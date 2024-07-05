@@ -16,7 +16,7 @@
 
 package com.oceanbase.odc.service.onlineschemachange;
 
-import static com.oceanbase.odc.service.schedule.model.JobType.ONLINE_SCHEMA_CHANGE_COMPLETE;
+import static com.oceanbase.odc.service.schedule.model.ScheduleType.ONLINE_SCHEMA_CHANGE_COMPLETE;
 
 import java.util.function.Consumer;
 
@@ -39,7 +39,8 @@ public class TriggerListenerFactory {
         return new TriggerListenerSupport() {
             @Override
             public String getName() {
-                return QuartzKeyGenerator.generateTriggerKey(scheduleId, ONLINE_SCHEMA_CHANGE_COMPLETE).toString();
+                return QuartzKeyGenerator
+                        .generateTriggerKey(scheduleId.toString(), ONLINE_SCHEMA_CHANGE_COMPLETE.name()).toString();
             }
 
             @Override

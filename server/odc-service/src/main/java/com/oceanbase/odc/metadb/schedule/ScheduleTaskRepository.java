@@ -39,7 +39,7 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
 public interface ScheduleTaskRepository extends JpaRepository<ScheduleTaskEntity, Long>,
         JpaSpecificationExecutor<ScheduleTaskEntity> {
 
-    Optional<ScheduleTaskEntity> findByIdAndJobName(Long id, Long scheduleId);
+    Optional<ScheduleTaskEntity> findByIdAndJobName(Long id, String scheduleId);
 
     List<ScheduleTaskEntity> findByJobNameAndStatusIn(String jobName, List<TaskStatus> statuses);
 

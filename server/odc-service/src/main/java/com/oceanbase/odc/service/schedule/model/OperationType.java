@@ -15,33 +15,20 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
-import org.quartz.JobDataMap;
-
-import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
-
-import lombok.Data;
-
 /**
  * @Author：tinker
- * @Date: 2023/6/27 15:34
+ * @Date: 2022/11/18 16:27
  * @Descripition:
  */
+public enum OperationType {
 
-@Data
-public class CreateQuartzJobReq {
+    CREATE,
 
-    // It represents the owner of the job.
-    private Long scheduleId;
-
-    private JobType type;
-
-    private Boolean allowConcurrent = false;
-
-    private MisfireStrategy misfireStrategy = MisfireStrategy.MISFIRE_INSTRUCTION_DO_NOTHING;
-
-    private TriggerConfig triggerConfig = null;
-
-    // To store task parameters.
-    private JobDataMap jobDataMap = new JobDataMap();
+    UPDATE,
+    PAUSE,
+    TERMINATION,
+    TERMINATE,
+    RESUME,
+    DELETE
 
 }

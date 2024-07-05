@@ -23,7 +23,7 @@ import org.locationtech.jts.util.Assert;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.ServiceTestEnv;
-import com.oceanbase.odc.service.schedule.flowtask.OperationType;
+import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeStatus;
 
 /**

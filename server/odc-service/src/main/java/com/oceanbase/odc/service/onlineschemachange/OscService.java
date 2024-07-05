@@ -63,6 +63,7 @@ import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.task.TaskService;
 
@@ -139,8 +140,8 @@ public class OscService {
                 OnlineSchemaChangeScheduleTaskResult.class);
 
         PreConditions.validArgumentState(
-                scheduleEntity.get().getJobType() == JobType.ONLINE_SCHEMA_CHANGE_COMPLETE,
-                ErrorCodes.BadArgument, new Object[] {scheduleEntity.get().getJobType()},
+                scheduleEntity.get().getType() == ScheduleType.ONLINE_SCHEMA_CHANGE_COMPLETE,
+                ErrorCodes.BadArgument, new Object[] {scheduleEntity.get().getType()},
                 "Task type is not " + TaskType.ONLINE_SCHEMA_CHANGE.name());
 
         SwapTableType swapTableType = oscParameters.getSwapTableType();
@@ -185,7 +186,7 @@ public class OscService {
                 ErrorCodes.BadRequest, new Object[] {req.getFlowInstanceId()},
                 "Task has not been scheduled, please retry update rate limiter latter");
         Long scheduleId = Long.parseLong(taskResult.getTasks().get(0).getJobName());
-        ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(scheduleId);
+        ScheduleEntity scheduleEntity = scheduleService.nullSafeGetByIdWithCheckPermission(scheduleId,false);
         OnlineSchemaChangeParameters parameters = JsonUtils.fromJson(
                 scheduleEntity.getJobParametersJson(), OnlineSchemaChangeParameters.class);
         RateLimiterConfig rateLimiter = parameters.getRateLimitConfig();

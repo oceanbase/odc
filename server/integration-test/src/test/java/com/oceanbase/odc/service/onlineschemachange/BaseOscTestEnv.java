@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.onlineschemachange;
 
-import static com.oceanbase.odc.service.schedule.model.JobType.ONLINE_SCHEMA_CHANGE_COMPLETE;
+import static com.oceanbase.odc.service.schedule.model.ScheduleType.ONLINE_SCHEMA_CHANGE_COMPLETE;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -65,8 +65,8 @@ import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectFullV
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectProgressResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectStepVO;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
-import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
@@ -180,7 +180,7 @@ public abstract class BaseOscTestEnv extends ServiceTestEnv {
         scheduleEntity.setStatus(ScheduleStatus.ENABLED);
         scheduleEntity.setAllowConcurrent(false);
         scheduleEntity.setMisfireStrategy(MisfireStrategy.MISFIRE_INSTRUCTION_DO_NOTHING);
-        scheduleEntity.setJobType(JobType.ONLINE_SCHEMA_CHANGE_COMPLETE);
+        scheduleEntity.setType(ScheduleType.ONLINE_SCHEMA_CHANGE_COMPLETE);
         scheduleEntity.setJobParametersJson(JsonUtils.toJson(changeParameters));
         TriggerConfig triggerConfig = new TriggerConfig();
         triggerConfig.setTriggerStrategy(TriggerStrategy.CRON);

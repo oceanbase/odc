@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
+import com.oceanbase.odc.service.schedule.processor.ScheduleChangePreprocessor;
 
 import lombok.Data;
 
@@ -52,8 +53,7 @@ public class CreateScheduleReq {
     private String description;
 
     /**
-     * Followings are filled by aspect
-     * {@link com.oceanbase.odc.service.schedule.processor.CreateScheduleAspect}
+     * Followings are filled by aspect {@link ScheduleChangePreprocessor}
      */
     @JsonProperty(access = Access.READ_ONLY)
     private Long projectId;

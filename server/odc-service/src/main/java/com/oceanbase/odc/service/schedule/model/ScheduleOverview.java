@@ -35,7 +35,7 @@ public class ScheduleOverview {
 
     private Long scheduleId;
 
-    private Map<String, String> attributes;
+    private Map<String, Object> attributes;
 
     private ScheduleStatus status;
 
