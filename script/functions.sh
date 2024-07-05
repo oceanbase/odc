@@ -360,6 +360,7 @@ function copy_obclient() {
 
 function maven_build_rpm() {
     local rpm_release=$1
+    local mvn_extra_args=$2
     if [ -z "$rpm_release" ]; then
         echo "Usage: maven_build_rpm <rpm_release>"
         return 1
@@ -370,7 +371,7 @@ function maven_build_rpm() {
     func_echo "maven build rpm package starting..."
     if ! mvn --file server/odc-server/pom.xml rpm:rpm \
         -Drpm.prefix=${RPM_DEFAULT_INSTALL_PREFIX} \
-        -Drpm.release=${rpm_release}; then
+        -Drpm.release=${rpm_release} " $mvn_extra_args"; then
         func_echo "maven build rpm failed"
         popd
         return 3
