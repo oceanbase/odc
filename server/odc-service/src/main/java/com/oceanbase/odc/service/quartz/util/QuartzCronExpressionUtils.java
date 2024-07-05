@@ -26,6 +26,9 @@ import java.util.StringTokenizer;
 
 import org.quartz.CronExpression;
 
+import com.oceanbase.odc.service.schedule.model.TriggerConfig;
+import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
+
 /**
  * @Author：tinker
  * @Date: 2023/1/4 16:00
@@ -104,6 +107,14 @@ public class QuartzCronExpressionUtils {
             pos++;
         }
         return sb.toString();
+    }
+
+    public static List<Date> getNextFiveFireTimes(TriggerConfig triggerConfig) {
+        if (triggerConfig.getTriggerStrategy() == TriggerStrategy.START_NOW
+                || triggerConfig.getTriggerStrategy() == TriggerStrategy.START_AT) {
+            return Collections.emptyList();
+        }
+        return getNextFiveFireTimes(triggerConfig.getCronExpression());
     }
 
     public static List<Date> getNextFiveFireTimes(String cronExpression) {

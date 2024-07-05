@@ -55,8 +55,8 @@ import com.oceanbase.odc.service.partitionplan.model.PartitionPlanStrategy;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTableConfig;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 
 import lombok.NonNull;
@@ -246,7 +246,7 @@ public class PartitionPlanScheduleService {
         Set<Long> scheduleIds = ppts.stream().map(PartitionPlanTableEntity::getScheduleId)
                 .collect(Collectors.toSet());
         for (Long scheduleId : scheduleIds) {
-            scheduleService.terminate(scheduleService.nullSafeGetById(scheduleId));
+            // scheduleService.changeSchedule(scheduleService.nullSafeGetById(scheduleId));
         }
         log.info("Disable partition plan related tables succeed, ids={}, tableNames={}", pptIds, ppts.stream()
                 .map(PartitionPlanTableEntity::getTableName).collect(Collectors.toList()));
@@ -259,7 +259,7 @@ public class PartitionPlanScheduleService {
         scheduleEntity.setStatus(ScheduleStatus.ENABLED);
         scheduleEntity.setAllowConcurrent(false);
         scheduleEntity.setMisfireStrategy(MisfireStrategy.MISFIRE_INSTRUCTION_DO_NOTHING);
-        scheduleEntity.setJobType(JobType.PARTITION_PLAN);
+        scheduleEntity.setType(ScheduleType.PARTITION_PLAN);
         scheduleEntity.setTriggerConfigJson(JsonUtils.toJson(triggerConfig));
         scheduleEntity.setProjectId(database.getProject().getId());
         scheduleEntity.setDataSourceId(database.getDataSource().getId());

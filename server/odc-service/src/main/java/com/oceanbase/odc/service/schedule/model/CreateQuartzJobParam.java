@@ -13,28 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.dlm.model;
+package com.oceanbase.odc.service.schedule.model;
+
+import org.quartz.JobDataMap;
+import org.quartz.JobKey;
+
+import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 
 import lombok.Data;
 
 /**
  * @Author：tinker
- * @Date: 2023/5/10 20:24
+ * @Date: 2023/6/27 15:34
  * @Descripition:
  */
 
 @Data
-public class OffsetConfig {
+public class CreateQuartzJobParam {
 
-    private String name;
+    private JobKey jobKey;
 
-    private String pattern;
+    private Boolean allowConcurrent = false;
 
-    private String dateFormatPattern;
+    private MisfireStrategy misfireStrategy = MisfireStrategy.MISFIRE_INSTRUCTION_DO_NOTHING;
 
-    private Operator operator;
+    private TriggerConfig triggerConfig = null;
 
-    private String unit;
+    // To store task parameters.
+    private JobDataMap jobDataMap = new JobDataMap();
 
-    private Long value;
 }

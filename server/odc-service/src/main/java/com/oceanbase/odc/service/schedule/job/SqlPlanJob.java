@@ -30,8 +30,7 @@ import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
-import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,18 +48,10 @@ public class SqlPlanJob implements OdcJob {
         JobDataMap jobDataMap = context.getJobDetail().getJobDataMap();
 
         ScheduleEntity scheduleEntity = JSON.parseObject(JSON.toJSONString(jobDataMap), ScheduleEntity.class);
-        if (!scheduleEntity.getAllowConcurrent()) {
-            ScheduleService scheduleService = SpringContextUtil.getBean(ScheduleService.class);
-            if (scheduleService.hasExecutingAsyncTask(scheduleEntity)) {
-                log.info("Concurrent execution is not allowed and wait for next time,job key={},fire time={}",
-                        context.getJobDetail().getKey(), context.getFireTime());
-                return;
-            }
-        }
 
         DatabaseChangeParameters taskParameters = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
                 DatabaseChangeParameters.class);
-        taskParameters.setParentJobType(JobType.SQL_PLAN);
+        taskParameters.setParentScheduleType(ScheduleType.SQL_PLAN);
         CreateFlowInstanceReq flowInstanceReq = new CreateFlowInstanceReq();
         flowInstanceReq.setParameters(taskParameters);
         flowInstanceReq.setTaskType(TaskType.ASYNC);

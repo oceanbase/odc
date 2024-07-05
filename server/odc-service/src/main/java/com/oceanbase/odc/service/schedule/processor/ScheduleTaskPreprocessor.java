@@ -13,22 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.flowtask;
+package com.oceanbase.odc.service.schedule.processor;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import org.springframework.stereotype.Component;
+
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 /**
  * @Author：tinker
- * @Date: 2022/11/18 16:27
+ * @Date: 2023/3/14 20:57
  * @Descripition:
  */
-public enum OperationType {
+@Target(value = {ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Component
+public @interface ScheduleTaskPreprocessor {
 
-    CREATE,
+    boolean isEnabled() default true;
 
-    UPDATE,
-    PAUSE,
-    TERMINATION,
-    TERMINATE,
-    RESUME,
-    DELETE
+    ScheduleType type();
 
 }

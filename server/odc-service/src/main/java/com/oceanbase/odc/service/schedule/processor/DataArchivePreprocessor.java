@@ -13,10 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.flowtask;
-
-import java.util.Arrays;
-import java.util.List;
+package com.oceanbase.odc.service.schedule.processor;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -25,10 +22,7 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -36,14 +30,11 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.DLMConfiguration;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
-import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
-import com.oceanbase.odc.service.flow.processor.ScheduleTaskPreprocessor;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
-import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.ScheduleTaskService;
-import com.oceanbase.odc.service.schedule.model.JobType;
-import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.schedule.model.OperationType;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
 import lombok.extern.slf4j.Slf4j;
@@ -54,16 +45,10 @@ import lombok.extern.slf4j.Slf4j;
  * @Descripition:
  */
 @Slf4j
-@ScheduleTaskPreprocessor(type = JobType.DATA_ARCHIVE)
-public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
+@ScheduleTaskPreprocessor(type = ScheduleType.DATA_ARCHIVE)
+public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
     @Autowired
     private AuthenticationFacade authenticationFacade;
-
-    @Autowired
-    private ScheduleService scheduleService;
-
-    @Autowired
-    private ScheduleTaskService scheduleTaskService;
 
     @Autowired
     private DatabaseService databaseService;
@@ -75,26 +60,24 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
     private DLMConfiguration dlmConfiguration;
 
     @Override
-    public void process(CreateFlowInstanceReq req) {
-        AlterScheduleParameters parameters = (AlterScheduleParameters) req.getParameters();
-        if (parameters.getOperationType() == OperationType.CREATE
-                || parameters.getOperationType() == OperationType.UPDATE) {
-            DataArchiveParameters dataArchiveParameters =
-                    (DataArchiveParameters) parameters.getScheduleTaskParameters();
-            initDefaultConfig(dataArchiveParameters);
+    public void process(ScheduleChangeParams req) {
+        if (req.getOperationType() == OperationType.CREATE || req.getOperationType() == OperationType.UPDATE) {
+            DataArchiveParameters parameters = req.getOperationType() == OperationType.CREATE
+                    ? (DataArchiveParameters) req.getCreateScheduleReq().getParameters()
+                    : (DataArchiveParameters) req.getUpdateScheduleReq().getParameters();
+
+            initDefaultConfig(parameters);
             // Throw exception when the specified database does not exist or the current user does not have
             // permission to access it.
-            Database sourceDb = databaseService.detail(dataArchiveParameters.getSourceDatabaseId());
-            Database targetDb = databaseService.detail(dataArchiveParameters.getTargetDataBaseId());
-            if (!dataArchiveParameters.getSyncTableStructure().isEmpty()
+            Database sourceDb = databaseService.detail(parameters.getSourceDatabaseId());
+            Database targetDb = databaseService.detail(parameters.getTargetDataBaseId());
+            parameters.setSourceDatabase(sourceDb);
+            parameters.setTargetDatabase(targetDb);
+            if (!parameters.getSyncTableStructure().isEmpty()
                     && sourceDb.getDataSource().getDialectType() != targetDb.getDataSource().getDialectType()) {
                 throw new UnsupportedException(
                         "Different types of databases do not support structural synchronization.");
             }
-            dataArchiveParameters.setSourceDatabaseName(sourceDb.getName());
-            dataArchiveParameters.setTargetDatabaseName(targetDb.getName());
-            dataArchiveParameters.setSourceDataSourceName(sourceDb.getDataSource().getName());
-            dataArchiveParameters.setTargetDataSourceName(targetDb.getDataSource().getName());
             ConnectionConfig sourceDs = sourceDb.getDataSource();
             sourceDs.setDefaultSchema(sourceDb.getName());
             ConnectionSessionFactory sourceSessionFactory = new DefaultConnectSessionFactory(sourceDs);
@@ -103,41 +86,14 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             ConnectionSession targetSession = targetSessionFactory.generateSession();
             try {
                 supportDataArchivingLink(sourceSession, targetSession);
-                checkTableAndCondition(sourceSession, sourceDb, dataArchiveParameters.getTables(),
-                        dataArchiveParameters.getVariables());
+                checkTableAndCondition(sourceSession, sourceDb, parameters.getTables(),
+                        parameters.getVariables());
             } finally {
                 sourceSession.expire();
                 targetSession.expire();
             }
-            if (parameters.getOperationType() == OperationType.CREATE) {
-                // pre create
-                ScheduleEntity scheduleEntity = buildScheduleEntity(req);
-                scheduleEntity.setCreatorId(authenticationFacade.currentUser().id());
-                scheduleEntity.setModifierId(scheduleEntity.getCreatorId());
-                scheduleEntity.setOrganizationId(authenticationFacade.currentOrganizationId());
-                scheduleEntity = scheduleService.create(scheduleEntity);
-                parameters.setTaskId(scheduleEntity.getId());
-                // create job limit config
-                initLimiterConfig(scheduleEntity.getId(), dataArchiveParameters.getRateLimit(), limiterService);
-            }
-            if (parameters.getOperationType() == OperationType.UPDATE) {
-                parameters.setDescription(req.getDescription());
-                ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(parameters.getTaskId());
-                List<ScheduleTaskEntity> runningTasks = scheduleTaskService.listTaskByJobNameAndStatus(
-                        scheduleEntity.getId().toString(), Arrays.asList(TaskStatus.RUNNING, TaskStatus.PREPARING));
-                if (scheduleEntity.getStatus() != ScheduleStatus.PAUSE || !runningTasks.isEmpty()) {
-                    throw new IllegalStateException(
-                            String.format(
-                                    "The task can only be edited when it is paused and there are no active subtasks executing."
-                                            + "status=%s,subtaskCount=%s",
-                                    scheduleEntity.getStatus(), runningTasks.size()));
-                }
-                // update job limit config
-                limiterService.updateByOrderId(scheduleEntity.getId(), dataArchiveParameters.getRateLimit());
-            }
             log.info("Data archive preprocessing has been completed.");
         }
-        req.setParentFlowInstanceId(parameters.getTaskId());
     }
 
     private void supportDataArchivingLink(ConnectionSession sourceSession, ConnectionSession targetSession) {

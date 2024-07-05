@@ -15,44 +15,33 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
-import java.util.Date;
+import org.quartz.JobDataMap;
 
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 
 import lombok.Data;
-import lombok.NonNull;
 
 /**
  * @Author：tinker
- * @Date: 2023/5/24 15:35
+ * @Date: 2024/6/9 22:19
  * @Descripition:
  */
 
 @Data
-public class ScheduleTaskResp {
-
-    private Long id;
+public class ChangeQuartJobParam {
 
     private String jobName;
 
     private String jobGroup;
 
-    private TaskStatus status;
+    private Boolean allowConcurrent = false;
 
-    private double progressPercentage;
+    private MisfireStrategy misfireStrategy = MisfireStrategy.MISFIRE_INSTRUCTION_DO_NOTHING;
 
-    private String executionDetails;
+    private TriggerConfig triggerConfig = null;
 
-    private String resultJson;
+    // To store task parameters.
+    private JobDataMap jobDataMap = new JobDataMap();
 
-    private Date createTime;
-
-    private Date updateTime;
-
-    public static ScheduleTaskResp withId(@NonNull Long id) {
-        ScheduleTaskResp resp = new ScheduleTaskResp();
-        resp.setId(id);
-        return resp;
-    }
-
+    private OperationType operationType;
 }

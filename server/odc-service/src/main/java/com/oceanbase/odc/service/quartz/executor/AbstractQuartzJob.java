@@ -30,7 +30,7 @@ import com.oceanbase.odc.service.schedule.job.OdcJob;
 import com.oceanbase.odc.service.schedule.job.OnlineSchemaChangeCompleteJob;
 import com.oceanbase.odc.service.schedule.job.PartitionPlanJob;
 import com.oceanbase.odc.service.schedule.job.SqlPlanJob;
-import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -69,8 +69,8 @@ public abstract class AbstractQuartzJob implements InterruptableJob {
 
     public OdcJob getOdcJob(JobExecutionContext context) {
         JobKey key = context.getJobDetail().getKey();
-        JobType jobType = JobType.valueOf(key.getGroup());
-        switch (jobType) {
+        ScheduleTaskType taskType = ScheduleTaskType.valueOf(key.getGroup());
+        switch (taskType) {
             case SQL_PLAN:
                 return new SqlPlanJob();
             case DATA_ARCHIVE:

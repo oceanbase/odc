@@ -29,7 +29,9 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.collections4.CollectionUtils;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.dlm.model.OffsetConfig;
+import com.oceanbase.odc.service.dlm.model.Operator;
 
 /**
  * @Author：tinker
@@ -40,11 +42,11 @@ public class DataArchiveConditionUtil {
     private static final Pattern CONDITION_VARIABLES_PATTERN = Pattern.compile("\\$\\{(.+?)\\}");
 
     public static String parseCondition(String condition, List<OffsetConfig> variables, Date baseDate) {
-        Map<String, String> variablesMap = getVariablesMap(variables);
+        Map<String, OffsetConfig> variablesMap = getVariablesMap(variables);
         return replaceVariables(condition, variablesMap, baseDate);
     }
 
-    private static String replaceVariables(String condition, Map<String, String> variables, Date baseDate) {
+    private static String replaceVariables(String condition, Map<String, OffsetConfig> variables, Date baseDate) {
         Matcher matcher = CONDITION_VARIABLES_PATTERN.matcher(condition);
         StringBuffer sb = new StringBuffer();
         while (matcher.find()) {
@@ -60,55 +62,68 @@ public class DataArchiveConditionUtil {
         return sb.toString();
     }
 
-    private static Map<String, String> getVariablesMap(List<OffsetConfig> variables) {
+    private static Map<String, OffsetConfig> getVariablesMap(List<OffsetConfig> variables) {
         if (CollectionUtils.isEmpty(variables)) {
             return Collections.emptyMap();
         }
-        Map<String, String> map = new HashMap<>();
+        Map<String, OffsetConfig> map = new HashMap<>();
         variables.forEach(obj -> {
             if (map.containsKey(obj.getName())) {
                 throw new IllegalArgumentException(String.format("Duplicate variable found,name=%s", obj.getName()));
             }
-            map.put(obj.getName(), obj.getPattern());
+            map.put(obj.getName(), obj);
         });
         return map;
     }
 
-    private static String calculateDateTime(Date baseDate, String pattern) {
-        String[] parts = pattern.split("\\|");
-        String offsetString = parts[1].substring(1);
-        ChronoUnit unit = parseUnit(offsetString);
-        long offsetSeconds = parseValue(offsetString) * unit.getDuration().getSeconds();
-        if (parts[1].startsWith("-")) {
-            offsetSeconds = -offsetSeconds;
+    private static String calculateDateTime(Date baseDate, OffsetConfig config) {
+
+        LocalDateTime localDateTime;
+        if (StringUtils.isNotEmpty(config.getPattern())) {
+            String[] parts = config.getPattern().split("\\|");
+            String offsetString = parts[1].substring(1);
+            ChronoUnit unit = parseUnit(offsetString.substring(offsetString.length() - 1));
+            long offsetSeconds = parseValue(offsetString) * unit.getDuration().getSeconds();
+            if (parts[1].startsWith("-")) {
+                offsetSeconds = -offsetSeconds;
+            }
+            localDateTime = baseDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
+                    .plusSeconds(offsetSeconds);
+            return localDateTime.format(DateTimeFormatter.ofPattern(parts[0]));
+        } else {
+            long offsetSeconds = config.getValue() * parseUnit(config.getUnit()).getDuration().getSeconds();
+            if (config.getOperator() == Operator.MINUS) {
+                offsetSeconds = -offsetSeconds;
+            }
+            localDateTime = baseDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
+                    .plusSeconds(offsetSeconds);
+            return localDateTime.format(DateTimeFormatter.ofPattern(config.getDateFormatPattern()));
         }
-        LocalDateTime localDateTime = baseDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
-                .plusSeconds(offsetSeconds);
-        return localDateTime.format(DateTimeFormatter.ofPattern(parts[0]));
+
     }
 
     private static int parseValue(String offsetString) {
         return Integer.parseInt(offsetString.substring(0, offsetString.length() - 1));
     }
 
-    private static ChronoUnit parseUnit(String offsetString) {
-        switch (offsetString.charAt(offsetString.length() - 1)) {
-            case 'y':
+    private static ChronoUnit parseUnit(String unit) {
+        switch (unit) {
+            case "y":
                 return ChronoUnit.YEARS;
-            case 'M':
+            case "M":
                 return ChronoUnit.MONTHS;
-            case 'd':
+            case "d":
                 return ChronoUnit.DAYS;
-            case 'h':
+            case "h":
                 return ChronoUnit.HOURS;
-            case 'm':
+            case "m":
                 return ChronoUnit.MINUTES;
-            case 's':
+            case "s":
                 return ChronoUnit.SECONDS;
-            case 'w':
+            case "w":
                 return ChronoUnit.WEEKS;
             default:
-                throw new IllegalArgumentException("Unknown unit: " + offsetString);
+                throw new IllegalArgumentException("Unknown unit: " + unit);
         }
     }
 }

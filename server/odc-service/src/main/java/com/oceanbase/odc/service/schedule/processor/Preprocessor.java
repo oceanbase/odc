@@ -13,28 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.dlm.model;
+package com.oceanbase.odc.service.schedule.processor;
 
-import lombok.Data;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 
 /**
  * @Author：tinker
- * @Date: 2023/5/10 20:24
+ * @Date: 2024/6/25 10:53
  * @Descripition:
  */
+public interface Preprocessor {
 
-@Data
-public class OffsetConfig {
+    void process(ScheduleChangeParams req);
 
-    private String name;
-
-    private String pattern;
-
-    private String dateFormatPattern;
-
-    private Operator operator;
-
-    private String unit;
-
-    private Long value;
 }

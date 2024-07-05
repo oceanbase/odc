@@ -45,7 +45,7 @@ public interface ScheduleMapper {
 
     @Named("entityToParameters")
     default ScheduleTaskParameters entityToParameters(ScheduleEntity entity) {
-        switch (entity.getJobType()) {
+        switch (entity.getType()) {
             case DATA_ARCHIVE:
                 return JsonUtils.fromJson(entity.getJobParametersJson(), DataArchiveParameters.class);
             case DATA_DELETE:
