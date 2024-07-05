@@ -23,12 +23,14 @@ import org.springframework.stereotype.Component;
 
 import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.tableformat.Table;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
+import com.oceanbase.odc.service.onlineschemachange.exception.OmsException;
 import com.oceanbase.odc.service.onlineschemachange.exception.OscException;
 import com.oceanbase.odc.service.onlineschemachange.logger.DefaultTableFactory;
 import com.oceanbase.odc.service.onlineschemachange.model.FullVerificationResult;
@@ -102,7 +104,11 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
                             return null;
                         })
                         .getCheckerResult();
-        updateOmsProjectConfig(scheduleTask.getId(), taskParameter, inputParameters, progress.getStatus());
+        // If config update is in processing, wait until the process done
+        // This behavior may cause process blocked if OMS update failed or resume failed
+        if (updateOmsProjectConfig(scheduleTask.getId(), taskParameter, inputParameters, progress.getStatus())) {
+            return;
+        }
 
         OnlineSchemaChangeScheduleTaskResult result = new OnlineSchemaChangeScheduleTaskResult(taskParameter);
 
@@ -119,11 +125,13 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
                 context.getParameter().getSwapTableType(), scheduleTask);
     }
 
-    private void updateOmsProjectConfig(Long scheduleTaskId, OnlineSchemaChangeScheduleTaskParameters taskParameters,
+    private boolean updateOmsProjectConfig(Long scheduleTaskId, OnlineSchemaChangeScheduleTaskParameters taskParameters,
             OnlineSchemaChangeParameters inputParameters, OmsProjectStatusEnum omsProjectStatus) {
         // if rate limiter parameters is changed, try to stop and restart project
         if (Objects.equals(inputParameters.getRateLimitConfig(), taskParameters.getRateLimitConfig())) {
-            return;
+            log.info("Rate limiter not changed,rateLimiterConfig = {}, update oms project not required",
+                    inputParameters.getRateLimitConfig());
+            return false;
         }
         log.info("Input rate limiter has changed, currentOmsProjectStatus={}, rateLimiterConfig={}, "
                 + "oldRateLimiterConfig={}.",
@@ -153,6 +161,7 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
                         taskParameters.getOmsProjectId(), scheduleTaskId, e);
             }
         }
+        return true;
     }
 
     private void doUpdateOmsProjectConfig(Long scheduleTaskId, OnlineSchemaChangeScheduleTaskParameters taskParameters,
@@ -173,7 +182,12 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
 
         log.info("Try to update oms project, omsProjectId={}, scheduleTaskId={},"
                 + " request={}.", taskParameters.getOmsProjectId(), scheduleTaskId, JsonUtils.toJson(request));
-        projectOpenApiService.updateProjectConfig(request);
+        try {
+            projectOpenApiService.updateProjectConfig(request);
+        } catch (OmsException omsException) {
+            throwOrIgnore(omsException);
+        }
+
         log.info("Update oms project completed, Try to resume project, omsProjectId={},"
                 + " scheduleTaskId={}", taskParameters.getOmsProjectId(), scheduleTaskId);
 
@@ -185,6 +199,19 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
         int rows = scheduleTaskRepository.updateTaskParameters(scheduleTaskId, JsonUtils.toJson(taskParameters));
         if (rows > 0) {
             log.info("Update throttle completed, scheduleTaskId={}", scheduleTaskId);
+        }
+    }
+
+    /**
+     * Lower version OMS may not support updateConfig api Ignore this exception and continue resume
+     * migrate project
+     * 
+     * @param omsException
+     */
+    private void throwOrIgnore(OmsException omsException) {
+        if (!StringUtils.containsIgnoreCase(omsException.getMessage(),
+                "Unsupported action: UpdateProjectConfig")) {
+            throw omsException;
         }
     }
 
