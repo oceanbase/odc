@@ -288,8 +288,8 @@ function maven_build_jar() {
 
     func_echo "maven build jar package starting..."
     func_echo "maven_extra_args: ${maven_extra_args[@]}"
-    mvn help:system
-    if ! (mvn clean install -Dmaven.test.skip=true ${maven_extra_args[@]}); then
+    mvn help:system ${maven_extra_args[@]}
+    if ! mvn clean install -Dmaven.test.skip=true ${maven_extra_args[@]}; then
         func_echo "maven build jar ${maven_extra_args[@]} failed"
         popd
         return 2
