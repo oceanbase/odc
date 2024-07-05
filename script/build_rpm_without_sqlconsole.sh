@@ -4,8 +4,8 @@
 
 # read parameters
 rpm_release=${1:-"1"}
-
-mvn_extra_args=${2:-""}
+shift
+mvn_extra_args=$@
 
 # read environment variables
 fetch_from_oss_flag=${FETCH_FROM_OSS:-"0"}
@@ -17,7 +17,7 @@ fi
 
 function build_rpm_without_sqlconsole() {
     log_info "maven build jar start"
-    if ! maven_build_jar "${mvn_extra_args}"; then
+    if ! maven_build_jar "${mvn_extra_args[@]}"; then
         log_error "maven build jar failed"
         return 4
     fi
@@ -38,7 +38,7 @@ function build_rpm_without_sqlconsole() {
     fi
 
     log_info "maven build rpm start"
-    if ! maven_build_rpm "${rpm_release}" "${mvn_extra_args}"; then
+    if ! maven_build_rpm "${rpm_release}" "${mvn_extra_args[@]}"; then
         log_error "maven build rpm failed"
         return 5
     fi
