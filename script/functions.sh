@@ -287,8 +287,9 @@ function maven_build_jar() {
     pushd "${ODC_DIR}" || return 1
 
     func_echo "maven build jar package starting..."
+    func_echo "maven_extra_args: ${maven_extra_args[@]}"
     mvn help:system
-    if ! mvn clean install -Dmaven.test.skip=true ${maven_extra_args[@]}; then
+    if ! (mvn clean install -Dmaven.test.skip=true ${maven_extra_args[@]}); then
         func_echo "maven build jar ${maven_extra_args[@]} failed"
         popd
         return 2

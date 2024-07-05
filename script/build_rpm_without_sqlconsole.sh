@@ -21,6 +21,7 @@ fi
 
 function build_rpm_without_sqlconsole() {
     log_info "maven build jar start"
+    echo "mvn_extra_args:" "${mvn_extra_args[@]}"
     if ! maven_build_jar "${mvn_extra_args[@]}"; then
         log_error "maven build jar failed"
         return 4
