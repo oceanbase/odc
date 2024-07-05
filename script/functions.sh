@@ -387,6 +387,7 @@ function copy_rpm_resources() {
     rm -vf ${ODC_DIR}/distribution/docker/resources/odc-*.rpm
     mkdir -p ${ODC_DIR}/distribution/docker/resources/
     mv --verbose ${ODC_DIR}/server/odc-server/target/rpm/odc-server/RPMS/*/odc-*.rpm ${ODC_DIR}/distribution/docker/resources/
+    func_echo "odc server rpm package(s) copied to $(pwd)"
     return $?
 }
 
