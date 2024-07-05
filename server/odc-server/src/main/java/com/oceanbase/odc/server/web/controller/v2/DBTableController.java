@@ -16,6 +16,7 @@
 package com.oceanbase.odc.server.web.controller.v2;
 
 import java.util.Base64;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
@@ -59,7 +61,12 @@ public class DBTableController {
             @PathVariable(required = false) String databaseName,
             @RequestParam(required = false, name = "fuzzyTableName") String fuzzyTableName) {
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
-        return Responses.list(tableService.showTablesLike(session, databaseName, fuzzyTableName));
+        if (!StringUtils.isEmpty(fuzzyTableName)) {
+            return Responses.list(tableService.showTablesLike(session, databaseName, fuzzyTableName));
+        } else {
+            return Responses.list(tableService.listTables(session, databaseName).stream().map(DBTable::getName).collect(
+                    Collectors.toList()));
+        }
     }
 
     @GetMapping(value = {"/{sessionId}/databases/{databaseName}/tables/{tableName}",

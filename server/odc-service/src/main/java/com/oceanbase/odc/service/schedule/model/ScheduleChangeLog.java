@@ -17,8 +17,6 @@ package com.oceanbase.odc.service.schedule.model;
 
 import java.util.Date;
 
-import com.oceanbase.odc.service.schedule.flowtask.OperationType;
-
 import lombok.Data;
 
 /**
@@ -49,16 +47,16 @@ public class ScheduleChangeLog {
     private Date updateTime;
 
     public static ScheduleChangeLog build(Long scheduleId, OperationType type, String oldParameters,
-            String newParameters) {
+            String newParameters, ScheduleChangeStatus status) {
 
-        return build(scheduleId, type, oldParameters, newParameters, null);
+        return build(scheduleId, type, oldParameters, newParameters, null, status);
     }
 
     public static ScheduleChangeLog build(Long scheduleId, OperationType type, String oldParameters,
-            String newParameters, Long flowInstanceId) {
+            String newParameters, Long flowInstanceId, ScheduleChangeStatus status) {
         ScheduleChangeLog log = new ScheduleChangeLog();
         log.setScheduleId(scheduleId);
-        log.setStatus(ScheduleChangeStatus.PREPARING);
+        log.setStatus(status);
         log.setType(type);
         log.setOldScheduleParameterJson(oldParameters);
         log.setNewScheduleParameterJson(newParameters);

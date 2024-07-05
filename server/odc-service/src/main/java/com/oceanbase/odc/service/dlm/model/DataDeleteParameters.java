@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.dlm.model;
 
 import java.util.List;
 
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 
 import lombok.Data;
@@ -31,15 +32,13 @@ public class DataDeleteParameters implements ScheduleTaskParameters {
 
     private Long databaseId;
 
-    private String databaseName;
-
     private Long targetDatabaseId;
 
-    private String targetDatabaseName;
+    // inner init
+    private Database database;
 
-    private String sourceDataSourceName;
-
-    private String targetDataSourceName;
+    // inner init
+    private Database targetDatabase;
 
     private List<OffsetConfig> variables;
 

@@ -15,12 +15,16 @@
  */
 package com.oceanbase.odc.service.connection.model;
 
+import java.util.Map;
+
 public interface CloudConnectionConfig {
     String getClusterName();
 
     String getTenantName();
 
     String getOBTenantName();
+
+    Map<String, Object> getAttributes();
 
     OBInstanceType getInstanceType();
 

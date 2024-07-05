@@ -53,7 +53,7 @@ import com.oceanbase.odc.service.onlineschemachange.model.OscLockDatabaseUserInf
 import com.oceanbase.odc.service.onlineschemachange.model.OscSwapTableVO;
 import com.oceanbase.odc.service.onlineschemachange.model.SwapTableType;
 import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
-import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
 import lombok.NonNull;
@@ -134,8 +134,8 @@ public class OscService {
                 OnlineSchemaChangeScheduleTaskResult.class);
 
         PreConditions.validArgumentState(
-                scheduleEntity.get().getJobType() == JobType.ONLINE_SCHEMA_CHANGE_COMPLETE,
-                ErrorCodes.BadArgument, new Object[] {scheduleEntity.get().getJobType()},
+                scheduleEntity.get().getType() == ScheduleType.ONLINE_SCHEMA_CHANGE_COMPLETE,
+                ErrorCodes.BadArgument, new Object[] {scheduleEntity.get().getType()},
                 "Task type is not " + TaskType.ONLINE_SCHEMA_CHANGE.name());
 
         SwapTableType swapTableType = oscParameters.getSwapTableType();

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.flowtask;
+package com.oceanbase.odc.service.flow.processor;
 
 import java.util.List;
 import java.util.regex.Pattern;
@@ -31,8 +31,6 @@ import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
-import com.oceanbase.odc.service.flow.processor.FlowTaskPreprocessor;
-import com.oceanbase.odc.service.flow.processor.Preprocessor;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.tools.dbbrowser.parser.ParserUtil;
 import com.oceanbase.tools.dbbrowser.parser.constant.GeneralSqlType;

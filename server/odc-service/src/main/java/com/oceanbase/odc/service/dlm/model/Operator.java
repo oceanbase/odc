@@ -13,29 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.flow.processor;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-import org.springframework.stereotype.Component;
-
-import com.oceanbase.odc.service.schedule.model.JobType;
+package com.oceanbase.odc.service.dlm.model;
 
 /**
  * @Author：tinker
- * @Date: 2023/3/14 20:57
+ * @Date: 2024/7/2 21:02
  * @Descripition:
  */
-@Target(value = {ElementType.TYPE})
-@Retention(RetentionPolicy.RUNTIME)
-@Component
-public @interface ScheduleTaskPreprocessor {
-
-    boolean isEnabled() default true;
-
-    JobType type();
-
+public enum Operator {
+    PLUS,
+    MINUS
 }
+

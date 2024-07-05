@@ -15,17 +15,13 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
-import java.util.List;
-
 import org.quartz.JobExecutionContext;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
-import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
@@ -40,29 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DataArchiveJob extends AbstractDlmJob {
     @Override
     public void executeJob(JobExecutionContext context) {
-        // execute in task framework.
-        if (taskFrameworkProperties.isEnabled()) {
-            executeInTaskFramework(context);
-            return;
-        }
-
-        ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
-
-        List<DlmTableUnit> dlmTableUnits = getTaskUnits(taskEntity);
-        DataArchiveParameters dataArchiveParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
-                DataArchiveParameters.class);
-        executeTask(taskEntity.getId(), dlmTableUnits, dataArchiveParameters.getTimeoutMillis());
-        TaskStatus taskStatus = getTaskStatus(taskEntity.getId());
-        scheduleTaskRepository.updateStatusById(taskEntity.getId(), taskStatus);
-
-        DataArchiveParameters parameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
-                DataArchiveParameters.class);
-
-        if (taskStatus == TaskStatus.DONE && parameters.isDeleteAfterMigration()) {
-            log.info("Start to create clear job,scheduleTaskId={}", taskEntity.getId());
-            scheduleService.dataArchiveDelete(Long.parseLong(taskEntity.getJobName()), taskEntity.getId());
-            log.info("Clear job is created,");
-        }
+        executeInTaskFramework(context);
     }
 
     private void executeInTaskFramework(JobExecutionContext context) {
