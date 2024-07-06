@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.objectstorage.cloud;
 
 import java.util.function.Supplier;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
@@ -40,6 +39,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.objectstorage.cloud.client.AlibabaCloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.client.AmazonCloudClient;
@@ -135,17 +135,20 @@ public class CloudResourceConfigurations {
                 .withCredentials(credentialsProvider)
                 .withClientConfiguration(clientConfiguration)
                 .disableChunkedEncoding();
-        if (StringUtils.isNotBlank(configuration.getPublicEndpoint())) {
+        // if not AWS, means use S3 SDK to access other cloud storage, then we must set endpoint
+        if (!configuration.getCloudProvider().isAWS()) {
+            String endpoint = configuration.getPublicEndpoint();
+            PreConditions.notBlank(endpoint, "endpoint");
             EndpointConfiguration endpointConfiguration =
-                    new EndpointConfiguration(configuration.getPublicEndpoint(), configuration.getRegion());
+                    new EndpointConfiguration(endpoint, configuration.getRegion());
             s3ClientBuilder.withEndpointConfiguration(endpointConfiguration);
-        } else if (StringUtils.isNotBlank(region)) {
-            s3ClientBuilder.withRegion(configuration.getRegion());
         } else {
-            throw new IllegalArgumentException("Region or endpoint must be set");
+            PreConditions.notBlank(region, "region");
+            s3ClientBuilder.withRegion(configuration.getRegion());
         }
         AmazonS3 s3 = s3ClientBuilder.build();
 
+        // TODO: set sts endpoint for other cloud provider
         AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.standard()
                 .withCredentials(credentialsProvider)
                 .withRegion(region)
