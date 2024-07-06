@@ -167,8 +167,23 @@ public class TaskMonitor {
         if (JobUtils.isReportEnabled()) {
             // Report finish signal to task server
             reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES);
+        } else {
+            waitForTaskResultPulled();
         }
         log.info("Task id: {} exit.", getJobId());
+    }
+
+    /**
+     * TODO: wait until task result be pulled by odc-sever
+     */
+    private void waitForTaskResultPulled() {
+        while (true) {
+            try {
+                TimeUnit.SECONDS.sleep(1);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private void uploadLogFileToCloudStorage(DefaultTaskResult finalResult) {
