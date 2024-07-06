@@ -57,7 +57,7 @@ public class ExecutorEndpointManager {
         Long jobId = je.getId();
         JobStatus status = je.getStatus();
 
-        if (status.isExecuting()) {
+        if (!status.isExecuting()) {
             throw new RuntimeException("Job is not executing, no executor endpoint available, jobId=" + jobId);
         }
         String executorEndpoint = je.getExecutorEndpoint();
