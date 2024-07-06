@@ -49,9 +49,19 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
 
     @Override
     public void start(JobContext context) {
+        log.info("Start task, id={}.", context.getJobIdentity().getId());
+
         this.context = context;
+
         this.jobParameters = Collections.unmodifiableMap(context.getJobParameters());
-        initCloudObjectStorageService();
+        log.info("Init task parameters success, id={}.", context.getJobIdentity().getId());
+
+        try {
+            initCloudObjectStorageService();
+        } catch (Exception e) {
+            log.warn("Init cloud object storage service failed, id={}.", getJobId(), e);
+        }
+
         this.taskMonitor = new TaskMonitor(this, cloudObjectStorageService);
         try {
             doInit(context);

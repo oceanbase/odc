@@ -65,7 +65,13 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
         if (tasks.containsKey(jobIdentity)) {
             throw new IllegalArgumentException("Task already exists, jobIdentity=" + jobIdentity.getId());
         }
-        Future<?> future = executor.submit(() -> task.start(jc));
+        Future<?> future = executor.submit(() -> {
+            try {
+                task.start(jc);
+            } catch (Exception e) {
+                log.error("Task start failed, jobIdentity={}.", jobIdentity.getId(), e);
+            }
+        });
         futures.put(jobIdentity, future);
         tasks.put(jobIdentity, task);
     }
