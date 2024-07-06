@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.schedule;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -71,6 +72,14 @@ public class ScheduleTaskRepositoryTest extends ServiceTestEnv {
         statuses.add(TaskStatus.PREPARING);
         List<ScheduleTaskEntity> byJobNameAndStatus = taskRepository.findByJobNameAndStatusIn("1", statuses);
         Assert.equals(byJobNameAndStatus.size(), 1);
+    }
+
+    @Test
+    public void findByIdIn() {
+        ScheduleTaskEntity scheduleTask = createScheduleTask();
+        List<ScheduleTaskEntity> res = taskRepository.findByIdIn(Collections.singleton(scheduleTask.getId()));
+        Assert.equals(res.size(), 1);
+        Assert.equals(scheduleTask, res.get(0));
     }
 
     private ScheduleTaskEntity createScheduleTask() {
