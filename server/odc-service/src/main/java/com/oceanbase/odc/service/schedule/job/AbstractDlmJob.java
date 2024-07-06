@@ -78,7 +78,7 @@ public abstract class AbstractDlmJob implements OdcJob {
 
     public DataSourceInfo getDataSourceInfo(Long databaseId) {
         Database db = databaseService.detail(databaseId);
-        ConnectionConfig config = databaseService.findDataSourceForConnectById(databaseId);
+        ConnectionConfig config = databaseService.findDataSourceForTaskById(databaseId);
         DataSourceInfo dataSourceInfo = DataSourceInfoMapper.toDataSourceInfo(config);
         dataSourceInfo.setDatabaseName(db.getName());
         return dataSourceInfo;

@@ -703,6 +703,14 @@ public class ConnectionService {
     }
 
     @SkipAuthorize("internal usage")
+    public ConnectionConfig getDecryptedConfig(@NotNull Long id) {
+        ConnectionConfig connection = internalGetSkipUserCheck(id, false, false);
+        connectionEncryption.decryptPasswords(connection);
+        return connection;
+    }
+
+
+    @SkipAuthorize("internal usage")
     public List<ConnectionConfig> listForConnectionSkipPermissionCheck(@NotNull Collection<Long> ids) {
         List<ConnectionConfig> connectionConfigs = internalListSkipUserCheck(ids, false, false);
         connectionConfigs.forEach(this::adaptConnectionConfig);
