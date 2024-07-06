@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.objectstorage.cloud;
 
 import java.util.function.Supplier;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
@@ -34,6 +35,7 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
@@ -129,12 +131,21 @@ public class CloudResourceConfigurations {
         AWSStaticCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(
                 new BasicAWSCredentials(accessKeyId, accessKeySecret));
         ClientConfiguration clientConfiguration = new ClientConfiguration().withProtocol(Protocol.HTTPS);
-        AmazonS3 s3 = AmazonS3ClientBuilder.standard()
+        AmazonS3ClientBuilder s3ClientBuilder = AmazonS3ClientBuilder.standard()
                 .withCredentials(credentialsProvider)
-                .withRegion(region)
                 .withClientConfiguration(clientConfiguration)
-                .disableChunkedEncoding()
-                .build();
+                .disableChunkedEncoding();
+        if (StringUtils.isNotBlank(configuration.getPublicEndpoint())) {
+            EndpointConfiguration endpointConfiguration =
+                    new EndpointConfiguration(configuration.getPublicEndpoint(), configuration.getRegion());
+            s3ClientBuilder.withEndpointConfiguration(endpointConfiguration);
+        } else if (StringUtils.isNotBlank(region)) {
+            s3ClientBuilder.withRegion(configuration.getRegion());
+        } else {
+            throw new IllegalArgumentException("Region or endpoint must be set");
+        }
+        AmazonS3 s3 = s3ClientBuilder.build();
+
         AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.standard()
                 .withCredentials(credentialsProvider)
                 .withRegion(region)
