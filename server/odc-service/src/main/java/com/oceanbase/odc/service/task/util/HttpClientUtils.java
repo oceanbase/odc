@@ -34,6 +34,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -64,7 +65,10 @@ public class HttpClientUtils {
     /**
      * set HttpClient for custom configuration
      */
-    public static void setHttpClient(HttpClient httpClient) {
+    public static void setHttpClient(@NonNull HttpClient httpClient) {
+        log.info("Set HttpClient, previous={}, current={}",
+                HttpClientUtils.httpClient == null ? null : HttpClientUtils.httpClient.hashCode(),
+                httpClient.hashCode());
         HttpClientUtils.httpClient = httpClient;
     }
 
@@ -99,7 +103,7 @@ public class HttpClientUtils {
             builder.setEntity(eb.build());
         }
 
-        String response = httpClient.execute(builder.build(), new BasicResponseHandler());
+        String response = HttpClientUtils.httpClient.execute(builder.build(), new BasicResponseHandler());
         return JsonUtils.fromJson(response, responseTypeRef);
     }
 
