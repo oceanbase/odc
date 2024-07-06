@@ -531,6 +531,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int updateJobParameters(Long id, String jobParametersJson) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaUpdate<JobEntity> update = cb.createCriteriaUpdate(JobEntity.class);
@@ -541,6 +542,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int updateExecutorEndpoint(Long id, String executorEndpoint) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaUpdate<JobEntity> update = cb.createCriteriaUpdate(JobEntity.class);

@@ -96,7 +96,7 @@ public class ExecutorEndpointManager {
                 throw new RuntimeException("Failed to get executor endpoint, pod not exists");
             }
         } catch (Exception e) {
-            throw new RuntimeException("Failed to get executor endpoint, " + e.getMessage());
+            throw new RuntimeException("Failed to get executor endpoint", e);
         }
     }
 
