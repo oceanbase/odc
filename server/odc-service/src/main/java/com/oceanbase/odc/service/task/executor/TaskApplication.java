@@ -83,16 +83,23 @@ public class TaskApplication {
         }));
         // 1 step: valid environment value not blank
         validEnvValues();
+        log.info("verify environment variables success.");
+
         // 2 step: decrypt environment value
         decryptEnvironments();
+        log.info("decrypt environment variables success.");
+
         // 3 step: get JobContext from environment
         context = JobContextProviderFactory.create().provide();
+        log.info("initial job context success.");
+
         // 4 step: trace taskId in log4j2 context
         trace(context.getJobIdentity().getId());
         // 5 step: set log path in system properties
         setLogPathSysProperty();
         // 6 step: set log4j2.xml
         setLog4JConfigXml();
+        log.info("initial log configuration success.");
 
         log.info("Task executor start info, ip={}, port={}, runMode={}, taskId={}, logPath={}, userId={}.",
                 SystemUtils.getLocalIpAddress(),
