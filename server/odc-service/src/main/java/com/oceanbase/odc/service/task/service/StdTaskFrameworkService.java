@@ -69,6 +69,7 @@ import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.listener.DefaultJobProcessUpdateEvent;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
+import com.oceanbase.odc.service.task.processor.DLMResultProcessor;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
@@ -116,6 +117,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     private TaskExecutorClient taskExecutorClient;
     @Autowired
     private ExecutorEndpointManager executorEndpointManager;
+    @Autowired
+    private DLMResultProcessor dlmResultProcessor;
 
     @Override
     public JobEntity find(Long id) {
@@ -359,6 +362,9 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 log.info("Update lastHeartbeatTime success, jobId={}, currentProgress={}", id, result.getProgress());
             } else {
                 log.warn("Update lastHeartbeatTime failed, jobId={}", id);
+            }
+            if ("DLM".equals(je.getJobType())) {
+                dlmResultProcessor.process(result);
             }
         }
         // here progress changed

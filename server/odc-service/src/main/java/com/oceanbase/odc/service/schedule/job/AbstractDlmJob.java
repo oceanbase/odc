@@ -23,6 +23,7 @@ import org.quartz.JobExecutionContext;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
+import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -38,6 +39,7 @@ import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 
 import lombok.extern.slf4j.Slf4j;
@@ -89,14 +91,18 @@ public abstract class AbstractDlmJob implements OdcJob {
         if (timeoutMillis != null) {
             jobData.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, timeoutMillis.toString());
         }
+        Map<String, String> jobProperties = new HashMap<>();
+        JobPropertiesUtils.setCloudProvider(jobProperties, CloudProvider.TENCENT_CLOUD);
+        JobPropertiesUtils.setRegionName(jobProperties, "ap-beijing");
         SingleJobProperties singleJobProperties = new SingleJobProperties();
         singleJobProperties.setEnableRetryAfterHeartTimeout(true);
         singleJobProperties.setMaxRetryTimesAfterHeartTimeout(2);
+        jobProperties.putAll(singleJobProperties.toJobProperties());
 
         DefaultJobDefinition jobDefinition = DefaultJobDefinition.builder().jobClass(DataArchiveTask.class)
                 .jobType("DLM")
                 .jobParameters(jobData)
-                .jobProperties(singleJobProperties.toJobProperties())
+                .jobProperties(jobProperties)
                 .build();
         return jobScheduler.scheduleJobNow(jobDefinition);
     }

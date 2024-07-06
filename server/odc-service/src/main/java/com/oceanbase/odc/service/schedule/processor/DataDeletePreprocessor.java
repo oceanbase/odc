@@ -71,10 +71,8 @@ public class DataDeletePreprocessor extends AbstractDlmPreprocessor {
                     throw new IllegalArgumentException("target database id can not be null");
                 }
                 Database targetDb = databaseService.detail(parameters.getTargetDatabaseId());
-                parameters.setTargetDatabase(targetDb);
             }
             Database sourceDb = databaseService.detail(parameters.getDatabaseId());
-            parameters.setDatabase(sourceDb);
             ConnectionConfig dataSource = sourceDb.getDataSource();
             dataSource.setDefaultSchema(sourceDb.getName());
             ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
