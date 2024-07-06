@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.metadb.schedule;
 
+import java.util.List;
+import java.util.Set;
+
 import javax.transaction.Transactional;
 import javax.validation.constraints.NotNull;
 
@@ -35,6 +38,10 @@ import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
  * @Descripition:
  */
 public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Long> {
+
+    @Query(value = "select * from schedule_schedule where connection_id in (:connectionIds) and status = 'ENABLED'",
+            nativeQuery = true)
+    List<ScheduleEntity> getEnabledScheduleByConnectionIds(Set<Long> connectionIds);
 
     @Transactional
     @Modifying

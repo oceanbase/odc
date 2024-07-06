@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.validation.constraints.NotNull;
 
@@ -49,6 +51,8 @@ import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
+import com.oceanbase.odc.metadb.schedule.LatestTaskMappingEntity;
+import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
@@ -75,6 +79,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
@@ -136,6 +141,9 @@ public class ScheduleService {
 
     @Autowired
     private ScheduleChangePreprocessor preprocessor;
+
+    @Autowired
+    private LatestTaskMappingRepository latestTaskMappingRepository;
 
     private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
 
@@ -536,6 +544,39 @@ public class ScheduleService {
 
     public boolean hasRunningTask(Long id) {
         return false;
+    }
+
+    public void terminateByDatasourceIds(Set<Long> datasourceIds) {
+        Set<Long> scheduleIds = scheduleRepository.getEnabledScheduleByConnectionIds(datasourceIds).stream()
+                .map(ScheduleEntity::getId).collect(
+                        Collectors.toSet());
+        if (scheduleIds.isEmpty()) {
+            return;
+        }
+        scheduleIds.forEach(v -> {
+            try {
+                changeSchedule(ScheduleChangeParams.with(v, OperationType.TERMINATE));
+            } catch (Exception e) {
+                log.warn("Terminate schedule failed,scheduleId={}", v, e);
+            }
+        });
+    }
+
+    public Map<ScheduleType, Long> countRunningScheduleByDatasourceIds(Set<Long> datasourceIds) {
+        List<ScheduleEntity> schedules = scheduleRepository.getEnabledScheduleByConnectionIds(
+                datasourceIds);
+        if (schedules.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<LatestTaskMappingEntity> latestTaskMapping = latestTaskMappingRepository.findByScheduleIdIn(
+                schedules.stream().map(ScheduleEntity::getId).collect(Collectors.toSet()));
+
+        Stream<ScheduleTask> scheduleTaskStream = scheduleTaskService.findByIds(
+                latestTaskMapping.stream().map(LatestTaskMappingEntity::getLatestScheduleTaskId).collect(
+                        Collectors.toSet()))
+                .stream().filter(o -> !o.getStatus().isTerminated());
+        return Collections.emptyMap();
     }
 
 }
