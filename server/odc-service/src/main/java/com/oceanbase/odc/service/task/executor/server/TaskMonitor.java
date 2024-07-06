@@ -22,6 +22,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.oceanbase.odc.common.util.ObjectUtil;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
@@ -71,6 +73,7 @@ public class TaskMonitor {
         this.reportScheduledExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
         reportScheduledExecutor.scheduleAtFixedRate(() -> {
             if (isTimeout() && !getTask().getStatus().isTerminated()) {
+                log.info("Task timeout, try stop, jobId={}", getJobId());
                 getTask().stop();
             }
             try {
@@ -143,13 +146,16 @@ public class TaskMonitor {
                 getTask().getJobContext().getJobParameters()
                         .get(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS);
 
-        if (milliSecStr != null) {
-            return System.currentTimeMillis() - startTimeMilliSeconds > Long.parseLong(milliSecStr);
+        if (StringUtils.isNotBlank(milliSecStr)) {
+            boolean timeout = System.currentTimeMillis() - startTimeMilliSeconds > Long.parseLong(milliSecStr);
+            if (timeout) {
+                log.info("Task timeout, jobId={}, timeoutMills={}", getJobId(), milliSecStr);
+            }
+            return timeout;
         } else {
             return false;
         }
     }
-
 
     private void doFinal() {
 

@@ -142,6 +142,8 @@ public class CloudResourceConfigurations {
             EndpointConfiguration endpointConfiguration =
                     new EndpointConfiguration(endpoint, configuration.getRegion());
             s3ClientBuilder.withEndpointConfiguration(endpointConfiguration);
+            log.info("use S3 sdk for non-s3, cloudProvider={}, endpoint={}",
+                    configuration.getCloudProvider(), endpoint);
         } else {
             PreConditions.notBlank(region, "region");
             s3ClientBuilder.withRegion(configuration.getRegion());
