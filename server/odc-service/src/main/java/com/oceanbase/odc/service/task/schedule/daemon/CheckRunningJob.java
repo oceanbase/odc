@@ -59,7 +59,7 @@ public class CheckRunningJob implements Job {
         JobConfigurationValidator.validComponent();
         TaskFrameworkProperties taskFrameworkProperties = getConfiguration().getTaskFrameworkProperties();
         int heartTimeoutSeconds = taskFrameworkProperties.getJobHeartTimeoutSeconds();
-        // find heart timeout job
+        // find heartbeat timeout job
         Page<JobEntity> jobs = getConfiguration().getTaskFrameworkService()
                 .findHeartTimeTimeoutJobs(heartTimeoutSeconds, 0,
                         taskFrameworkProperties.getSingleFetchCheckHeartTimeoutJobRows());
@@ -72,6 +72,8 @@ public class CheckRunningJob implements Job {
     }
 
     private void doHandleJobRetryingOrFailed(JobEntity jobEntity) {
+        log.info("Start to handle heartbeat timeout job, jobId={}.", jobEntity.getId());
+
         JobEntity a = getConfiguration().getTaskFrameworkService().findWithPessimisticLock(jobEntity.getId());
         if (a.getStatus() != JobStatus.RUNNING) {
             log.warn("Current job is not RUNNING, abort continue, jobId={}.", a.getId());
