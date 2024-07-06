@@ -17,13 +17,13 @@ package com.oceanbase.odc.service.schedule;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.validation.constraints.NotNull;
 
@@ -79,7 +79,6 @@ import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
-import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
@@ -563,20 +562,32 @@ public class ScheduleService {
     }
 
     public Map<ScheduleType, Long> countRunningScheduleByDatasourceIds(Set<Long> datasourceIds) {
-        List<ScheduleEntity> schedules = scheduleRepository.getEnabledScheduleByConnectionIds(
-                datasourceIds);
-        if (schedules.isEmpty()) {
+        Map<Long, ScheduleEntity> id2Schedule = scheduleRepository.getEnabledScheduleByConnectionIds(
+                datasourceIds).stream().collect(Collectors.toMap(ScheduleEntity::getId, o -> o));
+        if (id2Schedule.isEmpty()) {
             return Collections.emptyMap();
         }
 
-        List<LatestTaskMappingEntity> latestTaskMapping = latestTaskMappingRepository.findByScheduleIdIn(
-                schedules.stream().map(ScheduleEntity::getId).collect(Collectors.toSet()));
+        List<LatestTaskMappingEntity> latestTaskMapping =
+                latestTaskMappingRepository.findByScheduleIdIn(id2Schedule.keySet());
 
-        Stream<ScheduleTask> scheduleTaskStream = scheduleTaskService.findByIds(
-                latestTaskMapping.stream().map(LatestTaskMappingEntity::getLatestScheduleTaskId).collect(
-                        Collectors.toSet()))
-                .stream().filter(o -> !o.getStatus().isTerminated());
-        return Collections.emptyMap();
+        Set<Long> hasRunningTaskScheduleId = scheduleTaskService.findByIds(
+                latestTaskMapping.stream().map(LatestTaskMappingEntity::getLatestScheduleTaskId)
+                        .collect(Collectors.toSet()))
+                .stream().filter(o -> !o.getStatus().isTerminated()).map(o -> Long.parseLong(o.getJobName())).collect(
+                        Collectors.toSet());
+        Map<ScheduleType, Long> type2RunningTaskCount = new HashMap<>();
+        hasRunningTaskScheduleId.forEach(scheduleId -> {
+            if (id2Schedule.containsKey(scheduleId)) {
+                ScheduleType type = id2Schedule.get(scheduleId).getType();
+                if (type2RunningTaskCount.containsKey(type)) {
+                    type2RunningTaskCount.put(type, type2RunningTaskCount.get(type) + 1);
+                } else {
+                    type2RunningTaskCount.put(type, 1L);
+                }
+            }
+        });
+        return type2RunningTaskCount;
     }
 
 }

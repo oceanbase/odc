@@ -56,6 +56,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
     private Job job;
     private List<DlmTableUnit> dlmTableUnits;
     private DlmTableUnit currentTableUnit;
+    private boolean isToStop = false;
 
 
     @Override
@@ -108,10 +109,17 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
             }
             try {
                 job = jobFactory.createJob(dlmTableUnit);
-                dlmTableUnit.setStatus(TaskStatus.RUNNING);
                 log.info("Init {} job succeed,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
                 log.info("{} job start,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
-                job.run();
+                if (isToStop) {
+                    job.stop();
+                    currentTableUnit.setStatus(TaskStatus.CANCELED);
+                    log.info("The task has stopped.");
+                    break;
+                } else {
+                    dlmTableUnit.setStatus(TaskStatus.RUNNING);
+                    job.run();
+                }
                 log.info("{} job finished,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
                 dlmTableUnit.setStatus(TaskStatus.DONE);
             } catch (Throwable e) {
@@ -161,12 +169,15 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
 
     @Override
     protected void doStop() throws Exception {
-        job.stop();
-        try {
-            currentTableUnit.setStatus(TaskStatus.CANCELED);
-        } catch (Exception e) {
-            log.warn("Update dlm table unit status failed,DlmTableUnitId={}", job.getJobMeta().getJobId());
+        if (job != null) {
+            try {
+                job.stop();
+                currentTableUnit.setStatus(TaskStatus.CANCELED);
+            } catch (Exception e) {
+                log.warn("Update dlm table unit status failed,DlmTableUnitId={}", job.getJobMeta().getJobId());
+            }
         }
+        isToStop = true;
     }
 
     @Override
