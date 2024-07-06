@@ -58,11 +58,11 @@ public class DLMJobStore implements IJobStore {
     public DLMJobStore(ConnectionConfig metaDBConfig) {
         try {
             this.dataSource = (DruidDataSource) new DruidDataSourceFactory(metaDBConfig).getDataSource();
+            initEnableBreakpointRecovery();
         } catch (Exception e) {
             log.warn("Init metadb failed and set breakpoint recovery to false.");
             enableBreakpointRecovery = false;
         }
-        initEnableBreakpointRecovery();
     }
 
     public void destroy() {
