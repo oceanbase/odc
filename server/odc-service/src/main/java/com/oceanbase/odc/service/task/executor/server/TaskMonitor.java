@@ -62,6 +62,8 @@ public class TaskMonitor {
     }
 
     public void monitor() {
+        log.info("monitor starting, jobId={}", getJobId());
+
         this.startTimeMilliSeconds = System.currentTimeMillis();
 
         ThreadFactory threadFactory =
