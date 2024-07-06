@@ -60,6 +60,8 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
     @Override
     synchronized public void execute(Task<?> task, JobContext jc) {
         JobIdentity jobIdentity = jc.getJobIdentity();
+        log.info("Start to execute task, jobIdentity={}.", jobIdentity.getId());
+
         if (tasks.containsKey(jobIdentity)) {
             throw new IllegalArgumentException("Task already exists, jobIdentity=" + jobIdentity.getId());
         }
