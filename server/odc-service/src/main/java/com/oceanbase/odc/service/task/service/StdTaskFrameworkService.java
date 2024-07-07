@@ -46,6 +46,7 @@ import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.jpa.SpecificationUtil;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
+import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
@@ -337,7 +338,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             try {
                 doRefreshResult(id);
             } catch (Exception e) {
-                log.error("Refresh job result failed, jobId={}", id, e);
+                log.error("Refresh job result failed, jobId={}, causeReason={}",
+                        id, ExceptionUtils.getRootCauseReason(e));
             }
         });
     }
