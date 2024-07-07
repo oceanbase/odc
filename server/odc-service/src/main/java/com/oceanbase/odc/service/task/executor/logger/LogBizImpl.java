@@ -66,6 +66,8 @@ public class LogBizImpl implements LogBiz {
 
         if (allLogObjectId.isPresent() || warnLogObjectId.isPresent()) {
             logMap.put(JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME, storageService.getBucketName());
+        } else {
+            logMap.put(JobAttributeKeyConstants.LOG_STORAGE_FAILED_REASON, "No log file to upload.");
         }
         log.info("upload log files to cloud storage completed, jobId={}, logs={}", ji.getId(), logMap);
         return logMap;

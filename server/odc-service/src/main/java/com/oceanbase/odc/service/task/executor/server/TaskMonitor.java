@@ -58,7 +58,7 @@ public class TaskMonitor {
     private volatile long startTimeMilliSeconds;
     private ScheduledExecutorService reportScheduledExecutor;
     private ScheduledExecutorService heartScheduledExecutor;
-    private Map<String, String> logMetadata;
+    private Map<String, String> logMetadata = new HashMap<>();
     private AtomicLong logMetaCollectedMillis = new AtomicLong(0L);
 
     public TaskMonitor(BaseTask<?> task, CloudObjectStorageService cloudObjectStorageService) {
@@ -72,9 +72,6 @@ public class TaskMonitor {
     }
 
     public Map<String, String> getLogMetadata() {
-        if (this.logMetadata == null) {
-            return new HashMap<>();
-        }
         return new HashMap<>(this.logMetadata);
     }
 
@@ -221,7 +218,7 @@ public class TaskMonitor {
             try {
                 logMap = biz.uploadLogFileToCloudStorage(finalResult.getJobIdentity(), cloudObjectStorageService);
             } catch (Throwable e) {
-                log.warn("Upload job {} log file to cloud storage occur error", getJobId(), e);
+                log.warn("Upload job log file to cloud storage occur error, jobId={}", getJobId(), e);
             }
             finalResult.setLogMetadata(logMap);
         }
