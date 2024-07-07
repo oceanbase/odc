@@ -339,7 +339,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             try {
                 doRefreshResult(id);
             } catch (Exception e) {
-                log.error("Refresh job result failed, jobId={}, causeReason={}",
+                log.warn("Refresh job result failed, jobId={}, causeReason={}",
                         id, ExceptionUtils.getRootCauseReason(e));
             }
         });
