@@ -35,7 +35,6 @@ import com.amazonaws.Protocol;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
-import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
@@ -133,7 +132,7 @@ public class CloudResourceConfigurations {
                 new BasicAWSCredentials(accessKeyId, accessKeySecret));
         ClientConfiguration clientConfiguration = new ClientConfiguration().withProtocol(Protocol.HTTPS);
 
-        AmazonS3ClientBuilder s3ClientBuilder = AmazonS3ClientBuilder.standard()
+        AmazonS3ClientBuilder s3Builder = AmazonS3ClientBuilder.standard()
                 .withCredentials(credentialsProvider)
                 .withClientConfiguration(clientConfiguration)
                 .disableChunkedEncoding();
@@ -141,16 +140,14 @@ public class CloudResourceConfigurations {
         if (!configuration.getCloudProvider().isAWS()) {
             String endpoint = configuration.getPublicEndpoint();
             PreConditions.notBlank(endpoint, "endpoint");
-            s3ClientBuilder
-                    .withEndpointConfiguration(new EndpointConfiguration(endpoint, region))
-                    .withRegion(Regions.US_EAST_1); // for workaround, set a default region
+            s3Builder.withEndpointConfiguration(new EndpointConfiguration(endpoint, region));
             log.info("use S3 sdk for non-s3, cloudProvider={}, endpoint={}, region={}",
                     configuration.getCloudProvider(), endpoint, region);
         } else {
             PreConditions.notBlank(region, "region");
-            s3ClientBuilder.withRegion(configuration.getRegion());
+            s3Builder.withRegion(configuration.getRegion());
         }
-        AmazonS3 s3 = s3ClientBuilder.build();
+        AmazonS3 s3 = s3Builder.build();
 
         // TODO: set sts endpoint for other cloud provider
         AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.standard()
