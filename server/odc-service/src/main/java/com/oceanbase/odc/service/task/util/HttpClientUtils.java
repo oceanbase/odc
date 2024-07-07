@@ -16,26 +16,24 @@
 package com.oceanbase.odc.service.task.util;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-
-import org.apache.http.HttpVersion;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.entity.EntityBuilder;
-import org.apache.http.client.methods.RequestBuilder;
-import org.apache.http.entity.ContentType;
-import org.apache.http.impl.client.BasicResponseHandler;
-import org.apache.http.impl.client.HttpClientBuilder;
+import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.Headers;
+import okhttp3.HttpUrl;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Request.Builder;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 /**
  * @author gaoda.xy
@@ -43,68 +41,67 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class HttpClientUtils {
+    private static final String APPLICATION_JSON = "application/json; charset=utf-8";
 
     private static final int CONNECT_TIMEOUT_SECONDS = 3;
     private static final int SOCKET_TIMEOUT_SECONDS = 30;
-    private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
-    private static final Map<String, String> DEFAULT_HEADERS = new HashMap<String, String>() {
-        {
-            put("Content-Type", "application/json");
-        }
-    };
-    private static final RequestConfig DEFAULT_REQUEST_CONFIG = RequestConfig.custom()
-            .setConnectionRequestTimeout(CONNECT_TIMEOUT_SECONDS * 1000)
-            .setConnectTimeout(CONNECT_TIMEOUT_SECONDS * 1000)
-            .setSocketTimeout(SOCKET_TIMEOUT_SECONDS * 1000)
+
+    private static OkHttpClient httpClient = new OkHttpClient.Builder()
+            .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .readTimeout(SOCKET_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .writeTimeout(SOCKET_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .build();
 
-    private static HttpClient httpClient = HttpClientBuilder.create()
-            .setDefaultRequestConfig(DEFAULT_REQUEST_CONFIG)
-            .build();
-
-    /**
-     * set HttpClient for custom configuration
-     */
-    public static void setHttpClient(@NonNull HttpClient httpClient) {
-        log.info("Set HttpClient, previous={}, current={}",
+    public static void setHttpClient(OkHttpClient httpClient) {
+        log.info("Set OkHttpClient, previous={}, current={}",
                 HttpClientUtils.httpClient == null ? null : HttpClientUtils.httpClient.hashCode(),
                 httpClient.hashCode());
         HttpClientUtils.httpClient = httpClient;
     }
 
     public static <T> T request(String method, String uri, TypeReference<T> responseTypeRef) throws IOException {
-        return request(method, uri, DEFAULT_HEADERS, null, null, responseTypeRef);
+        return request(method, uri, null, null, null, responseTypeRef);
     }
 
     public static <T> T request(String method, String uri, String jsonBody, TypeReference<T> responseTypeRef)
             throws IOException {
-        return request(method, uri, DEFAULT_HEADERS, null, jsonBody, responseTypeRef);
+        return request(method, uri, null, null, jsonBody, responseTypeRef);
     }
 
-    public static <T> T request(String method, String uri, Map<String, String> headers,
-            Map<String, String> parameters, String jsonBody, TypeReference<T> responseTypeRef) throws IOException {
-        RequestBuilder builder = RequestBuilder.create(method.toUpperCase())
-                .setUri(uri)
-                .setCharset(DEFAULT_CHARSET)
-                .setVersion(HttpVersion.HTTP_1_1)
-                .setConfig(DEFAULT_REQUEST_CONFIG);
-        if (Objects.nonNull(headers)) {
-            headers.forEach(builder::addHeader);
-        }
+    public static <T> T request(@NonNull String method, @NonNull String uri, Map<String, String> headers,
+            Map<String, String> parameters, String jsonBody, @NonNull TypeReference<T> responseTypeRef)
+            throws IOException {
+        HttpUrl.Builder urlBuilder = HttpUrl.parse(uri).newBuilder();
         if (Objects.nonNull(parameters)) {
-            parameters.forEach(builder::addParameter);
+            parameters.forEach(urlBuilder::addQueryParameter);
+        }
+        String requestUrl = urlBuilder.build().toString();
+        RequestBody requestBody = jsonBody == null ? null
+                : RequestBody.create(jsonBody, MediaType.parse(APPLICATION_JSON));
+
+        Headers.Builder headersBuilder = new Headers.Builder();
+        if (Objects.nonNull(headers)) {
+            headers.forEach(headersBuilder::add);
+        }
+        Headers requestHeaders = headersBuilder.build();
+
+        Request request = new Builder()
+                .url(requestUrl)
+                .headers(requestHeaders)
+                .method(method, requestBody)
+                .build();
+
+        try (Response response = HttpClientUtils.httpClient.newCall(request).execute()) {
+            ResponseBody responseBody = Objects.requireNonNull(response.body(), "response.body is null");
+            if (!response.isSuccessful()) {
+                throw new IOException("Request failed with code: " + response.code()
+                        + ", message: " + response.message()
+                        + (responseBody.contentLength() > 0 ? ", response: " + responseBody.string() : ""));
+            }
+            String responseBodyJson = responseBody.string();
+            return JsonUtils.fromJson(responseBodyJson, responseTypeRef);
         }
 
-        if (jsonBody != null) {
-            // fix: java.lang.IllegalStateException: Content has not been provided
-            EntityBuilder eb = EntityBuilder.create()
-                    .setContentType(ContentType.APPLICATION_JSON);
-            eb.setText(jsonBody);
-            builder.setEntity(eb.build());
-        }
-
-        String response = HttpClientUtils.httpClient.execute(builder.build(), new BasicResponseHandler());
-        return JsonUtils.fromJson(response, responseTypeRef);
     }
 
 }
