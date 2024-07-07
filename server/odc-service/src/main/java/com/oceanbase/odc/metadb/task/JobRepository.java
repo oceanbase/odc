@@ -59,12 +59,10 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
      * update lastHeartTime and lastReportTime only, for task result no progress scenario
      */
     @Transactional
-    @Query(value = "update job_job set "
-            + " last_heart_time=:#{#param.lastHeartTime},last_report_time=:#{#param.lastReportTime}"
+    @Query(value = "update job_job set last_heart_time= CURRENT_TIMESTAMP "
             + " where id=:id and status =:#{#oldStatus.name()}", nativeQuery = true)
     @Modifying
-    int updateHeartbeatTime(@Param("param") JobEntity entity, @Param("id") Long id,
-            @Param("oldStatus") JobStatus oldStatus);
+    int updateHeartbeatTime(@Param("id") Long id, @Param("oldStatus") JobStatus oldStatus);
 
     @Transactional
     @Query("update JobEntity set "

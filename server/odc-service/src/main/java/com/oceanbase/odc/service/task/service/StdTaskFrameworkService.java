@@ -355,41 +355,48 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         DefaultTaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
         DefaultTaskResult previous = JsonUtils.fromJson(je.getResultJson(), DefaultTaskResult.class);
 
+        if (!updateHeartbeatTime(id)) {
+            log.warn("Update lastHeartbeatTime failed, the job may finished or deleted, jobId={}", id);
+            return;
+        }
         if (!result.progressChanged(previous)) {
-            log.info("Progress not changed, update heartbeat time only, jobId={}, currentProgress={}",
+            log.info("Progress not changed, skip update result to metadb, jobId={}, currentProgress={}",
                     id, result.getProgress());
-            JobEntity jse = new JobEntity();
-            jse.setLastHeartTime(JobDateUtils.getCurrentDate());
-            jse.setLastReportTime(JobDateUtils.getCurrentDate());
-            int rows = jobRepository.updateHeartbeatTime(je, id, JobStatus.RUNNING);
-            if (rows > 0) {
-                log.info("Update lastHeartbeatTime success, jobId={}, currentProgress={}", id, result.getProgress());
-            } else {
-                log.warn("Update lastHeartbeatTime failed, jobId={}", id);
-            }
             return;
         }
         log.info("Progress changed, will update result, jobId={}, currentProgress={}", id, result.getProgress());
-        // here progress changed
         if ("DLM".equals(je.getJobType())) {
             dlmResultProcessor.process(result);
         }
         saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
         int rows = updateTaskResult(result, je);
-        if (rows > 0) {
-            taskResultPublisherExecutor
-                    .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(result)));
+        if (rows == 0) {
+            log.warn("Update task result failed, jobId={}", id);
+            return;
+        }
+        taskResultPublisherExecutor
+                .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(result)));
 
-            if (publisher != null && result.getStatus() != null && result.getStatus().isTerminated()) {
-                taskResultPublisherExecutor.execute(() -> publisher
-                        .publishEvent(new JobTerminateEvent(result.getJobIdentity(), result.getStatus())));
+        if (publisher != null && result.getStatus() != null && result.getStatus().isTerminated()) {
+            taskResultPublisherExecutor.execute(() -> publisher
+                    .publishEvent(new JobTerminateEvent(result.getJobIdentity(), result.getStatus())));
 
-                if (result.getStatus() == JobStatus.FAILED) {
-                    AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED,
-                            MessageFormat.format("Job execution failed, jobId={0}",
-                                    result.getJobIdentity().getId()));
-                }
+            if (result.getStatus() == JobStatus.FAILED) {
+                AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED,
+                        MessageFormat.format("Job execution failed, jobId={0}",
+                                result.getJobIdentity().getId()));
             }
+        }
+    }
+
+    private boolean updateHeartbeatTime(Long id) {
+        int rows = jobRepository.updateHeartbeatTime(id, JobStatus.RUNNING);
+        if (rows > 0) {
+            log.info("Update lastHeartbeatTime success, jobId={}", id);
+            return true;
+        } else {
+            log.warn("Update lastHeartbeatTime failed, jobId={}", id);
+            return false;
         }
     }
 
