@@ -92,8 +92,11 @@ public abstract class AbstractDlmJob implements OdcJob {
             jobData.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, timeoutMillis.toString());
         }
         Map<String, String> jobProperties = new HashMap<>();
+
+        // TODO: should get job properties from connection attributes
         JobPropertiesUtils.setCloudProvider(jobProperties, CloudProvider.TENCENT_CLOUD);
         JobPropertiesUtils.setRegionName(jobProperties, "ap-beijing");
+
         SingleJobProperties singleJobProperties = new SingleJobProperties();
         singleJobProperties.setEnableRetryAfterHeartTimeout(true);
         singleJobProperties.setMaxRetryTimesAfterHeartTimeout(2);
