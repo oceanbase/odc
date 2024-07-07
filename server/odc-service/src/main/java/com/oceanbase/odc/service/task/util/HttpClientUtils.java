@@ -63,7 +63,7 @@ public class HttpClientUtils {
         return request(method, uri, null, null, null, responseTypeRef);
     }
 
-    public static <T> T request(String method, String uri, String jsonBody, TypeReference<T> responseTypeRef)
+    public static <T> T request(String method, String uri, @NonNull String jsonBody, TypeReference<T> responseTypeRef)
             throws IOException {
         return request(method, uri, null, null, jsonBody, responseTypeRef);
     }

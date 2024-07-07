@@ -46,7 +46,7 @@ public class TaskExecutorClient {
         log.info("Try query log from executor, jobId={}, url={}", jobId, url);
         try {
             SuccessResponse<String> response =
-                    HttpClientUtils.request("POST", url,
+                    HttpClientUtils.request("GET", url,
                             new TypeReference<SuccessResponse<String>>() {});
             if (response != null && response.getSuccessful()) {
                 return response.getData();
@@ -66,7 +66,7 @@ public class TaskExecutorClient {
         log.info("Try stop job in executor, ji={}, url={}", ji.getId(), url);
         try {
             SuccessResponse<Boolean> response =
-                    HttpClientUtils.request("POST", url, new TypeReference<SuccessResponse<Boolean>>() {});
+                    HttpClientUtils.request("POST", url, "", new TypeReference<SuccessResponse<Boolean>>() {});
             if (response != null && response.getSuccessful() && response.getData()) {
                 log.info("Stop job in executor succeed, ji={}, response={}.", ji.getId(), JsonUtils.toJson(response));
             } else {
@@ -105,7 +105,7 @@ public class TaskExecutorClient {
         log.info("Try query job result from executor, ji={}, url={}", ji.getId(), url);
         try {
             SuccessResponse<DefaultTaskResult> response =
-                    HttpClientUtils.request("POST", url, new TypeReference<SuccessResponse<DefaultTaskResult>>() {});
+                    HttpClientUtils.request("GET", url, new TypeReference<SuccessResponse<DefaultTaskResult>>() {});
             if (response != null && response.getSuccessful()) {
                 return response.getData();
             } else {
