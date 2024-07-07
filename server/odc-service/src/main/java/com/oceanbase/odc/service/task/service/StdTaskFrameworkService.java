@@ -31,6 +31,7 @@ import javax.persistence.criteria.CriteriaUpdate;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
@@ -356,7 +357,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         DefaultTaskResult previous = JsonUtils.fromJson(je.getResultJson(), DefaultTaskResult.class);
 
         if (!updateHeartbeatTime(id)) {
-            log.warn("Update lastHeartbeatTime failed, the job may finished or deleted, jobId={}", id);
+            log.warn("Update lastHeartbeatTime failed, the job may finished or deleted already, jobId={}", id);
             return;
         }
         if (!result.progressChanged(previous)) {
@@ -370,9 +371,16 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         // dlmResultProcessor.process(result);
         // }
         saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
+
+        if (result.getStatus().isTerminated() && MapUtils.isEmpty(result.getLogMetadata())) {
+            log.info("Job is finished but log have not uploaded, continue monitor result, jobId={}, currentStatus={}",
+                    je.getId(), je.getStatus());
+            return;
+        }
+
         int rows = updateTaskResult(result, je);
         if (rows == 0) {
-            log.warn("Update task result failed, jobId={}", id);
+            log.warn("Update task result failed, the job may finished or deleted already, jobId={}", id);
             return;
         }
         taskResultPublisherExecutor

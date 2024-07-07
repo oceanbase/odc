@@ -29,6 +29,7 @@ import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
 import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.executor.task.BaseTask;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
@@ -44,7 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ThreadPoolTaskExecutor implements TaskExecutor {
 
     private static final TaskExecutor TASK_EXECUTOR = new ThreadPoolTaskExecutor();
-    private final Map<JobIdentity, Task<?>> tasks = new HashMap<>();
+    private final Map<JobIdentity, BaseTask<?>> tasks = new HashMap<>();
     private final Map<JobIdentity, Future<?>> futures = new HashMap<>();
     private final ExecutorService executor;
 
@@ -58,7 +59,7 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
     }
 
     @Override
-    synchronized public void execute(Task<?> task, JobContext jc) {
+    synchronized public void execute(BaseTask<?> task, JobContext jc) {
         JobIdentity jobIdentity = jc.getJobIdentity();
         log.info("Start to execute task, jobIdentity={}.", jobIdentity.getId());
 
@@ -103,8 +104,8 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
     }
 
     @Override
-    public Task<?> getTask(JobIdentity ji) {
-        Task<?> task = tasks.get(ji);
+    public BaseTask<?> getTask(JobIdentity ji) {
+        BaseTask<?> task = tasks.get(ji);
         PreConditions.notNull(task, "task", "Task not found, jobIdentity=" + ji.getId());
         return task;
     }

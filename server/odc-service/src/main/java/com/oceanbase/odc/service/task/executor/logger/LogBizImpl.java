@@ -52,26 +52,29 @@ public class LogBizImpl implements LogBiz {
         return LogUtils.getLatestLogContent(logFileStr, fetchMaxLine, fetchMaxByteSize);
     }
 
-
     @Override
     public Map<String, String> uploadLogFileToCloudStorage(JobIdentity ji,
             CloudObjectStorageService storageService) throws IOException {
-        log.info("Job id: {}, upload log.", ji.getId());
+        log.info("upload log files to cloud storage starting, jobId={}", ji.getId());
 
         Map<String, String> logMap = new HashMap<>();
-        Optional<String> allLogObjectId = updateTemp(ji.getId(), OdcTaskLogLevel.ALL, storageService);
+        Optional<String> allLogObjectId = uploadTempFile(ji.getId(), OdcTaskLogLevel.ALL, storageService);
         allLogObjectId.ifPresent(a -> logMap.put(JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID, a));
 
-        Optional<String> warnLogObjectId = updateTemp(ji.getId(), OdcTaskLogLevel.WARN, storageService);
+        Optional<String> warnLogObjectId = uploadTempFile(ji.getId(), OdcTaskLogLevel.WARN, storageService);
         warnLogObjectId.ifPresent(a -> logMap.put(JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID, a));
 
         if (allLogObjectId.isPresent() || warnLogObjectId.isPresent()) {
             logMap.put(JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME, storageService.getBucketName());
         }
+        log.info("upload log files to cloud storage completed, jobId={}, logs={}", ji.getId(), logMap);
         return logMap;
     }
 
-    private Optional<String> updateTemp(Long jobId, OdcTaskLogLevel logType,
+    /**
+     * TODO: should not upload as temp file
+     */
+    private Optional<String> uploadTempFile(Long jobId, OdcTaskLogLevel logType,
             CloudObjectStorageService storageService) throws IOException {
         String logFileStr = LogUtils.getTaskLogFileWithPath(jobId, logType);
         String fileId = StringUtils.uuid();

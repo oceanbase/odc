@@ -38,7 +38,7 @@ import com.oceanbase.odc.service.task.executor.server.EmbedServer;
 import com.oceanbase.odc.service.task.executor.server.ExitHelper;
 import com.oceanbase.odc.service.task.executor.server.TaskFactory;
 import com.oceanbase.odc.service.task.executor.server.ThreadPoolTaskExecutor;
-import com.oceanbase.odc.service.task.executor.task.Task;
+import com.oceanbase.odc.service.task.executor.task.BaseTask;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -63,7 +63,7 @@ public class TaskApplication {
         try {
             server.start();
             log.info("Starting embed server.");
-            Task<?> task = TaskFactory.create(context.getJobClass());
+            BaseTask<?> task = TaskFactory.create(context.getJobClass());
             ThreadPoolTaskExecutor.getInstance().execute(task, context);
             ExitHelper.await();
         } catch (Exception e) {

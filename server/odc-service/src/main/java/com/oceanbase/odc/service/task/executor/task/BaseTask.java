@@ -31,6 +31,7 @@ import com.oceanbase.odc.service.task.executor.server.TaskMonitor;
 import com.oceanbase.odc.service.task.util.CloudObjectStorageServiceBuilder;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -45,6 +46,8 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
     private Map<String, String> jobParameters;
     private volatile JobStatus status = JobStatus.PREPARING;
     private CloudObjectStorageService cloudObjectStorageService;
+
+    @Getter
     private TaskMonitor taskMonitor;
 
     @Override
