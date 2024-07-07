@@ -35,6 +35,7 @@ import com.amazonaws.Protocol;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
@@ -87,21 +88,21 @@ public class CloudResourceConfigurations {
             return generateCloudClient(objectStorageConfiguration, () -> getInternalOss(objectStorageConfiguration));
         }
 
-        public CloudClient generateCloudClient(ObjectStorageConfiguration objectStorageConfiguration,
-                Supplier<OSS> ossSupplier) {
-            CloudProvider cloudProvider = objectStorageConfiguration.getCloudProvider();
-            log.info("recreate cloud client, ak=" + objectStorageConfiguration.getAccessKeyId());
+        public CloudClient generateCloudClient(ObjectStorageConfiguration configuration, Supplier<OSS> ossSupplier) {
+            CloudProvider cloudProvider = configuration.getCloudProvider();
+            log.info("generate cloud client, cloudProvider={}, region={}, ak={}",
+                    cloudProvider, configuration.getRegion(), configuration.getAccessKeyId());
             switch (cloudProvider) {
                 case ALIBABA_CLOUD:
                     try {
-                        return createAlibabaCloudClient(objectStorageConfiguration, ossSupplier.get());
+                        return createAlibabaCloudClient(configuration, ossSupplier.get());
                     } catch (ClientException e) {
                         throw new RuntimeException("Create Alibaba Cloud Client failed", e);
                     }
                 case AWS:
                 case TENCENT_CLOUD:
                 case HUAWEI_CLOUD:
-                    return createAmazonCloudClient(objectStorageConfiguration);
+                    return createAmazonCloudClient(configuration);
                 default:
                     return new NullCloudClient();
             }
@@ -131,6 +132,7 @@ public class CloudResourceConfigurations {
         AWSStaticCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(
                 new BasicAWSCredentials(accessKeyId, accessKeySecret));
         ClientConfiguration clientConfiguration = new ClientConfiguration().withProtocol(Protocol.HTTPS);
+
         AmazonS3ClientBuilder s3ClientBuilder = AmazonS3ClientBuilder.standard()
                 .withCredentials(credentialsProvider)
                 .withClientConfiguration(clientConfiguration)
@@ -139,11 +141,11 @@ public class CloudResourceConfigurations {
         if (!configuration.getCloudProvider().isAWS()) {
             String endpoint = configuration.getPublicEndpoint();
             PreConditions.notBlank(endpoint, "endpoint");
-            EndpointConfiguration endpointConfiguration =
-                    new EndpointConfiguration(endpoint, configuration.getRegion());
-            s3ClientBuilder.withEndpointConfiguration(endpointConfiguration);
-            log.info("use S3 sdk for non-s3, cloudProvider={}, endpoint={}",
-                    configuration.getCloudProvider(), endpoint);
+            s3ClientBuilder
+                    .withEndpointConfiguration(new EndpointConfiguration(endpoint, region))
+                    .withRegion(Regions.US_EAST_1); // for workaround, set a default region
+            log.info("use S3 sdk for non-s3, cloudProvider={}, endpoint={}, region={}",
+                    configuration.getCloudProvider(), endpoint, region);
         } else {
             PreConditions.notBlank(region, "region");
             s3ClientBuilder.withRegion(configuration.getRegion());
