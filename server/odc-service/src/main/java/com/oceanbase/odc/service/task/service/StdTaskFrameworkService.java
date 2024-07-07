@@ -354,6 +354,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         DefaultTaskResult previous = JsonUtils.fromJson(je.getResultJson(), DefaultTaskResult.class);
 
         if (!result.progressChanged(previous)) {
+            log.info("Progress not changed, update heartbeat time only, jobId={}, currentProgress={}",
+                    id, result.getProgress());
             JobEntity jse = new JobEntity();
             jse.setLastHeartTime(JobDateUtils.getCurrentDate());
             jse.setLastReportTime(JobDateUtils.getCurrentDate());
@@ -363,11 +365,13 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             } else {
                 log.warn("Update lastHeartbeatTime failed, jobId={}", id);
             }
-            if ("DLM".equals(je.getJobType())) {
-                dlmResultProcessor.process(result);
-            }
+            return;
         }
+        log.info("Progress changed, will update result, jobId={}, currentProgress={}", id, result.getProgress());
         // here progress changed
+        if ("DLM".equals(je.getJobType())) {
+            dlmResultProcessor.process(result);
+        }
         saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
         int rows = updateTaskResult(result, je);
         if (rows > 0) {
