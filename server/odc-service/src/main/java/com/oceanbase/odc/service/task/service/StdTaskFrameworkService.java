@@ -365,9 +365,10 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             return;
         }
         log.info("Progress changed, will update result, jobId={}, currentProgress={}", id, result.getProgress());
-        if ("DLM".equals(je.getJobType())) {
-            dlmResultProcessor.process(result);
-        }
+        // TODO: fix dlm result processor error
+        // if ("DLM".equals(je.getJobType())) {
+        // dlmResultProcessor.process(result);
+        // }
         saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
         int rows = updateTaskResult(result, je);
         if (rows == 0) {
