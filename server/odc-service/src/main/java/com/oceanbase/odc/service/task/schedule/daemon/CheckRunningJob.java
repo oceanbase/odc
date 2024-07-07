@@ -32,11 +32,13 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
+import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -73,8 +75,8 @@ public class CheckRunningJob implements Job {
 
     private void doHandleJobRetryingOrFailed(JobEntity jobEntity) {
         log.info("Start to handle heartbeat timeout job, jobId={}.", jobEntity.getId());
-
-        JobEntity a = getConfiguration().getTaskFrameworkService().findWithPessimisticLock(jobEntity.getId());
+        TaskFrameworkService taskFrameworkService = getConfiguration().getTaskFrameworkService();
+        JobEntity a = taskFrameworkService.findWithPessimisticLock(jobEntity.getId());
         if (a.getStatus() != JobStatus.RUNNING) {
             log.warn("Current job is not RUNNING, abort continue, jobId={}.", a.getId());
             return;
@@ -83,7 +85,12 @@ public class CheckRunningJob implements Job {
         if (isNeedRetry) {
             log.info("Need to restart job, try to set status to RETRYING, jobId={}, oldStatus={}.",
                     a.getId(), a.getStatus());
-            int rows = getConfiguration().getTaskFrameworkService()
+            int rows;
+            if (TaskRunMode.K8S == a.getRunMode()) {
+                rows = taskFrameworkService.updateExecutorEndpoint(a.getId(), null);
+                log.info("Clear executor endpoint why retry task, jobId={}, rows={}", a.getId(), rows);
+            }
+            rows = taskFrameworkService
                     .updateStatusDescriptionByIdOldStatus(a.getId(), JobStatus.RUNNING,
                             JobStatus.RETRYING, "Heart timeout and retrying job");
             if (rows > 0) {
@@ -96,7 +103,7 @@ public class CheckRunningJob implements Job {
             log.info("No need to restart job, try to set status to FAILED, jobId={},oldStatus={}.",
                     a.getId(), a.getStatus());
             TaskFrameworkProperties taskFrameworkProperties = getConfiguration().getTaskFrameworkProperties();
-            int rows = getConfiguration().getTaskFrameworkService()
+            int rows = taskFrameworkService
                     .updateStatusToFailedWhenHeartTimeout(a.getId(),
                             taskFrameworkProperties.getJobHeartTimeoutSeconds(),
                             "Heart timeout and set job to status FAILED.");
