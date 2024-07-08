@@ -69,7 +69,8 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
             o.setTargetTableName(temp);
         });
         parameters.setScheduleTaskId(taskEntity.getId());
-        Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis());
+        Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis(),
+                dataArchiveParameters.getSourceDatabaseId());
         log.info("Publish DLM job to task framework succeed,scheduleTaskId={},jobIdentity={}", taskEntity.getId(),
                 jobId);
         scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);

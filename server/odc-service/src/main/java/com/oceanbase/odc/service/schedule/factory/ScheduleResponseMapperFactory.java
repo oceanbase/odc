@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -50,6 +51,7 @@ import com.oceanbase.odc.service.schedule.model.Schedule;
 import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleOverviewAttributes;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 import lombok.NonNull;
@@ -101,7 +103,7 @@ public class ScheduleResponseMapperFactory {
                 .ifPresent(o -> scheduleDetailResp.setCreator(new InnerUser(o, null)));
 
         scheduleDetailResp.setType(schedule.getType());
-        scheduleDetailResp.setParameters(schedule.getParameters());
+        scheduleDetailResp.setParameters(detailParameters(schedule));
 
         return scheduleDetailResp;
     }
@@ -211,4 +213,32 @@ public class ScheduleResponseMapperFactory {
         return databases;
     }
 
+    private ScheduleTaskParameters detailParameters(Schedule schedule) {
+        switch (schedule.getType()) {
+            case DATA_ARCHIVE: {
+                DataArchiveParameters parameters = (DataArchiveParameters) schedule.getParameters();
+                Map<Long, Database> id2Database = getDatabaseByIds(
+                        Stream.of(parameters.getSourceDatabaseId(), parameters.getTargetDataBaseId()).collect(
+                                Collectors.toSet())).stream().collect(Collectors.toMap(Database::getId, o -> o));
+                parameters.setSourceDatabase(id2Database.get(parameters.getSourceDatabaseId()));
+                parameters.setTargetDatabase(id2Database.get(parameters.getTargetDataBaseId()));
+                return parameters;
+            }
+            case DATA_DELETE: {
+                DataDeleteParameters parameters = (DataDeleteParameters) schedule.getParameters();
+                Set<Long> databaseIds = new HashSet<>();
+                databaseIds.add(parameters.getDatabaseId());
+                if (parameters.getTargetDatabaseId() != null) {
+                    databaseIds.add(parameters.getTargetDatabaseId());
+                }
+                Map<Long, Database> id2Database = getDatabaseByIds(databaseIds)
+                        .stream().collect(Collectors.toMap(Database::getId, o -> o));
+                parameters.setDatabase(id2Database.get(parameters.getDatabaseId()));
+                parameters.setTargetDatabase(id2Database.get(parameters.getTargetDatabaseId()));
+                return parameters;
+            }
+            default:
+                return schedule.getParameters();
+        }
+    }
 }

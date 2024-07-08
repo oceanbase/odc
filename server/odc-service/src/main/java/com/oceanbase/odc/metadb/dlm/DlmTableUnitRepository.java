@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import javax.transaction.Transactional;
 
+import org.apache.ibatis.annotations.Param;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
@@ -36,6 +37,16 @@ public interface DlmTableUnitRepository extends OdcJpaRepository<DlmTableUnitEnt
     @Modifying
     @Query("UPDATE DlmTableUnitEntity e SET e.statistic = ?2 WHERE e.dlmTableUnitId = ?1")
     int updateStatisticByDlmTableUnitId(String dlmTableUnitId, String statistic);
+
+
+    @Transactional
+    @Modifying
+    @Query("INSERT INTO DlmTableUnitEntity (id, scheduleTaskId, dlmTableUnitId, tableName, targetTableName, fireTime, startTime, endTime, sourceDatasourceInfo, targetDatasourceInfo, statistic, status, type, parameters, createTime, updateTime) "
+            +
+            "VALUES (:#{#entity.id}, :#{#entity.scheduleTaskId}, :#{#entity.dlmTableUnitId}, :#{#entity.tableName}, :#{#entity.targetTableName}, :#{#entity.fireTime}, :#{#entity.startTime}, :#{#entity.endTime}, :#{#entity.sourceDatasourceInfo}, :#{#entity.targetDatasourceInfo}, :#{#entity.statistic}, :#{#entity.status}, :#{#entity.type}, :#{#entity.parameters}, :#{#entity.createTime}, :#{#entity.updateTime}) "
+            +
+            "ON DUPLICATE KEY UPDATE statistic = VALUES(statistic), status = VALUES(status)")
+    void saveAllWithUpdate(@Param("entity") List<DlmTableUnitEntity> entities);
 
     List<DlmTableUnitEntity> findByScheduleTaskId(Long scheduleTaskId);
 

@@ -13,14 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection;
+package com.oceanbase.odc.service.schedule.alarm;
 
-import com.oceanbase.odc.service.connection.model.CloudConnectionConfig;
+import java.util.Date;
 
 /**
- * @author jingtian
- * @date 2024/4/2
+ * @Author：tinker
+ * @Date: 2024/7/6 20:21
+ * @Descripition:
  */
-public interface ConnectionAdapter {
-    <T extends CloudConnectionConfig> T adaptConfig(T connectionConfig);
+public interface ScheduleAlarmClient {
+    void misfire(Long scheduleId, Date fireTime);
+
+    void fail(Long scheduleTaskId);
+
+    void timeout(Long scheduleTaskId);
 }

@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.task.executor.server;
 
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
+import com.oceanbase.odc.service.task.executor.task.BaseTask;
 import com.oceanbase.odc.service.task.executor.task.Task;
 
 /**
@@ -24,17 +25,16 @@ import com.oceanbase.odc.service.task.executor.task.Task;
  */
 public class TaskFactory {
 
-    public static Task<?> create(String jobClass) {
+    public static BaseTask<?> create(String jobClass) {
         try {
             Class<?> c = Class.forName(jobClass);
             if (!Task.class.isAssignableFrom(c)) {
                 throw new TaskRuntimeException("Job class is not implements Task. name={}" + jobClass);
             }
-            return (Task<?>) c.newInstance();
+            return (BaseTask<?>) c.newInstance();
         } catch (Exception e) {
             throw new TaskRuntimeException(e);
         }
     }
-
 
 }

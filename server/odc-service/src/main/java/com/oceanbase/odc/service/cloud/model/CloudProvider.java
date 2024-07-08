@@ -58,4 +58,8 @@ public enum CloudProvider {
         return this.values;
     }
 
+    public boolean isAWS() {
+        return this == AWS || this == AWSCN;
+    }
+
 }

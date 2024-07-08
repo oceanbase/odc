@@ -103,6 +103,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.DatabaseSyncManager;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
 import com.oceanbase.odc.service.connection.ssl.ConnectionSSLAdaptor;
 import com.oceanbase.odc.service.connection.util.ConnectionIdList;
@@ -702,6 +703,14 @@ public class ConnectionService {
     }
 
     @SkipAuthorize("internal usage")
+    public ConnectionConfig getDecryptedConfig(@NotNull Long id) {
+        ConnectionConfig connection = internalGetSkipUserCheck(id, false, false);
+        connectionEncryption.decryptPasswords(connection);
+        return connection;
+    }
+
+
+    @SkipAuthorize("internal usage")
     public List<ConnectionConfig> listForConnectionSkipPermissionCheck(@NotNull Collection<Long> ids) {
         List<ConnectionConfig> connectionConfigs = internalListSkipUserCheck(ids, false, false);
         connectionConfigs.forEach(this::adaptConnectionConfig);
@@ -1021,6 +1030,13 @@ public class ConnectionService {
         // Adapter should be called after decrypting passwords.
         environmentAdapter.adaptConfig(connection);
         connectionSSLAdaptor.adapt(connection);
+        OBTenantEndpoint endpoint = connection.getEndpoint();
+        if (Objects.nonNull(endpoint)) {
+            if (StringUtils.isNotBlank(endpoint.getVirtualHost()) && Objects.nonNull(endpoint.getVirtualPort())) {
+                connection.setHost(endpoint.getVirtualHost());
+                connection.setPort(endpoint.getVirtualPort());
+            }
+        }
     }
 
 }

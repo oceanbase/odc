@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection;
+package com.oceanbase.odc.service.task.processor;
 
-import com.oceanbase.odc.service.connection.model.CloudConnectionConfig;
+import com.oceanbase.odc.service.task.executor.task.TaskResult;
 
 /**
- * @author jingtian
- * @date 2024/4/2
+ * @Author：tinker
+ * @Date: 2024/7/6 10:45
+ * @Descripition:
  */
-public interface ConnectionAdapter {
-    <T extends CloudConnectionConfig> T adaptConfig(T connectionConfig);
+public interface ResultProcessor {
+    void process(TaskResult result);
 }

@@ -141,6 +141,8 @@ public class JobUtils {
                 .decrypt(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD)));
         config.setType(ConnectType.OB_MYSQL);
 
+        log.info("get MetaDB configuration, config={}", config);
+
         // TODO: avoid hardcode here
         config.setId(1L);
         return config;

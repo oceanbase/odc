@@ -31,6 +31,7 @@ import com.oceanbase.odc.service.task.executor.server.TaskMonitor;
 import com.oceanbase.odc.service.task.util.CloudObjectStorageServiceBuilder;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -45,13 +46,25 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
     private Map<String, String> jobParameters;
     private volatile JobStatus status = JobStatus.PREPARING;
     private CloudObjectStorageService cloudObjectStorageService;
+
+    @Getter
     private TaskMonitor taskMonitor;
 
     @Override
     public void start(JobContext context) {
+        log.info("Start task, id={}.", context.getJobIdentity().getId());
+
         this.context = context;
+
         this.jobParameters = Collections.unmodifiableMap(context.getJobParameters());
-        initCloudObjectStorageService();
+        log.info("Init task parameters success, id={}.", context.getJobIdentity().getId());
+
+        try {
+            initCloudObjectStorageService();
+        } catch (Exception e) {
+            log.warn("Init cloud object storage service failed, id={}.", getJobId(), e);
+        }
+
         this.taskMonitor = new TaskMonitor(this, cloudObjectStorageService);
         try {
             doInit(context);

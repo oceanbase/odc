@@ -72,4 +72,6 @@ public class DataArchiveParameters implements ScheduleTaskParameters {
     private ShardingStrategy shardingStrategy;
 
     private RateLimitConfiguration rateLimit;
+
+    private boolean fullDatabase = false;
 }

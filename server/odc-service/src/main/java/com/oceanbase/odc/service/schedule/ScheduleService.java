@@ -17,11 +17,13 @@ package com.oceanbase.odc.service.schedule;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
 
@@ -49,6 +51,8 @@ import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
+import com.oceanbase.odc.metadb.schedule.LatestTaskMappingEntity;
+import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
@@ -137,6 +141,9 @@ public class ScheduleService {
     @Autowired
     private ScheduleChangePreprocessor preprocessor;
 
+    @Autowired
+    private LatestTaskMappingRepository latestTaskMappingRepository;
+
     private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
 
 
@@ -206,9 +213,12 @@ public class ScheduleService {
                 break;
             }
             case UPDATE: {
-                scheduleRepository.updateJobParametersById(req.getScheduleId(),
-                        JsonUtils.toJson(req.getUpdateScheduleReq().getParameters()));
-                scheduleRepository.updateStatusById(targetSchedule.getId(), ScheduleStatus.ENABLED);
+                ScheduleEntity entity = nullSafeGetById(req.getScheduleId());
+                entity.setJobParametersJson(JsonUtils.toJson(req.getUpdateScheduleReq().getParameters()));
+                entity.setTriggerConfigJson(JsonUtils.toJson(req.getUpdateScheduleReq().getTriggerConfig()));
+                entity.setDescription(req.getUpdateScheduleReq().getDescription());
+                entity.setStatus(ScheduleStatus.ENABLED);
+                scheduleRepository.save(entity);
                 break;
             }
             case PAUSE: {
@@ -536,6 +546,51 @@ public class ScheduleService {
 
     public boolean hasRunningTask(Long id) {
         return false;
+    }
+
+    public void terminateByDatasourceIds(Set<Long> datasourceIds) {
+        Set<Long> scheduleIds = scheduleRepository.getEnabledScheduleByConnectionIds(datasourceIds).stream()
+                .map(ScheduleEntity::getId).collect(
+                        Collectors.toSet());
+        if (scheduleIds.isEmpty()) {
+            return;
+        }
+        scheduleIds.forEach(v -> {
+            try {
+                changeSchedule(ScheduleChangeParams.with(v, OperationType.TERMINATE));
+            } catch (Exception e) {
+                log.warn("Terminate schedule failed,scheduleId={}", v, e);
+            }
+        });
+    }
+
+    public Map<ScheduleType, Long> countRunningScheduleByDatasourceIds(Set<Long> datasourceIds) {
+        Map<Long, ScheduleEntity> id2Schedule = scheduleRepository.getEnabledScheduleByConnectionIds(
+                datasourceIds).stream().collect(Collectors.toMap(ScheduleEntity::getId, o -> o));
+        if (id2Schedule.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<LatestTaskMappingEntity> latestTaskMapping =
+                latestTaskMappingRepository.findByScheduleIdIn(id2Schedule.keySet());
+
+        Set<Long> hasRunningTaskScheduleId = scheduleTaskService.findByIds(
+                latestTaskMapping.stream().map(LatestTaskMappingEntity::getLatestScheduleTaskId)
+                        .collect(Collectors.toSet()))
+                .stream().filter(o -> !o.getStatus().isTerminated()).map(o -> Long.parseLong(o.getJobName())).collect(
+                        Collectors.toSet());
+        Map<ScheduleType, Long> type2RunningTaskCount = new HashMap<>();
+        hasRunningTaskScheduleId.forEach(scheduleId -> {
+            if (id2Schedule.containsKey(scheduleId)) {
+                ScheduleType type = id2Schedule.get(scheduleId).getType();
+                if (type2RunningTaskCount.containsKey(type)) {
+                    type2RunningTaskCount.put(type, type2RunningTaskCount.get(type) + 1);
+                } else {
+                    type2RunningTaskCount.put(type, 1L);
+                }
+            }
+        });
+        return type2RunningTaskCount;
     }
 
 }
