@@ -100,6 +100,7 @@ import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.DBSchemaService;
 import com.oceanbase.odc.service.db.schema.DBSchemaSyncTaskManager;
+import com.oceanbase.odc.service.db.schema.GlobalSearchProperties;
 import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncProperties;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
@@ -207,6 +208,9 @@ public class DatabaseService {
 
     @Autowired
     private DBSchemaSyncProperties dbSchemaSyncProperties;
+
+    @Autowired
+    private GlobalSearchProperties globalSearchProperties;
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
@@ -462,6 +466,7 @@ public class DatabaseService {
     public Boolean syncDataSourceSchemas(@NonNull Long dataSourceId) throws InterruptedException {
         Boolean res = internalSyncDataSourceSchemas(dataSourceId);
         try {
+            refreshExpiredPendingDBObjectStatus();
             dbSchemaSyncTaskManager
                     .submitTaskByDataSource(connectionService.getBasicWithoutPermissionCheck(dataSourceId));
         } catch (Exception e) {
@@ -791,6 +796,14 @@ public class DatabaseService {
     public void updateObjectLastSyncTimeAndStatus(@NotNull Long databaseId,
             @NotNull DBObjectSyncStatus status) {
         databaseRepository.setObjectLastSyncTimeAndStatusById(databaseId, new Date(), status);
+    }
+
+    @SkipAuthorize("odc internal usage")
+    @Transactional(rollbackFor = Exception.class)
+    public void refreshExpiredPendingDBObjectStatus() {
+        this.databaseRepository.setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeBefore(
+                DBObjectSyncStatus.INITIALIZED, DBObjectSyncStatus.PENDING,
+                new Date(System.currentTimeMillis() - this.globalSearchProperties.getMaxPendingMillis()));
     }
 
     private void checkPermission(Long projectId, Long dataSourceId) {
