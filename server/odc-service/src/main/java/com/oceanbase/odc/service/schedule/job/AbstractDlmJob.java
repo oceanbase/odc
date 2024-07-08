@@ -84,7 +84,22 @@ public abstract class AbstractDlmJob implements OdcJob {
         return dataSourceInfo;
     }
 
-    public Long publishJob(DLMJobReq parameters, Long timeoutMillis) {
+    public Map<String, Object> getDatasourceAttributesByDatabaseId(Long databaseId) {
+        return databaseService.findDataSourceForTaskById(databaseId).getAttributes();
+    }
+
+    public Long publishJob(DLMJobReq params, Long timeoutMillis, Long srcDatabaseId) {
+        Map<String, Object> attributes = getDatasourceAttributesByDatabaseId(srcDatabaseId);
+        if (attributes != null && !attributes.isEmpty()) {
+            return publishJob(params, timeoutMillis,
+                    CloudProvider.fromValue(attributes.get("cloudProvider").toString()),
+                    attributes.get("region").toString());
+        } else {
+            return publishJob(params, timeoutMillis, null, null);
+        }
+    }
+
+    public Long publishJob(DLMJobReq parameters, Long timeoutMillis, CloudProvider provider, String region) {
         Map<String, String> jobData = new HashMap<>();
         jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON,
                 JsonUtils.toJson(parameters));
@@ -92,11 +107,8 @@ public abstract class AbstractDlmJob implements OdcJob {
             jobData.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, timeoutMillis.toString());
         }
         Map<String, String> jobProperties = new HashMap<>();
-
-        // TODO: should get job properties from connection attributes
-        JobPropertiesUtils.setCloudProvider(jobProperties, CloudProvider.TENCENT_CLOUD);
-        JobPropertiesUtils.setRegionName(jobProperties, "ap-beijing");
-
+        JobPropertiesUtils.setCloudProvider(jobProperties, provider);
+        JobPropertiesUtils.setRegionName(jobProperties, region);
         SingleJobProperties singleJobProperties = new SingleJobProperties();
         singleJobProperties.setEnableRetryAfterHeartTimeout(true);
         singleJobProperties.setMaxRetryTimesAfterHeartTimeout(2);

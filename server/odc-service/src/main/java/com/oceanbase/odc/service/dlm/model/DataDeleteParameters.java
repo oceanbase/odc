@@ -62,6 +62,6 @@ public class DataDeleteParameters implements ScheduleTaskParameters {
 
     private Long timeoutMillis;
 
-    private boolean isFullDatabase;
+    private boolean fullDatabase;
 
 }

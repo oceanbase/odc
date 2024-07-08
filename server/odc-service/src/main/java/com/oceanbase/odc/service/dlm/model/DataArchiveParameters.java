@@ -73,5 +73,5 @@ public class DataArchiveParameters implements ScheduleTaskParameters {
 
     private RateLimitConfiguration rateLimit;
 
-    private boolean isFullDatabase = false;
+    private boolean fullDatabase = false;
 }
