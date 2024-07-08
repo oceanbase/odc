@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.task.listener;
 
-
 import java.util.Map;
 import java.util.Optional;
 
@@ -82,7 +81,8 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
                     ScheduleAlarmUtils.fail(o.getId());
                 }
                 // Trigger the data-delete job if necessary after the data-archive task is completed.
-                if ( parameters.getJobType() == JobType.MIGRATE && parameters.isDeleteAfterMigration() && taskStatus == TaskStatus.DONE) {
+                if (parameters.getJobType() == JobType.MIGRATE && parameters.isDeleteAfterMigration()
+                        && taskStatus == TaskStatus.DONE) {
                     scheduleTaskService.triggerDataArchiveDelete(o.getId());
                     log.info("Trigger delete job succeed.");
                 }
