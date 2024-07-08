@@ -14,6 +14,6 @@ CREATE TABLE IF NOT EXISTS `schedule_changelog` (
 CREATE TABLE IF NOT EXISTS `schedule_latest_task_mapping` (
 `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'The primary key identifier for this link record',
 `schedule_id` bigint NOT NULL COMMENT 'Identifier of the schedule, refer to schedule_schedule.id',
-`latest_schedule_task_id` bigint NULL COMMENT 'Identifier of the latest task within this schedule, can be NULL if no task has been run yet'
+`latest_schedule_task_id` bigint NULL COMMENT 'Identifier of the latest task within this schedule, can be NULL if no task has been run yet',
+UNIQUE KEY `uk_schedule_latest_task_mapping_schedule_id` (`schedule_id`)
 ) COMMENT='This table maintains the link to the latest task for each schedule for quick reference';
-
