@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
-@ConditionalOnMissingBean
+@ConditionalOnMissingBean(ScheduleAlarmClient.class)
 public class DefaultScheduleAlarmClient implements ScheduleAlarmClient {
 
     @Override
