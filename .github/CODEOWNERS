@@ -27,7 +27,7 @@
 /server/odc-core/**/session/        @yhilmare
 /server/odc-core/**/shared/         @yhilmare @yizhouxw
 /server/odc-core/**/sql/            @yhilmare @LuckyPickleZZ
-/server/odc-core/**/task/           @yhilmare @krihy
+/server/odc-core/**/task/           @yhilmare @yizhouxw
 
 # service common
 /server/odc-service/                                  @yhilmare @yizhouxw
@@ -50,7 +50,7 @@
 /server/odc-service/**/service/dml/                   @LuckyPickleZZ @PeachThinking
 /server/odc-service/**/service/encryption/            @PeachThinking @yizhouxw
 /server/odc-service/**/service/feature/               @MarkPotato777 @yizhouxw
-/server/odc-service/**/service/flow/                  @yhilmare @krihy
+/server/odc-service/**/service/flow/                  @yhilmare @yizhouxw
 /server/odc-service/**/service/i18n/                  @LuckyPickleZZ
 /server/odc-service/**/service/iam/                   @MarkPotato777 @PeachThinking
 /server/odc-service/**/service/info/                  @yhilmare @yizhouxw
@@ -59,11 +59,11 @@
 /server/odc-service/**/service/monitor/               @ungreat @yizhouxw
 /server/odc-service/**/service/notification/          @LuckyPickleZZ @MarkPotato777
 /server/odc-service/**/service/objectstorage/         @MarkPotato777 @yizhouxw
-/server/odc-service/**/service/onlineschemachange/    @krihy @LuckyPickleZZ
+/server/odc-service/**/service/onlineschemachange/    @LioRoger @LuckyPickleZZ
 /server/odc-service/**/service/partitionplan/         @guowl3 @yhilmare
 /server/odc-service/**/service/permission/            @MarkPotato777 @yhilmare
-/server/odc-service/**/service/pldebug/               @yhilmare @krihy
-/server/odc-service/**/service/plugin/                @yhilmare @krihy
+/server/odc-service/**/service/pldebug/               @yhilmare @yizhouxw
+/server/odc-service/**/service/plugin/                @yhilmare @LuckyPickleZZ
 /server/odc-service/**/service/quartz/                @guowl3 @yhilmare
 /server/odc-service/**/service/requlation/            @MarkPotato777 @yhilmare
 /server/odc-service/**/service/resourcegroup/         @MarkPotato777 @yhilmare
@@ -77,16 +77,16 @@
 /server/odc-service/**/service/sqlcheck/              @yhilmare @PeachThinking
 /server/odc-service/**/service/structurecompare/      @PeachThinking @yhilmare
 /server/odc-service/**/service/systemconfig/          @MarkPotato777  @yizhouxw
-/server/odc-service/**/service/task/                  @yhilmare @krihy @yizhouxw
+/server/odc-service/**/service/task/                  @yhilmare @yizhouxw
 /server/odc-service/**/service/websocket/             @LuckyPickleZZ  @yizhouxw
 
 # plugins
 /server/plugins/                                      @yhilmare @yizhouxw
-/server/plugins/connect-plugin-doris/                 @yhilmare @krihy
-/server/plugins/connect-plugin-mysql/                 @yhilmare @krihy
-/server/plugins/connect-plugin-ob-mysql/              @yhilmare @krihy
-/server/plugins/connect-plugin-ob-oracle/             @yhilmare @krihy
-/server/plugins/connect-plugin-oracle/                @yhilmare @krihy
+/server/plugins/connect-plugin-doris/                 @yhilmare @yizhouxw
+/server/plugins/connect-plugin-mysql/                 @yhilmare @yizhouxw
+/server/plugins/connect-plugin-ob-mysql/              @yhilmare @yizhouxw
+/server/plugins/connect-plugin-ob-oracle/             @yhilmare @yizhouxw
+/server/plugins/connect-plugin-oracle/                @yhilmare @yizhouxw
 
 /server/plugins/schema-plugin-api/                    @PeachThinking @MarkPotato777
 /server/plugins/schema-plugin-doris/                  @PeachThinking @MarkPotato777
