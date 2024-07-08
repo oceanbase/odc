@@ -70,7 +70,8 @@ public class DataArchiveJob extends AbstractDlmJob {
         parameters.getTargetDs().setQueryTimeout(dataArchiveParameters.getQueryTimeout());
         parameters.setSyncTableStructure(dataArchiveParameters.getSyncTableStructure());
 
-        Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis());
+        Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis(),
+                dataArchiveParameters.getSourceDatabaseId());
         scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
         scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));
         log.info("Publish data-archive job to task framework succeed,scheduleTaskId={},jobIdentity={}",

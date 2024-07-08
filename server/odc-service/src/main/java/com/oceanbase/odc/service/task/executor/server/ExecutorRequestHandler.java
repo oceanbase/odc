@@ -18,6 +18,8 @@ package com.oceanbase.odc.service.task.executor.server;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.collections4.MapUtils;
+
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.ObjectUtil;
 import com.oceanbase.odc.service.common.response.Responses;
@@ -27,6 +29,7 @@ import com.oceanbase.odc.service.task.constants.JobExecutorUrls;
 import com.oceanbase.odc.service.task.executor.logger.LogBiz;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
+import com.oceanbase.odc.service.task.executor.task.BaseTask;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResultBuilder;
 import com.oceanbase.odc.service.task.executor.task.Task;
@@ -93,8 +96,13 @@ public class ExecutorRequestHandler {
             matcher = getResultPattern.matcher(path);
             if (matcher.find()) {
                 JobIdentity ji = getJobIdentity(matcher);
-                Task<?> task = ThreadPoolTaskExecutor.getInstance().getTask(ji);
+                BaseTask<?> task = ThreadPoolTaskExecutor.getInstance().getTask(ji);
+                TaskMonitor taskMonitor = task.getTaskMonitor();
                 DefaultTaskResult result = DefaultTaskResultBuilder.build(task);
+                if (taskMonitor != null && MapUtils.isNotEmpty(taskMonitor.getLogMetadata())) {
+                    result.setLogMetadata(taskMonitor.getLogMetadata());
+                    taskMonitor.markLogMetaCollected();
+                }
                 DefaultTaskResult copiedResult = ObjectUtil.deepCopy(result, DefaultTaskResult.class);
                 return Responses.ok(copiedResult);
             }

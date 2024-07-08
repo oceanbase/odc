@@ -24,21 +24,13 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.alibaba.druid.pool.DruidDataSource;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
-import com.oceanbase.odc.service.dlm.model.DlmTableUnitParameters;
-import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
-import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
-import com.oceanbase.odc.service.schedule.model.DlmTableUnitStatistic;
 import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
-import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
 import com.oceanbase.tools.migrator.common.dto.TableSizeInfo;
 import com.oceanbase.tools.migrator.common.dto.TaskGenerator;
 import com.oceanbase.tools.migrator.common.element.PrimaryKey;
-import com.oceanbase.tools.migrator.common.enums.JobType;
 import com.oceanbase.tools.migrator.common.exception.JobException;
 import com.oceanbase.tools.migrator.common.exception.JobSqlException;
 import com.oceanbase.tools.migrator.common.meta.TableMeta;
@@ -64,91 +56,18 @@ public class DLMJobStore implements IJobStore {
     private boolean enableBreakpointRecovery;
 
     public DLMJobStore(ConnectionConfig metaDBConfig) {
-        this.dataSource = (DruidDataSource) new DruidDataSourceFactory(metaDBConfig).getDataSource();
-        initEnableBreakpointRecovery();
+        try {
+            this.dataSource = (DruidDataSource) new DruidDataSourceFactory(metaDBConfig).getDataSource();
+            initEnableBreakpointRecovery();
+        } catch (Exception e) {
+            log.warn("Init metadb failed and set breakpoint recovery to false.");
+            enableBreakpointRecovery = false;
+        }
     }
 
     public void destroy() {
         dataSource.close();
     }
-
-    public List<DlmTableUnit> getDlmTableUnits(Long scheduleTaskId) throws SQLException {
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement ps =
-                        conn.prepareStatement("select * from dlm_table_unit where schedule_task_id = ?")) {
-            ps.setLong(1, scheduleTaskId);
-            ResultSet resultSet = ps.executeQuery();
-            List<DlmTableUnit> dlmTableUnits = new LinkedList<>();
-            while (resultSet.next()) {
-                DlmTableUnit dlmTableUnit = new DlmTableUnit();
-                dlmTableUnit.setDlmTableUnitId(resultSet.getString("dlm_table_unit_id"));
-                dlmTableUnit.setType(JobType.valueOf(resultSet.getString("type")));
-                dlmTableUnit.setTableName(resultSet.getString("table_name"));
-                dlmTableUnit.setTargetTableName(resultSet.getString("target_table_name"));
-                dlmTableUnit.setFireTime(resultSet.getDate("fire_time"));
-                dlmTableUnit.setStatus(
-                        com.oceanbase.odc.core.shared.constant.TaskStatus.valueOf(resultSet.getString("status")));
-                dlmTableUnit.setScheduleTaskId(resultSet.getLong("schedule_task_id"));
-                dlmTableUnit.setSourceDatasourceInfo(JsonUtils.fromJson(resultSet.getString("source_datasource_info"),
-                        DataSourceInfo.class));
-                dlmTableUnit.setTargetDatasourceInfo(JsonUtils.fromJson(resultSet.getString("target_datasource_info"),
-                        DataSourceInfo.class));
-                dlmTableUnit.setParameters(
-                        JsonUtils.fromJson(resultSet.getString("parameters"), DlmTableUnitParameters.class));
-                dlmTableUnits.add(dlmTableUnit);
-            }
-            return dlmTableUnits;
-        }
-    }
-
-    public void updateDlmTableUnitStatus(String dlmTableUnitId, TaskStatus status) throws SQLException {
-        String sql = "UPDATE dlm_table_unit " +
-                "SET status = ?, " +
-                "start_time = CASE WHEN ? = 'RUNNING' AND start_time IS NULL THEN CURRENT_TIMESTAMP ELSE start_time END, "
-                +
-                "end_time = CASE WHEN ? IN ('CANCELED', 'DONE', 'FAILED') THEN CURRENT_TIMESTAMP ELSE end_time END " +
-                "WHERE dlm_table_unit_id = ?";
-
-        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, status.name());
-            pstmt.setString(2, status.name());
-            pstmt.setString(3, status.name());
-            pstmt.setString(4, dlmTableUnitId);
-            pstmt.executeUpdate();
-        }
-    }
-
-
-    public void storeDlmTableUnit(List<DlmTableUnit> dlmTableUnits) throws SQLException {
-        String sql = "INSERT INTO dlm_table_unit (schedule_task_id, dlm_table_unit_id, table_name, fire_time, " +
-                "target_table_name, source_datasource_info, target_datasource_info, status, type, " +
-                "parameters, statistic) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-        // Try-with-resources statement ensures that each resource is closed at the end of the statement
-        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            int count = 0;
-            for (DlmTableUnit dlmTableUnit : dlmTableUnits) {
-                ps.setLong(1, dlmTableUnit.getScheduleTaskId());
-                ps.setString(2, dlmTableUnit.getDlmTableUnitId());
-                ps.setString(3, dlmTableUnit.getTableName());
-                ps.setDate(4, new Date(dlmTableUnit.getFireTime().getTime()));
-                ps.setString(5, dlmTableUnit.getTargetTableName());
-                ps.setString(6, JsonUtils.toJson(dlmTableUnit.getSourceDatasourceInfo()));
-                ps.setString(7, JsonUtils.toJson(dlmTableUnit.getTargetDatasourceInfo()));
-                ps.setString(8, dlmTableUnit.getStatus().name());
-                ps.setString(9, dlmTableUnit.getType().name());
-                ps.setString(10, JsonUtils.toJson(dlmTableUnit.getParameters()));
-                ps.setString(11, JsonUtils.toJson(dlmTableUnit.getStatistic()));
-                ps.addBatch();
-                if (++count % 100 == 0 || count == dlmTableUnits.size()) {
-                    ps.executeBatch();
-                    ps.clearBatch();
-                }
-            }
-        }
-    }
-
-
 
     @Override
     public TaskGenerator getTaskGenerator(String generatorId, String jobId) throws SQLException {
@@ -225,24 +144,7 @@ public class DLMJobStore implements IJobStore {
 
     @Override
     public void storeJobStatistic(JobMeta jobMeta) throws JobSqlException {
-        DlmTableUnitStatistic statistic = new DlmTableUnitStatistic();
-        statistic.setProcessedRowCount(jobMeta.getJobStat().getRowCount());
-        statistic.setProcessedRowsPerSecond(jobMeta.getJobStat().getAvgRowCount());
-        statistic.setReadRowCount(jobMeta.getJobStat().getReadRowCount());
-        statistic.setReadRowsPerSecond(jobMeta.getJobStat().getAvgReadRowCount());
-        String updateSql = "UPDATE dlm_table_unit SET statistic = ? WHERE dlm_table_unit_id = ?";
 
-        try (Connection connection = dataSource.getConnection();
-                PreparedStatement preparedStatement = connection.prepareStatement(updateSql)) {
-
-            preparedStatement.setString(1, JsonUtils.toJson(statistic));
-            preparedStatement.setString(2, jobMeta.getJobId());
-
-            preparedStatement.executeUpdate();
-
-        } catch (SQLException e) {
-            log.warn("Update dlm job status failed,dlmTableUnitId={}", jobMeta.getJobId(), e);
-        }
     }
 
     @Override
@@ -309,17 +211,19 @@ public class DLMJobStore implements IJobStore {
 
     @Override
     public Long getAbnormalTaskIndex(String jobId) {
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement ps = conn.prepareStatement(
-                        "select count(1) from dlm_task_unit where job_id=? and (status != 'SUCCESS' or primary_key_cursor is null)")) {
-            ps.setString(1, jobId);
-            ResultSet resultSet = ps.executeQuery();
-            if (resultSet.next()) {
-                long count = resultSet.getLong(1);
-                return count > 0 ? count : null;
+        if (enableBreakpointRecovery) {
+            try (Connection conn = dataSource.getConnection();
+                    PreparedStatement ps = conn.prepareStatement(
+                            "select count(1) from dlm_task_unit where job_id=? and (status != 'SUCCESS' or primary_key_cursor is null)")) {
+                ps.setString(1, jobId);
+                ResultSet resultSet = ps.executeQuery();
+                if (resultSet.next()) {
+                    long count = resultSet.getLong(1);
+                    return count > 0 ? count : null;
+                }
+            } catch (Exception ignored) {
+                log.warn("Get abnormal task failed.jobId={}", jobId);
             }
-        } catch (Exception ignored) {
-            log.warn("Get abnormal task failed.jobId={}", jobId);
         }
         return null;
     }
@@ -331,35 +235,12 @@ public class DLMJobStore implements IJobStore {
 
     @Override
     public void updateLimiter(JobMeta jobMeta) {
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement ps = conn.prepareStatement(
-                        "select * from dlm_config_limiter_configuration where order_id = ?")) {
-            ps.setString(1, DlmJobIdUtil.getJobName(jobMeta.getJobId()));
-            ResultSet resultSet = ps.executeQuery();
-            RateLimitConfiguration rateLimit;
-            if (resultSet.next()) {
-                rateLimit = new RateLimitConfiguration();
-                rateLimit.setOrderId(resultSet.getLong("order_id"));
-                rateLimit.setBatchSize(resultSet.getInt("batch_size"));
-                rateLimit.setDataSizeLimit(resultSet.getLong("data_size_limit"));
-                rateLimit.setRowLimit(resultSet.getInt("row_limit"));
-            } else {
-                log.warn("RateLimitConfiguration not found,jobId={}", jobMeta.getJobId());
-                return;
-            }
-            setClusterLimitConfig(jobMeta.getSourceCluster(), rateLimit.getDataSizeLimit());
-            setClusterLimitConfig(jobMeta.getTargetCluster(), rateLimit.getDataSizeLimit());
-            setTenantLimitConfig(jobMeta.getSourceTenant(), rateLimit.getDataSizeLimit());
-            setTenantLimitConfig(jobMeta.getTargetTenant(), rateLimit.getDataSizeLimit());
-            setTableLimitConfig(jobMeta.getSourceTableMeta(), rateLimit.getRowLimit());
-            setTableLimitConfig(jobMeta.getTargetTableMeta(), rateLimit.getRowLimit());
-            log.info("Update limiter success,jobId={},rateLimit={}",
-                    jobMeta.getJobId(), rateLimit);
-        } catch (Exception e) {
-            log.warn("Update limiter failed,jobId={},error={}",
-                    jobMeta.getJobId(), e);
-        }
-
+        setClusterLimitConfig(jobMeta.getSourceCluster(), 1024 * 10);
+        setClusterLimitConfig(jobMeta.getTargetCluster(), 1024 * 10);
+        setTenantLimitConfig(jobMeta.getSourceTenant(), 1024 * 10);
+        setTenantLimitConfig(jobMeta.getTargetTenant(), 1024 * 10);
+        setTableLimitConfig(jobMeta.getTargetTableMeta(), 30000);
+        setTableLimitConfig(jobMeta.getSourceTableMeta(), 30000);
     }
 
     private void setClusterLimitConfig(ClusterMeta clusterMeta, long dataSizeLimit) {

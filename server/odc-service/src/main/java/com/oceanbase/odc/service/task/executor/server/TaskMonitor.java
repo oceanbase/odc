@@ -15,12 +15,16 @@
  */
 package com.oceanbase.odc.service.task.executor.server;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.odc.common.util.ObjectUtil;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
@@ -31,9 +35,9 @@ import com.oceanbase.odc.service.task.constants.JobServerUrls;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.logger.LogBiz;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
+import com.oceanbase.odc.service.task.executor.task.BaseTask;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResultBuilder;
-import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -47,21 +51,33 @@ import lombok.extern.slf4j.Slf4j;
 public class TaskMonitor {
 
     private static final int REPORT_RESULT_RETRY_TIMES = Integer.MAX_VALUE;
+    private static final long WAIT_AFTER_LOG_METADATA_COLLECT_MILLS = 5000L;
     private final TaskReporter reporter;
-    private final Task<?> task;
+    private final BaseTask<?> task;
     private final CloudObjectStorageService cloudObjectStorageService;
     private volatile long startTimeMilliSeconds;
     private ScheduledExecutorService reportScheduledExecutor;
     private ScheduledExecutorService heartScheduledExecutor;
+    private Map<String, String> logMetadata = new HashMap<>();
+    private AtomicLong logMetaCollectedMillis = new AtomicLong(0L);
 
-
-    public TaskMonitor(Task<?> task, CloudObjectStorageService cloudObjectStorageService) {
+    public TaskMonitor(BaseTask<?> task, CloudObjectStorageService cloudObjectStorageService) {
         this.task = task;
         this.reporter = new TaskReporter(task.getJobContext().getHostUrls());;
         this.cloudObjectStorageService = cloudObjectStorageService;
     }
 
+    public void markLogMetaCollected() {
+        this.logMetaCollectedMillis.set(System.currentTimeMillis());
+    }
+
+    public Map<String, String> getLogMetadata() {
+        return new HashMap<>(this.logMetadata);
+    }
+
     public void monitor() {
+        log.info("monitor starting, jobId={}", getJobId());
+
         this.startTimeMilliSeconds = System.currentTimeMillis();
 
         ThreadFactory threadFactory =
@@ -69,7 +85,8 @@ public class TaskMonitor {
         this.reportScheduledExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
         reportScheduledExecutor.scheduleAtFixedRate(() -> {
             if (isTimeout() && !getTask().getStatus().isTerminated()) {
-                getTask().abort();
+                log.info("Task timeout, try stop, jobId={}", getJobId());
+                getTask().stop();
             }
             try {
                 if (JobUtils.getExecutorPort().isPresent()) {
@@ -141,13 +158,16 @@ public class TaskMonitor {
                 getTask().getJobContext().getJobParameters()
                         .get(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS);
 
-        if (milliSecStr != null) {
-            return System.currentTimeMillis() - startTimeMilliSeconds > Long.parseLong(milliSecStr);
+        if (StringUtils.isNotBlank(milliSecStr)) {
+            boolean timeout = System.currentTimeMillis() - startTimeMilliSeconds > Long.parseLong(milliSecStr);
+            if (timeout) {
+                log.info("Task timeout, jobId={}, timeoutMills={}", getJobId(), milliSecStr);
+            }
+            return timeout;
         } else {
             return false;
         }
     }
-
 
     private void doFinal() {
 
@@ -160,13 +180,34 @@ public class TaskMonitor {
         log.info("Task id: {}, start to do remained work.", getJobId());
         uploadLogFileToCloudStorage(finalResult);
 
+        Map<String, String> latestLogMeta = finalResult.getLogMetadata();
+        this.logMetadata.putAll(latestLogMeta);
+
         log.info("Task id: {}, remained work be completed, report finished status.", getJobId());
 
         if (JobUtils.isReportEnabled()) {
             // Report finish signal to task server
             reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES);
+        } else {
+            waitForTaskResultPulled();
         }
         log.info("Task id: {} exit.", getJobId());
+    }
+
+    private void waitForTaskResultPulled() {
+        long currentTimeMillis = System.currentTimeMillis();
+        while (this.logMetaCollectedMillis.get() == 0
+                || currentTimeMillis > this.logMetaCollectedMillis.get() + WAIT_AFTER_LOG_METADATA_COLLECT_MILLS) {
+            log.info("wait for log meta pulled by odc-server, jobId={}, logMetaCollectedMillis={}",
+                    getJobId(), this.logMetaCollectedMillis.get());
+            try {
+                TimeUnit.SECONDS.sleep(1);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        log.info("log meta pulled by odc-server, jobId={}, logMetaCollectedMillis={}",
+                getJobId(), this.logMetaCollectedMillis.get());
     }
 
     private void uploadLogFileToCloudStorage(DefaultTaskResult finalResult) {
@@ -177,7 +218,7 @@ public class TaskMonitor {
             try {
                 logMap = biz.uploadLogFileToCloudStorage(finalResult.getJobIdentity(), cloudObjectStorageService);
             } catch (Throwable e) {
-                log.warn("Upload job {} log file to cloud storage occur error", getJobId(), e);
+                log.warn("Upload job log file to cloud storage occur error, jobId={}", getJobId(), e);
             }
             finalResult.setLogMetadata(logMap);
         }
@@ -212,7 +253,7 @@ public class TaskMonitor {
         return request;
     }
 
-    private Task<?> getTask() {
+    private BaseTask<?> getTask() {
         return task;
     }
 

@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.dispatch;
 
+import java.util.Map;
 import java.util.Objects;
 
 import com.oceanbase.odc.common.util.StringUtils;
@@ -39,6 +40,7 @@ import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.provider.JobImageNameProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 
 /**
  * Dispatch job to JobCaller immediately
@@ -92,6 +94,12 @@ public class ImmediateJobDispatcher implements JobDispatcher {
         if (je.getRunMode() == TaskRunMode.K8S) {
             K8sJobClient k8sJobClient = config.getK8sJobClientSelector().select(context);
             PodConfig podConfig = createDefaultPodConfig(config.getTaskFrameworkProperties());
+            Map<String, String> labels = JobPropertiesUtils.getLabels(context.getJobProperties());
+            podConfig.setLabels(labels);
+            String regionName = JobPropertiesUtils.getRegionName(context.getJobProperties());
+            if (StringUtils.isNotBlank(regionName)) {
+                podConfig.setRegion(regionName);
+            }
             return JobCallerBuilder.buildK8sJobCaller(k8sJobClient, podConfig, context);
         }
         return JobCallerBuilder.buildProcessCaller(context);

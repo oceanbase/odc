@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.input.ReversedLinesFileReader;
@@ -405,6 +406,11 @@ public class ScheduleTaskService {
         } catch (SchedulerException e) {
             throw new UnsupportedException(e.getMessage());
         }
+    }
+
+    public List<ScheduleTask> findByIds(Set<Long> ids) {
+        return scheduleTaskRepository.findByIdIn(ids).stream().map(scheduleTaskMapper::entityToModel)
+                .collect(Collectors.toList());
     }
 
 

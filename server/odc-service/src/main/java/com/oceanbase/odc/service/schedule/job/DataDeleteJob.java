@@ -72,7 +72,8 @@ public class DataDeleteJob extends AbstractDlmJob {
         parameters.getSourceDs().setQueryTimeout(dataDeleteParameters.getQueryTimeout());
         parameters.getTargetDs().setQueryTimeout(dataDeleteParameters.getQueryTimeout());
 
-        Long jobId = publishJob(parameters, dataDeleteParameters.getTimeoutMillis());
+        Long jobId =
+                publishJob(parameters, dataDeleteParameters.getTimeoutMillis(), dataDeleteParameters.getDatabaseId());
         scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
         scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));
         log.info("Publish data-delete job to task framework succeed,scheduleTaskId={},jobIdentity={}",

@@ -26,8 +26,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.core.shared.constant.ResourceType;
-import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigEntity;
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigRepository;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
@@ -95,7 +93,9 @@ public class DlmLimiterService {
                     : rateLimit.getDataSizeLimit());
             return mapper.entityToModel(limiterConfigRepository.save(entity));
         } else {
-            throw new NotFoundException(ResourceType.ODC_DLM_LIMITER_CONFIG, "Id", orderId);
+            RateLimitConfiguration config = getDefaultLimiterConfig();
+            config.setOrderId(orderId);
+            return mapper.entityToModel(limiterConfigRepository.save(mapper.modelToEntity(config)));
         }
     }
 

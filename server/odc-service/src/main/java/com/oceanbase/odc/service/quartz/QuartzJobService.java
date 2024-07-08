@@ -75,8 +75,13 @@ public class QuartzJobService {
                     createJob(createQuartzJobReq);
                 }
                 case UPDATE: {
-                    // TODO 是否允许修改触发策略？否则无需修改
-                    resumeJob(jobKey);
+                    deleteJob(jobKey);
+                    CreateQuartzJobParam createQuartzJobReq = new CreateQuartzJobParam();
+                    createQuartzJobReq.setJobKey(jobKey);
+                    createQuartzJobReq.setAllowConcurrent(req.getAllowConcurrent());
+                    createQuartzJobReq.setMisfireStrategy(req.getMisfireStrategy());
+                    createQuartzJobReq.setTriggerConfig(req.getTriggerConfig());
+                    createJob(createQuartzJobReq);
                     break;
                 }
                 case RESUME: {

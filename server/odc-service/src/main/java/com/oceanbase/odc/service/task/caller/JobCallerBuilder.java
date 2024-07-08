@@ -64,9 +64,9 @@ public class JobCallerBuilder {
 
         TaskMonitorMode monitorMode = JobPropertiesUtils.getMonitorMode(jobProperties);
         if (TaskMonitorMode.PULL.equals(monitorMode)) {
-            environments.put(JobEnvKeyConstants.REPORT_ENABLED, "true");
-        } else {
             environments.put(JobEnvKeyConstants.REPORT_ENABLED, "false");
+        } else {
+            environments.put(JobEnvKeyConstants.REPORT_ENABLED, "true");
         }
 
         // encryption related properties

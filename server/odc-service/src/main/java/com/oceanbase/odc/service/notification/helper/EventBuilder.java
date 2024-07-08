@@ -401,14 +401,20 @@ public class EventBuilder {
         Long organizationId;
         if (task instanceof TaskEntity) {
             organizationId = ((TaskEntity) task).getOrganizationId();
-        } else {
+        } else if (task instanceof ScheduleEntity) {
             organizationId = ((ScheduleEntity) task).getOrganizationId();
+        } else if (task instanceof ScheduleTask) {
+            // TODO: schedule_task should maintain organizationId
+            organizationId = null;
+        } else {
+            throw new UnexpectedException("task type not supported, taskType={}" + task.getClass().getSimpleName());
         }
         String odcSite = siteUrlResolver.getSiteUrl();
         if (!odcSite.startsWith("http")) {
             odcSite = "http://".concat(odcSite);
         }
-        return String.format(TICKET_URL_TEMPLATE, odcSite, taskId, taskType, organizationId);
+        String organizationIdStr = organizationId == null ? "" : organizationId.toString();
+        return String.format(TICKET_URL_TEMPLATE, odcSite, taskId, taskType, organizationIdStr);
     }
 
 }

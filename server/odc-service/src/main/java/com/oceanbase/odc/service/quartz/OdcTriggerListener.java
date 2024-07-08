@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.quartz;
 
 import static com.oceanbase.odc.core.alarm.AlarmEventNames.SCHEDULING_FAILED;
 
+import java.util.Date;
+
 import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
 import org.quartz.Trigger;
@@ -32,6 +34,7 @@ import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.alarm.ScheduleAlarmUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -71,6 +74,7 @@ public class OdcTriggerListener extends TriggerListenerSupport {
         if (!notificationProperties.isEnabled()) {
             return;
         }
+        ScheduleAlarmUtils.misfire(Long.parseLong(trigger.getJobKey().getName()), new Date());
         try {
             JobKey jobKey = trigger.getJobKey();
             scheduleRepository.findById(Long.parseLong(jobKey.getName()))

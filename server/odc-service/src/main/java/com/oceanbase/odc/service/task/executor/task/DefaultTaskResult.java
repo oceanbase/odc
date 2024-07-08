@@ -44,6 +44,9 @@ public class DefaultTaskResult implements TaskResult {
     private Map<String, String> logMetadata;
 
     public boolean progressChanged(DefaultTaskResult previous) {
+        if (previous == null) {
+            return true;
+        }
         if (status != previous.getStatus()) {
             return true;
         }

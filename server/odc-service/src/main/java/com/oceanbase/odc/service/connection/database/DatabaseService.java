@@ -245,6 +245,14 @@ public class DatabaseService {
         return connectionService.getForConnectionSkipPermissionCheck(database.getConnectionId());
     }
 
+    @SkipAuthorize("odc internal usage")
+    @Transactional(rollbackFor = Exception.class)
+    public ConnectionConfig findDataSourceForTaskById(@NonNull Long id) {
+        DatabaseEntity database = databaseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id));
+        return connectionService.getDecryptedConfig(database.getConnectionId());
+    }
+
     @PreAuthenticate(actions = "read", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public Page<Database> listDatabasesByDataSource(@NonNull Long id, String name, @NonNull Pageable pageable) {
         Specification<DatabaseEntity> specs = DatabaseSpecs

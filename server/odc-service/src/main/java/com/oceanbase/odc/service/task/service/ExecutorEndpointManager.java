@@ -57,7 +57,7 @@ public class ExecutorEndpointManager {
         Long jobId = je.getId();
         JobStatus status = je.getStatus();
 
-        if (status.isExecuting()) {
+        if (!status.isExecuting()) {
             throw new RuntimeException("Job is not executing, no executor endpoint available, jobId=" + jobId);
         }
         String executorEndpoint = je.getExecutorEndpoint();
@@ -96,7 +96,7 @@ public class ExecutorEndpointManager {
                 throw new RuntimeException("Failed to get executor endpoint, pod not exists");
             }
         } catch (Exception e) {
-            throw new RuntimeException("Failed to get executor endpoint, " + e.getMessage());
+            throw new RuntimeException("Failed to get executor endpoint", e);
         }
     }
 

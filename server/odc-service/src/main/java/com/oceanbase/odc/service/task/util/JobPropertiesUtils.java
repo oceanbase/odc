@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.task.util;
 
 import java.util.Map;
 
+import com.oceanbase.odc.common.util.MapUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.task.enums.TaskMonitorMode;
@@ -24,6 +25,14 @@ import com.oceanbase.odc.service.task.enums.TaskMonitorMode;
 import lombok.NonNull;
 
 public class JobPropertiesUtils {
+
+    public static void setLabels(@NonNull Map<String, String> jobProperties, @NonNull Map<String, String> labels) {
+        jobProperties.put("labels", MapUtils.formatKvString(labels));
+    }
+
+    public static Map<String, String> getLabels(@NonNull Map<String, String> jobProperties) {
+        return MapUtils.fromKvString(jobProperties.get("labels"));
+    }
 
     public static void setCloudProvider(@NonNull Map<String, String> jobProperties,
             @NonNull CloudProvider cloudProvider) {
