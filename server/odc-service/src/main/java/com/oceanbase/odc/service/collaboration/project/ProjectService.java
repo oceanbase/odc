@@ -201,7 +201,7 @@ public class ProjectService {
     @Transactional(rollbackFor = Exception.class)
     public ProjectEntity createProject4Migrate(@NotNull User user) {
         // default name
-        String projectName = BUILTIN_PROJECT_PREFIX + "INNER";
+        String projectName = BUILTIN_PROJECT_PREFIX + "DEFAULT";
         // if project exist
         if (repository.findByNameAndOrganizationId(projectName, user.getOrganizationId()).isPresent()) {
             return null;
@@ -214,7 +214,7 @@ public class ProjectService {
         builtInProject.setCreatorId(user.getCreatorId());
         builtInProject.setLastModifierId(user.getCreatorId());
         builtInProject.setOrganizationId(user.getOrganizationId());
-        builtInProject.setDescription("Built-in project for user " + user.getCreatorName());
+        builtInProject.setDescription("Built-in project for account " + user.getAccountName());
         builtInProject.setUniqueIdentifier(generateProjectUniqueIdentifier());
 
         return repository.saveAndFlush(builtInProject);
