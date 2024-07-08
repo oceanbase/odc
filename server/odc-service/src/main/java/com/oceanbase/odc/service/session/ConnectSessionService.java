@@ -330,7 +330,8 @@ public class ConnectSessionService {
         ConnectionSession session = connectionSessionManager.getSession(sessionId);
         if (session == null) {
             CreateSessionReq req = new DefaultConnectSessionIdGenerator().getKeyFromId(sessionId);
-            if (!autoCreate || !StringUtils.equals(req.getFrom(), stateHostGenerator.getHost())) {
+            if (!autoCreate || (!StringUtils.equals(req.getFrom(), stateHostGenerator.getHost())
+                    && !cloudMetadataClient.supportsCloudMetadata())) {
                 throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
             }
             Lock lock = this.sessionId2Lock.computeIfAbsent(sessionId, s -> new ReentrantLock());
