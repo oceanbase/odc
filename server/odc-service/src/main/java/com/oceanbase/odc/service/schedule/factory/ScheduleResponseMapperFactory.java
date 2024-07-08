@@ -121,12 +121,14 @@ public class ScheduleResponseMapperFactory {
                         Collectors.toMap(LatestTaskMappingEntity::getScheduleId,
                                 LatestTaskMappingEntity::getLatestScheduleTaskId));
 
-        Map<Long, ScheduleTaskEntity> scheduleId2ScheduleTask =
-                scheduleId2ScheduleTaskId.isEmpty() ? Collections.EMPTY_MAP
-                        : scheduleTaskRepository.findByJobNames(
-                                scheduleId2ScheduleTaskId.values().stream().map(Object::toString).collect(
-                                        Collectors.toSet()))
-                                .stream().collect(Collectors.toMap(o -> Long.valueOf(o.getJobName()), o -> o));
+        Map<Long, ScheduleTaskEntity> scheduleId2ScheduleTask;
+        if (scheduleId2ScheduleTaskId.isEmpty()) {
+            scheduleId2ScheduleTask = new HashMap<>();
+        } else {
+            scheduleId2ScheduleTask =
+                    scheduleTaskRepository.findByIdIn(new HashSet<>(scheduleId2ScheduleTaskId.values()))
+                            .stream().collect(Collectors.toMap(o -> Long.parseLong(o.getJobName()), o -> o));
+        }
 
         Map<Long, ScheduleOverviewAttributes> id2Attributes = generateAttributes(schedules);
         return schedules.stream().map(o -> {
