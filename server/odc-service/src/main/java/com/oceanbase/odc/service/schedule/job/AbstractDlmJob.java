@@ -22,6 +22,7 @@ import org.quartz.JobExecutionContext;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
@@ -90,7 +91,9 @@ public abstract class AbstractDlmJob implements OdcJob {
 
     public Long publishJob(DLMJobReq params, Long timeoutMillis, Long srcDatabaseId) {
         Map<String, Object> attributes = getDatasourceAttributesByDatabaseId(srcDatabaseId);
-        if (attributes != null && !attributes.isEmpty()) {
+
+        if (attributes != null && !attributes.isEmpty() && attributes.containsKey("cloudProvider")
+                && attributes.containsKey("region")) {
             return publishJob(params, timeoutMillis,
                     CloudProvider.fromValue(attributes.get("cloudProvider").toString()),
                     attributes.get("region").toString());
@@ -107,8 +110,10 @@ public abstract class AbstractDlmJob implements OdcJob {
             jobData.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, timeoutMillis.toString());
         }
         Map<String, String> jobProperties = new HashMap<>();
-        JobPropertiesUtils.setCloudProvider(jobProperties, provider);
-        JobPropertiesUtils.setRegionName(jobProperties, region);
+        if (provider != null && StringUtils.isNotEmpty(region)) {
+            JobPropertiesUtils.setCloudProvider(jobProperties, provider);
+            JobPropertiesUtils.setRegionName(jobProperties, region);
+        }
         SingleJobProperties singleJobProperties = new SingleJobProperties();
         singleJobProperties.setEnableRetryAfterHeartTimeout(true);
         singleJobProperties.setMaxRetryTimesAfterHeartTimeout(2);

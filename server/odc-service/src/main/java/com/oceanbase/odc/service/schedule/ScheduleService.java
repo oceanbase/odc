@@ -213,9 +213,12 @@ public class ScheduleService {
                 break;
             }
             case UPDATE: {
-                scheduleRepository.updateJobParametersById(req.getScheduleId(),
-                        JsonUtils.toJson(req.getUpdateScheduleReq().getParameters()));
-                scheduleRepository.updateStatusById(targetSchedule.getId(), ScheduleStatus.ENABLED);
+                ScheduleEntity entity = nullSafeGetById(req.getScheduleId());
+                entity.setJobParametersJson(JsonUtils.toJson(req.getUpdateScheduleReq().getParameters()));
+                entity.setTriggerConfigJson(JsonUtils.toJson(req.getUpdateScheduleReq().getTriggerConfig()));
+                entity.setDescription(req.getUpdateScheduleReq().getDescription());
+                entity.setStatus(ScheduleStatus.ENABLED);
+                scheduleRepository.save(entity);
                 break;
             }
             case PAUSE: {
