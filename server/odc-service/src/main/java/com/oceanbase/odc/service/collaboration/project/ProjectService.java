@@ -204,7 +204,7 @@ public class ProjectService {
         String projectName = BUILTIN_PROJECT_PREFIX + "DEFAULT";
         // if project exist
         if (repository.findByNameAndOrganizationId(projectName, user.getOrganizationId()).isPresent()) {
-            return null;
+            return repository.findByNameAndOrganizationId(projectName, user.getOrganizationId()).get();
         }
         // project property set
         ProjectEntity builtInProject = new ProjectEntity();
