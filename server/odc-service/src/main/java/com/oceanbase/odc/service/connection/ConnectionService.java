@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.connection;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -37,9 +39,11 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -108,6 +112,8 @@ import com.oceanbase.odc.service.connection.ssl.ConnectionSSLAdaptor;
 import com.oceanbase.odc.service.connection.util.ConnectionIdList;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncProperties;
+import com.oceanbase.odc.service.flow.model.BinaryDataResult;
+import com.oceanbase.odc.service.flow.model.ByteArrayDataResult;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.PermissionService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
@@ -115,6 +121,7 @@ import com.oceanbase.odc.service.iam.UserPermissionService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.sqlcheck.rule.MySQLObjectNameUsingReservedWords;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -219,6 +226,8 @@ public class ConnectionService {
     public static final String DEFAULT_MIN_PRIVILEGE = "read";
 
     private static final String UPDATE_DS_SCHEMA_LOCK_KEY_PREFIX = "update-ds-schema-lock-";
+
+    private static final String DATASOURCE_TEMPLATE_FILE_NAME = "datasource_template.xlsx";
 
     @PreAuthenticate(actions = "create", resourceType = "ODC_CONNECTION", isForAll = true)
     public ConnectionConfig create(@NotNull @Valid ConnectionConfig connection) {
@@ -738,6 +747,20 @@ public class ConnectionService {
             return false;
         }
         return true;
+    }
+
+    @SkipAuthorize
+    public BinaryDataResult getBatchImportTemplateFile() throws IOException {
+        String locale = LocaleContextHolder.getLocale().toLanguageTag().toLowerCase();
+        try (InputStream input = MySQLObjectNameUsingReservedWords.class.getClassLoader()
+                .getResourceAsStream("template/" + locale + "/" + DATASOURCE_TEMPLATE_FILE_NAME)) {
+            if (input == null) {
+                throw new UnexpectedException(DATASOURCE_TEMPLATE_FILE_NAME + " is not found");
+            }
+            byte[] buffer = new byte[input.available()];
+            IOUtils.read(input, buffer);
+            return new ByteArrayDataResult(DATASOURCE_TEMPLATE_FILE_NAME, buffer);
+        }
     }
 
     private Page<ConnectionConfig> innerList(@NotNull QueryConnectionParams params, @NotNull Pageable pageable) {

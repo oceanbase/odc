@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.iam;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -40,8 +42,10 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -77,6 +81,7 @@ import com.oceanbase.odc.core.shared.constant.UserType;
 import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.iam.LastSuccessLoginHistory;
 import com.oceanbase.odc.metadb.iam.LoginHistoryRepository;
@@ -98,6 +103,8 @@ import com.oceanbase.odc.service.automation.model.TriggerEvent;
 import com.oceanbase.odc.service.common.response.CustomPage;
 import com.oceanbase.odc.service.common.response.PaginatedData;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
+import com.oceanbase.odc.service.flow.model.BinaryDataResult;
+import com.oceanbase.odc.service.flow.model.ByteArrayDataResult;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.iam.model.ChangePasswordReq;
@@ -111,6 +118,7 @@ import com.oceanbase.odc.service.iam.util.PermissionUtil;
 import com.oceanbase.odc.service.iam.util.ResourceContextUtil;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.resourcegroup.model.ResourceContext;
+import com.oceanbase.odc.service.sqlcheck.rule.MySQLObjectNameUsingReservedWords;
 
 import lombok.Data;
 import lombok.NonNull;
@@ -184,6 +192,7 @@ public class UserService {
     private final List<Consumer<UserDeleteEvent>> preUserDeleteHooks = new ArrayList<>();
     private static final int FAILED_LOGIN_ATTEMPT_TIMES = 5;
     private static final long WITHOUT_ROLE_ID = 0L;
+    private static final String USER_TEMPLATE_FILE_NAME = "user_template.xlsx";
     /**
      * 10 minutes lock if failed login attempt FAILED_LOGIN_ATTEMPT_TIMES times <br>
      * 10 * 60 * 1000L
@@ -442,6 +451,20 @@ public class UserService {
             return Collections.emptySet();
         }
         return roleEntities.stream().map(RoleEntity::getId).collect(Collectors.toSet());
+    }
+
+    @SkipAuthorize
+    public BinaryDataResult getBatchImportTemplateFile() throws IOException {
+        String locale = LocaleContextHolder.getLocale().toLanguageTag().toLowerCase();
+        try (InputStream input = MySQLObjectNameUsingReservedWords.class.getClassLoader()
+                .getResourceAsStream("template/" + locale + "/" + USER_TEMPLATE_FILE_NAME)) {
+            if (input == null) {
+                throw new UnexpectedException(USER_TEMPLATE_FILE_NAME + " is not found");
+            }
+            byte[] buffer = new byte[input.available()];
+            IOUtils.read(input, buffer);
+            return new ByteArrayDataResult(USER_TEMPLATE_FILE_NAME, buffer);
+        }
     }
 
     public Set<String> getCurrentUserResourceRoleIdentifiers() {

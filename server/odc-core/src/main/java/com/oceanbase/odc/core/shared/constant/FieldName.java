@@ -41,6 +41,9 @@ public enum FieldName implements Translatable {
     DATASOURCE_ENVIRONMENT_DEV,
     DATASOURCE_ENVIRONMENT_PROD,
     DATASOURCE_ENVIRONMENT_SIT,
+    DATASOURCE_SERVICE_NAME,
+    DATASOURCE_SID,
+    DATASOURCE_USER_ROLE,
 
     /**
      * Batch Import User
