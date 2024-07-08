@@ -62,11 +62,39 @@ public class MapUtilsTest {
     }
 
     @Test
-    public void formatKvString() {
+    public void formatKvString_Success() {
         Map<String, String> map = new HashMap<>();
         map.put("a", "1");
         map.put("b", "2");
         String result = MapUtils.formatKvString(map);
         Assert.assertEquals("a=1,b=2", result);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void formatKvString_EmptyKey_IllegalArgumentException() {
+        Map<String, String> map = new HashMap<>();
+        map.put("", "2");
+        MapUtils.formatKvString(map);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void formatKvString_KeyContainsEntrySeparator_IllegalArgumentException() {
+        Map<String, String> map = new HashMap<>();
+        map.put("a,", "2");
+        MapUtils.formatKvString(map);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void formatKvString_KeyContainsValueSeparator_IllegalArgumentException() {
+        Map<String, String> map = new HashMap<>();
+        map.put("a=", "2");
+        MapUtils.formatKvString(map);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void formatKvString_ValueContainsSeparator_IllegalArgumentException() {
+        Map<String, String> map = new HashMap<>();
+        map.put("a", "2,");
+        MapUtils.formatKvString(map);
     }
 }

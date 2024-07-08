@@ -35,7 +35,7 @@ public class MapUtils {
     /**
      * A util that maps a list of entries into a <K,V> map.
      */
-    public static <K, V> Map<K, V> newMap(Class<K> keyType, Class<V> valueType, Object... entries) {
+    public static <K, V> Map<K, V> newMap(@NonNull Class<K> keyType, @NonNull Class<V> valueType, Object... entries) {
         if (entries == null || entries.length % 2 == 1) {
             throw new IllegalArgumentException("toMap must be called with an even number of parameters");
         }
@@ -61,7 +61,20 @@ public class MapUtils {
         return fromKvString(str, DEFAULT_ENTRY_SEPARATOR, DEFAULT_KEY_VALUE_SEPARATOR);
     }
 
-    public static Map<String, String> fromKvString(String str, String entrySeparator, String keyToValueSeparator) {
+    /**
+     * build Map from string，use entrySeparator for separate each k-v, use keyToValueSeparator for
+     * separate key and value
+     * 
+     * @param str input string
+     * @param entrySeparator separator for each k-v, can't be blank
+     * @param keyToValueSeparator separator for key and value, can't be blank
+     * @return
+     */
+    public static Map<String, String> fromKvString(@NonNull String str, String entrySeparator,
+            String keyToValueSeparator) {
+        if (StringUtils.isBlank(entrySeparator) || StringUtils.isBlank(keyToValueSeparator)) {
+            throw new IllegalArgumentException("entrySeparator and keyToValueSeparator can't be blank");
+        }
         if (StringUtils.isEmpty(str)) {
             return Collections.emptyMap();
         }
@@ -80,10 +93,30 @@ public class MapUtils {
         return formatKvString(map, DEFAULT_ENTRY_SEPARATOR, DEFAULT_KEY_VALUE_SEPARATOR);
     }
 
+    /**
+     * format map to kv structure, e.g. a=1,b=2
+     * 
+     * @param map map to format
+     * @param entrySeparator separator for each k-v, can't be blank
+     * @param keyToValueSeparator separator for key and value, can't be blank
+     * @return
+     */
     public static String formatKvString(@NonNull Map<String, String> map,
             String entrySeparator, String keyToValueSeparator) {
+        if (StringUtils.isBlank(entrySeparator) || StringUtils.isBlank(keyToValueSeparator)) {
+            throw new IllegalArgumentException("entrySeparator and keyToValueSeparator can't be blank");
+        }
+        map.forEach((k, v) -> {
+            if (StringUtils.isEmpty(k) || StringUtils.containsAny(k, entrySeparator, keyToValueSeparator)) {
+                throw new IllegalArgumentException("key can't be blank or contains separator, given key: " + k);
+            }
+            if (StringUtils.containsAny(v, entrySeparator, keyToValueSeparator)) {
+                throw new IllegalArgumentException("value can't contains separator, given value: " + v);
+            }
+        });
         return org.apache.commons.lang3.StringUtils.join(
-                map.entrySet().stream().map(e -> e.getKey() + keyToValueSeparator + e.getValue()).toArray(),
+                map.entrySet().stream().map(
+                        e -> e.getKey() + keyToValueSeparator + e.getValue()).toArray(),
                 entrySeparator);
     }
 
