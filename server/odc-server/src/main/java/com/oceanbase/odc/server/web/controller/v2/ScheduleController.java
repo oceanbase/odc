@@ -155,5 +155,4 @@ public class ScheduleController {
             @RequestParam OdcTaskLogLevel logType) {
         return Responses.single(scheduleService.getLog(scheduleId, taskId, logType));
     }
-
 }

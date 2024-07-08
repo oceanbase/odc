@@ -49,12 +49,15 @@ import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.core.alarm.AlarmEventNames;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.HttpRequestProvider;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
+import com.oceanbase.odc.service.session.factory.StateHostGenerator;
 import com.oceanbase.odc.service.state.model.RouteInfo;
 import com.oceanbase.odc.service.state.model.SingleNodeStateResponse;
 import com.oceanbase.odc.service.state.model.StateManager;
@@ -83,6 +86,9 @@ public class StateRouteAspect {
     @Autowired
     private ThreadPoolExecutor statefulRouteThreadPoolExecutor;
 
+    @Autowired
+    private StateHostGenerator stateHostGenerator;
+
     @Pointcut("@annotation(com.oceanbase.odc.service.state.model.StatefulRoute)")
     public void stateRouteMethods() {}
 
@@ -102,12 +108,22 @@ public class StateRouteAspect {
             } else {
                 routeInfo = stateManager.getRouteInfo(stateIdBySePL);
                 Verify.notNull(routeInfo, "routeInfo");
-                if (!routeInfo.isCurrentNode(properties) && routeHealthManager.isHealthy(routeInfo)) {
+                boolean healthyNode = routeHealthManager.isHealthy(routeInfo);
+                boolean notCurrentNode =
+                        !routeInfo.isCurrentNode(properties.getRequestPort(), stateHostGenerator.getHost());
+                log.debug("sate routeInfo={}, host={},port={}", routeInfo, stateHostGenerator.getHost(),
+                        properties.getRequestPort());
+                log.debug("healthyNode={}, notCurrentNode={}", healthyNode, notCurrentNode);
+                if (notCurrentNode && healthyNode) {
                     DispatchResponse dispatchResponse =
                             requestDispatcher.forward(routeInfo.getHostName(), routeInfo.getPort());
                     logTrace(method, stateIdBySePL, routeInfo);
                     StateRouteFilter.getContext().setDispatchResponse(dispatchResponse);
                     return null;
+                }
+                if (!healthyNode) {
+                    AlarmUtils.alarm(AlarmEventNames.STATEFUL_ROUTE_NOT_HEALTHY,
+                            "can't arrive route info " + routeInfo);
                 }
             }
         }
@@ -119,13 +135,16 @@ public class StateRouteAspect {
         Set<RouteInfo> allRoutes = stateManager.getAllRoutes(stateIdBySePL);
         List<SingleNodeStateResponse> allResponse = new ArrayList<>();
 
-        RouteInfo currentNode = allRoutes.stream().filter(r -> r.isCurrentNode(properties)).findFirst().orElse(null);
+        RouteInfo currentNode = allRoutes.stream()
+                .filter(r -> r.isCurrentNode(properties.getRequestPort(), stateHostGenerator.getHost())).findFirst()
+                .orElse(null);
         Object proceed = null;
         if (currentNode != null) {
             proceed = proceedingJoinPoint.proceed();
         }
-        Set<RouteInfo> otherNodeRoute = allRoutes.stream().filter(r -> !r.isCurrentNode(properties)).collect(
-                Collectors.toSet());
+        Set<RouteInfo> otherNodeRoute = allRoutes.stream()
+                .filter(r -> !r.isCurrentNode(properties.getRequestPort(), stateHostGenerator.getHost())).collect(
+                        Collectors.toSet());
 
         if (CollectionUtils.isEmpty(otherNodeRoute)) {
             return proceed;
