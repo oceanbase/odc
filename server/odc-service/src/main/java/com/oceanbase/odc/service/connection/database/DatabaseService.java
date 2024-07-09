@@ -801,9 +801,10 @@ public class DatabaseService {
     @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
     public void refreshExpiredPendingDBObjectStatus() {
-        this.databaseRepository.setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeBefore(
-                DBObjectSyncStatus.INITIALIZED, DBObjectSyncStatus.PENDING,
-                new Date(System.currentTimeMillis() - this.globalSearchProperties.getMaxPendingMillis()));
+        Date syncDate = new Date(System.currentTimeMillis() - this.globalSearchProperties.getMaxPendingMillis());
+        int affectRows = this.databaseRepository.setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeBefore(
+                DBObjectSyncStatus.INITIALIZED, DBObjectSyncStatus.PENDING, syncDate);
+        log.info("Refresh outdated pending objects status, syncDate={}, affectRows={}", syncDate, affectRows);
     }
 
     private void checkPermission(Long projectId, Long dataSourceId) {
