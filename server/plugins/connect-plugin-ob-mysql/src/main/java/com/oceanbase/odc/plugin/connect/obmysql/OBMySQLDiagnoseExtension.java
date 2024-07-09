@@ -44,6 +44,7 @@ import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.OBException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
+import com.oceanbase.odc.core.shared.model.ExecutorInfo;
 import com.oceanbase.odc.core.shared.model.OBSqlPlan;
 import com.oceanbase.odc.core.shared.model.PlanNode;
 import com.oceanbase.odc.core.shared.model.SqlExecDetail;
@@ -270,11 +271,12 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
     }
 
     @Override
-    public SqlExplain getQueryProfileByTraceId(Connection connection, @NonNull String traceId) throws SQLException {
+    public SqlExplain getQueryProfileByTraceIdAndSessIds(Connection connection, @NonNull String traceId,
+            @NonNull List<String> sessionIds) throws SQLException {
         try (Statement stmt = connection.createStatement()) {
-            String planId = getPlanIdByTraceId(stmt, traceId);
-            Verify.notEmpty(planId, "plan id");
-            PlanGraph graph = getPlanGraph(stmt, planId);
+            ExecutorInfo executorInfo = getPlanIdByTraceIdAndSessIds(stmt, traceId, sessionIds);
+            Verify.notEmpty(executorInfo.getPlanId(), "plan id");
+            PlanGraph graph = getPlanGraph(stmt, executorInfo);
             graph.setTraceId(traceId);
             QueryProfileHelper.refreshGraph(graph, getSqlPlanMonitorRecords(stmt, traceId));
 
@@ -293,22 +295,26 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
             } catch (Exception e) {
                 log.warn("Failed to query sql audit with OB trace_id={}.", traceId, e);
             }
-            SqlExplain explain = innerGetSqlExplainByDbmsXplan(stmt, planId);
+            SqlExplain explain = innerGetSqlExplainByDbmsXplan(stmt, executorInfo);
             explain.setGraph(graph);
             return explain;
         }
     }
 
-    protected String getPlanIdByTraceId(Statement stmt, String traceId) throws SQLException {
+    protected ExecutorInfo getPlanIdByTraceIdAndSessIds(Statement stmt, String traceId, List<String> sessionIds)
+            throws SQLException {
         try {
-            return OBUtils.queryPlanIdByTraceIdFromASH(stmt, traceId, ConnectType.OB_MYSQL);
+            return OBUtils.queryPlanIdByTraceIdFromASH(stmt, traceId, sessionIds, ConnectType.OB_MYSQL);
         } catch (SQLException e) {
-            return OBUtils.queryPlanIdByTraceIdFromAudit(stmt, traceId, ConnectType.OB_MYSQL);
+            return OBUtils.queryPlanIdByTraceIdFromAudit(stmt, traceId, sessionIds, ConnectType.OB_MYSQL);
         }
     }
 
-    protected String getPhysicalPlanByDbmsXplan(Statement stmt, String planId) throws SQLException {
-        try (ResultSet rs = stmt.executeQuery("select dbms_xplan.display_cursor(" + planId + ")")) {
+    protected String getPhysicalPlanByDbmsXplan(Statement stmt, ExecutorInfo executorInfo)
+            throws SQLException {
+        String sql = String.format("select dbms_xplan.display_cursor(%s,'ALL','%s',%s,%s)",
+                executorInfo.getPlanId(), executorInfo.getIp(), executorInfo.getPort(), executorInfo.getTenantId());
+        try (ResultSet rs = stmt.executeQuery(sql)) {
             if (!rs.next()) {
                 throw new SQLException("Failed to query plan by dbms_xplan.display_cursor");
             }
@@ -316,8 +322,8 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
         }
     }
 
-    protected PlanGraph getPlanGraph(Statement stmt, String planId) throws SQLException {
-        List<OBSqlPlan> planRecords = OBUtils.queryOBSqlPlanByPlanId(stmt, planId, ConnectType.OB_MYSQL);
+    protected PlanGraph getPlanGraph(Statement stmt, ExecutorInfo executorInfo) throws SQLException {
+        List<OBSqlPlan> planRecords = OBUtils.queryOBSqlPlanByPlanId(stmt, executorInfo, ConnectType.OB_MYSQL);
         return PlanGraphBuilder.buildPlanGraph(planRecords);
     }
 
@@ -342,11 +348,12 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
      *       0 - output...
      * </pre>
      */
-    private SqlExplain innerGetSqlExplainByDbmsXplan(Statement stmt, String planId) throws SQLException {
+    private SqlExplain innerGetSqlExplainByDbmsXplan(Statement stmt, ExecutorInfo executorInfo)
+            throws SQLException {
         SqlExplain sqlExplain = new SqlExplain();
         sqlExplain.setShowFormatInfo(true);
 
-        String planText = getPhysicalPlanByDbmsXplan(stmt, planId);
+        String planText = getPhysicalPlanByDbmsXplan(stmt, executorInfo);
         sqlExplain.setOriginalText(planText);
         String[] segs = planText.split("Outputs & filters")[0].split("\n");
         String headerLine = segs[1];

@@ -106,6 +106,7 @@ public class SqlExecuteResult {
     private List<String> whereColumns;
     private boolean withFullLinkTrace = false;
     private String traceEmptyReason;
+    private boolean withQueryProfile;
     @JsonIgnore
     private SqlTuple sqlTuple;
 

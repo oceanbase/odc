@@ -102,6 +102,7 @@ import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.session.util.SqlRewriteUtil;
+import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -354,6 +355,9 @@ public class ConnectConsoleService {
             return new AsyncExecuteResultResp(shouldRemoveContext, context, results);
         } catch (Exception e) {
             shouldRemoveContext = true;
+            // Front-end would stop getting more results if there is an exception. In this case the left queries
+            // should be killed.
+            killCurrentQuery(sessionId);
             throw e;
         } finally {
             if (shouldRemoveContext) {
@@ -588,6 +592,14 @@ public class ConnectConsoleService {
             result.initWarningMessage(connectionSession);
         } catch (Exception e) {
             log.warn("Failed to init warning message", e);
+        }
+        try {
+            SqlType sqlType = generalResult.getSqlTuple().getAst().getParseResult().getSqlType();
+            String version = ConnectionSessionUtil.getVersion(connectionSession);
+            result.setWithQueryProfile(sqlType == SqlType.SELECT && VersionUtils.isGreaterThanOrEqualsTo(version,
+                    OBQueryProfileManager.ENABLE_QUERY_PROFILE_VERSION));
+        } catch (Exception e) {
+            result.setWithQueryProfile(false);
         }
         return result;
     }
