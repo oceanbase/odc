@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.iam;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -128,25 +129,37 @@ public class UserPermissionService {
     public void bindUserAndDataSourcePermission(@NonNull Long userId, @NonNull Long organizationId,
             @NonNull Long dataSourceId, @NotEmpty List<String> actions) {
         actions.stream().filter(action -> StringUtils.notEquals(action, "create")).distinct().forEach(action -> {
-            PermissionEntity permission = new PermissionEntity();
-            permission.setAction(action);
-            permission.setType(PermissionType.PUBLIC_RESOURCE);
-            permission.setResourceIdentifier("ODC_CONNECTION:" + dataSourceId);
-            permission.setOrganizationId(organizationId);
-            permission.setCreatorId(userId);
-            permission.setBuiltIn(false);
-            permission.setExpireTime(TimeUtils.getMySQLMaxDatetime());
-            permission.setAuthorizationType(AuthorizationType.USER_AUTHORIZATION);
-            PermissionEntity saved = permissionRepository.saveAndFlush(permission);
-
-            UserPermissionEntity userPermission = new UserPermissionEntity();
-            userPermission.setUserId(userId);
-            userPermission.setPermissionId(saved.getId());
-            userPermission.setCreatorId(userId);
-            userPermission.setOrganizationId(organizationId);
-            userPermissionRepository.saveAndFlush(userPermission);
+            getPermission(userId, organizationId, "ODC_CONNECTION:" + dataSourceId, action);
         });
     }
 
+    @SkipAuthorize("internal usage")
+    @Transactional(rollbackFor = Exception.class)
+    public void bindUserAndDataSourceAllPermission(@NonNull Long userId, @NonNull Long organizationId) {
+        List<String> actionList = Arrays.asList("create", "read", "update", "delete");
+        actionList.forEach(action -> {
+            getPermission(userId, organizationId, "ODC_CONNECTION:*", action);
+        });
+    }
+
+    private void getPermission(Long userId, Long organizationId, String permissionRange, String action) {
+        PermissionEntity permission = new PermissionEntity();
+        permission.setAction(action);
+        permission.setType(PermissionType.PUBLIC_RESOURCE);
+        permission.setResourceIdentifier(permissionRange);
+        permission.setOrganizationId(organizationId);
+        permission.setCreatorId(userId);
+        permission.setBuiltIn(true);
+        permission.setExpireTime(TimeUtils.getMySQLMaxDatetime());
+        permission.setAuthorizationType(AuthorizationType.USER_AUTHORIZATION);
+        PermissionEntity saved = permissionRepository.saveAndFlush(permission);
+
+        UserPermissionEntity userPermission = new UserPermissionEntity();
+        userPermission.setUserId(userId);
+        userPermission.setPermissionId(saved.getId());
+        userPermission.setCreatorId(userId);
+        userPermission.setOrganizationId(organizationId);
+        userPermissionRepository.saveAndFlush(userPermission);
+    }
 
 }
