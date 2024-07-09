@@ -17,6 +17,7 @@ package com.oceanbase.odc.metadb.schedule;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.Test;
 import org.locationtech.jts.util.Assert;
@@ -41,6 +42,15 @@ public class LatestTaskMappingRepositoryTest extends ServiceTestEnv {
         Assert.equals(1, entities.size());
         Assert.equals(entity, entities.get(0));
         delete(entity);
+    }
+
+    @Test
+    public void findByScheduleId() {
+        LatestTaskMappingEntity entity = create();
+        Optional<LatestTaskMappingEntity> byScheduleId = repository.findByScheduleId(1L);
+        Assert.isTrue(byScheduleId.isPresent());
+        delete(entity);
+
     }
 
     private LatestTaskMappingEntity create() {

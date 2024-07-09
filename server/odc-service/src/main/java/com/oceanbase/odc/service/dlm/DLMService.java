@@ -90,6 +90,19 @@ public class DLMService {
     }
 
     @SkipAuthorize("odc internal usage")
+    public void createOrUpdateDlmTableUnits(List<DlmTableUnit> dlmTableUnits) {
+        dlmTableUnits.forEach(o -> {
+            if (dlmTableUnitRepository.findByDlmTableUnitId(o.getDlmTableUnitId()).isPresent()) {
+                dlmTableUnitRepository.updateStatisticAndStatusByDlmTableUnitId(JsonUtils.toJson(o.getStatistic()),
+                        o.getStatus(), o.getDlmTableUnitId());
+            } else {
+                dlmTableUnitRepository.save(DlmTableUnitMapper.modelToEntity(o));
+            }
+        });
+    }
+
+
+    @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
     public void updateStatusByDlmTableUnitId(String dlmTableUnitId, TaskStatus status) {
         dlmTableUnitRepository.findByDlmTableUnitId(dlmTableUnitId).ifPresent(e -> {

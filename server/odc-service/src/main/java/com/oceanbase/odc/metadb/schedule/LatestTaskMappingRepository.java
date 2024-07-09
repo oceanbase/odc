@@ -16,6 +16,7 @@
 package com.oceanbase.odc.metadb.schedule;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
@@ -28,4 +29,6 @@ import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 public interface LatestTaskMappingRepository extends OdcJpaRepository<LatestTaskMappingEntity, Long> {
 
     List<LatestTaskMappingEntity> findByScheduleIdIn(Set<Long> scheduleIds);
+
+    Optional<LatestTaskMappingEntity> findByScheduleId(Long scheduleId);
 }

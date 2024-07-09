@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.quartz;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -118,10 +119,12 @@ public class OdcJobListener implements JobListener {
             entity.setStatus(TaskStatus.PREPARING);
             entity.setFireTime(context.getFireTime());
             entity = taskRepository.save(entity);
-            LatestTaskMappingEntity latestTaskMappingEntity = new LatestTaskMappingEntity();
-            latestTaskMappingEntity.setLatestScheduleTaskId(entity.getId());
-            latestTaskMappingEntity.setScheduleId(scheduleId);
-            latestTaskMappingRepository.save(latestTaskMappingEntity);
+            Optional<LatestTaskMappingEntity> optional = latestTaskMappingRepository.findByScheduleId(scheduleId);
+            LatestTaskMappingEntity latestTaskMapping =
+                    optional.isPresent() ? optional.get() : new LatestTaskMappingEntity();
+            latestTaskMapping.setLatestScheduleTaskId(entity.getId());
+            latestTaskMapping.setScheduleId(scheduleId);
+            latestTaskMappingRepository.save(latestTaskMapping);
         } else {
             log.info("Load an existing task,taskId={}", targetTaskId);
             entity = taskRepository.findById(targetTaskId).orElseThrow(() -> new NotFoundException(

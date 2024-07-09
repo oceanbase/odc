@@ -48,7 +48,7 @@ public class DLMResultProcessor implements ResultProcessor {
         if (dlmTableUnits == null || dlmTableUnits.isEmpty()) {
             log.warn("Task result is empty!jobIdentity={}", result.getJobIdentity());
         }
-        dlmService.createDlmTableUnits(dlmTableUnits);
+        dlmService.createOrUpdateDlmTableUnits(dlmTableUnits);
         log.info("Create or update dlm tableUnits success,jobIdentity={},scheduleTaskId={}", result.getJobIdentity(),
                 dlmTableUnits.get(0).getScheduleTaskId());
     }
