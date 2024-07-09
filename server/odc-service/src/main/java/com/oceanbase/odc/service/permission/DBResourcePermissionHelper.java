@@ -425,7 +425,7 @@ public class DBResourcePermissionHelper {
                 .findNotExpiredByUserIdAndDatabaseIdIn(authenticationFacade.currentUserId(), databaseIds)
                 .stream().collect(Collectors.toMap(
                         UserTablePermissionEntity::getDatabaseId,
-                        e -> Collections.singleton(DatabasePermissionType.ACCESS),
+                        e -> Collections.singleton(DatabasePermissionType.from(e.getAction())),
                         (e1, e2) -> e1));
         typesFromTable.forEach((k, v) -> typesFromDatabase.merge(k, v, (v1, v2) -> {
             v1.addAll(v2);
