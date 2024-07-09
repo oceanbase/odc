@@ -118,7 +118,6 @@ import com.oceanbase.odc.service.iam.util.PermissionUtil;
 import com.oceanbase.odc.service.iam.util.ResourceContextUtil;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.resourcegroup.model.ResourceContext;
-import com.oceanbase.odc.service.sqlcheck.rule.MySQLObjectNameUsingReservedWords;
 
 import lombok.Data;
 import lombok.NonNull;
@@ -456,8 +455,8 @@ public class UserService {
     @SkipAuthorize
     public BinaryDataResult getBatchImportTemplateFile() throws IOException {
         String locale = LocaleContextHolder.getLocale().toLanguageTag().toLowerCase();
-        try (InputStream input = MySQLObjectNameUsingReservedWords.class.getClassLoader()
-                .getResourceAsStream("template/" + locale + "/" + USER_TEMPLATE_FILE_NAME)) {
+        try (InputStream input = this.getClass().getClassLoader().getResourceAsStream(
+                "template/" + locale + "/" + USER_TEMPLATE_FILE_NAME)) {
             if (input == null) {
                 throw new UnexpectedException(USER_TEMPLATE_FILE_NAME + " is not found");
             }
