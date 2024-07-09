@@ -92,9 +92,9 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
         try {
             String version = OBUtils.getObVersion(statement.getConnection());
             if (VersionUtils.isGreaterThanOrEqualsTo(version, OB_EXPLAIN_COMPATIBLE_VERSION)) {
-                explain.setExpTree(DiagnoseUtil.getExplainTree(text));
-            } else {
                 explain.setExpTree(DiagnoseUtil.getOB4xExplainTree(text));
+            } else {
+                explain.setExpTree(DiagnoseUtil.getExplainTree(text));
             }
             // outline
             String outline = text.split("BEGIN_OUTLINE_DATA")[1].split("END_OUTLINE_DATA")[0];
