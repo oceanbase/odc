@@ -41,7 +41,7 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
 
     @Query(value = "select * from schedule_schedule where connection_id in (:connectionIds) and status = 'ENABLED'",
             nativeQuery = true)
-    List<ScheduleEntity> getEnabledScheduleByConnectionIds(Set<Long> connectionIds);
+    List<ScheduleEntity> getEnabledScheduleByConnectionIds(@Param("connectionIds") Set<Long> connectionIds);
 
     @Transactional
     @Modifying
