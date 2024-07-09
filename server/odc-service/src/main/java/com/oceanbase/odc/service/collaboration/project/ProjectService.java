@@ -175,7 +175,7 @@ public class ProjectService {
         projectEntity.setUniqueIdentifier(generateProjectUniqueIdentifier());
         ProjectEntity savedProject = repository.saveAndFlush(projectEntity);
         // for migrate data source
-        if (Objects.equals(projectName, "DEFAULT_PROJECT")) {
+        if (Objects.equals(projectName, BUILTIN_PROJECT_PREFIX + "DEFAULT")) {
             projectEntity.setDescription("Built-in project for migrate data sources, organizationId is "
                     + user.getOrganizationId());
             repository.saveAndFlush(projectEntity);
