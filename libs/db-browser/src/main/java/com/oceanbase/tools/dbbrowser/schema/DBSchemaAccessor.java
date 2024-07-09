@@ -262,4 +262,6 @@ public interface DBSchemaAccessor {
     DBSynonym getSynonym(String schemaName, String synonymName, DBSynonymType synonymType);
 
     Map<String, DBTable> getTables(String schemaName, List<String> tableNames);
+
+    String getSessionTimeZone();
 }

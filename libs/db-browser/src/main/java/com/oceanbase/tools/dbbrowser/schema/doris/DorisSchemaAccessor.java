@@ -1279,4 +1279,9 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
         throw new UnsupportedOperationException("Not supported yet");
     }
 
+    @Override
+    public String getSessionTimeZone() {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
 }

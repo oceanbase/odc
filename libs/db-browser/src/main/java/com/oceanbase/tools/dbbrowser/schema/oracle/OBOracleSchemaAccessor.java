@@ -78,6 +78,7 @@ import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.PLObjectErrMsgUtils;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
+import com.oceanbase.tools.dbbrowser.util.TimestampUtils;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
@@ -393,12 +394,15 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         DBFunction function = new DBFunction();
         function.setFunName(functionName);
 
+        String sessionTimeZone = getSessionTimeZone();
         jdbcOperations.query(sb.toString(), (rs) -> {
             function.setDefiner(rs.getString(1));
             function.setDdl(String.format("CREATE OR REPLACE %s;", rs.getClob(5).toString()));
             function.setStatus(rs.getString(9));
-            function.setCreateTime(Timestamp.valueOf(rs.getString(7)));
-            function.setModifyTime(Timestamp.valueOf(rs.getString(8)));
+            function.setCreateTime(
+                    TimestampUtils.convertToDefaultTimeZone(Timestamp.valueOf(rs.getString(7)), sessionTimeZone));
+            function.setModifyTime(
+                    TimestampUtils.convertToDefaultTimeZone(Timestamp.valueOf(rs.getString(8)), sessionTimeZone));
         });
 
         if (StringUtils.containsIgnoreCase(function.getStatus(), PLConstants.PL_OBJECT_STATUS_INVALID)) {
@@ -558,12 +562,15 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
 
         DBProcedure procedure = new DBProcedure();
         procedure.setProName(procedureName);
+        String sessionTimeZone = getSessionTimeZone();
         jdbcOperations.query(sb.toString(), (rs) -> {
             procedure.setDefiner(rs.getString("OWNER"));
             procedure.setDdl(String.format("create or replace %s;", rs.getClob("TEXT").toString()));
             procedure.setStatus(rs.getString("STATUS"));
-            procedure.setCreateTime(rs.getTimestamp("CREATED"));
-            procedure.setModifyTime(rs.getTimestamp("LAST_DDL_TIME"));
+            procedure.setCreateTime(
+                    TimestampUtils.convertToDefaultTimeZone(rs.getTimestamp("CREATED"), sessionTimeZone));
+            procedure.setModifyTime(
+                    TimestampUtils.convertToDefaultTimeZone(rs.getTimestamp("LAST_DDL_TIME"), sessionTimeZone));
         });
 
         if (StringUtils.containsIgnoreCase(procedure.getStatus(), PLConstants.PL_OBJECT_STATUS_INVALID)) {
@@ -618,6 +625,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
 
         DBPackage dbPackage = new DBPackage();
         dbPackage.setPackageName(packageName);
+        String sessionTimeZone = getSessionTimeZone();
         jdbcOperations.query(sb.toString(), (rs) -> {
             try {
                 dbPackage.setStatus(rs.getString("STATUS"));
@@ -626,8 +634,10 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
                 DBPackageBasicInfo basicInfo = new DBPackageBasicInfo();
                 basicInfo.setDdl("create or replace " + rs.getClob("TEXT").toString());
                 basicInfo.setDefiner(rs.getString("OWNER"));
-                basicInfo.setCreateTime(rs.getTimestamp("CREATED"));
-                basicInfo.setModifyTime(rs.getTimestamp("LAST_DDL_TIME"));
+                basicInfo.setCreateTime(
+                        TimestampUtils.convertToDefaultTimeZone(rs.getTimestamp("CREATED"), sessionTimeZone));
+                basicInfo.setModifyTime(
+                        TimestampUtils.convertToDefaultTimeZone(rs.getTimestamp("LAST_DDL_TIME"), sessionTimeZone));
                 packageDetail.setBasicInfo(basicInfo);
 
                 // parse variables、 types、procedures、functions
@@ -854,11 +864,13 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         sb.value(typeName);
 
         DBType type = new DBType();
+        String sessionTimeZone = getSessionTimeZone();
         jdbcOperations.query(sb.toString(), (rs) -> {
             type.setOwner(rs.getString("OWNER"));
             type.setTypeName(rs.getString("TYPE_NAME"));
-            type.setCreateTime(rs.getTimestamp("CREATED"));
-            type.setLastDdlTime(rs.getTimestamp("LAST_DDL_TIME"));
+            type.setCreateTime(TimestampUtils.convertToDefaultTimeZone(rs.getTimestamp("CREATED"), sessionTimeZone));
+            type.setLastDdlTime(
+                    TimestampUtils.convertToDefaultTimeZone(rs.getTimestamp("LAST_DDL_TIME"), sessionTimeZone));
             type.setTypeId(rs.getBigDecimal("TYPEID").toString());
             type.setType(rs.getString("TYPECODE"));
         });

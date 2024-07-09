@@ -40,6 +40,7 @@ import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.OracleDataDictTableNames;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
+import com.oceanbase.tools.dbbrowser.util.TimestampUtils;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -64,10 +65,13 @@ public class OBOracleLessThan400SchemaAccessor extends OBOracleBetween4000And410
         obtainTableCharset(Collections.singletonList(tableOptions));
         obtainTableCollation(Collections.singletonList(tableOptions));
         String sql = this.sqlMapper.getSql(Statements.GET_TABLE_OPTION);
+        String sessionTimeZone = getSessionTimeZone();
         try {
             this.jdbcOperations.query(sql, new Object[] {schemaName, tableName}, rs -> {
-                tableOptions.setCreateTime(rs.getTimestamp("GMT_CREATE"));
-                tableOptions.setUpdateTime(rs.getTimestamp("GMT_MODIFIED"));
+                tableOptions.setCreateTime(
+                        TimestampUtils.convertToDefaultTimeZone(rs.getTimestamp("GMT_CREATE"), sessionTimeZone));
+                tableOptions.setUpdateTime(
+                        TimestampUtils.convertToDefaultTimeZone(rs.getTimestamp("GMT_MODIFIED"), sessionTimeZone));
                 tableOptions.setComment(rs.getString("COMMENT"));
                 tableOptions.setTabletSize(rs.getLong("TABLET_SIZE"));
             });

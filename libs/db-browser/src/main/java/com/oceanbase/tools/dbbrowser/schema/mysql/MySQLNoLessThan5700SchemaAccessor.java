@@ -94,6 +94,7 @@ import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
+import com.oceanbase.tools.dbbrowser.util.TimestampUtils;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
@@ -1086,13 +1087,22 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
 
     private void obtainOptionsByQuery(String schemaName, String tableName, DBTableOptions dbTableOptions) {
         String sql = this.sqlMapper.getSql(Statements.GET_TABLE_OPTION);
+        String sessionTimeZone = getSessionTimeZone();
         jdbcOperations.query(sql, new Object[] {schemaName, tableName}, t -> {
-            dbTableOptions.setCreateTime(t.getTimestamp("CREATE_TIME"));
-            dbTableOptions.setUpdateTime(t.getTimestamp("UPDATE_TIME"));
+            dbTableOptions.setCreateTime(
+                    TimestampUtils.convertToDefaultTimeZone(t.getTimestamp("CREATE_TIME"), sessionTimeZone));
+            dbTableOptions.setUpdateTime(
+                    TimestampUtils.convertToDefaultTimeZone(t.getTimestamp("UPDATE_TIME"), sessionTimeZone));
             dbTableOptions.setAutoIncrementInitialValue(t.getLong("AUTO_INCREMENT"));
             dbTableOptions.setCollationName(t.getString("TABLE_COLLATION"));
             dbTableOptions.setComment(t.getString("TABLE_COMMENT"));
         });
+    }
+
+    @Override
+    public String getSessionTimeZone() {
+        String sql = "select @@session.time_zone";
+        return jdbcOperations.queryForObject(sql, String.class);
     }
 
     private void obtainOptionsByParser(DBTableOptions dbTableOptions, String ddl) {
@@ -1194,10 +1204,13 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
                         .append(rs.getString("DTD_IDENTIFIER")).append(",");
             }
         });
+        String sessionTimeZone = getSessionTimeZone();
         jdbcOperations.query(sql1.toString(), (rs) -> {
             function.setDefiner(rs.getString("DEFINER"));
-            function.setCreateTime(Timestamp.valueOf(rs.getString("CREATED")));
-            function.setModifyTime(Timestamp.valueOf(rs.getString("LAST_ALTERED")));
+            function.setCreateTime(TimestampUtils.convertToDefaultTimeZone(Timestamp.valueOf(rs.getString("CREATED")),
+                    sessionTimeZone));
+            function.setModifyTime(TimestampUtils
+                    .convertToDefaultTimeZone(Timestamp.valueOf(rs.getString("LAST_ALTERED")), sessionTimeZone));
             function.setDdl(String.format("create function %s (%s) returns %s %s;",
                     StringUtils.quoteMysqlIdentifier(function.getFunName()),
                     StringUtils.substring(parameters.toString(), 0, parameters.length() - 1),
@@ -1266,10 +1279,13 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
                     .identifier(rs.getString("PARAMETER_NAME")).space()
                     .append(rs.getString("DTD_IDENTIFIER")).append(",");
         });
+        String sessionTimeZone = getSessionTimeZone();
         jdbcOperations.query(sql1.toString(), (rs) -> {
             procedure.setDefiner(rs.getString("DEFINER"));
-            procedure.setCreateTime(Timestamp.valueOf(rs.getString("CREATED")));
-            procedure.setModifyTime(Timestamp.valueOf(rs.getString("LAST_ALTERED")));
+            procedure.setCreateTime(TimestampUtils.convertToDefaultTimeZone(Timestamp.valueOf(rs.getString("CREATED")),
+                    sessionTimeZone));
+            procedure.setModifyTime(TimestampUtils
+                    .convertToDefaultTimeZone(Timestamp.valueOf(rs.getString("LAST_ALTERED")), sessionTimeZone));
             procedure.setDdl(String.format("create procedure %s (%s) %s;",
                     StringUtils.quoteMysqlIdentifier(procedure.getProName()),
                     StringUtils.substring(parameters.toString(), 0, parameters.length() - 1),
