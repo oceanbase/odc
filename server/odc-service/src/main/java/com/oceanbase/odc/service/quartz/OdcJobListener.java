@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.quartz;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -29,6 +30,8 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.iam.UserEntity;
+import com.oceanbase.odc.metadb.schedule.LatestTaskMappingEntity;
+import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
@@ -63,6 +66,8 @@ public class OdcJobListener implements JobListener {
     private UserService userService;
     @Autowired
     private HostProperties hostProperties;
+    @Autowired
+    private LatestTaskMappingRepository latestTaskMappingRepository;
 
     private static final String ODC_JOB_LISTENER = "ODC_JOB_LISTENER";
 
@@ -114,6 +119,12 @@ public class OdcJobListener implements JobListener {
             entity.setStatus(TaskStatus.PREPARING);
             entity.setFireTime(context.getFireTime());
             entity = taskRepository.save(entity);
+            Optional<LatestTaskMappingEntity> optional = latestTaskMappingRepository.findByScheduleId(scheduleId);
+            LatestTaskMappingEntity latestTaskMapping =
+                    optional.isPresent() ? optional.get() : new LatestTaskMappingEntity();
+            latestTaskMapping.setLatestScheduleTaskId(entity.getId());
+            latestTaskMapping.setScheduleId(scheduleId);
+            latestTaskMappingRepository.save(latestTaskMapping);
         } else {
             log.info("Load an existing task,taskId={}", targetTaskId);
             entity = taskRepository.findById(targetTaskId).orElseThrow(() -> new NotFoundException(
