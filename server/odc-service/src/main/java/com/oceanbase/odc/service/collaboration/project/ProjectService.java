@@ -158,10 +158,12 @@ public class ProjectService {
      */
     @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
-    public void createProjectIfNotExists(@NotNull User user) {
-        String projectName = BUILTIN_PROJECT_PREFIX + user.getAccountName();
-        if (repository.findByNameAndOrganizationId(projectName, user.getOrganizationId()).isPresent()) {
-            return;
+    public ProjectEntity createProjectIfNotExists(@NotNull User user, String projectName) {
+        Optional<ProjectEntity> ProjectEntity =
+                repository.findByNameAndOrganizationId(projectName, user.getOrganizationId());
+        // if project exist
+        if (ProjectEntity.isPresent()) {
+            return ProjectEntity.get();
         }
         ProjectEntity projectEntity = new ProjectEntity();
         projectEntity.setBuiltin(true);
@@ -170,54 +172,39 @@ public class ProjectService {
         projectEntity.setCreatorId(user.getCreatorId());
         projectEntity.setLastModifierId(user.getCreatorId());
         projectEntity.setOrganizationId(user.getOrganizationId());
-        projectEntity.setDescription("Built-in project for bastion user " + user.getAccountName());
         projectEntity.setUniqueIdentifier(generateProjectUniqueIdentifier());
-        ProjectEntity saved = repository.saveAndFlush(projectEntity);
-        // Grant DEVELOPER role to bastion user, and all other roles to user creator(admin)
-        Map<ResourceRoleName, ResourceRoleEntity> resourceRoleName2Entity =
-                resourceRoleRepository.findByResourceType(ResourceType.ODC_PROJECT).stream()
-                        .collect(Collectors.toMap(ResourceRoleEntity::getRoleName, r -> r, (r1, r2) -> r1));
-        List<UserResourceRoleEntity> userResourceRoleEntities = ResourceRoleName.all().stream().map(name -> {
-            ResourceRoleEntity resourceRoleEntity = resourceRoleName2Entity.getOrDefault(name, null);
-            if (Objects.isNull(resourceRoleEntity)) {
-                throw new NotFoundException(ResourceType.ODC_RESOURCE_ROLE, "name", name);
-            }
-            UserResourceRoleEntity entity = new UserResourceRoleEntity();
-            entity.setUserId(name == ResourceRoleName.DEVELOPER ? user.getId() : user.getCreatorId());
-            entity.setResourceId(saved.getId());
-            entity.setResourceRoleId(resourceRoleEntity.getId());
-            entity.setOrganizationId(user.getOrganizationId());
-            return entity;
-        }).collect(Collectors.toList());
-        userResourceRoleRepository.batchCreate(userResourceRoleEntities);
-    }
-
-    /**
-     * Create a built-in project for migrate user
-     *
-     * @param user user
-     */
-    @SkipAuthorize("odc migrate usage")
-    @Transactional(rollbackFor = Exception.class)
-    public ProjectEntity createProject4Migrate(@NotNull User user) {
-        // default name
-        String projectName = BUILTIN_PROJECT_PREFIX + "DEFAULT";
-        // if project exist
-        if (repository.findByNameAndOrganizationId(projectName, user.getOrganizationId()).isPresent()) {
-            return repository.findByNameAndOrganizationId(projectName, user.getOrganizationId()).get();
+        ProjectEntity savedProject = repository.saveAndFlush(projectEntity);
+        // for migrate data source
+        if (Objects.equals(projectName, "DEFAULT_PROJECT")) {
+            projectEntity.setDescription("Built-in project for migrate data sources, organizationId is "
+                    + user.getOrganizationId());
+            repository.saveAndFlush(projectEntity);
+            return savedProject;
         }
-        // project property set
-        ProjectEntity builtInProject = new ProjectEntity();
-        builtInProject.setBuiltin(true);
-        builtInProject.setArchived(false);
-        builtInProject.setName(projectName);
-        builtInProject.setCreatorId(user.getCreatorId());
-        builtInProject.setLastModifierId(user.getCreatorId());
-        builtInProject.setOrganizationId(user.getOrganizationId());
-        builtInProject.setDescription("Built-in project for account " + user.getAccountName());
-        builtInProject.setUniqueIdentifier(generateProjectUniqueIdentifier());
-
-        return repository.saveAndFlush(builtInProject);
+        // for bastion user
+        if (Objects.equals(projectName, BUILTIN_PROJECT_PREFIX + user.getAccountName())) {
+            projectEntity.setDescription("Built-in project for bastion user " + user.getAccountName());
+            repository.saveAndFlush(projectEntity);
+            // Grant DEVELOPER role to bastion user, and all other roles to user creator(admin)
+            Map<ResourceRoleName, ResourceRoleEntity> resourceRoleName2Entity =
+                    resourceRoleRepository.findByResourceType(ResourceType.ODC_PROJECT).stream()
+                            .collect(Collectors.toMap(ResourceRoleEntity::getRoleName, r -> r, (r1, r2) -> r1));
+            List<UserResourceRoleEntity> userResourceRoleEntities = ResourceRoleName.all().stream().map(name -> {
+                ResourceRoleEntity resourceRoleEntity = resourceRoleName2Entity.getOrDefault(name, null);
+                if (Objects.isNull(resourceRoleEntity)) {
+                    throw new NotFoundException(ResourceType.ODC_RESOURCE_ROLE, "name", name);
+                }
+                UserResourceRoleEntity entity = new UserResourceRoleEntity();
+                entity.setUserId(name == ResourceRoleName.DEVELOPER ? user.getId() : user.getCreatorId());
+                entity.setResourceId(savedProject.getId());
+                entity.setResourceRoleId(resourceRoleEntity.getId());
+                entity.setOrganizationId(user.getOrganizationId());
+                return entity;
+            }).collect(Collectors.toList());
+            userResourceRoleRepository.batchCreate(userResourceRoleEntities);
+            return savedProject;
+        }
+        return savedProject;
     }
 
     @PreAuthenticate(actions = "create", resourceType = "ODC_PROJECT", isForAll = true)

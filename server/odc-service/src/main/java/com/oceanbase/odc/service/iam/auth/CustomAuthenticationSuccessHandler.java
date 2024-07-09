@@ -124,7 +124,7 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
             SecurityContextUtils.switchCurrentUserOrganization(user, team, httpServletRequest, true);
             // If bastion is enabled, every user must hold a built-in project for create temporary SQL console
             if (bastionEnabled) {
-                projectService.createProjectIfNotExists(user);
+                projectService.createProjectIfNotExists(user, "USER_PROJECT_" + user.getAccountName());
             }
         }
 
