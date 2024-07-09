@@ -79,7 +79,7 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
             executorInfo.setPort(uc.getPort());
             taskEntity.setExecutor(JsonUtils.toJson(executorInfo));
         }
-        scheduleTaskService.update(taskEntity);
+        scheduleTaskService.updateStatusById(taskEntity.getId(), taskEntity.getStatus());
         log.debug("Update scheduleTask successfully, scheduleTaskId={}.", taskEntity.getId());
     }
 

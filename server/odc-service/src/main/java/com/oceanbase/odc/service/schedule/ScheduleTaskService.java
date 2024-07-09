@@ -211,10 +211,6 @@ public class ScheduleTaskService {
         scheduleTaskRepository.update(entity);
     }
 
-    public int updateParameters(Long id, String parameters) {
-        return scheduleTaskRepository.updateTaskParameters(id, parameters);
-    }
-
 
 
     public Page<ScheduleTask> list(Pageable pageable, Long scheduleId) {

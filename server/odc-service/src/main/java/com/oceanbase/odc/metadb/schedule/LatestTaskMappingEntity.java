@@ -21,6 +21,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 import lombok.Data;
 
@@ -32,7 +33,7 @@ import lombok.Data;
 
 @Entity
 @Data
-@Table(name = "schedule_latest_task_mapping")
+@Table(name = "schedule_latest_task_mapping", uniqueConstraints = @UniqueConstraint(columnNames = "schedule_id"))
 public class LatestTaskMappingEntity {
 
     @Id

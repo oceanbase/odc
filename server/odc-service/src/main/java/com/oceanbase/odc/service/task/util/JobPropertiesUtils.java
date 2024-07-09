@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.task.util;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import com.oceanbase.odc.common.util.MapUtils;
@@ -31,6 +32,9 @@ public class JobPropertiesUtils {
     }
 
     public static Map<String, String> getLabels(@NonNull Map<String, String> jobProperties) {
+        if (StringUtils.isBlank(jobProperties.get("labels"))) {
+            return new HashMap<>();
+        }
         return MapUtils.fromKvString(jobProperties.get("labels"));
     }
 
