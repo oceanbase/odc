@@ -159,52 +159,42 @@ public class ProjectService {
     @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
     public ProjectEntity createProjectIfNotExists(@NotNull User user, String projectName) {
-        Optional<ProjectEntity> ProjectEntity =
-                repository.findByNameAndOrganizationId(projectName, user.getOrganizationId());
+        Optional<ProjectEntity> projectOptional =
+            repository.findByNameAndOrganizationId(projectName, user.getOrganizationId());
         // if project exist
-        if (ProjectEntity.isPresent()) {
-            return ProjectEntity.get();
+        if (projectOptional.isPresent()) {
+            return projectOptional.get();
         }
         ProjectEntity projectEntity = new ProjectEntity();
         projectEntity.setBuiltin(true);
         projectEntity.setArchived(false);
         projectEntity.setName(projectName);
         projectEntity.setCreatorId(user.getCreatorId());
+        projectEntity.setDescription("Built-in project, name is " + projectName);
         projectEntity.setLastModifierId(user.getCreatorId());
         projectEntity.setOrganizationId(user.getOrganizationId());
         projectEntity.setUniqueIdentifier(generateProjectUniqueIdentifier());
-        ProjectEntity savedProject = repository.saveAndFlush(projectEntity);
-        // for migrate data source
-        if (Objects.equals(projectName, "default project")) {
-            projectEntity.setDescription("Built-in project for migrate data sources, organizationId is "
-                    + user.getOrganizationId());
-            repository.saveAndFlush(projectEntity);
-            return savedProject;
-        }
-        // for bastion user
-        if (Objects.equals(projectName, BUILTIN_PROJECT_PREFIX + user.getAccountName())) {
-            projectEntity.setDescription("Built-in project for bastion user " + user.getAccountName());
-            repository.saveAndFlush(projectEntity);
-            // Grant DEVELOPER role to bastion user, and all other roles to user creator(admin)
-            Map<ResourceRoleName, ResourceRoleEntity> resourceRoleName2Entity =
-                    resourceRoleRepository.findByResourceType(ResourceType.ODC_PROJECT).stream()
-                            .collect(Collectors.toMap(ResourceRoleEntity::getRoleName, r -> r, (r1, r2) -> r1));
-            List<UserResourceRoleEntity> userResourceRoleEntities = ResourceRoleName.all().stream().map(name -> {
-                ResourceRoleEntity resourceRoleEntity = resourceRoleName2Entity.getOrDefault(name, null);
-                if (Objects.isNull(resourceRoleEntity)) {
-                    throw new NotFoundException(ResourceType.ODC_RESOURCE_ROLE, "name", name);
-                }
-                UserResourceRoleEntity entity = new UserResourceRoleEntity();
-                entity.setUserId(name == ResourceRoleName.DEVELOPER ? user.getId() : user.getCreatorId());
-                entity.setResourceId(savedProject.getId());
-                entity.setResourceRoleId(resourceRoleEntity.getId());
-                entity.setOrganizationId(user.getOrganizationId());
-                return entity;
-            }).collect(Collectors.toList());
-            userResourceRoleRepository.batchCreate(userResourceRoleEntities);
-            return savedProject;
-        }
-        return savedProject;
+        return repository.saveAndFlush(projectEntity);
+    }
+
+    public void grantRole2BastionUser(@NotNull User user, ProjectEntity projectEntity) {
+        // Grant DEVELOPER role to bastion user, and all other roles to user creator(admin)
+        Map<ResourceRoleName, ResourceRoleEntity> resourceRoleName2Entity =
+                resourceRoleRepository.findByResourceType(ResourceType.ODC_PROJECT).stream()
+                        .collect(Collectors.toMap(ResourceRoleEntity::getRoleName, r -> r, (r1, r2) -> r1));
+        List<UserResourceRoleEntity> userResourceRoleEntities = ResourceRoleName.all().stream().map(name -> {
+            ResourceRoleEntity resourceRoleEntity = resourceRoleName2Entity.getOrDefault(name, null);
+            if (Objects.isNull(resourceRoleEntity)) {
+                throw new NotFoundException(ResourceType.ODC_RESOURCE_ROLE, "name", name);
+            }
+            UserResourceRoleEntity entity = new UserResourceRoleEntity();
+            entity.setUserId(name == ResourceRoleName.DEVELOPER ? user.getId() : user.getCreatorId());
+            entity.setResourceId(projectEntity.getId());
+            entity.setResourceRoleId(resourceRoleEntity.getId());
+            entity.setOrganizationId(user.getOrganizationId());
+            return entity;
+        }).collect(Collectors.toList());
+        userResourceRoleRepository.batchCreate(userResourceRoleEntities);
     }
 
     @PreAuthenticate(actions = "create", resourceType = "ODC_PROJECT", isForAll = true)
