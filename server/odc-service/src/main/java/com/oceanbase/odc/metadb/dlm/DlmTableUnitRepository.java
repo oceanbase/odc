@@ -25,7 +25,6 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 
 /**
  * @Author：tinker
@@ -38,12 +37,6 @@ public interface DlmTableUnitRepository extends OdcJpaRepository<DlmTableUnitEnt
     @Query("UPDATE DlmTableUnitEntity e SET e.statistic = ?2 WHERE e.dlmTableUnitId = ?1")
     int updateStatisticByDlmTableUnitId(String dlmTableUnitId, String statistic);
 
-    @Modifying
-    @Transactional
-    @Query(value = "UPDATE dlm_table_unit  SET statistic = ?1, status = ?2 WHERE dlm_table_unit_Id = ?3",
-            nativeQuery = true)
-    void updateStatisticAndStatusByDlmTableUnitId(String statistic,
-            TaskStatus status, String dlmTableUnitId);
 
     List<DlmTableUnitEntity> findByScheduleTaskId(Long scheduleTaskId);
 

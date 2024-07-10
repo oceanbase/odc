@@ -43,13 +43,21 @@ public class DLMResultProcessor implements ResultProcessor {
 
     @Override
     public void process(TaskResult result) {
-        List<DlmTableUnit> dlmTableUnits = JsonUtils.fromJson(result.getResultJson(),
-                new TypeReference<List<DlmTableUnit>>() {});
-        if (dlmTableUnits == null || dlmTableUnits.isEmpty()) {
-            log.warn("Task result is empty!jobIdentity={}", result.getJobIdentity());
+        log.info("Start refresh result,result={}", result.getResultJson());
+        try {
+            List<DlmTableUnit> dlmTableUnits = JsonUtils.fromJson(result.getResultJson(),
+                    new TypeReference<List<DlmTableUnit>>() {});
+            if (dlmTableUnits == null || dlmTableUnits.isEmpty()) {
+                log.warn("Task result is empty!jobIdentity={}", result.getJobIdentity());
+                return;
+            }
+            dlmService.createOrUpdateDlmTableUnits(dlmTableUnits);
+            log.info("Create or update dlm tableUnits success,jobIdentity={},scheduleTaskId={}",
+                    result.getJobIdentity(),
+                    dlmTableUnits.get(0).getScheduleTaskId());
+        } catch (Exception e) {
+            log.warn("Refresh result failed.", e);
         }
-        dlmService.createOrUpdateDlmTableUnits(dlmTableUnits);
-        log.info("Create or update dlm tableUnits success,jobIdentity={},scheduleTaskId={}", result.getJobIdentity(),
-                dlmTableUnits.get(0).getScheduleTaskId());
+
     }
 }
