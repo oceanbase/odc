@@ -41,6 +41,7 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
@@ -79,6 +80,8 @@ public class ScheduleResponseMapperFactory {
 
     @Autowired
     private LatestTaskMappingRepository latestTaskMappingRepository;
+    @Autowired
+    private DlmLimiterService limiterService;
 
 
 
@@ -224,6 +227,7 @@ public class ScheduleResponseMapperFactory {
                                 Collectors.toSet())).stream().collect(Collectors.toMap(Database::getId, o -> o));
                 parameters.setSourceDatabase(id2Database.get(parameters.getSourceDatabaseId()));
                 parameters.setTargetDatabase(id2Database.get(parameters.getTargetDataBaseId()));
+                parameters.setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(schedule.getId()));
                 return parameters;
             }
             case DATA_DELETE: {
@@ -237,6 +241,7 @@ public class ScheduleResponseMapperFactory {
                         .stream().collect(Collectors.toMap(Database::getId, o -> o));
                 parameters.setDatabase(id2Database.get(parameters.getDatabaseId()));
                 parameters.setTargetDatabase(id2Database.get(parameters.getTargetDatabaseId()));
+                parameters.setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(schedule.getId()));
                 return parameters;
             }
             default:

@@ -88,6 +88,7 @@ public class StartPreparingJob implements Job {
                 }
             } catch (Throwable e) {
                 log.warn("Start job failed, jobId={}.", a.getId(), e);
+                configuration.getTaskFrameworkDisabledHandler().handleJobToFailed();
             }
         }
 
