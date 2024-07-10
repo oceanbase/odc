@@ -137,9 +137,7 @@ public class UserPermissionService {
     @Transactional(rollbackFor = Exception.class)
     public void bindUserAndDataSourceAllPermission(@NonNull Long userId, @NonNull Long organizationId) {
         List<String> actionList = Arrays.asList("create", "read", "update", "delete");
-        actionList.forEach(action -> {
-            getPermission(userId, organizationId, "ODC_CONNECTION:*", action);
-        });
+        actionList.forEach(action -> getPermission(userId, organizationId, "ODC_CONNECTION:*", action));
     }
 
     private void getPermission(Long userId, Long organizationId, String permissionRange, String action) {
