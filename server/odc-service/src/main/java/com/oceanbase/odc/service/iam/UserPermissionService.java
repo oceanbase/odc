@@ -15,9 +15,11 @@
  */
 package com.oceanbase.odc.service.iam;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotEmpty;
 
@@ -148,5 +150,34 @@ public class UserPermissionService {
         });
     }
 
+    @SkipAuthorize("internal usage")
+    @Transactional(rollbackFor = Exception.class)
+    public void bindUserAndDataSourceAllPermission(@NonNull Long userId, @NonNull Long organizationId) {
+        List<String> actionList = Arrays.asList("create", "read", "update", "delete");
+        List<PermissionEntity> permissionList = actionList.stream()
+                .map(action -> {
+                    PermissionEntity permission = new PermissionEntity();
+                    permission.setAction(action);
+                    permission.setType(PermissionType.PUBLIC_RESOURCE);
+                    permission.setResourceIdentifier("ODC_CONNECTION:*");
+                    permission.setOrganizationId(organizationId);
+                    permission.setCreatorId(userId);
+                    permission.setBuiltIn(true);
+                    permission.setExpireTime(TimeUtils.getMySQLMaxDatetime());
+                    permission.setAuthorizationType(AuthorizationType.USER_AUTHORIZATION);
+                    return permission;
+                }).collect(Collectors.toList());
+        permissionRepository.saveAllAndFlush(permissionList);
+        List<UserPermissionEntity> userPermissionList = permissionList.stream()
+                .map(permission -> {
+                    UserPermissionEntity userPermission = new UserPermissionEntity();
+                    userPermission.setUserId(userId);
+                    userPermission.setPermissionId(permission.getId());
+                    userPermission.setCreatorId(userId);
+                    userPermission.setOrganizationId(organizationId);
+                    return userPermission;
+                }).collect(Collectors.toList());
+        userPermissionRepository.saveAllAndFlush(userPermissionList);
+    }
 
 }

@@ -42,6 +42,7 @@ import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.exception.AuthenticationException;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
+import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.service.automation.model.TriggerEvent;
 import com.oceanbase.odc.service.collaboration.OrganizationResourceMigrator;
@@ -124,7 +125,12 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
             SecurityContextUtils.switchCurrentUserOrganization(user, team, httpServletRequest, true);
             // If bastion is enabled, every user must hold a built-in project for create temporary SQL console
             if (bastionEnabled) {
-                projectService.createProjectIfNotExists(user);
+                ProjectEntity project = projectService
+                        .createProjectIfNotExists(user,
+                                "USER_PROJECT_" + user.getAccountName(),
+                                "Built-in project for bastion user " + user.getAccountName());
+                projectService.grantRole2BastionUser(user, project);
+                log.info("Create project successfully, projectName={}", project.getName());
             }
         }
 

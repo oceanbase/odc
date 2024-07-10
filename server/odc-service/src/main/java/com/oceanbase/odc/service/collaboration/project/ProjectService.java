@@ -102,7 +102,6 @@ public class ProjectService {
 
     @Autowired
     private UserRepository userRepository;
-
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
@@ -159,21 +158,28 @@ public class ProjectService {
      */
     @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
-    public void createProjectIfNotExists(@NotNull User user) {
-        String projectName = BUILTIN_PROJECT_PREFIX + user.getAccountName();
-        if (repository.findByNameAndOrganizationId(projectName, user.getOrganizationId()).isPresent()) {
-            return;
+    public ProjectEntity createProjectIfNotExists(@NotNull User user, String projectName, String description) {
+        Optional<ProjectEntity> projectOptional =
+                repository.findByNameAndOrganizationId(projectName, user.getOrganizationId());
+        // if project exist
+        if (projectOptional.isPresent()) {
+            return projectOptional.get();
         }
         ProjectEntity projectEntity = new ProjectEntity();
         projectEntity.setBuiltin(true);
         projectEntity.setArchived(false);
         projectEntity.setName(projectName);
         projectEntity.setCreatorId(user.getCreatorId());
+        projectEntity.setDescription(description);
         projectEntity.setLastModifierId(user.getCreatorId());
         projectEntity.setOrganizationId(user.getOrganizationId());
-        projectEntity.setDescription("Built-in project for bastion user " + user.getAccountName());
         projectEntity.setUniqueIdentifier(generateProjectUniqueIdentifier());
-        ProjectEntity saved = repository.saveAndFlush(projectEntity);
+        return repository.saveAndFlush(projectEntity);
+    }
+
+    @SkipAuthorize("odc internal usage")
+    @Transactional(rollbackFor = Exception.class)
+    public void grantRole2BastionUser(@NotNull User user, ProjectEntity projectEntity) {
         // Grant DEVELOPER role to bastion user, and all other roles to user creator(admin)
         Map<ResourceRoleName, ResourceRoleEntity> resourceRoleName2Entity =
                 resourceRoleRepository.findByResourceType(ResourceType.ODC_PROJECT).stream()
@@ -185,7 +191,7 @@ public class ProjectService {
             }
             UserResourceRoleEntity entity = new UserResourceRoleEntity();
             entity.setUserId(name == ResourceRoleName.DEVELOPER ? user.getId() : user.getCreatorId());
-            entity.setResourceId(saved.getId());
+            entity.setResourceId(projectEntity.getId());
             entity.setResourceRoleId(resourceRoleEntity.getId());
             entity.setOrganizationId(user.getOrganizationId());
             return entity;
