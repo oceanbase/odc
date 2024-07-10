@@ -18,12 +18,12 @@ package com.oceanbase.odc.service.dlm;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -92,27 +92,17 @@ public class DLMService {
     @SkipAuthorize("odc internal usage")
     public void createOrUpdateDlmTableUnits(List<DlmTableUnit> dlmTableUnits) {
         dlmTableUnits.forEach(o -> {
-            if (dlmTableUnitRepository.findByDlmTableUnitId(o.getDlmTableUnitId()).isPresent()) {
-                dlmTableUnitRepository.updateStatisticAndStatusByDlmTableUnitId(JsonUtils.toJson(o.getStatistic()),
-                        o.getStatus(), o.getDlmTableUnitId());
+            Optional<DlmTableUnitEntity> entityOptional = dlmTableUnitRepository.findByDlmTableUnitId(
+                    o.getDlmTableUnitId());
+            DlmTableUnitEntity entity;
+            if (entityOptional.isPresent()) {
+                entity = entityOptional.get();
+                entity.setStatistic(JsonUtils.toJson(o.getStatistic()));
+                entity.setStatus(o.getStatus());
             } else {
-                dlmTableUnitRepository.save(DlmTableUnitMapper.modelToEntity(o));
+                entity = DlmTableUnitMapper.modelToEntity(o);
             }
-        });
-    }
-
-
-    @SkipAuthorize("odc internal usage")
-    @Transactional(rollbackFor = Exception.class)
-    public void updateStatusByDlmTableUnitId(String dlmTableUnitId, TaskStatus status) {
-        dlmTableUnitRepository.findByDlmTableUnitId(dlmTableUnitId).ifPresent(e -> {
-            e.setStatus(status);
-            if (status == TaskStatus.RUNNING && e.getStartTime() == null) {
-                e.setStartTime(new Date());
-            } else if (status.isTerminated()) {
-                e.setEndTime(new Date());
-            }
-            dlmTableUnitRepository.save(e);
+            dlmTableUnitRepository.save(entity);
         });
     }
 
