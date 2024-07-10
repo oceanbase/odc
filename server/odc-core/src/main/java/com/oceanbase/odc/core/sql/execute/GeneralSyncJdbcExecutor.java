@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.core.sql.execute;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +61,12 @@ public class GeneralSyncJdbcExecutor implements SyncJdbcExecutor {
     private final JdbcTemplate jdbcTemplate;
 
     public GeneralSyncJdbcExecutor(@NonNull DataSource dataSource) {
+        try(Connection connection = dataSource.getConnection()){
+            PreparedStatement ps = connection.prepareStatement("select 1");
+            ps.execute();
+        } catch (SQLException e) {
+           log.info("建立连接失败");
+        }
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 

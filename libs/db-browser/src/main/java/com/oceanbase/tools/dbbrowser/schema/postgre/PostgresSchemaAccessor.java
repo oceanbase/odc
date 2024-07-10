@@ -15,9 +15,12 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.postgre;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
@@ -42,6 +45,7 @@ import com.oceanbase.tools.dbbrowser.model.DBType;
 import com.oceanbase.tools.dbbrowser.model.DBVariable;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.util.StringUtils;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -91,6 +95,26 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     @Override
     public List<DBObjectIdentity> listUsers() {
         return null;
+    }
+
+    @Override
+    public List<String> showTables(String schemaName) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("SELECT table_name FROM information_schema.tables ");
+        sb.append("WHERE table_schema = 'public' AND table_type = 'BASE TABLE'");
+        if (StringUtils.isNotBlank(schemaName)) {
+            sb.append("and table_catalog").append(" = ").append(schemaName);
+        }
+        List<String> tableNames = new ArrayList<>();
+        try {
+            tableNames = jdbcOperations.query(sb.toString(), (rs, rowNum) -> rs.getString(1));
+        } catch (BadSqlGrammarException e) {
+            if (StringUtils.containsIgnoreCase(e.getMessage(), "Unknown database")) {
+                return Collections.emptyList();
+            }
+            throw e;
+        }
+        return tableNames;
     }
 
     @Override

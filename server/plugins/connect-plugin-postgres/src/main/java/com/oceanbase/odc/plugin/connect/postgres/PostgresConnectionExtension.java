@@ -17,6 +17,7 @@ package com.oceanbase.odc.plugin.connect.postgres;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Properties;
@@ -28,15 +29,14 @@ import org.pf4j.Extension;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
 import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLConnectionExtension;
 
 import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
 
 @Extension
-@Slf4j
 public class PostgresConnectionExtension extends OBMySQLConnectionExtension {
 
     @Override
@@ -71,6 +71,11 @@ public class PostgresConnectionExtension extends OBMySQLConnectionExtension {
             Throwable rootCause = ExceptionUtils.getRootCause(e);
             return TestResult.unknownError(rootCause);
         }
+    }
+
+    @Override
+    public JdbcUrlParser getConnectionInfo(@NonNull String jdbcUrl, String userName) throws SQLException {
+        return new PostgresJdbcUrlParser(jdbcUrl, userName);
     }
 
     @Override

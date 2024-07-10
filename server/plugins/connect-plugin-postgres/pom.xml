@@ -30,7 +30,7 @@
     <properties>
         <root-project.basedir>${project.parent.parent.basedir}</root-project.basedir>
         <plugin.class>com.oceanbase.odc.plugin.connect.postgres.PostgresConnectionPlugin</plugin.class>
-        <plugin.dependencies>connect-plugin-ob-mysql</plugin.dependencies>
+        <plugin.dependencies>connect-plugin-ob-mysql, connect-plugin-mysql</plugin.dependencies>
     </properties>
 
     <dependencies>
@@ -55,6 +55,10 @@
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>odc-test</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>connect-plugin-mysql</artifactId>
         </dependency>
     </dependencies>
 
