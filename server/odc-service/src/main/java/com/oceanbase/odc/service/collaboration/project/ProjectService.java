@@ -177,6 +177,8 @@ public class ProjectService {
         return repository.saveAndFlush(projectEntity);
     }
 
+    @SkipAuthorize("odc internal usage")
+    @Transactional(rollbackFor = Exception.class)
     public void grantRole2BastionUser(@NotNull User user, ProjectEntity projectEntity) {
         // Grant DEVELOPER role to bastion user, and all other roles to user creator(admin)
         Map<ResourceRoleName, ResourceRoleEntity> resourceRoleName2Entity =
