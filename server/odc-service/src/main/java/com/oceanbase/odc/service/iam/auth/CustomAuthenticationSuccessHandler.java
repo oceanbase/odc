@@ -126,7 +126,9 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
             // If bastion is enabled, every user must hold a built-in project for create temporary SQL console
             if (bastionEnabled) {
                 ProjectEntity project = projectService
-                        .createProjectIfNotExists(user, "USER_PROJECT_" + user.getAccountName());
+                        .createProjectIfNotExists(user,
+                            "USER_PROJECT_" + user.getAccountName(),
+                            "Built-in project for bastion user " + user.getAccountName());
                 projectService.grantRole2BastionUser(user, project);
                 log.info("Create project successfully, projectName={}", project.getName());
             }

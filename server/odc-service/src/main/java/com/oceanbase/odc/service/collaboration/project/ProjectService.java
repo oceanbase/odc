@@ -158,7 +158,7 @@ public class ProjectService {
      */
     @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
-    public ProjectEntity createProjectIfNotExists(@NotNull User user, String projectName) {
+    public ProjectEntity createProjectIfNotExists(@NotNull User user, String projectName, String description) {
         Optional<ProjectEntity> projectOptional =
             repository.findByNameAndOrganizationId(projectName, user.getOrganizationId());
         // if project exist
@@ -170,7 +170,7 @@ public class ProjectService {
         projectEntity.setArchived(false);
         projectEntity.setName(projectName);
         projectEntity.setCreatorId(user.getCreatorId());
-        projectEntity.setDescription("Built-in project, name is " + projectName);
+        projectEntity.setDescription(description);
         projectEntity.setLastModifierId(user.getCreatorId());
         projectEntity.setOrganizationId(user.getOrganizationId());
         projectEntity.setUniqueIdentifier(generateProjectUniqueIdentifier());
