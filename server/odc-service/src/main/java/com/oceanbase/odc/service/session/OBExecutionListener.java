@@ -31,11 +31,13 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
-import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
 import com.oceanbase.odc.core.sql.util.OBUtils;
 import com.oceanbase.odc.service.queryprofile.OBQueryProfileManager;
 import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
+import com.oceanbase.tools.dbbrowser.parser.ParserUtil;
+import com.oceanbase.tools.dbbrowser.parser.constant.GeneralSqlType;
 import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
+import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -63,8 +65,8 @@ public class OBExecutionListener implements SqlExecutionListener {
     @Override
     public void onExecutionEnd(SqlTuple sqlTuple, List<JdbcGeneralResult> results, AsyncExecuteContext context) {
         JdbcGeneralResult firstResult = results.get(0);
-        if (StringUtils.isNotEmpty(firstResult.getTraceId()) && isSelect(sqlTuple)
-                && CollectionUtils.isNotEmpty(sessionIds)) {
+        if (StringUtils.isNotEmpty(firstResult.getTraceId()) && isSqlTypeSupportProfile(sqlTuple)
+            && CollectionUtils.isNotEmpty(sessionIds)) {
             profileManager.submit(session, firstResult.getTraceId(), sessionIds);
         }
     }
@@ -73,7 +75,7 @@ public class OBExecutionListener implements SqlExecutionListener {
     public void onExecutionCancelled(SqlTuple sqlTuple, List<JdbcGeneralResult> results, AsyncExecuteContext context) {}
 
     public void onExecutionStartAfter(SqlTuple sqlTuple, AsyncExecuteContext context) {
-        if (CollectionUtils.isEmpty(sessionIds) || !isSelect(sqlTuple)) {
+        if (CollectionUtils.isEmpty(sessionIds) || !isSqlTypeSupportProfile(sqlTuple)) {
             return;
         }
         String traceId = session.getSyncJdbcExecutor(BACKEND_DS_KEY).execute((StatementCallback<String>) stmt -> OBUtils
@@ -101,14 +103,15 @@ public class OBExecutionListener implements SqlExecutionListener {
                     .querySessionIdsByProxySessId(stmt, proxySessId, session.getConnectType()));
         } catch (Exception e) {
             log.warn("Failed to init session ids. Reason:{}", e.getMessage());
-            return Collections.singletonList(ConnectionSessionUtil.getConsoleConnectionId(session));
+            return Collections.emptyList();
         }
     }
 
-    private boolean isSelect(SqlTuple sqlTuple) {
+    public static boolean isSqlTypeSupportProfile(SqlTuple sqlTuple) {
         try {
-            AbstractSyntaxTree ast = sqlTuple.getAst();
-            return ast.getParseResult().getSqlType() == SqlType.SELECT;
+            BasicResult parseResult = sqlTuple.getAst().getParseResult();
+            SqlType sqlType = parseResult.getSqlType();
+            return ParserUtil.getGeneralSqlType(parseResult) == GeneralSqlType.DML || ParserUtil.isSelectType(sqlType);
         } catch (Exception e) {
             // eat exception
             return false;
