@@ -127,8 +127,8 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
             if (bastionEnabled) {
                 ProjectEntity project = projectService
                         .createProjectIfNotExists(user,
-                            "USER_PROJECT_" + user.getAccountName(),
-                            "Built-in project for bastion user " + user.getAccountName());
+                                "USER_PROJECT_" + user.getAccountName(),
+                                "Built-in project for bastion user " + user.getAccountName());
                 projectService.grantRole2BastionUser(user, project);
                 log.info("Create project successfully, projectName={}", project.getName());
             }

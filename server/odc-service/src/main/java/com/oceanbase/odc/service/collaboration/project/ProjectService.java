@@ -160,7 +160,7 @@ public class ProjectService {
     @Transactional(rollbackFor = Exception.class)
     public ProjectEntity createProjectIfNotExists(@NotNull User user, String projectName, String description) {
         Optional<ProjectEntity> projectOptional =
-            repository.findByNameAndOrganizationId(projectName, user.getOrganizationId());
+                repository.findByNameAndOrganizationId(projectName, user.getOrganizationId());
         // if project exist
         if (projectOptional.isPresent()) {
             return projectOptional.get();
