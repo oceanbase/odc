@@ -778,6 +778,7 @@ public class DatabaseService {
         return true;
     }
 
+    @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
     public void updateObjectSyncStatus(@NotNull Collection<Long> databaseIds, @NotNull DBObjectSyncStatus status) {
         if (CollectionUtils.isEmpty(databaseIds)) {

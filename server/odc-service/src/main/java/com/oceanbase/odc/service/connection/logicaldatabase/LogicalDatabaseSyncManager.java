@@ -24,7 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
@@ -42,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
  * @Description: []
  */
 
-@Service
+@Component
 @Slf4j
 public class LogicalDatabaseSyncManager {
     @Autowired
