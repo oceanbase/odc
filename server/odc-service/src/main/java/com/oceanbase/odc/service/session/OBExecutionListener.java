@@ -66,7 +66,7 @@ public class OBExecutionListener implements SqlExecutionListener {
     public void onExecutionEnd(SqlTuple sqlTuple, List<JdbcGeneralResult> results, AsyncExecuteContext context) {
         JdbcGeneralResult firstResult = results.get(0);
         if (StringUtils.isNotEmpty(firstResult.getTraceId()) && isSqlTypeSupportProfile(sqlTuple)
-            && CollectionUtils.isNotEmpty(sessionIds)) {
+                && CollectionUtils.isNotEmpty(sessionIds)) {
             profileManager.submit(session, firstResult.getTraceId(), sessionIds);
         }
     }
