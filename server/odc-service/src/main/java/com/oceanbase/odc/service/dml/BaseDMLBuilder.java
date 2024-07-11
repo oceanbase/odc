@@ -79,7 +79,9 @@ abstract class BaseDMLBuilder implements DMLBuilder {
             this.schema = null;
         }
         this.connectionSession = connectionSession;
-        this.constraints = constraints;
+        this.constraints =
+                constraints == null ? new LazyInitObject<>(() -> getConstraints(schema, tableName, connectionSession))
+                        : constraints;
         this.whereColumns = whereColumns;
     }
 
