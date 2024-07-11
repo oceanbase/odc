@@ -40,4 +40,9 @@ public class StatefulUuidStateIdGenerator {
         return Base64.getEncoder().encodeToString(JsonUtils.toJson(uuidStateId).getBytes(StandardCharsets.UTF_8));
     }
 
+    public static StatefulUuidStateId parseStateId(String stateId) {
+        return JsonUtils.fromJson(new String(Base64.getDecoder().decode(stateId)),
+                StatefulUuidStateId.class);
+    }
+
 }

@@ -15,14 +15,11 @@
  */
 package com.oceanbase.odc.service.state;
 
-import java.util.Base64;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.google.common.base.Preconditions;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.state.model.RouteInfo;
 import com.oceanbase.odc.service.state.model.StateManager;
@@ -38,9 +35,7 @@ public class StatefulUuidStateIdManager implements StateManager {
     @Override
     public RouteInfo getRouteInfo(Object stateId) {
         Preconditions.checkArgument(stateId instanceof String, "stateId");
-        StatefulUuidStateId statefulUuidStateId =
-                JsonUtils.fromJson(new String(Base64.getDecoder().decode((String) stateId)),
-                        StatefulUuidStateId.class);
+        StatefulUuidStateId statefulUuidStateId = StatefulUuidStateIdGenerator.parseStateId((String) stateId);
         return new RouteInfo(statefulUuidStateId.getFrom(), hostProperties.getRequestPort());
     }
 }
