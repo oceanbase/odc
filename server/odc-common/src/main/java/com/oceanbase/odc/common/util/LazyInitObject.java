@@ -17,6 +17,8 @@ package com.oceanbase.odc.common.util;
 
 import java.util.function.Supplier;
 
+import lombok.NonNull;
+
 /**
  * @author: liuyizhuo.lyz
  * @date: 2024/7/11
@@ -27,7 +29,7 @@ public class LazyInitObject<T> {
     private volatile T target;
     private final Supplier<T> supplier;
 
-    public LazyInitObject(Supplier<T> supplier) {
+    public LazyInitObject(@NonNull Supplier<T> supplier) {
         target = (T) NO_INIT;
         this.supplier = supplier;
     }
