@@ -49,6 +49,7 @@ import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
+import com.oceanbase.odc.service.flow.model.BinaryDataResult;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.RoleService;
@@ -407,6 +408,14 @@ public class IamController {
         return Responses.single(userBatchImportPreviewer.preview(file));
     }
 
+    @ApiOperation(value = "downloadUserTemplate", notes = "Download User Template File")
+    @RequestMapping(value = "/users/template", method = RequestMethod.GET)
+    public ResponseEntity<InputStreamResource> downloadTemplate() throws IOException {
+        BinaryDataResult result = this.userService.getBatchImportTemplateFile();
+        return WebResponseUtils.getFileAttachmentResponseEntity(
+                new InputStreamResource(result.getInputStream()), (result.getName()));
+    }
+
     /**
      * 批量导入用户
      *
@@ -418,4 +427,5 @@ public class IamController {
     public ListResponse<User> batchCreateUsers(@RequestBody List<CreateUserReq> createUserReqs) {
         return Responses.list(userService.batchImport(createUserReqs));
     }
+
 }
