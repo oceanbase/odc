@@ -47,7 +47,7 @@ import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaCh
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
-import com.oceanbase.odc.service.onlineschemachange.subtask.OscTaskCompleteHandler;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OSCStates;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.schedule.ScheduleService;
@@ -79,8 +79,6 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     private QuartzJobService quartzJobService;
     @Autowired
     private OnlineSchemaChangeTaskHandler taskHandler;
-    @Autowired
-    private OscTaskCompleteHandler completeHandler;
     @Autowired
     private OrganizationService organizationService;
     @Autowired
@@ -123,6 +121,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
                     .map(param -> {
                         param.setUid(uid);
                         param.setRateLimitConfig(parameter.getRateLimitConfig());
+                        param.setState(OSCStates.YIELD_CONTEXT.getState());
                         return createScheduleTaskEntity(schedule.getId(), param);
                     }).collect(Collectors.toList());
 

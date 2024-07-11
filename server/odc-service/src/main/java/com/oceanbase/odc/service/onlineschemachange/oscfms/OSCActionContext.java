@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.onlineschemachange.pipeline;
+package com.oceanbase.odc.service.onlineschemachange.oscfms;
 
-import com.oceanbase.odc.core.session.ConnectionSession;
+import java.util.function.Supplier;
+
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.onlineschemachange.fsm.ActionContext;
 import com.oceanbase.odc.service.onlineschemachange.model.LinkType;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
@@ -26,25 +29,33 @@ import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSche
 import lombok.Data;
 
 /**
- * @author yaobin
- * @date 2023-06-10
- * @since 4.2.0
+ * context for osc action
+ * 
+ * @author longpeng.zlp
+ * @date 2024/7/8 11:11
+ * @since 4.3.1
  */
 @Data
-public class OscValveContext implements ValveContext {
-
+public class OSCActionContext implements ActionContext {
     private Long projectId;
+
     private ScheduleEntity schedule;
+
     private ScheduleTaskEntity scheduleTask;
+
     private LinkType linkType;
-
-    private ConnectionSession connectionSession;
-
-    private ConnectionConfig connectionConfig;
 
     private OnlineSchemaChangeParameters parameter;
 
     private OnlineSchemaChangeScheduleTaskParameters taskParameter;
 
-    private boolean swapSucceedCallBack;
+    /**
+     * schedule task update interface
+     */
+    private ScheduleTaskRepository scheduleTaskRepository;
+
+    /**
+     * connector config supplier for OMS task operation
+     */
+    private Supplier<ConnectionConfig> connectionConfigSupplier;
 }
