@@ -100,6 +100,10 @@ public class DataSourceInfoMapper {
                 dataSourceInfo.setTenantName(connectionConfig.getTenantName());
                 dataSourceInfo.setDatabaseType(DataBaseType.OB_ORACLE);
                 break;
+            case POSTGRE_SQL:
+                dataSourceInfo.setFullUserName(connectionConfig.getUsername());
+                dataSourceInfo.setDatabaseType(DataBaseType.POSTGRE_SQL);
+                break;
             default:
                 log.warn(String.format("Unsupported datasource type:%s", connectionConfig.getDialectType()));
                 throw new UnsupportedException(

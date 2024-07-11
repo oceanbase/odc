@@ -101,13 +101,15 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     public List<String> showTables(String schemaName) {
         StringBuilder sb = new StringBuilder();
         sb.append("SELECT table_name FROM information_schema.tables ");
-        sb.append("WHERE table_schema = 'public' AND table_type = 'BASE TABLE'");
+        sb.append("WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ");
+        String sql = sb.toString();
         if (StringUtils.isNotBlank(schemaName)) {
-            sb.append("and table_catalog").append(" = ").append(schemaName);
+            sb.append("and table_catalog").append(" = '%s'");
+            sql = String.format(sb.toString(), schemaName);
         }
-        List<String> tableNames = new ArrayList<>();
+        List<String> tableNames;
         try {
-            tableNames = jdbcOperations.query(sb.toString(), (rs, rowNum) -> rs.getString(1));
+            tableNames = jdbcOperations.query(sql, (rs, rowNum) -> rs.getString(1));
         } catch (BadSqlGrammarException e) {
             if (StringUtils.containsIgnoreCase(e.getMessage(), "Unknown database")) {
                 return Collections.emptyList();

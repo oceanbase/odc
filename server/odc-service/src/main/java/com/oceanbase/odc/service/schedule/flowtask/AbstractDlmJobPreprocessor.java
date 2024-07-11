@@ -93,7 +93,16 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
             sqlBuilder.append(
                     "SELECT TABLE_NAME from INFORMATION_SCHEMA.STATISTICS where NON_UNIQUE = 0 AND NULLABLE != 'YES' ");
             sqlBuilder.append(String.format("AND TABLE_SCHEMA='%s' GROUP BY TABLE_NAME", databaseName));
-        } else {
+        } else if(connectionSession.getDialectType().isPostgreSql()){
+            sqlBuilder = new MySQLSqlBuilder();
+            sqlBuilder.append("SELECT DISTINCT c.relname AS table_name "
+                              + "FROM pg_class c "
+                              + "JOIN pg_namespace n ON n.oid = c.relnamespace "
+                              + "JOIN pg_index i ON c.oid = i.indrelid "
+                              + "WHERE i.indisunique = TRUE "
+                              + "  AND c.relkind = 'r' "
+                              + "  AND n.nspname = 'public'; ");
+        }else {
             sqlBuilder = new OracleSqlBuilder();
             sqlBuilder.append(
                     String.format("select table_name from all_constraints where constraint_type = 'P' and owner = '%s'",
@@ -136,11 +145,15 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
     private String generateTestSql(Database database, DataArchiveTableConfig table, List<OffsetConfig> variables) {
         try {
             DialectType dbType = database.getDataSource().getDialectType();
-            if (!dbType.isOracle() && !dbType.isMysql()) {
+            if (!dbType.isOracle() && !dbType.isMysql() && !dbType.isPostgreSql()) {
                 throw new UnsupportedException();
             }
             SqlBuilder sqlBuilder = dbType.isMysql() ? new MySQLSqlBuilder() : new OracleSqlBuilder();
-            sqlBuilder.append("SELECT 1 FROM ").identifier(database.getName(), table.getTableName());
+            if(dbType.isPostgreSql()){
+                sqlBuilder.append("SELECT 1 FROM ").identifier("public", table.getTableName());
+            }else {
+                sqlBuilder.append("SELECT 1 FROM ").identifier(database.getName(), table.getTableName());
+            }
             if (StringUtils.isNotEmpty(table.getConditionExpression())) {
                 sqlBuilder.append(" WHERE ")
                         .append(DataArchiveConditionUtil.parseCondition(table.getConditionExpression(),
