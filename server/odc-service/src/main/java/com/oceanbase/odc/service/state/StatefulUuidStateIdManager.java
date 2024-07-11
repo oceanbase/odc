@@ -13,22 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.pldebug;
+package com.oceanbase.odc.service.state;
 
 import java.util.Base64;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.google.common.base.Preconditions;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.common.model.HostProperties;
-import com.oceanbase.odc.service.pldebug.model.PLDebugSessionId;
 import com.oceanbase.odc.service.state.model.RouteInfo;
 import com.oceanbase.odc.service.state.model.StateManager;
+import com.oceanbase.odc.service.state.model.StatefulUuidStateId;
 
 @Component
-public class PLDebugStateManager implements StateManager {
+@ConditionalOnProperty(value = {"odc.web.stateful-route.enabled"}, havingValue = "true")
+public class StatefulUuidStateIdManager implements StateManager {
 
     @Autowired
     private HostProperties hostProperties;
@@ -36,8 +38,9 @@ public class PLDebugStateManager implements StateManager {
     @Override
     public RouteInfo getRouteInfo(Object stateId) {
         Preconditions.checkArgument(stateId instanceof String, "stateId");
-        PLDebugSessionId plDebugSessionId = JsonUtils.fromJson(new String(Base64.getDecoder().decode((String) stateId)),
-                PLDebugSessionId.class);
-        return new RouteInfo(plDebugSessionId.getFrom(), hostProperties.getRequestPort());
+        StatefulUuidStateId statefulUuidStateId =
+                JsonUtils.fromJson(new String(Base64.getDecoder().decode((String) stateId)),
+                        StatefulUuidStateId.class);
+        return new RouteInfo(statefulUuidStateId.getFrom(), hostProperties.getRequestPort());
     }
 }
