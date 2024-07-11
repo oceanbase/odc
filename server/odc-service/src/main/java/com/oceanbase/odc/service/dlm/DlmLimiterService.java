@@ -78,6 +78,10 @@ public class DlmLimiterService {
         }
     }
 
+    public Optional<RateLimitConfiguration> findByScheduleId(Long scheduleId) {
+        return limiterConfigRepository.findById(scheduleId).map(mapper::entityToModel);
+    }
+
     public List<RateLimitConfiguration> findByOrderIds(Collection<Long> orderIds) {
         return limiterConfigRepository.findByOrderIdIn(orderIds).stream().map(mapper::entityToModel)
                 .collect(Collectors.toList());

@@ -227,7 +227,7 @@ public class ScheduleResponseMapperFactory {
                                 Collectors.toSet())).stream().collect(Collectors.toMap(Database::getId, o -> o));
                 parameters.setSourceDatabase(id2Database.get(parameters.getSourceDatabaseId()));
                 parameters.setTargetDatabase(id2Database.get(parameters.getTargetDataBaseId()));
-                parameters.setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(schedule.getId()));
+                limiterService.findByScheduleId(schedule.getId()).ifPresent(parameters::setRateLimit);
                 return parameters;
             }
             case DATA_DELETE: {
@@ -241,7 +241,7 @@ public class ScheduleResponseMapperFactory {
                         .stream().collect(Collectors.toMap(Database::getId, o -> o));
                 parameters.setDatabase(id2Database.get(parameters.getDatabaseId()));
                 parameters.setTargetDatabase(id2Database.get(parameters.getTargetDatabaseId()));
-                parameters.setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(schedule.getId()));
+                limiterService.findByScheduleId(schedule.getId()).ifPresent(parameters::setRateLimit);
                 return parameters;
             }
             default:
