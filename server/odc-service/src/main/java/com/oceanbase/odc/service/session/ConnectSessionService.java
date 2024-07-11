@@ -276,7 +276,8 @@ public class ConnectSessionService {
         DefaultConnectSessionIdGenerator idGenerator = new DefaultConnectSessionIdGenerator();
         idGenerator.setDatabaseId(req.getDbId());
         idGenerator.setFixRealId(StringUtils.isBlank(req.getRealId()) ? null : req.getRealId());
-        idGenerator.setHost(stateHostGenerator.getHost());
+        String host = cloudMetadataClient.supportsCloudMetadata() ? req.getFrom() : stateHostGenerator.getHost();
+        idGenerator.setHost(host);
         sessionFactory.setIdGenerator(idGenerator);
         long timeoutMillis = TimeUnit.MILLISECONDS.convert(sessionProperties.getTimeoutMins(), TimeUnit.MINUTES);
         timeoutMillis = timeoutMillis + this.connectionSessionManager.getScanIntervalMillis();
