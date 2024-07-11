@@ -121,10 +121,10 @@ public abstract class AbstractDlmJob implements OdcJob {
                             dlmTableUnit.getTargetTableName(),
                             dlmTableUnit.getParameters().getSyncDBObjectType());
                 } catch (Exception e) {
-                    if(dlmTableUnit.getSourceDatasourceInfo().getDatabaseType().isPostgres()
-                       || dlmTableUnit.getTargetDatasourceInfo().getDatabaseType().isPostgres() ){
+                    if (dlmTableUnit.getSourceDatasourceInfo().getDatabaseType().isPostgres()
+                            || dlmTableUnit.getTargetDatasourceInfo().getDatabaseType().isPostgres()) {
                         log.info("postgres database not support sync table structure.");
-                    }else {
+                    } else {
                         log.warn("Sync table structure failed,tableName={}", dlmTableUnit.getTableName(), e);
                         dlmService.updateStatusByDlmTableUnitId(dlmTableUnit.getDlmTableUnitId(), TaskStatus.FAILED);
                         continue;

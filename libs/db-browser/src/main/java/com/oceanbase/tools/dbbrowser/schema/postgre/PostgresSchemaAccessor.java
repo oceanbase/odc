@@ -15,7 +15,6 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.postgre;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;

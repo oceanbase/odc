@@ -112,8 +112,7 @@ public class DBTableService {
 
     public List<DBTable> listTables(@NotNull ConnectionSession connectionSession, String schemaName) {
         return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<List<DBObjectIdentity>>)
-                    con -> getTableExtensionPoint(connectionSession)
+                .execute((ConnectionCallback<List<DBObjectIdentity>>) con -> getTableExtensionPoint(connectionSession)
                         .list(con, schemaName))
                 .stream().map(item -> {
                     DBTable table = new DBTable();
