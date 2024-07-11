@@ -423,10 +423,9 @@ public class DBResourcePermissionHelper {
                         }));
         Map<Long, Set<DatabasePermissionType>> typesFromTable = userTablePermissionRepository
                 .findNotExpiredByUserIdAndDatabaseIdIn(authenticationFacade.currentUserId(), databaseIds)
-                .stream().collect(Collectors.toMap(
-                        UserTablePermissionEntity::getDatabaseId,
-                        e -> Collections.singleton(DatabasePermissionType.ACCESS),
-                        (e1, e2) -> e1));
+                .stream()
+                .collect(Collectors.groupingBy(UserTablePermissionEntity::getDatabaseId,
+                        Collectors.mapping(e -> DatabasePermissionType.from(e.getAction()), Collectors.toSet())));
         typesFromTable.forEach((k, v) -> typesFromDatabase.merge(k, v, (v1, v2) -> {
             v1.addAll(v2);
             return v1;
