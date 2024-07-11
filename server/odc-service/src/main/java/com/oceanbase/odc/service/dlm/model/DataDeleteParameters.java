@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.dlm.model;
 
 import java.util.List;
 
+import javax.validation.constraints.NotNull;
+
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 
@@ -30,6 +32,7 @@ import lombok.Data;
 @Data
 public class DataDeleteParameters implements ScheduleTaskParameters {
 
+    @NotNull
     private Long databaseId;
 
     private Long targetDatabaseId;
@@ -44,6 +47,7 @@ public class DataDeleteParameters implements ScheduleTaskParameters {
 
     private List<DataArchiveTableConfig> tables;
 
+    @NotNull
     private RateLimitConfiguration rateLimit;
 
     private Boolean deleteByUniqueKey = true;
@@ -62,6 +66,6 @@ public class DataDeleteParameters implements ScheduleTaskParameters {
 
     private Long timeoutMillis;
 
-    private boolean fullDatabase;
+    private boolean fullDatabase = false;
 
 }

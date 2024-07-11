@@ -88,7 +88,8 @@ public class StartPreparingJob implements Job {
                 }
             } catch (Throwable e) {
                 log.warn("Start job failed, jobId={}.", a.getId(), e);
-                configuration.getTaskFrameworkDisabledHandler().handleJobToFailed();
+                // TODO 暂时调度失败直接放弃，不然会阻塞后续任务调度
+                configuration.getTaskFrameworkService().updateJobToCanceling(a.getId(), a.getStatus());
             }
         }
 
