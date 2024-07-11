@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.schedule.model;
 
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 
 import lombok.Data;
@@ -36,8 +37,10 @@ public class ScheduleTaskDetailResp {
 
     private TaskStatus status;
 
+    @JsonRawValue
     private String parameters;
 
+    @JsonRawValue
     private String executionDetails;
 
     private Date fireTime;

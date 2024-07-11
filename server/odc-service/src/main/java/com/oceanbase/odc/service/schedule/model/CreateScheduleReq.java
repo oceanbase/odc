@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
+import javax.validation.constraints.NotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -43,11 +45,14 @@ public class CreateScheduleReq {
             @JsonSubTypes.Type(value = DataArchiveParameters.class, name = "DATA_ARCHIVE"),
             @JsonSubTypes.Type(value = DataDeleteParameters.class, name = "DATA_DELETE")
     })
+    @NotNull
     private ScheduleTaskParameters parameters;
 
     // DATA_ARCHIVE、DATA_DELETE、PARTITION_PLAN
+    @NotNull
     private ScheduleType type;
 
+    @NotNull
     private TriggerConfig triggerConfig;
 
     private String description;

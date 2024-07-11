@@ -120,6 +120,14 @@ public class OdcJobListener implements JobListener {
             entity.setFireTime(context.getFireTime());
             entity = taskRepository.save(entity);
             Optional<LatestTaskMappingEntity> optional = latestTaskMappingRepository.findByScheduleId(scheduleId);
+            if (optional.isPresent()) {
+                Optional<ScheduleTaskEntity> taskEntityOptional =
+                        taskRepository.findById(optional.get().getLatestScheduleTaskId());
+                if (taskEntityOptional.isPresent() && !taskEntityOptional.get().getStatus().isTerminated()) {
+                    log.warn("Concurrent scheduling is not allowed, ignoring this trigger, scheduleId={}", scheduleId);
+                    return;
+                }
+            }
             LatestTaskMappingEntity latestTaskMapping =
                     optional.isPresent() ? optional.get() : new LatestTaskMappingEntity();
             latestTaskMapping.setLatestScheduleTaskId(entity.getId());
