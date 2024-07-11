@@ -105,7 +105,8 @@ public class CloudObjectStorageService {
         this.internalEndpointCloudObjectStorage = internalEndpointCloudObjectStorage;
         this.objectStorageConfiguration = objectStorageConfiguration;
         if (this.publicEndpointCloudObjectStorage.supported()) {
-            validateBucket();
+            // TODO 多云获取 location 异常，暂不校验
+            // validateBucket();
             createTempDirectory();
             log.info("Cloud object storage initialized");
         } else {
