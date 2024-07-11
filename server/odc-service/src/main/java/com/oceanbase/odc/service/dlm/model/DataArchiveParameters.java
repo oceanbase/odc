@@ -19,6 +19,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.validation.constraints.NotNull;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -37,14 +41,16 @@ public class DataArchiveParameters implements ScheduleTaskParameters {
 
     private String name;
 
+    @NotNull
     private Long sourceDatabaseId;
 
+    @NotNull
     private Long targetDataBaseId;
 
-    // inner init
+    @JsonProperty(access = Access.READ_ONLY)
     private Database sourceDatabase;
 
-    // inner init
+    @JsonProperty(access = Access.READ_ONLY)
     private Database targetDatabase;
 
     private List<OffsetConfig> variables;
