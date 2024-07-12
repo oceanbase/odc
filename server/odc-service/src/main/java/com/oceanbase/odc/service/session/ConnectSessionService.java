@@ -276,7 +276,9 @@ public class ConnectSessionService {
         DefaultConnectSessionIdGenerator idGenerator = new DefaultConnectSessionIdGenerator();
         idGenerator.setDatabaseId(req.getDbId());
         idGenerator.setFixRealId(StringUtils.isBlank(req.getRealId()) ? null : req.getRealId());
-        String host = cloudMetadataClient.supportsCloudMetadata() ? req.getFrom() : stateHostGenerator.getHost();
+        String host = cloudMetadataClient.supportsCloudMetadata()
+                && Boolean.FALSE.equals(cloudMetadataClient.supportsCloudParentUid()) ? req.getFrom()
+                        : stateHostGenerator.getHost();
         idGenerator.setHost(host);
         sessionFactory.setIdGenerator(idGenerator);
         long timeoutMillis = TimeUnit.MILLISECONDS.convert(sessionProperties.getTimeoutMins(), TimeUnit.MINUTES);
@@ -331,7 +333,8 @@ public class ConnectSessionService {
         ConnectionSession session = connectionSessionManager.getSession(sessionId);
         if (session == null) {
             CreateSessionReq req = new DefaultConnectSessionIdGenerator().getKeyFromId(sessionId);
-            boolean autoRecreate = cloudMetadataClient.supportsCloudMetadata();
+            boolean autoRecreate = cloudMetadataClient.supportsCloudMetadata()
+                    && Boolean.FALSE.equals(cloudMetadataClient.supportsCloudParentUid());
             if (!autoCreate || (!StringUtils.equals(req.getFrom(), stateHostGenerator.getHost()) && !autoRecreate)) {
                 throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
             }
