@@ -49,7 +49,6 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
-import com.oceanbase.odc.service.objectstorage.cloud.client.AmazonCloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadRequest;
@@ -395,7 +394,8 @@ public class CloudObjectStorageService {
      * 也就是杭州的client只允许操作杭州的bucket，不允许跨域操作
      */
     private void validateBucket() {
-        if (objectStorageConfiguration.getCloudProvider() == CloudProvider.NONE) {
+        if (objectStorageConfiguration.getCloudProvider() == CloudProvider.NONE
+                || objectStorageConfiguration.getCloudProvider() == CloudProvider.HUAWEI_CLOUD) {
             return;
         }
         String bucketName = getBucketName();
@@ -405,10 +405,6 @@ public class CloudObjectStorageService {
         String region = objectStorageConfiguration.getRegion();
         if (StringUtils.isNotEmpty(region)) {
             String location = publicEndpointCloudObjectStorage.getBucketLocation(bucketName);
-            if (publicEndpointCloudObjectStorage instanceof AmazonCloudClient) {
-                log.info("Skip S3 location verification.");
-                return;
-            }
             Verify.verify(StringUtils.equals(region, location) || StringUtils.endsWith(location, region),
                     "object storage bucket region does not match location, location=" + location + ", region="
                             + region);
