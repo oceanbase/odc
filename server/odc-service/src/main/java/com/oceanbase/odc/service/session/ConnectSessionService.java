@@ -276,7 +276,7 @@ public class ConnectSessionService {
         DefaultConnectSessionIdGenerator idGenerator = new DefaultConnectSessionIdGenerator();
         idGenerator.setDatabaseId(req.getDbId());
         idGenerator.setFixRealId(StringUtils.isBlank(req.getRealId()) ? null : req.getRealId());
-        if (Objects.nonNull(req.getFrom()) && isOBCLoudEnvironment()) {
+        if (Objects.nonNull(req.getFrom()) && isOBCloudEnvironment()) {
             idGenerator.setHost(req.getFrom());
         } else {
             idGenerator.setHost(stateHostGenerator.getHost());
@@ -335,7 +335,7 @@ public class ConnectSessionService {
         if (session == null) {
             CreateSessionReq req = new DefaultConnectSessionIdGenerator().getKeyFromId(sessionId);
             if (!autoCreate
-                    || (!StringUtils.equals(req.getFrom(), stateHostGenerator.getHost()) && !isOBCLoudEnvironment())) {
+                    || (!StringUtils.equals(req.getFrom(), stateHostGenerator.getHost()) && !isOBCloudEnvironment())) {
                 throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
             }
             Lock lock = this.sessionId2Lock.computeIfAbsent(sessionId, s -> new ReentrantLock());
@@ -470,7 +470,7 @@ public class ConnectSessionService {
         }
     }
 
-    private boolean isOBCLoudEnvironment() {
+    private boolean isOBCloudEnvironment() {
         return cloudMetadataClient.supportsCloudMetadata()
                 && Boolean.FALSE.equals(cloudMetadataClient.supportsCloudParentUid());
     }
