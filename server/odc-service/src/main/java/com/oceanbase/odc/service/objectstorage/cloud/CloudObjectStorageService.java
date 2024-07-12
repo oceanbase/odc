@@ -49,6 +49,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
+import com.oceanbase.odc.service.objectstorage.cloud.client.AmazonCloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadRequest;
@@ -105,8 +106,7 @@ public class CloudObjectStorageService {
         this.internalEndpointCloudObjectStorage = internalEndpointCloudObjectStorage;
         this.objectStorageConfiguration = objectStorageConfiguration;
         if (this.publicEndpointCloudObjectStorage.supported()) {
-            // TODO 多云获取 location 异常，暂不校验
-            // validateBucket();
+            validateBucket();
             createTempDirectory();
             log.info("Cloud object storage initialized");
         } else {
@@ -405,6 +405,10 @@ public class CloudObjectStorageService {
         String region = objectStorageConfiguration.getRegion();
         if (StringUtils.isNotEmpty(region)) {
             String location = publicEndpointCloudObjectStorage.getBucketLocation(bucketName);
+            if (publicEndpointCloudObjectStorage instanceof AmazonCloudClient) {
+                log.info("Skip S3 location verification.");
+                return;
+            }
             Verify.verify(StringUtils.equals(region, location) || StringUtils.endsWith(location, region),
                     "object storage bucket region does not match location, location=" + location + ", region="
                             + region);
