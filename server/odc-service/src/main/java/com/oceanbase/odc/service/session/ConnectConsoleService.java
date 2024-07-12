@@ -357,7 +357,11 @@ public class ConnectConsoleService {
             shouldRemoveContext = true;
             // Front-end would stop getting more results if there is an exception. In this case the left queries
             // should be killed.
-            killCurrentQuery(sessionId);
+            try {
+                killCurrentQuery(sessionId);
+            } catch (Exception ex) {
+                log.warn("Failed to kill query. Session id={}. Request id={}", sessionId, requestId);
+            }
             throw e;
         } finally {
             if (shouldRemoveContext) {
