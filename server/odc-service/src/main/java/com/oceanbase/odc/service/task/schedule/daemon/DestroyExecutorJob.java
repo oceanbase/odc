@@ -89,6 +89,11 @@ public class DestroyExecutorJob implements Job {
                 }
                 log.info("Job destroy executor succeed, jobId={}, status={}.", lockedEntity.getId(),
                         lockedEntity.getStatus());
+            } else if (lockedEntity.getStatus().isTerminated() && lockedEntity.getExecutorIdentifier() == null) {
+                // It is necessary to update the finish time when the job is terminated but the
+                // executorIdentifier is null, otherwise, the job cannot be released.
+                log.info("Executor not found, updating executor to destroyed,jobId={}", lockedEntity.getId());
+                taskFrameworkService.updateExecutorToDestroyed(lockedEntity.getId());
             }
         });
     }
