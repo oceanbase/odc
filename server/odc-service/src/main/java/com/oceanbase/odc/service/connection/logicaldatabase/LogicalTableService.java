@@ -16,18 +16,13 @@
 package com.oceanbase.odc.service.connection.logicaldatabase;
 
 import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
 
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.task.TaskRejectedException;
 import org.springframework.stereotype.Service;
@@ -43,7 +38,6 @@ import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
-import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingEntity;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingRepository;
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
@@ -56,7 +50,6 @@ import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalT
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.sqlparser.SyntaxErrorException;
 
 import lombok.extern.slf4j.Slf4j;
@@ -101,37 +94,7 @@ public class LogicalTableService {
         Verify.equals(DatabaseType.LOGICAL, logicalDatabase.getType(), "database type");
         projectPermissionValidator.checkProjectRole(logicalDatabase.getProjectId(), ResourceRoleName.all());
 
-        List<DBObjectEntity> logicalTables =
-                dbObjectRepository.findByDatabaseIdAndType(logicalDatabaseId, DBObjectType.LOGICAL_TABLE);
-
-
-        Set<Long> logicalTableIds = logicalTables.stream().map(DBObjectEntity::getId).collect(Collectors.toSet());
-        if (CollectionUtils.isEmpty(logicalTableIds)) {
-            return Collections.emptyList();
-        }
-        Map<Long, List<TableMappingEntity>> logicalTbId2Mappings =
-                mappingRepository.findByLogicalTableIdIn(logicalTableIds).stream()
-                        .collect(Collectors.groupingBy(TableMappingEntity::getLogicalTableId));
-
-
-        return logicalTables.stream().map(tableEntity -> {
-            DetailLogicalTableResp resp = new DetailLogicalTableResp();
-            List<TableMappingEntity> relations =
-                    logicalTbId2Mappings.getOrDefault(tableEntity.getId(), Collections.emptyList());
-            resp.setId(tableEntity.getId());
-            resp.setName(tableEntity.getName());
-            resp.setExpression(relations.isEmpty() ? StringUtils.EMPTY : relations.get(0).getExpression());
-            resp.setPhysicalTableCount(relations.size());
-            List<DataNode> inconsistentPhysicalTables = new ArrayList<>();
-            relations.stream().filter(relation -> !relation.getConsistent()).forEach(relation -> {
-                DataNode dataNode = new DataNode();
-                dataNode.setSchemaName(relation.getPhysicalDatabaseName());
-                dataNode.setTableName(relation.getPhysicalTableName());
-                inconsistentPhysicalTables.add(dataNode);
-            });
-            resp.setInconsistentPhysicalTables(inconsistentPhysicalTables);
-            return resp;
-        }).collect(Collectors.toList());
+        return Collections.singletonList(new DetailLogicalTableResp());
     }
 
     @Transactional(rollbackFor = Exception.class)

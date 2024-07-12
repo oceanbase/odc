@@ -15,9 +15,7 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
@@ -30,16 +28,12 @@ import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingEntity;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingRepository;
-import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingEntity;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingRepository;
-import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.LogicalTableFinder;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalTable;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.NonNull;
 
@@ -88,39 +82,6 @@ public class LogicalTableExtractTask implements Runnable {
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
-        }
-
-        try {
-            Set<String> existedTables = dbObjectRepository.findByDatabaseIdAndType(logicalDatabase.getId(),
-                    DBObjectType.LOGICAL_TABLE).stream().map(DBObjectEntity::getName).collect(Collectors.toSet());
-
-            logicalTables.stream().filter(table -> !existedTables.contains(table.getName())).forEach(table -> {
-                DBObjectEntity tableEntity = new DBObjectEntity();
-                tableEntity.setDatabaseId(logicalDatabase.getId());
-                tableEntity.setType(DBObjectType.LOGICAL_TABLE);
-                tableEntity.setName(table.getName());
-                tableEntity.setOrganizationId(logicalDatabase.getOrganizationId());
-                DBObjectEntity savedTableEntity = dbObjectRepository.save(tableEntity);
-
-                List<DataNode> dataNodes = table.getActualDataNodes();
-                List<TableMappingEntity> physicalTableEntities = new ArrayList<>();
-                dataNodes.stream().forEach(dataNode -> {
-                    TableMappingEntity physicalTableEntity = new TableMappingEntity();
-                    physicalTableEntity.setLogicalTableId(savedTableEntity.getId());
-                    physicalTableEntity.setOrganizationId(logicalDatabase.getOrganizationId());
-                    physicalTableEntity.setPhysicalDatabaseId(dataNode.getDatabaseId());
-                    physicalTableEntity.setPhysicalDatabaseName(dataNode.getSchemaName());
-                    physicalTableEntity.setPhysicalTableName(dataNode.getTableName());
-                    physicalTableEntity.setExpression(table.getFullNameExpression());
-                    physicalTableEntity.setConsistent(true);
-                    physicalTableEntities.add(physicalTableEntity);
-                });
-                tableRelationRepository.batchCreate(physicalTableEntities);
-            });
-        } finally {
-            if (lock != null) {
-                lock.unlock();
-            }
         }
     }
 }

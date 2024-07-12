@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -34,7 +33,6 @@ import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalD
  * @Date: 2024/5/7 15:07
  * @Description: []
  */
-@RestController
 @RequestMapping("/api/v2/connect/logicaldatabase")
 public class LogicalDatabaseController {
     @Autowired
