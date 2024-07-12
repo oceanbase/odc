@@ -66,7 +66,9 @@ public class DLMJobStore implements IJobStore {
     }
 
     public void destroy() {
-        dataSource.close();
+        if (dataSource != null) {
+            dataSource.close();
+        }
     }
 
     @Override

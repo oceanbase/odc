@@ -22,8 +22,10 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.dlm.DLMService;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
+import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +43,9 @@ public class DLMResultProcessor implements ResultProcessor {
     @Autowired
     private DLMService dlmService;
 
+    @Autowired
+    private ScheduleTaskService taskService;
+
     @Override
     public void process(TaskResult result) {
         log.info("Start refresh result,result={}", result.getResultJson());
@@ -55,6 +60,9 @@ public class DLMResultProcessor implements ResultProcessor {
             log.info("Create or update dlm tableUnits success,jobIdentity={},scheduleTaskId={}",
                     result.getJobIdentity(),
                     dlmTableUnits.get(0).getScheduleTaskId());
+            TaskStatus taskStatus = dlmService.getTaskStatus(dlmTableUnits);
+            taskService.updateStatusById(dlmTableUnits.get(0).getScheduleTaskId(), taskStatus);
+            log.info("Update schedule task status to {} success", taskStatus);
         } catch (Exception e) {
             log.warn("Refresh result failed.", e);
         }

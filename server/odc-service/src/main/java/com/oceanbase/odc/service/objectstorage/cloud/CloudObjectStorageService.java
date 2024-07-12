@@ -394,7 +394,8 @@ public class CloudObjectStorageService {
      * 也就是杭州的client只允许操作杭州的bucket，不允许跨域操作
      */
     private void validateBucket() {
-        if (objectStorageConfiguration.getCloudProvider() == CloudProvider.NONE) {
+        if (objectStorageConfiguration.getCloudProvider() == CloudProvider.NONE
+                || objectStorageConfiguration.getCloudProvider() == CloudProvider.HUAWEI_CLOUD) {
             return;
         }
         String bucketName = getBucketName();

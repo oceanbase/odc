@@ -115,7 +115,11 @@ public class DLMService {
     }
 
     public TaskStatus getTaskStatus(Long scheduleTaskId) {
-        Set<TaskStatus> collect = findByScheduleTaskId(scheduleTaskId).stream().map(DlmTableUnit::getStatus).collect(
+        return getTaskStatus(findByScheduleTaskId(scheduleTaskId));
+    }
+
+    public TaskStatus getTaskStatus(List<DlmTableUnit> dlmTableUnits) {
+        Set<TaskStatus> collect = dlmTableUnits.stream().map(DlmTableUnit::getStatus).collect(
                 Collectors.toSet());
         if (collect.contains(TaskStatus.FAILED)) {
             return TaskStatus.FAILED;
