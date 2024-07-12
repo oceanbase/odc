@@ -395,6 +395,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             taskResultPublisherExecutor.execute(() -> publisher
                     .publishEvent(new JobTerminateEvent(result.getJobIdentity(), result.getStatus())));
 
+            // TODO maybe we can destroy the pod there.
             if (result.getStatus() == JobStatus.FAILED) {
                 AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED,
                         MessageFormat.format("Job execution failed, jobId={0}",
