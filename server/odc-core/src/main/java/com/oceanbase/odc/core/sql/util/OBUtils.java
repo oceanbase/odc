@@ -41,7 +41,7 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
-import com.oceanbase.odc.core.shared.model.ExecutorInfo;
+import com.oceanbase.odc.core.shared.model.OBExecutionServerInfo;
 import com.oceanbase.odc.core.shared.model.OBSqlPlan;
 import com.oceanbase.odc.core.shared.model.SqlExecDetail;
 import com.oceanbase.odc.core.shared.model.SqlPlanMonitor;
@@ -445,7 +445,7 @@ public class OBUtils {
      * OceanBase only supports ASH views in versions higher than 4.0. Therefore, this method is not
      * applicable to earlier versions, please use sql_audit instead.
      */
-    public static ExecutorInfo queryPlanIdByTraceIdFromASH(@NonNull Statement statement, String traceId,
+    public static OBExecutionServerInfo queryPlanIdByTraceIdFromASH(@NonNull Statement statement, String traceId,
             List<String> sessionIds, ConnectType connectType) throws SQLException {
         DialectType dialectType = connectType.getDialectType();
         SqlBuilder sqlBuilder = getBuilder(connectType)
@@ -461,7 +461,7 @@ public class OBUtils {
             if (!rs.next()) {
                 throw new SQLException("No result found in ASH.");
             }
-            ExecutorInfo executorInfo = new ExecutorInfo();
+            OBExecutionServerInfo executorInfo = new OBExecutionServerInfo();
             executorInfo.setIp(rs.getString("svr_ip"));
             executorInfo.setPort(rs.getString("svr_port"));
             executorInfo.setPlanId(rs.getString("plan_id"));
@@ -470,7 +470,7 @@ public class OBUtils {
         }
     }
 
-    public static ExecutorInfo queryPlanIdByTraceIdFromAudit(@NonNull Statement statement, String traceId,
+    public static OBExecutionServerInfo queryPlanIdByTraceIdFromAudit(@NonNull Statement statement, String traceId,
             List<String> sessionIds, ConnectType connectType) throws SQLException {
         DialectType dialectType = connectType.getDialectType();
         SqlBuilder sqlBuilder = getBuilder(connectType)
@@ -485,7 +485,7 @@ public class OBUtils {
             if (!rs.next()) {
                 throw new SQLException("No result found in sql_audit.");
             }
-            ExecutorInfo executorInfo = new ExecutorInfo();
+            OBExecutionServerInfo executorInfo = new OBExecutionServerInfo();
             executorInfo.setIp(rs.getString("svr_ip"));
             executorInfo.setPort(rs.getString("svr_port"));
             executorInfo.setPlanId(rs.getString("plan_id"));
@@ -495,7 +495,7 @@ public class OBUtils {
     }
 
     public static List<OBSqlPlan> queryOBSqlPlanByPlanId(@NonNull Statement statement,
-            @NonNull ExecutorInfo executorInfo, ConnectType connectType) throws SQLException {
+            @NonNull OBExecutionServerInfo executorInfo, ConnectType connectType) throws SQLException {
         DialectType dialectType = connectType.getDialectType();
         SqlBuilder sqlBuilder = getBuilder(connectType)
                 .append("select id, parent_id, operator, object_owner, object_name, object_alias, ")

@@ -316,7 +316,8 @@ public class ConnectConsoleService {
         statementCallBack.setMaxCachedLines(sessionProperties.getResultSetMaxCachedLines());
         statementCallBack.setLocale(LocaleContextHolder.getLocale());
         if (connectionSession.getDialectType().isOceanbase() && sqlTuples.size() <= 10) {
-            statementCallBack.getListeners().add(new OBExecutionListener(connectionSession, profileManager));
+            statementCallBack.getListeners()
+                    .add(new OBQueryProfileExecutionListener(connectionSession, profileManager));
         }
 
         Future<List<JdbcGeneralResult>> futureResult = connectionSession.getAsyncJdbcExecutor(
@@ -594,7 +595,8 @@ public class ConnectConsoleService {
         }
         try {
             String version = ConnectionSessionUtil.getVersion(connectionSession);
-            result.setWithQueryProfile(OBExecutionListener.isSqlTypeSupportProfile(generalResult.getSqlTuple()) &&
+            result.setWithQueryProfile(OBQueryProfileExecutionListener
+                    .isSqlTypeSupportProfile(generalResult.getSqlTuple()) &&
                     VersionUtils.isGreaterThanOrEqualsTo(version, OBQueryProfileManager.ENABLE_QUERY_PROFILE_VERSION));
         } catch (Exception e) {
             result.setWithQueryProfile(false);

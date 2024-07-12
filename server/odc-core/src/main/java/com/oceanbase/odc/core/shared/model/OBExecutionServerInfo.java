@@ -22,7 +22,7 @@ import lombok.Data;
  * @date: 2024/7/4
  */
 @Data
-public class ExecutorInfo {
+public class OBExecutionServerInfo {
 
     private String ip;
     private String port;

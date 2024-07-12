@@ -44,7 +44,7 @@ import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.OBException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
-import com.oceanbase.odc.core.shared.model.ExecutorInfo;
+import com.oceanbase.odc.core.shared.model.OBExecutionServerInfo;
 import com.oceanbase.odc.core.shared.model.OBSqlPlan;
 import com.oceanbase.odc.core.shared.model.PlanNode;
 import com.oceanbase.odc.core.shared.model.SqlExecDetail;
@@ -226,7 +226,7 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
     public SqlExplain getQueryProfileByTraceIdAndSessIds(Connection connection, @NonNull String traceId,
             @NonNull List<String> sessionIds) throws SQLException {
         try (Statement stmt = connection.createStatement()) {
-            ExecutorInfo executorInfo = getPlanIdByTraceIdAndSessIds(stmt, traceId, sessionIds);
+            OBExecutionServerInfo executorInfo = getPlanIdByTraceIdAndSessIds(stmt, traceId, sessionIds);
             Verify.notEmpty(executorInfo.getPlanId(), "plan id");
             PlanGraph graph = getPlanGraph(stmt, executorInfo);
             graph.setTraceId(traceId);
@@ -253,7 +253,8 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
         }
     }
 
-    protected ExecutorInfo getPlanIdByTraceIdAndSessIds(Statement stmt, String traceId, List<String> sessionIds)
+    protected OBExecutionServerInfo getPlanIdByTraceIdAndSessIds(Statement stmt, String traceId,
+            List<String> sessionIds)
             throws SQLException {
         try {
             return OBUtils.queryPlanIdByTraceIdFromASH(stmt, traceId, sessionIds, ConnectType.OB_MYSQL);
@@ -262,7 +263,7 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
         }
     }
 
-    protected String getPhysicalPlanByDbmsXplan(Statement stmt, ExecutorInfo executorInfo)
+    protected String getPhysicalPlanByDbmsXplan(Statement stmt, OBExecutionServerInfo executorInfo)
             throws SQLException {
         String sql = String.format("select dbms_xplan.display_cursor(%s,'ALL','%s',%s,%s)",
                 executorInfo.getPlanId(), executorInfo.getIp(), executorInfo.getPort(), executorInfo.getTenantId());
@@ -274,7 +275,7 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
         }
     }
 
-    protected PlanGraph getPlanGraph(Statement stmt, ExecutorInfo executorInfo) throws SQLException {
+    protected PlanGraph getPlanGraph(Statement stmt, OBExecutionServerInfo executorInfo) throws SQLException {
         List<OBSqlPlan> planRecords = OBUtils.queryOBSqlPlanByPlanId(stmt, executorInfo, ConnectType.OB_MYSQL);
         return PlanGraphBuilder.buildPlanGraph(planRecords);
     }
@@ -300,7 +301,7 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
      *       0 - output...
      * </pre>
      */
-    private SqlExplain innerGetSqlExplainByDbmsXplan(Statement stmt, ExecutorInfo executorInfo)
+    private SqlExplain innerGetSqlExplainByDbmsXplan(Statement stmt, OBExecutionServerInfo executorInfo)
             throws SQLException {
         SqlExplain sqlExplain = new SqlExplain();
         sqlExplain.setShowFormatInfo(true);

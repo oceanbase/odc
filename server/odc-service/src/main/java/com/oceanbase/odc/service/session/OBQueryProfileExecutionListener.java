@@ -46,14 +46,14 @@ import lombok.extern.slf4j.Slf4j;
  * @date: 2024/4/23
  */
 @Slf4j
-public class OBExecutionListener implements SqlExecutionListener {
+public class OBQueryProfileExecutionListener implements SqlExecutionListener {
     private static final Long DEFAULT_QUERY_TRACE_ID_WAIT_MILLIS = 1100L;
 
     private final ConnectionSession session;
     private final List<String> sessionIds;
     private final OBQueryProfileManager profileManager;
 
-    public OBExecutionListener(ConnectionSession session, OBQueryProfileManager profileManager) {
+    public OBQueryProfileExecutionListener(ConnectionSession session, OBQueryProfileManager profileManager) {
         this.session = session;
         this.profileManager = profileManager;
         sessionIds = getSessionIds();
