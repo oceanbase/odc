@@ -41,6 +41,7 @@ import com.oceanbase.tools.migrator.core.meta.ClusterMeta;
 import com.oceanbase.tools.migrator.core.meta.JobMeta;
 import com.oceanbase.tools.migrator.core.meta.TaskMeta;
 import com.oceanbase.tools.migrator.core.meta.TenantMeta;
+import com.oceanbase.tools.migrator.core.stat.JobStat;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -54,11 +55,12 @@ public class DLMJobStore implements IJobStore {
 
     private DruidDataSource dataSource;
     private boolean enableBreakpointRecovery;
+    private JobStat jobStat;
 
     public DLMJobStore(ConnectionConfig metaDBConfig) {
         try {
             this.dataSource = (DruidDataSource) new DruidDataSourceFactory(metaDBConfig).getDataSource();
-            initEnableBreakpointRecovery();
+            enableBreakpointRecovery = true;
         } catch (Exception e) {
             log.warn("Init metadb failed and set breakpoint recovery to false.");
             enableBreakpointRecovery = false;
@@ -66,8 +68,10 @@ public class DLMJobStore implements IJobStore {
     }
 
     public void destroy() {
-        if (dataSource != null) {
+        try {
             dataSource.close();
+        } catch (Exception e) {
+            log.warn("Close meta datasource failed,errorMsg={}", e.getMessage());
         }
     }
 
@@ -145,9 +149,7 @@ public class DLMJobStore implements IJobStore {
     }
 
     @Override
-    public void storeJobStatistic(JobMeta jobMeta) throws JobSqlException {
-
-    }
+    public void storeJobStatistic(JobMeta jobMeta) throws JobSqlException {}
 
     @Override
     public List<TaskMeta> getTaskMeta(JobMeta jobMeta) throws SQLException {
@@ -262,22 +264,5 @@ public class DLMJobStore implements IJobStore {
     private void setTableLimitConfig(TableMeta tableMeta, int rowLimit) {
         tableMeta.setReadRowCountLimit(rowLimit);
         tableMeta.setWriteRowCountLimit(rowLimit);
-    }
-
-    private void initEnableBreakpointRecovery() {
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement preparedStatement = conn.prepareStatement(
-                        "select value from config_system_configuration where `key` = 'odc.task.dlm"
-                                + ".support-breakpoint-recovery'")) {
-            ResultSet resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                this.enableBreakpointRecovery = resultSet.getBoolean(1);
-                log.info("The status of breakpoint recovery is {}", enableBreakpointRecovery);
-                return;
-            }
-        } catch (Exception e) {
-            log.warn("Load breakpoint recovery config failed!", e);
-        }
-        enableBreakpointRecovery = false;
     }
 }

@@ -158,8 +158,19 @@ public class ScheduleTaskService {
                     "The task cannot be restarted because it is currently in progress or has already completed.");
         }
         try {
-            quartzJobService.triggerJob(new JobKey(scheduleTask.getJobName(), scheduleTask.getJobGroup()),
-                    ScheduleTaskUtils.buildTriggerDataMap(id));
+            JobKey jobKey = new JobKey(scheduleTask.getJobName(), scheduleTask.getJobGroup());
+            if (quartzJobService.checkExists(jobKey)) {
+                quartzJobService.triggerJob(jobKey, ScheduleTaskUtils.buildTriggerDataMap(id));
+            } else {
+                CreateQuartzJobParam param = new CreateQuartzJobParam();
+                param.setJobKey(jobKey);
+                param.setAllowConcurrent(false);
+                TriggerConfig triggerConfig = new TriggerConfig();
+                triggerConfig.setTriggerStrategy(TriggerStrategy.START_NOW);
+                param.setTriggerConfig(triggerConfig);
+                param.setJobDataMap(ScheduleTaskUtils.buildTriggerDataMap(scheduleTask.getId()));
+                quartzJobService.createJob(param);
+            }
         } catch (SchedulerException e) {
             log.warn("Trigger schedule task failed,scheduleTaskId={}", id);
             throw new InternalServerError(e.getMessage());

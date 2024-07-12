@@ -35,7 +35,6 @@ import org.quartz.Trigger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanMap;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -452,11 +451,10 @@ public class ScheduleService {
 
         params.setOrganizationId(authenticationFacade.currentOrganizationId());
         Page<ScheduleEntity> returnValue = scheduleRepository.find(pageable, params);
-        List<ScheduleOverview> res =
-                scheduleResponseMapperFactory.generateScheduleOverviewList(returnValue.getContent());
+        Map<Long, ScheduleOverview> id2Overview =
+                scheduleResponseMapperFactory.generateScheduleOverviewListMapper(returnValue.getContent());
 
-        return returnValue.isEmpty() ? Page.empty()
-                : new PageImpl<>(res, returnValue.getPageable(), returnValue.getTotalPages());
+        return returnValue.map(o -> id2Overview.get(o.getId()));
     }
 
     public Page<ScheduleTaskOverview> listScheduleTaskOverview(@NotNull Pageable pageable, @NotNull Long scheduleId) {
