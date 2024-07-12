@@ -58,7 +58,7 @@ server:
   tomcat:
     max-threads: 500
     min-spare-threads: 18
-    keep-alive-timeout: 65000
+    keep-alive-timeout: 70000
 swagger:
   enabled: false
 
