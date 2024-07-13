@@ -32,6 +32,7 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigEntity;
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigRepository;
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.Schedule;
@@ -74,9 +75,6 @@ public class DlmLimiterService {
 
     @Autowired
     private ScheduleService scheduleService;
-
-    @Autowired
-    private JobScheduler jobScheduler;
 
     public DlmLimiterConfigEntity create(RateLimitConfiguration config) {
         checkLimiterConfig(config);
@@ -133,7 +131,7 @@ public class DlmLimiterService {
             Map<String, String> map = new HashMap<>();
             map.put(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG, JsonUtils.toJson(rateLimit));
             try {
-                jobScheduler.modifyJobParameters(latestTask.get().getJobId(), map);
+                SpringContextUtil.getBean(JobScheduler.class).modifyJobParameters(latestTask.get().getJobId(), map);
             } catch (JobException e) {
                 log.warn("Sync limit config failed,jobId={}", latestTask.get().getJobId(), e);
             }
