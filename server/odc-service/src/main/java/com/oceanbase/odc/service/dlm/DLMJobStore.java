@@ -30,6 +30,7 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
+import com.oceanbase.odc.service.schedule.job.DLMJobReq;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
@@ -256,9 +257,19 @@ public class DLMJobStore implements IJobStore {
     @Override
     public void updateLimiter(JobMeta jobMeta) {
         try {
-            String limitConfig = jobContext.getJobParameters().get(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG);
-            RateLimitConfiguration params = JsonUtils.fromJson(limitConfig,
-                    RateLimitConfiguration.class);
+            Map<String, String> jobParameters = jobContext.getJobParameters();
+            RateLimitConfiguration params;
+            if (jobParameters.containsKey(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG)) {
+                params = JsonUtils.fromJson(
+                        jobContext.getJobParameters().get(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG),
+                        RateLimitConfiguration.class);
+            } else {
+                DLMJobReq dlmJobReq = JsonUtils.fromJson(
+                        jobContext.getJobParameters().get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
+                        DLMJobReq.class);
+                params = dlmJobReq.getRateLimit();
+            }
+
             setClusterLimitConfig(jobMeta.getSourceCluster(), params.getDataSizeLimit());
             setClusterLimitConfig(jobMeta.getTargetCluster(), params.getDataSizeLimit());
             setTenantLimitConfig(jobMeta.getSourceTenant(), params.getDataSizeLimit());

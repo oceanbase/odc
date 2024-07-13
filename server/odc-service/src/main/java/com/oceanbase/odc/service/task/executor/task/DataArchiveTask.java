@@ -89,8 +89,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
 
         for (String dlmTableUnitId : dlmTableUnitIds) {
             DlmTableUnit dlmTableUnit = result.get(dlmTableUnitId);
-            dlmTableUnit.setStatus(TaskStatus.RUNNING);
-            if (getStatus().isTerminated()) {
+            if (isToStop) {
                 log.info("Job is terminated,jobIdentity={}", context.getJobIdentity());
                 break;
             }
@@ -98,6 +97,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
                 log.info("The table had been completed,tableName={}", dlmTableUnit.getTableName());
                 continue;
             }
+            startTableUnit(dlmTableUnitId);
             if (parameters.getJobType() == JobType.MIGRATE) {
                 try {
                     DLMTableStructureSynchronizer.sync(
@@ -109,37 +109,45 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
                     log.warn("Failed to sync target table structure,table will be ignored,tableName={}",
                             dlmTableUnit.getTableName(), e);
                     // jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.FAILED);
-                    dlmTableUnit.setStatus(TaskStatus.FAILED);
+                    finishTableUnit(dlmTableUnitId, TaskStatus.FAILED);
                     continue;
                 }
             }
-            dlmTableUnit.setStartTime(new Date());
             try {
                 job = jobFactory.createJob(dlmTableUnit);
                 log.info("Init {} job succeed,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
                 log.info("{} job start,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
                 if (isToStop) {
+                    finishTableUnit(dlmTableUnitId, TaskStatus.CANCELED);
                     job.stop();
-                    dlmTableUnit.setStatus(TaskStatus.CANCELED);
                     log.info("The task has stopped.");
                     break;
                 } else {
                     job.run();
                 }
                 log.info("{} job finished,DLMJobId={}", dlmTableUnit.getType(), dlmTableUnitId);
-                dlmTableUnit.setStatus(TaskStatus.DONE);
+                finishTableUnit(dlmTableUnitId, TaskStatus.DONE);
             } catch (Throwable e) {
                 log.error("{} job failed,DLMJobId={},errorMsg={}", dlmTableUnit.getType(), dlmTableUnitId, e);
                 // set task status to failed if any job failed.
                 if (job != null && job.getJobMeta().isToStop()) {
-                    dlmTableUnit.setStatus(TaskStatus.CANCELED);
+                    finishTableUnit(dlmTableUnitId, TaskStatus.CANCELED);
                 } else {
-                    dlmTableUnit.setStatus(TaskStatus.FAILED);
+                    finishTableUnit(dlmTableUnitId, TaskStatus.FAILED);
                 }
             }
-            dlmTableUnit.setEndTime(new Date());
         }
         return true;
+    }
+
+    private void startTableUnit(String dlmTableUnitId) {
+        result.get(dlmTableUnitId).setStatus(TaskStatus.RUNNING);
+        result.get(dlmTableUnitId).setStartTime(new Date());
+    }
+
+    private void finishTableUnit(String dlmTableUnitId, TaskStatus status) {
+        result.get(dlmTableUnitId).setStatus(status);
+        result.get(dlmTableUnitId).setEndTime(new Date());
     }
 
     private List<DlmTableUnit> getDlmTableUnits(DLMJobReq req) throws SQLException {
@@ -173,6 +181,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
 
     @Override
     protected void doStop() throws Exception {
+        isToStop = true;
         if (job != null) {
             try {
                 job.stop();
@@ -185,7 +194,6 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
                 log.warn("Update dlm table unit status failed,DlmTableUnitId={}", job.getJobMeta().getJobId());
             }
         }
-        isToStop = true;
     }
 
     @Override
@@ -200,7 +208,6 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
 
     @Override
     public List<DlmTableUnit> getTaskResult() {
-        log.info("Get result:{}", result);
         return new ArrayList<>(result.values());
     }
 }
