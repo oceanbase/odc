@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.schedule;
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -40,6 +41,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
@@ -55,6 +57,7 @@ import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
+import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
@@ -143,6 +146,9 @@ public class ScheduleService {
 
     @Autowired
     private LatestTaskMappingRepository latestTaskMappingRepository;
+
+    @Autowired
+    private ConnectionService connectionService;
 
     private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
 
@@ -439,6 +445,17 @@ public class ScheduleService {
 
     public Page<ScheduleOverview> listScheduleOverview(@NotNull Pageable pageable,
             @NotNull QueryScheduleParams params) {
+        if (params.getDataSourceIds() == null) {
+            params.setDataSourceIds(new HashSet<>());
+        }
+        if (StringUtils.isNotEmpty(params.getClusterId())) {
+            params.getDataSourceIds().addAll(connectionService.innerListIdByOrganizationIdAndClusterId(
+                    authenticationFacade.currentOrganizationId(), params.getClusterId()));
+        }
+        if (StringUtils.isNotEmpty(params.getTenantId())) {
+            params.getDataSourceIds().addAll(connectionService.innerListIdByOrganizationIdAndTenantId(
+                    authenticationFacade.currentOrganizationId(), params.getTenantId()));
+        }
 
         if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
             Set<Long> projectIds = params.getProjectId() == null

@@ -17,6 +17,7 @@ package com.oceanbase.odc.server.web.controller.v2;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -171,7 +172,7 @@ public class ScheduleController {
     @RequestMapping(value = "/schedules", method = RequestMethod.GET)
     public PaginatedResponse<ScheduleOverview> list(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
-            @RequestParam(required = false, name = "dataSourceId") List<Long> datasourceIds,
+            @RequestParam(required = false, name = "dataSourceId") Set<Long> datasourceIds,
             @RequestParam(required = false, name = "databaseName") String databaseName,
             @RequestParam(required = false, name = "tenantId") String tenantId,
             @RequestParam(required = false, name = "clusterId") String clusterId,

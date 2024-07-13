@@ -32,7 +32,7 @@ import lombok.Data;
 @Builder
 public class QueryScheduleParams {
 
-    private List<Long> dataSourceIds;
+    private Set<Long> dataSourceIds;
     private Long id;
     private List<ScheduleStatus> statuses;
     private ScheduleType type;
