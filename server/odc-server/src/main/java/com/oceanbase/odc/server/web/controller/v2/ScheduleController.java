@@ -35,7 +35,6 @@ import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
@@ -66,10 +65,6 @@ import io.swagger.annotations.ApiOperation;
 public class ScheduleController {
     @Autowired
     private ScheduleService scheduleService;
-
-    @Autowired
-    private DlmLimiterService dlmLimiterService;
-
 
     // change log
 
@@ -210,7 +205,7 @@ public class ScheduleController {
     @RequestMapping(value = "/schedules/{id:[\\d]+}/dlmRateLimitConfiguration", method = RequestMethod.PUT)
     public SuccessResponse<RateLimitConfiguration> updateLimiterConfig(@PathVariable Long id,
             @RequestBody RateLimitConfiguration limiterConfig) {
-        return Responses.single(dlmLimiterService.updateByOrderId(id, limiterConfig));
+        return Responses.single(scheduleService.updateDlmRateLimit(id, limiterConfig));
     }
 
 }
