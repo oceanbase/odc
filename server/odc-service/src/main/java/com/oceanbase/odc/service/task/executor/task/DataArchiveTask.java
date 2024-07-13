@@ -58,7 +58,6 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
     private double progress = 0.0;
     private Job job;
     private Map<String, DlmTableUnit> result;
-    private DlmTableUnit dlmTableUnit;
     private boolean isToStop = false;
 
 
@@ -89,7 +88,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
         Set<String> dlmTableUnitIds = result.keySet();
 
         for (String dlmTableUnitId : dlmTableUnitIds) {
-            dlmTableUnit = result.get(dlmTableUnitId);
+            DlmTableUnit dlmTableUnit = result.get(dlmTableUnitId);
             dlmTableUnit.setStatus(TaskStatus.RUNNING);
             if (getStatus().isTerminated()) {
                 log.info("Job is terminated,jobIdentity={}", context.getJobIdentity());
@@ -177,7 +176,11 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
         if (job != null) {
             try {
                 job.stop();
-                dlmTableUnit.setStatus(TaskStatus.CANCELED);
+                result.forEach((k, v) -> {
+                    if (v.getStatus() == TaskStatus.RUNNING) {
+                        v.setStatus(TaskStatus.CANCELED);
+                    }
+                });
             } catch (Exception e) {
                 log.warn("Update dlm table unit status failed,DlmTableUnitId={}", job.getJobMeta().getJobId());
             }

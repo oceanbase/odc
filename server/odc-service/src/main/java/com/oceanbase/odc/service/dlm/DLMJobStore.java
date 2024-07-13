@@ -25,9 +25,13 @@ import java.util.List;
 import java.util.Map;
 
 import com.alibaba.druid.pool.DruidDataSource;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
+import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
 import com.oceanbase.tools.migrator.common.dto.TableSizeInfo;
 import com.oceanbase.tools.migrator.common.dto.TaskGenerator;
@@ -56,6 +60,7 @@ public class DLMJobStore implements IJobStore {
     private DruidDataSource dataSource;
     private boolean enableBreakpointRecovery = false;
     private Map<String, DlmTableUnit> dlmTableUnits;
+    private JobContext jobContext;
 
     public DLMJobStore(ConnectionConfig metaDBConfig) {
         // try {
@@ -250,12 +255,20 @@ public class DLMJobStore implements IJobStore {
 
     @Override
     public void updateLimiter(JobMeta jobMeta) {
-        setClusterLimitConfig(jobMeta.getSourceCluster(), 1024 * 10);
-        setClusterLimitConfig(jobMeta.getTargetCluster(), 1024 * 10);
-        setTenantLimitConfig(jobMeta.getSourceTenant(), 1024 * 10);
-        setTenantLimitConfig(jobMeta.getTargetTenant(), 1024 * 10);
-        setTableLimitConfig(jobMeta.getTargetTableMeta(), 30000);
-        setTableLimitConfig(jobMeta.getSourceTableMeta(), 30000);
+        try {
+            String limitConfig = jobContext.getJobParameters().get(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG);
+            RateLimitConfiguration params = JsonUtils.fromJson(limitConfig,
+                    RateLimitConfiguration.class);
+            setClusterLimitConfig(jobMeta.getSourceCluster(), params.getDataSizeLimit());
+            setClusterLimitConfig(jobMeta.getTargetCluster(), params.getDataSizeLimit());
+            setTenantLimitConfig(jobMeta.getSourceTenant(), params.getDataSizeLimit());
+            setTenantLimitConfig(jobMeta.getTargetTenant(), params.getDataSizeLimit());
+            setTableLimitConfig(jobMeta.getTargetTableMeta(), params.getRowLimit());
+            setTableLimitConfig(jobMeta.getSourceTableMeta(), params.getRowLimit());
+            log.info("Update rate limit to {}", params);
+        } catch (Exception e) {
+            log.warn("Update rate limit failed,errorMsg={}", e.getMessage());
+        }
     }
 
     private void setClusterLimitConfig(ClusterMeta clusterMeta, long dataSizeLimit) {

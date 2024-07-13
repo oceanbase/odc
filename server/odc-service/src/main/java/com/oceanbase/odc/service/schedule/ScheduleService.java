@@ -78,6 +78,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
@@ -540,6 +541,19 @@ public class ScheduleService {
     public List<ScheduleChangeLog> listScheduleChangeLog(Long id) {
         Schedule schedule = nullSafeGetByIdWithCheckPermission(id, false);
         return scheduleChangeLogService.listByScheduleId(schedule.getId());
+    }
+
+    public Optional<ScheduleTask> getLatestTask(Long id) {
+        Optional<LatestTaskMappingEntity> optional = latestTaskMappingRepository.findByScheduleId(id);
+        if (!optional.isPresent()) {
+            return Optional.empty();
+        }
+        List<ScheduleTask> res = scheduleTaskService.findByIds(
+                Collections.singleton(optional.get().getLatestScheduleTaskId()));
+        if (res.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(res.get(0));
     }
 
     public boolean hasRunningTask(Long id) {

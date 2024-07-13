@@ -16,7 +16,9 @@
 package com.oceanbase.odc.service.dlm;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -25,18 +27,27 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigEntity;
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigRepository;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.Schedule;
+import com.oceanbase.odc.service.schedule.model.ScheduleTask;
+import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
+import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.schedule.JobScheduler;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @Author：tinker
  * @Date: 2023/8/3 14:06
  * @Descripition:
  */
+@Slf4j
 @Service
 @SkipAuthorize("odc internal usage")
 public class DlmLimiterService {
@@ -63,6 +74,9 @@ public class DlmLimiterService {
 
     @Autowired
     private ScheduleService scheduleService;
+
+    @Autowired
+    private JobScheduler jobScheduler;
 
     public DlmLimiterConfigEntity create(RateLimitConfiguration config) {
         checkLimiterConfig(config);
@@ -93,6 +107,7 @@ public class DlmLimiterService {
         Schedule schedule = scheduleService.nullSafeGetByIdWithCheckPermission(orderId);
         checkLimiterConfig(rateLimit);
         Optional<DlmLimiterConfigEntity> entityOptional = limiterConfigRepository.findByOrderId(schedule.getId());
+        RateLimitConfiguration res;
         if (entityOptional.isPresent()) {
             DlmLimiterConfigEntity entity = entityOptional.get();
             entity.setRowLimit(
@@ -101,12 +116,29 @@ public class DlmLimiterService {
                     rateLimit.getBatchSize() == null ? entity.getBatchSize() : rateLimit.getBatchSize());
             entity.setDataSizeLimit(rateLimit.getDataSizeLimit() == null ? entity.getDataSizeLimit()
                     : rateLimit.getDataSizeLimit());
-            return mapper.entityToModel(limiterConfigRepository.save(entity));
+            res = mapper.entityToModel(limiterConfigRepository.save(entity));
         } else {
             RateLimitConfiguration config = getDefaultLimiterConfig();
             config.setOrderId(orderId);
-            return mapper.entityToModel(limiterConfigRepository.save(mapper.modelToEntity(config)));
+            res = mapper.entityToModel(limiterConfigRepository.save(mapper.modelToEntity(config)));
         }
+        syncRateLimitToRunningTask(orderId, res);
+        return res;
+    }
+
+    private void syncRateLimitToRunningTask(Long scheduleId, RateLimitConfiguration rateLimit) {
+        Optional<ScheduleTask> latestTask = scheduleService.getLatestTask(scheduleId);
+        if (latestTask.isPresent() && latestTask.get().getStatus() == TaskStatus.RUNNING
+                && latestTask.get().getJobId() != null) {
+            Map<String, String> map = new HashMap<>();
+            map.put(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG, JsonUtils.toJson(rateLimit));
+            try {
+                jobScheduler.modifyJobParameters(latestTask.get().getJobId(), map);
+            } catch (JobException e) {
+                log.warn("Sync limit config failed,jobId={}", latestTask.get().getJobId(), e);
+            }
+        }
+
     }
 
     public RateLimitConfiguration getDefaultLimiterConfig() {

@@ -30,8 +30,10 @@ import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.TriggerKey;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.concurrent.Await;
 import com.oceanbase.odc.common.event.EventPublisher;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
@@ -126,7 +128,11 @@ public class StdJobScheduler implements JobScheduler {
         if (!jobEntity.getStatus().isExecuting()) {
             throw new JobException("Job is not executing, jobId={0}, jobStatus={1}.", jobId, jobEntity.getStatus());
         }
-        String newJobParametersJson = JobUtils.toJson(jobParameters);
+        // partial update
+        Map<String, String> oldJobParameters = JsonUtils.fromJson(jobEntity.getJobParametersJson(),
+                new TypeReference<Map<String, String>>() {});
+        oldJobParameters.putAll(jobParameters);
+        String newJobParametersJson = JobUtils.toJson(oldJobParameters);
         configuration.getTaskFrameworkService().updateJobParameters(jobId, newJobParametersJson);
 
         if (jobEntity.getStatus() == JobStatus.PREPARING) {
