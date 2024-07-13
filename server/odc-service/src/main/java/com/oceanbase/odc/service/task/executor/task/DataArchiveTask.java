@@ -132,7 +132,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
             } catch (Throwable e) {
                 log.error("{} job failed,DLMJobId={},errorMsg={}", dlmTableUnit.getType(), dlmTableUnitId, e);
                 // set task status to failed if any job failed.
-                if (job.getJobMeta().isToStop()) {
+                if (job != null && job.getJobMeta().isToStop()) {
                     dlmTableUnit.setStatus(TaskStatus.CANCELED);
                 } else {
                     dlmTableUnit.setStatus(TaskStatus.FAILED);
