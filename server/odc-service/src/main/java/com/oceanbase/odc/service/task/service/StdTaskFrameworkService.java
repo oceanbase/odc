@@ -349,7 +349,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     public boolean refreshLogMeta(Long id) {
         JobEntity je = find(id);
         // CANCELING is also a state within the running phase
-        if (JobStatus.RUNNING != je.getStatus() || JobStatus.CANCELING != je.getStatus()) {
+        if (JobStatus.RUNNING != je.getStatus() && JobStatus.CANCELING != je.getStatus()) {
             log.warn("Job is not running, don't need to refresh log meta, jobId={}, currentStatus={}", id,
                     je.getStatus());
             return true;
