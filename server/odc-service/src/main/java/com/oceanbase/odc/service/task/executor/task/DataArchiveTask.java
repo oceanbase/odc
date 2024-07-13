@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.task.executor.task;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -209,6 +210,6 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
             result.get(jobMeta.getJobId()).getStatistic().setProcessedRowCount(jobMeta.getJobStat().getRowCount());
         }
         log.info("Get result:{}", result);
-        return (List<DlmTableUnit>) result.values();
+        return new ArrayList<>(result.values());
     }
 }

@@ -30,6 +30,7 @@ import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigEntity;
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigRepository;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.model.Schedule;
 
 /**
  * @Author：tinker
@@ -89,8 +90,9 @@ public class DlmLimiterService {
 
     @Transactional(rollbackFor = Exception.class)
     public RateLimitConfiguration updateByOrderId(Long orderId, RateLimitConfiguration rateLimit) {
+        Schedule schedule = scheduleService.nullSafeGetByIdWithCheckPermission(orderId);
         checkLimiterConfig(rateLimit);
-        Optional<DlmLimiterConfigEntity> entityOptional = limiterConfigRepository.findByOrderId(orderId);
+        Optional<DlmLimiterConfigEntity> entityOptional = limiterConfigRepository.findByOrderId(schedule.getId());
         if (entityOptional.isPresent()) {
             DlmLimiterConfigEntity entity = entityOptional.get();
             entity.setRowLimit(

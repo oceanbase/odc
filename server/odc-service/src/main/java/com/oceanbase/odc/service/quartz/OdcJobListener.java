@@ -126,7 +126,7 @@ public class OdcJobListener implements JobListener {
             entity = taskRepository.findById(targetTaskId).orElseThrow(() -> new NotFoundException(
                     ResourceType.ODC_SCHEDULE_TASK, "id", targetTaskId));
         }
-        updateLatestTaskId(scheduleId,entity.getId());
+        updateLatestTaskId(scheduleId, entity.getId());
         ScheduleTaskContextHolder.trace(scheduleEntity.getId(), entity.getJobGroup(), entity.getId());
         taskRepository.updateExecutor(entity.getId(), JsonUtils.toJson(new ExecutorInfo(hostProperties)));
         context.setResult(entity);
@@ -143,11 +143,11 @@ public class OdcJobListener implements JobListener {
         ScheduleTaskContextHolder.clear();
     }
 
-    private void concurrentValidation(Long scheduleId){
+    private void concurrentValidation(Long scheduleId) {
         Optional<LatestTaskMappingEntity> optional = latestTaskMappingRepository.findByScheduleId(scheduleId);
         if (optional.isPresent()) {
             Optional<ScheduleTaskEntity> taskEntityOptional =
-                taskRepository.findById(optional.get().getLatestScheduleTaskId());
+                    taskRepository.findById(optional.get().getLatestScheduleTaskId());
             if (taskEntityOptional.isPresent() && !taskEntityOptional.get().getStatus().isTerminated()) {
                 log.warn("Concurrent scheduling is not allowed, ignoring this trigger, scheduleId={}", scheduleId);
                 throw new IllegalStateException("Concurrent scheduling is not allowed, ignoring this trigger.");
@@ -155,12 +155,12 @@ public class OdcJobListener implements JobListener {
         }
     }
 
-    private void updateLatestTaskId(Long scheduleId,Long scheduleTaskId){
+    private void updateLatestTaskId(Long scheduleId, Long scheduleTaskId) {
         Optional<LatestTaskMappingEntity> optional = latestTaskMappingRepository.findByScheduleId(scheduleId);
         LatestTaskMappingEntity entity;
-        if(optional.isPresent()){
+        if (optional.isPresent()) {
             entity = optional.get();
-        }else{
+        } else {
             entity = new LatestTaskMappingEntity();
             entity.setScheduleId(scheduleId);
         }
