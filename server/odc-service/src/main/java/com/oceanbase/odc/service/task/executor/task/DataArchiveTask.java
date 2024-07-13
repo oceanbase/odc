@@ -39,7 +39,6 @@ import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.tools.migrator.common.enums.JobType;
-import com.oceanbase.tools.migrator.core.meta.JobMeta;
 import com.oceanbase.tools.migrator.job.Job;
 import com.oceanbase.tools.migrator.task.CheckMode;
 
@@ -82,6 +81,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
         try {
             result = getDlmTableUnits(parameters).stream()
                     .collect(Collectors.toMap(DlmTableUnit::getDlmTableUnitId, o -> o));
+            jobStore.setDlmTableUnits(result);
         } catch (Exception e) {
             log.warn("Get dlm job failed!", e);
             return false;
@@ -197,16 +197,6 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
 
     @Override
     public List<DlmTableUnit> getTaskResult() {
-        if (job != null) {
-            JobMeta jobMeta = job.getJobMeta();
-            log.info("Update statistic:{}", jobMeta.getJobStat());
-            result.get(jobMeta.getJobId()).getStatistic()
-                    .setReadRowsPerSecond(jobMeta.getJobStat().getAvgReadRowCount());
-            result.get(jobMeta.getJobId()).getStatistic().setReadRowCount(jobMeta.getJobStat().getReadRowCount());
-            result.get(jobMeta.getJobId()).getStatistic()
-                    .setProcessedRowsPerSecond(jobMeta.getJobStat().getAvgRowCount());
-            result.get(jobMeta.getJobId()).getStatistic().setProcessedRowCount(jobMeta.getJobStat().getRowCount());
-        }
         log.info("Get result:{}", result);
         return new ArrayList<>(result.values());
     }

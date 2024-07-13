@@ -22,11 +22,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import com.alibaba.druid.pool.DruidDataSource;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
 import com.oceanbase.tools.migrator.common.dto.TableSizeInfo;
 import com.oceanbase.tools.migrator.common.dto.TaskGenerator;
@@ -41,7 +42,6 @@ import com.oceanbase.tools.migrator.core.meta.ClusterMeta;
 import com.oceanbase.tools.migrator.core.meta.JobMeta;
 import com.oceanbase.tools.migrator.core.meta.TaskMeta;
 import com.oceanbase.tools.migrator.core.meta.TenantMeta;
-import com.oceanbase.tools.migrator.core.stat.JobStat;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -54,17 +54,20 @@ import lombok.extern.slf4j.Slf4j;
 public class DLMJobStore implements IJobStore {
 
     private DruidDataSource dataSource;
-    private boolean enableBreakpointRecovery;
-    private JobStat jobStat;
+    private boolean enableBreakpointRecovery = false;
+    private Map<String, DlmTableUnit> dlmTableUnits;
 
     public DLMJobStore(ConnectionConfig metaDBConfig) {
-        try {
-            this.dataSource = (DruidDataSource) new DruidDataSourceFactory(metaDBConfig).getDataSource();
-            enableBreakpointRecovery = true;
-        } catch (Exception e) {
-            log.warn("Init metadb failed and set breakpoint recovery to false.");
-            enableBreakpointRecovery = false;
-        }
+        // try {
+        // this.dataSource = (DruidDataSource) new DruidDataSourceFactory(metaDBConfig).getDataSource();
+        // } catch (Exception e) {
+        // log.warn("Init metadb failed and set breakpoint recovery to false.");
+        // enableBreakpointRecovery = false;
+        // }
+    }
+
+    public void setDlmTableUnits(Map<String, DlmTableUnit> dlmTableUnits) {
+        this.dlmTableUnits = dlmTableUnits;
     }
 
     public void destroy() {
@@ -149,7 +152,15 @@ public class DLMJobStore implements IJobStore {
     }
 
     @Override
-    public void storeJobStatistic(JobMeta jobMeta) throws JobSqlException {}
+    public void storeJobStatistic(JobMeta jobMeta) throws JobSqlException {
+        dlmTableUnits.get(jobMeta.getJobId()).getStatistic().setProcessedRowCount(jobMeta.getJobStat().getRowCount());
+        dlmTableUnits.get(jobMeta.getJobId()).getStatistic()
+                .setProcessedRowsPerSecond(jobMeta.getJobStat().getAvgRowCount());
+
+        dlmTableUnits.get(jobMeta.getJobId()).getStatistic().setReadRowCount(jobMeta.getJobStat().getReadRowCount());
+        dlmTableUnits.get(jobMeta.getJobId()).getStatistic()
+                .setReadRowsPerSecond(jobMeta.getJobStat().getAvgReadRowCount());
+    }
 
     @Override
     public List<TaskMeta> getTaskMeta(JobMeta jobMeta) throws SQLException {

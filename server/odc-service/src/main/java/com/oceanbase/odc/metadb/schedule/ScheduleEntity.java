@@ -25,11 +25,14 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
@@ -93,5 +96,9 @@ public class ScheduleEntity implements Serializable {
     private Long creatorId;
     @Column(name = "modifier_id")
     private Long modifierId;
+
+    @ManyToOne
+    @JoinColumn(name = "connection_id", referencedColumnName = "id")
+    private ConnectionConfig datasource;
 
 }
