@@ -65,6 +65,9 @@ public class DlmLimiterService {
     private DlmLimiterConfigRepository limiterConfigRepository;
 
     public DlmLimiterConfigEntity create(RateLimitConfiguration config) {
+        config.setRowLimit(config.getRowLimit() == null ? defaultRowLimit : config.getRowLimit());
+        config.setBatchSize(config.getBatchSize() == null ? defaultBatchSize : config.getBatchSize());
+        config.setDataSizeLimit(config.getDataSizeLimit() == null ? defaultDataSizeLimit : config.getDataSizeLimit());
         checkLimiterConfig(config);
         DlmLimiterConfigEntity entity = mapper.modelToEntity(config);
         return limiterConfigRepository.save(entity);

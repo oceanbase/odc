@@ -28,10 +28,8 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.OffsetConfig;
-import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
@@ -128,22 +126,6 @@ public class AbstractDlmPreprocessor implements Preprocessor {
         } catch (Exception e) {
             throw new IllegalArgumentException(String.format("Parse condition error,message=%s", e.getMessage()));
         }
-    }
-
-    protected void initLimiterConfig(Long scheduleId, RateLimitConfiguration limiterConfig,
-            DlmLimiterService limiterService) {
-        RateLimitConfiguration defaultLimiterConfig = limiterService.getDefaultLimiterConfig();
-        if (limiterConfig.getRowLimit() == null) {
-            limiterConfig.setRowLimit(defaultLimiterConfig.getRowLimit());
-        }
-        if (limiterConfig.getDataSizeLimit() == null) {
-            limiterConfig.setDataSizeLimit(defaultLimiterConfig.getDataSizeLimit());
-        }
-        if (limiterConfig.getBatchSize() == null) {
-            limiterConfig.setBatchSize(defaultLimiterConfig.getBatchSize());
-        }
-        limiterConfig.setOrderId(scheduleId);
-        limiterService.create(limiterConfig);
     }
 
 }
