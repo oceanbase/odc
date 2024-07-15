@@ -46,9 +46,6 @@ public class DataDeleteJob extends AbstractDlmJob {
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
         DataDeleteParameters dataDeleteParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                 DataDeleteParameters.class);
-        if (dataDeleteParameters.isFullDatabase()) {
-            return;
-        }
         DLMJobReq parameters = new DLMJobReq();
         parameters.setJobName(taskEntity.getJobName());
         parameters.setScheduleTaskId(taskEntity.getId());

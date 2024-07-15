@@ -43,9 +43,6 @@ public class DataArchiveJob extends AbstractDlmJob {
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
         DataArchiveParameters dataArchiveParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                 DataArchiveParameters.class);
-        if (dataArchiveParameters.isFullDatabase()) {
-            return;
-        }
         DLMJobReq parameters = new DLMJobReq();
         parameters.setJobName(taskEntity.getJobName());
         parameters.setScheduleTaskId(taskEntity.getId());
