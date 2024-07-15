@@ -71,8 +71,9 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
     @Override
     protected boolean doStart(JobContext context) throws Exception {
 
-        String taskParameters = context.getJobParameters().get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON);
-        DLMJobReq parameters = JsonUtils.fromJson(taskParameters,
+        Map<String, String> jobParameters = context.getJobParameters();
+        jobStore.setJobParameters(jobParameters);
+        DLMJobReq parameters = JsonUtils.fromJson(jobParameters.get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
                 DLMJobReq.class);
         if (parameters.getFireTime() == null) {
             parameters.setFireTime(new Date());

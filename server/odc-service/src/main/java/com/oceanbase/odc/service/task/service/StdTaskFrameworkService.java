@@ -364,7 +364,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             }
             saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
             return true;
-        } catch (JobException exception) {
+        } catch (Exception exception) {
             log.warn("Refresh log meta failed,errorMsg={}", exception.getMessage());
             return false;
         }

@@ -31,7 +31,6 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.schedule.job.DLMJobReq;
-import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
 import com.oceanbase.tools.migrator.common.dto.TableSizeInfo;
@@ -61,7 +60,7 @@ public class DLMJobStore implements IJobStore {
     private DruidDataSource dataSource;
     private boolean enableBreakpointRecovery = false;
     private Map<String, DlmTableUnit> dlmTableUnits;
-    private JobContext jobContext;
+    private Map<String, String> jobParameters;
 
     public DLMJobStore(ConnectionConfig metaDBConfig) {
         // try {
@@ -257,15 +256,14 @@ public class DLMJobStore implements IJobStore {
     @Override
     public void updateLimiter(JobMeta jobMeta) {
         try {
-            Map<String, String> jobParameters = jobContext.getJobParameters();
             RateLimitConfiguration params;
             if (jobParameters.containsKey(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG)) {
                 params = JsonUtils.fromJson(
-                        jobContext.getJobParameters().get(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG),
+                        jobParameters.get(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG),
                         RateLimitConfiguration.class);
             } else {
                 DLMJobReq dlmJobReq = JsonUtils.fromJson(
-                        jobContext.getJobParameters().get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
+                        jobParameters.get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
                         DLMJobReq.class);
                 params = dlmJobReq.getRateLimit();
             }
@@ -280,6 +278,10 @@ public class DLMJobStore implements IJobStore {
         } catch (Exception e) {
             log.warn("Update rate limit failed,errorMsg={}", e.getMessage());
         }
+    }
+
+    public void setJobParameters(Map<String, String> jobParameters) {
+        this.jobParameters = jobParameters;
     }
 
     private void setClusterLimitConfig(ClusterMeta clusterMeta, long dataSizeLimit) {
