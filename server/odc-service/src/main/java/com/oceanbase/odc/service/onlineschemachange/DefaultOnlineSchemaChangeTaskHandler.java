@@ -486,12 +486,12 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
     }
 
     private OnlineSchemaChangeScheduleTaskParameters parseOnlineSchemaChangeScheduleTaskParameters(String jsonStr) {
-        OnlineSchemaChangeScheduleTaskParameters OnlineSchemaChangeScheduleTaskParameters = JsonUtils.fromJson(
+        OnlineSchemaChangeScheduleTaskParameters onlineSchemaChangeScheduleTaskParameters = JsonUtils.fromJson(
                 jsonStr, OnlineSchemaChangeScheduleTaskParameters.class);
         // correct null value to default RateLimiterConfig object
-        if (null == OnlineSchemaChangeScheduleTaskParameters.getRateLimitConfig()) {
-            OnlineSchemaChangeScheduleTaskParameters.setRateLimitConfig(new RateLimiterConfig());
+        if (null == onlineSchemaChangeScheduleTaskParameters.getRateLimitConfig()) {
+            onlineSchemaChangeScheduleTaskParameters.setRateLimitConfig(new RateLimiterConfig());
         }
-        return OnlineSchemaChangeScheduleTaskParameters;
+        return onlineSchemaChangeScheduleTaskParameters;
     }
 }
