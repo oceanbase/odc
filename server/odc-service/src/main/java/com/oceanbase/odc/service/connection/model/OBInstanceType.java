@@ -25,7 +25,7 @@ import lombok.Getter;
 /**
  * @Author: Lebie
  * @Date: 2022/10/25 下午4:56
- * @Description: [公有云/多云 实例类型，公有云支持集群实例、MySQL 租户实例 和 Oracle 租户实例；多云目前只有 集群实例]
+ * @Description: [公有云/多云 实例类型，公有云支持集群实例、MySQL 租户实例 和 Oracle 租户实例；多云目前只有 集群实例、租户实例、AP实例]
  */
 public enum OBInstanceType implements Translatable {
     CLUSTER("cluster"),
@@ -33,7 +33,13 @@ public enum OBInstanceType implements Translatable {
     ORACLE_TENANT("otenant"),
     MYSQL_SERVERLESS("mtenant_serverless"),
     ORACLE_SERVERLESS("otenant_serverless"),
-    DEDICATED("DEDICATED");
+    DEDICATED("DEDICATED"),
+    SHARED("SHARED"),
+    // K8s独占集群模式
+    K8s_DEDICATED("K8s_DEDICATED"),
+    // K8s共享集群模式
+    K8s_SHARED("K8s_SHARED"),
+    ANALYTICAL_CLUSTER("ANALYTICAL_CLUSTER");
 
     @Getter
     private String value;
