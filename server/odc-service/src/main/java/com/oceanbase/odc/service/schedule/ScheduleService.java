@@ -603,7 +603,7 @@ public class ScheduleService {
         return false;
     }
 
-    public void terminateByDatasourceIdsNoCheckPermission(Set<Long> datasourceIds) {
+    public void terminateByDatasourceIds(Set<Long> datasourceIds) {
         Set<Long> scheduleIds = scheduleRepository.getEnabledScheduleByConnectionIds(datasourceIds).stream()
                 .map(ScheduleEntity::getId).collect(
                         Collectors.toSet());
