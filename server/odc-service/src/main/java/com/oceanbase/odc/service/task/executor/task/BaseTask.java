@@ -90,7 +90,8 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
                 log.warn("Task is already finished and cannot be canceled, id={}, status={}.", getJobId(), getStatus());
             } else {
                 doStop();
-                updateStatus(JobStatus.CANCELED);
+                // doRefresh cannot execute if update status to 'canceled'.
+                updateStatus(JobStatus.CANCELING);
             }
             return true;
         } catch (Throwable e) {

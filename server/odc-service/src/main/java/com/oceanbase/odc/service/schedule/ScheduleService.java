@@ -663,6 +663,7 @@ public class ScheduleService {
             map.put(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG, JsonUtils.toJson(rateLimit));
             try {
                 SpringContextUtil.getBean(JobScheduler.class).modifyJobParameters(latestTask.get().getJobId(), map);
+                log.info("Sync rate limit to executor success:{}", map);
             } catch (JobException e) {
                 log.warn("Sync limit config failed,jobId={}", latestTask.get().getJobId(), e);
             }
