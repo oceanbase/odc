@@ -187,7 +187,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
             try {
                 job.stop();
                 result.forEach((k, v) -> {
-                    if (v.getStatus() == TaskStatus.RUNNING) {
+                    if (!v.getStatus().isTerminated()) {
                         v.setStatus(TaskStatus.CANCELED);
                     }
                 });
