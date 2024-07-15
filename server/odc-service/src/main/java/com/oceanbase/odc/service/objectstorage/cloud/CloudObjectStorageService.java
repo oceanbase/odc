@@ -405,14 +405,16 @@ public class CloudObjectStorageService {
         String region = objectStorageConfiguration.getRegion();
         if (StringUtils.isNotEmpty(region)) {
             String location = publicEndpointCloudObjectStorage.getBucketLocation(bucketName);
-            if (objectStorageConfiguration.getCloudProvider().isAWS()) {
-                Verify.verify(StringUtils.startsWithIgnoreCase(region, location),
-                        "object storage bucket region does not match location, location=" + location + ", region="
-                                + region);
-            }
-            Verify.verify(StringUtils.equals(region, location) || StringUtils.endsWith(location, region),
-                    "object storage bucket region does not match location, location=" + location + ", region="
-                            + region);
+            log.info("location={},region={},cloudProvider={}", location, region,
+                    objectStorageConfiguration.getCloudProvider());
+            // if (objectStorageConfiguration.getCloudProvider().isAWS()) {
+            // Verify.verify(StringUtils.startsWithIgnoreCase(region, location),
+            // "object storage bucket region does not match location, location=" + location + ", region="
+            // + region);
+            // }
+            // Verify.verify(StringUtils.equals(region, location) || StringUtils.endsWith(location, region),
+            // "object storage bucket region does not match location, location=" + location + ", region="
+            // + region);
         }
     }
 

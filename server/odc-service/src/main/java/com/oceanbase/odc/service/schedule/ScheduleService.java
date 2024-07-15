@@ -603,7 +603,7 @@ public class ScheduleService {
         return false;
     }
 
-    public void terminateByDatasourceIds(Set<Long> datasourceIds) {
+    public void terminateByDatasourceIdsNoCheckPermission(Set<Long> datasourceIds) {
         Set<Long> scheduleIds = scheduleRepository.getEnabledScheduleByConnectionIds(datasourceIds).stream()
                 .map(ScheduleEntity::getId).collect(
                         Collectors.toSet());
@@ -612,7 +612,7 @@ public class ScheduleService {
         }
         scheduleIds.forEach(v -> {
             try {
-                changeSchedule(ScheduleChangeParams.with(v, OperationType.TERMINATE));
+                executeChangeSchedule(ScheduleChangeParams.with(v, OperationType.TERMINATE));
             } catch (Exception e) {
                 log.warn("Terminate schedule failed,scheduleId={}", v, e);
             }
