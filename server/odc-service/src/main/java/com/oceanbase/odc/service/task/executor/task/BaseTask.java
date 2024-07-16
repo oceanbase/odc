@@ -114,6 +114,7 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
         }
         DefaultJobContext ctx = (DefaultJobContext) getJobContext();
         // change the value in job context
+        log.info("Update task parameters success,old={},new={}", this.jobParameters, jobParameters);
         ctx.setJobParameters(jobParameters);
         this.jobParameters = Collections.unmodifiableMap(jobParameters);
         return true;
