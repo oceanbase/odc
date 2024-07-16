@@ -471,6 +471,7 @@ public class ScheduleService {
 
     public Page<ScheduleOverview> listScheduleOverview(@NotNull Pageable pageable,
             @NotNull QueryScheduleParams params) {
+        log.info("List schedule overview req:{}", params);
         if (params.getDataSourceIds() == null) {
             params.setDataSourceIds(new HashSet<>());
         }
