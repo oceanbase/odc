@@ -15,23 +15,18 @@
  */
 package com.oceanbase.odc.service.task.schedule.daemon;
 
-import java.text.MessageFormat;
-
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.data.domain.Page;
 
-import com.oceanbase.odc.core.alarm.AlarmEventNames;
-import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -87,15 +82,15 @@ public class DoCancelingJob implements Job {
                     throw new TaskRuntimeException(
                             "Update job status to CANCELED failed, jobId=" + lockedEntity.getId());
                 }
-                log.info("Prepare cancel task, jobId={}.", lockedEntity.getId());
-                try {
-                    getConfiguration().getJobDispatcher().stop(JobIdentity.of(lockedEntity.getId()));
-                } catch (JobException e) {
-                    log.warn("Stop job occur error: ", e);
-                    AlarmUtils.alarm(AlarmEventNames.TASK_CANCELED_FAILED,
-                            MessageFormat.format("Cancel job failed, jobId={0}", lockedEntity.getId()));
-                    throw new TaskRuntimeException(e);
-                }
+                // log.info("Prepare cancel task, jobId={}.", lockedEntity.getId());
+                // try {
+                // getConfiguration().getJobDispatcher().stop(JobIdentity.of(lockedEntity.getId()));
+                // } catch (JobException e) {
+                // log.warn("Stop job occur error: ", e);
+                // AlarmUtils.alarm(AlarmEventNames.TASK_CANCELED_FAILED,
+                // MessageFormat.format("Cancel job failed, jobId={0}", lockedEntity.getId()));
+                // throw new TaskRuntimeException(e);
+                // }
                 log.info("Job be cancelled successfully, jobId={}, oldStatus={}.", lockedEntity.getId(),
                         lockedEntity.getStatus());
                 getConfiguration().getEventPublisher().publishEvent(
