@@ -203,6 +203,13 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
     }
 
     @Override
+    protected void afterModifiedJobParameters() throws Exception {
+        if (jobStore != null) {
+            jobStore.setJobParameters(getJobParameters());
+        }
+    }
+
+    @Override
     public double getProgress() {
         return progress;
     }
