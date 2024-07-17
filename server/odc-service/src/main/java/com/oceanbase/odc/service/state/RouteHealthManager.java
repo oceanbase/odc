@@ -52,7 +52,7 @@ public class RouteHealthManager implements InitializingBean {
 
     public boolean isHealthy(RouteInfo routeInfo) {
         RouteManageInfo routeManageInfo = ROUTE_HEALTHY_MAP.computeIfAbsent(routeInfo,
-                r -> new RouteManageInfo(r.isHealthyHost(), LocalDateTime.now()));
+                r -> new RouteManageInfo(r.isHealthyHost(3), LocalDateTime.now()));
         routeManageInfo.now();
         return routeManageInfo.isHealthy();
     }
@@ -79,9 +79,10 @@ public class RouteHealthManager implements InitializingBean {
             Map.Entry<RouteInfo, RouteManageInfo> item = it.next();
             RouteManageInfo manageInfo = item.getValue();
             if (manageInfo.expired(expireSeconds)) {
+                log.info("route info has expired, route={}", manageInfo);
                 it.remove();
             }
-            manageInfo.setHealthy(item.getKey().isHealthyHost());
+            manageInfo.setHealthy(item.getKey().isHealthyHost(3));
         }
     }
 

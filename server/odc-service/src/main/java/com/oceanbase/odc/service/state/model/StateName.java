@@ -15,15 +15,15 @@
  */
 package com.oceanbase.odc.service.state.model;
 
-import com.oceanbase.odc.service.pldebug.PLDebugStateManager;
 import com.oceanbase.odc.service.session.ConnectSessionStateManager;
+import com.oceanbase.odc.service.state.StatefulUuidStateIdManager;
 
 import lombok.Getter;
 
 @Getter
 public enum StateName {
     NONE(null),
-    PL_DEBUG_SESSION(PLDebugStateManager.class),
+    UUID_STATEFUL_ID(StatefulUuidStateIdManager.class),
     DB_SESSION(ConnectSessionStateManager.class);
 
     private final Class<? extends StateManager> stateManagerClass;
