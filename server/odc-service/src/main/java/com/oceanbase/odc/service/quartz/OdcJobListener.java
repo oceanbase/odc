@@ -164,6 +164,7 @@ public class OdcJobListener implements JobListener {
             entity = new LatestTaskMappingEntity();
             entity.setScheduleId(scheduleId);
         }
+        log.info("Update latest task from {} to {}", entity.getLatestScheduleTaskId(), scheduleTaskId);
         entity.setLatestScheduleTaskId(scheduleTaskId);
         latestTaskMappingRepository.save(entity);
     }

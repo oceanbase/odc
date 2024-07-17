@@ -394,8 +394,7 @@ public class CloudObjectStorageService {
      * 也就是杭州的client只允许操作杭州的bucket，不允许跨域操作
      */
     private void validateBucket() {
-        if (objectStorageConfiguration.getCloudProvider() == CloudProvider.NONE
-                || objectStorageConfiguration.getCloudProvider() == CloudProvider.HUAWEI_CLOUD) {
+        if (objectStorageConfiguration.getCloudProvider() != CloudProvider.ALIBABA_CLOUD) {
             return;
         }
         String bucketName = getBucketName();
@@ -407,14 +406,9 @@ public class CloudObjectStorageService {
             String location = publicEndpointCloudObjectStorage.getBucketLocation(bucketName);
             log.info("location={},region={},cloudProvider={}", location, region,
                     objectStorageConfiguration.getCloudProvider());
-            // if (objectStorageConfiguration.getCloudProvider().isAWS()) {
-            // Verify.verify(StringUtils.startsWithIgnoreCase(region, location),
-            // "object storage bucket region does not match location, location=" + location + ", region="
-            // + region);
-            // }
-            // Verify.verify(StringUtils.equals(region, location) || StringUtils.endsWith(location, region),
-            // "object storage bucket region does not match location, location=" + location + ", region="
-            // + region);
+            Verify.verify(StringUtils.equals(region, location) || StringUtils.endsWith(location, region),
+                    "object storage bucket region does not match location, location=" + location + ", region="
+                            + region);
         }
     }
 

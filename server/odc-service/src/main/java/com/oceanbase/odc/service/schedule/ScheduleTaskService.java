@@ -168,8 +168,7 @@ public class ScheduleTaskService {
                 TriggerConfig triggerConfig = new TriggerConfig();
                 triggerConfig.setTriggerStrategy(TriggerStrategy.START_NOW);
                 param.setTriggerConfig(triggerConfig);
-                param.setJobDataMap(ScheduleTaskUtils.buildTriggerDataMap(scheduleTask.getId()));
-                quartzJobService.createJob(param);
+                quartzJobService.createJob(param, ScheduleTaskUtils.buildTriggerDataMap(id));
             }
         } catch (SchedulerException e) {
             log.warn("Trigger schedule task failed,scheduleTaskId={}", id);
