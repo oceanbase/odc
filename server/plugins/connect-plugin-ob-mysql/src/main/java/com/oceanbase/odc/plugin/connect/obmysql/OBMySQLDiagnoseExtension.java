@@ -238,7 +238,7 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
     @Override
     public SqlExecDetail getExecutionDetailById(Connection connection, @NonNull String id) throws SQLException {
         // v$sql_audit中对于分区表会有多条记录，需要过滤
-        String appendSql = "TRACE_ID = '" + id + "' AND LENGTH(QUERY_SQL) > 0;";
+        String appendSql = "TRACE_ID = '" + id + "' AND LENGTH(QUERY_SQL) > 0 AND IS_INNER_SQL = 0;";
         return innerGetExecutionDetail(connection, appendSql, id);
     }
 
