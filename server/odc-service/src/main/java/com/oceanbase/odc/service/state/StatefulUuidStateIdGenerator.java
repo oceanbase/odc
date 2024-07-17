@@ -28,7 +28,6 @@ import com.oceanbase.odc.service.session.factory.StateHostGenerator;
 import com.oceanbase.odc.service.state.model.StatefulUuidStateId;
 
 @Component
-@ConditionalOnProperty(value = {"odc.web.stateful-route.enabled"}, havingValue = "true")
 public class StatefulUuidStateIdGenerator {
 
     @Autowired
