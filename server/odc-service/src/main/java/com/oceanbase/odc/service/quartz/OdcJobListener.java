@@ -96,6 +96,8 @@ public class OdcJobListener implements JobListener {
                 scheduleEntity.getOrganizationId(), scheduleEntity.getProjectId(), scheduleEntity.getDatabaseId(),
                 scheduleEntity.getType());
 
+        concurrentValidation(scheduleId);
+
         UserEntity userEntity = userService.nullSafeGet(scheduleEntity.getCreatorId());
         userEntity.setOrganizationId(scheduleEntity.getOrganizationId());
         User taskCreator = new User(userEntity);
@@ -119,25 +121,12 @@ public class OdcJobListener implements JobListener {
             entity.setStatus(TaskStatus.PREPARING);
             entity.setFireTime(context.getFireTime());
             entity = taskRepository.save(entity);
-            Optional<LatestTaskMappingEntity> optional = latestTaskMappingRepository.findByScheduleId(scheduleId);
-            if (optional.isPresent()) {
-                Optional<ScheduleTaskEntity> taskEntityOptional =
-                        taskRepository.findById(optional.get().getLatestScheduleTaskId());
-                if (taskEntityOptional.isPresent() && !taskEntityOptional.get().getStatus().isTerminated()) {
-                    log.warn("Concurrent scheduling is not allowed, ignoring this trigger, scheduleId={}", scheduleId);
-                    return;
-                }
-            }
-            LatestTaskMappingEntity latestTaskMapping =
-                    optional.isPresent() ? optional.get() : new LatestTaskMappingEntity();
-            latestTaskMapping.setLatestScheduleTaskId(entity.getId());
-            latestTaskMapping.setScheduleId(scheduleId);
-            latestTaskMappingRepository.save(latestTaskMapping);
         } else {
             log.info("Load an existing task,taskId={}", targetTaskId);
             entity = taskRepository.findById(targetTaskId).orElseThrow(() -> new NotFoundException(
                     ResourceType.ODC_SCHEDULE_TASK, "id", targetTaskId));
         }
+        updateLatestTaskId(scheduleId, entity.getId());
         ScheduleTaskContextHolder.trace(scheduleEntity.getId(), entity.getJobGroup(), entity.getId());
         taskRepository.updateExecutor(entity.getId(), JsonUtils.toJson(new ExecutorInfo(hostProperties)));
         context.setResult(entity);
@@ -152,5 +141,31 @@ public class OdcJobListener implements JobListener {
     @Override
     public void jobWasExecuted(JobExecutionContext context, JobExecutionException jobException) {
         ScheduleTaskContextHolder.clear();
+    }
+
+    private void concurrentValidation(Long scheduleId) {
+        Optional<LatestTaskMappingEntity> optional = latestTaskMappingRepository.findByScheduleId(scheduleId);
+        if (optional.isPresent()) {
+            Optional<ScheduleTaskEntity> taskEntityOptional =
+                    taskRepository.findById(optional.get().getLatestScheduleTaskId());
+            if (taskEntityOptional.isPresent() && !taskEntityOptional.get().getStatus().isTerminated()) {
+                log.warn("Concurrent scheduling is not allowed, ignoring this trigger, scheduleId={}", scheduleId);
+                throw new IllegalStateException("Concurrent scheduling is not allowed, ignoring this trigger.");
+            }
+        }
+    }
+
+    private void updateLatestTaskId(Long scheduleId, Long scheduleTaskId) {
+        Optional<LatestTaskMappingEntity> optional = latestTaskMappingRepository.findByScheduleId(scheduleId);
+        LatestTaskMappingEntity entity;
+        if (optional.isPresent()) {
+            entity = optional.get();
+        } else {
+            entity = new LatestTaskMappingEntity();
+            entity.setScheduleId(scheduleId);
+        }
+        log.info("Update latest task from {} to {}", entity.getLatestScheduleTaskId(), scheduleTaskId);
+        entity.setLatestScheduleTaskId(scheduleTaskId);
+        latestTaskMappingRepository.save(entity);
     }
 }

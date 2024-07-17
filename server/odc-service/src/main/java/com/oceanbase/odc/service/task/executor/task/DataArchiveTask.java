@@ -16,9 +16,13 @@
 package com.oceanbase.odc.service.task.executor.task;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
@@ -51,11 +55,9 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
 
     private DLMJobFactory jobFactory;
     private DLMJobStore jobStore;
-    private boolean isSuccess = true;
     private double progress = 0.0;
     private Job job;
-    private List<DlmTableUnit> dlmTableUnits;
-    private DlmTableUnit currentTableUnit;
+    private Map<String, DlmTableUnit> result;
     private boolean isToStop = false;
 
 
@@ -69,22 +71,26 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
     @Override
     protected boolean doStart(JobContext context) throws Exception {
 
-        String taskParameters = context.getJobParameters().get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON);
-        DLMJobReq parameters = JsonUtils.fromJson(taskParameters,
-                DLMJobReq.class);
+        jobStore.setJobParameters(getJobParameters());
+        DLMJobReq parameters =
+                JsonUtils.fromJson(getJobParameters().get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
+                        DLMJobReq.class);
         if (parameters.getFireTime() == null) {
             parameters.setFireTime(new Date());
         }
         try {
-            dlmTableUnits = getDlmTableUnits(parameters);
+            result = getDlmTableUnits(parameters).stream()
+                    .collect(Collectors.toMap(DlmTableUnit::getDlmTableUnitId, o -> o));
+            jobStore.setDlmTableUnits(result);
         } catch (Exception e) {
             log.warn("Get dlm job failed!", e);
             return false;
         }
+        Set<String> dlmTableUnitIds = result.keySet();
 
-        for (DlmTableUnit dlmTableUnit : dlmTableUnits) {
-            currentTableUnit = dlmTableUnit;
-            if (getStatus().isTerminated()) {
+        for (String dlmTableUnitId : dlmTableUnitIds) {
+            DlmTableUnit dlmTableUnit = result.get(dlmTableUnitId);
+            if (isToStop) {
                 log.info("Job is terminated,jobIdentity={}", context.getJobIdentity());
                 break;
             }
@@ -92,6 +98,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
                 log.info("The table had been completed,tableName={}", dlmTableUnit.getTableName());
                 continue;
             }
+            startTableUnit(dlmTableUnitId);
             if (parameters.getJobType() == JobType.MIGRATE) {
                 try {
                     DLMTableStructureSynchronizer.sync(
@@ -103,7 +110,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
                     log.warn("Failed to sync target table structure,table will be ignored,tableName={}",
                             dlmTableUnit.getTableName(), e);
                     // jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.FAILED);
-                    dlmTableUnit.setStatus(TaskStatus.FAILED);
+                    finishTableUnit(dlmTableUnitId, TaskStatus.FAILED);
                     continue;
                 }
             }
@@ -112,30 +119,36 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
                 log.info("Init {} job succeed,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
                 log.info("{} job start,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
                 if (isToStop) {
+                    finishTableUnit(dlmTableUnitId, TaskStatus.CANCELED);
                     job.stop();
-                    currentTableUnit.setStatus(TaskStatus.CANCELED);
                     log.info("The task has stopped.");
                     break;
                 } else {
-                    dlmTableUnit.setStatus(TaskStatus.RUNNING);
                     job.run();
                 }
-                log.info("{} job finished,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
-                dlmTableUnit.setStatus(TaskStatus.DONE);
+                log.info("{} job finished,DLMJobId={}", dlmTableUnit.getType(), dlmTableUnitId);
+                finishTableUnit(dlmTableUnitId, TaskStatus.DONE);
             } catch (Throwable e) {
-                log.error("{} job failed,DLMJobId={},errorMsg={}", job.getJobMeta().getJobType(),
-                        job.getJobMeta().getJobId(),
-                        e);
+                log.error("{} job failed,DLMJobId={},errorMsg={}", dlmTableUnit.getType(), dlmTableUnitId, e);
                 // set task status to failed if any job failed.
-                isSuccess = false;
-                if (job.getJobMeta().isToStop()) {
-                    dlmTableUnit.setStatus(TaskStatus.CANCELED);
+                if (job != null && job.getJobMeta().isToStop()) {
+                    finishTableUnit(dlmTableUnitId, TaskStatus.CANCELED);
                 } else {
-                    dlmTableUnit.setStatus(TaskStatus.FAILED);
+                    finishTableUnit(dlmTableUnitId, TaskStatus.FAILED);
                 }
             }
         }
-        return isSuccess;
+        return true;
+    }
+
+    private void startTableUnit(String dlmTableUnitId) {
+        result.get(dlmTableUnitId).setStatus(TaskStatus.RUNNING);
+        result.get(dlmTableUnitId).setStartTime(new Date());
+    }
+
+    private void finishTableUnit(String dlmTableUnitId, TaskStatus status) {
+        result.get(dlmTableUnitId).setStatus(status);
+        result.get(dlmTableUnitId).setEndTime(new Date());
     }
 
     private List<DlmTableUnit> getDlmTableUnits(DLMJobReq req) throws SQLException {
@@ -169,20 +182,31 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
 
     @Override
     protected void doStop() throws Exception {
+        isToStop = true;
         if (job != null) {
             try {
                 job.stop();
-                currentTableUnit.setStatus(TaskStatus.CANCELED);
+                result.forEach((k, v) -> {
+                    if (!v.getStatus().isTerminated()) {
+                        v.setStatus(TaskStatus.CANCELED);
+                    }
+                });
             } catch (Exception e) {
                 log.warn("Update dlm table unit status failed,DlmTableUnitId={}", job.getJobMeta().getJobId());
             }
         }
-        isToStop = true;
     }
 
     @Override
     protected void doClose() throws Exception {
         jobStore.destroy();
+    }
+
+    @Override
+    protected void afterModifiedJobParameters() throws Exception {
+        if (jobStore != null) {
+            jobStore.setJobParameters(getJobParameters());
+        }
     }
 
     @Override
@@ -192,6 +216,6 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
 
     @Override
     public List<DlmTableUnit> getTaskResult() {
-        return dlmTableUnits;
+        return new ArrayList<>(result.values());
     }
 }

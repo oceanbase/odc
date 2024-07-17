@@ -699,6 +699,20 @@ public class ConnectionService {
     }
 
     @SkipAuthorize("odc internal usages")
+    public List<Long> innerListIdByOrganizationIdAndClusterId(@NonNull Long organizationId, String clusterId) {
+        return repository.findByOrganizationIdAndClusterName(organizationId, clusterId).stream()
+                .map(ConnectionEntity::getId)
+                .collect(Collectors.toList());
+    }
+
+    @SkipAuthorize("odc internal usages")
+    public List<Long> innerListIdByOrganizationIdAndTenantId(@NonNull Long organizationId, String tenantId) {
+        return repository.findByOrganizationIdAndTenantName(organizationId, tenantId).stream()
+                .map(ConnectionEntity::getId)
+                .collect(Collectors.toList());
+    }
+
+    @SkipAuthorize("odc internal usages")
     public List<ConnectionConfig> innerListByIds(@NotEmpty Collection<Long> ids) {
         return repository.findByIdIn(ids).stream().map(mapper::entityToModel).collect(Collectors.toList());
     }

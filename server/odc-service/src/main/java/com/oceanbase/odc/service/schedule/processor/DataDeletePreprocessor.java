@@ -78,6 +78,9 @@ public class DataDeletePreprocessor extends AbstractDlmPreprocessor {
             ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
             ConnectionSession connectionSession = connectionSessionFactory.generateSession();
             try {
+                if (parameters.isFullDatabase()) {
+                    parameters.setTables(getAllTables(connectionSession, sourceDb.getName()));
+                }
                 checkTableAndCondition(connectionSession, sourceDb, parameters.getTables(),
                         parameters.getVariables());
             } finally {

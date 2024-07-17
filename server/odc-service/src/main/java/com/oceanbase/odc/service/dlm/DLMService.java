@@ -99,6 +99,8 @@ public class DLMService {
                 entity = entityOptional.get();
                 entity.setStatistic(JsonUtils.toJson(o.getStatistic()));
                 entity.setStatus(o.getStatus());
+                entity.setStartTime(o.getStartTime());
+                entity.setEndTime(o.getEndTime());
             } else {
                 entity = DlmTableUnitMapper.modelToEntity(o);
             }

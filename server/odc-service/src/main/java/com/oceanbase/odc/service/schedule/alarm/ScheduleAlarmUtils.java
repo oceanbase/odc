@@ -19,24 +19,30 @@ import java.util.Date;
 
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @Author：tinker
  * @Date: 2024/7/8 13:40
  * @Descripition:
  */
+@Slf4j
 public class ScheduleAlarmUtils {
 
     private static ScheduleAlarmClient scheduleAlarmClient;
 
     public static void misfire(Long scheduleId, Date fireTime) {
+        log.warn("Schedule is misfire,id={},fireTime={}", scheduleId, fireTime);
         getAlarmClient().misfire(scheduleId, fireTime);
     }
 
     public static void fail(Long scheduleTaskId) {
+        log.warn("Schedule task execution failed,scheduleTaskId={}", scheduleTaskId);
         getAlarmClient().fail(scheduleTaskId);
     }
 
     public static void timeout(Long scheduleTaskId) {
+        log.warn("Schedule task execution timeout,scheduleTaskId={}", scheduleTaskId);
         getAlarmClient().timeout(scheduleTaskId);
     }
 

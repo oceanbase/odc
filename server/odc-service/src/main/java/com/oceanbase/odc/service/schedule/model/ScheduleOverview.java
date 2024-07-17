@@ -35,6 +35,8 @@ public class ScheduleOverview {
 
     private Long scheduleId;
 
+    private TriggerConfig triggerConfig;
+
     private Map<String, Object> attributes;
 
     private ScheduleStatus status;

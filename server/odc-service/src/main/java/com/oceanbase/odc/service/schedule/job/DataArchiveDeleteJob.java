@@ -66,6 +66,8 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
         DLMJobReq parameters = getDLMJobReq(dataArchiveTask.getJobId());
         parameters.setJobType(JobType.DELETE);
         parameters.setScheduleTaskId(taskEntity.getId());
+        parameters
+                .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName())));
         Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis(),
                 dataArchiveParameters.getSourceDatabaseId());
         log.info("Publish DLM job to task framework succeed,scheduleTaskId={},jobIdentity={}", taskEntity.getId(),

@@ -20,6 +20,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import org.springframework.jdbc.core.ConnectionCallback;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -28,12 +32,12 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.OffsetConfig;
-import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
+import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
+import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
@@ -51,6 +55,18 @@ public class AbstractDlmPreprocessor implements Preprocessor {
 
     @Override
     public void process(ScheduleChangeParams req) {}
+
+    public List<DataArchiveTableConfig> getAllTables(ConnectionSession sourceSession, String schemaName) {
+        return Objects.requireNonNull(sourceSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<List<DBObjectIdentity>>) con -> SchemaPluginUtil.getTableExtension(
+                        sourceSession.getDialectType())
+                        .list(con, schemaName)))
+                .stream().map(o -> {
+                    DataArchiveTableConfig config = new DataArchiveTableConfig();
+                    config.setTableName(o.getName());
+                    return config;
+                }).collect(Collectors.toList());
+    }
 
     public void checkTableAndCondition(ConnectionSession connectionSession, Database sourceDb,
             List<DataArchiveTableConfig> tables,
@@ -128,22 +144,6 @@ public class AbstractDlmPreprocessor implements Preprocessor {
         } catch (Exception e) {
             throw new IllegalArgumentException(String.format("Parse condition error,message=%s", e.getMessage()));
         }
-    }
-
-    protected void initLimiterConfig(Long scheduleId, RateLimitConfiguration limiterConfig,
-            DlmLimiterService limiterService) {
-        RateLimitConfiguration defaultLimiterConfig = limiterService.getDefaultLimiterConfig();
-        if (limiterConfig.getRowLimit() == null) {
-            limiterConfig.setRowLimit(defaultLimiterConfig.getRowLimit());
-        }
-        if (limiterConfig.getDataSizeLimit() == null) {
-            limiterConfig.setDataSizeLimit(defaultLimiterConfig.getDataSizeLimit());
-        }
-        if (limiterConfig.getBatchSize() == null) {
-            limiterConfig.setBatchSize(defaultLimiterConfig.getBatchSize());
-        }
-        limiterConfig.setOrderId(scheduleId);
-        limiterService.create(limiterConfig);
     }
 
 }

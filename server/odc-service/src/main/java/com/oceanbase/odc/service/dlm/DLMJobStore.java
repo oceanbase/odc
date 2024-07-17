@@ -22,11 +22,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import com.alibaba.druid.pool.DruidDataSource;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
+import com.oceanbase.odc.service.schedule.job.DLMJobReq;
+import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
 import com.oceanbase.tools.migrator.common.dto.TableSizeInfo;
 import com.oceanbase.tools.migrator.common.dto.TaskGenerator;
@@ -53,21 +58,23 @@ import lombok.extern.slf4j.Slf4j;
 public class DLMJobStore implements IJobStore {
 
     private DruidDataSource dataSource;
-    private boolean enableBreakpointRecovery;
+    private boolean enableBreakpointRecovery = false;
+    private Map<String, DlmTableUnit> dlmTableUnits;
+    private Map<String, String> jobParameters;
 
     public DLMJobStore(ConnectionConfig metaDBConfig) {
-        try {
-            this.dataSource = (DruidDataSource) new DruidDataSourceFactory(metaDBConfig).getDataSource();
-            initEnableBreakpointRecovery();
-        } catch (Exception e) {
-            log.warn("Init metadb failed and set breakpoint recovery to false.");
-            enableBreakpointRecovery = false;
-        }
+
+    }
+
+    public void setDlmTableUnits(Map<String, DlmTableUnit> dlmTableUnits) {
+        this.dlmTableUnits = dlmTableUnits;
     }
 
     public void destroy() {
-        if (dataSource != null) {
+        try {
             dataSource.close();
+        } catch (Exception e) {
+            log.warn("Close meta datasource failed,errorMsg={}", e.getMessage());
         }
     }
 
@@ -146,7 +153,13 @@ public class DLMJobStore implements IJobStore {
 
     @Override
     public void storeJobStatistic(JobMeta jobMeta) throws JobSqlException {
+        dlmTableUnits.get(jobMeta.getJobId()).getStatistic().setProcessedRowCount(jobMeta.getJobStat().getRowCount());
+        dlmTableUnits.get(jobMeta.getJobId()).getStatistic()
+                .setProcessedRowsPerSecond(jobMeta.getJobStat().getAvgRowCount());
 
+        dlmTableUnits.get(jobMeta.getJobId()).getStatistic().setReadRowCount(jobMeta.getJobStat().getReadRowCount());
+        dlmTableUnits.get(jobMeta.getJobId()).getStatistic()
+                .setReadRowsPerSecond(jobMeta.getJobStat().getAvgReadRowCount());
     }
 
     @Override
@@ -237,12 +250,39 @@ public class DLMJobStore implements IJobStore {
 
     @Override
     public void updateLimiter(JobMeta jobMeta) {
-        setClusterLimitConfig(jobMeta.getSourceCluster(), 1024 * 10);
-        setClusterLimitConfig(jobMeta.getTargetCluster(), 1024 * 10);
-        setTenantLimitConfig(jobMeta.getSourceTenant(), 1024 * 10);
-        setTenantLimitConfig(jobMeta.getTargetTenant(), 1024 * 10);
-        setTableLimitConfig(jobMeta.getTargetTableMeta(), 30000);
-        setTableLimitConfig(jobMeta.getSourceTableMeta(), 30000);
+        try {
+            RateLimitConfiguration params;
+            if (jobParameters.containsKey(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG)) {
+                params = JsonUtils.fromJson(
+                        jobParameters.get(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG),
+                        RateLimitConfiguration.class);
+            } else {
+                DLMJobReq dlmJobReq = JsonUtils.fromJson(
+                        jobParameters.get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
+                        DLMJobReq.class);
+                params = dlmJobReq.getRateLimit();
+            }
+            setClusterLimitConfig(jobMeta.getSourceCluster(), params.getDataSizeLimit());
+            setClusterLimitConfig(jobMeta.getTargetCluster(), params.getDataSizeLimit());
+            setTenantLimitConfig(jobMeta.getSourceTenant(), params.getDataSizeLimit());
+            setTenantLimitConfig(jobMeta.getTargetTenant(), params.getDataSizeLimit());
+            setTableLimitConfig(jobMeta.getTargetTableMeta(), params.getRowLimit());
+            setTableLimitConfig(jobMeta.getSourceTableMeta(), params.getRowLimit());
+
+            log.info("Update rate limit to {}", params);
+        } catch (Exception e) {
+            log.warn("Update rate limit failed,errorMsg={}", e.getMessage());
+            setClusterLimitConfig(jobMeta.getSourceCluster(), 1024);
+            setClusterLimitConfig(jobMeta.getTargetCluster(), 1024);
+            setTenantLimitConfig(jobMeta.getSourceTenant(), 1024);
+            setTenantLimitConfig(jobMeta.getTargetTenant(), 1024);
+            setTableLimitConfig(jobMeta.getTargetTableMeta(), 1000);
+            setTableLimitConfig(jobMeta.getSourceTableMeta(), 1000);
+        }
+    }
+
+    public void setJobParameters(Map<String, String> jobParameters) {
+        this.jobParameters = jobParameters;
     }
 
     private void setClusterLimitConfig(ClusterMeta clusterMeta, long dataSizeLimit) {
@@ -262,22 +302,5 @@ public class DLMJobStore implements IJobStore {
     private void setTableLimitConfig(TableMeta tableMeta, int rowLimit) {
         tableMeta.setReadRowCountLimit(rowLimit);
         tableMeta.setWriteRowCountLimit(rowLimit);
-    }
-
-    private void initEnableBreakpointRecovery() {
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement preparedStatement = conn.prepareStatement(
-                        "select value from config_system_configuration where `key` = 'odc.task.dlm"
-                                + ".support-breakpoint-recovery'")) {
-            ResultSet resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                this.enableBreakpointRecovery = resultSet.getBoolean(1);
-                log.info("The status of breakpoint recovery is {}", enableBreakpointRecovery);
-                return;
-            }
-        } catch (Exception e) {
-            log.warn("Load breakpoint recovery config failed!", e);
-        }
-        enableBreakpointRecovery = false;
     }
 }
