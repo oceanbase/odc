@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.schedule;
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -35,12 +36,12 @@ import org.quartz.Trigger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanMap;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
@@ -56,7 +57,13 @@ import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
+import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.dlm.DlmLimiterService;
+import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
+import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -79,12 +86,16 @@ import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.processor.ScheduleChangePreprocessor;
+import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
+import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
+import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -144,6 +155,12 @@ public class ScheduleService {
     @Autowired
     private LatestTaskMappingRepository latestTaskMappingRepository;
 
+    @Autowired
+    private ConnectionService connectionService;
+
+    @Autowired
+    private DlmLimiterService dlmLimiterService;
+
     private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
 
 
@@ -175,6 +192,21 @@ public class ScheduleService {
 
             targetSchedule = scheduleMapper.entityToModel(scheduleRepository.save(entity));
             req.setScheduleId(targetSchedule.getId());
+            if (req.getCreateScheduleReq().getType() == ScheduleType.DATA_ARCHIVE
+                    || req.getCreateScheduleReq().getType() == ScheduleType.DATA_DELETE) {
+                if (req.getCreateScheduleReq().getParameters() instanceof DataArchiveParameters) {
+                    DataArchiveParameters parameters = (DataArchiveParameters) req.getCreateScheduleReq()
+                            .getParameters();
+                    parameters.getRateLimit().setOrderId(req.getScheduleId());
+                    dlmLimiterService.create(parameters.getRateLimit());
+                }
+                if (req.getCreateScheduleReq().getParameters() instanceof DataDeleteParameters) {
+                    DataDeleteParameters parameters = (DataDeleteParameters) req.getCreateScheduleReq()
+                            .getParameters();
+                    parameters.getRateLimit().setOrderId(req.getScheduleId());
+                    dlmLimiterService.create(parameters.getRateLimit());
+                }
+            }
         } else {
             targetSchedule = nullSafeGetByIdWithCheckPermission(req.getScheduleId(), true);
             if (req.getOperationType() == OperationType.UPDATE
@@ -439,6 +471,18 @@ public class ScheduleService {
 
     public Page<ScheduleOverview> listScheduleOverview(@NotNull Pageable pageable,
             @NotNull QueryScheduleParams params) {
+        log.info("List schedule overview req:{}", params);
+        if (params.getDataSourceIds() == null) {
+            params.setDataSourceIds(new HashSet<>());
+        }
+        if (StringUtils.isNotEmpty(params.getClusterId())) {
+            params.getDataSourceIds().addAll(connectionService.innerListIdByOrganizationIdAndClusterId(
+                    authenticationFacade.currentOrganizationId(), params.getClusterId()));
+        }
+        if (StringUtils.isNotEmpty(params.getTenantId())) {
+            params.getDataSourceIds().addAll(connectionService.innerListIdByOrganizationIdAndTenantId(
+                    authenticationFacade.currentOrganizationId(), params.getTenantId()));
+        }
 
         if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
             Set<Long> projectIds = params.getProjectId() == null
@@ -452,11 +496,10 @@ public class ScheduleService {
 
         params.setOrganizationId(authenticationFacade.currentOrganizationId());
         Page<ScheduleEntity> returnValue = scheduleRepository.find(pageable, params);
-        List<ScheduleOverview> res =
-                scheduleResponseMapperFactory.generateScheduleOverviewList(returnValue.getContent());
+        Map<Long, ScheduleOverview> id2Overview =
+                scheduleResponseMapperFactory.generateScheduleOverviewListMapper(returnValue.getContent());
 
-        return returnValue.isEmpty() ? Page.empty()
-                : new PageImpl<>(res, returnValue.getPageable(), returnValue.getTotalPages());
+        return returnValue.map(o -> id2Overview.get(o.getId()));
     }
 
     public Page<ScheduleTaskOverview> listScheduleTaskOverview(@NotNull Pageable pageable, @NotNull Long scheduleId) {
@@ -544,6 +587,19 @@ public class ScheduleService {
         return scheduleChangeLogService.listByScheduleId(schedule.getId());
     }
 
+    public Optional<ScheduleTask> getLatestTask(Long id) {
+        Optional<LatestTaskMappingEntity> optional = latestTaskMappingRepository.findByScheduleId(id);
+        if (!optional.isPresent()) {
+            return Optional.empty();
+        }
+        List<ScheduleTask> res = scheduleTaskService.findByIds(
+                Collections.singleton(optional.get().getLatestScheduleTaskId()));
+        if (res.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(res.get(0));
+    }
+
     public boolean hasRunningTask(Long id) {
         return false;
     }
@@ -557,7 +613,7 @@ public class ScheduleService {
         }
         scheduleIds.forEach(v -> {
             try {
-                changeSchedule(ScheduleChangeParams.with(v, OperationType.TERMINATE));
+                executeChangeSchedule(ScheduleChangeParams.with(v, OperationType.TERMINATE));
             } catch (Exception e) {
                 log.warn("Terminate schedule failed,scheduleId={}", v, e);
             }
@@ -591,6 +647,29 @@ public class ScheduleService {
             }
         });
         return type2RunningTaskCount;
+    }
+
+    public RateLimitConfiguration updateDlmRateLimit(Long scheduleId, RateLimitConfiguration rateLimit) {
+        Schedule schedule = nullSafeGetByIdWithCheckPermission(scheduleId, true);
+        RateLimitConfiguration rateLimitConfiguration = dlmLimiterService.updateByOrderId(schedule.getId(), rateLimit);
+        syncRateLimitToRunningTask(scheduleId, rateLimit);
+        return rateLimitConfiguration;
+    }
+
+    private void syncRateLimitToRunningTask(Long scheduleId, RateLimitConfiguration rateLimit) {
+        Optional<ScheduleTask> latestTask = getLatestTask(scheduleId);
+        if (latestTask.isPresent() && latestTask.get().getStatus() == TaskStatus.RUNNING
+                && latestTask.get().getJobId() != null) {
+            Map<String, String> map = new HashMap<>();
+            map.put(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG, JsonUtils.toJson(rateLimit));
+            try {
+                SpringContextUtil.getBean(JobScheduler.class).modifyJobParameters(latestTask.get().getJobId(), map);
+                log.info("Sync rate limit to executor success:{}", map);
+            } catch (JobException e) {
+                log.warn("Sync limit config failed,jobId={}", latestTask.get().getJobId(), e);
+            }
+        }
+
     }
 
 }

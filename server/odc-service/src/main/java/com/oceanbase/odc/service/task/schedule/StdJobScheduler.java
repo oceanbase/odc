@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
+import java.text.MessageFormat;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -30,8 +31,12 @@ import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.TriggerKey;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.concurrent.Await;
 import com.oceanbase.odc.common.event.EventPublisher;
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.alarm.AlarmEventNames;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
@@ -126,7 +131,12 @@ public class StdJobScheduler implements JobScheduler {
         if (!jobEntity.getStatus().isExecuting()) {
             throw new JobException("Job is not executing, jobId={0}, jobStatus={1}.", jobId, jobEntity.getStatus());
         }
-        String newJobParametersJson = JobUtils.toJson(jobParameters);
+        // partial update
+        Map<String, String> oldJobParameters = JsonUtils.fromJson(jobEntity.getJobParametersJson(),
+                new TypeReference<Map<String, String>>() {});
+        oldJobParameters.putAll(jobParameters);
+        String newJobParametersJson = JobUtils.toJson(oldJobParameters);
+        log.info("Start to modify job parameters,old={},new={}", oldJobParameters, newJobParametersJson);
         configuration.getTaskFrameworkService().updateJobParameters(jobId, newJobParametersJson);
 
         if (jobEntity.getStatus() == JobStatus.PREPARING) {
@@ -155,6 +165,15 @@ public class StdJobScheduler implements JobScheduler {
         if (!jobEntity.getStatus().isExecuting()) {
             throw new JobException("Cancel job failed, current job {0} status is {1}, can't be cancel.",
                     jobEntity.getId(), jobEntity.getStatus());
+        }
+        log.info("Prepare cancel task, jobId={}.", jobEntity.getId());
+        try {
+            configuration.getJobDispatcher().stop(JobIdentity.of(jobEntity.getId()));
+        } catch (JobException e) {
+            log.warn("Stop job occur error: ", e);
+            AlarmUtils.alarm(AlarmEventNames.TASK_CANCELED_FAILED,
+                    MessageFormat.format("Cancel job failed, jobId={0}", jobEntity.getId()));
+            throw new TaskRuntimeException(e);
         }
         int count = configuration.getTaskFrameworkService().updateJobToCanceling(jobId, jobEntity.getStatus());
         if (count <= 0) {

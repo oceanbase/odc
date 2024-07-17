@@ -83,6 +83,9 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
             ConnectionSession sourceSession = sourceSessionFactory.generateSession();
             ConnectionSession targetSession = targetSessionFactory.generateSession();
             try {
+                if (parameters.isFullDatabase()) {
+                    parameters.setTables(getAllTables(sourceSession, sourceDb.getName()));
+                }
                 supportDataArchivingLink(sourceSession, targetSession);
                 checkTableAndCondition(sourceSession, sourceDb, parameters.getTables(),
                         parameters.getVariables());

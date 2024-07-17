@@ -54,6 +54,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleOverviewAttributes;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
+import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 
 import lombok.NonNull;
 
@@ -111,10 +112,11 @@ public class ScheduleResponseMapperFactory {
         return scheduleDetailResp;
     }
 
-    public List<ScheduleOverview> generateScheduleOverviewList(@NonNull Collection<ScheduleEntity> schedules) {
+    public Map<Long, ScheduleOverview> generateScheduleOverviewListMapper(
+            @NonNull Collection<ScheduleEntity> schedules) {
 
         if (schedules.isEmpty()) {
-            return Collections.emptyList();
+            return Collections.emptyMap();
         }
 
         Set<Long> scheduleIds = schedules.stream().map(ScheduleEntity::getId).collect(Collectors.toSet());
@@ -138,6 +140,7 @@ public class ScheduleResponseMapperFactory {
             ScheduleOverview overview = new ScheduleOverview();
             overview.setScheduleId(o.getId());
             overview.setStatus(o.getStatus());
+            overview.setTriggerConfig(JsonUtils.fromJson(o.getTriggerConfigJson(), TriggerConfig.class));
             overview.setAttributes(JSON.parseObject(JSON.toJSONString(id2Attributes.get(o.getId()))));
             if (scheduleId2ScheduleTaskId.containsKey(o.getId())) {
                 ScheduleTaskEntity scheduleTask = scheduleId2ScheduleTask.get(o.getId());
@@ -145,7 +148,7 @@ public class ScheduleResponseMapperFactory {
                 overview.setLatestExecutionStatus(scheduleTask.getStatus());
             }
             return overview;
-        }).collect(Collectors.toList());
+        }).collect(Collectors.toMap(ScheduleOverview::getScheduleId, o -> o));
     }
 
     private Map<Long, ScheduleOverviewAttributes> generateAttributes(Collection<ScheduleEntity> schedules) {

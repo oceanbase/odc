@@ -26,16 +26,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigEntity;
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigRepository;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
-import com.oceanbase.odc.service.schedule.ScheduleService;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @Author：tinker
  * @Date: 2023/8/3 14:06
  * @Descripition:
  */
+@Slf4j
 @Service
 @SkipAuthorize("odc internal usage")
 public class DlmLimiterService {
@@ -60,10 +64,10 @@ public class DlmLimiterService {
     @Autowired
     private DlmLimiterConfigRepository limiterConfigRepository;
 
-    @Autowired
-    private ScheduleService scheduleService;
-
     public DlmLimiterConfigEntity create(RateLimitConfiguration config) {
+        config.setRowLimit(config.getRowLimit() == null ? defaultRowLimit : config.getRowLimit());
+        config.setBatchSize(config.getBatchSize() == null ? defaultBatchSize : config.getBatchSize());
+        config.setDataSizeLimit(config.getDataSizeLimit() == null ? defaultDataSizeLimit : config.getDataSizeLimit());
         checkLimiterConfig(config);
         DlmLimiterConfigEntity entity = mapper.modelToEntity(config);
         return limiterConfigRepository.save(entity);
@@ -79,7 +83,7 @@ public class DlmLimiterService {
     }
 
     public Optional<RateLimitConfiguration> findByScheduleId(Long scheduleId) {
-        return limiterConfigRepository.findById(scheduleId).map(mapper::entityToModel);
+        return limiterConfigRepository.findByOrderId(scheduleId).map(mapper::entityToModel);
     }
 
     public List<RateLimitConfiguration> findByOrderIds(Collection<Long> orderIds) {
@@ -101,9 +105,7 @@ public class DlmLimiterService {
                     : rateLimit.getDataSizeLimit());
             return mapper.entityToModel(limiterConfigRepository.save(entity));
         } else {
-            RateLimitConfiguration config = getDefaultLimiterConfig();
-            config.setOrderId(orderId);
-            return mapper.entityToModel(limiterConfigRepository.save(mapper.modelToEntity(config)));
+            throw new NotFoundException(ResourceType.ODC_DLM_LIMITER_CONFIG, "Id", orderId);
         }
     }
 

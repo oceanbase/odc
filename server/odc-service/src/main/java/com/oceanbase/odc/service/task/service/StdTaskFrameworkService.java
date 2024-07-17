@@ -345,8 +345,34 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         });
     }
 
+    @Override
+    public boolean refreshLogMeta(Long id) {
+        JobEntity je = find(id);
+        // CANCELING is also a state within the running phase
+        if (JobStatus.RUNNING != je.getStatus() && JobStatus.CANCELING != je.getStatus()) {
+            log.warn("Job is not running, don't need to refresh log meta, jobId={}, currentStatus={}", id,
+                    je.getStatus());
+            return true;
+        }
+        try {
+            String executorEndpoint = executorEndpointManager.getExecutorEndpoint(je);
+            DefaultTaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
+            if (MapUtils.isEmpty(result.getLogMetadata())) {
+                log.info("Refresh log failed due to log have not uploaded,  jobId={}, currentStatus={}", je.getId(),
+                        je.getStatus());
+                return false;
+            }
+            saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
+            return true;
+        } catch (Exception exception) {
+            log.warn("Refresh log meta failed,errorMsg={}", exception.getMessage());
+            return false;
+        }
+    }
+
     private void doRefreshResult(Long id) throws JobException {
         JobEntity je = find(id);
+        // CANCELING is also a state within the running phase
         if (JobStatus.RUNNING != je.getStatus()) {
             log.info("Job is not running, ignore refresh, jobId={}, currentStatus={}", id, je.getStatus());
             return;

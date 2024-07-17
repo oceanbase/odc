@@ -90,7 +90,8 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
                 log.warn("Task is already finished and cannot be canceled, id={}, status={}.", getJobId(), getStatus());
             } else {
                 doStop();
-                updateStatus(JobStatus.CANCELED);
+                // doRefresh cannot execute if update status to 'canceled'.
+                updateStatus(JobStatus.CANCELING);
             }
             return true;
         } catch (Throwable e) {
@@ -113,8 +114,14 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
         }
         DefaultJobContext ctx = (DefaultJobContext) getJobContext();
         // change the value in job context
+        log.info("Update task parameters success,old={},new={}", this.jobParameters, jobParameters);
         ctx.setJobParameters(jobParameters);
         this.jobParameters = Collections.unmodifiableMap(jobParameters);
+        try {
+            afterModifiedJobParameters();
+        } catch (Exception e) {
+            log.warn("Do after modified job parameters failed", e);
+        }
         return true;
     }
 
@@ -177,4 +184,8 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
      * task can release relational resource in this method
      */
     protected abstract void doClose() throws Exception;
+
+    protected void afterModifiedJobParameters() throws Exception {
+        // do nothing
+    }
 }
