@@ -87,6 +87,8 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
                     parameters.setTables(getAllTables(sourceSession, sourceDb.getName()));
                 }
                 supportDataArchivingLink(sourceSession, targetSession);
+                checkTableAndCondition(sourceSession, sourceDb, parameters.getTables(),
+                        parameters.getVariables());
             } finally {
                 sourceSession.expire();
                 targetSession.expire();
