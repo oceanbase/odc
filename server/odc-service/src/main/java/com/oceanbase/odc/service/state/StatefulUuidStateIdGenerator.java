@@ -19,7 +19,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
