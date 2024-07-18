@@ -36,9 +36,9 @@ public class ScheduleChangeLog {
 
     private OperationType type;
 
-    private String oldScheduleParameterJson;
+    private String previousParameters;
 
-    private String newScheduleParameterJson;
+    private String newParameter;
 
     private ScheduleChangeStatus status;
 
@@ -58,8 +58,8 @@ public class ScheduleChangeLog {
         log.setScheduleId(scheduleId);
         log.setStatus(status);
         log.setType(type);
-        log.setOldScheduleParameterJson(oldParameters);
-        log.setNewScheduleParameterJson(newParameters);
+        log.setPreviousParameters(oldParameters);
+        log.setNewParameter(newParameters);
         log.setFlowInstanceId(flowInstanceId);
         return log;
     }

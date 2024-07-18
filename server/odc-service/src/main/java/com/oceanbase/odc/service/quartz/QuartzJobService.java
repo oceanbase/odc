@@ -73,6 +73,7 @@ public class QuartzJobService {
                     createQuartzJobReq.setMisfireStrategy(req.getMisfireStrategy());
                     createQuartzJobReq.setTriggerConfig(req.getTriggerConfig());
                     createJob(createQuartzJobReq);
+                    break;
                 }
                 case UPDATE: {
                     deleteJob(jobKey);
