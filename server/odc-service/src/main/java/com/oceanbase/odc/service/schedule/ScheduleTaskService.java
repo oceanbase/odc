@@ -419,6 +419,9 @@ public class ScheduleTaskService {
                 .collect(Collectors.toList());
     }
 
+    public Optional<ScheduleTask> findById(Long id) {
+        return scheduleTaskRepository.findById(id).map(scheduleTaskMapper::entityToModel);
+    }
 
 
 }
