@@ -15,35 +15,34 @@
  */
 package com.oceanbase.odc.common.util;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.function.Supplier;
+
+import lombok.NonNull;
 
 /**
  * @author: liuyizhuo.lyz
  * @date: 2024/7/11
  */
-public class LazyInitObjectTest {
+public class Lazy<T> {
+    private static final Object NO_INIT = new Object();
 
-    @Test
-    public void test_LazyInitialize_Get_Success() {
-        DummyCounter counter = new DummyCounter();
-        Assert.assertEquals(0, counter.cnt);
-        LazyInitObject<DummyCounter> o = new LazyInitObject<>(() -> {
-            counter.count();
-            return counter;
-        });
-        Assert.assertEquals(1, o.get().cnt);
-        Assert.assertEquals(1, o.get().cnt);
+    private volatile T target;
+    private final Supplier<T> supplier;
+
+    public Lazy(@NonNull Supplier<T> supplier) {
+        target = (T) NO_INIT;
+        this.supplier = supplier;
     }
 
-    private static class DummyCounter {
-
-        private int cnt = 0;
-
-        private void count() {
-            cnt++;
+    public T get() {
+        if (target == NO_INIT) {
+            synchronized (this) {
+                if (target == NO_INIT) {
+                    target = supplier.get();
+                }
+            }
         }
-
+        return target;
     }
 
 }

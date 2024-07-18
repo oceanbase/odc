@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import com.oceanbase.odc.common.util.LazyInitObject;
+import com.oceanbase.odc.common.util.Lazy;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.service.dml.model.DataModifyUnit;
@@ -42,7 +42,7 @@ import lombok.NonNull;
 public class OracleDMLBuilder extends BaseDMLBuilder {
 
     public OracleDMLBuilder(@NonNull List<DataModifyUnit> modifyUnits, List<String> whereColumns,
-            ConnectionSession connectionSession, LazyInitObject<List<DBTableConstraint>> constraints) {
+            ConnectionSession connectionSession, Lazy<List<DBTableConstraint>> constraints) {
         super(modifyUnits, whereColumns, connectionSession, constraints);
     }
 

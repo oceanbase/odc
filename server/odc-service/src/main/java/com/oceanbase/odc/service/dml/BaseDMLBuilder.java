@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import com.oceanbase.odc.common.util.LazyInitObject;
+import com.oceanbase.odc.common.util.Lazy;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
@@ -53,12 +53,12 @@ abstract class BaseDMLBuilder implements DMLBuilder {
     private final String tableName;
     private final String schema;
     private final List<DataModifyUnit> modifyUnits;
-    private final LazyInitObject<List<DBTableConstraint>> constraints;
+    private final Lazy<List<DBTableConstraint>> constraints;
     private final List<String> whereColumns;
     protected final ConnectionSession connectionSession;
 
     public BaseDMLBuilder(@NonNull List<DataModifyUnit> modifyUnits, List<String> whereColumns,
-            @NonNull ConnectionSession connectionSession, LazyInitObject<List<DBTableConstraint>> constraints) {
+            @NonNull ConnectionSession connectionSession, Lazy<List<DBTableConstraint>> constraints) {
         Set<String> schemas = modifyUnits.stream()
                 .map(DataModifyUnit::getSchemaName)
                 .filter(Objects::nonNull).collect(Collectors.toSet());
@@ -80,7 +80,7 @@ abstract class BaseDMLBuilder implements DMLBuilder {
         }
         this.connectionSession = connectionSession;
         this.constraints =
-                constraints == null ? new LazyInitObject<>(() -> getConstraints(schema, tableName, connectionSession))
+                constraints == null ? new Lazy<>(() -> getConstraints(schema, tableName, connectionSession))
                         : constraints;
         this.whereColumns = whereColumns;
     }

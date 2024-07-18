@@ -27,7 +27,7 @@ import javax.validation.constraints.NotNull;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
-import com.oceanbase.odc.common.util.LazyInitObject;
+import com.oceanbase.odc.common.util.Lazy;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -74,7 +74,7 @@ public class TableDataService {
         BatchDataModifyResp resp = new BatchDataModifyResp();
         resp.setTableName(tableName);
         resp.setSchemaName(schemaName);
-        LazyInitObject<List<DBTableConstraint>> constraints = new LazyInitObject<>(
+        Lazy<List<DBTableConstraint>> constraints = new Lazy<>(
                 () -> BaseDMLBuilder.getConstraints(schemaName, tableName, connectionSession));
         Map<String, DBTableColumn> columnName2Column = getColumnName2Column(connectionSession, schemaName, tableName);
         StringBuilder sqlBuilder = new StringBuilder();

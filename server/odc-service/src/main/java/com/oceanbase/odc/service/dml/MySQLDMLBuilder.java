@@ -20,7 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.oceanbase.odc.common.util.LazyInitObject;
+import com.oceanbase.odc.common.util.Lazy;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.service.dml.model.DataModifyUnit;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
@@ -40,7 +40,7 @@ import lombok.NonNull;
 public class MySQLDMLBuilder extends BaseDMLBuilder {
 
     public MySQLDMLBuilder(@NonNull List<DataModifyUnit> modifyUnits, List<String> whereColumns,
-            ConnectionSession connectionSession, LazyInitObject<List<DBTableConstraint>> constraints) {
+            ConnectionSession connectionSession, Lazy<List<DBTableConstraint>> constraints) {
         super(modifyUnits, whereColumns, connectionSession, constraints);
     }
 
