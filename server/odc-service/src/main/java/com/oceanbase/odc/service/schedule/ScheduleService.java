@@ -369,7 +369,11 @@ public class ScheduleService {
         if (optional.isPresent()) {
             Optional<ScheduleTask> taskEntityOptional =
                     scheduleTaskService.findById(optional.get().getLatestScheduleTaskId());
-            return taskEntityOptional.isPresent() && !taskEntityOptional.get().getStatus().isTerminated();
+            if (taskEntityOptional.isPresent() && !taskEntityOptional.get().getStatus().isTerminated()) {
+                log.info("Found executing task,scheduleId={},executingTaskId={}", scheduleId,
+                        taskEntityOptional.get().getId());
+                return true;
+            }
         }
         return false;
     }
