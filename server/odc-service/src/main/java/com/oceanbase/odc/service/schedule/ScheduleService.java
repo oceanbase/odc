@@ -341,7 +341,7 @@ public class ScheduleService {
      * true and terminates the scheduled task if the database does not exist. If the database exists, it
      * returns false.
      */
-    public boolean terminateIfScheduleInvalid(Long scheduleId) {
+    public boolean vetoJobExecution(Long scheduleId) {
         Optional<ScheduleEntity> scheduleEntityOptional = scheduleRepository.findById(scheduleId);
         if (scheduleEntityOptional.isPresent()) {
             ScheduleEntity entity = scheduleEntityOptional.get();
@@ -356,11 +356,22 @@ public class ScheduleService {
                     log.warn("Terminate schedule failed,scheduleId={}", scheduleId);
                 }
             }
-            return isInvalid;
+            // concurrent is not allowed
+            return isInvalid || hasExecutingTask(scheduleId);
         }
         // terminate if schedule not found or invalid.
         return true;
 
+    }
+
+    private boolean hasExecutingTask(Long scheduleId) {
+        Optional<LatestTaskMappingEntity> optional = latestTaskMappingRepository.findByScheduleId(scheduleId);
+        if (optional.isPresent()) {
+            Optional<ScheduleTask> taskEntityOptional =
+                    scheduleTaskService.findById(optional.get().getLatestScheduleTaskId());
+            return taskEntityOptional.isPresent() && !taskEntityOptional.get().getStatus().isTerminated();
+        }
+        return false;
     }
 
     private boolean isInvalidSchedule(ScheduleEntity schedule) {

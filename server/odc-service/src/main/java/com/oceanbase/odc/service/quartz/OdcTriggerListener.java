@@ -64,7 +64,7 @@ public class OdcTriggerListener extends TriggerListenerSupport {
     @Override
     public boolean vetoJobExecution(Trigger trigger, JobExecutionContext context) {
         return SpringContextUtil.getBean(ScheduleService.class)
-                .terminateIfScheduleInvalid(Long.parseLong(context.getTrigger().getJobKey().getName()));
+                .vetoJobExecution(Long.parseLong(context.getTrigger().getJobKey().getName()));
     }
 
     @Override
