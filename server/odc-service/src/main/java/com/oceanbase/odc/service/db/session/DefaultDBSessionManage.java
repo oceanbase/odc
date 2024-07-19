@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.db.session;
 
 import java.sql.Connection;
+import java.sql.ResultSetMetaData;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
@@ -40,12 +41,14 @@ import org.springframework.stereotype.Service;
 
 import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.model.OdcDBSession;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
@@ -55,6 +58,8 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionInfoUtil;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.db.browser.DBStatsAccessors;
+import com.oceanbase.odc.service.db.model.KillSessionOBProxyVersionNumber;
+import com.oceanbase.odc.service.db.model.KillSessionOBVersionNumber;
 import com.oceanbase.odc.service.db.session.DBSessionService.SessionIdKillSql;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
@@ -211,6 +216,69 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
                 jdbcGeneralResult.getQueryResult();
             } catch (Exception e) {
                 if (StringUtils.contains(e.getMessage(), "Unknown thread id")) {
+                    // use 'select proxy_version()' command to check whether ob_proxy exists
+                    String obProxyVersion;
+                    try {
+                        obProxyVersion =
+                                connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
+                                        .queryForObject("select proxy_version()", String.class);
+                    } catch (Exception e1) {
+                        if (StringUtils.contains(e1.getMessage(), "FUNCTION proxy_version does not exist")) {
+                            log.warn(
+                                    "Connect directly to observer, obProxy does not exist, return error result directly");
+                            return jdbcGeneralResult;
+                        } else {
+                            throw e1;
+                        }
+                    }
+                    String obVersion = (String) connectionSession.getAttribute("OB_VERSION");
+                    // obVersion is greater than or equal to 4.2.3. And obProxy is greater than or equal to 4.2.3.
+                    // if the field in the result set obtained by the show processlist command contains the time, then
+                    // the global session has been opened
+                    log.info(
+                            "Kill query/session Unknown thread id error, check whether OBProxy started the global client session");
+                    if (VersionUtils.isGreaterThanOrEqualsTo(obProxyVersion,
+                            KillSessionOBProxyVersionNumber.GLOBAL_CLIENT_SESSION_V_4_2_3.getName())
+                            && VersionUtils.isGreaterThanOrEqualsTo(obVersion,
+                                    KillSessionOBVersionNumber.GLOBAL_CLIENT_SESSION_V_4_2_2.getName())) {
+                        Boolean enabledGlobalClientSession =
+                                connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).query(
+                                        "SHOW PROCESSLIST",
+                                        rs -> {
+                                            ResultSetMetaData metaData = rs.getMetaData();
+                                            int columnCount = metaData.getColumnCount();
+                                            for (int i = 1; i <= columnCount; i++) {
+                                                if ("TIME".equalsIgnoreCase(metaData.getColumnName(i))) {
+                                                    return true;
+                                                }
+                                            }
+                                            return false;
+                                        });
+                        if (enabledGlobalClientSession) {
+                            log.info("The obProxy has started the global client session, return error result directly");
+                            return jdbcGeneralResult;
+                        }
+                    }
+                    // If ob version is greater than or equals to 4.2.1.0 and the tenant is in oracle mode, try to solve
+                    // it with anonymous code blocks
+                    if (VersionUtils.isGreaterThanOrEqualsTo(obVersion,
+                            KillSessionOBVersionNumber.ORACLE_kill_SESSION_WITH_BLOCK_V_4_2_1_0.getName())
+                            && connectionSession.getDialectType() == DialectType.OB_ORACLE) {
+                        log.info("Kill query/session Unknown thread id error, try anonymous code blocks");
+                        String executedSql = sqlTuple.getExecutedSql();
+                        if (executedSql != null && executedSql.endsWith(";")) {
+                            executedSql = executedSql.substring(0, executedSql.length() - 1);
+                        }
+                        String anonymousCodeBlock = "BEGIN\n"
+                                + "EXECUTE IMMEDIATE \'"
+                                + executedSql
+                                + "\';\n"
+                                + "END;";
+                        connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
+                                .execute(anonymousCodeBlock);
+                        return JdbcGeneralResult.successResult(sqlTuple);
+                    }
+                    // trying direct connect observe as the final solution
                     try {
                         log.info("Kill query/session Unknown thread id error, try direct connect observer");
                         directLinkServerAndExecute(sqlTuple.getExecutedSql(),
