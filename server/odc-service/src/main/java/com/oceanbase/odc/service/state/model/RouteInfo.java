@@ -67,7 +67,7 @@ public class RouteInfo {
             String response = restTemplate.getForObject(url, String.class);
             return response.contains("true");
         } catch (Exception e) {
-            log.error("test route health check failed, hostName={},port={}", hostName, port, e);
+            log.warn("test route health check failed, hostName={},port={}", hostName, port, e);
             return false;
         }
     }
