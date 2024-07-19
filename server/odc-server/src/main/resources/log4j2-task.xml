@@ -52,7 +52,7 @@
                                  fileName="${LOG_DIRECTORY}/${ctx:taskId}/task-log.all"
                                  filePattern="${LOG_DIRECTORY}/${ctx:taskId}/${date:yyyy-MM}/task-log-%d{yyyy-MM-dd}-%i.all.gz">
                         <PatternLayout>
-                            <pattern>[%d{yyyy-MM-dd HH:mm:ss}] [%X{taskId}] [%p] %m%n</pattern>
+                            <pattern>[%d{yyyy-MM-dd HH:mm:ss z}] [%X{taskId}] [%p] %m%n</pattern>
                         </PatternLayout>
                         <Filters>
                             <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
@@ -74,7 +74,7 @@
                                  fileName="${LOG_DIRECTORY}/${ctx:taskId}/task-log.warn"
                                  filePattern="${LOG_DIRECTORY}/${ctx:taskId}/${date:yyyy-MM}/task-log-%d{yyyy-MM-dd}-%i.warn.gz">
                         <PatternLayout>
-                            <pattern>[%d{yyyy-MM-dd HH:mm:ss}] [%X{taskId}] [%p] %m%n</pattern>
+                            <pattern>[%d{yyyy-MM-dd HH:mm:ss z}] [%X{taskId}] [%p] %m%n</pattern>
                         </PatternLayout>
                         <Filters>
                             <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
