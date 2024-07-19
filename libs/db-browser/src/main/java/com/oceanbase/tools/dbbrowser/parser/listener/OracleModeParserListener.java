@@ -37,12 +37,14 @@ import com.oceanbase.tools.dbbrowser.parser.constant.PLObjectType;
 import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlLexer;
+import com.oceanbase.tools.sqlparser.oracle.PlSqlParser;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Alter_functionContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Alter_indexContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Alter_packageContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Alter_procedureContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Alter_userContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Anonymous_blockContext;
+import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Commit_statementContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Create_function_bodyContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Create_indexContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Create_packageContext;
@@ -66,6 +68,7 @@ import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.ParameterContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Procedure_bodyContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Procedure_nameContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Procedure_specContext;
+import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Rollback_statementContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Type_declarationContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Variable_declarationContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParserBaseListener;
@@ -405,6 +408,16 @@ public class OracleModeParserListener extends PlSqlParserBaseListener implements
         }
     }
 
+    @Override
+    public void enterCommit_statement(Commit_statementContext ctx) {
+        doRecord(SqlType.COMMIT, DBObjectType.OTHERS, null);
+    }
+
+    @Override
+    public void enterRollback_statement(PlSqlParser.Rollback_statementContext ctx) {
+        doRecord(SqlType.ROLLBACK, DBObjectType.OTHERS, null);
+    }
+
     private void doRecord(SqlType sqlType, DBObjectType dbObjectType, String rawPlName) {
         if (Objects.nonNull(sqlType) && Objects.isNull(this.sqlType)) {
             this.sqlType = sqlType;
@@ -426,4 +439,5 @@ public class OracleModeParserListener extends PlSqlParserBaseListener implements
         CharStream stream = start.getTokenSource().getInputStream();
         return stream.getText(Interval.of(start.getStartIndex(), end));
     }
+
 }
