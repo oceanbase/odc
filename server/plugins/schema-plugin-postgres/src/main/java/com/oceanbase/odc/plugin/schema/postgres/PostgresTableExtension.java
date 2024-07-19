@@ -19,12 +19,12 @@ import java.sql.Connection;
 
 import org.pf4j.Extension;
 
-import com.oceanbase.odc.plugin.schema.mysql.MySQLTableExtension;
+import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.odc.plugin.schema.postgres.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 @Extension
-public class PostgresTableExtension extends MySQLTableExtension {
+public class PostgresTableExtension extends OBMySQLTableExtension {
 
     @Override
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {

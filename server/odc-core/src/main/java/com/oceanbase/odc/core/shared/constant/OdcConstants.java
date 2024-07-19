@@ -89,7 +89,6 @@ public class OdcConstants {
      */
     public static final String POSTGRES_DRIVER_CLASS_NAME = "org.postgresql.Driver";
 
-
     /**
      * Parameters name
      */

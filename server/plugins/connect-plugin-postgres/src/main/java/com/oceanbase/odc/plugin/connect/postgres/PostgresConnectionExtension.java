@@ -88,6 +88,7 @@ public class PostgresConnectionExtension extends OBMySQLConnectionExtension {
 
     @Override
     public List<ConnectionInitializer> getConnectionInitializers() {
-        return super.getConnectionInitializers();
+        return null;
     }
+
 }

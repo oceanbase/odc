@@ -15,53 +15,11 @@
  */
 package com.oceanbase.odc.plugin.connect.postgres;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import org.pf4j.Extension;
 
-import com.oceanbase.jdbc.OceanBaseConnection;
-import com.oceanbase.odc.common.util.JdbcOperationsUtil;
-import com.oceanbase.odc.common.util.ReflectionUtils;
-import com.oceanbase.odc.core.datasource.SingleConnectionDataSource.CloseIgnoreInvocationHandler;
-import com.oceanbase.odc.plugin.connect.mysql.MySQLSessionExtension;
-
-import lombok.NonNull;
+import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLSessionExtension;
 
 @Extension
-public class PostgresSessionExtension extends MySQLSessionExtension {
+public class PostgresSessionExtension extends OBMySQLSessionExtension {
 
-    @Override
-    public String getConnectionId(@NonNull Connection connection) {
-        String querySql = "SELECT pg_backend_pid();";
-        String connectionId = null;
-        try {
-            return JdbcOperationsUtil.getJdbcOperations(connection).queryForObject(querySql, String.class);
-        } catch (Exception e) {
-            OceanBaseConnection actual =
-                    ReflectionUtils.getProxiedFieldValue(connection, CloseIgnoreInvocationHandler.class, "target");
-            connectionId = actual == null ? "" : actual.getServerThreadId() + "";
-        }
-        return connectionId;
-    }
-
-    @Override
-    public void killQuery(@NonNull Connection connection, @NonNull String connectionId) {
-
-    }
-
-    @Override
-    public void switchSchema(Connection connection, String schemaName) throws SQLException {
-
-    }
-
-    @Override
-    public String getCurrentSchema(Connection connection) {
-        return null;
-    }
-
-    @Override
-    public String getVariable(Connection connection, String variableName) {
-        return null;
-    }
 }

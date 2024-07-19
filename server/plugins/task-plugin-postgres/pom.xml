@@ -31,18 +31,13 @@
     <properties>
         <root-project.basedir>${project.parent.parent.basedir}</root-project.basedir>
         <plugin.class>com.oceanbase.odc.plugin.task.postgres.PostgresTaskPlugin</plugin.class>
-        <plugin.dependencies>schema-plugin-mysql, schema-plugin-postgres, connect-plugin-postgres, task-plugin-ob-mysql, task-plugin-mysql, connect-plugin-mysql
-        </plugin.dependencies>
+        <plugin.dependencies>schema-plugin-postgres, connect-plugin-postgres</plugin.dependencies>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>task-plugin-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.oceanbase</groupId>
-            <artifactId>task-plugin-mysql</artifactId>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>

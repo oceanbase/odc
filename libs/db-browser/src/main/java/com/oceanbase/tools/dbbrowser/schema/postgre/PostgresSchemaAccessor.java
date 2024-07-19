@@ -72,9 +72,8 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     @Override
     public List<DBDatabase> listDatabases() {
         StringBuilder sb = new StringBuilder();
-        sb.append("SELECT datname AS database_name,");
-        sb.append("pg_encoding_to_char(encoding) AS character_set,");
-        sb.append("datcollate AS collation FROM pg_database;");
+        sb.append("SELECT datname AS database_name,pg_encoding_to_char(encoding) AS character_set,"
+                + "datcollate AS collation FROM pg_database;");
         return jdbcOperations.query(sb.toString(), (rs, rowNum) -> {
             DBDatabase database = new DBDatabase();
             database.setId(rs.getString("database_name"));
@@ -99,11 +98,11 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     @Override
     public List<String> showTables(String schemaName) {
         StringBuilder sb = new StringBuilder();
-        sb.append("SELECT table_name FROM information_schema.tables ");
-        sb.append("WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ");
+        sb.append("SELECT table_name FROM information_schema.tables "
+                + "WHERE table_schema = 'public' AND table_type = 'BASE TABLE'");
         String sql = sb.toString();
         if (StringUtils.isNotBlank(schemaName)) {
-            sb.append("and table_catalog").append(" = '%s'");
+            sb.append("AND table_catalog").append(" = '%s'");
             sql = String.format(sb.toString(), schemaName);
         }
         List<String> tableNames;

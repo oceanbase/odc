@@ -32,7 +32,7 @@
     <properties>
         <root-project.basedir>${project.parent.parent.basedir}</root-project.basedir>
         <plugin.class>com.oceanbase.odc.plugin.schema.postgres.PostgresSchemaPlugin</plugin.class>
-        <plugin.dependencies>schema-plugin-ob-mysql, schema-plugin-mysql</plugin.dependencies>
+        <plugin.dependencies>schema-plugin-ob-mysql</plugin.dependencies>
     </properties>
 
     <dependencies>
@@ -47,10 +47,6 @@
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>schema-plugin-ob-mysql</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.oceanbase</groupId>
-            <artifactId>schema-plugin-mysql</artifactId>
         </dependency>
     </dependencies>
 
