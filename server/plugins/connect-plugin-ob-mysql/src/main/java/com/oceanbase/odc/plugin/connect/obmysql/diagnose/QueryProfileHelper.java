@@ -69,8 +69,7 @@ public class QueryProfileHelper {
             replaceSPMStatsIntoProfile(spmStats, graph);
         } catch (Exception e) {
             log.warn("Failed to get runtime statistics with OB trace_id={}.", traceId, e);
-            throw new IllegalStateException(String.format(
-                    "Failed to get runtime statistics with OB trace_id=%s. reason:%s", traceId, e.getMessage()));
+            return;
         }
 
         Map<String, List<String>> topNodes = new HashMap<>();

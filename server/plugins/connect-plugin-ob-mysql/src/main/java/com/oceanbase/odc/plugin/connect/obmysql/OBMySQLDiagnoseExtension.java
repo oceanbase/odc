@@ -247,7 +247,14 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
             } catch (Exception e) {
                 log.warn("Failed to query sql audit with OB trace_id={}.", traceId, e);
             }
-            SqlExplain explain = innerGetSqlExplainByDbmsXplan(stmt, executorInfo);
+            SqlExplain explain;
+            try {
+                explain = innerGetSqlExplainByDbmsXplan(stmt, executorInfo);
+            } catch (Exception e) {
+                log.warn("Failed to query plan by dbms_xplan.display_cursor.", e);
+                explain = new SqlExplain();
+                explain.setShowFormatInfo(false);
+            }
             explain.setGraph(graph);
             return explain;
         }
@@ -259,7 +266,7 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
         try {
             return OBUtils.queryPlanIdByTraceIdFromASH(stmt, traceId, sessionIds, ConnectType.OB_MYSQL);
         } catch (SQLException e) {
-            return OBUtils.queryPlanIdByTraceIdFromAudit(stmt, traceId, sessionIds, ConnectType.OB_MYSQL);
+            return OBUtils.queryPlanIdByTraceIdFromAudit(stmt, traceId, ConnectType.OB_MYSQL);
         }
     }
 

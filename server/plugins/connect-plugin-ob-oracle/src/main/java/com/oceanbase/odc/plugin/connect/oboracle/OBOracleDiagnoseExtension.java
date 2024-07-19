@@ -189,7 +189,7 @@ public class OBOracleDiagnoseExtension extends OBMySQLDiagnoseExtension {
         try {
             return OBUtils.queryPlanIdByTraceIdFromASH(stmt, traceId, sessionIds, ConnectType.OB_ORACLE);
         } catch (SQLException e) {
-            return OBUtils.queryPlanIdByTraceIdFromAudit(stmt, traceId, sessionIds, ConnectType.OB_ORACLE);
+            return OBUtils.queryPlanIdByTraceIdFromAudit(stmt, traceId, ConnectType.OB_ORACLE);
         }
     }
 

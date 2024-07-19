@@ -471,16 +471,15 @@ public class OBUtils {
     }
 
     public static OBExecutionServerInfo queryPlanIdByTraceIdFromAudit(@NonNull Statement statement, String traceId,
-            List<String> sessionIds, ConnectType connectType) throws SQLException {
+            ConnectType connectType) throws SQLException {
         DialectType dialectType = connectType.getDialectType();
         SqlBuilder sqlBuilder = getBuilder(connectType)
                 .append("select svr_ip,svr_port,tenant_id,plan_id from ")
                 .append(dialectType.isMysql() ? "oceanbase" : "sys")
                 .append(".gv$ob_sql_audit where trace_id=")
                 .value(traceId)
-                .append(" and sid in (")
-                .append(String.join(",", sessionIds))
-                .append(") and is_inner_sql=0");
+                .append(" and length(query_sql)>0 and is_inner_sql=0 ")
+                .append(dialectType.isMysql() ? "limit 1" : "and rownum<=1");
         try (ResultSet rs = statement.executeQuery(sqlBuilder.toString())) {
             if (!rs.next()) {
                 throw new SQLException("No result found in sql_audit.");
