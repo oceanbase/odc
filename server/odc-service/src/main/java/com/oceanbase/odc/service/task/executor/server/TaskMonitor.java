@@ -219,6 +219,8 @@ public class TaskMonitor {
                 logMap = biz.uploadLogFileToCloudStorage(finalResult.getJobIdentity(), cloudObjectStorageService);
             } catch (Throwable e) {
                 log.warn("Upload job log file to cloud storage occur error, jobId={}", getJobId(), e);
+                // putAll will throw NPE if it returns null.
+                logMap = new HashMap<>();
             }
             finalResult.setLogMetadata(logMap);
         }
