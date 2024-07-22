@@ -84,9 +84,9 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     private static final String GLOBAL_CLIENT_SESSION_OB_PROXY_VERSION_NUMBER = "4.2.3";
     private static final String GLOBAL_CLIENT_SESSION_OB_VERSION_NUMBER = "4.2.5";
     private static final String ORACLE_MODEL_KILL_SESSION_WITH_BLOCK_OB_VERSION_NUMBER = "4.2.1.0";
-    private static final int GLOBAL_CLIENT_SESSION_PROXY_ID_MIN = 0;
-    private static final int GLOBAL_CLIENT_SESSION_PROXY_ID_MAX = 8191;
-    private static final int GLOBAL_CLIENT_SESSION_ID_VERSION = 2;
+    private static final byte GLOBAL_CLIENT_SESSION_PROXY_ID_MIN = 0;
+    private static final short GLOBAL_CLIENT_SESSION_PROXY_ID_MAX = 8191;
+    private static final byte GLOBAL_CLIENT_SESSION_ID_VERSION = 2;
 
 
     @Autowired
@@ -210,8 +210,8 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
             String sqlScript) {
         String obProxyVersion = null;
         Boolean enabledGlobalClientSession = null;
-        Boolean isObtainedObProxyVersion = false;
-        Boolean isObtainedEnabledGlobalClientSession = false;
+        boolean isObtainedObProxyVersion = false;
+        boolean isObtainedEnabledGlobalClientSession = false;
         List<JdbcGeneralResult> results =
                 connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
                         .execute(new OdcStatementCallBack(sqlTuples, connectionSession, true, null, false));
