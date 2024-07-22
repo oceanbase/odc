@@ -20,6 +20,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 
 import org.pf4j.Extension;
 
@@ -94,7 +95,8 @@ public class MySQLDiagnoseExtensionPoint implements SqlDiagnoseExtensionPoint {
     }
 
     @Override
-    public SqlExplain getQueryProfileByTraceId(Connection connection, @NonNull String traceId) throws SQLException {
+    public SqlExplain getQueryProfileByTraceIdAndSessIds(Connection connection, @NonNull String traceId,
+            @NonNull List<String> sessionIds) throws SQLException {
         throw new UnsupportedOperationException("Not supported for mysql mode");
     }
 

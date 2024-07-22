@@ -69,6 +69,7 @@ public class QueryProfileHelper {
             replaceSPMStatsIntoProfile(spmStats, graph);
         } catch (Exception e) {
             log.warn("Failed to get runtime statistics with OB trace_id={}.", traceId, e);
+            return;
         }
 
         Map<String, List<String>> topNodes = new HashMap<>();
@@ -147,7 +148,7 @@ public class QueryProfileHelper {
         long totalCPUTs = 0;
         long totalIOWaitTs = 0;
         long starts = 0;
-        float outputs = 0;
+        long outputs = 0;
         long maxMem = 0;
         long maxDisk = 0;
         long ioBytes = 0;
@@ -211,7 +212,7 @@ public class QueryProfileHelper {
             }
 
             outputs += spm.getOutputRows();
-            child.putStatistics(OUTPUT_ROWS, (float) spm.getOutputRows() + "");
+            child.putStatistics(OUTPUT_ROWS, spm.getOutputRows() + "");
             if (spm.getWorkareaMaxMem() != 0) {
                 child.putStatistics(WORKAREA_MAX_MEN, spm.getWorkareaMaxMem() + "");
                 maxMem = Math.max(spm.getWorkareaMaxMem(), maxMem);
@@ -285,7 +286,7 @@ public class QueryProfileHelper {
         // output rows
         List<PlanGraphEdge> inEdges = operator.getInEdges();
         if (inEdges != null && inEdges.size() == 1) {
-            inEdges.get(0).setWeight(outputs);
+            inEdges.get(0).setWeight((float) outputs);
         }
 
         subOperators.sort(Comparator.comparingLong(PlanGraphOperator::getDuration).reversed());

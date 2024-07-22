@@ -20,6 +20,8 @@ import static com.oceanbase.odc.core.session.ConnectionSessionConstants.BACKEND_
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -30,6 +32,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
@@ -38,6 +41,7 @@ import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.sql.execute.cache.BinaryDataManager;
 import com.oceanbase.odc.core.sql.execute.cache.model.BinaryContentMetaData;
+import com.oceanbase.odc.core.sql.util.OBUtils;
 import com.oceanbase.odc.plugin.connect.model.diagnose.SqlExplain;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 
@@ -58,7 +62,7 @@ public class OBQueryProfileManager {
     @Qualifier("queryProfileMonitorExecutor")
     private ThreadPoolTaskExecutor executor;
 
-    public void submit(ConnectionSession session, @NonNull String traceId) {
+    public void submit(ConnectionSession session, @NonNull String traceId, List<String> sessionIds) {
         executor.execute(() -> {
             if (session.isExpired()
                     || ConnectionSessionUtil.getBinaryContentMetadata(session, PROFILE_KEY_PREFIX + traceId) != null) {
@@ -68,7 +72,7 @@ public class OBQueryProfileManager {
                 SqlExplain profile = session.getSyncJdbcExecutor(BACKEND_DS_KEY).execute(
                         (ConnectionCallback<SqlExplain>) conn -> ConnectionPluginUtil
                                 .getDiagnoseExtension(session.getConnectType().getDialectType())
-                                .getQueryProfileByTraceId(conn, traceId));
+                                .getQueryProfileByTraceIdAndSessIds(conn, traceId, sessionIds));
                 BinaryDataManager binaryDataManager = ConnectionSessionUtil.getBinaryDataManager(session);
                 BinaryContentMetaData metaData = binaryDataManager.write(
                         new ByteArrayInputStream(JsonUtils.toJson(profile).getBytes()));
@@ -94,15 +98,25 @@ public class OBQueryProfileManager {
                 InputStream stream = ConnectionSessionUtil.getBinaryDataManager(session).read(metadata);
                 return JsonUtils.fromJson(StreamUtils.copyToString(stream, StandardCharsets.UTF_8), SqlExplain.class);
             }
+            List<String> sessionIds = getSessionIds(session);
             return session.getSyncJdbcExecutor(BACKEND_DS_KEY).execute(
                     (StatementCallback<SqlExplain>) stmt -> ConnectionPluginUtil
                             .getDiagnoseExtension(session.getConnectType().getDialectType())
-                            .getQueryProfileByTraceId(stmt.getConnection(), traceId));
+                            .getQueryProfileByTraceIdAndSessIds(stmt.getConnection(), traceId, sessionIds));
         } catch (Exception e) {
             log.warn("Failed to get profile with OB trace_id={}.", traceId, e);
             throw new UnexpectedException(
                     String.format("Failed to get profile with OB trace_id=%s. Reason:%s", traceId, e.getMessage()));
         }
+    }
+
+    private List<String> getSessionIds(ConnectionSession session) {
+        String proxySessId = ConnectionSessionUtil.getConsoleConnectionProxySessId(session);
+        if (StringUtils.isEmpty(proxySessId)) {
+            return Collections.singletonList(ConnectionSessionUtil.getConsoleConnectionId(session));
+        }
+        return session.getSyncJdbcExecutor(BACKEND_DS_KEY).execute((StatementCallback<List<String>>) stmt -> OBUtils
+                .querySessionIdsByProxySessId(stmt, proxySessId, session.getConnectType()));
     }
 
 }
