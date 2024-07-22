@@ -44,6 +44,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -175,6 +176,7 @@ public class ScheduleService {
 
         // create or load target schedule
         if (req.getOperationType() == OperationType.CREATE) {
+            PreConditions.notNull(req.getCreateScheduleReq(), "req.createScheduleReq");
             validateTriggerConfig(req.getCreateScheduleReq().getTriggerConfig());
             ScheduleEntity entity = new ScheduleEntity();
 
@@ -272,14 +274,15 @@ public class ScheduleService {
                 entity.setTriggerConfigJson(JsonUtils.toJson(req.getUpdateScheduleReq().getTriggerConfig()));
                 entity.setDescription(req.getUpdateScheduleReq().getDescription());
                 entity.setStatus(ScheduleStatus.ENABLED);
+                PreConditions.notNull(req.getUpdateScheduleReq(), "req.updateScheduleReq");
                 if (req.getUpdateScheduleReq().getParameters() instanceof DataArchiveParameters) {
-                    DataArchiveParameters parameters = (DataArchiveParameters) req.getCreateScheduleReq()
+                    DataArchiveParameters parameters = (DataArchiveParameters) req.getUpdateScheduleReq()
                             .getParameters();
                     parameters.getRateLimit().setOrderId(req.getScheduleId());
                     dlmLimiterService.updateByOrderId(req.getScheduleId(), parameters.getRateLimit());
                 }
                 if (req.getUpdateScheduleReq().getParameters() instanceof DataDeleteParameters) {
-                    DataDeleteParameters parameters = (DataDeleteParameters) req.getCreateScheduleReq()
+                    DataDeleteParameters parameters = (DataDeleteParameters) req.getUpdateScheduleReq()
                             .getParameters();
                     parameters.getRateLimit().setOrderId(req.getScheduleId());
                     dlmLimiterService.updateByOrderId(req.getScheduleId(), parameters.getRateLimit());
