@@ -262,7 +262,7 @@ public class ScheduleService {
                     parameters.getRateLimit().setOrderId(req.getScheduleId());
                     dlmLimiterService.updateByOrderId(req.getScheduleId(), parameters.getRateLimit());
                 }
-                scheduleRepository.save(entity);
+                targetSchedule = scheduleMapper.entityToModel(scheduleRepository.save(entity));
                 break;
             }
             case PAUSE: {
