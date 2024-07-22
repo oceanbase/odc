@@ -249,8 +249,8 @@ public class ScheduleService {
             if (nextFiveFireTimes.size() != 2) {
                 throw new IllegalArgumentException("Invalid cron expression");
             }
-            long interval = nextFiveFireTimes.get(1).getTime() - nextFiveFireTimes.get(0).getTime();
-            if (interval / 1000 < 30 * 60) {
+            long intervalMills = nextFiveFireTimes.get(1).getTime() - nextFiveFireTimes.get(0).getTime();
+            if (intervalMills / 1000 < 10 * 60) {
                 throw new IllegalArgumentException(
                         "The interval between weeks is too short. The minimum interval is 10 minutes.");
             }
