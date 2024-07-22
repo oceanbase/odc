@@ -73,6 +73,14 @@ public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
 
     @Modifying
     @Transactional
+    @Query(value = "update connect_database t set t.object_sync_status = :#{#status.name()} "
+            + "where t.object_sync_status = :#{#originalStatus.name()} and t.object_last_sync_time < :syncTime",
+            nativeQuery = true)
+    int setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeBefore(@Param("status") DBObjectSyncStatus status,
+            @Param("originalStatus") DBObjectSyncStatus originalStatus, @Param("syncTime") Date syncTime);
+
+    @Modifying
+    @Transactional
     @Query(value = "update connect_database t set t.object_sync_status = :#{#status.name()}, t.object_last_sync_time = :syncTime where t.id = :id",
             nativeQuery = true)
     int setObjectLastSyncTimeAndStatusById(@Param("id") Long id, @Param("syncTime") Date syncTime,
@@ -95,4 +103,5 @@ public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
     @Query(value = "update connect_database t set t.project_id = null where t.project_id = :projectId",
             nativeQuery = true)
     int setProjectIdToNull(@Param("projectId") Long projectId);
+
 }

@@ -79,6 +79,7 @@ public class DatabaseSyncManager {
         return doExecute(() -> executor.submit(() -> {
             Boolean res = syncDBForDataSource(connection);
             try {
+                databaseService.refreshExpiredPendingDBObjectStatus();
                 dbSchemaSyncTaskManager.submitTaskByDataSource(connection);
             } catch (Exception e) {
                 log.warn("Failed to submit sync database schema task for datasource id={}", connection.getId(), e);
