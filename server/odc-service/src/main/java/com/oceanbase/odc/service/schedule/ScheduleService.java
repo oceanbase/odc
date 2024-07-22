@@ -251,13 +251,13 @@ public class ScheduleService {
                 entity.setDescription(req.getUpdateScheduleReq().getDescription());
                 entity.setStatus(ScheduleStatus.ENABLED);
                 if (req.getUpdateScheduleReq().getParameters() instanceof DataArchiveParameters) {
-                    DataArchiveParameters parameters = (DataArchiveParameters) req.getCreateScheduleReq()
+                    DataArchiveParameters parameters = (DataArchiveParameters) req.getUpdateScheduleReq()
                             .getParameters();
                     parameters.getRateLimit().setOrderId(req.getScheduleId());
                     dlmLimiterService.updateByOrderId(req.getScheduleId(), parameters.getRateLimit());
                 }
                 if (req.getUpdateScheduleReq().getParameters() instanceof DataDeleteParameters) {
-                    DataDeleteParameters parameters = (DataDeleteParameters) req.getCreateScheduleReq()
+                    DataDeleteParameters parameters = (DataDeleteParameters) req.getUpdateScheduleReq()
                             .getParameters();
                     parameters.getRateLimit().setOrderId(req.getScheduleId());
                     dlmLimiterService.updateByOrderId(req.getScheduleId(), parameters.getRateLimit());
