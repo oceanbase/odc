@@ -28,6 +28,7 @@ import lombok.NonNull;
 public interface ConnectionSessionManager {
     /**
      * Start a session and use a keyword to persist the session into a buffer
+     * 启动会话并使用关键字将会话持久化到缓冲区中
      *
      * @param factory {@code ConnectionSessionFactory}
      * @return session object
@@ -36,6 +37,7 @@ public interface ConnectionSessionManager {
 
     /**
      * Get a session from the session manager
+     * 从会话管理器获取会话
      *
      * @param id Keyword used to store session objects
      * @return session object
