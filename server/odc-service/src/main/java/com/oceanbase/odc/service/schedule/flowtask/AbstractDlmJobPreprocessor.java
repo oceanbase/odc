@@ -100,7 +100,7 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
                     + "JOIN pg_namespace n ON n.oid = c.relnamespace "
                     + "JOIN pg_index i ON c.oid = i.indrelid "
                     + "WHERE i.indisunique = TRUE "
-                    + "  AND c.relkind = 'r' "
+                    + "  AND (c.relkind = 'r' or c.relkind = 'p') "
                     + "  AND n.nspname = 'public'; ");
         } else {
             sqlBuilder = new OracleSqlBuilder();
