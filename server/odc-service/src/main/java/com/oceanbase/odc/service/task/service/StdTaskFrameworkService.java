@@ -369,6 +369,9 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 return false;
             }
             saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
+            if ("DLM".equals(je.getJobType())) {
+                dlmResultProcessor.process(result);
+            }
             return true;
         } catch (Exception exception) {
             log.warn("Refresh log meta failed,errorMsg={}", exception.getMessage());
