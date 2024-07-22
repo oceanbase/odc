@@ -86,7 +86,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     private static final String ORACLE_MODEL_KILL_SESSION_WITH_BLOCK_OB_VERSION_NUMBER = "4.2.1.0";
     private static final int GLOBAL_CLIENT_SESSION_PROXY_ID_MIN = 0;
     private static final int GLOBAL_CLIENT_SESSION_PROXY_ID_MAX = 8191;
-    private static final int GLOBAL_CLIENT_SESSION_ID_VERSION   = 2;
+    private static final int GLOBAL_CLIENT_SESSION_ID_VERSION = 2;
 
 
     @Autowired
