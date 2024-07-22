@@ -82,7 +82,7 @@ public class LogBizImpl implements LogBiz {
         String fileId = StringUtils.uuid();
         File jobLogFile = new File(logFileStr);
         if (jobLogFile.exists() && jobLogFile.length() > 0) {
-            String ossName = storageService.uploadTemp(fileId, jobLogFile);
+            String ossName = storageService.upload(fileId, jobLogFile);
             log.info("upload job {} log to OSS successfully, file name={}, oss object name {}.",
                     logType.getName(), fileId, ossName);
             return Optional.of(ossName);
