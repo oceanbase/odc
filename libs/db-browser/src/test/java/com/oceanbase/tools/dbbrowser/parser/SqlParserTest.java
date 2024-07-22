@@ -256,4 +256,32 @@ public class SqlParserTest {
         Assert.assertEquals("sys", parseSqlResult.getForeignConstraint().get(1).getReferenceSchemaName());
     }
 
+    @Test
+    public void parseMysql_commitStmt_getSqlTypeSucceed() {
+        ParseSqlResult actual = SqlParser.parseMysql("commit");
+        Assert.assertEquals(DBObjectType.OTHERS, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.COMMIT, actual.getSqlType());
+    }
+
+    @Test
+    public void parseMysql_rollbackStmt_getSqlTypeSucceed() {
+        ParseSqlResult actual = SqlParser.parseMysql("rollback");
+        Assert.assertEquals(DBObjectType.OTHERS, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.ROLLBACK, actual.getSqlType());
+    }
+
+    @Test
+    public void parseOracle_commitStmt_getSqlTypeSucceed() {
+        ParseSqlResult actual = SqlParser.parseOracle("commit");
+        Assert.assertEquals(DBObjectType.OTHERS, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.COMMIT, actual.getSqlType());
+    }
+
+    @Test
+    public void parseOracle_rollbackStmt_getSqlTypeSucceed() {
+        ParseSqlResult actual = SqlParser.parseOracle("rollback");
+        Assert.assertEquals(DBObjectType.OTHERS, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.ROLLBACK, actual.getSqlType());
+    }
+
 }
