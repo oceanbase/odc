@@ -250,6 +250,18 @@ public class ScheduleService {
                 entity.setTriggerConfigJson(JsonUtils.toJson(req.getUpdateScheduleReq().getTriggerConfig()));
                 entity.setDescription(req.getUpdateScheduleReq().getDescription());
                 entity.setStatus(ScheduleStatus.ENABLED);
+                if (req.getUpdateScheduleReq().getParameters() instanceof DataArchiveParameters) {
+                    DataArchiveParameters parameters = (DataArchiveParameters) req.getCreateScheduleReq()
+                            .getParameters();
+                    parameters.getRateLimit().setOrderId(req.getScheduleId());
+                    dlmLimiterService.updateByOrderId(req.getScheduleId(), parameters.getRateLimit());
+                }
+                if (req.getUpdateScheduleReq().getParameters() instanceof DataDeleteParameters) {
+                    DataDeleteParameters parameters = (DataDeleteParameters) req.getCreateScheduleReq()
+                            .getParameters();
+                    parameters.getRateLimit().setOrderId(req.getScheduleId());
+                    dlmLimiterService.updateByOrderId(req.getScheduleId(), parameters.getRateLimit());
+                }
                 scheduleRepository.save(entity);
                 break;
             }
