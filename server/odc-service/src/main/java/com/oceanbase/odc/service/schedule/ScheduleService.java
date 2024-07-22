@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.schedule;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -71,6 +72,7 @@ import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
+import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.schedule.factory.ScheduleResponseMapperFactory;
 import com.oceanbase.odc.service.schedule.model.ChangeQuartJobParam;
@@ -91,6 +93,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
+import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.schedule.processor.ScheduleChangePreprocessor;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.exception.JobException;
@@ -172,6 +175,7 @@ public class ScheduleService {
 
         // create or load target schedule
         if (req.getOperationType() == OperationType.CREATE) {
+            validateTriggerConfig(req.getCreateScheduleReq().getTriggerConfig());
             ScheduleEntity entity = new ScheduleEntity();
 
             entity.setProjectId(req.getCreateScheduleReq().getProjectId());
@@ -209,6 +213,9 @@ public class ScheduleService {
             }
         } else {
             targetSchedule = nullSafeGetByIdWithCheckPermission(req.getScheduleId(), true);
+            if (req.getOperationType() == OperationType.UPDATE) {
+                validateTriggerConfig(req.getUpdateScheduleReq().getTriggerConfig());
+            }
             if (req.getOperationType() == OperationType.UPDATE
                     && (targetSchedule.getStatus() != ScheduleStatus.PAUSE || hasRunningTask(targetSchedule.getId()))) {
                 log.warn("Update schedule is not allowed,status={}", targetSchedule.getStatus());
@@ -233,6 +240,21 @@ public class ScheduleService {
                                 : ScheduleChangeStatus.APPROVING));
         log.info("Create change log success,changLog={}", changeLog);
         return targetSchedule;
+    }
+
+    private void validateTriggerConfig(TriggerConfig triggerConfig) {
+        if (triggerConfig.getTriggerStrategy() == TriggerStrategy.CRON) {
+            List<Date> nextFiveFireTimes =
+                    QuartzCronExpressionUtils.getNextFiveFireTimes(triggerConfig.getCronExpression(), 2);
+            if (nextFiveFireTimes.size() != 2) {
+                throw new IllegalArgumentException("Invalid cron expression");
+            }
+            long intervalMills = nextFiveFireTimes.get(1).getTime() - nextFiveFireTimes.get(0).getTime();
+            if (intervalMills / 1000 < 10 * 60) {
+                throw new IllegalArgumentException(
+                        "The interval between weeks is too short. The minimum interval is 10 minutes.");
+            }
+        }
     }
 
     public void executeChangeSchedule(ScheduleChangeParams req) {
