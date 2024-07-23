@@ -150,7 +150,8 @@ public class OdcJobListener implements JobListener {
             // double check
             if (entity.getLatestScheduleTaskId() != null) {
                 Optional<ScheduleTaskEntity> taskOptional = taskRepository.findById(entity.getLatestScheduleTaskId());
-                log.info("Found latest task,scheduleId={},taskId={},status={}",scheduleId,scheduleTaskId,taskOptional.isPresent()?taskOptional.get().getStatus():null);
+                log.info("Found latest task,scheduleId={},taskId={},status={}", scheduleId, scheduleTaskId,
+                        taskOptional.isPresent() ? taskOptional.get().getStatus() : null);
                 if (taskOptional.isPresent() && !taskOptional.get().getStatus().isTerminated()) {
                     throw new UnexpectedException("Concurrent is not allowed.");
                 }

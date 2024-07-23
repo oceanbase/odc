@@ -69,7 +69,7 @@ public class OdcTriggerListener extends TriggerListenerSupport {
             log.warn("The job will be skipped, job key:" + trigger.getJobKey());
             ScheduleAlarmUtils.misfire(Long.parseLong(trigger.getJobKey().getName()), new Date());
         }
-        log.info("The job will be execution,job key:"+ trigger.getJobKey());
+        log.info("The job will be execution,job key:" + trigger.getJobKey());
         return skipExecution;
     }
 
