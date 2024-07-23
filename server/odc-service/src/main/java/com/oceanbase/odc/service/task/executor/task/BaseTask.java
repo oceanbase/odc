@@ -113,7 +113,6 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
             return false;
         }
         DefaultJobContext ctx = (DefaultJobContext) getJobContext();
-        // change the value in job context
         ctx.setJobParameters(jobParameters);
         this.jobParameters = Collections.unmodifiableMap(jobParameters);
         try {
