@@ -136,7 +136,6 @@ public class StdJobScheduler implements JobScheduler {
                 new TypeReference<Map<String, String>>() {});
         oldJobParameters.putAll(jobParameters);
         String newJobParametersJson = JobUtils.toJson(oldJobParameters);
-        log.info("Start to modify job parameters,old={},new={}", oldJobParameters, newJobParametersJson);
         configuration.getTaskFrameworkService().updateJobParameters(jobId, newJobParametersJson);
 
         if (jobEntity.getStatus() == JobStatus.PREPARING) {
