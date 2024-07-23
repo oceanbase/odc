@@ -29,6 +29,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.schedule.LatestTaskMappingEntity;
 import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
@@ -146,6 +147,10 @@ public class OdcJobListener implements JobListener {
         LatestTaskMappingEntity entity;
         if (optional.isPresent()) {
             entity = optional.get();
+            Optional<ScheduleTaskEntity> taskOptional = taskRepository.findById(entity.getLatestScheduleTaskId());
+            if (taskOptional.isPresent() && !taskOptional.get().getStatus().isTerminated()) {
+                throw new UnexpectedException("Concurrent is not allowed.");
+            }
         } else {
             entity = new LatestTaskMappingEntity();
             entity.setScheduleId(scheduleId);
