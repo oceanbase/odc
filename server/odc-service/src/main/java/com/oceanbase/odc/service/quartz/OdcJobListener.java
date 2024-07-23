@@ -147,9 +147,12 @@ public class OdcJobListener implements JobListener {
         LatestTaskMappingEntity entity;
         if (optional.isPresent()) {
             entity = optional.get();
-            Optional<ScheduleTaskEntity> taskOptional = taskRepository.findById(entity.getLatestScheduleTaskId());
-            if (taskOptional.isPresent() && !taskOptional.get().getStatus().isTerminated()) {
-                throw new UnexpectedException("Concurrent is not allowed.");
+            // double check
+            if (entity.getLatestScheduleTaskId() != null) {
+                Optional<ScheduleTaskEntity> taskOptional = taskRepository.findById(entity.getLatestScheduleTaskId());
+                if (taskOptional.isPresent() && !taskOptional.get().getStatus().isTerminated()) {
+                    throw new UnexpectedException("Concurrent is not allowed.");
+                }
             }
         } else {
             entity = new LatestTaskMappingEntity();
