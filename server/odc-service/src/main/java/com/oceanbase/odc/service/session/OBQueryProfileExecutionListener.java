@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.session;
 
 import static com.oceanbase.odc.core.session.ConnectionSessionConstants.BACKEND_DS_KEY;
 import static com.oceanbase.odc.core.session.ConnectionSessionConstants.CONSOLE_DS_KEY;
-import static com.oceanbase.odc.service.queryprofile.OBQueryProfileManager.ENABLE_QUERY_PROFILE_VERSION;
 
 import java.util.Collections;
 import java.util.List;
@@ -91,7 +90,7 @@ public class OBQueryProfileExecutionListener implements SqlExecutionListener {
     }
 
     private List<String> getSessionIds() {
-        if (VersionUtils.isLessThan(ConnectionSessionUtil.getVersion(session), ENABLE_QUERY_PROFILE_VERSION)) {
+        if (!isObVersionSupportQueryProfile(ConnectionSessionUtil.getVersion(session))) {
             return Collections.emptyList();
         }
         String proxySessId = ConnectionSessionUtil.getConsoleConnectionProxySessId(session);
@@ -116,5 +115,15 @@ public class OBQueryProfileExecutionListener implements SqlExecutionListener {
             // eat exception
             return false;
         }
+    }
+
+    /**
+     * [4.2.4, 4.3.0) || [4.3.3, )
+     */
+    public static boolean isObVersionSupportQueryProfile(String version) {
+        return VersionUtils.isGreaterThanOrEqualsTo(version, "4.2.4")
+                && VersionUtils.isLessThan(version, "4.3.0")
+                || VersionUtils.isGreaterThanOrEqualsTo(version, "4.3.3");
+
     }
 }
