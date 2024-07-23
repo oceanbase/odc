@@ -324,6 +324,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
             JdbcGeneralResult jdbcGeneralResult, boolean isDirectedOBServer,
             boolean isEnabledGlobalClientSession, boolean isSupportedOracleModeKillSession) {
         if (isDirectedOBServer) {
+            log.info("The current connection mode is directing observer, return error result directly");
             return jdbcGeneralResult;
         }
         if (isEnabledGlobalClientSession) {
