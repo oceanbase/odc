@@ -63,8 +63,13 @@ public class OdcTriggerListener extends TriggerListenerSupport {
 
     @Override
     public boolean vetoJobExecution(Trigger trigger, JobExecutionContext context) {
-        return SpringContextUtil.getBean(ScheduleService.class)
+        boolean skipExecution = SpringContextUtil.getBean(ScheduleService.class)
                 .vetoJobExecution(Long.parseLong(context.getTrigger().getJobKey().getName()));
+        if (skipExecution) {
+            log.warn("The job will be skipped, job key:" + trigger.getJobKey());
+            ScheduleAlarmUtils.misfire(Long.parseLong(trigger.getJobKey().getName()), new Date());
+        }
+        return skipExecution;
     }
 
     @Override
