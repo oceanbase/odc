@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.db.session;
 
+import static com.oceanbase.odc.core.shared.constant.DialectType.OB_MYSQL;
+
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -260,10 +262,15 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     }
 
     private static boolean checkObServerDirected(ConnectionSession connectionSession) {
+        String sql;
+        if (OB_MYSQL == connectionSession.getDialectType()) {
+
+            sql = "select PROXY_SESSID from oceanbase.gv$ob_processlist where ID =(select id from oceanbase.gv$ob_processlist where info like '%gv$ob_processlist%');";
+        } else {
+            sql = "select PROXY_SESSID from gv$ob_processlist where ID =(select id from gv$ob_processlist where info like '%gv$ob_processlist%');";
+        }
         return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                .queryForObject(
-                        "select PROXY_SESSID from oceanbase.gv$ob_processlist where ID =(select id from oceanbase.gv$ob_processlist where info like '%gv$ob_processlist%');",
-                        String.class) == null;
+                .queryForObject(sql, String.class) == null;
     }
 
     private String getObProxyVersion(ConnectionSession connectionSession, boolean isDirectedOBServer) {
