@@ -100,6 +100,12 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
         StringBuilder sb = new StringBuilder();
         sb.append("SELECT table_name FROM information_schema.tables "
                 + "WHERE table_schema = 'public' AND table_type = 'BASE TABLE'");
+        sb.append(" AND table_name NOT IN ("
+                  + "        SELECT child.relname "
+                  + "        FROM pg_inherits "
+                  + "        JOIN pg_class child ON pg_inherits.inhrelid = child.oid "
+                  + "        JOIN pg_namespace nmsp_child ON nmsp_child.oid = child.relnamespace "
+                  + "        WHERE nmsp_child.nspname = 'public') ");
         String sql = sb.toString();
         if (StringUtils.isNotBlank(schemaName)) {
             sb.append("AND table_catalog").append(" = '%s'");
