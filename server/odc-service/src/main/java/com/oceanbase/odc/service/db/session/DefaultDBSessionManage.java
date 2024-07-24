@@ -262,8 +262,8 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     }
 
     /**
-     * Check whether client directed oceanbase database server.
-     * If an exception occurs or the version does not support, return null.
+     * Check whether client directed oceanbase database server. If an exception occurs or the version
+     * does not support, return null.
      *
      * @param connectionSession
      * @return
@@ -286,8 +286,8 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     }
 
     /**
-     * Get the OBProxy version number.
-     * If an exception occurs or the version does not support, return null.
+     * Get the OBProxy version number. If an exception occurs or the version does not support, return
+     * null.
      *
      * @param connectionSession
      * @param isDirectedOBServer
@@ -331,8 +331,8 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     }
 
     /**
-     * Gets the value of OBProxy's configuration variable
-     * If an exception occurs or the version does not support, return null.
+     * Gets the value of OBProxy's configuration variable If an exception occurs or the version does not
+     * support, return null.
      * 
      * @param connectionSession
      * @param configName
@@ -380,9 +380,8 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     }
 
     /**
-     * Try to kill session by using anonymous code blocks.
-     * If successful, return a successful jdbcGeneralResult,
-     * otherwise return the original jdbcGeneralResult.
+     * Try to kill session by using anonymous code blocks. If successful, return a successful
+     * jdbcGeneralResult, otherwise return the original jdbcGeneralResult.
      *
      * @param connectionSession
      * @param jdbcGeneralResult
@@ -413,9 +412,8 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     }
 
     /**
-     * Try to kill session by direct connect observer.
-     * If successful, return a successful jdbcGeneralResult,
-     * otherwise return the original jdbcGeneralResult.
+     * Try to kill session by direct connect observer. If successful, return a successful
+     * jdbcGeneralResult, otherwise return the original jdbcGeneralResult.
      *
      * @param connectionSession
      * @param jdbcGeneralResult
