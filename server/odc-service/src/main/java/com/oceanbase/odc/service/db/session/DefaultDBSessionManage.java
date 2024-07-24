@@ -261,6 +261,13 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         return finalResults;
     }
 
+    /**
+     * Check whether client directed oceanbase database server.
+     * If an exception occurs or the version does not support, return null.
+     *
+     * @param connectionSession
+     * @return
+     */
     private Boolean checkObServerDirected(ConnectionSession connectionSession) {
         String sql = (connectionSession.getDialectType() == OB_MYSQL)
                 ? "select PROXY_SESSID from oceanbase.gv$ob_processlist where ID =(select connection_id());"
@@ -278,6 +285,14 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         return null;
     }
 
+    /**
+     * Get the OBProxy version number.
+     * If an exception occurs or the version does not support, return null.
+     *
+     * @param connectionSession
+     * @param isDirectedOBServer
+     * @return
+     */
     private String getObProxyVersion(ConnectionSession connectionSession, Boolean isDirectedOBServer) {
         if (Boolean.TRUE.equals(isDirectedOBServer)) {
             return null;
@@ -317,6 +332,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
 
     /**
      * Gets the value of OBProxy's configuration variable
+     * If an exception occurs or the version does not support, return null.
      * 
      * @param connectionSession
      * @param configName
@@ -363,6 +379,16 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
                 connectionSession.getDialectType() == DialectType.OB_ORACLE;
     }
 
+    /**
+     * Try to kill session by using anonymous code blocks.
+     * If successful, return a successful jdbcGeneralResult,
+     * otherwise return the original jdbcGeneralResult.
+     *
+     * @param connectionSession
+     * @param jdbcGeneralResult
+     * @param sqlTuple
+     * @return
+     */
     private JdbcGeneralResult tryKillSessionWithAnonymousBlock(ConnectionSession connectionSession,
             JdbcGeneralResult jdbcGeneralResult, SqlTuple sqlTuple) {
         log.info("Kill query/session Unknown thread id error, try anonymous code blocks");
@@ -386,6 +412,16 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         }
     }
 
+    /**
+     * Try to kill session by direct connect observer.
+     * If successful, return a successful jdbcGeneralResult,
+     * otherwise return the original jdbcGeneralResult.
+     *
+     * @param connectionSession
+     * @param jdbcGeneralResult
+     * @param sqlTuple
+     * @return
+     */
     private JdbcGeneralResult tryKillSessionViaDirectConnectObServer(ConnectionSession connectionSession,
             JdbcGeneralResult jdbcGeneralResult, SqlTuple sqlTuple) {
         try {
