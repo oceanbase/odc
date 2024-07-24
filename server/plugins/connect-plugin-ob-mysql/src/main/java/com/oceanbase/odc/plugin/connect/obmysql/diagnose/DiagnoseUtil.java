@@ -199,6 +199,15 @@ public class DiagnoseUtil {
     public static String getOB4xExplainTree(String text) {
         String[] segs = text.split("Outputs & filters");
 
+        // output & filter
+        String[] outputSegs = segs[1].split("Used Hint")[0].split("[0-9]+ - output");
+        Map<Integer, String> outputFilters = new HashMap<>();
+        for (int i = 1; i < outputSegs.length; i++) {
+            String seg = outputSegs[i].replaceAll("\\(0x[A-Za-z0-9]+\\)", "");
+            String tmp = "output" + seg;
+            outputFilters.put(i - 1, tmp);
+        }
+
         String[] lines = segs[0].split("\n");
         String headerLine = lines[1];
         Matcher matcher = OPERATOR_PATTERN.matcher(headerLine);
@@ -209,11 +218,11 @@ public class DiagnoseUtil {
         int operatorStrLen = matcher.end(1) - operatorStartIndex;
 
         PlanNode tree = null;
-        for (int i = 0; i < segs.length - 4; i++) {
+        for (int i = 0; i < lines.length - 4; i++) {
             PlanNode node = new PlanNode();
             node.setId(i);
 
-            String line = segs[i + 3];
+            String line = lines[i + 3];
             String temp = line.substring(operatorStartIndex);
             String operatorStr = temp.substring(0, operatorStrLen);
             DiagnoseUtil.recognizeNodeDepthAndOperator(node, operatorStr);
@@ -222,8 +231,7 @@ public class DiagnoseUtil {
             node.setName(others[1]);
             node.setRowCount(others[2]);
             node.setCost(others[3]);
-            node.setRealRowCount(others[4]);
-            node.setRealCost(others[5]);
+            node.setOutputFilter(outputFilters.get(i));
 
             PlanNode tmpPlanNode = DiagnoseUtil.buildPlanTree(tree, node);
             if (tree == null) {

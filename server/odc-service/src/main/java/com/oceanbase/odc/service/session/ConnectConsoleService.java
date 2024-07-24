@@ -601,7 +601,7 @@ public class ConnectConsoleService {
             String version = ConnectionSessionUtil.getVersion(connectionSession);
             result.setWithQueryProfile(OBQueryProfileExecutionListener
                     .isSqlTypeSupportProfile(generalResult.getSqlTuple()) &&
-                    VersionUtils.isGreaterThanOrEqualsTo(version, OBQueryProfileManager.ENABLE_QUERY_PROFILE_VERSION));
+                    OBQueryProfileExecutionListener.isObVersionSupportQueryProfile(version));
         } catch (Exception e) {
             result.setWithQueryProfile(false);
         }
