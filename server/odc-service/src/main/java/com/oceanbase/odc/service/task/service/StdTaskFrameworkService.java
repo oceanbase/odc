@@ -331,7 +331,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 if (taskResult.getStatus() == JobStatus.FAILED) {
                     AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED,
                             MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}",
-                                    taskResult.getJobIdentity().getId(), SensitiveDataUtils.mask(taskResult.getResultJson())));
+                                    taskResult.getJobIdentity().getId(),
+                                    SensitiveDataUtils.mask(taskResult.getResultJson())));
                 }
             }
         }
