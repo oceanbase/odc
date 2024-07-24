@@ -87,7 +87,8 @@ public class DoCancelingJob implements Job {
                 } catch (JobException e) {
                     log.warn("Stop job occur error: ", e);
                     AlarmUtils.alarm(AlarmEventNames.TASK_CANCELED_FAILED,
-                            MessageFormat.format("Cancel job failed, jobId={0}", lockedEntity.getId()));
+                            MessageFormat.format("Cancel job failed, jobId={0}, message={1}", lockedEntity.getId(),
+                                    e.getMessage()));
                     throw new TaskRuntimeException(e);
                 }
                 log.info("Job be cancelled successfully, jobId={}, oldStatus={}.", lockedEntity.getId(),
