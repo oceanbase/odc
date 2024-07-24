@@ -67,3 +67,14 @@ jasypt:
   encryptor:
     password: ${ODC_PROPERTY_ENCRYPTION_PASSWORD}
     algorithm: PBEWithHmacSHA512AndAES_128
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    prometheus:
+      enabled: true
+  server:
+    port: 8089
