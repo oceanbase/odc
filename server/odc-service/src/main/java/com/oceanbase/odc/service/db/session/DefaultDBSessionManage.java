@@ -227,8 +227,8 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     }
 
     /**
-     * process the execution result after the first kill commands if the result contains unknown thread
-     * id exception, try to use other solutions to execute the kill commands
+     * process the execution result after the first kill commands. if the result contains unknown thread
+     * id exception, try to use other solutions to execute the kill commands.
      * 
      * @param connectionSession
      * @param results
@@ -236,7 +236,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
      */
     private List<JdbcGeneralResult> processResults(ConnectionSession connectionSession,
             List<JdbcGeneralResult> results) {
-        boolean isDirectedOBServer = checkObServerDirected(connectionSession);
+        Boolean isDirectedOBServer = checkObServerDirected(connectionSession);
         String obProxyVersion = getObProxyVersion(connectionSession, isDirectedOBServer);
         String obVersion = (String) connectionSession.getAttribute("OB_VERSION");
         boolean isEnabledGlobalClientSession =
@@ -261,20 +261,25 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         return finalResults;
     }
 
-    private static boolean checkObServerDirected(ConnectionSession connectionSession) {
-        String sql;
-        if (OB_MYSQL == connectionSession.getDialectType()) {
-
-            sql = "select PROXY_SESSID from oceanbase.gv$ob_processlist where ID =(select id from oceanbase.gv$ob_processlist where info like '%gv$ob_processlist%');";
-        } else {
-            sql = "select PROXY_SESSID from gv$ob_processlist where ID =(select id from gv$ob_processlist where info like '%gv$ob_processlist%');";
+    private Boolean checkObServerDirected(ConnectionSession connectionSession) {
+        String sql = (connectionSession.getDialectType() == OB_MYSQL)
+                ? "select PROXY_SESSID from oceanbase.gv$ob_processlist where ID =(select connection_id());"
+                : "select PROXY_SESSID from gv$ob_processlist where ID =(select sys_context('userenv','sid') from dual);";
+        try {
+            List<String> proxySessids = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
+                    .query(sql, (rs, rowNum) -> rs.getString("PROXY_SESSID"));
+            if (proxySessids != null && proxySessids.size() == 1) {
+                return proxySessids.get(0) == null;
+            }
+        } catch (Exception e) {
+            log.warn("Failed to obtain the PROXY_SESSID: {}", e.getMessage());
         }
-        return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                .queryForObject(sql, String.class) == null;
+        // Return null if the version is not supported or an exception occurs
+        return null;
     }
 
-    private String getObProxyVersion(ConnectionSession connectionSession, boolean isDirectedOBServer) {
-        if (isDirectedOBServer) {
+    private String getObProxyVersion(ConnectionSession connectionSession, Boolean isDirectedOBServer) {
+        if (Boolean.TRUE.equals(isDirectedOBServer)) {
             return null;
         }
         try {
@@ -318,9 +323,14 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
      * @return
      */
     private Integer getOBProxyConfig(ConnectionSession connectionSession, String configName) {
-        return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                .query("show proxyconfig like '" + configName + "';",
-                        rs -> rs.next() ? rs.getInt("value") : null);
+        try {
+            return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
+                    .query("show proxyconfig like '" + configName + "';",
+                            rs -> rs.next() ? rs.getInt("value") : null);
+        } catch (Exception e) {
+            log.warn("Failed to obtain the value of OBProxy's configuration variable: {}", e.getMessage());
+            return null;
+        }
     }
 
     private boolean isUnknownThreadIdError(Exception e) {
@@ -328,9 +338,9 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     }
 
     private JdbcGeneralResult handleUnknownThreadIdError(ConnectionSession connectionSession,
-            JdbcGeneralResult jdbcGeneralResult, boolean isDirectedOBServer,
+            JdbcGeneralResult jdbcGeneralResult, Boolean isDirectedOBServer,
             boolean isEnabledGlobalClientSession, boolean isSupportedOracleModeKillSession) {
-        if (isDirectedOBServer) {
+        if (Boolean.TRUE.equals(isDirectedOBServer)) {
             log.info("The current connection mode is directing observer, return error result directly");
             return jdbcGeneralResult;
         }
@@ -342,15 +352,15 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
             return tryKillSessionWithAnonymousBlock(connectionSession, jdbcGeneralResult,
                     jdbcGeneralResult.getSqlTuple());
         }
-        return tryDirectConnectObserver(connectionSession, jdbcGeneralResult, jdbcGeneralResult.getSqlTuple());
+        return tryKillSessionViaDirectConnectObServer(connectionSession, jdbcGeneralResult,
+                jdbcGeneralResult.getSqlTuple());
     }
 
     private boolean checkOracleModeKillSessionSupported(String obVersion, ConnectionSession connectionSession) {
-        if (StringUtils.isBlank(obVersion)) {
-            return false;
-        }
-        return VersionUtils.isGreaterThanOrEqualsTo(obVersion, ORACLE_MODEL_KILL_SESSION_WITH_BLOCK_OB_VERSION_NUMBER)
-                && connectionSession.getDialectType() == DialectType.OB_ORACLE;
+        return StringUtils.isNotBlank(obVersion) &&
+                VersionUtils.isGreaterThanOrEqualsTo(obVersion, ORACLE_MODEL_KILL_SESSION_WITH_BLOCK_OB_VERSION_NUMBER)
+                &&
+                connectionSession.getDialectType() == DialectType.OB_ORACLE;
     }
 
     private JdbcGeneralResult tryKillSessionWithAnonymousBlock(ConnectionSession connectionSession,
@@ -376,7 +386,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         }
     }
 
-    private JdbcGeneralResult tryDirectConnectObserver(ConnectionSession connectionSession,
+    private JdbcGeneralResult tryKillSessionViaDirectConnectObServer(ConnectionSession connectionSession,
             JdbcGeneralResult jdbcGeneralResult, SqlTuple sqlTuple) {
         try {
             log.info("Kill query/session Unknown thread id error, try direct connect observer");
