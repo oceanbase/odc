@@ -114,7 +114,8 @@ public abstract class AbstractDlmJob implements OdcJob {
                         dlmTableUnit.getTableName());
                 continue;
             }
-            if (dlmTableUnit.getType() == JobType.MIGRATE) {
+            if (dlmTableUnit.getType() == JobType.MIGRATE
+                    && !dlmTableUnit.getParameters().getSyncDBObjectType().isEmpty()) {
                 try {
                     DLMTableStructureSynchronizer.sync(dlmTableUnit.getSourceDatasourceInfo(),
                             dlmTableUnit.getTargetDatasourceInfo(), dlmTableUnit.getTableName(),

@@ -88,7 +88,7 @@ public class DataArchiveTask extends BaseTask<Boolean> {
                 log.info("The table had been completed,tableName={}", dlmTableUnit.getTableName());
                 continue;
             }
-            if (parameters.getJobType() == JobType.MIGRATE) {
+            if (parameters.getJobType() == JobType.MIGRATE && !parameters.getSyncTableStructure().isEmpty()) {
                 try {
                     DLMTableStructureSynchronizer.sync(
                             DataSourceInfoMapper.toConnectionConfig(parameters.getSourceDs()),
