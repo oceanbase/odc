@@ -75,7 +75,7 @@ public class AsyncExecuteContext {
         List<JdbcGeneralResult> copiedResults = new ArrayList<>();
 
         long expect = System.currentTimeMillis() + timeoutMillis;
-        while (System.currentTimeMillis() <= expect && results.isEmpty()) {
+        while (!isFinished() && System.currentTimeMillis() <= expect && results.isEmpty()) {
         }
         while (!results.isEmpty()) {
             copiedResults.add(results.poll());

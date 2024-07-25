@@ -52,6 +52,7 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_user_profile_stmtCo
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_user_stmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Column_nameContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Column_name_listContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Commit_stmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Create_dblink_stmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Create_index_stmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Create_keystore_stmtContext;
@@ -99,6 +100,7 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Normal_relation_factorCon
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Out_of_line_constraintContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.References_clauseContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Relation_nameContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Rollback_stmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Scope_or_scope_aliasContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Select_stmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Select_with_hierarchical_queryContext;
@@ -685,4 +687,17 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
         setSqlType(SqlType.CREATE);
         this.dbObjectType = DBObjectType.OTHERS;
     }
+
+    @Override
+    public void enterCommit_stmt(Commit_stmtContext ctx) {
+        setSqlType(SqlType.COMMIT);
+        this.dbObjectType = DBObjectType.OTHERS;
+    }
+
+    @Override
+    public void enterRollback_stmt(Rollback_stmtContext ctx) {
+        setSqlType(SqlType.ROLLBACK);
+        this.dbObjectType = DBObjectType.OTHERS;
+    }
+
 }

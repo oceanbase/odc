@@ -316,7 +316,8 @@ public class ConnectConsoleService {
         statementCallBack.setMaxCachedLines(sessionProperties.getResultSetMaxCachedLines());
         statementCallBack.setLocale(LocaleContextHolder.getLocale());
         if (connectionSession.getDialectType().isOceanbase() && sqlTuples.size() <= 10) {
-            statementCallBack.getListeners().add(new OBExecutionListener(connectionSession, profileManager));
+            statementCallBack.getListeners()
+                    .add(new OBQueryProfileExecutionListener(connectionSession, profileManager));
         }
 
         Future<List<JdbcGeneralResult>> futureResult = connectionSession.getAsyncJdbcExecutor(
@@ -354,6 +355,13 @@ public class ConnectConsoleService {
             return new AsyncExecuteResultResp(shouldRemoveContext, context, results);
         } catch (Exception e) {
             shouldRemoveContext = true;
+            // Front-end would stop getting more results if there is an exception. In this case the left queries
+            // should be killed.
+            try {
+                killCurrentQuery(sessionId);
+            } catch (Exception ex) {
+                log.warn("Failed to kill query. Session id={}. Request id={}", sessionId, requestId);
+            }
             throw e;
         } finally {
             if (shouldRemoveContext) {
@@ -588,6 +596,14 @@ public class ConnectConsoleService {
             result.initWarningMessage(connectionSession);
         } catch (Exception e) {
             log.warn("Failed to init warning message", e);
+        }
+        try {
+            String version = ConnectionSessionUtil.getVersion(connectionSession);
+            result.setWithQueryProfile(OBQueryProfileExecutionListener
+                    .isSqlTypeSupportProfile(generalResult.getSqlTuple()) &&
+                    OBQueryProfileExecutionListener.isObVersionSupportQueryProfile(version));
+        } catch (Exception e) {
+            result.setWithQueryProfile(false);
         }
         return result;
     }

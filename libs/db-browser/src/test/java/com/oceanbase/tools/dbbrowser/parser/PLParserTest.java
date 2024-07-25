@@ -23,6 +23,7 @@ import org.junit.Test;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBProcedure;
+import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseMysqlPLResult;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseOraclePLResult;
 import com.oceanbase.tools.sqlparser.SyntaxErrorException;
@@ -1166,6 +1167,20 @@ public class PLParserTest {
         Assert.assertEquals("PKG_OB_测试程序包", actual.getPlName());
         Assert.assertEquals(4, actual.getProcedureList().size());
         Assert.assertEquals(1, actual.getFunctionList().size());
+    }
+
+    @Test
+    public void parseOracle_commitStmt_getSqlTypeSucceed() {
+        ParseOraclePLResult actual = PLParser.parseOracle("commit");
+        Assert.assertEquals(DBObjectType.OTHERS, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.COMMIT, actual.getSqlType());
+    }
+
+    @Test
+    public void parseOracle_rollbackStmt_getSqlTypeSucceed() {
+        ParseOraclePLResult actual = PLParser.parseOracle("rollback");
+        Assert.assertEquals(DBObjectType.OTHERS, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.ROLLBACK, actual.getSqlType());
     }
 
 }

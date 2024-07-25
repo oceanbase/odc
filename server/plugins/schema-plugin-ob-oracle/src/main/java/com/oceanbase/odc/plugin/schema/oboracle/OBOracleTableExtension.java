@@ -80,7 +80,11 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
         table.setTableOptions(tableOptions);
         table.setDDL(getTableDDL(connection, schemaName, tableName, parser, columns, tableOptions));
         table.setStats(getTableStats(connection, schemaName, tableName));
-        table.setColumnGroups(accessor.listTableColumnGroups(schemaName, tableName));
+        try {
+            table.setColumnGroups(accessor.listTableColumnGroups(schemaName, tableName));
+        } catch (Exception e) {
+            // eat the exception
+        }
         return table;
     }
 

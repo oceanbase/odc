@@ -90,7 +90,7 @@ public class UpdateGenerator implements DMLGenerator {
                 .append(" where ")
                 .append(oldSql)
                 .append(";");
-        this.affectMultiRows = !this.dmlBuilder.containsUniqueKeys() && !this.dmlBuilder.containsPrimaryKeyOrRowId();
+        this.affectMultiRows = !this.dmlBuilder.containsPrimaryKeyOrRowId() && !this.dmlBuilder.containsUniqueKeys();
         return sqlBuilder.toString();
     }
 

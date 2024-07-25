@@ -18,6 +18,7 @@ package com.oceanbase.odc.plugin.connect.api;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 
 import org.pf4j.ExtensionPoint;
 
@@ -43,6 +44,7 @@ public interface SqlDiagnoseExtensionPoint extends ExtensionPoint {
 
     SqlExecDetail getExecutionDetailBySql(Connection connection, @NonNull String sql) throws SQLException;
 
-    SqlExplain getQueryProfileByTraceId(Connection connection, @NonNull String traceId) throws SQLException;
+    SqlExplain getQueryProfileByTraceIdAndSessIds(Connection connection, @NonNull String traceId,
+            @NonNull List<String> sessionIds) throws SQLException;
 
 }
