@@ -26,8 +26,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.iam.UserEntity;
@@ -129,7 +131,7 @@ public class OdcJobListener implements JobListener {
                     taskRepository.updateStatusById(entity.getId(), TaskStatus.PREPARING,
                             TaskStatus.getRetryAllowedStatus());
             if (affectRows < 1) {
-                throw new UnexpectedException("Concurrent is not allowed.");
+                throw new IllegalStateException(String.format("Task is running,taskId=%s", entity.getId()));
             }
         }
         ScheduleTaskContextHolder.trace(scheduleEntity.getId(), entity.getJobGroup(), entity.getId());
