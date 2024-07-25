@@ -150,12 +150,10 @@ public class ScheduleTaskService {
      */
     public void start(Long id) {
         ScheduleTask scheduleTask = nullSafeGetModelById(id);
-        int affectRows =
-                scheduleTaskRepository.updateStatusById(id, TaskStatus.PREPARING, TaskStatus.getRetryAllowedStatus());
-        if (affectRows < 1) {
+        if (!scheduleTask.getStatus().isRetryAllowed()) {
             log.warn(
-                    "The task cannot be restarted because it is currently in progress or has already completed,scheduleTaskId={},status={}",
-                    id, scheduleTask.getStatus());
+                    "The task cannot be restarted because it is currently in progress or has already completed,scheduleTaskId={}",
+                    id);
             throw new IllegalStateException(
                     "The task cannot be restarted because it is currently in progress or has already completed.");
         }
