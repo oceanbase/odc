@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.security.max-login-record-time-minutes', '0', '登录成功记录间隔') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.security.max-login-record-time-minutes', '0', 'Interval of login records.') ON DUPLICATE KEY UPDATE `id`=`id`;
