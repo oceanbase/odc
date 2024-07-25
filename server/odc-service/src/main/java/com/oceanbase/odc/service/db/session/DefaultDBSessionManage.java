@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.db.session;
 import static com.oceanbase.odc.core.shared.constant.DialectType.OB_MYSQL;
 
 import java.sql.Connection;
-import java.sql.SQLTransientConnectionException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
@@ -212,10 +211,11 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     public List<JdbcGeneralResult> executeKillSession(ConnectionSession connectionSession, List<SqlTuple> sqlTuples,
             String sqlScript) {
         List<JdbcGeneralResult> results = executeKillCommands(connectionSession, sqlTuples, sqlScript);
-        return (connectionSession.getDialectType() == DialectType.OB_MYSQL
-                || connectionSession.getDialectType() == DialectType.OB_ORACLE)
-                        ? processResults(connectionSession, results)
-                        : results;
+        if (connectionSession.getDialectType() == DialectType.OB_MYSQL
+                || connectionSession.getDialectType() == DialectType.OB_ORACLE) {
+            return processResults(connectionSession, results);
+        }
+        return results;
     }
 
     private List<JdbcGeneralResult> executeKillCommands(ConnectionSession connectionSession, List<SqlTuple> sqlTuples,
@@ -354,8 +354,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     }
 
     private boolean isUnknownThreadIdError(Exception e) {
-        return e instanceof SQLTransientConnectionException
-                && StringUtils.containsIgnoreCase(e.getMessage(), "Unknown thread id");
+        return StringUtils.containsIgnoreCase(e.getMessage(), "Unknown thread id");
     }
 
     private JdbcGeneralResult handleUnknownThreadIdError(ConnectionSession connectionSession,
