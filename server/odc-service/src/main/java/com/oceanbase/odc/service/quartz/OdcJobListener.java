@@ -26,8 +26,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.iam.UserEntity;
@@ -120,12 +122,18 @@ public class OdcJobListener implements JobListener {
             entity.setStatus(TaskStatus.PREPARING);
             entity.setFireTime(context.getFireTime());
             entity = taskRepository.save(entity);
+            updateLatestTaskId(scheduleId, entity.getId());
         } else {
             log.info("Load an existing task,taskId={}", targetTaskId);
             entity = taskRepository.findById(targetTaskId).orElseThrow(() -> new NotFoundException(
                     ResourceType.ODC_SCHEDULE_TASK, "id", targetTaskId));
+            int affectRows =
+                    taskRepository.updateStatusById(entity.getId(), TaskStatus.PREPARING,
+                            TaskStatus.getRetryAllowedStatus());
+            if (affectRows < 1) {
+                throw new IllegalStateException(String.format("Task is running,taskId=%s", entity.getId()));
+            }
         }
-        updateLatestTaskId(scheduleId, entity.getId());
         ScheduleTaskContextHolder.trace(scheduleEntity.getId(), entity.getJobGroup(), entity.getId());
         taskRepository.updateExecutor(entity.getId(), JsonUtils.toJson(new ExecutorInfo(hostProperties)));
         context.setResult(entity);
