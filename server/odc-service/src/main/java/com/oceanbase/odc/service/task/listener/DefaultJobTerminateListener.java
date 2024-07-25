@@ -77,7 +77,7 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
                 scheduleService.refreshScheduleStatus(Long.parseLong(o.getJobName()));
                 // Trigger the data-delete job if necessary after the data-archive task is completed.
                 if (parameters.getJobType() == com.oceanbase.tools.migrator.common.enums.JobType.MIGRATE
-                        && parameters.isDeleteAfterMigration()) {
+                        && parameters.isDeleteAfterMigration() && taskStatus == TaskStatus.DONE) {
                     scheduleService.dataArchiveDelete(Long.parseLong(o.getJobName()), o.getId());
                     log.info("Trigger delete job succeed.");
                 }
