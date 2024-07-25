@@ -52,6 +52,13 @@ public interface ScheduleTaskRepository extends JpaRepository<ScheduleTaskEntity
 
     @Transactional
     @Modifying
+    @Query(value = "update schedule_task set status = :#{#newStatus.name()} where id = :id and status in (:previousStatus)",
+            nativeQuery = true)
+    int updateStatusById(@Param("id") Long id, @Param("newStatus") TaskStatus newStatus,
+            @Param("previousStatus") List<String> previousStatus);
+
+    @Transactional
+    @Modifying
     @Query("update ScheduleTaskEntity st set st.status = ?2, st.progressPercentage = ?3 where st.id = ?1")
     int updateStatusAndProcessPercentageById(Long id, TaskStatus status, double progressPercentage);
 

@@ -120,12 +120,18 @@ public class OdcJobListener implements JobListener {
             entity.setStatus(TaskStatus.PREPARING);
             entity.setFireTime(context.getFireTime());
             entity = taskRepository.save(entity);
+            updateLatestTaskId(scheduleId, entity.getId());
         } else {
             log.info("Load an existing task,taskId={}", targetTaskId);
             entity = taskRepository.findById(targetTaskId).orElseThrow(() -> new NotFoundException(
                     ResourceType.ODC_SCHEDULE_TASK, "id", targetTaskId));
+            int affectRows =
+                    taskRepository.updateStatusById(entity.getId(), TaskStatus.PREPARING,
+                            TaskStatus.getRetryAllowedStatus());
+            if (affectRows < 1) {
+                throw new UnexpectedException("Concurrent is not allowed.");
+            }
         }
-        updateLatestTaskId(scheduleId, entity.getId());
         ScheduleTaskContextHolder.trace(scheduleEntity.getId(), entity.getJobGroup(), entity.getId());
         taskRepository.updateExecutor(entity.getId(), JsonUtils.toJson(new ExecutorInfo(hostProperties)));
         context.setResult(entity);
