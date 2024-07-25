@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.db.session;
 import static com.oceanbase.odc.core.shared.constant.DialectType.OB_MYSQL;
 
 import java.sql.Connection;
+import java.sql.SQLTransientConnectionException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
@@ -211,7 +212,10 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     public List<JdbcGeneralResult> executeKillSession(ConnectionSession connectionSession, List<SqlTuple> sqlTuples,
             String sqlScript) {
         List<JdbcGeneralResult> results = executeKillCommands(connectionSession, sqlTuples, sqlScript);
-        return processResults(connectionSession, results);
+        return (connectionSession.getDialectType() == DialectType.OB_MYSQL
+                || connectionSession.getDialectType() == DialectType.OB_ORACLE)
+                        ? processResults(connectionSession, results)
+                        : results;
     }
 
     private List<JdbcGeneralResult> executeKillCommands(ConnectionSession connectionSession, List<SqlTuple> sqlTuples,
@@ -236,12 +240,12 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
      */
     private List<JdbcGeneralResult> processResults(ConnectionSession connectionSession,
             List<JdbcGeneralResult> results) {
-        Boolean isDirectedOBServer = checkObServerDirected(connectionSession);
+        Boolean isDirectedOBServer = isObServerDirected(connectionSession);
         String obProxyVersion = getObProxyVersion(connectionSession, isDirectedOBServer);
-        String obVersion = (String) connectionSession.getAttribute("OB_VERSION");
+        String obVersion = ConnectionSessionUtil.getVersion(connectionSession);
         boolean isEnabledGlobalClientSession =
-                checkGlobalClientSessionEnabled(connectionSession, obProxyVersion, obVersion);
-        boolean isSupportedOracleModeKillSession = checkOracleModeKillSessionSupported(obVersion, connectionSession);
+                isGlobalClientSessionEnabled(connectionSession, obProxyVersion, obVersion);
+        boolean isSupportedOracleModeKillSession = isOracleModeKillSessionSupported(obVersion, connectionSession);
         List<JdbcGeneralResult> finalResults = new ArrayList<>();
         for (JdbcGeneralResult jdbcGeneralResult : results) {
             try {
@@ -268,7 +272,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
      * @param connectionSession
      * @return
      */
-    private Boolean checkObServerDirected(ConnectionSession connectionSession) {
+    private Boolean isObServerDirected(ConnectionSession connectionSession) {
         String sql = (connectionSession.getDialectType() == OB_MYSQL)
                 ? "select PROXY_SESSID from oceanbase.gv$ob_processlist where ID =(select connection_id());"
                 : "select PROXY_SESSID from gv$ob_processlist where ID =(select sys_context('userenv','sid') from dual);";
@@ -306,7 +310,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         }
     }
 
-    private boolean checkGlobalClientSessionEnabled(ConnectionSession connectionSession, String obProxyVersion,
+    private boolean isGlobalClientSessionEnabled(ConnectionSession connectionSession, String obProxyVersion,
             String obVersion) {
         // verification version requirement
         if (StringUtils.isBlank(obProxyVersion)
@@ -350,7 +354,8 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     }
 
     private boolean isUnknownThreadIdError(Exception e) {
-        return StringUtils.contains(e.getMessage(), "Unknown thread id");
+        return e instanceof SQLTransientConnectionException
+                && StringUtils.containsIgnoreCase(e.getMessage(), "Unknown thread id");
     }
 
     private JdbcGeneralResult handleUnknownThreadIdError(ConnectionSession connectionSession,
@@ -365,14 +370,14 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
             return jdbcGeneralResult;
         }
         if (isSupportedOracleModeKillSession) {
-            return tryKillSessionWithAnonymousBlock(connectionSession, jdbcGeneralResult,
+            return tryKillSessionByAnonymousBlock(connectionSession, jdbcGeneralResult,
                     jdbcGeneralResult.getSqlTuple());
         }
         return tryKillSessionViaDirectConnectObServer(connectionSession, jdbcGeneralResult,
                 jdbcGeneralResult.getSqlTuple());
     }
 
-    private boolean checkOracleModeKillSessionSupported(String obVersion, ConnectionSession connectionSession) {
+    private boolean isOracleModeKillSessionSupported(String obVersion, ConnectionSession connectionSession) {
         return StringUtils.isNotBlank(obVersion) &&
                 VersionUtils.isGreaterThanOrEqualsTo(obVersion, ORACLE_MODEL_KILL_SESSION_WITH_BLOCK_OB_VERSION_NUMBER)
                 &&
@@ -388,7 +393,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
      * @param sqlTuple
      * @return
      */
-    private JdbcGeneralResult tryKillSessionWithAnonymousBlock(ConnectionSession connectionSession,
+    private JdbcGeneralResult tryKillSessionByAnonymousBlock(ConnectionSession connectionSession,
             JdbcGeneralResult jdbcGeneralResult, SqlTuple sqlTuple) {
         log.info("Kill query/session Unknown thread id error, try anonymous code blocks");
         String executedSql = sqlTuple.getExecutedSql();
