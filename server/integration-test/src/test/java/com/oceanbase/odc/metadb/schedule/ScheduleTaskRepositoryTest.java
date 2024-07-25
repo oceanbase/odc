@@ -52,6 +52,20 @@ public class ScheduleTaskRepositoryTest extends ServiceTestEnv {
         taskRepository.updateStatusById(scheduleTask.getId(), TaskStatus.DONE);
         Optional<ScheduleTaskEntity> optional = taskRepository.findById(scheduleTask.getId());
         Assert.equals(optional.get().getStatus(), TaskStatus.DONE);
+        int affectRows = taskRepository.updateStatusById(scheduleTask.getId(), TaskStatus.PREPARING,
+                TaskStatus.getRetryAllowedStatus());
+        optional = taskRepository.findById(scheduleTask.getId());
+        System.out.println(optional.get().getStatus());
+        Assert.equals(1, affectRows);
+    }
+
+    @Test
+    public void updateStatusById_failed() {
+        ScheduleTaskEntity scheduleTask = createScheduleTask();
+        taskRepository.updateStatusById(scheduleTask.getId(), TaskStatus.RUNNING);
+        int affectRows = taskRepository.updateStatusById(scheduleTask.getId(), TaskStatus.PREPARING,
+                TaskStatus.getRetryAllowedStatus());
+        Assert.equals(0, affectRows);
     }
 
     @Test

@@ -116,7 +116,7 @@ public abstract class AbstractDlmJob implements OdcJob {
         }
         SingleJobProperties singleJobProperties = new SingleJobProperties();
         singleJobProperties.setEnableRetryAfterHeartTimeout(true);
-        singleJobProperties.setMaxRetryTimesAfterHeartTimeout(2);
+        singleJobProperties.setMaxRetryTimesAfterHeartTimeout(1);
         jobProperties.putAll(singleJobProperties.toJobProperties());
 
         DefaultJobDefinition jobDefinition = DefaultJobDefinition.builder().jobClass(DataArchiveTask.class)
