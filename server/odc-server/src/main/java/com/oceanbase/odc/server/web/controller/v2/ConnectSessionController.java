@@ -209,7 +209,7 @@ public class ConnectSessionController {
      * kill session
      *
      * @param req
-     * @return
+     * @return kill result
      */
     @ApiOperation(value = "kill session", notes = "终止会话接口")
     @RequestMapping(value = "/sessions/killSession", method = RequestMethod.POST)
