@@ -59,7 +59,8 @@ public class MigratesTest {
                 .build();
 
         Migrates migrates = new Migrates(configuration,
-                new DefaultSchemaHistoryRepository(configuration.getDataSource()));
+                new DefaultSchemaHistoryRepository(configuration.getDataSource()),
+                new DefaultBeforeCheckDeleteHook());
 
         migrates.migrate();
 
@@ -77,7 +78,8 @@ public class MigratesTest {
                 .resourceLocations(Collections.singletonList("migrate/migrate"))
                 .basePackages(Arrays.asList("com.oceanbase.odc.core.migrate"))
                 .build();
-        new Migrates(init, new DefaultSchemaHistoryRepository(init.getDataSource())).migrate();
+        new Migrates(init, new DefaultSchemaHistoryRepository(init.getDataSource()),
+                new DefaultBeforeCheckDeleteHook()).migrate();
         new JdbcTemplate(dataSource).execute("drop table migrate_schema_history");
 
         MigrateConfiguration second = MigrateConfiguration.builder()
@@ -87,7 +89,8 @@ public class MigratesTest {
                 .initVersion("1.3.2")
                 .build();
 
-        new Migrates(second, new DefaultSchemaHistoryRepository(second.getDataSource())).migrate();
+        new Migrates(second, new DefaultSchemaHistoryRepository(second.getDataSource()),
+                new DefaultBeforeCheckDeleteHook()).migrate();
         Long rowCount = new JdbcTemplate(dataSource)
                 .queryForObject("select count(*) from migrate_schema_history where script like '%V%'", Long.class);
 
@@ -105,7 +108,8 @@ public class MigratesTest {
         thrown.expectMessage("no JdbcMigratable implementation found under basePackages");
 
         Migrates migrates = new Migrates(configuration,
-                new DefaultSchemaHistoryRepository(configuration.getDataSource()));
+                new DefaultSchemaHistoryRepository(configuration.getDataSource()),
+                new DefaultBeforeCheckDeleteHook());
         migrates.migrate();
     }
 
@@ -140,7 +144,8 @@ public class MigratesTest {
                 "Software degrade is not allowed, please check your ODC version which should be greater than or equal to 3.4.0");
 
         Migrates migrates = new Migrates(configuration,
-                new DefaultSchemaHistoryRepository(configuration.getDataSource()));
+                new DefaultSchemaHistoryRepository(configuration.getDataSource()),
+                new DefaultBeforeCheckDeleteHook());
         migrates.migrate();
     }
 

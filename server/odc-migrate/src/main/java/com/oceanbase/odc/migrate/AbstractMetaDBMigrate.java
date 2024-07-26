@@ -35,6 +35,7 @@ import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.odc.common.lang.Holder;
+import com.oceanbase.odc.core.migrate.BeforeCheckDeleteHook;
 import com.oceanbase.odc.core.migrate.DefaultSchemaHistoryRepository;
 import com.oceanbase.odc.core.migrate.MigrateConfiguration;
 import com.oceanbase.odc.core.migrate.Migrates;
@@ -59,6 +60,9 @@ abstract public class AbstractMetaDBMigrate {
     @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
 
+    @Autowired
+    private BeforeCheckDeleteHook execute;
+
     abstract public MigrateConfiguration migrateConfiguration();
 
     @PostConstruct
@@ -73,7 +77,7 @@ abstract public class AbstractMetaDBMigrate {
                         configuration.getInitVersion());
 
                 new Migrates(configuration, new DefaultSchemaHistoryRepository(
-                        configuration.getDataSource())).migrate();
+                        configuration.getDataSource()), execute).migrate();
                 log.info("migrate success");
             } finally {
                 lock.unlock();

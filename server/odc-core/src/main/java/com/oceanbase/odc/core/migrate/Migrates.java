@@ -59,12 +59,15 @@ public class Migrates {
 
     private final MigrateConfiguration configuration;
     private final SchemaHistoryRepository repository;
+    private final BeforeCheckDeleteHook execute;
     private final Map<String, List<SchemaHistory>> version2Histories;
     private final List<ResourceMigrateMetaInfo> migrateMetas = new LinkedList<>();
 
-    public Migrates(MigrateConfiguration configuration, SchemaHistoryRepository repository) {
+    public Migrates(MigrateConfiguration configuration, SchemaHistoryRepository repository,
+            BeforeCheckDeleteHook execute) {
         this.configuration = configuration;
         this.repository = repository;
+        this.execute = execute;
         this.version2Histories = repository.listSuccess().stream()
                 .collect(Collectors.groupingBy(SchemaHistory::getVersion));
         initResourceManager(configuration);
@@ -85,7 +88,14 @@ public class Migrates {
                 version2Migratables.keySet().stream().map(Version::new).sorted().collect(Collectors.toList());
         log.info("versionCount={}", sortedVersions.size());
 
-        degradeCheck(sortedVersions.get(sortedVersions.size() - 1).getVersion());
+        String currentVersion = sortedVersions.get(sortedVersions.size() - 1).getVersion();
+        log.info("currentVersion={}", currentVersion);
+
+        if (VersionUtils.isLessThan(currentVersion, "4.3.0")) {
+            execute.executeDeleteBeforeCheck(configuration.getDataSource());
+        }
+
+        degradeCheck(currentVersion);
         for (Version version : sortedVersions) {
             log.debug("version={}", version);
             List<Migrator> migratables = version2Migratables.get(version.getVersion());
