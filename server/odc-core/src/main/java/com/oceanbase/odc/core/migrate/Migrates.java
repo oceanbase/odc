@@ -90,8 +90,9 @@ public class Migrates {
 
         String currentVersion = sortedVersions.get(sortedVersions.size() - 1).getVersion();
 
-        if (VersionUtils.isGreaterThan(currentVersion, "4.3.0.0")) {
-            log.info("delete check, currentVersion={}", currentVersion);
+        if (VersionUtils.isLessThan(configuration.getInitVersion(), "4.3.0.0")) {
+            log.info("delete check done, initVersion={}, currentVersion={}",
+                    configuration.getInitVersion(), currentVersion);
             execute.executeDeleteBeforeCheck(configuration.getDataSource());
         }
 
