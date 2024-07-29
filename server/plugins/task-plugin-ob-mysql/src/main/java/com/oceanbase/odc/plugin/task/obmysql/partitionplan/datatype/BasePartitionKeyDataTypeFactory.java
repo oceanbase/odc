@@ -70,8 +70,8 @@ public abstract class BasePartitionKeyDataTypeFactory implements DataTypeFactory
          * assume that the partition key is a column
          */
         Map<String, DBTableColumn> colName2Col = this.dbTable.getColumns().stream()
-                .collect(Collectors.toMap(c -> unquoteIdentifier(c.getName()).toLowerCase(), c -> c));
-        DBTableColumn column = colName2Col.get(unquotedPartitionKey.toLowerCase());
+                .collect(Collectors.toMap(c -> unquoteIdentifier(c.getName()), c -> c));
+        DBTableColumn column = colName2Col.get(unquotedPartitionKey);
         if (column != null) {
             return recognizeColumnDataType(column);
         }
