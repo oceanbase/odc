@@ -2,18 +2,25 @@
 
 Change Risk Control
 
-- Added table level permission control. Allow project members to have different permissions for different tables, Including query, change, and export operations on tables.
+- Added table level permission control. Allow project members to have different permissions for different tables. Including query, change, and export operations on tables.
 
 Session Management
 
-- When killing session on OceanBase 4.2.3 and obproxy 4.2.5, use global client session to solve unknown thread id exception.
-- Using anonymous block to kill session in OceanBase 4.2.1 oracle mode.
+- Killing query/session supports more scenarios
+  - When killing session on OceanBase 4.2.3 and obproxy 4.2.5, use global client session to solve unknown thread id exception.
+  - Using anonymous block to kill session in OceanBase 4.2.1 oracle mode.
 
-SQL Diagnosis
+AP Development
 
-- Support viewing SQL plan in graph format.
-- The diagnostic module adds query profile function. Support viewing actual SQL execution plan and real-time execution data.
+- Added query profile feature, which supports querying SQL execution details during or completed execution for OceanBase 4.2.4 or higher
+  - Provides graphical, tabular, and textual views of OceanBase's actual execution plan, visually displaying the connection relationships and step sequences between operators
+  - The query profile supports displaying the execution status of operators, providing a global summary of various execution time stages and detailed information at the operator level. It also supports sorting of Top5 time-consuming operators, making it easy to quickly identify and locate performance bottlenecks
+  - Implemented the ability to collect and analyze SQL execution data in real-time. Support viewing of I/O data and output row count for each thread during standalone/distributed execution
 
+SQL Development
+
+- SQL execution supports viewing execution progress, including: total count of executions, current number, and trace ID of the SQL currently being executed; Support real-time viewing of completed execution results
+- Support viewing the logical execution plan of OceanBase in graphical format
 
 ### Usability Improvements
 
