@@ -1,5 +1,65 @@
 # OceanBase Developer Center (ODC) CHANGELOG
 
+## 4.3.1 (2024-07-)
+
+### 功能变化
+
+变更风险管控
+
+- 新增表级别权限管控，允许项目成员对不同表拥有不同操作权限，包括对表的查询、变更和导出操作
+
+会话管理
+
+- 当连接为 OceanBase 4.2.3 和 obproxy 4.2.5 或更高的版本时，使用 Client session 能力进行会话关闭
+- 在 OceanBase 4.2.1 oracle 模式下，使用匿名块进行会话关闭
+
+SQL 诊断
+
+- 支持以图格式查看 OceanBase 的逻辑 SQL 执行计划
+- 诊断模块新增执行剖析功能，支持查看实际 SQL 执行计划及实时执行数据
+
+### 易用性改进
+
+- SQL 执行时支持查看执行进度，并支持实时查看已完成的执行结果
+- 数据清理任务支持编辑任务配置
+- 数据源模块，支持批量导入 mysql、oracle 和 doris 数据源
+
+### 缺陷修复
+
+数据生命周期管理
+- 如果 syncTableStructure 配置关闭，则不比较表结构 [#3014](https://github.com/oceanbase/odc/pull/3014)
+
+变更风险管控
+- 自动授权规则对 LoginSuccess 事件不生效 [#3003](https://github.com/oceanbase/odc/pull/3003)
+
+导入导出
+- 桌面版模式下，如果清理了元数据库但未清理工作空间，则再次发起导入任务时可能会存在脏数据文件 [#3006](https://github.com/oceanbase/odc/pull/3006)
+
+SQL 检查
+
+- 无法识别 `commit` 和 `rollback` 语句 [#2985](https://github.com/oceanbase/odc/pull/2985)
+
+SQL 开发
+- PL 调试期间可能会报 NPE 异常 [#2930](https://github.com/oceanbase/odc/pull/2930)
+- oracle 数据源修改会话变量的 sql 错误 [#2872](https://github.com/oceanbase/odc/pull/2872)
+
+模拟数据
+- 模拟数据任务无法终止 [#2850](https://github.com/oceanbase/odc/pull/2850)
+
+全局对象检索
+- 对象同步无法停止 [#2928](https://github.com/obase/odc/pull/2928)
+
+工单
+- 检查结果文件不存在本机时，无法获取 SQL 检查的结果 [#2943](https://github.com/oceanbase/odc/pull/2943)
+- 集群模型中的守护进程作业将同时被触发 [#2408](https://github.com/oceanbase/odc/pull/2408)
+
+审计
+- `content_ip_address`列值的实际长度超过了该列的长度限制 [#2863](https://github.com/oceanbase/odc/pull/2863)
+
+其他
+- 反序列化分页对象失败 [#2434](https://github.com/oceanbase/odc/pull/2434)
+
+
 ## 4.3.0_bp1（2024-06-24）
 
 ### 易用性改进
