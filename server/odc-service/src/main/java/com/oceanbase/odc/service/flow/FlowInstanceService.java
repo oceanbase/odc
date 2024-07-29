@@ -140,6 +140,7 @@ import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.FlowTaskProperties;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeTaskResult;
+import com.oceanbase.odc.service.flow.task.model.OdcMockTaskConfig;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
@@ -796,6 +797,26 @@ public class FlowInstanceService {
                                 .map(UnauthorizedDBResource::getUnauthorizedPermissionTypes).flatMap(Collection::stream)
                                 .map(DatabasePermissionType::getLocalizedMessage).collect(Collectors.joining(","))},
                         "Lack permission for the database with id " + req.getDatabaseId());
+            }
+            return;
+        }
+        if (req.getTaskType() == TaskType.MOCKDATA) {
+            OdcMockTaskConfig parameters = (OdcMockTaskConfig) req.getParameters();
+            Map<DBResource, Set<DatabasePermissionType>> resource2Types = new HashMap<>();
+            List<String> tableNames = FlowTaskUtil.getMockDataTableNames(parameters);
+            if (CollectionUtils.isNotEmpty(tableNames)) {
+                ConnectionConfig config = connectionService.getBasicWithoutPermissionCheck(req.getConnectionId());
+                tableNames.forEach(table -> resource2Types.put(DBResource.from(config, req.getDatabaseName(), table),
+                    DatabasePermissionType.from(TaskType.MOCKDATA)));
+            }
+            List<UnauthorizedDBResource> unauthorizedDBResources = this.permissionHelper
+                .filterUnauthorizedDBResources(resource2Types, false);
+            if (CollectionUtils.isNotEmpty(unauthorizedDBResources)) {
+                throw new BadRequestException(ErrorCodes.DatabaseAccessDenied,
+                    new Object[] {unauthorizedDBResources.stream()
+                                      .map(UnauthorizedDBResource::getUnauthorizedPermissionTypes).flatMap(Collection::stream)
+                                      .map(DatabasePermissionType::getLocalizedMessage).collect(Collectors.joining(","))},
+                    "Lack permission for the database with id " + req.getDatabaseId());
             }
             return;
         }

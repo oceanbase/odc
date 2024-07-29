@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -34,6 +35,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
@@ -314,6 +316,20 @@ public class FlowTaskUtil {
         Object value = execution.getVariables().get(RuntimeTaskConstants.RISKLEVEL_DESCRIBER);
         return internalGet(value, RiskLevelDescriber.class).orElseThrow(
                 () -> new VerifyException("RiskLevelDescriber is absent"));
+    }
+
+    public static List<String> getMockDataTableNames(@NonNull OdcMockTaskConfig config) {
+        String taskJson = config.getTaskDetail();
+        PreConditions.notBlank(taskJson, "taskDetail");
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            HashMap<String, Object> map = mapper.readValue(taskJson, HashMap.class);
+            List<Map<String, Object>> tableList = (List<Map<String, Object>>) map.get("tables");
+            return tableList.stream().map(table -> (String) table.get("tableName")).collect(Collectors.toList());
+        } catch (Exception ex) {
+            log.error("Failed to get tables from OdcMockTaskConfig, ", ex);
+            throw new UnexpectedException("Failed to get tables from OdcMockTaskConfig", ex);
+        }
     }
 
     @SuppressWarnings("all")
