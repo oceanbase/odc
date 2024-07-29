@@ -1,3 +1,61 @@
+
+
+Change Risk Control
+
+- Added table level permission control. Allow project members to have different permissions for different tables.
+
+Session Management
+
+- When killing session on OceanBase 4.2.3 and odp 4.2.5, use global client session to solve unknown thread id exception.
+- Using anonymous block to kill session in OceanBase 4.2.1 oracle mode.
+
+Sql Diagnosis
+
+- Support viewing SQL plan in graph format.
+- The diagnostic module adds query profile function. Support viewing actual SQL execution plan and real-time execution data.
+
+
+### Usability Improvements
+
+- SQL execution supports obtaining execution progress. And the completed execution results could be viewed in real time.
+- Data cleaning tasks support editing task configuration.
+- Support import mysql, oracle and doris datasource.
+
+### Bug Fixes
+
+DLM
+- Even if syncTableStructure config is off, the table structure would still be compared [#3014](https://github.com/oceanbase/odc/pull/3014)
+
+Change Risk Control
+- Automatic authorization rules do not take effect for LoginSuccess events [#3003](https://github.com/oceanbase/odc/pull/3003)
+
+Data transfer
+- If the metadb was cleaned the working directory was not, dirty data files may be imported [#3006](https://github.com/oceanbase/odc/pull/3006)
+
+SQL check
+
+- Failed to recognize the commit and rollback statement [#2985](https://github.com/oceanbase/odc/pull/2985)
+
+SQL development
+- NPE would be reported during the pl debugging [#2930](https://github.com/oceanbase/odc/pull/2930)
+- Modifying session sql in oracle is incorrect [#2872](https://github.com/oceanbase/odc/pull/2872)
+
+Mock data
+- Unable to cancel the mock data task [#2850](https://github.com/oceanbase/odc/pull/2850)
+
+Global object search
+- Unable to stop data object synchronization [#2928](https://github.com/obase/odc/pull/2928)
+
+Ticket
+- Failed to get sql check result when the check result file is not on this machine [#2943](https://github.com/oceanbase/odc/pull/2943)
+- Daemon job in cluster model would be fired at one time [#2408](https://github.com/oceanbase/odc/pull/2408)
+
+Audit
+- The actual length of the value in the 'content_ip-address' column exceeds the length limit of the column [#2863](https://github.com/oceanbase/odc/pull/2863)
+
+Web
+- Failed to deserialize the paginated object [#2434](https://github.com/oceanbase/odc/pull/2434)
+
 ## 4.3.0_bp1 (2024-06-24)
 
 ### Usability Improvements
