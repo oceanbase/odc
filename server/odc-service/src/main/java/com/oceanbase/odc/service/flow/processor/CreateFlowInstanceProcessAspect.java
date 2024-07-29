@@ -184,7 +184,10 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
         }
         if (req.getParameters() instanceof AlterScheduleParameters) {
             AlterScheduleParameters parameters = (AlterScheduleParameters) req.getParameters();
-            validateTriggerConfig(parameters.getTriggerConfig());
+            if (parameters.getOperationType() == OperationType.CREATE
+                    || parameters.getOperationType() == OperationType.UPDATE) {
+                validateTriggerConfig(parameters.getTriggerConfig());
+            }
         }
     }
 
