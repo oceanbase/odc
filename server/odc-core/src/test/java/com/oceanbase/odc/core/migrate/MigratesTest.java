@@ -60,7 +60,7 @@ public class MigratesTest {
 
         Migrates migrates = new Migrates(configuration,
                 new DefaultSchemaHistoryRepository(configuration.getDataSource()),
-                new DefaultBeforeCheckDeleteHook());
+                new DefaultMigratePreHook());
 
         migrates.migrate();
 
@@ -79,7 +79,7 @@ public class MigratesTest {
                 .basePackages(Arrays.asList("com.oceanbase.odc.core.migrate"))
                 .build();
         new Migrates(init, new DefaultSchemaHistoryRepository(init.getDataSource()),
-                new DefaultBeforeCheckDeleteHook()).migrate();
+                new DefaultMigratePreHook()).migrate();
         new JdbcTemplate(dataSource).execute("drop table migrate_schema_history");
 
         MigrateConfiguration second = MigrateConfiguration.builder()
@@ -90,7 +90,7 @@ public class MigratesTest {
                 .build();
 
         new Migrates(second, new DefaultSchemaHistoryRepository(second.getDataSource()),
-                new DefaultBeforeCheckDeleteHook()).migrate();
+                new DefaultMigratePreHook()).migrate();
         Long rowCount = new JdbcTemplate(dataSource)
                 .queryForObject("select count(*) from migrate_schema_history where script like '%V%'", Long.class);
 
@@ -109,7 +109,7 @@ public class MigratesTest {
 
         Migrates migrates = new Migrates(configuration,
                 new DefaultSchemaHistoryRepository(configuration.getDataSource()),
-                new DefaultBeforeCheckDeleteHook());
+                new DefaultMigratePreHook());
         migrates.migrate();
     }
 
@@ -145,7 +145,7 @@ public class MigratesTest {
 
         Migrates migrates = new Migrates(configuration,
                 new DefaultSchemaHistoryRepository(configuration.getDataSource()),
-                new DefaultBeforeCheckDeleteHook());
+                new DefaultMigratePreHook());
         migrates.migrate();
     }
 

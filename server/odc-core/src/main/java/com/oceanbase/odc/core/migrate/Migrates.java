@@ -58,13 +58,13 @@ import lombok.extern.slf4j.Slf4j;
 public class Migrates {
 
     private final MigrateConfiguration configuration;
-    private final SchemaHistoryRepository repository;
-    private final BeforeCheckDeleteHook execute;
+    private final SchemaHistoryRepository          repository;
+    private final MigratePreHook                   execute;
     private final Map<String, List<SchemaHistory>> version2Histories;
     private final List<ResourceMigrateMetaInfo> migrateMetas = new LinkedList<>();
 
     public Migrates(MigrateConfiguration configuration, SchemaHistoryRepository repository,
-            BeforeCheckDeleteHook execute) {
+            MigratePreHook execute) {
         this.configuration = configuration;
         this.repository = repository;
         this.execute = execute;
@@ -90,11 +90,9 @@ public class Migrates {
 
         String currentVersion = sortedVersions.get(sortedVersions.size() - 1).getVersion();
 
-        if (VersionUtils.isLessThan(configuration.getInitVersion(), "4.3.0.0")) {
-            log.info("delete check done, initVersion={}, currentVersion={}",
-                    configuration.getInitVersion(), currentVersion);
-            execute.executeDeleteBeforeCheck(configuration.getDataSource());
-        }
+        execute.executeDeleteBeforeCheck(configuration.getDataSource(), configuration.getInitVersion());
+        log.info("delete check done, initVersion={}, currentVersion={}",
+            configuration.getInitVersion(), currentVersion);
 
         degradeCheck(currentVersion);
         for (Version version : sortedVersions) {

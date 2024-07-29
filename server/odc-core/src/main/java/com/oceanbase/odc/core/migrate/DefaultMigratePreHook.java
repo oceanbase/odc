@@ -17,13 +17,14 @@ package com.oceanbase.odc.core.migrate;
 
 import javax.sql.DataSource;
 
-/**
- * @author yiminpeng
- * @date 2024/07/26
- * @version : BeforeCheckDeleteHook.java, v 1.0
- */
-public interface BeforeCheckDeleteHook {
+import lombok.extern.slf4j.Slf4j;
 
-    void executeDeleteBeforeCheck(DataSource dataSource);
+@Slf4j
+public class DefaultMigratePreHook implements MigratePreHook {
 
+    @Override
+    public void executeDeleteBeforeCheck(DataSource dataSource, String initVersion) {
+        log.debug("DefaultMigratePreHook passing");
+        return;
+    }
 }
