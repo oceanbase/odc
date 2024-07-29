@@ -57,7 +57,7 @@ public class OBMySQLPartitionKeyDataTypeFactory extends BasePartitionKeyDataType
 
     @Override
     protected String unquoteIdentifier(String identifier) {
-        return new OBMySQLAutoPartitionExtensionPoint().unquoteIdentifier(identifier.toLowerCase());
+        return new OBMySQLAutoPartitionExtensionPoint().unquoteIdentifier(identifier);
     }
 
     @Override
