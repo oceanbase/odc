@@ -2,7 +2,7 @@
 
 Change Risk Control
 
-- Added table level permission control. Allow project members to have different permissions for different tables.
+- Added table level permission control. Allow project members to have different permissions for different tables, Including query, change, and export operations on tables.
 
 Session Management
 
