@@ -318,7 +318,7 @@ public class DBResourcePermissionHelper {
             }
             if (resource.getType() == ResourceType.ODC_DATABASE) {
                 if (resource.getDatabaseId() == null) {
-                    unauthorizedDBResources.add(UnauthorizedDBResource.from(resource, needs, false));
+                    unauthorizedDBResources.add(UnauthorizedDBResource.from(resource, needs, false, null));
                     continue;
                 }
                 DatabaseEntity database = dbId2Entity.get(resource.getDatabaseId());
@@ -346,11 +346,12 @@ public class DBResourcePermissionHelper {
                         needs.stream().filter(p -> !authorized.contains(p)).collect(Collectors.toSet());
                 if (CollectionUtils.isNotEmpty(unauthorized)) {
                     unauthorizedDBResources.add(UnauthorizedDBResource.from(resource, unauthorized,
-                            database.getProjectId() != null && involvedProjectIds.contains(database.getProjectId())));
+                            database.getProjectId() != null && involvedProjectIds.contains(database.getProjectId()),
+                            database.getProjectId()));
                 }
             } else if (resource.getType() == ResourceType.ODC_TABLE) {
                 if (resource.getDatabaseId() == null) {
-                    unauthorizedDBResources.add(UnauthorizedDBResource.from(resource, needs, false));
+                    unauthorizedDBResources.add(UnauthorizedDBResource.from(resource, needs, false, null));
                     continue;
                 }
                 Set<DatabasePermissionType> authorized = new HashSet<>();
@@ -376,7 +377,8 @@ public class DBResourcePermissionHelper {
                         needs.stream().filter(p -> !authorized.contains(p)).collect(Collectors.toSet());
                 if (CollectionUtils.isNotEmpty(unauthorized)) {
                     unauthorizedDBResources.add(UnauthorizedDBResource.from(resource, unauthorized,
-                            database.getProjectId() != null && involvedProjectIds.contains(database.getProjectId())));
+                            database.getProjectId() != null && involvedProjectIds.contains(database.getProjectId()),
+                            database.getProjectId()));
                 }
             } else {
                 throw new IllegalStateException("Unsupported resource type: " + resource.getType());
