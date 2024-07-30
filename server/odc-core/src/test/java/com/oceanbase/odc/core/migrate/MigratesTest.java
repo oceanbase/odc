@@ -91,6 +91,7 @@ public class MigratesTest {
 
         new Migrates(second, new DefaultSchemaHistoryRepository(second.getDataSource()),
                 new DefaultBeforeMigrate()).migrate();
+
         Long rowCount = new JdbcTemplate(dataSource)
                 .queryForObject("select count(*) from migrate_schema_history where script like '%V%'", Long.class);
 
@@ -110,6 +111,7 @@ public class MigratesTest {
         Migrates migrates = new Migrates(configuration,
                 new DefaultSchemaHistoryRepository(configuration.getDataSource()),
                 new DefaultBeforeMigrate());
+
         migrates.migrate();
     }
 
@@ -146,6 +148,7 @@ public class MigratesTest {
         Migrates migrates = new Migrates(configuration,
                 new DefaultSchemaHistoryRepository(configuration.getDataSource()),
                 new DefaultBeforeMigrate());
+
         migrates.migrate();
     }
 
