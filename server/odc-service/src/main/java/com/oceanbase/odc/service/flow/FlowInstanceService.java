@@ -789,6 +789,11 @@ public class FlowInstanceService {
                                 DatabasePermissionType.from(TaskType.EXPORT));
                     }
                 });
+            } else if (Objects.nonNull(parameters.isExportAllObjects()) && parameters.isExportAllObjects()) {
+                ConnectionConfig config = connectionService.getBasicWithoutPermissionCheck(req.getConnectionId());
+                resource2Types.put(
+                        DBResource.from(config, req.getDatabaseName(), null, ResourceType.ODC_DATABASE),
+                        DatabasePermissionType.from(TaskType.EXPORT));
             }
             List<UnauthorizedDBResource> unauthorizedDBResources = this.permissionHelper
                     .filterUnauthorizedDBResources(resource2Types, false);
