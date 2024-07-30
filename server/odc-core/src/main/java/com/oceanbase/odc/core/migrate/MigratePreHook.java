@@ -24,6 +24,6 @@ import javax.sql.DataSource;
  */
 public interface MigratePreHook {
 
-    void executeDeleteBeforeCheck(DataSource dataSource, String initVersion);
+    void beforeMigrate(DataSource dataSource, String initVersion);
 
 }

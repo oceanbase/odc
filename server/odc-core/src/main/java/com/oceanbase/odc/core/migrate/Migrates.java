@@ -90,9 +90,11 @@ public class Migrates {
 
         String currentVersion = sortedVersions.get(sortedVersions.size() - 1).getVersion();
 
-        execute.executeDeleteBeforeCheck(configuration.getDataSource(), configuration.getInitVersion());
-        log.info("delete check done, initVersion={}, currentVersion={}",
-                configuration.getInitVersion(), currentVersion);
+        if (execute != null) {
+            execute.beforeMigrate(configuration.getDataSource(), configuration.getInitVersion());
+            log.info("delete check done, initVersion={}, currentVersion={}",
+                    configuration.getInitVersion(), currentVersion);
+        }
 
         degradeCheck(currentVersion);
         for (Version version : sortedVersions) {
