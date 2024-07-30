@@ -10,21 +10,30 @@
 
 会话管理
 
-- 关闭会话/查询支持更多场景
+- 关闭会话/查询支持非直连 OBServer 的更多场景
   - 当连接为 OceanBase 4.2.3 和 obproxy 4.2.5 或更高的版本时，使用 Client session 能力进行会话管理
   - 在 OceanBase 4.2.1 oracle 模式下，使用匿名块进行会话管理
 
 AP 开发
 
-- 新增执行剖析功能，当数据源版本为 OceanBase 4.2.4 或更高时，支持查询执行过程中或已完成的 SQL 执行详情
-  - 提供了 OceanBase 实际执行计划的图形视图、表格视图和文本视图，直观展示算子之间的连接关系和步骤顺序
-  - 支持展示算子的执行状态，提供了各项执行耗时阶段的全局汇总和算子级别的详情信息，支持 Top5 耗时算子的排序，便于迅速识别和定位性能瓶颈
-  - 实现了实时采集和分析 SQL 执行数据的能力，支持查看单机/分布式执行时每个线程的 I/O 数据和吐行行数
+- 新增实时执行剖析，可视化、交互式呈现 sql_plan_monitor
+  - 此功能需要数据源版本 OceanBase 4.2.4+
+  - 不仅支持对已完成的 SQL 执行进行分析，也支持对执行中的 SQL 进行实时分析
+  - 提供执行计划的图形视图、表格视图和文本视图，直观展示算子之间的连接关系和步骤顺序
+  - 全局视图提供 Top5 耗时算子的排序和各项执行耗时阶段的全局汇总，快速定位性能瓶颈
+  - 算子节点包含算子的执行状态和详情信息，详细信息包括 CPU、内存、磁盘、吐行和节点属性
+  - 对于并行执行节点，支持按照 DB 耗时、IO 内存和吐行行数排序，快速定位数据倾斜，不仅支持分析单机执行计划也支持分析分布式执行计划
+  - 全新设计的一体化实时诊断页面，可以结合执行计划、全链路诊断，在一个页面完成执行剖析
 
 SQL 开发
 
 - SQL 执行时支持查看执行进度，包括：总执行条数、当前执行条数及当前正在执行 SQL 的 trace id；支持实时查看已完成的执行结果
 - 支持以图形格式查看 OceanBase 的逻辑 SQL 执行计划
+
+数据源
+
+- 全功能适配 OB 4.2.4、OB 4.3.1、OB 4.3.2
+
 
 ### 易用性改进
 
@@ -34,17 +43,17 @@ SQL 开发
 ### 缺陷修复
 
 数据生命周期管理
-- 如果 syncTableStructure 配置关闭，则不比较表结构 [#3014](https://github.com/oceanbase/odc/pull/3014)
+- 未启用表结构同步时也进行了表结构比较 [#3014](https://github.com/oceanbase/odc/pull/3014)                                                                                                            
 
 变更风险管控
 - 自动授权规则对 LoginSuccess 事件不生效 [#3003](https://github.com/oceanbase/odc/pull/3003)
 
 导入导出
-- 桌面版模式下，如果清理了元数据库但未清理工作空间，则再次发起导入任务时可能会存在脏数据文件 [#3006](https://github.com/oceanbase/odc/pull/3006)
+- 桌面版模式下，重新安装 ODC 场景，导入任务可能会受到历史执行任务导入文件影响 [#3006](https://github.com/oceanbase/odc/pull/3006)
 
 SQL 检查
 
-- 无法识别 `commit` 和 `rollback` 语句 [#2985](https://github.com/oceanbase/odc/pull/2985)
+- 启用 SQL 窗口规范时，SQL 窗口的提交、回滚按钮可能会失效 [#2985](https://github.com/oceanbase/odc/pull/2985)
 
 SQL 开发
 - PL 调试期间可能会报 NPE 异常 [#2930](https://github.com/oceanbase/odc/pull/2930)
@@ -58,13 +67,12 @@ SQL 开发
 
 工单
 - 检查结果文件不存在本机时，无法获取 SQL 检查的结果 [#2943](https://github.com/oceanbase/odc/pull/2943)
-- 集群模型中的守护进程作业将同时被触发 [#2408](https://github.com/oceanbase/odc/pull/2408)
 
 审计
 - `content_ip_address`列值的实际长度超过了该列的长度限制 [#2863](https://github.com/oceanbase/odc/pull/2863)
 
 其他
-- 反序列化分页对象失败 [#2434](https://github.com/oceanbase/odc/pull/2434)
+- 多节点部署使用进程模式调度任务时，所有任务会被调度到同一个节点 [#2408](https://github.com/oceanbase/odc/pull/2408)
 
 
 ## 4.3.0_bp1（2024-06-24）

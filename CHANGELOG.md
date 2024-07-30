@@ -6,7 +6,7 @@ Change Risk Control
 
 Session Management
 
-- Killing query/session supports more scenarios
+- Killing query/session supports more scenarios for non directly connected OBServer
   - When killing session on OceanBase 4.2.3 and obproxy 4.2.5, use global client session to solve unknown thread id exception.
   - Using anonymous block to kill session in OceanBase 4.2.1 oracle mode.
 
@@ -17,10 +17,23 @@ AP Development
   - The query profile supports displaying the execution status of operators, providing a global summary of various execution time stages and detailed information at the operator level. It also supports sorting of Top5 time-consuming operators, making it easy to quickly identify and locate performance bottlenecks
   - Implemented the ability to collect and analyze SQL execution data in real-time. Support viewing of I/O data and output row count for each thread during standalone/distributed execution
 
+- Added real-time query profile, which supports visual and interactive presentation of sql_plan_monitor
+  - This feature requires the data source version OceanBase 4.2.4+
+  - Not only does it support analysis of completed SQL executions, but also supports real-time analysis of executing SQL
+  - Provide graphical, tabular, and textual views for executing plans, visually displaying the connection relationships and step sequences between operators
+  - The global view provides sorting of Top5 time-consuming operators and a summary of each execution time-consuming stage, helping identifying performance bottlenecks
+  - The operator node contains the execution status and detailed information, including CPU, memory, disk, output rows, and node properties
+  - For parallel execution nodes, it supports sorting by DB time, IO memory, and number of rows to quickly locate data skew. It not only supports analyzing standalone execution plans but also supports analyzing distributed execution plans
+  - The newly designed integrated real-time diagnostic page can combine execution plans and full link trace to complete execution analysis in one page
+
 SQL Development
 
 - SQL execution supports viewing execution progress, including: total count of executions, current number, and trace ID of the SQL currently being executed; Support real-time viewing of completed execution results
 - Support viewing the logical execution plan of OceanBase in graphical format
+
+Data Source
+
+- Adapted to OceanBase 4.2.4/4.3.1/4.3.2
 
 ### Usability Improvements
 
@@ -37,11 +50,11 @@ Change Risk Control
 - Automatic authorization rules do not take effect for LoginSuccess events [#3003](https://github.com/oceanbase/odc/pull/3003)
 
 Data Transfer
-- If the metadb was cleaned the working directory was not, dirty data files may be imported [#3006](https://github.com/oceanbase/odc/pull/3006)
+- If ODC was reinstalled, dirty data files may be imported [#3006](https://github.com/oceanbase/odc/pull/3006)
 
 SQL Check
 
-- Failed to recognize the commit and rollback statement [#2985](https://github.com/oceanbase/odc/pull/2985)
+- When the SQL specification is enabled, the submit and rollback function of SQL window may be invalid [#2985](https://github.com/oceanbase/odc/pull/2985)
 
 SQL Development
 - NPE would be reported during the pl debugging [#2930](https://github.com/oceanbase/odc/pull/2930)
@@ -55,13 +68,13 @@ Global Object Search
 
 Ticket
 - Failed to get sql check result when the check result file is not on this machine [#2943](https://github.com/oceanbase/odc/pull/2943)
-- Daemon job in cluster model would be fired at one time [#2408](https://github.com/oceanbase/odc/pull/2408)
+
 
 Audit
 - The actual length of the value in the 'content_ip_address' column exceeds the length limit of the column [#2863](https://github.com/oceanbase/odc/pull/2863)
 
 Others
-- Failed to deserialize the paginated object [#2434](https://github.com/oceanbase/odc/pull/2434)
+- Daemon job in cluster model would be fired at one time [#2408](https://github.com/oceanbase/odc/pull/2408)
 
 ## 4.3.0_bp1 (2024-06-24)
 
