@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.session.interceptor;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -30,6 +31,7 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.DBResource;
@@ -88,13 +90,25 @@ public class DBResourcePermissionInterceptor extends BaseTimeConsumingIntercepto
         for (Entry<DBSchemaIdentity, Set<SqlType>> entry : identity2Types.entrySet()) {
             DBSchemaIdentity identity = entry.getKey();
             Set<SqlType> sqlTypes = entry.getValue();
+            Set<DatabasePermissionType> permissionTypes = new HashSet<>();
             if (CollectionUtils.isNotEmpty(sqlTypes)) {
-                Set<DatabasePermissionType> permissionTypes = sqlTypes.stream().map(DatabasePermissionType::from)
+                if (sqlTypes.contains(SqlType.CREATE)) {
+                    permissionTypes.add(DatabasePermissionType.from(SqlType.CREATE));
+                    resource2PermissionTypes.put(
+                            DBResource.from(connectionConfig, identity.getSchema(), identity.getTable(),
+                                    ResourceType.ODC_DATABASE),
+                            permissionTypes);
+                    sqlTypes.remove(SqlType.CREATE);
+                }
+                permissionTypes = sqlTypes.stream().map(DatabasePermissionType::from)
                         .filter(Objects::nonNull).collect(Collectors.toSet());
                 if (CollectionUtils.isNotEmpty(permissionTypes)) {
-                    resource2PermissionTypes.put(
-                            DBResource.from(connectionConfig, identity.getSchema(), identity.getTable()),
-                            permissionTypes);
+                    resource2PermissionTypes.computeIfAbsent(
+                            DBResource.from(connectionConfig, identity.getSchema(), identity.getTable(),
+                                    Objects.isNull(identity.getTable()) ? ResourceType.ODC_DATABASE
+                                            : ResourceType.ODC_TABLE),
+                            k -> new HashSet<>())
+                            .addAll(permissionTypes);
                 }
             }
         }
