@@ -58,13 +58,13 @@ import lombok.extern.slf4j.Slf4j;
 public class Migrates {
 
     private final MigrateConfiguration configuration;
-    private final SchemaHistoryRepository repository;
-    private final MigratePreHook execute;
+    private final SchemaHistoryRepository          repository;
+    private final BeforeMigrate                    execute;
     private final Map<String, List<SchemaHistory>> version2Histories;
     private final List<ResourceMigrateMetaInfo> migrateMetas = new LinkedList<>();
 
     public Migrates(MigrateConfiguration configuration, SchemaHistoryRepository repository,
-            MigratePreHook execute) {
+            BeforeMigrate execute) {
         this.configuration = configuration;
         this.repository = repository;
         this.execute = execute;

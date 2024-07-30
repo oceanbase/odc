@@ -20,9 +20,9 @@ import javax.sql.DataSource;
 /**
  * @author yiminpeng
  * @date 2024/07/26
- * @version : MigratePreHook.java, v 1.0
+ * @version : BeforeMigrate.java, v 1.0
  */
-public interface MigratePreHook {
+public interface BeforeMigrate {
 
     void executeDeleteBeforeCheck(DataSource dataSource, String initVersion);
 

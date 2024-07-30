@@ -22,12 +22,11 @@ import org.springframework.stereotype.Component;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Component
-public class DefaultMigratePreHook implements MigratePreHook {
+public class DefaultBeforeMigrate implements BeforeMigrate {
 
     @Override
     public void executeDeleteBeforeCheck(DataSource dataSource, String initVersion) {
-        log.debug("DefaultMigratePreHook passing");
+        log.debug("DefaultBeforeMigrate passing");
         return;
     }
 }
