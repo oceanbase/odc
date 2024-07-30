@@ -17,8 +17,6 @@ package com.oceanbase.odc.core.migrate;
 
 import javax.sql.DataSource;
 
-import org.springframework.stereotype.Component;
-
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

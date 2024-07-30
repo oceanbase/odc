@@ -58,8 +58,8 @@ import lombok.extern.slf4j.Slf4j;
 public class Migrates {
 
     private final MigrateConfiguration configuration;
-    private final SchemaHistoryRepository          repository;
-    private final BeforeMigrate                    execute;
+    private final SchemaHistoryRepository repository;
+    private final BeforeMigrate execute;
     private final Map<String, List<SchemaHistory>> version2Histories;
     private final List<ResourceMigrateMetaInfo> migrateMetas = new LinkedList<>();
 
