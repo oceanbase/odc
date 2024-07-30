@@ -59,12 +59,12 @@ public class Migrates {
 
     private final MigrateConfiguration configuration;
     private final SchemaHistoryRepository repository;
-    private final BeforeMigrate execute;
+    private final MigratePreHook execute;
     private final Map<String, List<SchemaHistory>> version2Histories;
     private final List<ResourceMigrateMetaInfo> migrateMetas = new LinkedList<>();
 
     public Migrates(MigrateConfiguration configuration, SchemaHistoryRepository repository,
-            BeforeMigrate execute) {
+            MigratePreHook execute) {
         this.configuration = configuration;
         this.repository = repository;
         this.execute = execute;
@@ -90,9 +90,11 @@ public class Migrates {
 
         String currentVersion = sortedVersions.get(sortedVersions.size() - 1).getVersion();
 
-        execute.executeDeleteBeforeCheck(configuration.getDataSource(), configuration.getInitVersion());
-        log.info("delete check done, initVersion={}, currentVersion={}",
-                configuration.getInitVersion(), currentVersion);
+        if (execute != null) {
+            execute.beforeMigrate(configuration.getDataSource(), configuration.getInitVersion());
+            log.info("delete check done, initVersion={}, currentVersion={}",
+                    configuration.getInitVersion(), currentVersion);
+        }
 
         degradeCheck(currentVersion);
         for (Version version : sortedVersions) {
