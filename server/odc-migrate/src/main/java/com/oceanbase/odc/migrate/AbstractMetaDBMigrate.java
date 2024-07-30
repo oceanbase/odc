@@ -60,7 +60,7 @@ abstract public class AbstractMetaDBMigrate {
     @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
 
-    @Autowired
+    @Autowired(required = false)
     private MigratePreHook execute;
 
     abstract public MigrateConfiguration migrateConfiguration();
