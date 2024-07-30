@@ -38,7 +38,6 @@ import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.core.migrate.BeforeMigrate;
 import com.oceanbase.odc.core.migrate.DefaultSchemaHistoryRepository;
 import com.oceanbase.odc.core.migrate.MigrateConfiguration;
-import com.oceanbase.odc.core.migrate.MigratePreHook;
 import com.oceanbase.odc.core.migrate.Migrates;
 
 import lombok.Getter;
