@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.session.interceptor;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,10 +81,18 @@ public class DBResourcePermissionInterceptor extends BaseTimeConsumingIntercepto
             return true;
         }
         ConnectionConfig connectionConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
+        Set<String> existedDatabaseNames =
+                databaseService.listDatabasesByConnectionIds(Collections.singleton(connectionConfig.getId()))
+                        .stream().filter(database -> database.getExisted()).map(database -> database.getName())
+                        .collect(Collectors.toSet());
+
         String currentSchema = ConnectionSessionUtil.getCurrentSchema(session);
         Map<DBSchemaIdentity, Set<SqlType>> identity2Types = DBSchemaExtractor.listDBSchemasWithSqlTypes(
                 response.getSqls().stream().map(SqlTuplesWithViolation::getSqlTuple).collect(Collectors.toList()),
-                session.getDialectType(), currentSchema);
+                session.getDialectType(), currentSchema).entrySet().stream()
+                .filter(entry -> Objects.isNull(entry.getKey().getSchema())
+                        || existedDatabaseNames.contains(entry.getKey().getSchema()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         Map<DBResource, Set<DatabasePermissionType>> resource2PermissionTypes = new HashMap<>();
         for (Entry<DBSchemaIdentity, Set<SqlType>> entry : identity2Types.entrySet()) {
             DBSchemaIdentity identity = entry.getKey();
