@@ -33,9 +33,9 @@ import com.oceanbase.odc.service.onlineschemachange.oms.request.FullTransferConf
 import com.oceanbase.odc.service.onlineschemachange.oms.request.IncrTransferConfig;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsProjectControlRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.UpdateProjectConfigRequest;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.OSCActionContext;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.OSCActionResult;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OSCStates;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,24 +45,24 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.3.1
  */
 @Slf4j
-public class OMSModifyDataTaskAction implements Action<OSCActionContext, OSCActionResult> {
+public class OmsModifyDataTaskAction implements Action<OscActionContext, OscActionResult> {
     private final OmsProjectOpenApiService projectOpenApiService;
 
     private final OnlineSchemaChangeProperties onlineSchemaChangeProperties;
 
-    public OMSModifyDataTaskAction(@NotNull OmsProjectOpenApiService projectOpenApiService,
+    public OmsModifyDataTaskAction(@NotNull OmsProjectOpenApiService projectOpenApiService,
             @NotNull OnlineSchemaChangeProperties onlineSchemaChangeProperties) {
         this.projectOpenApiService = projectOpenApiService;
         this.onlineSchemaChangeProperties = onlineSchemaChangeProperties;
     }
 
-    public OSCActionResult execute(OSCActionContext context) throws Exception {
+    public OscActionResult execute(OscActionContext context) throws Exception {
         ScheduleTaskEntity scheduleTask = context.getScheduleTask();
         log.debug("Start execute {}, schedule task id {}", getClass().getSimpleName(), scheduleTask.getId());
 
         OnlineSchemaChangeScheduleTaskParameters taskParameter = context.getTaskParameter();
         OnlineSchemaChangeParameters inputParameters = context.getParameter();
-        OmsProjectStatusEnum projectStatusEnum = OMSRequestUtil.getProjectProjectStatus(taskParameter.getUid(),
+        OmsProjectStatusEnum projectStatusEnum = OmsRequestUtil.getProjectProjectStatus(taskParameter.getUid(),
                 taskParameter.getOmsProjectId(),
                 projectOpenApiService);
         // If config update is in processing, wait until the process done
@@ -70,17 +70,17 @@ public class OMSModifyDataTaskAction implements Action<OSCActionContext, OSCActi
         return updateOmsProjectConfig(scheduleTask.getId(), taskParameter, inputParameters, projectStatusEnum, context);
     }
 
-    private OSCActionResult updateOmsProjectConfig(Long scheduleTaskId,
+    private OscActionResult updateOmsProjectConfig(Long scheduleTaskId,
             OnlineSchemaChangeScheduleTaskParameters taskParameters,
             OnlineSchemaChangeParameters inputParameters, OmsProjectStatusEnum omsProjectStatus,
-            OSCActionContext context) {
+            OscActionContext context) {
         // if rate limiter parameters is changed, try to stop and restart project
         if (Objects.equals(inputParameters.getRateLimitConfig(), taskParameters.getRateLimitConfig())) {
             log.info("Rate limiter not changed,rateLimiterConfig = {}, update oms project not required",
                     inputParameters.getRateLimitConfig());
             // swap to monitor state
-            return new OSCActionResult(OSCStates.MODIFY_DATA_TASK.getState(), null,
-                    OSCStates.MONITOR_DATA_TASK.getState());
+            return new OscActionResult(OscStates.MODIFY_DATA_TASK.getState(), null,
+                    OscStates.MONITOR_DATA_TASK.getState());
         }
         log.info("Input rate limiter has changed, currentOmsProjectStatus={}, rateLimiterConfig={}, "
                 + "oldRateLimiterConfig={}.",
@@ -102,8 +102,8 @@ public class OMSModifyDataTaskAction implements Action<OSCActionContext, OSCActi
                         taskParameters.getOmsProjectId(), scheduleTaskId, e);
             }
             // keep in same state
-            return new OSCActionResult(OSCStates.MODIFY_DATA_TASK.getState(), null,
-                    OSCStates.MODIFY_DATA_TASK.getState());
+            return new OscActionResult(OscStates.MODIFY_DATA_TASK.getState(), null,
+                    OscStates.MODIFY_DATA_TASK.getState());
         } else if (omsProjectStatus == OmsProjectStatusEnum.SUSPEND) {
             try {
                 doUpdateOmsProjectConfig(scheduleTaskId, taskParameters, inputParameters, context);
@@ -112,19 +112,19 @@ public class OMSModifyDataTaskAction implements Action<OSCActionContext, OSCActi
                         taskParameters.getOmsProjectId(), scheduleTaskId, e);
             }
             // jump to monitor state
-            return new OSCActionResult(OSCStates.MODIFY_DATA_TASK.getState(), null,
-                    OSCStates.MONITOR_DATA_TASK.getState());
+            return new OscActionResult(OscStates.MODIFY_DATA_TASK.getState(), null,
+                    OscStates.MONITOR_DATA_TASK.getState());
         } else {
             log.info("Undetermined oms project status, omsProjectId={}, scheduleTaskId={}.",
                     taskParameters.getOmsProjectId(), scheduleTaskId);
             // jump to monitor state to monitor undetermined state
-            return new OSCActionResult(OSCStates.MODIFY_DATA_TASK.getState(), null,
-                    OSCStates.MONITOR_DATA_TASK.getState());
+            return new OscActionResult(OscStates.MODIFY_DATA_TASK.getState(), null,
+                    OscStates.MONITOR_DATA_TASK.getState());
         }
     }
 
     private void doUpdateOmsProjectConfig(Long scheduleTaskId, OnlineSchemaChangeScheduleTaskParameters taskParameters,
-            OnlineSchemaChangeParameters oscParameters, OSCActionContext context) {
+            OnlineSchemaChangeParameters oscParameters, OscActionContext context) {
         OmsProjectControlRequest controlRequest = new OmsProjectControlRequest();
         controlRequest.setId(taskParameters.getOmsProjectId());
         controlRequest.setUid(taskParameters.getUid());

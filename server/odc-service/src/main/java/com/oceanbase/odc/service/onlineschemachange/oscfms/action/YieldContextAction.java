@@ -30,9 +30,9 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskSpecs;
 import com.oceanbase.odc.service.onlineschemachange.fsm.Action;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.ActionScheduler;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.OSCActionContext;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.OSCActionResult;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OSCStates;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.3.1
  */
 @Slf4j
-public class YieldContextAction implements Action<OSCActionContext, OSCActionResult> {
+public class YieldContextAction implements Action<OscActionContext, OscActionResult> {
 
     private final ScheduleTaskRepository scheduleTaskRepository;
 
@@ -55,15 +55,15 @@ public class YieldContextAction implements Action<OSCActionContext, OSCActionRes
     }
 
     @Override
-    public OSCActionResult execute(OSCActionContext context) throws Exception {
+    public OscActionResult execute(OscActionContext context) throws Exception {
         ScheduleEntity scheduleEntity = context.getSchedule();
         if (tryDispatchNextSchedulerTask(scheduleEntity)) {
-            return new OSCActionResult(OSCStates.YIELD_CONTEXT.getState(), null,
-                    OSCStates.CREATE_GHOST_TABLES.getState());
+            return new OscActionResult(OscStates.YIELD_CONTEXT.getState(), null,
+                    OscStates.CREATE_GHOST_TABLES.getState());
         } else {
             // delete scheduler job and complete
-            return new OSCActionResult(OSCStates.YIELD_CONTEXT.getState(), null,
-                    OSCStates.COMPLETE.getState());
+            return new OscActionResult(OscStates.YIELD_CONTEXT.getState(), null,
+                    OscStates.COMPLETE.getState());
         }
     }
 

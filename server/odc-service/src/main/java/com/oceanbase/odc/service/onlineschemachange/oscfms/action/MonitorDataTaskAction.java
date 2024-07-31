@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.OMSMonitorDataTaskAction;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.OmsMonitorDataTaskAction;
 
 /**
  * @author longpeng.zlp
@@ -35,7 +35,7 @@ public class MonitorDataTaskAction extends ActionDelegate {
             @NotNull OmsProjectOpenApiService projectOpenApiService,
             @NotNull OnlineSchemaChangeProperties onlineSchemaChangeProperties) {
         MonitorDataTaskAction ret = new MonitorDataTaskAction();
-        ret.action = new OMSMonitorDataTaskAction(projectOpenApiService, onlineSchemaChangeProperties);
+        ret.action = new OmsMonitorDataTaskAction(projectOpenApiService, onlineSchemaChangeProperties);
         return ret;
     }
 }

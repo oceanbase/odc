@@ -20,7 +20,7 @@ import javax.validation.constraints.NotNull;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.DataSourceOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.OMSCreateDataTaskAction;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.OmsCreateDataTaskAction;
 
 /**
  * @author longpeng.zlp
@@ -34,7 +34,7 @@ public class CreateDataTaskAction extends ActionDelegate {
             @NotNull OmsProjectOpenApiService projectOpenApiService,
             @NotNull OnlineSchemaChangeProperties oscProperties) {
         CreateDataTaskAction ret = new CreateDataTaskAction();
-        ret.action = new OMSCreateDataTaskAction(dataSourceOpenApiService, projectOpenApiService, oscProperties);
+        ret.action = new OmsCreateDataTaskAction(dataSourceOpenApiService, projectOpenApiService, oscProperties);
         return ret;
     }
 }

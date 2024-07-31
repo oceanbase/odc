@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms;
 import java.util.List;
 import java.util.concurrent.Executors;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
@@ -34,9 +35,9 @@ import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsProjectStatusEn
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsProjectControlRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectProgressResponse;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.OSCActionContext;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.OSCActionResult;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OSCStates;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -47,19 +48,19 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.3.1
  */
 @Slf4j
-public class OMSCleanResourcesAction implements Action<OSCActionContext, OSCActionResult> {
+public class OmsCleanResourcesAction implements Action<OscActionContext, OscActionResult> {
 
     private final OmsProjectOpenApiService projectOpenApiService;
 
     private final List<TaskStatus> expectedTaskStatus = Lists.newArrayList(TaskStatus.DONE, TaskStatus.FAILED,
             TaskStatus.CANCELED, TaskStatus.RUNNING);
 
-    public OMSCleanResourcesAction(@NonNull OmsProjectOpenApiService omsProjectOpenApiService) {
+    public OmsCleanResourcesAction(@NonNull OmsProjectOpenApiService omsProjectOpenApiService) {
         this.projectOpenApiService = omsProjectOpenApiService;
     }
 
     @Override
-    public OSCActionResult execute(OSCActionContext context) throws Exception {
+    public OscActionResult execute(OscActionContext context) throws Exception {
         OnlineSchemaChangeScheduleTaskParameters taskParameters = context.getTaskParameter();
         ScheduleTaskEntity scheduleTask = context.getScheduleTask();
         PreConditions.validArgumentState(expectedTaskStatus.contains(scheduleTask.getStatus()), ErrorCodes.Unexpected,
@@ -70,39 +71,40 @@ public class OMSCleanResourcesAction implements Action<OSCActionContext, OSCActi
             // try release again
             log.info("OCS: release OMS project failed, try it again. OMS project ID {}, uid {}",
                     taskParameters.getOmsProjectId(), taskParameters.getUid());
-            return new OSCActionResult(OSCStates.CLEAN_RESOURCE.getState(), null, OSCStates.CLEAN_RESOURCE.getState());
+            return new OscActionResult(OscStates.CLEAN_RESOURCE.getState(), null, OscStates.CLEAN_RESOURCE.getState());
         }
-        return determinateNextState(scheduleTask, context.getSchedule(), context);
+        return determinateNextState(scheduleTask, context.getSchedule());
     }
 
-    private OSCActionResult determinateNextState(ScheduleTaskEntity scheduleTask, ScheduleEntity schedule,
-            OSCActionContext context) {
+    @VisibleForTesting
+    protected OscActionResult determinateNextState(ScheduleTaskEntity scheduleTask, ScheduleEntity schedule) {
         Long scheduleId = schedule.getId();
         // try to dispatch to next state for done status
         if (scheduleTask.getStatus() == TaskStatus.DONE) {
-            return new OSCActionResult(OSCStates.CLEAN_RESOURCE.getState(), null, OSCStates.YIELD_CONTEXT.getState());
+            return new OscActionResult(OscStates.CLEAN_RESOURCE.getState(), null, OscStates.YIELD_CONTEXT.getState());
         }
         // if task state is in cancel state, stop and transfer to complete state
         if (scheduleTask.getStatus() == TaskStatus.CANCELED) {
             log.info("Because task is canceled, so delete quartz job {}", scheduleId);
             // cancel as complete
-            return new OSCActionResult(OSCStates.CLEAN_RESOURCE.getState(), null, OSCStates.COMPLETE.getState());
+            return new OscActionResult(OscStates.CLEAN_RESOURCE.getState(), null, OscStates.COMPLETE.getState());
         }
         // remain failed and prepare state
         OnlineSchemaChangeParameters onlineSchemaChangeParameters = JsonUtils.fromJson(
-                context.getSchedule().getJobParametersJson(), OnlineSchemaChangeParameters.class);
+               schedule.getJobParametersJson(), OnlineSchemaChangeParameters.class);
         if (onlineSchemaChangeParameters.getErrorStrategy() == TaskErrorStrategy.CONTINUE) {
             log.info("Because error strategy is continue, so schedule next task");
             // try schedule next task
-            return new OSCActionResult(OSCStates.CLEAN_RESOURCE.getState(), null, OSCStates.YIELD_CONTEXT.getState());
+            return new OscActionResult(OscStates.CLEAN_RESOURCE.getState(), null, OscStates.YIELD_CONTEXT.getState());
         } else {
             log.info("Because error strategy is abort, so delete quartz job {}", scheduleId);
             // not continue for remain state, transfer to complete state
-            return new OSCActionResult(OSCStates.CLEAN_RESOURCE.getState(), null, OSCStates.COMPLETE.getState());
+            return new OscActionResult(OscStates.CLEAN_RESOURCE.getState(), null, OscStates.COMPLETE.getState());
         }
     }
 
-    private boolean checkAndReleaseProject(String omsProjectId, String uid) {
+    @VisibleForTesting
+    protected boolean checkAndReleaseProject(String omsProjectId, String uid) {
         if (omsProjectId == null) {
             return true;
         }
@@ -113,7 +115,7 @@ public class OMSCleanResourcesAction implements Action<OSCActionContext, OSCActi
         return checkAndReleaseProject(controlRequest);
     }
 
-    public boolean checkAndReleaseProject(OmsProjectControlRequest projectControl) {
+    protected boolean checkAndReleaseProject(OmsProjectControlRequest projectControl) {
         if (projectControl.getId() == null) {
             return true;
         }
@@ -144,21 +146,18 @@ public class OMSCleanResourcesAction implements Action<OSCActionContext, OSCActi
         if (projectControlRequest.getId() == null) {
             return;
         }
-        Executors.newSingleThreadExecutor().submit(() -> {
-            try {
-
-                OmsProjectProgressResponse response =
-                        projectOpenApiService.describeProjectProgress(projectControlRequest);
-                if (response.getStatus() == OmsProjectStatusEnum.RUNNING) {
-                    projectOpenApiService.stopProject(projectControlRequest);
-                }
-                projectOpenApiService.releaseProject(projectControlRequest);
-                log.info("Release oms project, id {}", projectControlRequest.getId());
-            } catch (Throwable ex) {
-                log.warn("Failed to release oms project, id {}, occur error {}", projectControlRequest.getId(),
-                        ex.getMessage());
+        // try release sync
+        try {
+            OmsProjectProgressResponse response =
+                projectOpenApiService.describeProjectProgress(projectControlRequest);
+            if (response.getStatus() == OmsProjectStatusEnum.RUNNING) {
+                projectOpenApiService.stopProject(projectControlRequest);
             }
-        });
-
+            projectOpenApiService.releaseProject(projectControlRequest);
+            log.info("Release oms project, id {}", projectControlRequest.getId());
+        } catch (Throwable ex) {
+            log.warn("Failed to release oms project, id {}, occur error {}", projectControlRequest.getId(),
+                ex.getMessage());
+        }
     }
 }

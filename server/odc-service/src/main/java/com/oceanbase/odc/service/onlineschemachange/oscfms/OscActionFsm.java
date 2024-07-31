@@ -33,6 +33,8 @@ import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.validate.ValidatorUtils;
+import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ErrorCode;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
@@ -44,23 +46,25 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
-import com.oceanbase.odc.service.onlineschemachange.fsm.ActionFSM;
+import com.oceanbase.odc.service.onlineschemachange.fsm.ActionFsm;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.RateLimiterConfig;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.DataSourceOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.CleanResourcesAction;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.action.ConnectionProvider;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.CreateDataTaskAction;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.CreateGhostTableAction;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.ModifyDataTaskAction;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.MonitorDataTaskAction;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.SwapTableAction;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.YieldContextAction;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OSCStates;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -74,7 +78,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class OSCActionFSM extends ActionFSM<OSCActionContext, OSCActionResult> {
+public class OscActionFsm extends ActionFsm<OscActionContext, OscActionResult> {
     @Autowired
     private ConnectionService connectionService;
     @Autowired
@@ -110,59 +114,59 @@ public class OSCActionFSM extends ActionFSM<OSCActionContext, OSCActionResult> {
     // register state change action
     @PostConstruct
     public void init() {
-        OSCStatesTransfer statesTransfer = new OSCStatesTransfer();
+        OscStatesTransfer statesTransfer = new OscStatesTransfer();
         // YIELD_CONTEXT -> CREATE_GHOST_TABLES
-        registerEvent(OSCStates.YIELD_CONTEXT.getState(),
+        registerEvent(OscStates.YIELD_CONTEXT.getState(),
                 new YieldContextAction(actionScheduler, scheduleTaskRepository), statesTransfer,
-                ImmutableSet.of(OSCStates.CREATE_GHOST_TABLES.getState(), OSCStates.COMPLETE.getState()));
+                ImmutableSet.of(OscStates.CREATE_GHOST_TABLES.getState(), OscStates.COMPLETE.getState()));
 
         // CREATE_GHOST_TABLES -> CREATE_GHOST_TABLES | CREATE_DATA_TASK | COMPLETE(cancel)
-        registerEvent(OSCStates.CREATE_GHOST_TABLES.getState(), new CreateGhostTableAction(), statesTransfer,
-                ImmutableSet.of(OSCStates.CREATE_GHOST_TABLES.getState(), OSCStates.CREATE_DATA_TASK.getState(),
-                        OSCStates.COMPLETE.getState()));
+        registerEvent(OscStates.CREATE_GHOST_TABLES.getState(), new CreateGhostTableAction(), statesTransfer,
+                ImmutableSet.of(OscStates.CREATE_GHOST_TABLES.getState(), OscStates.CREATE_DATA_TASK.getState(),
+                        OscStates.COMPLETE.getState()));
 
         // CREATE_DATA_TASK -> CREATE_DATA_TASK | MONITOR_DATA_TASK| COMPLETE(cnacel)
-        registerEvent(OSCStates.CREATE_DATA_TASK.getState(),
+        registerEvent(OscStates.CREATE_DATA_TASK.getState(),
                 CreateDataTaskAction.ofOMSCreateDataTaskAction(dataSourceOpenApiService, omsProjectOpenApiService,
                         onlineSchemaChangeProperties),
                 statesTransfer,
-                ImmutableSet.of(OSCStates.CREATE_DATA_TASK.getState(), OSCStates.MONITOR_DATA_TASK.getState(),
-                        OSCStates.COMPLETE.getState()));
+                ImmutableSet.of(OscStates.CREATE_DATA_TASK.getState(), OscStates.MONITOR_DATA_TASK.getState(),
+                        OscStates.COMPLETE.getState()));
 
         // MONITOR_DATA_TASK -> MONITOR_DATA_TASK | MODIFY_DATA_TASK| SWAP_TABLE | COMPLETE(cancel)
-        registerEvent(OSCStates.MONITOR_DATA_TASK.getState(),
+        registerEvent(OscStates.MONITOR_DATA_TASK.getState(),
                 MonitorDataTaskAction
                         .ofOMSMonitorDataTaskAction(omsProjectOpenApiService, onlineSchemaChangeProperties),
                 statesTransfer,
-                ImmutableSet.of(OSCStates.MONITOR_DATA_TASK.getState(), OSCStates.MODIFY_DATA_TASK.getState(),
-                        OSCStates.SWAP_TABLE.getState(),
-                        OSCStates.COMPLETE.getState()));
+                ImmutableSet.of(OscStates.MONITOR_DATA_TASK.getState(), OscStates.MODIFY_DATA_TASK.getState(),
+                        OscStates.SWAP_TABLE.getState(),
+                        OscStates.COMPLETE.getState()));
 
         // MODIFY_DATA_TASK -> MODIFY_DATA_TASK | MONITOR_DATA_TASK | COMPLETE(cancel)
-        registerEvent(OSCStates.MODIFY_DATA_TASK.getState(),
+        registerEvent(OscStates.MODIFY_DATA_TASK.getState(),
                 ModifyDataTaskAction.ofOMSModifyDataTaskAction(omsProjectOpenApiService, onlineSchemaChangeProperties),
                 statesTransfer,
-                ImmutableSet.of(OSCStates.MONITOR_DATA_TASK.getState(), OSCStates.MODIFY_DATA_TASK.getState(),
-                        OSCStates.COMPLETE.getState()));
+                ImmutableSet.of(OscStates.MONITOR_DATA_TASK.getState(), OscStates.MODIFY_DATA_TASK.getState(),
+                        OscStates.COMPLETE.getState()));
 
         // SWAP_TABLE -> SWAP_TABLE | CLEAN_RESOURCES | COMPLETE(cancel)
-        registerEvent(OSCStates.SWAP_TABLE.getState(),
+        registerEvent(OscStates.SWAP_TABLE.getState(),
                 SwapTableAction.ofOMSSwapTableAction(dbSessionManageFacade, omsProjectOpenApiService,
                         onlineSchemaChangeProperties),
                 statesTransfer,
-                ImmutableSet.of(OSCStates.SWAP_TABLE.getState(), OSCStates.CLEAN_RESOURCE.getState(),
-                        OSCStates.COMPLETE.getState()));
+                ImmutableSet.of(OscStates.SWAP_TABLE.getState(), OscStates.CLEAN_RESOURCE.getState(),
+                        OscStates.COMPLETE.getState()));
 
         // CLEAN_RESOURCE -> YIELD_CONTEXT | CLEAN_RESOURCES | COMPLETE(cancel)
-        registerEvent(OSCStates.CLEAN_RESOURCE.getState(),
+        registerEvent(OscStates.CLEAN_RESOURCE.getState(),
                 CleanResourcesAction.ofOMSCleanResourcesAction(omsProjectOpenApiService), statesTransfer,
-                ImmutableSet.of(OSCStates.YIELD_CONTEXT.getState(), OSCStates.CLEAN_RESOURCE.getState(),
-                        OSCStates.COMPLETE.getState()));
+                ImmutableSet.of(OscStates.YIELD_CONTEXT.getState(), OscStates.CLEAN_RESOURCE.getState(),
+                        OscStates.COMPLETE.getState()));
         // COMPLETE should not be scheduled
     }
 
     @Override
-    public String resolveState(OSCActionContext context) {
+    public String resolveState(OscActionContext context) {
         ScheduleTaskEntity scheduleTaskEntity = context.getScheduleTask();
         OnlineSchemaChangeScheduleTaskParameters parameters = JsonUtils.fromJson(scheduleTaskEntity.getParametersJson(),
                 OnlineSchemaChangeScheduleTaskParameters.class);
@@ -176,13 +180,13 @@ public class OSCActionFSM extends ActionFSM<OSCActionContext, OSCActionResult> {
      * @param schedulerTaskID
      */
     public void schedule(Long schedulerID, Long schedulerTaskID) {
-        OSCActionContext oscActionContext = getOSCContext(schedulerID, schedulerTaskID);
+        OscActionContext oscActionContext = getOSCContext(schedulerID, schedulerTaskID);
         String state = resolveState(oscActionContext);
         // CLEAN_RESOURCE should always schedule
-        if (!StringUtils.equals(OSCStates.CLEAN_RESOURCE.getState(), state) &&
-                (isTaskExpired(oscActionContext) || isFlowInstanceFailed(state, oscActionContext))) {
+        if (!StringUtils.equals(OscStates.CLEAN_RESOURCE.getState(), state) &&
+            (isTaskExpired(oscActionContext) || isFlowInstanceFailed(state, oscActionContext))) {
             // transfer from current state to clean resources
-            transferTaskStatesWithStates(state, OSCStates.CLEAN_RESOURCE.getState(), null,
+            transferTaskStatesWithStates(state, OscStates.CLEAN_RESOURCE.getState(), null,
                     oscActionContext.getScheduleTask(), TaskStatus.CANCELED);
             return;
         }
@@ -190,9 +194,9 @@ public class OSCActionFSM extends ActionFSM<OSCActionContext, OSCActionResult> {
         schedule(oscActionContext);
     }
 
-    public boolean isFlowInstanceFailed(String state, OSCActionContext oscActionContext) {
+    public boolean isFlowInstanceFailed(String state, OscActionContext oscActionContext) {
         // only check in monitor data task state
-        if (!StringUtils.equals(state, OSCStates.MONITOR_DATA_TASK.getState())) {
+        if (!StringUtils.equals(state, OscStates.MONITOR_DATA_TASK.getState())) {
             return false;
         }
         Long flowInstanceID = oscActionContext.getParameter().getFlowInstanceId();
@@ -220,8 +224,8 @@ public class OSCActionFSM extends ActionFSM<OSCActionContext, OSCActionResult> {
                 OnlineSchemaChangeScheduleTaskParameters.class);
         String currentState = parameters.getState();
         // first yield, jump to create table state to decrease wait time
-        if (StringUtils.equals(currentState, OSCStates.YIELD_CONTEXT.getState())) {
-            transferTaskStatesWithStates(OSCStates.YIELD_CONTEXT.getState(), OSCStates.CREATE_GHOST_TABLES.getState(),
+        if (StringUtils.equals(currentState, OscStates.YIELD_CONTEXT.getState())) {
+            transferTaskStatesWithStates(OscStates.YIELD_CONTEXT.getState(), OscStates.CREATE_GHOST_TABLES.getState(),
                     null, scheduleTaskEntity, TaskStatus.RUNNING);
         } else {
             // recover current state
@@ -236,7 +240,7 @@ public class OSCActionFSM extends ActionFSM<OSCActionContext, OSCActionResult> {
         OnlineSchemaChangeScheduleTaskParameters parameters = JsonUtils.fromJson(scheduleTaskEntity.getParametersJson(),
                 OnlineSchemaChangeScheduleTaskParameters.class);
         String currentState = parameters.getState();
-        transferTaskStatesWithStates(null, OSCStates.CLEAN_RESOURCE.getState(),
+        transferTaskStatesWithStates(null, OscStates.CLEAN_RESOURCE.getState(),
                 "CANCEL", scheduleTaskEntity, TaskStatus.CANCELED);
         // try submit scheduler in case task may in failed state
         actionScheduler.submitFMSScheduler(scheduleEntity, schedulerTaskID);
@@ -248,7 +252,7 @@ public class OSCActionFSM extends ActionFSM<OSCActionContext, OSCActionResult> {
      * @param context
      * @return
      */
-    private boolean isTaskExpired(OSCActionContext context) {
+    private boolean isTaskExpired(OscActionContext context) {
         ScheduleTaskEntity scheduleTask = context.getScheduleTask();
         OnlineSchemaChangeScheduleTaskParameters parameters =
                 parseOnlineSchemaChangeScheduleTaskParameters(scheduleTask.getParametersJson());
@@ -273,8 +277,8 @@ public class OSCActionFSM extends ActionFSM<OSCActionContext, OSCActionResult> {
     }
 
     @Override
-    public void onActionComplete(String currentState, String nextState, String extraInfo, OSCActionContext context) {
-        if (StringUtils.equals(nextState, OSCStates.COMPLETE.getState())) {
+    public void onActionComplete(String currentState, String nextState, String extraInfo, OscActionContext context) {
+        if (StringUtils.equals(nextState, OscStates.COMPLETE.getState())) {
             log.info("OCS: complete state reached, delete scheduler, prev state {}, schedule id {}", currentState,
                     context.getSchedule().getId());
             actionScheduler.cancelScheduler(context.getSchedule().getId());
@@ -299,8 +303,8 @@ public class OSCActionFSM extends ActionFSM<OSCActionContext, OSCActionResult> {
             return;
         }
         // swap table -> clean resource, correct task status to done
-        if (StringUtils.equals(currentState, OSCStates.SWAP_TABLE.getState())
-                && StringUtils.equals(nextState, OSCStates.CLEAN_RESOURCE.getState())
+        if (StringUtils.equals(currentState, OscStates.SWAP_TABLE.getState())
+                && StringUtils.equals(nextState, OscStates.CLEAN_RESOURCE.getState())
                 && TaskStatus.RUNNING == scheduleTaskEntity.getStatus()) {
             transferTaskStatesWithStates(currentState, nextState, extraInfo, scheduleTaskEntity, TaskStatus.DONE);
             return;
@@ -321,7 +325,7 @@ public class OSCActionFSM extends ActionFSM<OSCActionContext, OSCActionResult> {
         parameters.setExtraInfo(extraInfo);
         if (TaskStatus.CANCELED == taskStatus) {
             // CANCEL should clean resource for force update
-            parameters.setState(OSCStates.CLEAN_RESOURCE.getState());
+            parameters.setState(OscStates.CLEAN_RESOURCE.getState());
         }
         scheduleTaskEntity.setParametersJson(JsonUtils.toJson(parameters));
         scheduleTaskEntity.setStatus(taskStatus);
@@ -334,15 +338,15 @@ public class OSCActionFSM extends ActionFSM<OSCActionContext, OSCActionResult> {
     }
 
     @Override
-    public void handleException(OSCActionContext context, Throwable e) {
+    public void handleException(OscActionContext context, Throwable e) {
         // we hope in resume mode continue, not drop oms project
         // not do state transfer
         actionScheduler.cancelScheduler(context.getSchedule().getId());
         scheduleTaskRepository.updateStatusById(context.getScheduleTask().getId(), TaskStatus.FAILED);
     }
 
-    private OSCActionContext getOSCContext(Long scheduleId, Long scheduleTaskId) {
-        OSCActionContext oscContext = null;
+    private OscActionContext getOSCContext(Long scheduleId, Long scheduleTaskId) {
+        OscActionContext oscContext = null;
         try {
             oscContext = createOSCContext(scheduleId, scheduleTaskId);
             ValidatorUtils.verifyField(oscContext.getTaskParameter());
@@ -353,7 +357,7 @@ public class OSCActionFSM extends ActionFSM<OSCActionContext, OSCActionResult> {
         return oscContext;
     }
 
-    private OSCActionContext createOSCContext(Long scheduleId, Long scheduleTaskId) {
+    private OscActionContext createOSCContext(Long scheduleId, Long scheduleTaskId) {
         ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(scheduleId);
         OnlineSchemaChangeParameters onlineSchemaChangeParameters =
                 parseOnlineSchemaChangeParameters(scheduleEntity.getJobParametersJson());
@@ -361,18 +365,14 @@ public class OSCActionFSM extends ActionFSM<OSCActionContext, OSCActionResult> {
         OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters =
                 parseOnlineSchemaChangeScheduleTaskParameters(scheduleTaskEntity.getParametersJson());
 
-        OSCActionContext oscContext = new OSCActionContext();
+        OscActionContext oscContext = new OscActionContext();
         oscContext.setSchedule(scheduleEntity);
         oscContext.setScheduleTask(scheduleTaskEntity);
         oscContext.setParameter(onlineSchemaChangeParameters);
         oscContext.setTaskParameter(oscScheduleTaskParameters);
         oscContext.setScheduleTaskRepository(scheduleTaskRepository);
-        oscContext.setConnectionConfigSupplier(new Supplier<ConnectionConfig>() {
-            @Override
-            public ConnectionConfig get() {
-                return connectionService.getForConnectionSkipPermissionCheck(scheduleEntity.getConnectionId());
-            }
-        });
+        oscContext.setConnectionProvider(new DefaultConnectionProvider(oscScheduleTaskParameters.getDatabaseName(),
+            connectionService, scheduleEntity.getConnectionId()));
         return oscContext;
     }
 
@@ -400,5 +400,39 @@ public class OSCActionFSM extends ActionFSM<OSCActionContext, OSCActionResult> {
             OnlineSchemaChangeScheduleTaskParameters.setRateLimitConfig(new RateLimiterConfig());
         }
         return OnlineSchemaChangeScheduleTaskParameters;
+    }
+
+    /**
+     * default connection provider wrapped connection service
+     */
+    private static final class DefaultConnectionProvider implements ConnectionProvider {
+        private final String dbName;
+        private final ConnectionService connectionService;
+        private final Long connectionID;
+        private volatile ConnectionConfig config;
+
+        public DefaultConnectionProvider(String dbName, ConnectionService connectionService, Long connectionID) {
+            this.dbName = dbName;
+            this.connectionService = connectionService;
+            this.connectionID = connectionID;
+        }
+
+        @Override
+        public ConnectionConfig connectionConfig() {
+            if (null == config) {
+                config =  connectionService.getForConnectionSkipPermissionCheck(connectionID);
+            }
+            return config;
+        }
+
+        @Override
+        public ConnectionSession createConnectionSession() {
+            ConnectionConfig connectionConfig = connectionConfig();
+            ConnectionSession connectionSession =
+                new DefaultConnectSessionFactory(connectionConfig).generateSession();
+            ConnectionSessionUtil.setCurrentSchema(connectionSession,
+                dbName);
+            return new DefaultConnectSessionFactory(connectionConfig).generateSession();
+        }
     }
 }

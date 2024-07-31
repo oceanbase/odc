@@ -20,6 +20,7 @@ import java.util.Objects;
 
 import javax.validation.constraints.NotNull;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.tableformat.Table;
@@ -38,10 +39,10 @@ import com.oceanbase.odc.service.onlineschemachange.model.PrecheckResult;
 import com.oceanbase.odc.service.onlineschemachange.model.SwapTableType;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepName;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.OSCActionContext;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.OSCActionResult;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.ProjectStepResultChecker.ProjectStepResult;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OSCStates;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 import com.oceanbase.odc.service.onlineschemachange.rename.SwapTableUtil;
 
 import lombok.extern.slf4j.Slf4j;
@@ -52,19 +53,19 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.3.1
  */
 @Slf4j
-public class OMSMonitorDataTaskAction implements Action<OSCActionContext, OSCActionResult> {
+public class OmsMonitorDataTaskAction implements Action<OscActionContext, OscActionResult> {
     private final OmsProjectOpenApiService projectOpenApiService;
 
     private final OnlineSchemaChangeProperties onlineSchemaChangeProperties;
 
-    public OMSMonitorDataTaskAction(@NotNull OmsProjectOpenApiService projectOpenApiService,
+    public OmsMonitorDataTaskAction(@NotNull OmsProjectOpenApiService projectOpenApiService,
             @NotNull OnlineSchemaChangeProperties onlineSchemaChangeProperties) {
         this.projectOpenApiService = projectOpenApiService;
         this.onlineSchemaChangeProperties = onlineSchemaChangeProperties;
     }
 
     @Override
-    public OSCActionResult execute(OSCActionContext context) throws Exception {
+    public OscActionResult execute(OscActionContext context) throws Exception {
         ScheduleTaskEntity scheduleTask = context.getScheduleTask();
         log.debug("Start execute {}, schedule task id {}", getClass().getSimpleName(), scheduleTask.getId());
 
@@ -72,8 +73,8 @@ public class OMSMonitorDataTaskAction implements Action<OSCActionContext, OSCAct
         OnlineSchemaChangeParameters inputParameters = context.getParameter();
         // switch state
         if (shouldUpdateOMSConfig(taskParameter, inputParameters)) {
-            return new OSCActionResult(OSCStates.MONITOR_DATA_TASK.getState(), null,
-                    OSCStates.MONITOR_DATA_TASK.getState());
+            return new OscActionResult(OscStates.MONITOR_DATA_TASK.getState(), null,
+                    OscStates.MODIFY_DATA_TASK.getState());
         }
         // get result
         OnlineSchemaChangeScheduleTaskResult lastResult = JsonUtils.fromJson(scheduleTask.getResultJson(),
@@ -88,7 +89,7 @@ public class OMSMonitorDataTaskAction implements Action<OSCActionContext, OSCAct
         }
         // get oms step result
         ProjectStepResult projectStepResult =
-                OMSRequestUtil.buildProjectStepResult(projectOpenApiService, onlineSchemaChangeProperties,
+                OmsRequestUtil.buildProjectStepResult(projectOpenApiService, onlineSchemaChangeProperties,
                         taskParameter.getUid(), taskParameter.getOmsProjectId(), taskParameter.getDatabaseName(),
                         lastResult.getCheckFailedTime());
         adaptResult(result, projectStepResult);
@@ -105,10 +106,11 @@ public class OMSMonitorDataTaskAction implements Action<OSCActionContext, OSCAct
         }
     }
 
-    private OSCActionResult handleOmsProjectStepResult(OSCActionContext context, ProjectStepResult projectStepResult,
+    @VisibleForTesting
+    protected OscActionResult handleOmsProjectStepResult(OscActionContext context, ProjectStepResult projectStepResult,
             OnlineSchemaChangeScheduleTaskResult result, SwapTableType swapTableType, ScheduleTaskEntity scheduleTask) {
         // oms task is ready, try swap step
-        if (OMSRequestUtil.OMSTaskReady(projectStepResult)) {
+        if (OmsRequestUtil.OMSTaskReady(projectStepResult)) {
             // is manual swap table
             boolean isSwapTableReady =
                     SwapTableUtil.isSwapTableReady(scheduleTask.getStatus(), result.getFullTransferProgressPercentage(),
@@ -116,8 +118,8 @@ public class OMSMonitorDataTaskAction implements Action<OSCActionContext, OSCAct
             // can't swap table
             if (!isSwapTableReady) {
                 // keep in same state, monitor task state
-                return new OSCActionResult(OSCStates.MONITOR_DATA_TASK.getState(), null,
-                        OSCStates.MONITOR_DATA_TASK.getState());
+                return new OscActionResult(OscStates.MONITOR_DATA_TASK.getState(), null,
+                        OscStates.MONITOR_DATA_TASK.getState());
 
             }
             // try do swap table
@@ -125,8 +127,8 @@ public class OMSMonitorDataTaskAction implements Action<OSCActionContext, OSCAct
                 case AUTO:
                     // auto swap, jump to swap stable state
                     scheduleTask.setResultJson(JsonUtils.toJson(result));
-                    return new OSCActionResult(OSCStates.MONITOR_DATA_TASK.getState(), null,
-                            OSCStates.SWAP_TABLE.getState());
+                    return new OscActionResult(OscStates.MONITOR_DATA_TASK.getState(), null,
+                            OscStates.SWAP_TABLE.getState());
                 case MANUAL:
                     if (!result.isManualSwapTableStarted()) {
                         // isManualSwapTableEnabled set true to let swap table button show on front-end panel
@@ -138,12 +140,12 @@ public class OMSMonitorDataTaskAction implements Action<OSCActionContext, OSCAct
                         log.info("OSC: oms project ready, wait manual swap table triggered, task id {}",
                                 scheduleTask.getId());
                         // manual swap table not set, keep waiting
-                        return new OSCActionResult(OSCStates.MONITOR_DATA_TASK.getState(), null,
-                                OSCStates.MONITOR_DATA_TASK.getState());
+                        return new OscActionResult(OscStates.MONITOR_DATA_TASK.getState(), null,
+                                OscStates.MONITOR_DATA_TASK.getState());
                     } else {
                         // jump to swap table state
-                        return new OSCActionResult(OSCStates.MONITOR_DATA_TASK.getState(), null,
-                                OSCStates.SWAP_TABLE.getState());
+                        return new OscActionResult(OscStates.MONITOR_DATA_TASK.getState(), null,
+                                OscStates.SWAP_TABLE.getState());
                     }
                 default:
                     throw new IllegalStateException("invalid state for swap table type");
@@ -154,7 +156,7 @@ public class OMSMonitorDataTaskAction implements Action<OSCActionContext, OSCAct
         }
     }
 
-    private OSCActionResult continueHandleProjectStepResult(ProjectStepResult projectStepResult) {
+    private OscActionResult continueHandleProjectStepResult(ProjectStepResult projectStepResult) {
         if (projectStepResult.getPreCheckResult() == PrecheckResult.FAILED) {
             throw new OscException(ErrorCodes.OmsPreCheckFailed, projectStepResult.getErrorMsg());
         } else if (projectStepResult.getTaskStatus() == TaskStatus.FAILED) {
@@ -165,8 +167,8 @@ public class OMSMonitorDataTaskAction implements Action<OSCActionContext, OSCAct
                             + projectStepResult.getFullVerificationResultDescription());
         } else {
             // stay in monitor state
-            return new OSCActionResult(OSCStates.MONITOR_DATA_TASK.getState(), null,
-                    OSCStates.MONITOR_DATA_TASK.getState());
+            return new OscActionResult(OscStates.MONITOR_DATA_TASK.getState(), null,
+                    OscStates.MONITOR_DATA_TASK.getState());
         }
     }
 
@@ -221,7 +223,8 @@ public class OMSMonitorDataTaskAction implements Action<OSCActionContext, OSCAct
         result.setCheckFailedTime(projectStepResult.getCheckFailedTime());
     }
 
-    private boolean shouldUpdateOMSConfig(OnlineSchemaChangeScheduleTaskParameters taskParameters,
+    @VisibleForTesting
+    protected boolean shouldUpdateOMSConfig(OnlineSchemaChangeScheduleTaskParameters taskParameters,
             OnlineSchemaChangeParameters inputParameters) {
         // if rate limiter parameters is changed, try to stop and restart project
         if (Objects.equals(inputParameters.getRateLimitConfig(), taskParameters.getRateLimitConfig())) {

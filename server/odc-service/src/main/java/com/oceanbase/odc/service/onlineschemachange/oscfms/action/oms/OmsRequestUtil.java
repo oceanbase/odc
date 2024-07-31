@@ -42,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.3.1
  */
 @Slf4j
-public class OMSRequestUtil {
+public class OmsRequestUtil {
     /**
      *
      * @return
@@ -79,7 +79,6 @@ public class OMSRequestUtil {
         if (log.isDebugEnabled()) {
             log.debug("Get project step list from projectOpenApiService is {} ", JsonUtils.toJson(projectSteps));
         }
-
 
         OmsProjectProgressResponse progress = omsProjectOpenApiService.describeProjectProgress(projectRequest);
 

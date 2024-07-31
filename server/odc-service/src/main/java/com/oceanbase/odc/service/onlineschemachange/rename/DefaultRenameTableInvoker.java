@@ -47,7 +47,7 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
     private final RenameBackHandler renameBackHandler;
 
     public DefaultRenameTableInvoker(ConnectionSession connSession,
-            DBSessionManageFacade dbSessionManageFacade) {
+            DBSessionManageFacade dbSessionManageFacade, RenameTableHandler renameTableHandler) {
         List<RenameTableInterceptor> interceptors = new LinkedList<>();
 
         LockRenameTableFactory lockRenameTableFactory = new LockRenameTableFactory();
@@ -57,7 +57,7 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
         interceptors.add(new ForeignKeyInterceptor(connSession));
         this.interceptors = interceptors;
         this.connectionSession = connSession;
-        this.renameTableHandler = RenameTableHandlers.getForeignKeyHandler(connSession);
+        this.renameTableHandler = renameTableHandler;
         this.renameBackHandler = new RenameBackHandler(renameTableHandler);
     }
 

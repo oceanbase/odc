@@ -20,8 +20,8 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.OSCActionFSM;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OSCStates;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionFsm;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 
@@ -43,7 +43,7 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
     @Autowired
     private ScheduleService scheduleService;
     @Autowired
-    private OSCActionFSM oscActionFSM;
+    private OscActionFsm    oscActionFSM;
 
     @Override
     public void start(@NonNull Long scheduleId, @NonNull Long scheduleTaskId) {
@@ -58,7 +58,7 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
     @Override
     public void terminate(@NonNull Long scheduleId, @NonNull Long scheduleTaskId) {
         ScheduleTaskEntity scheduleTaskEntity = scheduleTaskService.nullSafeGetById(scheduleTaskId);
-        oscActionFSM.transferTaskStatesWithStates(null, OSCStates.CLEAN_RESOURCE.getState(), null, scheduleTaskEntity,
+        oscActionFSM.transferTaskStatesWithStates(null, OscStates.CLEAN_RESOURCE.getState(), null, scheduleTaskEntity,
                 TaskStatus.CANCELED);
     }
 

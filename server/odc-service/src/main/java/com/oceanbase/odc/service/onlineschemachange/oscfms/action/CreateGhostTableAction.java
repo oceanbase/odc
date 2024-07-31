@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
@@ -39,9 +40,9 @@ import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangePara
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlType;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.OSCActionContext;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.OSCActionResult;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OSCStates;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -56,16 +57,14 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.3.1
  */
 @Slf4j
-public class CreateGhostTableAction implements Action<OSCActionContext, OSCActionResult> {
+public class CreateGhostTableAction implements Action<OscActionContext, OscActionResult> {
 
     @Override
-    public OSCActionResult execute(OSCActionContext context) throws Exception {
+    public OscActionResult execute(OscActionContext context) throws Exception {
         ConnectionSession connectionSession = null;
-        ConnectionConfig connectionConfig = context.getConnectionConfigSupplier().get();
         Long scheduleTaskId = context.getScheduleTask().getId();
         try {
-            connectionSession =
-                    new DefaultConnectSessionFactory(connectionConfig).generateSession();
+            connectionSession = context.getConnectionProvider().createConnectionSession();
             ConnectionSessionUtil.setCurrentSchema(connectionSession,
                     context.getTaskParameter().getDatabaseName());
             prepareSchema(context.getParameter(), context.getTaskParameter(),
@@ -79,19 +78,19 @@ public class CreateGhostTableAction implements Action<OSCActionContext, OSCActio
                 connectionSession.expire();
             }
         }
-        return new OSCActionResult(OSCStates.CREATE_GHOST_TABLES.getState(), null,
-                OSCStates.CREATE_DATA_TASK.getState());
+        return new OscActionResult(OscStates.CREATE_GHOST_TABLES.getState(), null,
+                OscStates.CREATE_DATA_TASK.getState());
     }
 
     @Override
-    public void rollback(OSCActionContext context) {
-        ConnectionConfig connectionConfig = context.getConnectionConfigSupplier().get();
+    public void rollback(OscActionContext context) {
         log.info("OSC: create table failed rollback, taskID {}", context.getScheduleTask().getId());
-        failedOscTask(context, connectionConfig);
+        failedOscTask(context);
     }
 
-    private void prepareSchema(OnlineSchemaChangeParameters param, OnlineSchemaChangeScheduleTaskParameters taskParam,
-            ConnectionSession session, Long scheduleTaskId, OSCActionContext oscContext) throws SQLException {
+    @VisibleForTesting
+    protected void prepareSchema(OnlineSchemaChangeParameters param, OnlineSchemaChangeScheduleTaskParameters taskParam,
+            ConnectionSession session, Long scheduleTaskId, OscActionContext oscContext) throws SQLException {
 
         dropNewTableIfExits(taskParam, session);
 
@@ -118,7 +117,8 @@ public class CreateGhostTableAction implements Action<OSCActionContext, OSCActio
         validateColumnDifferent(taskParam, session);
     }
 
-    private void dropNewTableIfExits(OnlineSchemaChangeScheduleTaskParameters taskParam, ConnectionSession session) {
+    @VisibleForTesting
+    protected void dropNewTableIfExits(OnlineSchemaChangeScheduleTaskParameters taskParam, ConnectionSession session) {
         List<String> list = DBSchemaAccessors.create(session)
                 .showTablesLike(taskParam.getDatabaseName(), taskParam.getNewTableNameUnwrapped());
         // Drop new table suffix with _osc_new_ if exists
@@ -129,11 +129,12 @@ public class CreateGhostTableAction implements Action<OSCActionContext, OSCActio
         }
     }
 
-    private void failedOscTask(OSCActionContext valveContext, ConnectionConfig config) {
-        ConnectionSession connectionSession =
-                new DefaultConnectSessionFactory(config).generateSession();
+    @VisibleForTesting
+    protected void failedOscTask(OscActionContext context) {
+        ConnectionSession connectionSession = null;
         try {
-            dropNewTableIfExits(valveContext.getTaskParameter(), connectionSession);
+            connectionSession = context.getConnectionProvider().createConnectionSession();
+            dropNewTableIfExits(context.getTaskParameter(), connectionSession);
         } finally {
             if (connectionSession != null) {
                 connectionSession.expire();

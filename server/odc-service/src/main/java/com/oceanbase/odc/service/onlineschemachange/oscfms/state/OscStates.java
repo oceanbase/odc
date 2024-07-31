@@ -22,7 +22,7 @@ package com.oceanbase.odc.service.onlineschemachange.oscfms.state;
  * @date 2024/7/8 10:40
  * @since 4.3.1
  */
-public enum OSCStates {
+public enum OscStates {
     // init or yield fms and reset states. it's first state of fms
     YIELD_CONTEXT("YIELD_CONTEXT"),
     CREATE_GHOST_TABLES("CREATE_GHOST_TABLES"),
@@ -37,7 +37,7 @@ public enum OSCStates {
 
     private final String state;
 
-    OSCStates(String state) {
+    OscStates(String state) {
         this.state = state;
     }
 

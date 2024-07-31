@@ -37,11 +37,11 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.3.1
  */
 @Slf4j
-public abstract class ActionFSM<Context extends ActionContext, ActionResult> {
+public abstract class ActionFsm<Context extends ActionContext, ActionResult> {
 
     protected final Map<String, FSMNode<Context, ActionResult>> eventMap = new HashMap<>();
 
-    protected ActionFSM() {}
+    protected ActionFsm() {}
 
     /**
      * resolve current from context

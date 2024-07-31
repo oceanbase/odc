@@ -25,7 +25,7 @@ import lombok.Data;
  */
 @Data
 @AllArgsConstructor
-public class OSCActionResult {
+public class OscActionResult {
     // current state
     private String currentState;
     // current sub event

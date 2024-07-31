@@ -16,8 +16,8 @@
 package com.oceanbase.odc.service.onlineschemachange.oscfms.action;
 
 import com.oceanbase.odc.service.onlineschemachange.fsm.Action;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.OSCActionContext;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.OSCActionResult;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
 
 /**
  * delegate impl
@@ -26,17 +26,17 @@ import com.oceanbase.odc.service.onlineschemachange.oscfms.OSCActionResult;
  * @date 2024/7/8 20:06
  * @since 4.3.1
  */
-public class ActionDelegate implements Action<OSCActionContext, OSCActionResult> {
+public class ActionDelegate implements Action<OscActionContext, OscActionResult> {
     // use delegate
-    protected Action<OSCActionContext, OSCActionResult> action;
+    protected Action<OscActionContext, OscActionResult> action;
 
     @Override
-    public OSCActionResult execute(OSCActionContext context) throws Exception {
+    public OscActionResult execute(OscActionContext context) throws Exception {
         return action.execute(context);
     }
 
     @Override
-    public void rollback(OSCActionContext context) {
+    public void rollback(OscActionContext context) {
         action.rollback(context);
     }
 }

@@ -22,9 +22,9 @@ import com.oceanbase.odc.service.onlineschemachange.fsm.StateTransfer;
  * @date 2024/7/9 17:54
  * @since 4.3.1
  */
-public class OSCStatesTransfer implements StateTransfer<OSCActionContext, OSCActionResult> {
+public class OscStatesTransfer implements StateTransfer<OscActionContext, OscActionResult> {
     @Override
-    public String translateToNewState(String currentState, OSCActionResult oscActionResult, OSCActionContext context) {
+    public String translateToNewState(String currentState, OscActionResult oscActionResult, OscActionContext context) {
         return oscActionResult.getNextState();
     }
 }

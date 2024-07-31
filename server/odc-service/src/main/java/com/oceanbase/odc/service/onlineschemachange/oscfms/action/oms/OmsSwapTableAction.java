@@ -34,11 +34,12 @@ import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSche
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
 import com.oceanbase.odc.service.onlineschemachange.monitor.DBUserMonitorExecutor;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.OSCActionContext;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.OSCActionResult;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.ProjectStepResultChecker.ProjectStepResult;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OSCStates;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 import com.oceanbase.odc.service.onlineschemachange.rename.DefaultRenameTableInvoker;
+import com.oceanbase.odc.service.onlineschemachange.rename.RenameTableHandlers;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
@@ -52,7 +53,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.3.1
  */
 @Slf4j
-public class OMSSwapTableAction implements Action<OSCActionContext, OSCActionResult> {
+public class OmsSwapTableAction implements Action<OscActionContext, OscActionResult> {
 
     private final DBSessionManageFacade dbSessionManageFacade;
 
@@ -60,7 +61,7 @@ public class OMSSwapTableAction implements Action<OSCActionContext, OSCActionRes
 
     private final OnlineSchemaChangeProperties onlineSchemaChangeProperties;
 
-    public OMSSwapTableAction(@NotNull DBSessionManageFacade dbSessionManageFacade,
+    public OmsSwapTableAction(@NotNull DBSessionManageFacade dbSessionManageFacade,
             @NotNull OmsProjectOpenApiService projectOpenApiService,
             @NotNull OnlineSchemaChangeProperties onlineSchemaChangeProperties) {
         this.dbSessionManageFacade = dbSessionManageFacade;
@@ -69,11 +70,11 @@ public class OMSSwapTableAction implements Action<OSCActionContext, OSCActionRes
     }
 
     @Override
-    public OSCActionResult execute(OSCActionContext context) throws Exception {
+    public OscActionResult execute(OscActionContext context) throws Exception {
         if (!checkOMSProject(context)) {
             // OMS state abnormal, keep waiting
             log.info("OSC: swap table waiting for OMS task ready");
-            return new OSCActionResult(OSCStates.SWAP_TABLE.getState(), null, OSCStates.SWAP_TABLE.getState());
+            return new OscActionResult(OscStates.SWAP_TABLE.getState(), null, OscStates.SWAP_TABLE.getState());
         }
         // begin swap table
         ScheduleTaskEntity scheduleTask = context.getScheduleTask();
@@ -83,43 +84,44 @@ public class OMSSwapTableAction implements Action<OSCActionContext, OSCActionRes
         PreConditions.notNull(taskParameters, "OnlineSchemaChangeScheduleTaskParameters is null");
         OnlineSchemaChangeParameters parameters = context.getParameter();
 
-        ConnectionConfig config = context.getConnectionConfigSupplier().get();
+        ConnectionConfig config = context.getConnectionProvider().connectionConfig();
         DBUserMonitorExecutor userMonitorExecutor = new DBUserMonitorExecutor(config, parameters.getLockUsers());
-        ConnectionSession connectionSession = new DefaultConnectSessionFactory(config).generateSession();
+        ConnectionSession connectionSession = null;
         try {
+            connectionSession = context.getConnectionProvider().createConnectionSession();
             if (enableUserMonitor(parameters.getLockUsers())) {
                 userMonitorExecutor.start();
             }
             ConnectionSessionUtil.setCurrentSchema(connectionSession, taskParameters.getDatabaseName());
             DefaultRenameTableInvoker defaultRenameTableInvoker =
-                    new DefaultRenameTableInvoker(connectionSession, dbSessionManageFacade);
+                    new DefaultRenameTableInvoker(connectionSession, dbSessionManageFacade, RenameTableHandlers.getForeignKeyHandler(connectionSession));
             defaultRenameTableInvoker.invoke(taskParameters, parameters);
             // rename table success, jump to clean resoruce state
-            return new OSCActionResult(OSCStates.SWAP_TABLE.getState(), null, OSCStates.CLEAN_RESOURCE.getState());
+            return new OscActionResult(OscStates.SWAP_TABLE.getState(), null, OscStates.CLEAN_RESOURCE.getState());
         } finally {
             try {
                 if (enableUserMonitor(parameters.getLockUsers())) {
                     userMonitorExecutor.stop();
                 }
             } finally {
-                connectionSession.expire();
+                if (null != connectionSession) {
+                    connectionSession.expire();
+                }
             }
         }
     }
 
-    public boolean checkOMSProject(OSCActionContext context) {
+    protected boolean checkOMSProject(OscActionContext context) {
         OnlineSchemaChangeScheduleTaskParameters taskParameter = context.getTaskParameter();
-        OnlineSchemaChangeParameters inputParameters = context.getParameter();
         // get result
         OnlineSchemaChangeScheduleTaskResult lastResult = JsonUtils.fromJson(context.getScheduleTask().getResultJson(),
                 OnlineSchemaChangeScheduleTaskResult.class);
-        OnlineSchemaChangeScheduleTaskResult result = new OnlineSchemaChangeScheduleTaskResult(taskParameter);
         // get oms step result
         ProjectStepResult projectStepResult =
-                OMSRequestUtil.buildProjectStepResult(projectOpenApiService, onlineSchemaChangeProperties,
+                OmsRequestUtil.buildProjectStepResult(projectOpenApiService, onlineSchemaChangeProperties,
                         taskParameter.getUid(), taskParameter.getOmsProjectId(), taskParameter.getDatabaseName(),
                         lastResult.getCheckFailedTime());
-        return OMSRequestUtil.OMSTaskReady(projectStepResult);
+        return OmsRequestUtil.OMSTaskReady(projectStepResult);
     }
 
     private boolean enableUserMonitor(List<String> lockUsers) {

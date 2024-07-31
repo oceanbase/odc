@@ -48,9 +48,9 @@ import com.oceanbase.odc.service.onlineschemachange.oms.request.IncrTransferConf
 import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsProjectControlRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.SpecificTransferMapping;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.TableTransferObject;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.OSCActionContext;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.OSCActionResult;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OSCStates;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
 import lombok.extern.slf4j.Slf4j;
@@ -61,14 +61,14 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.3.1
  */
 @Slf4j
-public class OMSCreateDataTaskAction implements Action<OSCActionContext, OSCActionResult> {
+public class OmsCreateDataTaskAction implements Action<OscActionContext, OscActionResult> {
     protected final DataSourceOpenApiService dataSourceOpenApiService;
 
     private final OmsProjectOpenApiService projectOpenApiService;
 
     protected final OnlineSchemaChangeProperties oscProperties;
 
-    public OMSCreateDataTaskAction(@NotNull DataSourceOpenApiService dataSourceOpenApiService,
+    public OmsCreateDataTaskAction(@NotNull DataSourceOpenApiService dataSourceOpenApiService,
             @NotNull OmsProjectOpenApiService projectOpenApiService,
             @NotNull OnlineSchemaChangeProperties oscProperties) {
         this.dataSourceOpenApiService = dataSourceOpenApiService;
@@ -77,7 +77,7 @@ public class OMSCreateDataTaskAction implements Action<OSCActionContext, OSCActi
     }
 
     @Override
-    public OSCActionResult execute(OSCActionContext context) throws Exception {
+    public OscActionResult execute(OscActionContext context) throws Exception {
         Long taskId = context.getScheduleTask().getId();
         OnlineSchemaChangeScheduleTaskParameters scheduleTaskParameters = context.getTaskParameter();
         log.info("Start execute {}, schedule task id {}", getClass().getSimpleName(), taskId);
@@ -94,22 +94,22 @@ public class OMSCreateDataTaskAction implements Action<OSCActionContext, OSCActi
         // start project
         startOMSDataProject(projectId, scheduleTaskParameters.getUid());
         // transfer to next stage
-        return new OSCActionResult(OSCStates.CREATE_DATA_TASK.getState(), null, OSCStates.MONITOR_DATA_TASK.getState());
+        return new OscActionResult(OscStates.CREATE_DATA_TASK.getState(), null, OscStates.MONITOR_DATA_TASK.getState());
     }
 
     /**
      * create oms data source
      */
     private String tryCreateOMSDataSource(OnlineSchemaChangeScheduleTaskParameters scheduleTaskParameters,
-            OSCActionContext context) {
+            OscActionContext context) {
         String omsDsId = scheduleTaskParameters.getOmsDataSourceId();
         // not created datasource yet, try create it
         if (StringUtils.isEmpty(omsDsId)) {
-            ConnectionConfig connectionConfig = context.getConnectionConfigSupplier().get();
+            ConnectionConfig connectionConfig = context.getConnectionProvider().connectionConfig();
             ConnectionSession connectionSession = null;
             CreateOceanBaseDataSourceRequest dataSourceRequest = null;
             try {
-                connectionSession = new DefaultConnectSessionFactory(connectionConfig).generateSession();
+                connectionSession = context.getConnectionProvider().createConnectionSession();
                 dataSourceRequest = getCreateDataSourceRequest(connectionConfig, connectionSession,
                         context.getTaskParameter());
                 omsDsId = dataSourceOpenApiService.createOceanBaseDataSource(dataSourceRequest);
@@ -133,7 +133,7 @@ public class OMSCreateDataTaskAction implements Action<OSCActionContext, OSCActi
      * create oms data project
      */
     private String tryCreateOMSDataProject(OnlineSchemaChangeScheduleTaskParameters scheduleTaskParameters,
-            String omsDataSourceID, OSCActionContext context) {
+            String omsDataSourceID, OscActionContext context) {
         String projectId = scheduleTaskParameters.getOmsProjectId();
         // not create projectID yet
         if (StringUtils.isEmpty(projectId)) {

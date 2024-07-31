@@ -15,16 +15,14 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.oscfms;
 
-import java.util.function.Supplier;
-
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.fsm.ActionContext;
 import com.oceanbase.odc.service.onlineschemachange.model.LinkType;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.action.ConnectionProvider;
 
 import lombok.Data;
 
@@ -36,7 +34,7 @@ import lombok.Data;
  * @since 4.3.1
  */
 @Data
-public class OSCActionContext implements ActionContext {
+public class OscActionContext implements ActionContext {
     private Long projectId;
 
     private ScheduleEntity schedule;
@@ -55,7 +53,7 @@ public class OSCActionContext implements ActionContext {
     private ScheduleTaskRepository scheduleTaskRepository;
 
     /**
-     * connector config supplier for OMS task operation
+     * connector provider for db operation
      */
-    private Supplier<ConnectionConfig> connectionConfigSupplier;
+    private ConnectionProvider connectionProvider;
 }

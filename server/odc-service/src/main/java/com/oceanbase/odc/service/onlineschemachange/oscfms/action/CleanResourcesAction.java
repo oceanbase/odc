@@ -18,7 +18,7 @@ package com.oceanbase.odc.service.onlineschemachange.oscfms.action;
 import javax.validation.constraints.NotNull;
 
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.OMSCleanResourcesAction;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.OmsCleanResourcesAction;
 
 /**
  * @author longpeng.zlp
@@ -30,7 +30,7 @@ public class CleanResourcesAction extends ActionDelegate {
     public static CleanResourcesAction ofOMSCleanResourcesAction(
             @NotNull OmsProjectOpenApiService omsProjectOpenApiService) {
         CleanResourcesAction ret = new CleanResourcesAction();
-        ret.action = new OMSCleanResourcesAction(omsProjectOpenApiService);
+        ret.action = new OmsCleanResourcesAction(omsProjectOpenApiService);
         return ret;
     }
 }
