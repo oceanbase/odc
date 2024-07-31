@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -393,9 +394,16 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
 
     private List<UnauthorizedDBResource> getUnauthorizedDBResources(List<OffsetString> sqls,
             ConnectionConfig config, String defaultSchema, TaskType taskType) {
+        Set<String> existedDatabaseNames =
+                databaseService.listDatabasesByConnectionIds(Collections.singleton(connectionConfig.getId()))
+                        .stream().filter(database -> database.getExisted()).map(database -> database.getName())
+                        .collect(Collectors.toSet());
         Map<DBSchemaIdentity, Set<SqlType>> identity2Types = DBSchemaExtractor.listDBSchemasWithSqlTypes(
                 sqls.stream().map(e -> SqlTuple.newTuple(e.getStr())).collect(Collectors.toList()),
-                config.getDialectType(), defaultSchema);
+                config.getDialectType(), defaultSchema).entrySet().stream()
+                .filter(entry -> Objects.isNull(entry.getKey().getSchema())
+                        || existedDatabaseNames.contains(entry.getKey().getSchema()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));;
         Map<DBResource, Set<DatabasePermissionType>> resource2PermissionTypes = new HashMap<>();
         for (Entry<DBSchemaIdentity, Set<SqlType>> entry : identity2Types.entrySet()) {
             DBSchemaIdentity identity = entry.getKey();
