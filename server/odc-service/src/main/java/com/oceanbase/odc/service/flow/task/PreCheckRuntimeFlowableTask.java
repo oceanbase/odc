@@ -25,10 +25,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -409,21 +407,9 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                 config.getDialectType(), defaultSchema).entrySet().stream()
                 .filter(entry -> Objects.isNull(entry.getKey().getSchema())
                         || existedDatabaseNames.contains(entry.getKey().getSchema()))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));;
-        Map<DBResource, Set<DatabasePermissionType>> resource2PermissionTypes = new HashMap<>();
-        for (Entry<DBSchemaIdentity, Set<SqlType>> entry : identity2Types.entrySet()) {
-            DBSchemaIdentity identity = entry.getKey();
-            Set<SqlType> sqlTypes = entry.getValue();
-            if (CollectionUtils.isNotEmpty(sqlTypes)) {
-                Set<DatabasePermissionType> permissionTypes = sqlTypes.stream().map(DatabasePermissionType::from)
-                        .filter(Objects::nonNull).collect(Collectors.toSet());
-                permissionTypes.addAll(DatabasePermissionType.from(taskType));
-                if (CollectionUtils.isNotEmpty(permissionTypes)) {
-                    resource2PermissionTypes.put(
-                            DBResource.from(config, identity.getSchema(), identity.getTable()), permissionTypes);
-                }
-            }
-        }
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<DBResource, Set<DatabasePermissionType>> resource2PermissionTypes =
+                DBResourcePermissionHelper.getDBResource2PermissionTypes(identity2Types, config, taskType);
         return dbResourcePermissionHelper.filterUnauthorizedDBResources(resource2PermissionTypes, false);
     }
 

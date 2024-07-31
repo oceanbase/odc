@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
@@ -38,6 +39,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
@@ -53,10 +55,13 @@ import com.oceanbase.odc.metadb.iam.UserTablePermissionRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.connection.database.model.DBResource;
 import com.oceanbase.odc.service.connection.database.model.UnauthorizedDBResource;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.common.PermissionCheckWhitelist;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
+import com.oceanbase.odc.service.session.util.DBSchemaExtractor.DBSchemaIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 
 /**
  * @author gaoda.xy
@@ -397,6 +402,40 @@ public class DBResourcePermissionHelper {
             }).collect(Collectors.toList());
         }
         return unauthorizedDBResources;
+    }
+
+    public static Map<DBResource, Set<DatabasePermissionType>> getDBResource2PermissionTypes(
+            Map<DBSchemaIdentity, Set<SqlType>> identity2Types, ConnectionConfig connectionConfig, TaskType taskType) {
+        Map<DBResource, Set<DatabasePermissionType>> resource2PermissionTypes = new HashMap<>();
+        for (Entry<DBSchemaIdentity, Set<SqlType>> entry : identity2Types.entrySet()) {
+            DBSchemaIdentity identity = entry.getKey();
+            Set<SqlType> sqlTypes = entry.getValue();
+            Set<DatabasePermissionType> permissionTypes = new HashSet<>();
+            if (CollectionUtils.isNotEmpty(sqlTypes)) {
+                if (sqlTypes.contains(SqlType.CREATE)) {
+                    permissionTypes.add(DatabasePermissionType.from(SqlType.CREATE));
+                    resource2PermissionTypes.put(
+                            DBResource.from(connectionConfig, identity.getSchema(), identity.getTable(),
+                                    ResourceType.ODC_DATABASE),
+                            permissionTypes);
+                    sqlTypes.remove(SqlType.CREATE);
+                }
+                permissionTypes = sqlTypes.stream().map(DatabasePermissionType::from)
+                        .filter(Objects::nonNull).collect(Collectors.toSet());
+                if (Objects.nonNull(taskType)) {
+                    permissionTypes.addAll(DatabasePermissionType.from(taskType));
+                }
+                if (CollectionUtils.isNotEmpty(permissionTypes)) {
+                    resource2PermissionTypes.computeIfAbsent(
+                            DBResource.from(connectionConfig, identity.getSchema(), identity.getTable(),
+                                    Objects.isNull(identity.getTable()) ? ResourceType.ODC_DATABASE
+                                            : ResourceType.ODC_TABLE),
+                            k -> new HashSet<>())
+                            .addAll(permissionTypes);
+                }
+            }
+        }
+        return resource2PermissionTypes;
     }
 
     private Set<Long> getPermittedProjectIds() {
