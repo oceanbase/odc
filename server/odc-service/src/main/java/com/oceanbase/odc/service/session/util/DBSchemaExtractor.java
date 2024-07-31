@@ -425,7 +425,7 @@ public class DBSchemaExtractor {
         public RelationFactor visitSql_stmt(Sql_stmtContext ctx) {
             try {
                 OBOracleRelationFactorVisitor visitor = new OBOracleRelationFactorVisitor();
-                visitor.visit(ctx.getChild(0).getChild(0));
+                visitor.visit(ctx);
                 identities.addAll(visitor.getIdentities());
             } catch (Exception e) {
                 // eat the exception
