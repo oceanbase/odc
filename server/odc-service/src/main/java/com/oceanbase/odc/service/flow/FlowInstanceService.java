@@ -789,7 +789,7 @@ public class FlowInstanceService {
                                 DatabasePermissionType.from(TaskType.EXPORT));
                     }
                 });
-            } else if (Objects.nonNull(parameters.isExportAllObjects()) && parameters.isExportAllObjects()) {
+            } else if (parameters.isExportAllObjects()) {
                 ConnectionConfig config = connectionService.getBasicWithoutPermissionCheck(req.getConnectionId());
                 resource2Types.put(
                         DBResource.from(config, req.getDatabaseName(), null, ResourceType.ODC_DATABASE),

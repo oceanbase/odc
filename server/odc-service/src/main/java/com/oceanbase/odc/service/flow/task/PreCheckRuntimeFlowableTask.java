@@ -24,11 +24,8 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -45,7 +42,6 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
@@ -398,33 +394,8 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         Map<DBSchemaIdentity, Set<SqlType>> identity2Types = DBSchemaExtractor.listDBSchemasWithSqlTypes(
                 sqls.stream().map(e -> SqlTuple.newTuple(e.getStr())).collect(Collectors.toList()),
                 config.getDialectType(), defaultSchema);
-        Map<DBResource, Set<DatabasePermissionType>> resource2PermissionTypes = new HashMap<>();
-        for (Entry<DBSchemaIdentity, Set<SqlType>> entry : identity2Types.entrySet()) {
-            DBSchemaIdentity identity = entry.getKey();
-            Set<SqlType> sqlTypes = entry.getValue();
-            Set<DatabasePermissionType> permissionTypes = new HashSet<>();
-            if (CollectionUtils.isNotEmpty(sqlTypes)) {
-                if (sqlTypes.contains(SqlType.CREATE)) {
-                    permissionTypes.add(DatabasePermissionType.from(SqlType.CREATE));
-                    resource2PermissionTypes.put(
-                            DBResource.from(config, identity.getSchema(), identity.getTable(),
-                                    ResourceType.ODC_DATABASE),
-                            permissionTypes);
-                    sqlTypes.remove(SqlType.CREATE);
-                }
-                permissionTypes = sqlTypes.stream().map(DatabasePermissionType::from)
-                        .filter(Objects::nonNull).collect(Collectors.toSet());
-                permissionTypes.addAll(DatabasePermissionType.from(taskType));
-                if (CollectionUtils.isNotEmpty(permissionTypes)) {
-                    resource2PermissionTypes.computeIfAbsent(
-                            DBResource.from(config, identity.getSchema(), identity.getTable(),
-                                    Objects.isNull(identity.getTable()) ? ResourceType.ODC_DATABASE
-                                            : ResourceType.ODC_TABLE),
-                            k -> new HashSet<>())
-                            .addAll(permissionTypes);
-                }
-            }
-        }
+        Map<DBResource, Set<DatabasePermissionType>> resource2PermissionTypes =
+                DBResourcePermissionHelper.getDBResource2PermissionTypes(identity2Types, config, taskType);
         return dbResourcePermissionHelper.filterUnauthorizedDBResources(resource2PermissionTypes, false);
     }
 
