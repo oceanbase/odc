@@ -61,6 +61,7 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Routine_nameContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Var_nameContext;
 import com.oceanbase.tools.sqlparser.oboracle.PLParser.IdentifierContext;
 import com.oceanbase.tools.sqlparser.oboracle.PLParser.Pl_schema_nameContext;
+import com.oceanbase.tools.sqlparser.oboracle.PLParser.Sql_stmtContext;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.expression.FunctionCall;
@@ -417,6 +418,14 @@ public class DBSchemaExtractor {
                 rf.setSchema(identifiers.get(0).getText());
             }
             identities.add(new DBSchemaIdentity(rf.getSchema(), null));
+            return null;
+        }
+
+        @Override
+        public RelationFactor visitSql_stmt(Sql_stmtContext ctx) {
+            OBOracleRelationFactorVisitor visitor = new OBOracleRelationFactorVisitor();
+            visitor.visit(ctx.getChild(0).getChild(0));
+            identities.addAll(visitor.getIdentities());
             return null;
         }
 
