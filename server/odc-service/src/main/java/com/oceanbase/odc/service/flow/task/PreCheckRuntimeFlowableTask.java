@@ -77,6 +77,7 @@ import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.table.TablePermissionService;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
+import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
@@ -126,6 +127,8 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private PreCheckTaskProperties preCheckTaskProperties;
     @Autowired
     private ObjectStorageFacade storageFacade;
+    @Autowired
+    private RiskLevelService riskLevelService;
 
     @Autowired
     private TablePermissionService tablePermissionService;
@@ -221,6 +224,9 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                         .map(approvalFlowConfigSelector::select)
                         .max(Comparator.comparingInt(RiskLevel::getLevel))
                         .orElseThrow(() -> new IllegalStateException("Unknown error"));
+            } else if (taskEntity.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION
+                    || taskEntity.getTaskType() == TaskType.APPLY_TABLE_PERMISSION) {
+                riskLevel = riskLevelService.findHighestRiskLevel();
             } else if (riskLevelDescriber != null) {
                 riskLevel = approvalFlowConfigSelector.select(riskLevelDescriber);
             } else {
