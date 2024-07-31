@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.session.interceptor;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -86,7 +87,10 @@ public class DBResourcePermissionInterceptor extends BaseTimeConsumingIntercepto
         String currentSchema = ConnectionSessionUtil.getCurrentSchema(session);
         Map<DBSchemaIdentity, Set<SqlType>> identity2Types = DBSchemaExtractor.listDBSchemasWithSqlTypes(
                 response.getSqls().stream().map(SqlTuplesWithViolation::getSqlTuple).collect(Collectors.toList()),
-                session.getDialectType(), currentSchema);
+                session.getDialectType(), currentSchema).entrySet().stream()
+                .filter(entry -> Objects.isNull(entry.getKey().getSchema())
+                        || existedDatabaseNames.contains(entry.getKey().getSchema()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         Map<DBResource, Set<DatabasePermissionType>> resource2PermissionTypes =
                 DBResourcePermissionHelper.getDBResource2PermissionTypes(identity2Types, connectionConfig, null);
         List<UnauthorizedDBResource> unauthorizedDBResource = dbResourcePermissionHelper

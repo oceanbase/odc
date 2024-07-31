@@ -398,7 +398,10 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                         .collect(Collectors.toSet());
         Map<DBSchemaIdentity, Set<SqlType>> identity2Types = DBSchemaExtractor.listDBSchemasWithSqlTypes(
                 sqls.stream().map(e -> SqlTuple.newTuple(e.getStr())).collect(Collectors.toList()),
-                config.getDialectType(), defaultSchema);
+                config.getDialectType(), defaultSchema).entrySet().stream()
+                .filter(entry -> Objects.isNull(entry.getKey().getSchema())
+                        || existedDatabaseNames.contains(entry.getKey().getSchema()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         Map<DBResource, Set<DatabasePermissionType>> resource2PermissionTypes =
                 DBResourcePermissionHelper.getDBResource2PermissionTypes(identity2Types, config, taskType);
         return dbResourcePermissionHelper.filterUnauthorizedDBResources(resource2PermissionTypes, false);
