@@ -108,7 +108,7 @@
 # SQL 窗口执行
 - type: "DATABASE_OPERATION"
   action: "OTHERS"
-  method_signature: "com.oceanbase.odc.server.web.controller.v2.ConnectSessionController.asyncSqlExecute"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.ConnectSessionController.streamExecute"
   sid_extract_expression: "{#sessionId}"
   in_connection: 1
   enabled: 1
@@ -539,3 +539,19 @@
   enabled: 1
   id: 98
 
+# TABLE_PERMISSION_MANAGEMENT
+- type: "TABLE_PERMISSION_MANAGEMENT"
+  action: "GRANT_TABLE_PERMISSION"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.TablePermissionController.batchCreate"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 99
+
+- type: "TABLE_PERMISSION_MANAGEMENT"
+  action: "REVOKE_TABLE_PERMISSION"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.TablePermissionController.batchRevoke"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 100

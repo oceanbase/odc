@@ -112,7 +112,8 @@ public class StartPreparingJob implements Job {
                     getConfiguration().getJobDispatcher().start(jc);
                 } catch (JobException e) {
                     AlarmUtils.alarm(AlarmEventNames.TASK_START_FAILED,
-                            MessageFormat.format("Start job failed, jobId={0}", lockedEntity.getId()));
+                            MessageFormat.format("Start job failed, jobId={0}, message={1}", lockedEntity.getId(),
+                                    e.getMessage()));
                     throw new TaskRuntimeException(e);
                 }
             } else {

@@ -18,11 +18,12 @@ package com.oceanbase.odc.plugin.connect.api;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 
 import org.pf4j.ExtensionPoint;
 
 import com.oceanbase.odc.core.shared.model.SqlExecDetail;
-import com.oceanbase.odc.core.shared.model.SqlExplain;
+import com.oceanbase.odc.plugin.connect.model.diagnose.SqlExplain;
 
 import lombok.NonNull;
 
@@ -42,4 +43,8 @@ public interface SqlDiagnoseExtensionPoint extends ExtensionPoint {
     SqlExecDetail getExecutionDetailById(Connection connection, @NonNull String id) throws SQLException;
 
     SqlExecDetail getExecutionDetailBySql(Connection connection, @NonNull String sql) throws SQLException;
+
+    SqlExplain getQueryProfileByTraceIdAndSessIds(Connection connection, @NonNull String traceId,
+            @NonNull List<String> sessionIds) throws SQLException;
+
 }

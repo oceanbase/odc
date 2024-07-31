@@ -142,7 +142,21 @@ public abstract class BaseJobCaller implements JobCaller {
         doDestroy(ji, ExecutorIdentifierParser.parser(executorIdentifier));
     }
 
+    @Override
+    public boolean canBeDestroy(JobIdentity ji) {
+        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
+        TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
+        JobEntity jobEntity = taskFrameworkService.find(ji.getId());
+        String executorIdentifier = jobEntity.getExecutorIdentifier();
+        if (executorIdentifier == null) {
+            return true;
+        }
+        return canBeDestroy(ji, ExecutorIdentifierParser.parser(executorIdentifier));
+    }
+
     protected abstract void doDestroy(JobIdentity ji, ExecutorIdentifier ei) throws JobException;
+
+    protected abstract boolean canBeDestroy(JobIdentity ji, ExecutorIdentifier ei);
 
     private <T extends AbstractEvent> void publishEvent(T event) {
         JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();

@@ -38,6 +38,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.ddl.DdlConstants;
 import com.oceanbase.odc.service.onlineschemachange.exception.OmsException;
+import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsOceanBaseType;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.DataSourceOpenApiService;
@@ -103,7 +104,7 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
         PreConditions.notNull(omsDsId, "Oms datasource id");
 
         CreateOmsProjectRequest createProjectRequest = getCreateProjectRequest(omsDsId,
-                context.getSchedule().getId(), context.getTaskParameter());
+                context.getSchedule().getId(), context.getTaskParameter(), context.getParameter());
 
         String projectId = projectOpenApiService.createProject(createProjectRequest);
 
@@ -155,7 +156,8 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
     }
 
     private CreateOmsProjectRequest getCreateProjectRequest(String omsDsId, Long scheduleId,
-            OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters) {
+            OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters,
+            OnlineSchemaChangeParameters oscParameters) {
         CreateOmsProjectRequest request = new CreateOmsProjectRequest();
         doCreateProjectRequest(omsDsId, scheduleId, oscScheduleTaskParameters, request);
         if (oscProperties.isEnableFullVerify()) {
@@ -185,8 +187,12 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
         CommonTransferConfig commonTransferConfig = new CommonTransferConfig();
         request.setCommonTransferConfig(commonTransferConfig);
         FullTransferConfig fullTransferConfig = new FullTransferConfig();
-        request.setFullTransferConfig(fullTransferConfig);
         IncrTransferConfig incrTransferConfig = new IncrTransferConfig();
+        fullTransferConfig.setThrottleIOPS(oscParameters.getRateLimitConfig().getDataSizeLimit());
+        incrTransferConfig.setThrottleIOPS(oscParameters.getRateLimitConfig().getDataSizeLimit());
+        fullTransferConfig.setThrottleRps(oscParameters.getRateLimitConfig().getRowLimit());
+        incrTransferConfig.setThrottleRps(oscParameters.getRateLimitConfig().getRowLimit());
+        request.setFullTransferConfig(fullTransferConfig);
         request.setIncrTransferConfig(incrTransferConfig);
         request.setUid(oscScheduleTaskParameters.getUid());
         return request;

@@ -74,7 +74,7 @@ import com.oceanbase.odc.service.db.util.OBMysqlCallProcedureCallBack;
 import com.oceanbase.odc.service.db.util.OBOracleCallFunctionBlockCallBack;
 import com.oceanbase.odc.service.db.util.OBOracleCallProcedureBlockCallBack;
 import com.oceanbase.odc.service.db.util.OBOracleCompilePLCallBack;
-import com.oceanbase.odc.service.permission.database.DatabasePermissionHelper;
+import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.odc.service.session.SessionProperties;
@@ -105,7 +105,7 @@ public class DBPLService {
     @Autowired
     private DatabaseRepository databaseRepository;
     @Autowired
-    private DatabasePermissionHelper databasePermissionHelper;
+    private DBResourcePermissionHelper permissionHelper;
 
     private static final Integer DEFAULT_MAX_CONCURRENT_BATCH_COMPILE_TASK_COUNT = 10;
     private final DefaultSqlExecuteTaskManager taskManager;
@@ -242,7 +242,7 @@ public class DBPLService {
 
     public String callProcedure(@NonNull ConnectionSession session, @NonNull CallProcedureReq req) {
         Long databaseId = getDatabaseIdByConnectionSession(session);
-        databasePermissionHelper.checkPermissions(Collections.singleton(databaseId),
+        permissionHelper.checkDBPermissions(Collections.singleton(databaseId),
                 Collections.singleton(DatabasePermissionType.CHANGE));
         ConnectionCallback<CallProcedureResp> callback;
         DialectType dialectType = session.getDialectType();
@@ -277,7 +277,7 @@ public class DBPLService {
 
     public String callFunction(@NonNull ConnectionSession session, @NonNull CallFunctionReq req) {
         Long databaseId = getDatabaseIdByConnectionSession(session);
-        databasePermissionHelper.checkPermissions(Collections.singleton(databaseId),
+        permissionHelper.checkDBPermissions(Collections.singleton(databaseId),
                 Collections.singleton(DatabasePermissionType.CHANGE));
         ConnectionCallback<CallFunctionResp> callback;
         DialectType dialectType = session.getDialectType();

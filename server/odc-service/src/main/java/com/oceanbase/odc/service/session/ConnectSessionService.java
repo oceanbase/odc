@@ -87,7 +87,7 @@ import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.lab.model.LabProperties;
-import com.oceanbase.odc.service.permission.database.DatabasePermissionHelper;
+import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
@@ -142,7 +142,7 @@ public class ConnectSessionService {
     @Autowired
     private SecurityManager securityManager;
     @Autowired
-    private DatabasePermissionHelper databasePermissionHelper;
+    private DBResourcePermissionHelper permissionHelper;
     @Autowired
     private CloudMetadataClient cloudMetadataClient;
     @Autowired
@@ -234,7 +234,7 @@ public class ConnectSessionService {
                     throw new AccessDeniedException();
                 }
                 Map<Long, Set<DatabasePermissionType>> id2PermissionTypes =
-                        databasePermissionHelper.getPermissions(Collections.singleton(req.getDbId()));
+                        permissionHelper.getDBPermissions(Collections.singleton(req.getDbId()));
                 if (!id2PermissionTypes.containsKey(req.getDbId()) || id2PermissionTypes.get(req.getDbId()).isEmpty()) {
                     throw new AccessDeniedException();
                 }

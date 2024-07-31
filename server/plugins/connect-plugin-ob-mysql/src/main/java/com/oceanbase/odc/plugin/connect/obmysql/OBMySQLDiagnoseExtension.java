@@ -15,6 +15,11 @@
  */
 package com.oceanbase.odc.plugin.connect.obmysql;
 
+import static com.oceanbase.odc.plugin.connect.obmysql.diagnose.ProfileConstants.DB_TIME;
+import static com.oceanbase.odc.plugin.connect.obmysql.diagnose.ProfileConstants.IS_HIT_PLAN_CACHE;
+import static com.oceanbase.odc.plugin.connect.obmysql.diagnose.ProfileConstants.PLAN_TYPE;
+import static com.oceanbase.odc.plugin.connect.obmysql.diagnose.ProfileConstants.QUEUE_TIME;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -23,19 +28,34 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.pf4j.Extension;
 
 import com.alibaba.fastjson.JSON;
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.TimespanFormatUtil;
 import com.oceanbase.odc.common.util.VersionUtils;
+import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.OBException;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
+import com.oceanbase.odc.core.shared.model.OBExecutionServerInfo;
+import com.oceanbase.odc.core.shared.model.OBSqlPlan;
 import com.oceanbase.odc.core.shared.model.PlanNode;
 import com.oceanbase.odc.core.shared.model.SqlExecDetail;
-import com.oceanbase.odc.core.shared.model.SqlExplain;
+import com.oceanbase.odc.core.shared.model.SqlPlanMonitor;
+import com.oceanbase.odc.core.sql.util.OBUtils;
 import com.oceanbase.odc.plugin.connect.api.SqlDiagnoseExtensionPoint;
+import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraph;
+import com.oceanbase.odc.plugin.connect.model.diagnose.SqlExplain;
 import com.oceanbase.odc.plugin.connect.obmysql.diagnose.DiagnoseUtil;
+import com.oceanbase.odc.plugin.connect.obmysql.diagnose.PlanGraphBuilder;
+import com.oceanbase.odc.plugin.connect.obmysql.diagnose.QueryProfileHelper;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +68,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Extension
 public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
+    private static final String OB_EXPLAIN_COMPATIBLE_VERSION = "4.0";
+    private static final Pattern OPERATOR_PATTERN = Pattern.compile(".+\\|(OPERATOR +)\\|.+");
 
     @Override
     public SqlExplain getExplain(Statement statement, @NonNull String sql) throws SQLException {
@@ -68,30 +90,19 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
         }
         SqlExplain explain = new SqlExplain();
         try {
-            String[] segs = text.split("Outputs & filters");
-            // 层次计划信息
-            StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append("|0 ");
-            String temp = segs[0].split("--\n\\|0")[1].split("\\|\n==")[0];
-            stringBuilder.append(temp).append("|");
-            String formatText = stringBuilder.toString();
-            // output & filter
-            String[] outputSegs = segs[1].split("Used Hint")[0].split("[0-9]+ - output");
-            Map<Integer, String> outputFilters = new HashMap<>();
-            for (int i = 1; i < outputSegs.length; i++) {
-                // 去除内存地址
-                String seg = outputSegs[i].replaceAll("\\(0x[A-Za-z0-9]+\\)", "");
-                String tmp = "output" + seg;
-                outputFilters.put(i - 1, tmp);
+            String version = OBUtils.getObVersion(statement.getConnection());
+            if (VersionUtils.isGreaterThanOrEqualsTo(version, OB_EXPLAIN_COMPATIBLE_VERSION)) {
+                explain.setExpTree(DiagnoseUtil.getOB4xExplainTree(text));
+            } else {
+                explain.setExpTree(DiagnoseUtil.getExplainTree(text));
             }
-            String jsonTree = getJsonTreeText(formatText, outputFilters);
-            explain.setExpTree(jsonTree);
             // outline
             String outline = text.split("BEGIN_OUTLINE_DATA")[1].split("END_OUTLINE_DATA")[0];
             explain.setOutline(outline);
             // 设置原始的执行计划信息
             explain.setOriginalText(text);
             explain.setShowFormatInfo(true);
+            explain.setGraph(getSqlPlanGraphBySql(statement, sql));
         } catch (Exception e) {
             log.warn("Fail to parse explain result, origin plan text: {}", text, e);
             throw OBException.executeFailed(ErrorCodes.ObGetPlanExplainFailed,
@@ -100,43 +111,6 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
         return explain;
     }
 
-    /**
-     *
-     * |0 |HASH JOIN | |98011 |258722| |1 | SUBPLAN SCAN |SUBQUERY_TABLE |101 |99182 | |2 | HASH
-     * DISTINCT| |101 |99169 | |3 | TABLE SCAN |t_test_get_explain2|100000 |66272 | |4 | TABLE SCAN |t1
-     * |100000 |68478 |
-     *
-     * @param jsonText
-     * @return
-     */
-    private String getJsonTreeText(String jsonText, Map<Integer, String> outputFilters) {
-        String[] segs = jsonText.split("\\|");
-        PlanNode planTree = null;
-        for (int i = 0; i < segs.length; i++) {
-            if ((i - 1) % 6 == 0) {
-                String id = segs[i].trim();
-                String operator = segs[i + 1];
-                String name = segs[i + 2].trim();
-                String rowCount = segs[i + 3].trim();
-                String cost = segs[i + 4].trim();
-                // 构建计划树
-                int depth = DiagnoseUtil.recognizeNodeDepth(operator);
-                PlanNode node = new PlanNode();
-                node.setId(Integer.parseInt(id.trim()));
-                node.setName(name);
-                node.setCost(cost);
-                node.setDepth(depth);
-                node.setOperator(operator);
-                node.setRowCount(rowCount);
-                node.setOutputFilter(outputFilters.get(Integer.parseInt(id)));
-                PlanNode tmpPlanNode = DiagnoseUtil.buildPlanTree(planTree, node);
-                if (planTree == null) {
-                    planTree = tmpPlanNode;
-                }
-            }
-        }
-        return JSON.toJSONString(planTree);
-    }
 
     @Override
     public SqlExplain getPhysicalPlanBySqlId(Connection connection, @NonNull String sqlId) throws SQLException {
@@ -248,6 +222,161 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
         return innerGetExecutionDetail(connection, appendSql, null);
     }
 
+    @Override
+    public SqlExplain getQueryProfileByTraceIdAndSessIds(Connection connection, @NonNull String traceId,
+            @NonNull List<String> sessionIds) throws SQLException {
+        try (Statement stmt = connection.createStatement()) {
+            OBExecutionServerInfo executorInfo = getPlanIdByTraceIdAndSessIds(stmt, traceId, sessionIds);
+            Verify.notEmpty(executorInfo.getPlanId(), "plan id");
+            PlanGraph graph = getPlanGraph(stmt, executorInfo);
+            graph.setTraceId(traceId);
+            QueryProfileHelper.refreshGraph(graph, getSqlPlanMonitorRecords(stmt, traceId));
+
+            try {
+                SqlExecDetail execDetail = getExecutionDetailById(connection, traceId);
+                Verify.notNull(execDetail, "exec detail");
+                graph.putOverview(QUEUE_TIME,
+                        TimespanFormatUtil.formatTimespan(execDetail.getQueueTime(), TimeUnit.MICROSECONDS));
+                graph.putOverview(PLAN_TYPE, execDetail.getPlanType());
+                graph.putOverview(IS_HIT_PLAN_CACHE, execDetail.isHitPlanCache() + "");
+                if (graph.getDuration() == 0) {
+                    graph.setDuration(execDetail.getExecTime());
+                    graph.putOverview(DB_TIME,
+                            TimespanFormatUtil.formatTimespan(execDetail.getExecTime(), TimeUnit.MICROSECONDS));
+                }
+            } catch (Exception e) {
+                log.warn("Failed to query sql audit with OB trace_id={}.", traceId, e);
+            }
+            SqlExplain explain;
+            try {
+                explain = innerGetSqlExplainByDbmsXplan(stmt, executorInfo);
+            } catch (Exception e) {
+                log.warn("Failed to query plan by dbms_xplan.display_cursor.", e);
+                explain = new SqlExplain();
+                explain.setShowFormatInfo(false);
+            }
+            explain.setGraph(graph);
+            return explain;
+        }
+    }
+
+    protected OBExecutionServerInfo getPlanIdByTraceIdAndSessIds(Statement stmt, String traceId,
+            List<String> sessionIds)
+            throws SQLException {
+        try {
+            return OBUtils.queryPlanIdByTraceIdFromASH(stmt, traceId, sessionIds, ConnectType.OB_MYSQL);
+        } catch (SQLException e) {
+            return OBUtils.queryPlanIdByTraceIdFromAudit(stmt, traceId, ConnectType.OB_MYSQL);
+        }
+    }
+
+    protected String getPhysicalPlanByDbmsXplan(Statement stmt, OBExecutionServerInfo executorInfo)
+            throws SQLException {
+        String sql = String.format("select dbms_xplan.display_cursor(%s,'ALL','%s',%s,%s)",
+                executorInfo.getPlanId(), executorInfo.getIp(), executorInfo.getPort(), executorInfo.getTenantId());
+        try (ResultSet rs = stmt.executeQuery(sql)) {
+            if (!rs.next()) {
+                throw new SQLException("Failed to query plan by dbms_xplan.display_cursor");
+            }
+            return rs.getString(1);
+        }
+    }
+
+    protected PlanGraph getPlanGraph(Statement stmt, OBExecutionServerInfo executorInfo) throws SQLException {
+        List<OBSqlPlan> planRecords = OBUtils.queryOBSqlPlanByPlanId(stmt, executorInfo, ConnectType.OB_MYSQL);
+        return PlanGraphBuilder.buildPlanGraph(planRecords);
+    }
+
+    protected List<SqlPlanMonitor> getSqlPlanMonitorRecords(Statement stmt, String traceId) throws SQLException {
+        Map<String, String> statId2Name = OBUtils.querySPMStatNames(stmt, ConnectType.OB_MYSQL);
+        return OBUtils.querySqlPlanMonitorStats(
+                stmt, traceId, ConnectType.OB_MYSQL, statId2Name);
+    }
+
+    /**
+     * <pre>
+     *     ===========================================================================================================
+     *     |ID|OPERATOR              |NAME    |EST.ROWS|EST.TIME(us)|REAL.ROWS|REAL.TIME(us)|IO TIME(us)|CPU TIME(us)|
+     *     -----------------------------------------------------------------------------------------------------------
+     *     |0 |PX COORDINATOR MERGE  |        |697     |50767       |2        |545699       |509932     |546311      |
+     *     |1 |+-EXCHANGE OUT DISTR  |:EX10007|697     |50370       |2        |543539       |0          |59          |
+     *     |2 |  +-SORT              |        |697     |50259       |2        |543539       |0          |78          |
+     *     |9 |  | +-SHARED HASH JOIN|        |2570    |47498       |2549     |525890       |0          |7917        |
+     *     ===========================================================================================================
+     *     Outputs & filters:
+     *     -------------------------------------
+     *       0 - output...
+     * </pre>
+     */
+    private SqlExplain innerGetSqlExplainByDbmsXplan(Statement stmt, OBExecutionServerInfo executorInfo)
+            throws SQLException {
+        SqlExplain sqlExplain = new SqlExplain();
+        sqlExplain.setShowFormatInfo(true);
+
+        String planText = getPhysicalPlanByDbmsXplan(stmt, executorInfo);
+        sqlExplain.setOriginalText(planText);
+        String[] segs = planText.split("Outputs & filters")[0].split("\n");
+        String headerLine = segs[1];
+        Matcher matcher = OPERATOR_PATTERN.matcher(headerLine);
+        if (!matcher.matches()) {
+            throw new UnexpectedException("Invalid explain:" + planText);
+        }
+        int operatorStartIndex = matcher.start(1);
+        int operatorStrLen = matcher.end(1) - operatorStartIndex;
+
+        PlanNode tree = null;
+        for (int i = 0; i < segs.length - 4; i++) {
+            PlanNode node = new PlanNode();
+            node.setId(i);
+
+            String line = segs[i + 3];
+            String temp = line.substring(operatorStartIndex);
+            String operatorStr = temp.substring(0, operatorStrLen);
+            DiagnoseUtil.recognizeNodeDepthAndOperator(node, operatorStr);
+
+            String[] others = temp.substring(operatorStrLen).split("\\|");
+            node.setName(others[1]);
+            node.setRowCount(others[2]);
+            node.setCost(others[3]);
+            node.setRealRowCount(others[4]);
+            node.setRealCost(others[5]);
+
+            PlanNode tmpPlanNode = DiagnoseUtil.buildPlanTree(tree, node);
+            if (tree == null) {
+                tree = tmpPlanNode;
+            }
+
+        }
+        sqlExplain.setExpTree(JsonUtils.toJson(tree));
+        return sqlExplain;
+    }
+
+    private PlanGraph getSqlPlanGraphBySql(Statement statement, @NonNull String sql) throws SQLException {
+        String explain = "explain format=json " + sql;
+        StringBuilder planJson = new StringBuilder();
+        try (ResultSet rs = statement.executeQuery(explain)) {
+            while (rs.next()) {
+                planJson.append(rs.getString(1));
+            }
+        }
+        explain = "explain " + sql;
+        List<String> queryPlan = new ArrayList<>();
+        try (ResultSet rs = statement.executeQuery(explain)) {
+            while (rs.next()) {
+                queryPlan.add(rs.getString(1).trim());
+            }
+        }
+        String planText = String.join("\n", queryPlan);
+        String[] segs = planText.split("Outputs & filters");
+        String[] outputSegs = segs[1].split("Used Hint")[0].split("[0-9]+ - output");
+        Map<String, String> outputFilters = new HashMap<>();
+        for (int i = 1; i < outputSegs.length; i++) {
+            outputFilters.put(i - 1 + "", "output" + outputSegs[i]);
+        }
+        return PlanGraphBuilder.buildPlanGraph(
+                JsonUtils.fromJsonMap(planJson.toString(), String.class, Object.class), outputFilters);
+    }
+
     protected SqlExecDetail innerGetExecutionDetail(Connection connection, String appendSql, String traceId)
             throws SQLException {
         OBMySQLInformationExtension informationExtension = new OBMySQLInformationExtension();
@@ -270,5 +399,4 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
                     String.format("Failed to get execution detail, traceId=%s, message=%s", traceId, e.getMessage()));
         }
     }
-
 }

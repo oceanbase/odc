@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
+import com.oceanbase.odc.service.common.ConditionOnServer;
 import com.oceanbase.odc.service.connection.database.DatabaseSyncManager;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
@@ -35,6 +36,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
+@ConditionOnServer
 public class DatabaseSyncSchedules {
     @Autowired
     private DatabaseSyncManager databaseSyncManager;

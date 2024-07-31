@@ -78,6 +78,7 @@ import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.session.model.AsyncExecuteResultResp;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.session.model.SqlTuplesWithViolation;
@@ -132,7 +133,7 @@ public class AuditEventAspect {
     @Pointcut("execution(public * com.oceanbase.odc.server.web.controller.*.*.*(..))")
     public void eventAudit() {}
 
-    @Pointcut("execution(public * com.oceanbase.odc.server.web.controller.v2.ConnectSessionController.getAsyncSqlExecute(..))")
+    @Pointcut("execution(public * com.oceanbase.odc.server.web.controller.v2.ConnectSessionController.getMoreResults(..))")
     public void getAsyncSqlExecuteResult() {}
 
     @Around("eventAudit()")
@@ -164,14 +165,16 @@ public class AuditEventAspect {
     @AfterReturning(value = "getAsyncSqlExecuteResult()", returning = "returnValue")
     public void afterSqlExecute(Object returnValue) {
         try {
-
-            Object data = null;
-            if (returnValue instanceof SuccessResponse) {
-                data = ((SuccessResponse) returnValue).getData();
+            if (!(returnValue instanceof SuccessResponse)) {
+                return;
+            }
+            AsyncExecuteResultResp data = (AsyncExecuteResultResp) ((SuccessResponse) returnValue).getData();
+            List<SqlExecuteResult> results = data.getResults();
+            if (results.isEmpty()) {
+                return;
             }
             List<AuditEventEntity> events = new ArrayList<>();
-            for (Object obj : (List) data) {
-                SqlExecuteResult result = (SqlExecuteResult) obj;
+            for (SqlExecuteResult result : results) {
                 AuditEventResult auditEventResult = getAuditEventResultFromResult(result);
                 if (AuditEventResult.UNFINISHED != auditEventResult) {
                     AuditEventAction action = AuditUtils.getSqlTypeFromResult(result.getSqlType());
@@ -291,7 +294,9 @@ public class AuditEventAspect {
                 .type(auditEventMeta.getType())
                 .startTime(new Date())
                 .serverIpAddress(SystemUtils.getLocalIpAddress())
-                .clientIpAddress(WebRequestUtils.getClientAddress(servletRequest))
+                .clientIpAddress(
+                        AuditUtils.getFirstIpFromRemoteAddress(
+                                WebRequestUtils.getClientAddress(servletRequest)))
                 .organizationId(authenticationFacade.currentOrganizationId())
                 .userId(authenticationFacade.currentUserId())
                 .username(authenticationFacade.currentUsername())

@@ -276,6 +276,8 @@ public class DatabasePermissionServiceTest extends ServiceTestEnv {
         entity.setAuthorizationType(authorizationType);
         entity.setTicketId(ticketId);
         entity.setExpireTime(expireTime);
+        entity.setResourceType(ResourceType.ODC_DATABASE);
+        entity.setResourceId(databaseId);
         return permissionRepository.saveAndFlush(entity);
     }
 

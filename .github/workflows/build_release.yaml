@@ -122,7 +122,7 @@ jobs:
           echo "::notice ::BUILD DOCKER IMAGE DOWNLOAD URL https://farm-use-for-odc.obs.cn-east-3.myhuaweicloud.com/odc-image/$GITHUB_RUN_ID/odc-${{ env.odc_docker_image_tag }}-arm64.tar.gz"
 
   build-web-x86_64:
-    name: Build Web Artifact (x86_64)
+    name: Build Web Artifact Release(AMD64)
     needs: [ calculate-version ]
     runs-on: ubuntu-latest
     env:
@@ -131,184 +131,49 @@ jobs:
     steps:
       - name: Checkout workspace
         uses: actions/checkout@v4
+      - name: action by obfarm++odc_build_amd++BUILD_DOCKER_IMAGE=1;BUILD_RPM=1;BUILD_RPM_VERSION=${{ inputs.rpm_release }};BUILD_DOCKER_TAG=${{ env.odc_docker_image_tag }}
+        uses: ./.github/obfarm/
+        id: build-web-arm64
         with:
-          submodules: "recursive"
-      - name: Setup JDK 8
-        uses: actions/setup-java@v4
-        with:
-          java-version: "8"
-          distribution: "temurin"
-          cache: maven
-      - name: Setup node 16
-        uses: actions/setup-node@v4
-        with:
-          node-version: "16"
-      - name: Build front static resources
-        run: |
-          echo "Current directory: "`pwd`
-          echo "Start build front static resources"
-          pushd client
-          echo "Run npm install pnpm -g"
-          npm install pnpm@8 -g
-          echo "Run pnpm install"
-          pnpm install
-          echo "Run npm run build:odc"
-          npm run build:odc
-          popd
-          echo "Build front static resources success"
-          echo "Start copy resources files"
-          static_resources_path="server/odc-server/src/main/resources/static"
-          if [ ! -d "${static_resources_path}" ]; then
-            echo "mkdir -p ${static_resources_path}"
-            mkdir -p "${static_resources_path}"
-          fi
-          rm --force --recursive --verbose ${static_resources_path}/*
-          cp --force --recursive --verbose client/dist/renderer/* ${static_resources_path}
-          echo "Copy resources files success"
-      - name: Set release version
-        id: set_release_version
-        run: |
-          main_version="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | cut -d - -f 1)"
-          new_version="${main_version}-${odc_rpm_release_number}"
-          echo "new_version=${new_version}" >> $GITHUB_OUTPUT
-          echo "RPM's version is "${new_version}
-          mvn versions:set -DnewVersion="${new_version}"
-          mvn versions:commit
-      - name: Build jar & rpm (x86_64)
-        run: |
-          echo "Start prepare oceanbase-client"
-          pushd import
-          echo "Current dir is "`pwd`          
-          cp ../build-resource/obclient/2.2.4/linux_x86/obclient.tar.gz obclient.tar.gz
-          popd
-          echo "Prepare oceanbase-client success"
-          echo "Start build rpm package"
-          mvn help:system
-          mvn clean install -Dmaven.test.skip=true
-          mvn --file server/odc-server/pom.xml rpm:rpm -Drpm.prefix=/opt
-          echo "Build rpm package success"
-          rm --force --recursive --verbose distribution/docker/resources/odc-*.rpm
-          mkdir -p distribution/docker/resources/
-          mv --verbose server/odc-server/target/rpm/odc-server/RPMS/*/odc-*.rpm distribution/docker/resources/
-          mv --verbose server/odc-server/target/*-executable.jar distribution/jar/odc.jar
-          cp -fv distribution/jar/odc.jar distribution/jar/odc-slim.jar
-          zip -d distribution/jar/odc-slim.jar "BOOT-INF/classes/static/*"
-      - name: Upload jar
-        uses: actions/upload-artifact@v4
-        with:
-          name: odc-artifact-jar
-          path: |
-            distribution/plugins/*.jar
-            distribution/starters/*.jar
-            distribution/jar/*.jar
-      - name: Upload rpm (x86_64)
-        uses: actions/upload-artifact@v4
-        with:
-          name: odc-server-${{ steps.set_release_version.outputs.new_version }}.x86_64.rpm
-          path: distribution/docker/resources/odc-*.rpm
-      - name: Build docker image (x86_64)
-        run: |
-          sed -e "s/DATE_CHANGE/$(date)/" -i distribution/docker/odc/Dockerfile
-          echo "odc_docker_image_tag=${odc_docker_image_tag}"
-          pushd distribution/docker
-          docker build -t docker.io/oceanbase/odc:${odc_docker_image_tag} -f odc/Dockerfile .
-          docker save -o resources/odc-${odc_docker_image_tag}.tar.gz docker.io/oceanbase/odc:${odc_docker_image_tag}
-          popd
-      - name: Upload docker image (x86_64)
-        uses: actions/upload-artifact@v4
-        with:
-          name: odc-${{ env.odc_docker_image_tag }}.tar.gz
-          path: distribution/docker/resources/odc-*.tar.gz
+          pipeline_id: ${{ github.run_id }}
+          project: ${{ github.repository }}
+          jobname: odc_build_amd
 
-  build-client:
-    name: Build Client Artifact
-    needs: [ build-web-x86_64 ]
-    runs-on: macos-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        target: [ win, mac, linux_x86, linux_aarch64 ]
+  build-web-arm:
+    name: Build Web Artifact Release(ARM64)
+    needs: [ calculate-version ]
+    runs-on: ubuntu-latest
+    env:
+      odc_rpm_release_number: ${{ needs.calculate-version.outputs.odc_rpm_release_number }}
+      odc_docker_image_tag: ${{ needs.calculate-version.outputs.odc_docker_image_tag }}
     steps:
       - name: Checkout workspace
         uses: actions/checkout@v4
+      - name: action by obfarm++odc_build_arm++BUILD_DOCKER_IMAGE=1;BUILD_RPM=1;BUILD_RPM_VERSION=${{ inputs.rpm_release }};BUILD_DOCKER_TAG=${{ env.odc_docker_image_tag }}
+        uses: ./.github/obfarm/
+        id: build-web-arm64
         with:
-          submodules: "recursive"
-      - name: Download resources
-        uses: actions/download-artifact@v4
+          pipeline_id: ${{ github.run_id }}
+          project: ${{ github.repository }}
+          jobname: odc_build_arm
+
+  build-client:
+    name: Build Client Artifact
+    needs: [ calculate-version ]
+    runs-on: ubuntu-latest
+    env:
+      odc_rpm_release_number: ${{ needs.calculate-version.outputs.odc_rpm_release_number }}
+      odc_docker_image_tag: ${{ needs.calculate-version.outputs.odc_docker_image_tag }}
+    steps:
+      - name: Checkout workspace
+        uses: actions/checkout@v4
+      - name: action by obfarm++odc_build_client
+        uses: ./.github/obfarm/
+        id: build-client
         with:
-          name: odc-artifact-jar
-          path: jar-dist
-      - name: Change directory
-        run: |
-          mkdir -p client/libraries/java
-          cp jar-dist/jar/odc-slim.jar client/libraries/java/odc.jar
-          mkdir -p client/libraries/java/plugins
-          cp -R jar-dist/plugins/. client/libraries/java/plugins
-          mkdir -p client/libraries/java/starters
-          cp -R jar-dist/starters/. client/libraries/java/starters
-      - name: Setup node 16
-        uses: actions/setup-node@v4
-        with:
-          node-version: "16"
-      - name: Install dependencies
-        uses: pnpm/action-setup@v4
-        with:
-          version: 8
-          run_install: false
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-      - uses: actions/cache@v4
-        name: Setup pnpm cache
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-      - name: Build artifact
-        env:
-          # MACOS_CERTIFICATE: ${{ secrets.PROD_MACOS_CERTIFICATE }}
-          # MACOS_CERTIFICATE_PWD: ${{ secrets.PROD_MACOS_CERTIFICATE_PWD }}
-          # MACOS_CERTIFICATE_NAME: ${{ secrets.PROD_MACOS_CERTIFICATE_NAME }}
-          # MACOS_CI_KEYCHAIN_PWD: ${{ secrets.PROD_MACOS_CI_KEYCHAIN_PWD }}
-          # APPLE_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_APPLE_ID }}
-          # APPLE_TEAM_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_TEAM_ID }}
-          # APPLE_ID_PASSWORD: ${{ secrets.PROD_MACOS_NOTARIZATION_PWD }}
-          # APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.PROD_MACOS_NOTARIZATION_PWD }}
-          WIN_CSC_LINK: ${{ secrets.PROD_WIN_CSC_LINK }}
-          WIN_CSC_KEY_PASSWORD: ${{ secrets.PROD_WIN_CSC_KEY_PASSWORD }}
-        run: |
-          # Turn our base64-encoded certificate back to a regular .p12 file
-          cd client
-          # echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
-          # We need to create a new keychain, otherwise using the certificate will prompt
-          # with a UI dialog asking for the certificate password, which we can't
-          # use in a headless CI environment
-          # security create-keychain -p "$MACOS_CI_KEYCHAIN_PWD" build.keychain 
-          # security default-keychain -s build.keychain
-          # security unlock-keychain -p "$MACOS_CI_KEYCHAIN_PWD" build.keychain
-          # security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
-          # security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" build.keychain
-          # echo "Cert Imported"
-          echo "node-linker=hoisted" >> .npmrc
-          pnpm install
-          # We need to create a new keychain, otherwise using the certificate will prompt
-          # with a UI dialog asking for the certificate password, which we can't
-          # use in a headless CI environment
-          export ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
-          export ODC_BUILD_SKIP_JAR=true
-          export CSC_IDENTITY_AUTO_DISCOVERY=false
-          node ./scripts/client/build.js ${{ matrix.target }}
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: odc-client-pkg-${{ matrix.target }}
-          path: |
-            client/release/*.dmg
-            client/release/*.deb
-            client/release/*.exe
-            client/release/*.AppImage
+          pipeline_id: ${{ github.run_id }}
+          project: ${{ github.repository }}
+          jobname: odc_build_client
 
   release:
     name: Release (Skip for now)

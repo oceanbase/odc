@@ -65,6 +65,9 @@ public class OrganizationAuthenticationInterceptor implements HandlerInterceptor
             "/api/v2/datasource/sessions/*/sqls/*/download",
             "/api/v2/config/**",
             "/api/v2/snippet/builtinSnippets",
+            "/api/v2/datasource/datasources/template",
+            "/api/v2/iam/users/template"
+            "/api/v2/snippet/builtinSnippets",
             "/api/v2/cloud/collaboration/currentProject",
             "/api/v1/cloud/webhook/instanceChange/preCheck",
             "/api/v1/cloud/webhook/instanceChange/processEvent"

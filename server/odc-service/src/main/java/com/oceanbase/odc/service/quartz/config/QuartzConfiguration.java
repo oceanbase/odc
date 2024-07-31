@@ -28,6 +28,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
+import com.oceanbase.odc.service.common.ConditionOnServer;
 import com.oceanbase.odc.service.quartz.OdcJobListener;
 import com.oceanbase.odc.service.quartz.OdcTriggerListener;
 
@@ -38,6 +39,7 @@ import com.oceanbase.odc.service.quartz.OdcTriggerListener;
  */
 
 @Configuration
+@ConditionOnServer
 public class QuartzConfiguration {
 
     @Autowired

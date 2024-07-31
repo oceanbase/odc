@@ -1,0 +1,194 @@
+## Test cases for MySQL
+# access database and table
+- id: 1
+  dialect_type: OB_MYSQL
+  default_schema: default_schema
+  sqls:
+    - select 1 from dual;
+  expected: [ ]
+- id: 2
+  dialect_type: OB_MYSQL
+  default_schema: default_schema
+  sqls:
+    - select * from db1.table1;
+  expected:
+    - schema: db1
+      table: table1
+- id: 3
+  dialect_type: OB_MYSQL
+  default_schema: default_schema
+  sqls:
+    - select * from table1;
+  expected:
+    - schema: default_schema
+      table: table1
+- id: 4
+  dialect_type: OB_MYSQL
+  default_schema: default_schema
+  sqls:
+    - select * from table1;
+    - truncate table db1.table1;
+  expected:
+    - schema: default_schema
+      table: table1
+    - schema: db1
+      table: table1
+- id: 5
+  dialect_type: OB_MYSQL
+  default_schema: default_schema
+  sqls:
+    - use db1;
+  expected:
+    - schema: db1
+      table: ~
+- id: 6
+  dialect_type: OB_MYSQL
+  default_schema: default_schema
+  sqls:
+    - create table db1.table1 (id int);
+  expected:
+    - schema: db1
+      table: table1
+- id: 7
+  dialect_type: OB_MYSQL
+  default_schema: default_schema
+  sqls:
+    - alter table db1.table1 add column name varchar(10);
+  expected:
+    - schema: db1
+      table: table1
+
+# access function or procedure
+- id: 8
+  dialect_type: OB_MYSQL
+  default_schema: default_schema
+  sqls:
+    - select func();
+  expected:
+    - schema: default_schema
+      table: ~
+- id: 9
+  dialect_type: OB_MYSQL
+  default_schema: default_schema
+  sqls:
+    - CREATE FUNCTION `func` (
+      `str1` VARCHAR ( 45 ),
+      `str2` VARCHAR ( 45 )) RETURNS VARCHAR ( 128 ) BEGIN
+      RETURN ( SELECT concat( str1, str2 ) FROM DUAL );
+      END;
+  expected:
+    - schema: default_schema
+      table: ~
+- id: 10
+  dialect_type: OB_MYSQL
+  default_schema: default_schema
+  sqls:
+    - call `schema_name`.`user_procedure`();
+  expected:
+    - schema: schema_name
+      table: ~
+# access DBLink
+- id: 11
+  dialect_type: OB_MYSQL
+  default_schema: default_schema
+  sqls:
+    - "select * from db1.table1@fake_dblink;"
+  expected: [ ]
+
+
+## Test cases for Oracle
+# access database and table
+- id: 12
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - SELECT 1 FROM DUAL;
+  expected: [ ]
+- id: 13
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - SELECT * FROM DB1.TABLE1;
+  expected:
+    - schema: DB1
+      table: TABLE1
+- id: 14
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - SELECT * FROM TABLE1;
+  expected:
+    - schema: DEFAULT_SCHEMA
+      table: TABLE1
+- id: 15
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - SELECT * FROM TABLE1;
+    - TRUNCATE TABLE DB1.TABLE1;
+  expected:
+    - schema: DEFAULT_SCHEMA
+      table: TABLE1
+    - schema: DB1
+      table: TABLE1
+- id: 16
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - ALTER SESSION SET CURRENT_SCHEMA = OTHER_SCHEMA;
+  expected:
+    - schema: OTHER_SCHEMA
+      table: ~
+- id: 17
+  dialect_type: OB_ORACLE
+  default_schema: default_schema
+  sqls:
+    - CREATE TABLE DB1.TABLE1 (ID INT);
+  expected:
+    - schema: DB1
+      table: TABLE1
+- id: 18
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - ALTER TABLE "DB1"."TABLE1" ADD "NAME" VARCHAR(120) DEFAULT NULL;
+  expected:
+    - schema: DB1
+      table: TABLE1
+
+# access function or procedure
+- id: 19
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - SELECT FUNC() FROM DUAL;
+  expected:
+    - schema: DEFAULT_SCHEMA
+      table: ~
+- id: 20
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - CREATE OR REPLACE FUNCTION INCREMENT_BY_ONE (INPUT_NUMBER IN NUMBER)
+      RETURN NUMBER IS
+      BEGIN
+      RETURN INPUT_NUMBER + 1;
+      END INCREMENT_BY_ONE;
+  expected:
+    - schema: DEFAULT_SCHEMA
+      table: ~
+- id: 21
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - CALL SCHEMA_NAME.USER_PROCEDURE();
+  expected:
+    - schema: SCHEMA_NAME
+      table: ~
+# access DBLink
+- id: 22
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "SELECT * FROM DB1.TABLE1@FAKE_DBLINK;"
+  expected: [ ]

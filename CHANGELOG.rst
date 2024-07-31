@@ -3,6 +3,118 @@
 
 New
 ~~~
+- Feat(kill session): adapt global client session and using block in
+  oracle model in kill session (#2978) [zijia.cj]
+- Feat(server): allows some beans to be loaded only in server mode
+  (#2757) [Ang]
+- Feat(sql-execute): supports service layer for query profile (#2423)
+  [LuckyLeo]
+- Feat(CI): support run build release by ob farm (#2738) [niyuhang]
+- Feat(osc): add rate limiter for osc (#2402) [krihy]
+- Feat(logical-database): logical database metadata management (#2358)
+  [pynzzZ]
+- Feat(config):add creator_id to config entity (#2485) [Ang]
+- Feat(table-permission): supports table level authority control (#2324)
+  [XiaoYang, isadba]
+
+Changes
+~~~~~~~
+- Refactor(statefulRoute): generalization plDebugsession to UUID stateId
+  (#2960) [Ang]
+- Refactor: change the CODEOWNERS (#2931) [IL MARE]
+- Chore: update client version (#2821) [Xiao Kang]
+- Refactor(flow): add organizationId to flow instance detail (#2841)
+  [Ang]
+- Refactor(config): Add more fields to configEntity #2493. [Ang]
+
+Fix
+~~~
+- Fix(dlm): don't compare the table structure if syncTableStructure is
+  off (#3014) [guowl3]
+- Fix(login): set max_login_record_time_minutes default value to 0 in
+  web mode (#3003) [Ang]
+- Fix(data-transfer): clean work directory before import (#3006)
+  [LuckyLeo]
+- Fix(alarm): task alarm add exception message (#3004) [Ang]
+- Fix(query-profile): modified the version supporting query profile
+  (#3002) [LuckyLeo]
+- Fix(diagnose): failed to view query profile for distributed OB (#2945)
+  [LuckyLeo]
+- Fix(db-browser): failed to recognize the commit and rollback statement
+  (#2985) [IL MARE]
+- Fix(global-search): unable to stop data object synchronization (#2928)
+  [IL MARE]
+- Fix(pre-check): failed to get sql check result when the check result
+  file is not on this machine (#2943) [IL MARE]
+- Fix(security): update oauth2 client version (#2981) [Ang]
+- Fix(stateful): remove wrong condition (#2975) [Ang]
+- Fix(osc): the online schema change blocked when rate limiter modified
+  before swap table action (#2908) [LioRoger]
+- Fix(web): modify tomcat keepAliveTimeout to 70 seconds (#2964) [Ang]
+- Fix(statefulRoute): failed to list built-in snippets (#2935) [Ang]
+- Fix(permission): fail to submit ticket if lack of database permission
+  (#2946) [LuckyLeo]
+- Fix(statefulRoute): fix list column can't reach (#2953) [Ang]
+- Fix(import): add template api and supports mysql, oracle and doris
+  datasource importing (#2936) [IL MARE]
+- Fix(pl-debug): avoid npe during the pl debugging (#2930) [IL MARE]
+- Fix(mock data): failed to cancel the mock data task (#2850) [zijia.cj]
+- Fix(sql): the sql of modifying session parameter in oracle is error
+  (#2872) [zijia.cj]
+- Fix(migrate): fix login process resource load faild (#2883)
+  [yiminpeng]
+- Fix(flow): failed to startup a ticket (#2798) [IL MARE]
+- Fix(audit): client ip length more langer then audit column
+  client_ip_address (#2863) [CHLK]
+- Fix(ob-sql-parser): failed to recognize interval expression in ob-
+  oracle mode (#2873) [IL MARE]
+- Fix(data viewing): get result-set timeout (#2848) [zijia.cj]
+- Fix(database-permission): mistake caused by code merge (#2786)
+  [XiaoYang]
+- Fix(metadb): change systemConfigDao to systemConfigRepository. (#2467)
+  [Ang]
+- Fix(deserialization): failed to deserialize the page object (#2434)
+  [Ang]
+- Fix(taskframework): daemon job be fired at one time in cluster model
+  (#2408) [krihy]
+
+Security
+~~~~~~~~
+- Security: modify annotations on some service classes (#2955)
+  [LuckyLeo]
+
+
+v4.3.0_bp1 (2024-06-24)
+-----------------------
+
+Fix
+~~~
+- Fix(sql-check): remove the word 'id' from the reserved words (#2796)
+  [IL MARE]
+- Fix(clientMode): fail to migrate metadb in client mode (#2797)
+  [LuckyLeo]
+- Fix(data-transfer): avoid task failure by processing exception
+  messages (#2779) [LuckyLeo]
+- Fix(table-object): there would be an NPE if fail to parse index ddl
+  (#2776) [LuckyLeo]
+- Fix(multiple database): added exclusive description of the subticket
+  (#2762) [zijia.cj]
+- Fix(taskframework): running task be canceled incorrect due to
+  heartbeat timeout  (#2763) [krihy]
+- Fix(schedule): creator is not allowed to alter schedule (#2772)
+  [guowl3]
+- Fix(multiple database): frequently printing logs (#2765) [zijia.cj]
+- Fix(taskframework): cannot rollback stop when destroy executor failed
+  (#2755) [krihy]
+- Fix(client-mode): odc failed to start in client mode (#2761)
+  [LuckyLeo]
+
+
+v4.3.0 (2024-06-11)
+-------------------
+
+New
+~~~
 - Feat(config):add creator_id to config entity (#2485) [Ang]
 - Feat(dlm):upgrade dlm sdk version to 1.1.3 #2601. [guowl3]
 - Feat(projectService): adaption for organization、project、role service
@@ -54,6 +166,8 @@ New
 
 Changes
 ~~~~~~~
+- Refactor(schedule): add without permission method (#2670) [Ang]
+- Refactor(security): add configurable security whitelists (#2714) [Ang]
 - Refactor(flow): add skip auth to flow mapper (#2538) [Ang]
 - Refactor(config): Add more fields to configEntity #2493. [Ang]
 - Chore: use OBE error code (#2413) [yizhou]
@@ -62,6 +176,18 @@ Changes
 
 Fix
 ~~~
+- Fix(schedule): terminate if schedule is invalid (#2725) [guowl3]
+- Fix(structure-comparison): get a wrong result when comparing two same
+  tables (#2720) [IL MARE]
+- Fix(multiple database): change the method when initiating child
+  tickets (#2719) [zijia.cj]
+- Fix(ticket): failed to view all tickets (#2716) [IL MARE]
+- Fix(dlm): upgrade dlm sdk to 1.1.4 (#2697) [guowl3]
+- Fix(dlm): the task status does not update properly when structural
+  synchronization fails (#2712) [guowl3]
+- Fix(ticket): project owners failed to abort a ticket (#2709) [IL MARE]
+- Fix(db-browser): failed to open SYS console when user without query
+  sys permissions (#2708) [zhangxiao]
 - Fix(security): add skip auth annotation (#2704) [guowl3]
 - Fix(dlm): alter execute task job type for data cleaning (#2706) [kiko]
 - Fix(multiple database): the return of method intercepted in multiple

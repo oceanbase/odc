@@ -46,6 +46,7 @@ import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.jpa.SpecificationUtil;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.security.SensitiveDataUtils;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -295,6 +296,10 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Job identity is null");
             return;
         }
+        if (taskResult.getStatus() == JobStatus.CANCELED) {
+            log.warn("Job is canceled by odc server, this result is ignored.");
+            return;
+        }
         JobEntity je = find(taskResult.getJobIdentity().getId());
         if (je == null) {
             log.warn("Job identity is not exists by id {}", taskResult.getJobIdentity().getId());
@@ -326,8 +331,9 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
                 if (taskResult.getStatus() == JobStatus.FAILED) {
                     AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED,
-                            MessageFormat.format("Job execution failed, jobId={0}",
-                                    taskResult.getJobIdentity().getId()));
+                            MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}",
+                                    taskResult.getJobIdentity().getId(),
+                                    SensitiveDataUtils.mask(taskResult.getResultJson())));
                 }
             }
         }

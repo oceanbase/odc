@@ -57,7 +57,7 @@ import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 @SkipAuthorize("odc internal usage")
 public class QuartzJobService {
 
-    @Autowired
+    @Autowired(required = false)
     @Qualifier(value = ("defaultScheduler"))
     private Scheduler scheduler;
 

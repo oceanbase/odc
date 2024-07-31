@@ -46,6 +46,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_table_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_tablegroup_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_tablespace_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_tenant_stmtContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Commit_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_database_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_function_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
@@ -71,6 +72,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Limit_clauseContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.No_table_select_with_order_and_limitContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Opt_for_update_waitContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factorContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Rollback_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Scope_or_scope_aliasContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Select_clause_set_with_order_and_limitContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Select_stmtContext;
@@ -243,6 +245,18 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
     @Override
     public void enterSet_charset_stmt(Set_charset_stmtContext ctx) {
         setSqlType(SqlType.SET);
+    }
+
+    @Override
+    public void enterCommit_stmt(Commit_stmtContext ctx) {
+        setSqlType(SqlType.COMMIT);
+        this.dbObjectType = DBObjectType.OTHERS;
+    }
+
+    @Override
+    public void enterRollback_stmt(Rollback_stmtContext ctx) {
+        setSqlType(SqlType.ROLLBACK);
+        this.dbObjectType = DBObjectType.OTHERS;
     }
 
     @Override
@@ -537,4 +551,5 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
         private String name;
         private Boolean isStored;
     }
+
 }

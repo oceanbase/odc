@@ -207,5 +207,4 @@ public class ScheduleController {
             @RequestBody RateLimitConfiguration limiterConfig) {
         return Responses.single(scheduleService.updateDlmRateLimit(id, limiterConfig));
     }
-
 }

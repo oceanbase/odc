@@ -583,6 +583,8 @@ VALUES ('odc.notification.max-resend-times', '3', 'odc', 'default', 'master', '�
 update `id`=`id`;
 insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
 VALUES ('odc.notification.host-black-list', '', 'odc', 'default', 'master', 'The Hosts in this black list are NOT allowed to prevent SSRF security vulnerabilities. The black list is empty by default, allowing access to all Hosts.') ON DUPLICATE KEY update `id`=`id`;
+insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
+VALUES ('odc.notification.send-timeout-millis', '10000', 'odc', 'default', 'master', 'The network timeout for sending notifications. Default to 10000ms') ON DUPLICATE KEY update `id`=`id`;
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.lab.resource.mysql-init-script-template',
 'create user if not exists {{dbUsername}}@''%'' identified by {{password}};  create database if not exists {{dbName}};  grant all privileges on {{dbName}}.* to {{dbUsername}}@''%'';  grant select on oceanbase.gv$tenant to {{dbUsername}}@''%'';  grant select on oceanbase.gv$unit to {{dbUsername}}@''%'';  grant select on oceanbase.gv$table to {{dbUsername}}@''%'';  grant select on oceanbase.gv$sysstat to {{dbUsername}}@''%'';  grant select on oceanbase.gv$memory to {{dbUsername}}@''%'';  grant select on oceanbase.gv$memstore to {{dbUsername}}@''%'';  grant select on oceanbase.gv$sql_audit to {{dbUsername}}@''%'';  grant select on oceanbase.gv$plan_cache_plan_stat to {{dbUsername}}@''%'';  grant select on oceanbase.gv$plan_cache_plan_explain to {{dbUsername}}@''%'';'
@@ -658,6 +660,9 @@ VALUES
   ( 'odc.rollback.query-data-batch-size', '1000', '生成备份回滚方案批量查询数据的数量' )
   ON DUPLICATE KEY UPDATE `id` = `id`;
 
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.osc.rate-limit.enabled','false', 'enable OSC rate limit')
+  ON DUPLICATE KEY UPDATE `id`=`id`;
+
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.osc.cloud.enabled-instance-ids',
   '', 'instances that enable OSC')
   ON DUPLICATE KEY UPDATE `id`=`id`;
@@ -711,6 +716,7 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.data-security.masking.enabled', 'true', '是否开启数据脱敏，默认为开启' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.partition-plan.schedule-cron', '0 0 * * * ?', '默认调度周期：每天 0 点' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.trigger.minimum-interval', '600', '计划任务最小触发间隔，默认值：600 ，单位：秒' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 
 --
 -- v4.2.1

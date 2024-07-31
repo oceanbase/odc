@@ -20,6 +20,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 
 import org.pf4j.Extension;
 
@@ -32,8 +33,8 @@ import com.oceanbase.odc.common.util.tableformat.Table;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.OBException;
 import com.oceanbase.odc.core.shared.model.SqlExecDetail;
-import com.oceanbase.odc.core.shared.model.SqlExplain;
 import com.oceanbase.odc.plugin.connect.api.SqlDiagnoseExtensionPoint;
+import com.oceanbase.odc.plugin.connect.model.diagnose.SqlExplain;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -92,4 +93,11 @@ public class MySQLDiagnoseExtensionPoint implements SqlDiagnoseExtensionPoint {
     public SqlExecDetail getExecutionDetailBySql(Connection connection, @NonNull String sql) throws SQLException {
         throw new UnsupportedOperationException("Not supported for mysql mode");
     }
+
+    @Override
+    public SqlExplain getQueryProfileByTraceIdAndSessIds(Connection connection, @NonNull String traceId,
+            @NonNull List<String> sessionIds) throws SQLException {
+        throw new UnsupportedOperationException("Not supported for mysql mode");
+    }
+
 }

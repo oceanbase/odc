@@ -39,7 +39,9 @@ public enum DatabasePermissionType implements Translatable {
 
     QUERY("query"),
     CHANGE("change"),
-    EXPORT("export");
+    EXPORT("export"),
+    // The user has no database permission but has permissions to access the inner tables
+    ACCESS("access");
 
     private final String action;
 
@@ -52,14 +54,17 @@ public enum DatabasePermissionType implements Translatable {
     }
 
     public static DatabasePermissionType from(String action) {
-        if ("query".equalsIgnoreCase(action)) {
+        if (QUERY.action.equalsIgnoreCase(action)) {
             return DatabasePermissionType.QUERY;
         }
-        if ("change".equalsIgnoreCase(action)) {
+        if (CHANGE.action.equalsIgnoreCase(action)) {
             return DatabasePermissionType.CHANGE;
         }
-        if ("export".equalsIgnoreCase(action)) {
+        if (EXPORT.action.equalsIgnoreCase(action)) {
             return DatabasePermissionType.EXPORT;
+        }
+        if (ACCESS.action.equalsIgnoreCase(action)) {
+            return DatabasePermissionType.ACCESS;
         }
         return null;
     }

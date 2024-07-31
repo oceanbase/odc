@@ -26,6 +26,7 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.metadb.connection.ConnectionEntity;
+import com.oceanbase.odc.service.common.ConditionOnServer;
 import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.connection.ConnectionSessionHistoryService;
@@ -42,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 @ConditionalOnProperty(value = "odc.lab.enabled", havingValue = "true")
+@ConditionOnServer
 public class LabSchedules {
     @Autowired
     private ResourceService resourceService;

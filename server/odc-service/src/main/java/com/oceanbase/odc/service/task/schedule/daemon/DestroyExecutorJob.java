@@ -82,8 +82,8 @@ public class DestroyExecutorJob implements Job {
                     if (e.getMessage() != null &&
                             !e.getMessage().startsWith(JobConstants.ODC_EXECUTOR_CANNOT_BE_DESTROYED)) {
                         AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTOR_DESTROY_FAILED,
-                                MessageFormat.format("Job executor destroy failed, jobId={0}",
-                                        lockedEntity.getId()));
+                                MessageFormat.format("Job executor destroy failed, jobId={0}, message={1}",
+                                        lockedEntity.getId(), e.getMessage()));
                     }
                     throw new TaskRuntimeException(e);
                 }

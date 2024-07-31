@@ -80,6 +80,9 @@ public class AuditUtils {
                 case APPLY_DATABASE_PERMISSION:
                     type = AuditEventType.APPLY_DATABASE_PERMISSION;
                     break;
+                case APPLY_TABLE_PERMISSION:
+                    type = AuditEventType.APPLY_TABLE_PERMISSION;
+                    break;
                 case STRUCTURE_COMPARISON:
                     type = AuditEventType.STRUCTURE_COMPARISON;
                     break;
@@ -186,6 +189,8 @@ public class AuditUtils {
                     return AuditEventAction.CREATE_APPLY_PROJECT_PERMISSION_TASK;
                 case APPLY_DATABASE_PERMISSION:
                     return AuditEventAction.CREATE_APPLY_DATABASE_PERMISSION_TASK;
+                case APPLY_TABLE_PERMISSION:
+                    return AuditEventAction.CREATE_APPLY_TABLE_PERMISSION_TASK;
             }
         }
         if (action == AuditEventAction.STOP_TASK) {
@@ -216,6 +221,8 @@ public class AuditUtils {
                     return AuditEventAction.STOP_APPLY_PROJECT_PERMISSION_TASK;
                 case APPLY_DATABASE_PERMISSION:
                     return AuditEventAction.STOP_APPLY_DATABASE_PERMISSION_TASK;
+                case APPLY_TABLE_PERMISSION:
+                    return AuditEventAction.STOP_APPLY_TABLE_PERMISSION_TASK;
             }
         }
         if (action == AuditEventAction.EXECUTE_TASK) {
@@ -274,6 +281,8 @@ public class AuditUtils {
                     return AuditEventAction.APPROVE_APPLY_PROJECT_PERMISSION_TASK;
                 case APPLY_DATABASE_PERMISSION:
                     return AuditEventAction.APPROVE_APPLY_DATABASE_PERMISSION_TASK;
+                case APPLY_TABLE_PERMISSION:
+                    return AuditEventAction.APPROVE_APPLY_TABLE_PERMISSION_TASK;
             }
         }
         if (action == AuditEventAction.REJECT) {
@@ -306,10 +315,38 @@ public class AuditUtils {
                     return AuditEventAction.REJECT_APPLY_PROJECT_PERMISSION_TASK;
                 case APPLY_DATABASE_PERMISSION:
                     return AuditEventAction.REJECT_APPLY_DATABASE_PERMISSION_TASK;
+                case APPLY_TABLE_PERMISSION:
+                    return AuditEventAction.REJECT_APPLY_TABLE_PERMISSION_TASK;
             }
         }
         // 如果不是流程相关的 action，则返回原值
         return action;
     }
 
+    /**
+     * <pre>
+     * Get the first ip of {@param remoteAddress}.
+     * The X-Forwarded-For header may contain multiple IP addresses, separated
+     * by commas, and typically, the first non-unknown IP is considered to be the client's IP address.
+     * </pre>
+     *
+     * @author keyang.lk
+     * @date 2024-07-02
+     * @param remoteAddress
+     * @return The first ip of remoteAddress
+     */
+    public static String getFirstIpFromRemoteAddress(String remoteAddress) {
+        if (remoteAddress == null || remoteAddress.isEmpty() || "unknown".equalsIgnoreCase(remoteAddress)) {
+            return "N/A";
+        }
+        // 处理X-Forwarded-For可能包含多个IP地址的情况（由逗号分隔），通常第一个非unknown的IP是客户端的IP
+        String[] ips = remoteAddress.split(",");
+        for (String ip : ips) {
+            if (ip != null && !ip.isEmpty() &&
+                    !"unknown".equalsIgnoreCase(ip.trim())) {
+                return ip.trim();
+            }
+        }
+        return remoteAddress;
+    }
 }

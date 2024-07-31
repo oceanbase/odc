@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -33,10 +32,12 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.metadb.iam.OrganizationEntity;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
+import com.oceanbase.odc.service.common.ConditionOnServer;
 import com.oceanbase.odc.service.config.UserConfigKeys;
 import com.oceanbase.odc.service.config.UserConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +48,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
+@ConditionOnServer
 public class DBSchemaSyncScheduler {
 
     @Autowired
@@ -54,6 +56,9 @@ public class DBSchemaSyncScheduler {
 
     @Autowired
     private ConnectionService connectionService;
+
+    @Autowired
+    private DatabaseService databaseService;
 
     @Autowired
     private OrganizationRepository organizationRepository;
@@ -64,15 +69,15 @@ public class DBSchemaSyncScheduler {
     @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
 
-    @Value("${odc.database.schema.global-search.enabled:true}")
-    private boolean enableGlobalSearch;
+    @Autowired
+    private GlobalSearchProperties globalSearchProperties;
 
     private static final String LOCK_KEY = "db-schema-sync-schedule-lock";
     private static final long LOCK_HOLD_TIME_SECONDS = 10;
 
     @Scheduled(cron = "${odc.database.schema.sync.cron-expression:0 0 2 * * ?}")
     public void sync() throws InterruptedException {
-        if (!enableGlobalSearch) {
+        if (!globalSearchProperties.isEnableGlobalSearch()) {
             log.info("Skip syncing database schema due to global search is disabled");
             return;
         }
@@ -91,6 +96,7 @@ public class DBSchemaSyncScheduler {
     }
 
     private void doSync() {
+        this.databaseService.refreshExpiredPendingDBObjectStatus();
         List<ConnectionConfig> dataSources = new ArrayList<>();
         Map<OrganizationType, List<OrganizationEntity>> orgMap = organizationRepository.findAll().stream()
                 .collect(Collectors.groupingBy(OrganizationEntity::getType));

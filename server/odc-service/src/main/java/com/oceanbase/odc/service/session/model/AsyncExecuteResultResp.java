@@ -27,6 +27,7 @@ import lombok.Data;
 public class AsyncExecuteResultResp {
     List<SqlExecuteResult> results;
     private String traceId;
+    private String sqlId;
     private int total;
     private int count;
     private boolean finished;
@@ -36,6 +37,7 @@ public class AsyncExecuteResultResp {
         this.finished = finished;
         this.results = results;
         traceId = context.getCurrentExecutingSqlTraceId();
+        sqlId = context.getCurrentExecutingSqlId();
         total = context.getToBeExecutedSqlCount();
         count = context.getTotalExecutedSqlCount();
         sql = context.getCurrentExecutingSql();

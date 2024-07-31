@@ -44,6 +44,7 @@ public class AsyncExecuteContext {
     private Future<List<JdbcGeneralResult>> future;
     private String currentExecutingSqlTraceId;
     private String currentExecutingSql;
+    private String currentExecutingSqlId;
     private int totalExecutedSqlCount = 0;
 
     public AsyncExecuteContext(List<SqlTuple> sqlTuples, Map<String, Object> contextMap) {
@@ -70,8 +71,12 @@ public class AsyncExecuteContext {
     /**
      * only return the incremental results
      */
-    public List<JdbcGeneralResult> getMoreSqlExecutionResults() {
+    public List<JdbcGeneralResult> getMoreSqlExecutionResults(long timeoutMillis) {
         List<JdbcGeneralResult> copiedResults = new ArrayList<>();
+
+        long expect = System.currentTimeMillis() + timeoutMillis;
+        while (!isFinished() && System.currentTimeMillis() <= expect && results.isEmpty()) {
+        }
         while (!results.isEmpty()) {
             copiedResults.add(results.poll());
         }
