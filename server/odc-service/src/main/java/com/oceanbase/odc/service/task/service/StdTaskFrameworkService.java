@@ -295,6 +295,10 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Job identity is null");
             return;
         }
+        if (taskResult.getStatus() == JobStatus.CANCELED) {
+            log.warn("Job is canceled by odc server, this result is ignored.");
+            return;
+        }
         JobEntity je = find(taskResult.getJobIdentity().getId());
         if (je == null) {
             log.warn("Job identity is not exists by id {}", taskResult.getJobIdentity().getId());

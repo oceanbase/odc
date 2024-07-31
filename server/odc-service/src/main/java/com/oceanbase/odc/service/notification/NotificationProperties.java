@@ -51,4 +51,6 @@ public class NotificationProperties {
 
     private List<String> hostBlackList;
 
+    private long sendTimeoutMillis;
+
 }

@@ -116,6 +116,7 @@ public class DLMService {
                         Collectors.toList());
     }
 
+    @SkipAuthorize("odc internal usage")
     public TaskStatus getTaskStatus(Long scheduleTaskId) {
         return getTaskStatus(findByScheduleTaskId(scheduleTaskId));
     }

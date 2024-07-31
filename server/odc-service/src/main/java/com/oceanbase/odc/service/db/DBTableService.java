@@ -97,6 +97,7 @@ public class DBTableService {
                     .execute((ConnectionCallback<DBTable>) con -> getTableExtensionPoint(connectionSession)
                             .getDetail(con, schemaName, tableName));
         } catch (Exception e) {
+            log.warn("Query table information failed, table name=%s.", e);
             throw new UnexpectedException(String
                     .format("Query table information failed, table name=%s, error massage=%s", tableName,
                             e.getMessage()));
