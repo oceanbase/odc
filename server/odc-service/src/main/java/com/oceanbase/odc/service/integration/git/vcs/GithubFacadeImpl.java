@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.integration.git.vcs;
 
 import java.time.Duration;
@@ -47,9 +46,9 @@ public class GithubFacadeImpl implements VcsFacade {
     public GithubFacadeImpl(String apiUrl) {
         this.apiUrl = apiUrl;
         this.restTemplate = new RestTemplateBuilder()
-            .setConnectTimeout(Duration.ofSeconds(10))
-            .setReadTimeout(Duration.ofSeconds(10))
-            .build();
+                .setConnectTimeout(Duration.ofSeconds(10))
+                .setReadTimeout(Duration.ofSeconds(10))
+                .build();
     }
 
     @Override

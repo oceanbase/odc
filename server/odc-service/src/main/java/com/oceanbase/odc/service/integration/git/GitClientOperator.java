@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.integration.git;
 
 import java.io.ByteArrayOutputStream;
@@ -101,11 +100,6 @@ public class GitClientOperator {
         return new GitClientOperator(dest);
     }
 
-    /**
-     * 
-     * @return
-     * @throws GitAPIException
-     */
     public Set<String> listBranches() throws GitAPIException {
         return git.branchList().setListMode(ListMode.ALL).call()
                 .stream()
@@ -154,7 +148,7 @@ public class GitClientOperator {
     }
 
     /**
-     * @param path absolute path
+     * @param path relative path
      */
     public void add(String path) throws GitAPIException {
         git.add().addFilepattern(path).call();
