@@ -71,9 +71,9 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
             // permission to access it.
             Database sourceDb = databaseService.detail(parameters.getSourceDatabaseId());
             Database targetDb = databaseService.detail(parameters.getTargetDataBaseId());
-            if (!dataArchiveParameters.getSyncTableStructure().isEmpty()) {
+            if (!parameters.getSyncTableStructure().isEmpty()) {
                 supportSyncTableStructure(sourceDb.getDataSource().getDialectType(), targetDb.getDataSource()
-                    .getDialectType());
+                        .getDialectType());
             }
             ConnectionConfig sourceDs = sourceDb.getDataSource();
             sourceDs.setDefaultSchema(sourceDb.getName());
