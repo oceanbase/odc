@@ -423,9 +423,13 @@ public class DBSchemaExtractor {
 
         @Override
         public RelationFactor visitSql_stmt(Sql_stmtContext ctx) {
-            OBOracleRelationFactorVisitor visitor = new OBOracleRelationFactorVisitor();
-            visitor.visit(ctx.getChild(0).getChild(0));
-            identities.addAll(visitor.getIdentities());
+            try {
+                OBOracleRelationFactorVisitor visitor = new OBOracleRelationFactorVisitor();
+                visitor.visit(ctx.getChild(0).getChild(0));
+                identities.addAll(visitor.getIdentities());
+            } catch (Exception e) {
+                // eat the exception
+            }
             return null;
         }
 
