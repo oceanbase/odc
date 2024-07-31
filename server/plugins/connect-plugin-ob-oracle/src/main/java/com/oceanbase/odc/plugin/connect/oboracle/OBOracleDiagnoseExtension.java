@@ -19,18 +19,28 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
+import java.util.Map;
 
 import org.pf4j.Extension;
 
 import com.alibaba.fastjson.JSON;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.VersionUtils;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.OBException;
+import com.oceanbase.odc.core.shared.model.OBExecutionServerInfo;
+import com.oceanbase.odc.core.shared.model.OBSqlPlan;
 import com.oceanbase.odc.core.shared.model.PlanNode;
 import com.oceanbase.odc.core.shared.model.SqlExecDetail;
-import com.oceanbase.odc.core.shared.model.SqlExplain;
+import com.oceanbase.odc.core.shared.model.SqlPlanMonitor;
+import com.oceanbase.odc.core.sql.util.OBUtils;
+import com.oceanbase.odc.plugin.connect.model.diagnose.PlanGraph;
+import com.oceanbase.odc.plugin.connect.model.diagnose.SqlExplain;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLDiagnoseExtension;
 import com.oceanbase.odc.plugin.connect.obmysql.diagnose.DiagnoseUtil;
+import com.oceanbase.odc.plugin.connect.obmysql.diagnose.PlanGraphBuilder;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -137,7 +147,7 @@ public class OBOracleDiagnoseExtension extends OBMySQLDiagnoseExtension {
     @Override
     public SqlExecDetail getExecutionDetailById(Connection connection, @NonNull String id) throws SQLException {
         // v$sql_audit中对于分区表会有多条记录，需要过滤
-        String appendSql = "TRACE_ID = '" + id + "' AND LENGTH(QUERY_SQL) > 0;";
+        String appendSql = "TRACE_ID = '" + id + "' AND LENGTH(QUERY_SQL) > 0 AND IS_INNER_SQL = 0;";
         return innerGetExecutionDetail(connection, appendSql, id);
     }
 
@@ -172,4 +182,48 @@ public class OBOracleDiagnoseExtension extends OBMySQLDiagnoseExtension {
         }
     }
 
+    @Override
+    protected OBExecutionServerInfo getPlanIdByTraceIdAndSessIds(Statement stmt, String traceId,
+            List<String> sessionIds)
+            throws SQLException {
+        try {
+            return OBUtils.queryPlanIdByTraceIdFromASH(stmt, traceId, sessionIds, ConnectType.OB_ORACLE);
+        } catch (SQLException e) {
+            return OBUtils.queryPlanIdByTraceIdFromAudit(stmt, traceId, ConnectType.OB_ORACLE);
+        }
+    }
+
+    @Override
+    protected String getPhysicalPlanByDbmsXplan(Statement stmt, OBExecutionServerInfo executorInfo)
+            throws SQLException {
+        try (ResultSet rs =
+                stmt.executeQuery("select VALUE from V$NLS_PARAMETERS where PARAMETER='NLS_CHARACTERSET'")) {
+            if (rs.next() && StringUtils.containsIgnoreCase(rs.getString(1), "GBK")) {
+                stmt.execute("set names gbk");
+            }
+        }
+        String sql = String.format("select * from TABLE(DBMS_XPLAN.DISPLAY_CURSOR(%s,'ALL','%s',%s,%s))",
+                executorInfo.getPlanId(), executorInfo.getIp(), executorInfo.getPort(), executorInfo.getTenantId());
+        StringBuilder builder = new StringBuilder();
+        try (ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                builder.append(rs.getString(1)).append("\n");
+            }
+        }
+        if (builder.length() == 0) {
+            throw new SQLException("Failed to query plan by dbms_xplan.display_cursor");
+        }
+        return builder.toString();
+    }
+
+    protected PlanGraph getPlanGraph(Statement stmt, OBExecutionServerInfo executorInfo) throws SQLException {
+        List<OBSqlPlan> planRecords = OBUtils.queryOBSqlPlanByPlanId(stmt, executorInfo, ConnectType.OB_ORACLE);
+        return PlanGraphBuilder.buildPlanGraph(planRecords);
+    }
+
+    protected List<SqlPlanMonitor> getSqlPlanMonitorRecords(Statement stmt, String traceId) throws SQLException {
+        Map<String, String> statId2Name = OBUtils.querySPMStatNames(stmt, ConnectType.OB_ORACLE);
+        return OBUtils.querySqlPlanMonitorStats(
+                stmt, traceId, ConnectType.OB_ORACLE, statId2Name);
+    }
 }

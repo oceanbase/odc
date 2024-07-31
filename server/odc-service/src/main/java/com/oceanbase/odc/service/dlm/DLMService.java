@@ -111,9 +111,10 @@ public class DLMService {
                         Collectors.toList());
     }
 
+    @SkipAuthorize("odc internal usage")
     public TaskStatus getTaskStatus(Long scheduleTaskId) {
-        Set<TaskStatus> collect = findByScheduleTaskId(scheduleTaskId).stream().map(DlmTableUnit::getStatus).collect(
-                Collectors.toSet());
+        Set<TaskStatus> collect = findByScheduleTaskId(scheduleTaskId).stream()
+                .map(DlmTableUnit::getStatus).collect(Collectors.toSet());
         if (collect.contains(TaskStatus.FAILED)) {
             return TaskStatus.FAILED;
         }

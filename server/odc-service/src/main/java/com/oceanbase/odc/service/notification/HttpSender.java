@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -48,6 +49,9 @@ import com.oceanbase.odc.service.notification.model.WebhookChannelConfig;
  */
 @Component("Webhook")
 public class HttpSender implements MessageSender {
+
+    @Autowired
+    private NotificationProperties notificationProperties;
 
     @Override
     public ChannelType type() {
@@ -112,8 +116,8 @@ public class HttpSender implements MessageSender {
 
     private RestTemplate getRestTemplate(WebhookChannelConfig channelConfig) {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(10000);
-        requestFactory.setReadTimeout(10000);
+        requestFactory.setConnectTimeout((int) notificationProperties.getSendTimeoutMillis());
+        requestFactory.setReadTimeout((int) notificationProperties.getSendTimeoutMillis());
         RestTemplate restTemplate = new RestTemplate(requestFactory);
 
         if (StringUtils.isEmpty(channelConfig.getHttpProxy())) {

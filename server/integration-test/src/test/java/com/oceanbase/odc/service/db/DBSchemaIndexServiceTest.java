@@ -59,7 +59,7 @@ import com.oceanbase.odc.service.db.schema.model.QueryDBObjectResp;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
-import com.oceanbase.odc.service.permission.database.DatabasePermissionHelper;
+import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.test.tool.TestRandom;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -88,7 +88,7 @@ public class DBSchemaIndexServiceTest extends ServiceTestEnv {
     @MockBean
     private ConnectionService connectionService;
     @MockBean
-    private DatabasePermissionHelper databasePermissionHelper;
+    private DBResourcePermissionHelper permissionHelper;
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
@@ -135,7 +135,7 @@ public class DBSchemaIndexServiceTest extends ServiceTestEnv {
         Mockito.when(connectionService.getBasicWithoutPermissionCheck(Mockito.eq(CONNECTION_ID)))
                 .thenReturn(getConnectionConfig());
         Mockito.when(connectionService.mapByIdIn(Mockito.anySet())).thenReturn(getConnectionMap());
-        Mockito.when(databasePermissionHelper.getPermissions(Mockito.anySet())).thenReturn(
+        Mockito.when(permissionHelper.getDBPermissions(Mockito.anySet())).thenReturn(
                 getDatabaseId2PermissionTypes(databases.stream().map(Database::getId).collect(Collectors.toList())));
     }
 

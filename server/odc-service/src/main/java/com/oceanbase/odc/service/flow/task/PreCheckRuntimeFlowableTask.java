@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -44,7 +45,6 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
@@ -55,7 +55,9 @@ import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.DBResource;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.database.model.UnauthorizedDBResource;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
@@ -71,15 +73,17 @@ import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
+import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
-import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
+import com.oceanbase.odc.service.permission.table.TablePermissionService;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.model.JobType;
-import com.oceanbase.odc.service.session.util.SchemaExtractor;
+import com.oceanbase.odc.service.session.util.DBSchemaExtractor;
+import com.oceanbase.odc.service.session.util.DBSchemaExtractor.DBSchemaIdentity;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckService;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
@@ -115,11 +119,17 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     @Autowired
     private DatabaseService databaseService;
     @Autowired
+    private DBResourcePermissionHelper dbResourcePermissionHelper;
+    @Autowired
     private SqlCheckService sqlCheckService;
     @Autowired
     private PreCheckTaskProperties preCheckTaskProperties;
     @Autowired
     private ObjectStorageFacade storageFacade;
+
+    @Autowired
+    private TablePermissionService tablePermissionService;
+
     private static final String CHECK_RESULT_FILE_NAME = "sql-check-result.json";
 
     @Override
@@ -302,7 +312,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                     return;
                 }
             }
-            doSqlCheckAndDatabasePermissionCheck(preCheckTaskEntity, riskLevelDescriber, taskType);
+            doSqlCheckAndResourcePermissionCheck(preCheckTaskEntity, riskLevelDescriber, taskType);
             if (isIntercepted(this.sqlCheckResult, this.permissionCheckResult)) {
                 throw new ServiceTaskError(new RuntimeException());
             }
@@ -313,8 +323,9 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             Map<Long, RiskLevelDescriber> databaseId2RiskLevelDescriber) {
         TaskType taskType = taskEntity.getTaskType();
         doMultipleSqlCheckAndDatabasePermissionCheck(preCheckTaskEntity, databaseId2RiskLevelDescriber, taskType);
-        this.permissionCheckResult.setUnauthorizedDatabases(
-                this.permissionCheckResult.getUnauthorizedDatabases().stream().distinct().collect(Collectors.toList()));
+        this.permissionCheckResult.setUnauthorizedDBResources(
+                this.permissionCheckResult.getUnauthorizedDBResources().stream().distinct()
+                        .collect(Collectors.toList()));
         if (isIntercepted(this.multipleSqlCheckTaskResult, this.permissionCheckResult)) {
             throw new ServiceTaskError(new RuntimeException());
         }
@@ -336,7 +347,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             }
         }
         if (Objects.nonNull(permissionCheckResult)) {
-            return CollectionUtils.isNotEmpty(permissionCheckResult.getUnauthorizedDatabases());
+            return CollectionUtils.isNotEmpty(permissionCheckResult.getUnauthorizedDBResources());
         }
         return false;
     }
@@ -354,24 +365,24 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             return true;
         }
         if (Objects.nonNull(permissionCheckResult)) {
-            return CollectionUtils.isNotEmpty(permissionCheckResult.getUnauthorizedDatabases());
+            return CollectionUtils.isNotEmpty(permissionCheckResult.getUnauthorizedDBResources());
         }
         return false;
     }
 
-    private void doSqlCheckAndDatabasePermissionCheck(TaskEntity preCheckTaskEntity, RiskLevelDescriber describer,
+    private void doSqlCheckAndResourcePermissionCheck(TaskEntity preCheckTaskEntity, RiskLevelDescriber describer,
             TaskType taskType) {
         List<OffsetString> sqls = new ArrayList<>();
         this.overLimit = getSqlContentUntilOverLimit(sqls, preCheckTaskProperties.getMaxSqlContentBytes());
-        List<UnauthorizedDatabase> unauthorizedDatabases = new ArrayList<>();
+        List<UnauthorizedDBResource> unauthorizedDBResource = new ArrayList<>();
         List<CheckViolation> violations = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(sqls)) {
             violations.addAll(this.sqlCheckService.check(Long.valueOf(describer.getEnvironmentId()),
                     describer.getDatabaseName(), sqls, connectionConfig));
-            unauthorizedDatabases = getUnauthorizedDatabases(sqls, connectionConfig.getId(),
-                    preCheckTaskEntity.getDatabaseName(), this.connectionConfig.getDialectType(), taskType);
+            unauthorizedDBResource = getUnauthorizedDBResources(sqls, connectionConfig,
+                    preCheckTaskEntity.getDatabaseName(), taskType);
         }
-        this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDatabases);
+        this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDBResource);
         this.sqlCheckResult = SqlCheckTaskResult.success(violations);
         try {
             storeTaskResultToFile(preCheckTaskEntity.getId(), this.sqlCheckResult);
@@ -381,24 +392,33 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         }
     }
 
-    private List<UnauthorizedDatabase> getUnauthorizedDatabases(List<OffsetString> sqls,
-            Long connectionId, String defaultSchema, DialectType dialectType, TaskType taskType) {
-        Map<String, Set<SqlType>> schemaName2SqlTypes = SchemaExtractor.listSchemaName2SqlTypes(
+    private List<UnauthorizedDBResource> getUnauthorizedDBResources(List<OffsetString> sqls,
+            ConnectionConfig config, String defaultSchema, TaskType taskType) {
+        Set<String> existedDatabaseNames =
+                databaseService.listDatabasesByConnectionIds(Collections.singleton(connectionConfig.getId()))
+                        .stream().filter(database -> database.getExisted()).map(database -> database.getName())
+                        .collect(Collectors.toSet());
+        Map<DBSchemaIdentity, Set<SqlType>> identity2Types = DBSchemaExtractor.listDBSchemasWithSqlTypes(
                 sqls.stream().map(e -> SqlTuple.newTuple(e.getStr())).collect(Collectors.toList()),
-                defaultSchema, dialectType);
-        Map<String, Set<DatabasePermissionType>> schemaName2PermissionTypes = new HashMap<>();
-        for (Entry<String, Set<SqlType>> entry : schemaName2SqlTypes.entrySet()) {
+                config.getDialectType(), defaultSchema).entrySet().stream()
+                .filter(entry -> Objects.isNull(entry.getKey().getSchema())
+                        || existedDatabaseNames.contains(entry.getKey().getSchema()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));;
+        Map<DBResource, Set<DatabasePermissionType>> resource2PermissionTypes = new HashMap<>();
+        for (Entry<DBSchemaIdentity, Set<SqlType>> entry : identity2Types.entrySet()) {
+            DBSchemaIdentity identity = entry.getKey();
             Set<SqlType> sqlTypes = entry.getValue();
             if (CollectionUtils.isNotEmpty(sqlTypes)) {
                 Set<DatabasePermissionType> permissionTypes = sqlTypes.stream().map(DatabasePermissionType::from)
                         .filter(Objects::nonNull).collect(Collectors.toSet());
                 permissionTypes.addAll(DatabasePermissionType.from(taskType));
                 if (CollectionUtils.isNotEmpty(permissionTypes)) {
-                    schemaName2PermissionTypes.put(entry.getKey(), permissionTypes);
+                    resource2PermissionTypes.put(
+                            DBResource.from(config, identity.getSchema(), identity.getTable()), permissionTypes);
                 }
             }
         }
-        return databaseService.filterUnauthorizedDatabases(schemaName2PermissionTypes, connectionId, true);
+        return dbResourcePermissionHelper.filterUnauthorizedDBResources(resource2PermissionTypes, false);
     }
 
     private void doMultipleSqlCheckAndDatabasePermissionCheck(TaskEntity preCheckTaskEntity,
@@ -412,13 +432,12 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                         Long.valueOf(databaseId2RiskLevelDescriber.get(database.getId()).getEnvironmentId()),
                         database.getName(), sqls, database.getDataSource()));
                 sqlCheckTaskResultList.add(SqlCheckTaskResult.success(violations));
-                List<UnauthorizedDatabase> unauthorizedDatabases = getUnauthorizedDatabases(sqls,
-                        database.getDataSource().getId(), database.getName(),
-                        database.getDataSource().getDialectType(), taskType);
+                List<UnauthorizedDBResource> unauthorizedDBResources = getUnauthorizedDBResources(sqls,
+                        database.getDataSource(), database.getName(), taskType);
                 if (this.permissionCheckResult == null) {
-                    this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDatabases);
+                    this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDBResources);
                 } else {
-                    this.permissionCheckResult.getUnauthorizedDatabases().addAll(unauthorizedDatabases);
+                    this.permissionCheckResult.getUnauthorizedDBResources().addAll(unauthorizedDBResources);
                 }
             }
             this.multipleSqlCheckTaskResult = new MultipleSqlCheckTaskResult();

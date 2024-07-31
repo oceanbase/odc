@@ -74,6 +74,7 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         initJobRateLimiter();
         setTaskFrameworkDisabledHandler(new DefaultTaskFrameworkDisabledHandler());
         setJasyptEncryptorConfigProperties(ctx.getBean(JasyptEncryptorConfigProperties.class));
+        setHostProperties(ctx.getBean(HostProperties.class));
     }
 
     @Override

@@ -198,6 +198,7 @@ public class DBSchemaIndexService {
     }
 
     public Boolean syncDatabaseObjects(@NonNull @Valid SyncDBObjectReq req) {
+        this.databaseService.refreshExpiredPendingDBObjectStatus();
         Set<Database> databases = new HashSet<>();
         if (req.getResourceType() == ResourceType.ODC_CONNECTION) {
             Set<Database> dbs = new HashSet<>(databaseService.listExistDatabasesByConnectionId(req.getResourceId()));

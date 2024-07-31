@@ -36,15 +36,16 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.model.SqlExecDetail;
-import com.oceanbase.odc.core.shared.model.SqlExplain;
 import com.oceanbase.odc.core.shared.model.TraceSpan;
 import com.oceanbase.odc.core.sql.execute.cache.model.BinaryContentMetaData;
+import com.oceanbase.odc.plugin.connect.model.diagnose.SqlExplain;
 import com.oceanbase.odc.service.common.model.ResourceSql;
 import com.oceanbase.odc.service.diagnose.fulllinktrace.JaegerConverter;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
+import com.oceanbase.odc.service.queryprofile.OBQueryProfileManager;
 
 @Service
 @SkipAuthorize("inside connect session")
@@ -53,6 +54,8 @@ public class SqlDiagnoseService {
     private ObjectStorageFacade objectStorageFacade;
     @Autowired
     private AuthenticationFacade authenticationFacade;
+    @Autowired
+    private OBQueryProfileManager profileManager;
 
     public SqlExplain explain(ConnectionSession session, ResourceSql odcSql) {
         return session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
@@ -105,6 +108,10 @@ public class SqlDiagnoseService {
         ObjectMetadata metadata = objectStorageFacade.putTempObject(bucketName, odcSql.getTag(),
                 inputStream.available(), inputStream);
         return objectStorageFacade.getDownloadUrl(metadata.getBucketName(), metadata.getObjectId());
+    }
+
+    public SqlExplain getQueryProfile(ConnectionSession session, String traceId) throws IOException {
+        return profileManager.getProfile(traceId, session);
     }
 
 }

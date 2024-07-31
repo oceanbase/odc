@@ -25,6 +25,7 @@ public final class AlarmEventNames {
      */
     public static final String SYSTEM_CONFIG_CHANGED = "SYSTEM_CONFIG_CHANGED";
     public static final String REST_API_CALL_FAILED = "REST_API_CALL_FAILED";
+    public static final String STATEFUL_ROUTE_NOT_HEALTHY = "STATEFUL_ROUTE_NOT_HEALTHY";
 
     /**
      * warn

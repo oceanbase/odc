@@ -64,6 +64,8 @@ import com.oceanbase.odc.metadb.iam.UserDatabasePermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserRepository;
+import com.oceanbase.odc.metadb.iam.UserTablePermissionEntity;
+import com.oceanbase.odc.metadb.iam.UserTablePermissionRepository;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleRepository;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
@@ -127,6 +129,9 @@ public class ProjectService {
 
     @Autowired
     private UserDatabasePermissionRepository userDatabasePermissionRepository;
+
+    @Autowired
+    private UserTablePermissionRepository userTablePermissionRepository;
 
     @Autowired
     private PermissionRepository permissionRepository;
@@ -388,6 +393,7 @@ public class ProjectService {
                     ResourceType.ODC_DATABASE);
         }
         deleteMemberRelatedDatabasePermissions(userId, projectId);
+        deleteMemberRelatedTablePermissions(userId, projectId);
         return true;
     }
 
@@ -470,8 +476,8 @@ public class ProjectService {
 
     @SkipAuthorize("internal usage")
     public Set<Long> getMemberProjectIds(Long userId) {
-        return resourceRoleService.listByUserId(userId).stream().map(UserResourceRole::getResourceId)
-                .collect(Collectors.toSet());
+        return resourceRoleService.listByUserId(userId).stream().filter(UserResourceRole::isProjectMember)
+                .map(UserResourceRole::getResourceId).collect(Collectors.toSet());
     }
 
     @SkipAuthorize("odc internal usage")
@@ -551,7 +557,16 @@ public class ProjectService {
     private void deleteMemberRelatedDatabasePermissions(@NonNull Long userId, @NonNull Long projectId) {
         List<Long> permissionIds = userDatabasePermissionRepository.findByUserIdAndProjectId(userId, projectId).stream()
                 .map(UserDatabasePermissionEntity::getId).collect(Collectors.toList());
-        if (!CollectionUtils.isEmpty(permissionIds)) {
+        if (CollectionUtils.isNotEmpty(permissionIds)) {
+            permissionRepository.deleteByIds(permissionIds);
+            userPermissionRepository.deleteByPermissionIds(permissionIds);
+        }
+    }
+
+    private void deleteMemberRelatedTablePermissions(@NonNull Long userId, @NonNull Long projectId) {
+        List<Long> permissionIds = userTablePermissionRepository.findByUserIdAndProjectId(userId, projectId).stream()
+                .map(UserTablePermissionEntity::getId).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(permissionIds)) {
             permissionRepository.deleteByIds(permissionIds);
             userPermissionRepository.deleteByPermissionIds(permissionIds);
         }

@@ -33,6 +33,8 @@ public class PlanNode {
     private String operator;
     private String rowCount;
     private String cost;
+    private String realCost;
+    private String realRowCount;
     private int depth;
     private String outputFilter;
     private LinkedHashMap<String, PlanNode> children = new LinkedHashMap<>();

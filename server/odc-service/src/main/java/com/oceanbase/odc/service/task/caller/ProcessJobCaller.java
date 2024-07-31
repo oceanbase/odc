@@ -19,6 +19,7 @@ package com.oceanbase.odc.service.task.caller;
 import static com.oceanbase.odc.service.task.constants.JobConstants.ODC_EXECUTOR_CANNOT_BE_DESTROYED;
 
 import java.text.MessageFormat;
+import java.util.Objects;
 import java.util.Optional;
 
 import com.oceanbase.odc.common.util.SystemUtils;
@@ -75,7 +76,8 @@ public class ProcessJobCaller extends BaseJobCaller {
                     pid, executorName);
         }
 
-        String portString = Optional.ofNullable(SystemUtils.getEnvOrProperty("server.port"))
+        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
+        String portString = Optional.ofNullable(jobConfiguration.getHostProperties().getPort())
                 .orElse(DefaultExecutorIdentifier.DEFAULT_PORT + "");
         // set process id as namespace
         return DefaultExecutorIdentifier.builder().host(SystemUtils.getLocalIpAddress())
@@ -99,7 +101,10 @@ public class ProcessJobCaller extends BaseJobCaller {
             return;
         }
 
-        if (SystemUtils.getLocalIpAddress().equals(ei.getHost())) {
+        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
+        String portString = Optional.ofNullable(jobConfiguration.getHostProperties().getPort())
+                .orElse(DefaultExecutorIdentifier.DEFAULT_PORT + "");
+        if (SystemUtils.getLocalIpAddress().equals(ei.getHost()) && Objects.equals(portString, ei.getPort() + "")) {
             updateExecutorDestroyed(ji);
             return;
         }
@@ -122,6 +127,26 @@ public class ProcessJobCaller extends BaseJobCaller {
         throw new JobException(ODC_EXECUTOR_CANNOT_BE_DESTROYED +
                 "Connect to target odc server succeed, but cannot destroy process,"
                 + " may not on this machine, jodId={0}, identifier={1}", ji.getId(), ei);
+    }
+
+    @Override
+    public boolean canBeDestroy(JobIdentity ji, ExecutorIdentifier ei) {
+        if (isExecutorExist(ei)) {
+            log.info("Executor be found, jobId={}, identifier={}", ji.getId(), ei);
+            return true;
+        }
+        String portString = Optional.ofNullable(
+                JobConfigurationHolder.getJobConfiguration().getHostProperties().getPort())
+                .orElse(DefaultExecutorIdentifier.DEFAULT_PORT + "");
+        if (SystemUtils.getLocalIpAddress().equals(ei.getHost()) && Objects.equals(portString, ei.getPort() + "")) {
+            return true;
+        }
+        if (!HttpUtil.isOdcHealthy(ei.getHost(), ei.getPort())) {
+            log.info("Cannot connect to target odc server, executor can be destroyed,jobId={}, identifier={}",
+                    ji.getId(), ei);
+            return true;
+        }
+        return false;
     }
 
     @Override

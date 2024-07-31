@@ -33,6 +33,7 @@ import com.oceanbase.odc.service.flow.processor.ScheduleTaskPreprocessor;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
 import lombok.extern.slf4j.Slf4j;
@@ -64,7 +65,8 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
     @Override
     public void process(CreateFlowInstanceReq req) {
         AlterScheduleParameters parameters = (AlterScheduleParameters) req.getParameters();
-        if (parameters.getOperationType() == OperationType.CREATE) {
+        if (parameters.getOperationType() == OperationType.CREATE
+                || parameters.getOperationType() == OperationType.UPDATE) {
             DataDeleteParameters dataDeleteParameters =
                     (DataDeleteParameters) parameters.getScheduleTaskParameters();
             initDefaultConfig(dataDeleteParameters);
@@ -94,13 +96,29 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
             }
             log.info("QUICK-DELETE job preprocessing has been completed.");
             // pre create
-            ScheduleEntity scheduleEntity = buildScheduleEntity(req);
-            scheduleEntity.setCreatorId(authenticationFacade.currentUser().id());
-            scheduleEntity.setModifierId(scheduleEntity.getCreatorId());
-            scheduleEntity.setOrganizationId(authenticationFacade.currentOrganizationId());
-            scheduleEntity = scheduleService.create(scheduleEntity);
-            parameters.setTaskId(scheduleEntity.getId());
-            initLimiterConfig(scheduleEntity.getId(), dataDeleteParameters.getRateLimit(), limiterService);
+            if (parameters.getOperationType() == OperationType.CREATE) {
+                ScheduleEntity scheduleEntity = buildScheduleEntity(req);
+                scheduleEntity.setCreatorId(authenticationFacade.currentUser().id());
+                scheduleEntity.setModifierId(scheduleEntity.getCreatorId());
+                scheduleEntity.setOrganizationId(authenticationFacade.currentOrganizationId());
+                scheduleEntity = scheduleService.create(scheduleEntity);
+                parameters.setTaskId(scheduleEntity.getId());
+                initLimiterConfig(scheduleEntity.getId(), dataDeleteParameters.getRateLimit(), limiterService);
+            }
+
+            if (parameters.getOperationType() == OperationType.UPDATE) {
+                parameters.setDescription(req.getDescription());
+                ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(parameters.getTaskId());
+                if (scheduleEntity.getStatus() != ScheduleStatus.PAUSE
+                        || scheduleService.hasExecutingScheduleTask(scheduleEntity.getId())) {
+                    throw new IllegalStateException(
+                            String.format(
+                                    "The task can only be edited when it is paused and there are no active subtasks executing,status=%s",
+                                    scheduleEntity.getStatus()));
+                }
+                // update job limit config
+                limiterService.updateByOrderId(scheduleEntity.getId(), dataDeleteParameters.getRateLimit());
+            }
         }
         req.setParentFlowInstanceId(parameters.getTaskId());
     }

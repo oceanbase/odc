@@ -44,7 +44,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class SqlRewriteUtil {
-
     private static final String SELECT_ODC_INTERNAL_ROWID_STMT =
             ", ROWID AS \"" + OdcConstants.ODC_INTERNAL_ROWID + "\" ";
 

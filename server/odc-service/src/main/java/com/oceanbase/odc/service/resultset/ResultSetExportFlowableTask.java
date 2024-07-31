@@ -25,25 +25,18 @@ import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.connection.ConnectionService;
-import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.flow.task.BaseODCFlowTaskDelegate;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
-import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.task.TaskService;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ResultSetExportFlowableTask extends BaseODCFlowTaskDelegate<ResultSetExportResult> {
-    public static final String TASK_WORKSPACE = "task.workspace";
 
     @Autowired
     private DumperResultSetExportTaskManager taskManager;
-    @Autowired
-    private AuthenticationFacade authenticationFacade;
-    @Autowired
-    private DataMaskingService maskingService;
     @Autowired
     private ConnectionService connectionService;
     private ResultSetExportTaskContext context;

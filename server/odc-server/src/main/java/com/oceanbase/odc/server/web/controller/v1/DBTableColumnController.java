@@ -52,6 +52,7 @@ public class DBTableColumnController {
 
     @ApiOperation(value = "list", notes = "查询表的所有列，sid示例：sid:1000-1:d:db1:t:tb1")
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<List<OdcDBTableColumn>> list(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
         ConnectionSession session = sessionService.nullSafeGet(i.getSid(), true);

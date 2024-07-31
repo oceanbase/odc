@@ -35,8 +35,9 @@ import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.logicaldatabase.model.DataNode;
-import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTable;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.LogicalTableFinder;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalTable;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
 
 import lombok.SneakyThrows;

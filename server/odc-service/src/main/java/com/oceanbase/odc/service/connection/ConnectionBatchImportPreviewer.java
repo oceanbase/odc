@@ -25,11 +25,14 @@ import static com.oceanbase.odc.core.shared.constant.FieldName.DATASOURCE_HOST;
 import static com.oceanbase.odc.core.shared.constant.FieldName.DATASOURCE_NAME;
 import static com.oceanbase.odc.core.shared.constant.FieldName.DATASOURCE_PASSWORD;
 import static com.oceanbase.odc.core.shared.constant.FieldName.DATASOURCE_PORT;
+import static com.oceanbase.odc.core.shared.constant.FieldName.DATASOURCE_SERVICE_NAME;
+import static com.oceanbase.odc.core.shared.constant.FieldName.DATASOURCE_SID;
 import static com.oceanbase.odc.core.shared.constant.FieldName.DATASOURCE_SYSTENANTPASSWORD;
 import static com.oceanbase.odc.core.shared.constant.FieldName.DATASOURCE_SYSTENANTUSERNAME;
 import static com.oceanbase.odc.core.shared.constant.FieldName.DATASOURCE_TENANTNAME;
 import static com.oceanbase.odc.core.shared.constant.FieldName.DATASOURCE_TYPE;
 import static com.oceanbase.odc.core.shared.constant.FieldName.DATASOURCE_USERNAME;
+import static com.oceanbase.odc.core.shared.constant.FieldName.DATASOURCE_USER_ROLE;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,6 +51,7 @@ import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.plugin.connect.model.oracle.UserRole;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.collaboration.environment.model.QueryEnvironmentParam;
@@ -131,11 +135,7 @@ public class ConnectionBatchImportPreviewer {
         String clusterName = map.get(DATASOURCE_CLUSTERNAME.getLocalizedMessage());
         batchImportConnection.setClusterName(clusterName);
         String tenantName = map.get(DATASOURCE_TENANTNAME.getLocalizedMessage());
-        if (StringUtils.isEmpty(tenantName) || !SPACE_PATTERN.matcher(tenantName).matches()) {
-            batchImportConnection.setErrorMessage("file content error:" + DATASOURCE_TENANTNAME.getLocalizedMessage());
-        } else {
-            batchImportConnection.setTenantName(tenantName);
-        }
+        batchImportConnection.setTenantName(tenantName);
         String username = map.get(DATASOURCE_USERNAME.getLocalizedMessage());
         if (StringUtils.isEmpty(username) || !SPACE_PATTERN.matcher(username).matches()) {
             batchImportConnection.setErrorMessage("file content error:" + DATASOURCE_USERNAME.getLocalizedMessage());
@@ -160,6 +160,18 @@ public class ConnectionBatchImportPreviewer {
         batchImportConnection.setSysTenantUsername(sysTenantUsername);
         String sysTenantPassword = map.get(DATASOURCE_SYSTENANTPASSWORD.getLocalizedMessage());
         batchImportConnection.setSysTenantPassword(sysTenantPassword);
+        String serviceName = map.get(DATASOURCE_SERVICE_NAME.getLocalizedMessage());
+        if (StringUtils.isNotEmpty(serviceName) && SPACE_PATTERN.matcher(serviceName).matches()) {
+            batchImportConnection.setServiceName(serviceName);
+        }
+        String sid = map.get(DATASOURCE_SID.getLocalizedMessage());
+        if (StringUtils.isNotEmpty(sid) && SPACE_PATTERN.matcher(sid).matches()) {
+            batchImportConnection.setSid(sid);
+        }
+        String oracleUserRole = map.get(DATASOURCE_USER_ROLE.getLocalizedMessage());
+        if (StringUtils.isNotEmpty(oracleUserRole) && SPACE_PATTERN.matcher(oracleUserRole).matches()) {
+            batchImportConnection.setUserRole(UserRole.valueOf(oracleUserRole));
+        }
         return batchImportConnection;
     }
 
