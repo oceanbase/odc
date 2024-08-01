@@ -548,7 +548,6 @@ reserved-key-words:
   - 'hosts'
   - 'hour'
   - 'hybrid_hist'
-  - 'id'
   - 'idc'
   - 'identity'
   - 'indexed'

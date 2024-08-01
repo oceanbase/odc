@@ -23,11 +23,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -76,6 +75,7 @@ import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.table.TablePermissionService;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
+import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
@@ -125,6 +125,8 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private PreCheckTaskProperties preCheckTaskProperties;
     @Autowired
     private ObjectStorageFacade storageFacade;
+    @Autowired
+    private RiskLevelService riskLevelService;
 
     @Autowired
     private TablePermissionService tablePermissionService;
@@ -220,6 +222,9 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                         .map(approvalFlowConfigSelector::select)
                         .max(Comparator.comparingInt(RiskLevel::getLevel))
                         .orElseThrow(() -> new IllegalStateException("Unknown error"));
+            } else if (taskEntity.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION
+                    || taskEntity.getTaskType() == TaskType.APPLY_TABLE_PERMISSION) {
+                riskLevel = riskLevelService.findHighestRiskLevel();
             } else if (riskLevelDescriber != null) {
                 riskLevel = approvalFlowConfigSelector.select(riskLevelDescriber);
             } else {
@@ -393,23 +398,18 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
 
     private List<UnauthorizedDBResource> getUnauthorizedDBResources(List<OffsetString> sqls,
             ConnectionConfig config, String defaultSchema, TaskType taskType) {
+        Set<String> existedDatabaseNames =
+                databaseService.listDatabasesByConnectionIds(Collections.singleton(connectionConfig.getId()))
+                        .stream().filter(database -> database.getExisted()).map(database -> database.getName())
+                        .collect(Collectors.toSet());
         Map<DBSchemaIdentity, Set<SqlType>> identity2Types = DBSchemaExtractor.listDBSchemasWithSqlTypes(
                 sqls.stream().map(e -> SqlTuple.newTuple(e.getStr())).collect(Collectors.toList()),
-                config.getDialectType(), defaultSchema);
-        Map<DBResource, Set<DatabasePermissionType>> resource2PermissionTypes = new HashMap<>();
-        for (Entry<DBSchemaIdentity, Set<SqlType>> entry : identity2Types.entrySet()) {
-            DBSchemaIdentity identity = entry.getKey();
-            Set<SqlType> sqlTypes = entry.getValue();
-            if (CollectionUtils.isNotEmpty(sqlTypes)) {
-                Set<DatabasePermissionType> permissionTypes = sqlTypes.stream().map(DatabasePermissionType::from)
-                        .filter(Objects::nonNull).collect(Collectors.toSet());
-                permissionTypes.addAll(DatabasePermissionType.from(taskType));
-                if (CollectionUtils.isNotEmpty(permissionTypes)) {
-                    resource2PermissionTypes.put(
-                            DBResource.from(config, identity.getSchema(), identity.getTable()), permissionTypes);
-                }
-            }
-        }
+                config.getDialectType(), defaultSchema).entrySet().stream()
+                .filter(entry -> Objects.isNull(entry.getKey().getSchema())
+                        || existedDatabaseNames.contains(entry.getKey().getSchema()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<DBResource, Set<DatabasePermissionType>> resource2PermissionTypes =
+                DBResourcePermissionHelper.getDBResource2PermissionTypes(identity2Types, config, taskType);
         return dbResourcePermissionHelper.filterUnauthorizedDBResources(resource2PermissionTypes, false);
     }
 

@@ -125,6 +125,10 @@ public class PLDebugSession {
 
     public synchronized PLDebugContextResp getContext() {
         PLDebugContextResp plDebugContextResp = new PLDebugContextResp();
+        if (debuggerSession == null || debuggeeSession == null) {
+            throw OBException.executeFailed(ErrorCodes.DebugTimeout,
+                    String.format("Debug timeout for %d ms", timeoutMilliSeconds));
+        }
         // terminated
         boolean terminated = !debuggerSession.detectSessionAlive() || !debuggeeSession.detectSessionAlive();
         plDebugContextResp.setTerminated(terminated);

@@ -58,18 +58,25 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private Exception thrown = null;
     private volatile MockContext context;
     private volatile ConnectionConfig connectionConfig;
+    private volatile boolean cancelled = false;
 
     @Override
-    public boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
-        Verify.notNull(context, "MockContext is null");
+    public synchronized boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
+        MockTaskStatus status = MockTaskStatus.CANCELED;
+        boolean isInterrupted = true;
+        if (this.context == null) {
+            this.cancelled = true;
+        } else {
+            isInterrupted = context.shutdown();
+            TableTaskContext tableContext = context.getTables().get(0);
+            status = tableContext == null ? null : tableContext.getStatus();
+        }
         Map<String, String> variables = new HashMap<>();
         variables.putIfAbsent("mocktask.workspace", taskId + "");
         TraceContextHolder.span(variables);
-        boolean isInterrupted = context.shutdown();
         taskService.cancel(taskId, getResult(taskId));
-        TableTaskContext tableContext = context.getTables().get(0);
-        log.info("The mock data task was cancelled, taskId={}, status={}, cancelResult={}", taskId,
-                tableContext == null ? null : tableContext.getStatus(), isInterrupted);
+        log.info("MockData task was cancelled, taskId={}, status={}, cancelResult={}", taskId,
+                status, isInterrupted);
         TraceContextHolder.clear();
         return isInterrupted;
     }
@@ -77,7 +84,7 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     @Override
     public boolean isCancelled() {
         if (context == null) {
-            return false;
+            return this.cancelled;
         }
         TableTaskContext tableTaskContext = context.getTables().get(0);
         Verify.notNull(tableTaskContext, "TableTaskContext");
@@ -87,16 +94,20 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private MockTaskConfig getMockTaskConfig(Long taskId, DelegateExecution execution) {
         OdcMockTaskConfig config = FlowTaskUtil.getMockParameter(execution);
         this.connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
-        return FlowTaskUtil.generateMockConfig(taskId, execution, getTimeoutMillis(),
-                config, mockProperties);
+        return FlowTaskUtil.generateMockConfig(taskId, execution, getTimeoutMillis(), config, mockProperties);
     }
 
     @Override
-    protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) {
+    protected synchronized Void start(Long taskId, TaskService taskService, DelegateExecution execution) {
         try {
             Map<String, String> variables = new HashMap<>();
             variables.putIfAbsent("mocktask.workspace", taskId + "");
             TraceContextHolder.span(variables);
+            if (this.cancelled) {
+                log.warn("MockData task has been cancelled, taskId={}, activityId={}", taskId,
+                        execution.getCurrentActivityId());
+                return null;
+            }
             log.info("MockData task starts, taskId={}, activityId={}", taskId, execution.getCurrentActivityId());
             MockTaskConfig mockTaskConfig = getMockTaskConfig(taskId, execution);
             ObMockerFactory factory = new ObMockerFactory(mockTaskConfig);

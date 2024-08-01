@@ -37,19 +37,15 @@ public class DBResource {
     private Long tableId;
     private String tableName;
 
-    public static DBResource from(ConnectionConfig dataSource, String databaseName, String tableName) {
+    public static DBResource from(ConnectionConfig dataSource, String databaseName, String tableName,
+            ResourceType type) {
         DBResource obj = new DBResource();
         obj.setDataSourceId(dataSource.getId());
         obj.setDataSourceName(dataSource.getName());
         obj.setDialectType(dataSource.getDialectType());
         obj.setDatabaseName(databaseName);
         obj.setTableName(tableName);
-        if (databaseName != null) {
-            obj.setType(ResourceType.ODC_DATABASE);
-        }
-        if (tableName != null) {
-            obj.setType(ResourceType.ODC_TABLE);
-        }
+        obj.setType(type);
         return obj;
     }
 

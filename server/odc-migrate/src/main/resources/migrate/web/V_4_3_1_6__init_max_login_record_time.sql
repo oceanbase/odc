@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.pldebug.model;
 
-import lombok.Data;
-
-@Data
-public class PLDebugSessionId {
-    private String uuid;
-    private String from;
-}
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.security.max-login-record-time-minutes', '0', 'Interval of login records.') ON DUPLICATE KEY UPDATE `id`=`id`;

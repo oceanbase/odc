@@ -27,6 +27,8 @@ import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.snippet.BuiltinSnippet;
 import com.oceanbase.odc.service.snippet.BuiltinSnippetService;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -39,6 +41,7 @@ public class BuiltinSnippetController {
 
     @ApiOperation(value = "listBuiltinSnippets", notes = "查询内建的 snippets")
     @RequestMapping(value = "builtinSnippets", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public ListResponse<BuiltinSnippet> listBuiltinSnippets(
             @RequestParam(value = "sessionId", required = false) String sessionId) {
         if (Objects.isNull(sessionId)) {

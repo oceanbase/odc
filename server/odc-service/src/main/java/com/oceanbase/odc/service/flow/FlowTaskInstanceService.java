@@ -313,7 +313,7 @@ public class FlowTaskInstanceService {
             if (!this.dispatchChecker.isThisMachine(info)) {
                 DispatchResponse response = requestDispatcher.forward(info.getHost(), info.getPort());
                 return response.getContentByType(
-                        new TypeReference<ListResponse<SqlCheckTaskResult>>() {}).getData().getContents();
+                        new TypeReference<ListResponse<PreCheckTaskResult>>() {}).getData().getContents();
             }
             String dir = FileManager.generateDir(FileBucket.PRE_CHECK) + File.separator + taskId;
             String fileName;

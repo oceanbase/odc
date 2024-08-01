@@ -316,7 +316,8 @@ public class ConnectConsoleService {
         statementCallBack.setMaxCachedLines(sessionProperties.getResultSetMaxCachedLines());
         statementCallBack.setLocale(LocaleContextHolder.getLocale());
         if (connectionSession.getDialectType().isOceanbase() && sqlTuples.size() <= 10) {
-            statementCallBack.getListeners().add(new OBExecutionListener(connectionSession, profileManager));
+            statementCallBack.getListeners()
+                    .add(new OBQueryProfileExecutionListener(connectionSession, profileManager));
         }
 
         Future<List<JdbcGeneralResult>> futureResult = connectionSession.getAsyncJdbcExecutor(
@@ -336,10 +337,12 @@ public class ConnectConsoleService {
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId);
         AsyncExecuteContext context =
                 (AsyncExecuteContext) ConnectionSessionUtil.getExecuteContext(connectionSession, requestId);
-        int timeout = Objects.isNull(timeoutSeconds) ? DEFAULT_GET_RESULT_TIMEOUT_SECONDS : timeoutSeconds;
+        int gettingResultTimeoutSeconds =
+                Objects.isNull(timeoutSeconds) ? DEFAULT_GET_RESULT_TIMEOUT_SECONDS : timeoutSeconds;
         boolean shouldRemoveContext = context.isFinished();
         try {
-            List<JdbcGeneralResult> resultList = context.getMoreSqlExecutionResults(timeout);
+            List<JdbcGeneralResult> resultList =
+                    context.getMoreSqlExecutionResults(gettingResultTimeoutSeconds * 1000L);
             List<SqlExecuteResult> results = resultList.stream().map(jdbcGeneralResult -> {
                 SqlExecuteResult result = generateResult(connectionSession, jdbcGeneralResult, context.getContextMap());
                 try (TraceStage stage = result.getSqlTuple().getSqlWatch().start(SqlExecuteStages.SQL_AFTER_CHECK)) {
@@ -352,6 +355,13 @@ public class ConnectConsoleService {
             return new AsyncExecuteResultResp(shouldRemoveContext, context, results);
         } catch (Exception e) {
             shouldRemoveContext = true;
+            // Front-end would stop getting more results if there is an exception. In this case the left queries
+            // should be killed.
+            try {
+                killCurrentQuery(sessionId);
+            } catch (Exception ex) {
+                log.warn("Failed to kill query. Session id={}. Request id={}", sessionId, requestId);
+            }
             throw e;
         } finally {
             if (shouldRemoveContext) {
@@ -586,6 +596,14 @@ public class ConnectConsoleService {
             result.initWarningMessage(connectionSession);
         } catch (Exception e) {
             log.warn("Failed to init warning message", e);
+        }
+        try {
+            String version = ConnectionSessionUtil.getVersion(connectionSession);
+            result.setWithQueryProfile(OBQueryProfileExecutionListener
+                    .isSqlTypeSupportProfile(generalResult.getSqlTuple()) &&
+                    OBQueryProfileExecutionListener.isObVersionSupportQueryProfile(version));
+        } catch (Exception e) {
+            result.setWithQueryProfile(false);
         }
         return result;
     }

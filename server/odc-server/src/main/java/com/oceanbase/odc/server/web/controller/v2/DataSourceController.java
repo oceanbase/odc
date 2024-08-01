@@ -24,9 +24,11 @@ import java.util.Set;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -43,6 +45,7 @@ import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.common.util.WebResponseUtils;
 import com.oceanbase.odc.service.connection.ConnectionBatchImportPreviewer;
 import com.oceanbase.odc.service.connection.ConnectionHelper;
 import com.oceanbase.odc.service.connection.ConnectionService;
@@ -54,6 +57,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionPreviewBatchImportResp;
 import com.oceanbase.odc.service.connection.model.GenerateConnectionStringReq;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
+import com.oceanbase.odc.service.flow.model.BinaryDataResult;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -176,6 +180,14 @@ public class DataSourceController {
     public SuccessResponse<ConnectionPreviewBatchImportResp> previewBatchImportDataSources(
             @RequestParam MultipartFile file) throws IOException {
         return Responses.success(connectionBatchImportPreviewer.preview(file));
+    }
+
+    @ApiOperation(value = "downloadDatasourceTemplate", notes = "Download Datasource Template File")
+    @RequestMapping(value = "/datasources/template", method = RequestMethod.GET)
+    public ResponseEntity<InputStreamResource> downloadTemplate() throws IOException {
+        BinaryDataResult result = this.connectionService.getBatchImportTemplateFile();
+        return WebResponseUtils.getFileAttachmentResponseEntity(
+                new InputStreamResource(result.getInputStream()), (result.getName()));
     }
 
     @ApiOperation(value = "batchCreateDataSources", notes = "Batch create datasources")

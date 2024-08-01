@@ -332,6 +332,8 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
             LOGGER.warn("Multiple files for CSV format is invalid, importFileNames={}", fileNames);
             throw new IllegalArgumentException("Multiple files isn't accepted for CSV format");
         }
+        // There maybe some dirty files generated before 4.2.3. We should clean them first.
+        FileUtils.cleanDirectory(destDir);
         LocalFileManager fileManager = SpringContextUtil.getBean(LocalFileManager.class);
         List<URL> inputs = new ArrayList<>();
         for (String fileName : fileNames) {

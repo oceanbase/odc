@@ -34,4 +34,6 @@ public interface SessionExtensionPoint extends ExtensionPoint, SessionOperations
     String getCurrentSchema(Connection connection);
 
     String getVariable(Connection connection, String variableName);
+
+    String getAlterVariableStatement(String variableScope, String variableName, String variableValue);
 }

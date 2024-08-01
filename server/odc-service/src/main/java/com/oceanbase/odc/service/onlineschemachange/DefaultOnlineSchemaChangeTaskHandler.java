@@ -69,6 +69,7 @@ import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangePara
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlType;
+import com.oceanbase.odc.service.onlineschemachange.model.RateLimiterConfig;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsProjectControlRequest;
 import com.oceanbase.odc.service.onlineschemachange.pipeline.BaseCreateOmsProjectValve;
@@ -195,8 +196,8 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
     @Override
     public void complete(@NonNull Long scheduleId, @NonNull Long scheduleTaskId) {
         ScheduleTaskEntity scheduleTask = scheduleTaskService.nullSafeGetById(scheduleTaskId);
-        OnlineSchemaChangeScheduleTaskParameters parameters = JsonUtils.fromJson(scheduleTask.getParametersJson(),
-                OnlineSchemaChangeScheduleTaskParameters.class);
+        OnlineSchemaChangeScheduleTaskParameters parameters =
+                parseOnlineSchemaChangeScheduleTaskParameters(scheduleTask.getParametersJson());
         // check task is expired
         Duration between = Duration.between(scheduleTask.getCreateTime().toInstant(), Instant.now());
         log.info("Schedule id {} to check schedule task status with schedule task id {}", scheduleId, scheduleTaskId);
@@ -216,8 +217,8 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
     @Override
     public void terminate(@NonNull Long scheduleId, @NonNull Long scheduleTaskId) {
         ScheduleTaskEntity scheduleTask = scheduleTaskService.nullSafeGetById(scheduleTaskId);
-        OnlineSchemaChangeScheduleTaskParameters parameters = JsonUtils.fromJson(scheduleTask.getParametersJson(),
-                OnlineSchemaChangeScheduleTaskParameters.class);
+        OnlineSchemaChangeScheduleTaskParameters parameters =
+                parseOnlineSchemaChangeScheduleTaskParameters(scheduleTask.getParametersJson());
         completeHandler.onOscScheduleTaskCancel(parameters.getOmsProjectId(),
                 parameters.getUid(), scheduleId, scheduleTaskId);
     }
@@ -246,8 +247,8 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
         }
 
         ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(scheduleId);
-        OnlineSchemaChangeParameters onlineSchemaChangeParameters = JsonUtils.fromJson(
-                scheduleEntity.getJobParametersJson(), OnlineSchemaChangeParameters.class);
+        OnlineSchemaChangeParameters onlineSchemaChangeParameters =
+                parseOnlineSchemaChangeParameters(scheduleEntity.getJobParametersJson());
         if (onlineSchemaChangeParameters.getErrorStrategy() == TaskErrorStrategy.CONTINUE) {
             log.info("Because error strategy is continue, so schedule next task");
             // schedule next task
@@ -372,11 +373,11 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
 
     private OscValveContext createValveContext(Long scheduleId, Long scheduleTaskId) {
         ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(scheduleId);
-        OnlineSchemaChangeParameters onlineSchemaChangeParameters = JsonUtils.fromJson(
-                scheduleEntity.getJobParametersJson(), OnlineSchemaChangeParameters.class);
+        OnlineSchemaChangeParameters onlineSchemaChangeParameters =
+                parseOnlineSchemaChangeParameters(scheduleEntity.getJobParametersJson());
         ScheduleTaskEntity scheduleTaskEntity = scheduleTaskService.nullSafeGetById(scheduleTaskId);
-        OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters = JsonUtils.fromJson(
-                scheduleTaskEntity.getParametersJson(), OnlineSchemaChangeScheduleTaskParameters.class);
+        OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters =
+                parseOnlineSchemaChangeScheduleTaskParameters(scheduleTaskEntity.getParametersJson());
 
         OscValveContext valveContext = new OscValveContext();
         valveContext.setSchedule(scheduleEntity);
@@ -468,4 +469,29 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
         }
     }
 
+    /**
+     * parse and set compatible fields
+     * 
+     * @param jsonStr
+     * @return
+     */
+    private OnlineSchemaChangeParameters parseOnlineSchemaChangeParameters(String jsonStr) {
+        OnlineSchemaChangeParameters onlineSchemaChangeParameters = JsonUtils.fromJson(
+                jsonStr, OnlineSchemaChangeParameters.class);
+        // correct null value to default RateLimiterConfig object
+        if (null == onlineSchemaChangeParameters.getRateLimitConfig()) {
+            onlineSchemaChangeParameters.setRateLimitConfig(new RateLimiterConfig());
+        }
+        return onlineSchemaChangeParameters;
+    }
+
+    private OnlineSchemaChangeScheduleTaskParameters parseOnlineSchemaChangeScheduleTaskParameters(String jsonStr) {
+        OnlineSchemaChangeScheduleTaskParameters onlineSchemaChangeScheduleTaskParameters = JsonUtils.fromJson(
+                jsonStr, OnlineSchemaChangeScheduleTaskParameters.class);
+        // correct null value to default RateLimiterConfig object
+        if (null == onlineSchemaChangeScheduleTaskParameters.getRateLimitConfig()) {
+            onlineSchemaChangeScheduleTaskParameters.setRateLimitConfig(new RateLimiterConfig());
+        }
+        return onlineSchemaChangeScheduleTaskParameters;
+    }
 }

@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import com.oceanbase.odc.common.util.Lazy;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
@@ -52,12 +53,12 @@ abstract class BaseDMLBuilder implements DMLBuilder {
     private final String tableName;
     private final String schema;
     private final List<DataModifyUnit> modifyUnits;
-    private final List<DBTableConstraint> constraints;
+    private final Lazy<List<DBTableConstraint>> constraints;
     private final List<String> whereColumns;
     protected final ConnectionSession connectionSession;
 
     public BaseDMLBuilder(@NonNull List<DataModifyUnit> modifyUnits, List<String> whereColumns,
-            @NonNull ConnectionSession connectionSession, List<DBTableConstraint> constraints) {
+            @NonNull ConnectionSession connectionSession, Lazy<List<DBTableConstraint>> constraints) {
         Set<String> schemas = modifyUnits.stream()
                 .map(DataModifyUnit::getSchemaName)
                 .filter(Objects::nonNull).collect(Collectors.toSet());
@@ -78,7 +79,9 @@ abstract class BaseDMLBuilder implements DMLBuilder {
             this.schema = null;
         }
         this.connectionSession = connectionSession;
-        this.constraints = constraints == null ? getConstraints(schema, tableName, connectionSession) : constraints;
+        this.constraints =
+                constraints == null ? new Lazy<>(() -> getConstraints(schema, tableName, connectionSession))
+                        : constraints;
         this.whereColumns = whereColumns;
     }
 
@@ -135,7 +138,8 @@ abstract class BaseDMLBuilder implements DMLBuilder {
     public boolean containsUniqueKeys() {
         final Set<String> columnNames = this.modifyUnits.stream()
                 .map(DataModifyUnit::getColumnName).collect(Collectors.toSet());
-        return this.constraints.stream()
+        return this.constraints.get()
+                .stream()
                 .filter(c -> c.getType() == DBConstraintType.UNIQUE_KEY && c.getColumnNames() != null)
                 .anyMatch(c -> columnNames.containsAll(c.getColumnNames()));
     }
@@ -174,7 +178,8 @@ abstract class BaseDMLBuilder implements DMLBuilder {
     }
 
     private boolean matchUniqueConstraint(DataModifyUnit u) {
-        Optional<DBTableConstraint> optional = this.constraints.stream()
+        Optional<DBTableConstraint> optional = this.constraints.get()
+                .stream()
                 .filter(c -> c.getType() == DBConstraintType.UNIQUE_KEY).findFirst();
         return optional.isPresent() && optional.get().getColumnNames().contains(u.getColumnName());
     }
@@ -182,7 +187,7 @@ abstract class BaseDMLBuilder implements DMLBuilder {
     private DBTableConstraint getPrimaryConstraint() {
         Map<String, DataModifyUnit> name2Units = this.modifyUnits.stream()
                 .collect(Collectors.toMap(DataModifyUnit::getColumnName, unit -> unit));
-        for (DBTableConstraint constraint : this.constraints) {
+        for (DBTableConstraint constraint : this.constraints.get()) {
             if (DBConstraintType.PRIMARY_KEY != constraint.getType()) {
                 continue;
             }

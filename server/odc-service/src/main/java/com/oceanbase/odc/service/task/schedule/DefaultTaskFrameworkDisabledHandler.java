@@ -72,6 +72,10 @@ public class DefaultTaskFrameworkDisabledHandler implements TaskFrameworkDisable
             } else {
                 throw new TaskRuntimeException("Update status to FAILED occur error.");
             }
+            if (!configuration.getJobDispatcher().canBeDestroy(ji)) {
+                log.info("Cannot destroy pod, jobId={}.", ji.getId());
+                throw new TaskRuntimeException("Cannot destroy pod, jobId={}" + ji.getId());
+            }
 
             if (je.getStatus() == JobStatus.RUNNING) {
                 try {

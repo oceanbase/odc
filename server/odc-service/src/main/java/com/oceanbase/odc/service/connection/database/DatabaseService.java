@@ -92,6 +92,7 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
+import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.database.model.DatabaseUser;
 import com.oceanbase.odc.service.connection.database.model.DeleteDatabasesReq;
 import com.oceanbase.odc.service.connection.database.model.ModifyDatabaseOwnerReq;
@@ -100,6 +101,7 @@ import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.DBSchemaService;
 import com.oceanbase.odc.service.db.schema.DBSchemaSyncTaskManager;
+import com.oceanbase.odc.service.db.schema.GlobalSearchProperties;
 import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncProperties;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
@@ -207,6 +209,9 @@ public class DatabaseService {
 
     @Autowired
     private DBSchemaSyncProperties dbSchemaSyncProperties;
+
+    @Autowired
+    private GlobalSearchProperties globalSearchProperties;
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
@@ -348,6 +353,8 @@ public class DatabaseService {
             database.setOrganizationId(authenticationFacade.currentOrganizationId());
             database.setLastSyncTime(new Date(System.currentTimeMillis()));
             database.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
+            database.setDialectType(connection.getDialectType());
+            database.setType(DatabaseType.PHYSICAL);
             DatabaseEntity saved = databaseRepository.saveAndFlush(database);
             List<UserResourceRole> userResourceRoles = buildUserResourceRoles(Collections.singleton(saved.getId()),
                     req.getOwnerIds());
@@ -462,6 +469,7 @@ public class DatabaseService {
     public Boolean syncDataSourceSchemas(@NonNull Long dataSourceId) throws InterruptedException {
         Boolean res = internalSyncDataSourceSchemas(dataSourceId);
         try {
+            refreshExpiredPendingDBObjectStatus();
             dbSchemaSyncTaskManager
                     .submitTaskByDataSource(connectionService.getBasicWithoutPermissionCheck(dataSourceId));
         } catch (Exception e) {
@@ -778,6 +786,7 @@ public class DatabaseService {
         return true;
     }
 
+    @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
     public void updateObjectSyncStatus(@NotNull Collection<Long> databaseIds, @NotNull DBObjectSyncStatus status) {
         if (CollectionUtils.isEmpty(databaseIds)) {
@@ -791,6 +800,15 @@ public class DatabaseService {
     public void updateObjectLastSyncTimeAndStatus(@NotNull Long databaseId,
             @NotNull DBObjectSyncStatus status) {
         databaseRepository.setObjectLastSyncTimeAndStatusById(databaseId, new Date(), status);
+    }
+
+    @SkipAuthorize("odc internal usage")
+    @Transactional(rollbackFor = Exception.class)
+    public void refreshExpiredPendingDBObjectStatus() {
+        Date syncDate = new Date(System.currentTimeMillis() - this.globalSearchProperties.getMaxPendingMillis());
+        int affectRows = this.databaseRepository.setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeBefore(
+                DBObjectSyncStatus.INITIALIZED, DBObjectSyncStatus.PENDING, syncDate);
+        log.info("Refresh outdated pending objects status, syncDate={}, affectRows={}", syncDate, affectRows);
     }
 
     private void checkPermission(Long projectId, Long dataSourceId) {

@@ -263,8 +263,6 @@ public class FlowInstanceService {
     @Autowired
     private EnvironmentRepository environmentRepository;
     @Autowired
-    private DBResourcePermissionHelper dbResourcePermissionHelper;
-    @Autowired
     private EnvironmentService environmentService;
 
     private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
@@ -785,13 +783,20 @@ public class FlowInstanceService {
                 ConnectionConfig config = connectionService.getBasicWithoutPermissionCheck(req.getConnectionId());
                 parameters.getExportDbObjects().forEach(item -> {
                     if (item.getDbObjectType() == ObjectType.TABLE) {
-                        resource2Types.put(DBResource.from(config, req.getDatabaseName(), item.getObjectName()),
+                        resource2Types.put(
+                                DBResource.from(config, req.getDatabaseName(), item.getObjectName(),
+                                        ResourceType.ODC_TABLE),
                                 DatabasePermissionType.from(TaskType.EXPORT));
                     }
                 });
+            } else if (parameters.isExportAllObjects()) {
+                ConnectionConfig config = connectionService.getBasicWithoutPermissionCheck(req.getConnectionId());
+                resource2Types.put(
+                        DBResource.from(config, req.getDatabaseName(), null, ResourceType.ODC_DATABASE),
+                        DatabasePermissionType.from(TaskType.EXPORT));
             }
-            List<UnauthorizedDBResource> unauthorizedDBResources =
-                    dbResourcePermissionHelper.filterUnauthorizedDBResources(resource2Types, false);
+            List<UnauthorizedDBResource> unauthorizedDBResources = this.permissionHelper
+                    .filterUnauthorizedDBResources(resource2Types, false);
             if (CollectionUtils.isNotEmpty(unauthorizedDBResources)) {
                 throw new BadRequestException(ErrorCodes.DatabaseAccessDenied,
                         new Object[] {unauthorizedDBResources.stream()

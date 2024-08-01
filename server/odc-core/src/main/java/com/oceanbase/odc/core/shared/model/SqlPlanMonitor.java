@@ -27,6 +27,7 @@ import lombok.Data;
 @Data
 public class SqlPlanMonitor {
 
+    private String conId;
     private String svrIp;
     private String svrPort;
     private String processName;
