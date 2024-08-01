@@ -168,7 +168,9 @@ public class GitClientOperator {
                 .setProgressMonitor(new TextProgressMonitor(new LogProgressWriter()))
                 .call();
         List<PushResult> results = IteratorUtils.toList(gitPushResult.iterator());
-        Verify.singleton(results, "push result is not a singleton, size=" + results.size());
+        Verify.singleton(results, String.format("push result is not a singleton, detail:[%s]",
+                results.stream().map(PushResult::getRemoteUpdates).collect(Collectors.toList()).toString()));
+
         return results.get(0).getRemoteUpdates()
                 .stream()
                 .map(RemoteRefUpdate::getStatus)

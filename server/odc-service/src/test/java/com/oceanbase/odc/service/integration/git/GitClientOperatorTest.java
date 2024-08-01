@@ -142,7 +142,8 @@ public class GitClientOperatorTest {
 
         getOperator().resetHard(lastCommitId);
 
-        Assert.assertEquals(lastCommitId, git.log().call().iterator().next().getId().getName());
+        Assert.assertEquals("select 1 from dual",
+                FileUtils.readFileToString(new File(PROJECT_WORKDIR, "test.sql"), StandardCharsets.UTF_8));
     }
 
     private Git getGit() throws IOException {
