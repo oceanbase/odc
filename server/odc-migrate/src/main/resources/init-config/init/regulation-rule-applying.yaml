@@ -445,13 +445,13 @@
 - enabled: 1
   level: 0
   rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
-  ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-infect-row.name}
+  ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.name}
   appliedDialectTypes:
     - 'OB_MYSQL'
     - 'OB_ORACLE'
     - 'MYSQL'
     - 'ORACLE'
-  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-infect-row.allowed-max-sql-infect-count}":1000}'
+  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.allowed-max-sql-affected-count}":1000}'
 - enabled: 1
   level: 0
   rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
@@ -940,13 +940,13 @@
 - enabled: 1
   level: 0
   rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
-  ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-infect-row.name}
+  ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.name}
   appliedDialectTypes:
     - 'OB_MYSQL'
     - 'OB_ORACLE'
     - 'MYSQL'
     - 'ORACLE'
-  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-infect-row.allowed-max-sql-infect-count}":10000}'
+  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.allowed-max-sql-affected-count}":10000}'
 - enabled: 1
   level: 0
   rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
@@ -1435,13 +1435,13 @@
 - enabled: 1
   level: 1
   rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
-  ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-infect-row.name}
+  ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.name}
   appliedDialectTypes:
     - 'OB_MYSQL'
     - 'OB_ORACLE'
     - 'MYSQL'
     - 'ORACLE'
-  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-infect-row.allowed-max-sql-infect-count}":1000}'
+  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.allowed-max-sql-affected-count}":1000}'
 - enabled: 1
   level: 1
   rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
@@ -1920,13 +1920,13 @@
 - enabled: 1
   level: 1
   rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
-  ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-infect-row.name}
+  ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.name}
   appliedDialectTypes:
     - 'OB_MYSQL'
     - 'OB_ORACLE'
     - 'MYSQL'
     - 'ORACLE'
-  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-infect-row.allowed-max-sql-infect-count}":1000}'
+  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.allowed-max-sql-affected-count}":1000}'
 - enabled: 1
   level: 1
   rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
