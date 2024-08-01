@@ -34,9 +34,10 @@ public class UnauthorizedDBResource extends DBResource {
 
     private Boolean applicable;
     private Set<DatabasePermissionType> unauthorizedPermissionTypes;
+    private Long projectId;
 
     public static UnauthorizedDBResource from(DBResource dbResource, Set<DatabasePermissionType> types,
-            boolean applicable) {
+            boolean applicable, Long projectId) {
         UnauthorizedDBResource obj = new UnauthorizedDBResource();
         obj.setType(dbResource.getType());
         obj.setDialectType(dbResource.getDialectType());
@@ -48,6 +49,7 @@ public class UnauthorizedDBResource extends DBResource {
         obj.setTableName(dbResource.getTableName());
         obj.setUnauthorizedPermissionTypes(types);
         obj.setApplicable(applicable);
+        obj.setProjectId(projectId);
         return obj;
     }
 

@@ -385,8 +385,8 @@
             <Routes pattern="$${ctx:taskId}">
                 <Route>
                     <RollingFile name="Rolling-${ctx:taskId}"
-                                 fileName="${LOG_DIRECTORY}/apply-database/${ctx:taskWorkSpace}/${ctx:taskId}/apply-table-task.warn"
-                                 filePattern="${LOG_DIRECTORY}/apply-database/${ctx:taskWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/apply-table-task-%d{yyyy-MM-dd}-%i.warn.gz">
+                                 fileName="${LOG_DIRECTORY}/apply-table/${ctx:taskWorkSpace}/${ctx:taskId}/apply-table-task.warn"
+                                 filePattern="${LOG_DIRECTORY}/apply-table/${ctx:taskWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/apply-table-task-%d{yyyy-MM-dd}-%i.warn.gz">
                         <PatternLayout>
                             <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
                         </PatternLayout>
