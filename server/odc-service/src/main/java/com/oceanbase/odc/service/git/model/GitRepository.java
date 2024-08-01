@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.integration.git.vcs;
+package com.oceanbase.odc.service.git.model;
 
-import java.util.List;
+import java.util.Date;
 
-import com.oceanbase.odc.service.integration.git.model.GitRepository;
+import lombok.Data;
 
 /**
  * @author: liuyizhuo.lyz
  * @date: 2024/7/29
  */
-public interface VcsFacade {
-
-    List<GitRepository> listRepositories(String token);
-
+@Data
+public class GitRepository extends GitProvider {
+    private Long id;
+    private Date createTime;
+    private Date updateTime;
+    private Long creatorId;
+    private Long organizationId;
+    private Long projectId;
+    private String name;
+    private String description;
+    private String sshUrl;
+    private String cloneUrl;
 }

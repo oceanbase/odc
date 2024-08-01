@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.integration.git;
+package com.oceanbase.odc.service.git;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,8 +31,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.oceanbase.odc.service.integration.git.model.FileChangeType;
-import com.oceanbase.odc.service.integration.git.model.GitDiff;
+import com.oceanbase.odc.service.git.GitClientOperator;
+import com.oceanbase.odc.service.git.model.FileChangeType;
+import com.oceanbase.odc.service.git.model.GitDiff;
 
 /**
  * @author: liuyizhuo.lyz

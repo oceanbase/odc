@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.integration.git;
-
-import java.util.List;
-
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-
-import com.oceanbase.odc.config.jpa.OdcJpaRepository;
+package com.oceanbase.odc.service.git.vcs;
 
 /**
  * @author: liuyizhuo.lyz
  * @date: 2024/7/29
  */
-public interface GitRepoRepository extends OdcJpaRepository<GitRepositoryEntity, Long>,
-        JpaSpecificationExecutor<GitRepositoryEntity> {
+public class GithubEFacadeImpl extends GithubFacadeImpl {
+    private static final String API_URL_FORMAT = "%s/api/v3/user/repos";
 
-    List<GitRepositoryEntity> findByProjectId(Long projectId);
-
+    public GithubEFacadeImpl(String host) {
+        super(String.format(API_URL_FORMAT, host));
+    }
 }

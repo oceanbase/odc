@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.integration.git;
+package com.oceanbase.odc.service.git;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -57,9 +57,9 @@ import org.eclipse.jgit.treewalk.FileTreeIterator;
 import org.eclipse.jgit.treewalk.TreeWalk;
 
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.service.integration.git.model.FileChangeType;
-import com.oceanbase.odc.service.integration.git.model.GitDiff;
-import com.oceanbase.odc.service.integration.git.model.GitStatus;
+import com.oceanbase.odc.service.git.model.FileChangeType;
+import com.oceanbase.odc.service.git.model.GitDiff;
+import com.oceanbase.odc.service.git.model.GitStatus;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -274,6 +274,10 @@ public class GitClientOperator {
 
     public String lastCommitId() throws GitAPIException {
         return git.log().setMaxCount(1).call().iterator().next().getName();
+    }
+
+    public void resetHardToHead() throws GitAPIException {
+        resetHard("HEAD");
     }
 
     public void resetHard(String version) throws GitAPIException {

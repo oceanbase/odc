@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.integration.git.model;
-
-import lombok.Data;
+package com.oceanbase.odc.service.git.model;
 
 /**
  * @author: liuyizhuo.lyz
  * @date: 2024/7/30
  */
-@Data
-public class GitDiff {
+public enum FileChangeType {
 
-    private String oldPath;
-
-    private String newPath;
-
-    private FileChangeType state;
-
-    private String diff;
+    // added
+    A,
+    // deleted
+    D,
+    // modified
+    M,
+    // moved
+    R,
+    // conflict
+    C
 
 }

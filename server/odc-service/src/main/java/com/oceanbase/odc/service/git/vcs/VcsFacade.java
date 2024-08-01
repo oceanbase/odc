@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.integration.git.vcs;
+package com.oceanbase.odc.service.git.vcs;
+
+import java.util.List;
+
+import com.oceanbase.odc.service.git.model.GitRepository;
 
 /**
  * @author: liuyizhuo.lyz
  * @date: 2024/7/29
  */
-public class GitlabEFacadeImpl extends GitlabFacadeImpl {
-    private static final String API_URL_FORMAT = "%s/api/v4/projects?membership=true&simple=true";
+public interface VcsFacade {
 
-    public GitlabEFacadeImpl(String host) {
-        super(String.format(API_URL_FORMAT, host));
-    }
+    List<GitRepository> listRepositories(String token);
+
 }

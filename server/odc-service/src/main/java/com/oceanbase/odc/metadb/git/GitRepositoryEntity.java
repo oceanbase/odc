@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.integration.git;
+package com.oceanbase.odc.metadb.git;
 
 import java.util.Date;
 
@@ -26,7 +26,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.oceanbase.odc.service.integration.git.model.VcsProvider;
+import com.oceanbase.odc.service.git.model.VcsProvider;
 
 import lombok.Data;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.integration.git.model;
+package com.oceanbase.odc.metadb.git;
+
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
 /**
  * @author: liuyizhuo.lyz
- * @date: 2024/7/30
+ * @date: 2024/7/29
  */
-public enum FileChangeType {
+public interface GitRepoRepository extends OdcJpaRepository<GitRepositoryEntity, Long>,
+        JpaSpecificationExecutor<GitRepositoryEntity> {
 
-    // added
-    A,
-    // deleted
-    D,
-    // modified
-    M,
-    // moved
-    R,
-    // conflict
-    C
+    List<GitRepositoryEntity> findByProjectId(Long projectId);
 
 }
