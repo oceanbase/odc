@@ -1,80 +1,84 @@
-## 4.3.1 (2024-07-)
+## 4.3.1 (2024-07-31)
 
-Change Risk Control
+### Feature Updates
 
-- Added table level permission control. Allow project members to have different permissions for different tables. Including query, change, and export operations on tables.
+Risk Control Changes
+
+- Added table-level permission control, allowing project members to have different operation permissions on different tables, including query, change, and export operations, enhancing collaborative control capabilities.
 
 Session Management
 
-- Killing query/session supports more scenarios for non directly connected OBServer
-  - When killing session on OceanBase 4.2.3 and obproxy 4.2.5, use global client session to solve unknown thread id exception.
-  - Using anonymous block to kill session in OceanBase 4.2.1 oracle mode.
+- Support for closing sessions/queries has been extended to more scenarios where OBServer is not directly connected.
+    - When connected to OceanBase V4.2.3 and OBProxy V4.2.5 or higher versions, session management is performed using client session capability.
+    - In OceanBase V4.2.1 Oracle mode, session management is handled using anonymous blocks.
 
-AP Development
+OLAP Development
 
-- Added query profile feature, which supports querying SQL execution details during or completed execution for OceanBase 4.2.4 or higher
-  - Provides graphical, tabular, and textual views of OceanBase's actual execution plan, visually displaying the connection relationships and step sequences between operators
-  - The query profile supports displaying the execution status of operators, providing a global summary of various execution time stages and detailed information at the operator level. It also supports sorting of Top5 time-consuming operators, making it easy to quickly identify and locate performance bottlenecks
-  - Implemented the ability to collect and analyze SQL execution data in real-time. Support viewing of I/O data and output row count for each thread during standalone/distributed execution
-
-- Added real-time query profile, which supports visual and interactive presentation of sql_plan_monitor
-  - This feature requires the data source version OceanBase 4.2.4+
-  - Not only does it support analysis of completed SQL executions, but also supports real-time analysis of executing SQL
-  - Provide graphical, tabular, and textual views for executing plans, visually displaying the connection relationships and step sequences between operators
-  - The global view provides sorting of Top5 time-consuming operators and a summary of each execution time-consuming stage, helping identifying performance bottlenecks
-  - The operator node contains the execution status and detailed information, including CPU, memory, disk, output rows, and node properties
-  - For parallel execution nodes, it supports sorting by DB time, IO memory, and number of rows to quickly locate data skew. It not only supports analyzing standalone execution plans but also supports analyzing distributed execution plans
-  - The newly designed integrated real-time diagnostic page can combine execution plans and full link trace to complete execution analysis in one page
+- Added real-time execution profiling, providing visual and interactive presentation of `sql_plan_monitor`.
+    - This feature requires data source version OceanBase V4.2.4 or higher.
+    - Supports analysis not only of completed SQL executions but also real-time analysis of ongoing SQL executions.
+    - Provides graphical, tabular, and text views of execution plans, intuitively displaying operator connections and step sequences.
+    - Global view offers sorting of Top 5 time-consuming operators and overall summary of execution phases, quickly pinpointing performance bottlenecks.
+    - Operator nodes include execution status and detailed information such as CPU, memory, disk, output rows, and node attributes.
+    - For parallel execution nodes, supports sorting by DB time, IO memory, and rows processed, quickly identifying data skew. Supports analysis of both standalone and distributed execution plans.
+    - Newly designed integrated real-time diagnostic page for comprehensive query profiling combining execution plans and end-to-end trace diagnostics.
 
 SQL Development
 
-- SQL execution supports viewing execution progress, including: total count of executions, current number, and trace ID of the SQL currently being executed; Support real-time viewing of completed execution results
-- Support viewing the logical execution plan of OceanBase in graphical format
+- During SQL execution, supports viewing execution progress, including total number of executions, current execution count, and trace ID of currently executing SQL. Real-time viewing of completed execution results is also supported.
+- Supports graphical format viewing of OceanBase's logical SQL execution plan.
 
-Data Source
+Data Sources
 
-- Adapted to OceanBase 4.2.4/4.3.1/4.3.2
+- Fully compatible with OceanBase V4.2.4, OceanBase V4.3.1, OceanBase V4.3.2.
 
 ### Usability Improvements
 
-- SQL execution supports obtaining execution progress. And the completed execution results could be viewed in real time.
-- Data cleaning tasks support editing task configuration.
-- Support import mysql, oracle and doris datasource.
+- Data delete tasks now support editing task configurations.
+- Data source module supports batch import from MySQL, Oracle, and Doris data sources.
 
 ### Bug Fixes
 
-DLM
-- Even if syncTableStructure config is off, the table structure would still be compared [#3014](https://github.com/oceanbase/odc/pull/3014)
+Data Lifecycle Management
+
+- Table structure comparison performed even when structure synchronization is not enabled. [#3014](https://github.com/oceanbase/odc/pull/3014)
 
 Change Risk Control
-- Automatic authorization rules do not take effect for LoginSuccess events [#3003](https://github.com/oceanbase/odc/pull/3003)
 
-Data Transfer
-- If ODC was reinstalled, dirty data files may be imported [#3006](https://github.com/oceanbase/odc/pull/3006)
+- Automatic authorization rules did not take effect for LoginSuccess events. [#3003](https://github.com/oceanbase/odc/pull/3003)
+
+Import/Export
+
+- In the desktop mode, reinstalling ODC may lead to the unintended import of historical files generated during previous import tasks when initiating new tasks. [#3006](https://github.com/oceanbase/odc/pull/3006)
 
 SQL Check
 
-- When the SQL specification is enabled, the submit and rollback function of SQL window may be invalid [#2985](https://github.com/oceanbase/odc/pull/2985)
+- When SQL window rules are enabled, commit and rollback buttons in SQL window may become ineffective. [#2985](https://github.com/oceanbase/odc/pull/2985)
 
 SQL Development
-- NPE would be reported during the pl debugging [#2930](https://github.com/oceanbase/odc/pull/2930)
-- Modifying session sql in oracle is incorrect [#2872](https://github.com/oceanbase/odc/pull/2872)
+
+- NPE may occur during PL debugging. [#2930](https://github.com/oceanbase/odc/pull/2930)
+- SQL error when modifying session variables for Oracle data sources. [#2872](https://github.com/oceanbase/odc/pull/2872)
 
 Mock Data
-- Unable to cancel the mock data task [#2850](https://github.com/oceanbase/odc/pull/2850)
 
-Global Object Search
-- Unable to stop data object synchronization [#2928](https://github.com/obase/odc/pull/2928)
+- Unable to terminate mock data tasks. [#2850](https://github.com/oceanbase/odc/pull/2850)
 
-Ticket
-- Failed to get sql check result when the check result file is not on this machine [#2943](https://github.com/oceanbase/odc/pull/2943)
+Global Object Retrieval
 
+- Object synchronization cannot be stopped. [#2928](https://github.com/obase/odc/pull/2928)
 
-Audit
-- The actual length of the value in the 'content_ip_address' column exceeds the length limit of the column [#2863](https://github.com/oceanbase/odc/pull/2863)
+Tickets
 
-Others
-- Daemon job in cluster model would be fired at one time [#2408](https://github.com/oceanbase/odc/pull/2408)
+- Unable to retrieve SQL check results when check result file does not exist locally. [#2943](https://github.com/oceanbase/odc/pull/2943)
+
+Auditing
+
+- Actual length of `content_ip_address` column values exceeds the column length limit. [#2863](https://github.com/oceanbase/odc/pull/2863)
+
+Other
+
+- When deploying across multiple nodes using process mode to schedule tasks, all tasks may be scheduled to the same node. [#2408](https://github.com/oceanbase/odc/pull/2408)
 
 ## 4.3.0_bp1 (2024-06-24)
 
