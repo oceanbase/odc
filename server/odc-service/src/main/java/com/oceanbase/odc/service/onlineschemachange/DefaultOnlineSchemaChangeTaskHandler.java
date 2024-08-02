@@ -43,7 +43,7 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
     @Autowired
     private ScheduleService scheduleService;
     @Autowired
-    private OscActionFsm    oscActionFSM;
+    private OscActionFsm oscActionFSM;
 
     @Override
     public void start(@NonNull Long scheduleId, @NonNull Long scheduleTaskId) {

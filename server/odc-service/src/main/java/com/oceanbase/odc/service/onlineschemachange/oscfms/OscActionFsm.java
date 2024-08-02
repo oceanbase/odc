@@ -20,7 +20,6 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 import javax.annotation.PostConstruct;
 
@@ -184,7 +183,7 @@ public class OscActionFsm extends ActionFsm<OscActionContext, OscActionResult> {
         String state = resolveState(oscActionContext);
         // CLEAN_RESOURCE should always schedule
         if (!StringUtils.equals(OscStates.CLEAN_RESOURCE.getState(), state) &&
-            (isTaskExpired(oscActionContext) || isFlowInstanceFailed(state, oscActionContext))) {
+                (isTaskExpired(oscActionContext) || isFlowInstanceFailed(state, oscActionContext))) {
             // transfer from current state to clean resources
             transferTaskStatesWithStates(state, OscStates.CLEAN_RESOURCE.getState(), null,
                     oscActionContext.getScheduleTask(), TaskStatus.CANCELED);
@@ -372,7 +371,7 @@ public class OscActionFsm extends ActionFsm<OscActionContext, OscActionResult> {
         oscContext.setTaskParameter(oscScheduleTaskParameters);
         oscContext.setScheduleTaskRepository(scheduleTaskRepository);
         oscContext.setConnectionProvider(new DefaultConnectionProvider(oscScheduleTaskParameters.getDatabaseName(),
-            connectionService, scheduleEntity.getConnectionId()));
+                connectionService, scheduleEntity.getConnectionId()));
         return oscContext;
     }
 
@@ -420,7 +419,7 @@ public class OscActionFsm extends ActionFsm<OscActionContext, OscActionResult> {
         @Override
         public ConnectionConfig connectionConfig() {
             if (null == config) {
-                config =  connectionService.getForConnectionSkipPermissionCheck(connectionID);
+                config = connectionService.getForConnectionSkipPermissionCheck(connectionID);
             }
             return config;
         }
@@ -429,9 +428,9 @@ public class OscActionFsm extends ActionFsm<OscActionContext, OscActionResult> {
         public ConnectionSession createConnectionSession() {
             ConnectionConfig connectionConfig = connectionConfig();
             ConnectionSession connectionSession =
-                new DefaultConnectSessionFactory(connectionConfig).generateSession();
+                    new DefaultConnectSessionFactory(connectionConfig).generateSession();
             ConnectionSessionUtil.setCurrentSchema(connectionSession,
-                dbName);
+                    dbName);
             return new DefaultConnectSessionFactory(connectionConfig).generateSession();
         }
     }

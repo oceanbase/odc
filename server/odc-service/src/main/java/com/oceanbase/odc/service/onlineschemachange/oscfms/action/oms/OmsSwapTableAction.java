@@ -41,7 +41,6 @@ import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 import com.oceanbase.odc.service.onlineschemachange.rename.DefaultRenameTableInvoker;
 import com.oceanbase.odc.service.onlineschemachange.rename.RenameTableHandlers;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
-import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -94,7 +93,8 @@ public class OmsSwapTableAction implements Action<OscActionContext, OscActionRes
             }
             ConnectionSessionUtil.setCurrentSchema(connectionSession, taskParameters.getDatabaseName());
             DefaultRenameTableInvoker defaultRenameTableInvoker =
-                    new DefaultRenameTableInvoker(connectionSession, dbSessionManageFacade, RenameTableHandlers.getForeignKeyHandler(connectionSession));
+                    new DefaultRenameTableInvoker(connectionSession, dbSessionManageFacade,
+                            RenameTableHandlers.getForeignKeyHandler(connectionSession));
             defaultRenameTableInvoker.invoke(taskParameters, parameters);
             // rename table success, jump to clean resoruce state
             return new OscActionResult(OscStates.SWAP_TABLE.getState(), null, OscStates.CLEAN_RESOURCE.getState());

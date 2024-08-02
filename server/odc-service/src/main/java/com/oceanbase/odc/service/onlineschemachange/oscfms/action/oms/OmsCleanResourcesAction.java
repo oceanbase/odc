@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms;
 
 import java.util.List;
-import java.util.concurrent.Executors;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
@@ -91,7 +90,7 @@ public class OmsCleanResourcesAction implements Action<OscActionContext, OscActi
         }
         // remain failed and prepare state
         OnlineSchemaChangeParameters onlineSchemaChangeParameters = JsonUtils.fromJson(
-               schedule.getJobParametersJson(), OnlineSchemaChangeParameters.class);
+                schedule.getJobParametersJson(), OnlineSchemaChangeParameters.class);
         if (onlineSchemaChangeParameters.getErrorStrategy() == TaskErrorStrategy.CONTINUE) {
             log.info("Because error strategy is continue, so schedule next task");
             // try schedule next task
@@ -149,7 +148,7 @@ public class OmsCleanResourcesAction implements Action<OscActionContext, OscActi
         // try release sync
         try {
             OmsProjectProgressResponse response =
-                projectOpenApiService.describeProjectProgress(projectControlRequest);
+                    projectOpenApiService.describeProjectProgress(projectControlRequest);
             if (response.getStatus() == OmsProjectStatusEnum.RUNNING) {
                 projectOpenApiService.stopProject(projectControlRequest);
             }
@@ -157,7 +156,7 @@ public class OmsCleanResourcesAction implements Action<OscActionContext, OscActi
             log.info("Release oms project, id {}", projectControlRequest.getId());
         } catch (Throwable ex) {
             log.warn("Failed to release oms project, id {}, occur error {}", projectControlRequest.getId(),
-                ex.getMessage());
+                    ex.getMessage());
         }
     }
 }

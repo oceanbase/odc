@@ -51,7 +51,6 @@ import com.oceanbase.odc.service.onlineschemachange.oms.request.TableTransferObj
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
-import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
 import lombok.extern.slf4j.Slf4j;
 

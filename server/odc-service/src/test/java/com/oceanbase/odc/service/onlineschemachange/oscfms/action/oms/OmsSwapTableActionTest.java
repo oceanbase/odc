@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms;
 
 import java.util.ArrayList;
@@ -39,7 +38,6 @@ import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepName;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepStatus;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectProgressResponse;
-import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectStepVO;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
@@ -58,6 +56,7 @@ public class OmsSwapTableActionTest {
     private DBSessionManageFacade dbSessionManageFacade;
     private OmsProjectOpenApiService omsProjectOpenApiService;
     private OnlineSchemaChangeProperties onlineSchemaChangeProperties;
+
     @Before
     public void init() {
         dbSessionManageFacade = Mockito.mock(DBSessionManageFacade.class);
@@ -73,11 +72,14 @@ public class OmsSwapTableActionTest {
 
     @Test
     public void testCheckOmsProjectNotReady() throws Exception {
-        OscActionContext context = OscTestUtil.createOcsActionContext(DialectType.OB_MYSQL, OscStates.SWAP_TABLE.getState(), TaskStatus.RUNNING);
-        Mockito.when(omsProjectOpenApiService.describeProjectProgress(ArgumentMatchers.any())).thenReturn(getOMSResponse(OmsProjectStatusEnum.RUNNING));
-        Mockito.when(omsProjectOpenApiService.describeProjectSteps(ArgumentMatchers.any())).thenReturn(getProjectSteps());
+        OscActionContext context = OscTestUtil.createOcsActionContext(DialectType.OB_MYSQL,
+                OscStates.SWAP_TABLE.getState(), TaskStatus.RUNNING);
+        Mockito.when(omsProjectOpenApiService.describeProjectProgress(ArgumentMatchers.any()))
+                .thenReturn(getOMSResponse(OmsProjectStatusEnum.RUNNING));
+        Mockito.when(omsProjectOpenApiService.describeProjectSteps(ArgumentMatchers.any()))
+                .thenReturn(getProjectSteps());
         OmsSwapTableAction swapTableAction = new OmsSwapTableAction(dbSessionManageFacade, omsProjectOpenApiService,
-            onlineSchemaChangeProperties);
+                onlineSchemaChangeProperties);
         OscActionResult result = swapTableAction.execute(context);
         Assert.assertEquals(result.getNextState(), OscStates.SWAP_TABLE.getState());
     }
@@ -88,13 +90,15 @@ public class OmsSwapTableActionTest {
         Mockito.when(connectionSession.getDialectType()).thenReturn(DialectType.OB_MYSQL);
         Mockito.when(connectionSession.getAttribute(ConnectionSessionConstants.OB_VERSION)).thenReturn("3.4.0");
         Mockito.when(connectionSession.getSyncJdbcExecutor(
-            ArgumentMatchers.anyString())).thenReturn(Mockito.mock(SyncJdbcExecutor.class));
+                ArgumentMatchers.anyString())).thenReturn(Mockito.mock(SyncJdbcExecutor.class));
         MockRenameTableHandler mockRenameTableHandler = new MockRenameTableHandler();
-        DefaultRenameTableInvoker renameTableInvoker = new DefaultRenameTableInvoker(connectionSession, dbSessionManageFacade, mockRenameTableHandler);
+        DefaultRenameTableInvoker renameTableInvoker =
+                new DefaultRenameTableInvoker(connectionSession, dbSessionManageFacade, mockRenameTableHandler);
         OnlineSchemaChangeParameters parameters = OscTestUtil.createOscParameters();
         parameters.setSwapTableNameRetryTimes(1);
-        renameTableInvoker.invoke(OscTestUtil.createTaskParameters(DialectType.OB_MYSQL, OscStates.SWAP_TABLE.getState()),
-            parameters);
+        renameTableInvoker.invoke(
+                OscTestUtil.createTaskParameters(DialectType.OB_MYSQL, OscStates.SWAP_TABLE.getState()),
+                parameters);
         Assert.assertEquals(mockRenameTableHandler.renamePair.size(), 1);
         Assert.assertEquals(mockRenameTableHandler.renamePair.get(0), "ghost_test_table");
     }
@@ -104,6 +108,7 @@ public class OmsSwapTableActionTest {
         omsProjectResponse.setStatus(statusEnum);
         return omsProjectResponse;
     }
+
     private List<OmsProjectStepVO> getProjectSteps() {
         OmsProjectStepVO fullStep = new OmsProjectStepVO();
         fullStep.setName(OmsStepName.FULL_TRANSFER);
@@ -126,6 +131,7 @@ public class OmsSwapTableActionTest {
 
     private static final class MockRenameTableHandler implements RenameTableHandler {
         List<String> renamePair = new ArrayList<>();
+
         @Override
         public void rename(String schema, String fromName, String toName) {
             renamePair.add(toName);

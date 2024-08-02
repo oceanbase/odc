@@ -31,7 +31,6 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBObjectOperators;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.onlineschemachange.ddl.DdlUtils;
@@ -43,7 +42,6 @@ import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlT
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
-import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;

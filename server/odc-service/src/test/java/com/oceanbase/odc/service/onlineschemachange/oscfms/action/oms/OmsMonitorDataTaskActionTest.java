@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms;
 
 import org.junit.Assert;
@@ -66,9 +65,11 @@ public class OmsMonitorDataTaskActionTest {
         OnlineSchemaChangeScheduleTaskResult result = OscTestUtil.createTaskResult(DialectType.OB_MYSQL);
         result.setFullTransferProgressPercentage(100.0);
         result.setFullVerificationResult(FullVerificationResult.UNCHECK);
-        OmsMonitorDataTaskAction omsMonitorDataTaskAction = new OmsMonitorDataTaskAction(projectOpenApiService, onlineSchemaChangeProperties);
-        OscActionResult actionResult = omsMonitorDataTaskAction.handleOmsProjectStepResult(context, createProjectStepResult(TaskStatus.DONE), result,
-            SwapTableType.AUTO, scheduleTask);
+        OmsMonitorDataTaskAction omsMonitorDataTaskAction =
+                new OmsMonitorDataTaskAction(projectOpenApiService, onlineSchemaChangeProperties);
+        OscActionResult actionResult = omsMonitorDataTaskAction.handleOmsProjectStepResult(context,
+                createProjectStepResult(TaskStatus.DONE), result,
+                SwapTableType.AUTO, scheduleTask);
         Assert.assertEquals(actionResult.getNextState(), OscStates.SWAP_TABLE.getState());
     }
 
@@ -79,9 +80,11 @@ public class OmsMonitorDataTaskActionTest {
         result.setFullTransferProgressPercentage(100.0);
         result.setFullVerificationResult(FullVerificationResult.UNCHECK);
         result.setManualSwapTableStarted(false);
-        OmsMonitorDataTaskAction omsMonitorDataTaskAction = new OmsMonitorDataTaskAction(projectOpenApiService, onlineSchemaChangeProperties);
-        OscActionResult actionResult = omsMonitorDataTaskAction.handleOmsProjectStepResult(context, createProjectStepResult(TaskStatus.DONE), result,
-            SwapTableType.MANUAL, scheduleTask);
+        OmsMonitorDataTaskAction omsMonitorDataTaskAction =
+                new OmsMonitorDataTaskAction(projectOpenApiService, onlineSchemaChangeProperties);
+        OscActionResult actionResult = omsMonitorDataTaskAction.handleOmsProjectStepResult(context,
+                createProjectStepResult(TaskStatus.DONE), result,
+                SwapTableType.MANUAL, scheduleTask);
         Assert.assertEquals(actionResult.getNextState(), OscStates.MONITOR_DATA_TASK.getState());
         Assert.assertTrue(result.isManualSwapTableEnabled());
     }
@@ -93,9 +96,11 @@ public class OmsMonitorDataTaskActionTest {
         result.setFullTransferProgressPercentage(100.0);
         result.setFullVerificationResult(FullVerificationResult.UNCHECK);
         result.setManualSwapTableStarted(true);
-        OmsMonitorDataTaskAction omsMonitorDataTaskAction = new OmsMonitorDataTaskAction(projectOpenApiService, onlineSchemaChangeProperties);
-        OscActionResult actionResult = omsMonitorDataTaskAction.handleOmsProjectStepResult(context, createProjectStepResult(TaskStatus.DONE), result,
-            SwapTableType.MANUAL, scheduleTask);
+        OmsMonitorDataTaskAction omsMonitorDataTaskAction =
+                new OmsMonitorDataTaskAction(projectOpenApiService, onlineSchemaChangeProperties);
+        OscActionResult actionResult = omsMonitorDataTaskAction.handleOmsProjectStepResult(context,
+                createProjectStepResult(TaskStatus.DONE), result,
+                SwapTableType.MANUAL, scheduleTask);
         Assert.assertEquals(actionResult.getNextState(), OscStates.SWAP_TABLE.getState());
     }
 
@@ -105,9 +110,11 @@ public class OmsMonitorDataTaskActionTest {
         OnlineSchemaChangeScheduleTaskResult result = OscTestUtil.createTaskResult(DialectType.OB_MYSQL);
         result.setFullTransferProgressPercentage(90.0);
         result.setFullVerificationResult(FullVerificationResult.UNCHECK);
-        OmsMonitorDataTaskAction omsMonitorDataTaskAction = new OmsMonitorDataTaskAction(projectOpenApiService, onlineSchemaChangeProperties);
-        OscActionResult actionResult = omsMonitorDataTaskAction.handleOmsProjectStepResult(context, createProjectStepResult(TaskStatus.DONE), result,
-            SwapTableType.AUTO, scheduleTask);
+        OmsMonitorDataTaskAction omsMonitorDataTaskAction =
+                new OmsMonitorDataTaskAction(projectOpenApiService, onlineSchemaChangeProperties);
+        OscActionResult actionResult = omsMonitorDataTaskAction.handleOmsProjectStepResult(context,
+                createProjectStepResult(TaskStatus.DONE), result,
+                SwapTableType.AUTO, scheduleTask);
         Assert.assertEquals(actionResult.getNextState(), OscStates.MONITOR_DATA_TASK.getState());
     }
 
@@ -115,9 +122,11 @@ public class OmsMonitorDataTaskActionTest {
     public void testHandleOmsProjectStepResultNotReady1() {
         ScheduleTaskEntity scheduleTask = OscTestUtil.createScheduleTaskEntity(TaskStatus.RUNNING);
         OnlineSchemaChangeScheduleTaskResult result = OscTestUtil.createTaskResult(DialectType.OB_MYSQL);
-        OmsMonitorDataTaskAction omsMonitorDataTaskAction = new OmsMonitorDataTaskAction(projectOpenApiService, onlineSchemaChangeProperties);
-        OscActionResult actionResult = omsMonitorDataTaskAction.handleOmsProjectStepResult(context, createProjectStepResult(TaskStatus.RUNNING), result,
-            SwapTableType.AUTO, scheduleTask);
+        OmsMonitorDataTaskAction omsMonitorDataTaskAction =
+                new OmsMonitorDataTaskAction(projectOpenApiService, onlineSchemaChangeProperties);
+        OscActionResult actionResult = omsMonitorDataTaskAction.handleOmsProjectStepResult(context,
+                createProjectStepResult(TaskStatus.RUNNING), result,
+                SwapTableType.AUTO, scheduleTask);
         Assert.assertEquals(actionResult.getNextState(), OscStates.MONITOR_DATA_TASK.getState());
     }
 
@@ -125,16 +134,20 @@ public class OmsMonitorDataTaskActionTest {
     public void testHandleOmsProjectStepResultNotReady2() {
         ScheduleTaskEntity scheduleTask = OscTestUtil.createScheduleTaskEntity(TaskStatus.RUNNING);
         OnlineSchemaChangeScheduleTaskResult result = OscTestUtil.createTaskResult(DialectType.OB_MYSQL);
-        OmsMonitorDataTaskAction omsMonitorDataTaskAction = new OmsMonitorDataTaskAction(projectOpenApiService, onlineSchemaChangeProperties);
-        OscActionResult actionResult = omsMonitorDataTaskAction.handleOmsProjectStepResult(context, createProjectStepResult(TaskStatus.FAILED), result,
-            SwapTableType.AUTO, scheduleTask);
+        OmsMonitorDataTaskAction omsMonitorDataTaskAction =
+                new OmsMonitorDataTaskAction(projectOpenApiService, onlineSchemaChangeProperties);
+        OscActionResult actionResult = omsMonitorDataTaskAction.handleOmsProjectStepResult(context,
+                createProjectStepResult(TaskStatus.FAILED), result,
+                SwapTableType.AUTO, scheduleTask);
         Assert.assertEquals(actionResult.getNextState(), OscStates.MONITOR_DATA_TASK.getState());
     }
 
     @Test
     public void testOmsMonitorDataTaskSwitchToModifyDataState() throws Exception {
-        OmsMonitorDataTaskAction omsMonitorDataTaskAction = new OmsMonitorDataTaskAction(projectOpenApiService, onlineSchemaChangeProperties);
-        context = OscTestUtil.createOcsActionContext(DialectType.OB_MYSQL, OscStates.MONITOR_DATA_TASK.getState(), TaskStatus.RUNNING);
+        OmsMonitorDataTaskAction omsMonitorDataTaskAction =
+                new OmsMonitorDataTaskAction(projectOpenApiService, onlineSchemaChangeProperties);
+        context = OscTestUtil.createOcsActionContext(DialectType.OB_MYSQL, OscStates.MONITOR_DATA_TASK.getState(),
+                TaskStatus.RUNNING);
         RateLimiterConfig r1 = new RateLimiterConfig();
         r1.setDataSizeLimit(100);
         r1.setRowLimit(100);

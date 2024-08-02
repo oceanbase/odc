@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms;
 
 import org.junit.Assert;
@@ -128,7 +127,7 @@ public class OmsCleanResourcesActionTest {
         schedule.setJobParametersJson(JsonUtils.toJson(onlineSchemaChangeParameters));
         ScheduleTaskEntity scheduleTask = OscTestUtil.createScheduleTaskEntity(TaskStatus.FAILED);
         OscActionResult actionResult = omsCleanResourcesAction.determinateNextState(scheduleTask, schedule);
-        // switch to complete  if not ignore error
+        // switch to complete if not ignore error
         Assert.assertEquals(actionResult.getNextState(), OscStates.COMPLETE.getState());
     }
 
@@ -138,7 +137,8 @@ public class OmsCleanResourcesActionTest {
         ret.setStatus(OmsProjectStatusEnum.RUNNING);
         Mockito.when(omsProjectOpenApiService.describeProjectProgress(ArgumentMatchers.any())).thenReturn(ret);
         OmsCleanResourcesAction omsCleanResourcesAction = new OmsCleanResourcesAction(omsProjectOpenApiService);
-        OscActionContext oscActionContext = OscTestUtil.createOcsActionContext(DialectType.OB_MYSQL, OscStates.CLEAN_RESOURCE.getState(), TaskStatus.RUNNING);
+        OscActionContext oscActionContext = OscTestUtil.createOcsActionContext(DialectType.OB_MYSQL,
+                OscStates.CLEAN_RESOURCE.getState(), TaskStatus.RUNNING);
         oscActionContext.getTaskParameter().setOmsProjectId("omsProjectID");
         oscActionContext.getTaskParameter().setUid("omsUid");
         OscActionResult oscActionResult = omsCleanResourcesAction.execute(oscActionContext);

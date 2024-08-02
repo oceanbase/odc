@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms;
 
 import org.junit.Assert;
@@ -31,11 +30,11 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties.OmsProperties;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.OscTestUtil;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.DataSourceOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscTestUtil;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.ConnectionProvider;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 
@@ -64,24 +63,23 @@ public class OmsCreateDataTaskActionTest {
         config = new ConnectionConfig();
         config.setType(ConnectType.OB_MYSQL);
         syncJdbcExecutor = Mockito.mock(SyncJdbcExecutor.class);
-        // init  mock
+        // init mock
         connectionSession = Mockito.mock(ConnectionSession.class);
         Mockito.when(connectionSession.getSyncJdbcExecutor(ArgumentMatchers.anyString())).thenReturn(syncJdbcExecutor);
         omsProjectOpenApiService = Mockito.mock(OmsProjectOpenApiService.class);
         Mockito.when(omsProjectOpenApiService.createProject(ArgumentMatchers.any())).thenReturn("testProjectID");
         dataSourceOpenApiService = Mockito.mock(DataSourceOpenApiService.class);
-        Mockito.when(dataSourceOpenApiService.createOceanBaseDataSource(ArgumentMatchers.any())).thenReturn("testOmsID");
+        Mockito.when(dataSourceOpenApiService.createOceanBaseDataSource(ArgumentMatchers.any()))
+                .thenReturn("testOmsID");
     }
 
     @Test
     public void testOmsCreateDataTaskAction() throws Exception {
         OmsCreateDataTaskAction omsCreateDataTaskAction = new OmsCreateDataTaskAction(dataSourceOpenApiService,
-            omsProjectOpenApiService,
-            onlineSchemaChangeProperties
-            );
+                omsProjectOpenApiService,
+                onlineSchemaChangeProperties);
         OscActionContext oscActionContext = OscTestUtil.createOcsActionContext(DialectType.OB_MYSQL,
-            OscStates.CREATE_DATA_TASK.getState(), TaskStatus.RUNNING
-            );
+                OscStates.CREATE_DATA_TASK.getState(), TaskStatus.RUNNING);
         oscActionContext.setScheduleTaskRepository(Mockito.mock(ScheduleTaskRepository.class));
         oscActionContext.setConnectionProvider(new ConnectionProvider() {
             @Override
@@ -106,12 +104,10 @@ public class OmsCreateDataTaskActionTest {
     public void testOmsCreateDataTaskActionReentrant() throws Exception {
 
         OmsCreateDataTaskAction omsCreateDataTaskAction = new OmsCreateDataTaskAction(dataSourceOpenApiService,
-            omsProjectOpenApiService,
-            onlineSchemaChangeProperties
-        );
+                omsProjectOpenApiService,
+                onlineSchemaChangeProperties);
         OscActionContext oscActionContext = OscTestUtil.createOcsActionContext(DialectType.OB_MYSQL,
-            OscStates.CREATE_DATA_TASK.getState(), TaskStatus.RUNNING
-        );
+                OscStates.CREATE_DATA_TASK.getState(), TaskStatus.RUNNING);
         oscActionContext.getTaskParameter().setOmsDataSourceId("newOmsDsID");
         oscActionContext.getTaskParameter().setOmsProjectId("newProjectID");
         oscActionContext.setScheduleTaskRepository(Mockito.mock(ScheduleTaskRepository.class));
