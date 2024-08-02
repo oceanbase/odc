@@ -34,7 +34,7 @@ import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
-import com.oceanbase.odc.service.task.service.StdTaskFrameworkService;
+import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -54,7 +54,7 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
     @Autowired
     private TaskService taskService;
     @Autowired
-    private StdTaskFrameworkService stdTaskFrameworkService;
+    private TaskFrameworkService stdTaskFrameworkService;
 
     @Override
     public void onEvent(DefaultJobProcessUpdateEvent event) {

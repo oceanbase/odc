@@ -79,7 +79,7 @@ public class DBSchemaSyncService {
     public boolean sync(@NonNull Database database) throws InterruptedException, SQLException {
         PreConditions.notNull(database.getDataSource(), "database.dataSource");
         Long dataSourceId = database.getDataSource().getId();
-        Lock lock = jdbcLockRegistry.obtain("sync-datasource-" + dataSourceId + "-database-" + database.getId());
+        Lock lock = jdbcLockRegistry.obtain(getSyncDBObjectLockKey(dataSourceId, database.getId()));
         if (!lock.tryLock(3, TimeUnit.SECONDS)) {
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
         }
@@ -107,6 +107,10 @@ public class DBSchemaSyncService {
         } finally {
             lock.unlock();
         }
+    }
+
+    public String getSyncDBObjectLockKey(@NonNull Long dataSourceId, @NonNull Long databaseId) {
+        return "sync-datasource-" + dataSourceId + "-database-" + databaseId;
     }
 
 }

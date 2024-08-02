@@ -28,12 +28,14 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.print.DocFlavor.STRING;
 
 import org.hibernate.annotations.Where;
 
 import com.oceanbase.odc.core.shared.PermissionConfiguration;
 import com.oceanbase.odc.core.shared.constant.AuthorizationType;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -94,6 +96,13 @@ public class PermissionEntity implements PermissionConfiguration {
 
     @Column(name = "ticket_id")
     private Long ticketId;
+
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "resource_type")
+    private ResourceType resourceType;
+
+    @Column(name = "resource_id")
+    private Long resourceId;
 
     @Override
     public String resourceIdentifier() {

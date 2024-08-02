@@ -183,9 +183,6 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
         if (Objects.nonNull(asyncTaskThread)) {
             double progress = asyncTaskThread.getProgressPercentage();
             taskService.updateProgress(taskId, progress);
-            if (System.currentTimeMillis() - asyncTaskThread.getStartTimestamp() > getTimeoutMillis()) {
-                asyncTaskThread.stopTaskAndKillQuery(sessionManageFacade);
-            }
         }
     }
 

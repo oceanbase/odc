@@ -26,7 +26,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
-import com.oceanbase.odc.service.session.util.SchemaExtractor;
+import com.oceanbase.odc.service.session.util.DBSchemaExtractor;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -46,7 +46,7 @@ public class SwitchDatabaseInterceptor implements SqlExecuteInterceptor {
             return;
         }
         String currentSchema = ConnectionSessionUtil.getCurrentSchema(session);
-        Optional<String> switchSchema = SchemaExtractor
+        Optional<String> switchSchema = DBSchemaExtractor
                 .extractSwitchedSchemaName(Collections.singletonList(response.getSqlTuple()), session.getDialectType());
         if (switchSchema.isPresent() && !Objects.equals(switchSchema.get(), currentSchema)) {
             ConnectionSessionUtil.setCurrentSchema(session, switchSchema.get());

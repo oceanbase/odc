@@ -18,10 +18,8 @@ package com.oceanbase.odc.service.permission.database.model;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 
 import com.oceanbase.odc.core.flow.model.TaskParameters;
-import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter.ApplyProject;
 
 import lombok.Data;
@@ -36,7 +34,7 @@ public class ApplyDatabaseParameter implements Serializable, TaskParameters {
     private static final long serialVersionUID = -2482302525012272875L;
 
     /**
-     * Project to be applied for, the
+     * Project to be applied for, required
      */
     private ApplyProject project;
     /**
@@ -65,20 +63,6 @@ public class ApplyDatabaseParameter implements Serializable, TaskParameters {
         private String name;
         private Long dataSourceId;
         private String dataSourceName;
-
-        public static ApplyDatabase from(Database database) {
-            ApplyDatabase applyDatabase = new ApplyDatabase();
-            if (Objects.isNull(database)) {
-                return null;
-            }
-            applyDatabase.setId(database.getId());
-            applyDatabase.setName(database.getName());
-            if (Objects.nonNull(database.getDataSource())) {
-                applyDatabase.setDataSourceId(database.getDataSource().getId());
-                applyDatabase.setDataSourceName(database.getDataSource().getName());
-            }
-            return applyDatabase;
-        }
 
     }
 

@@ -73,9 +73,8 @@ public class UserDatabasePermissionSpec {
         return SpecificationUtil.columnIn(UserDatabasePermissionEntity_.ACTION, actions);
     }
 
-    public static Specification<UserDatabasePermissionEntity> authorizationTypeEqual(
-            AuthorizationType authorizationTypes) {
-        return SpecificationUtil.columnEqual(UserDatabasePermissionEntity_.AUTHORIZATION_TYPE, authorizationTypes);
+    public static Specification<UserDatabasePermissionEntity> authorizationTypeEqual(AuthorizationType type) {
+        return SpecificationUtil.columnEqual(UserDatabasePermissionEntity_.AUTHORIZATION_TYPE, type);
     }
 
     public static Specification<UserDatabasePermissionEntity> filterByExpirationStatus(

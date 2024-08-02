@@ -58,6 +58,7 @@ import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangePara
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
+import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
@@ -76,6 +77,7 @@ import lombok.NonNull;
 public class FlowInstanceDetailResp {
 
     private Long id;
+    private Long organizationId;
     private TaskType type;
     private List<FlowSubType> subTypes;
     private Integer maxRiskLevel;
@@ -118,6 +120,7 @@ public class FlowInstanceDetailResp {
             resp.setCreateTime(entity.getCreateTime());
             resp.setStatus(entity.getStatus());
             resp.setProjectId(entity.getProjectId());
+            resp.setOrganizationId(entity.getOrganizationId());
             Set<UserEntity> candidates = getCandidatesByFlowInstanceId.apply(entity.getId());
             if (candidates != null) {
                 resp.setCandidateApprovers(candidates.stream().map(InnerUser::new).collect(Collectors.toSet()));
@@ -162,6 +165,7 @@ public class FlowInstanceDetailResp {
             if (this.ifRollbackable != null) {
                 resp.setRollbackable(ifRollbackable.test(flowInstance.getId()));
             }
+            resp.setOrganizationId(flowInstance.getOrganizationId());
             resp.setCreator(InnerUser.of(flowInstance.getCreatorId(), getUserById, getRolesByUserId));
             resp.setCompleteTime(flowInstance.getUpdateTime());
             resp.setCreateTime(flowInstance.getCreateTime());
@@ -267,6 +271,9 @@ public class FlowInstanceDetailResp {
                     break;
                 case APPLY_DATABASE_PERMISSION:
                     resp.setParameters(JsonUtils.fromJson(parameterJson, ApplyDatabaseParameter.class));
+                    break;
+                case APPLY_TABLE_PERMISSION:
+                    resp.setParameters(JsonUtils.fromJson(parameterJson, ApplyTableParameter.class));
                     break;
                 case STRUCTURE_COMPARISON:
                     DBStructureComparisonParameter dbStructureComparisonParameter = JsonUtils.fromJson(parameterJson,

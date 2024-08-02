@@ -86,10 +86,9 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             // permission to access it.
             Database sourceDb = databaseService.detail(dataArchiveParameters.getSourceDatabaseId());
             Database targetDb = databaseService.detail(dataArchiveParameters.getTargetDataBaseId());
-            if (!dataArchiveParameters.getSyncTableStructure().isEmpty()
-                    && sourceDb.getDataSource().getDialectType() != targetDb.getDataSource().getDialectType()) {
-                throw new UnsupportedException(
-                        "Different types of databases do not support structural synchronization.");
+            if (!dataArchiveParameters.getSyncTableStructure().isEmpty()) {
+                supportSyncTableStructure(sourceDb.getDataSource().getDialectType(), targetDb.getDataSource()
+                        .getDialectType());
             }
             dataArchiveParameters.setSourceDatabaseName(sourceDb.getName());
             dataArchiveParameters.setTargetDatabaseName(targetDb.getName());
@@ -187,5 +186,16 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
         parameters.setScanBatchSize(dlmConfiguration.getDefaultScanBatchSize());
         parameters.setQueryTimeout(dlmConfiguration.getTaskConnectionQueryTimeout());
         parameters.setShardingStrategy(dlmConfiguration.getShardingStrategy());
+    }
+
+    private void supportSyncTableStructure(DialectType srcDbType, DialectType tgtDbType) {
+        if (srcDbType != tgtDbType) {
+            throw new UnsupportedException(
+                    "Different types of databases do not support table structure synchronization.");
+        }
+        if (!srcDbType.isMysql()) {
+            throw new UnsupportedException(
+                    String.format("The database does not support table structure synchronization,type=%s", srcDbType));
+        }
     }
 }

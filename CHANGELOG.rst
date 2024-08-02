@@ -1,5 +1,113 @@
-(unreleased)
-------------
+v4.3.1 (2024-07-31)
+-------------------
+
+New
+~~~
+- Feat(kill session): adapt global client session and using block in
+  oracle model in kill session (#2978) [zijia.cj]
+- Feat(server): allows some beans to be loaded only in server mode
+  (#2757) [Ang]
+- Feat(sql-execute): supports service layer for query profile (#2423)
+  [LuckyLeo]
+- Feat(CI): support run build release by ob farm (#2738) [niyuhang]
+- Feat(osc): add rate limiter for osc (#2402) [krihy]
+- Feat(logical-database): logical database metadata management (#2358)
+  [pynzzZ]
+- Feat(config):add creator_id to config entity (#2485) [Ang]
+- Feat(table-permission): supports table level authority control (#2324)
+  [XiaoYang, isadba]
+
+Changes
+~~~~~~~
+- Refactor(statefulRoute): generalization plDebugsession to UUID stateId
+  (#2960) [Ang]
+- Refactor: change the CODEOWNERS (#2931) [IL MARE]
+- Chore: update client version (#2821) [Xiao Kang]
+- Refactor(flow): add organizationId to flow instance detail (#2841)
+  [Ang]
+- Refactor(config): Add more fields to configEntity #2493. [Ang]
+
+Fix
+~~~
+- Fix(parser): failed to recognize the schema or package name from an
+  anonymous block (#3069) [IL MARE]
+- Fix(table-permission): creating table needs table change permissions
+  (#3057) [pynzzZ]
+- Fix(flow): wrong approval flow for database/table permission apply
+  ticket (#3072) [pynzzZ]
+- Fix(database-permission): wrongly recognize packages as schemas
+  (#3067) [pynzzZ]
+- Fix(dlm): create the target table if the sync table structure is off
+  in MySQL mode (#3050) [guowl3]
+- Fix(table-permission): table permission apply tickets warning log not
+  found (#3049) [pynzzZ]
+- Fix(table-permission): could create tickets when users have no
+  permission to the database (#3046) [pynzzZ]
+- Fix(partition-plan): can not recognize the partition key's data type
+  on mysql mode (#3039) [guowl3]
+- Fix(dlm): several bug related to editing data cleaning (#3033)
+  [guowl3]
+- Fix(table-permission): not select the specific database/table by
+  default when create the permission application ticket (#3035) [pynzzZ]
+- Fix(database): creating databases under the data source failed (#3037)
+  [pynzzZ]
+- Fix(dlm): don't compare the table structure if syncTableStructure is
+  off (#3014) [guowl3]
+- Fix(login): set max_login_record_time_minutes default value to 0 in
+  web mode (#3003) [Ang]
+- Fix(data-transfer): clean work directory before import (#3006)
+  [LuckyLeo]
+- Fix(alarm): task alarm add exception message (#3004) [Ang]
+- Fix(query-profile): modified the version supporting query profile
+  (#3002) [LuckyLeo]
+- Fix(diagnose): failed to view query profile for distributed OB (#2945)
+  [LuckyLeo]
+- Fix(db-browser): failed to recognize the commit and rollback statement
+  (#2985) [IL MARE]
+- Fix(global-search): unable to stop data object synchronization (#2928)
+  [IL MARE]
+- Fix(pre-check): failed to get sql check result when the check result
+  file is not on this machine (#2943) [IL MARE]
+- Fix(security): update oauth2 client version (#2981) [Ang]
+- Fix(stateful): remove wrong condition (#2975) [Ang]
+- Fix(osc): the online schema change blocked when rate limiter modified
+  before swap table action (#2908) [LioRoger]
+- Fix(web): modify tomcat keepAliveTimeout to 70 seconds (#2964) [Ang]
+- Fix(statefulRoute): failed to list built-in snippets (#2935) [Ang]
+- Fix(permission): fail to submit ticket if lack of database permission
+  (#2946) [LuckyLeo]
+- Fix(statefulRoute): fix list column can't reach (#2953) [Ang]
+- Fix(import): add template api and supports mysql, oracle and doris
+  datasource importing (#2936) [IL MARE]
+- Fix(pl-debug): avoid npe during the pl debugging (#2930) [IL MARE]
+- Fix(mock data): failed to cancel the mock data task (#2850) [zijia.cj]
+- Fix(sql): the sql of modifying session parameter in oracle is error
+  (#2872) [zijia.cj]
+- Fix(migrate): fix login process resource load faild (#2883)
+  [yiminpeng]
+- Fix(flow): failed to startup a ticket (#2798) [IL MARE]
+- Fix(audit): client ip length more langer then audit column
+  client_ip_address (#2863) [CHLK]
+- Fix(ob-sql-parser): failed to recognize interval expression in ob-
+  oracle mode (#2873) [IL MARE]
+- Fix(data viewing): get result-set timeout (#2848) [zijia.cj]
+- Fix(database-permission): mistake caused by code merge (#2786)
+  [XiaoYang]
+- Fix(metadb): change systemConfigDao to systemConfigRepository. (#2467)
+  [Ang]
+- Fix(deserialization): failed to deserialize the page object (#2434)
+  [Ang]
+- Fix(taskframework): daemon job be fired at one time in cluster model
+  (#2408) [krihy]
+
+Security
+~~~~~~~~
+- Security: modify annotations on some service classes (#2955)
+  [LuckyLeo]
+
+
+v4.3.0_bp1 (2024-06-24)
+-----------------------
 
 Fix
 ~~~

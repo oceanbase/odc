@@ -28,6 +28,7 @@ import com.oceanbase.odc.service.onlineschemachange.oms.request.ListOmsProjectFu
 import com.oceanbase.odc.service.onlineschemachange.oms.request.ListOmsProjectRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsApiReturnResult;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsProjectControlRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.UpdateProjectConfigRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectFullVerifyResultResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectProgressResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectResponse;
@@ -150,4 +151,13 @@ public class OmsProjectOpenApiServiceImpl implements OmsProjectOpenApiService {
         return omsClient.postOmsInterface(params);
     }
 
+    @Override
+    public void updateProjectConfig(UpdateProjectConfigRequest request) {
+        ClientRequestParams params = new ClientRequestParams()
+                .setRequest(request)
+                .setAction("UpdateProjectConfig")
+                .setTypeReference(new TypeReference<OmsApiReturnResult<Void>>() {});
+
+        omsClient.postOmsInterface(params);
+    }
 }

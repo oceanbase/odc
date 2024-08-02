@@ -24,9 +24,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.model.SqlExecDetail;
-import com.oceanbase.odc.core.shared.model.SqlExplain;
 import com.oceanbase.odc.core.shared.model.TraceSpan;
+import com.oceanbase.odc.plugin.connect.model.diagnose.SqlExplain;
 import com.oceanbase.odc.service.common.model.ResourceSql;
 import com.oceanbase.odc.service.common.response.OdcResult;
 import com.oceanbase.odc.service.common.response.Responses;
@@ -93,6 +94,17 @@ public class SqlDiagnoseController {
             throws IOException {
         return Responses.success(diagnoseService.getFullLinkTraceDownloadUrl(
                 sessionService.nullSafeGet(SidUtils.getSessionId(sid)), sql));
+    }
+
+    @ApiOperation(value = "getQueryProfile")
+    @RequestMapping(value = "/getQueryProfile/{sid}", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
+    public SuccessResponse<SqlExplain> getQueryProfile(@PathVariable String sid,
+            @RequestBody ResourceSql resource) throws IOException {
+        String traceId = resource.getTag();
+        PreConditions.notEmpty(traceId, "trace id");
+        return Responses.success(diagnoseService.getQueryProfile(
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid)), traceId));
     }
 
 }

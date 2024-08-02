@@ -4874,11 +4874,11 @@ DATE_VALUE
     ;
 
 INTERVAL_VALUE
-    : I N T E R V A L ([ \t\n\r\f]+|('--'(~[\n\r])*))?'\''(~['])*'\''[ \t\n\r\f]*( Y E A R | M O N T H )[ \t\n\r\f]*('('|[\uff08])[ \t\n\r\f]*[0-9]+[ \t\n\r\f]*(')'|[\uff09])?
-    | I N T E R V A L ([ \t\n\r\f]+|('--'(~[\n\r])*))?'\''(~['])*'\''[ \t\n\r\f]*( Y E A R | M O N T H )([ \t\n\r\f]*('('|[\uff08])[ \t\n\r\f]*[0-9]+[ \t\n\r\f]*(')'|[\uff09])[ \t\n\r\f]*|[ \t\n\r\f]+) T O [ \t\n\r\f]+( Y E A R | M O N T H )
-    | I N T E R V A L ([ \t\n\r\f]+|('--'(~[\n\r])*))?'\''(~['])*'\''[ \t\n\r\f]*( D A Y | H O U R | M I N U T E | S E C O N D )[ \t\n\r\f]*('('|[\uff08])[ \t\n\r\f]*[0-9]+[ \t\n\r\f]*(')'|[\uff09])?
-    | I N T E R V A L ([ \t\n\r\f]+|('--'(~[\n\r])*))?'\''(~['])*'\''[ \t\n\r\f]* S E C O N D [ \t\n\r\f]*('('|[\uff08])[ \t\n\r\f]*[0-9]+[ \t\n\r\f]*','[ \t\n\r\f]*[0-9]+[ \t\n\r\f]*(')'|[\uff09])
-    | I N T E R V A L ([ \t\n\r\f]+|('--'(~[\n\r])*))?'\''(~['])*'\''[ \t\n\r\f]*( D A Y | H O U R | M I N U T E | S E C O N D )([ \t\n\r\f]*('('|[\uff08])[ \t\n\r\f]*[0-9]+[ \t\n\r\f]*(')'|[\uff09])[ \t\n\r\f]*|[ \t\n\r\f]+) T O [ \t\n\r\f]+( D A Y | H O U R | M I N U T E | S E C O N D [ \t\n\r\f]*('('|[\uff08])[ \t\n\r\f]*[0-9]+[ \t\n\r\f]*(')'|[\uff09])?)
+    : I N T E R V A L WHITESPACE? '\''(~['])*'\'' SPACE_* ( Y E A R | M O N T H ) INTERVAL_PRICISION?
+    | I N T E R V A L WHITESPACE? '\''(~['])*'\'' SPACE_* ( Y E A R | M O N T H ) (INTERVAL_PRICISION SPACE_* | SPACE_+) T O SPACE_+ ( Y E A R | M O N T H )
+    | I N T E R V A L WHITESPACE? '\''(~['])*'\'' SPACE_* ( D A Y | H O U R | M I N U T E | S E C O N D ) INTERVAL_PRICISION?
+    | I N T E R V A L WHITESPACE? '\''(~['])*'\'' SPACE_* S E C O N D INTERVAL_SEC_PRICISION
+    | I N T E R V A L WHITESPACE? '\''(~['])*'\'' SPACE_* ( D A Y | H O U R | M I N U T E | S E C O N D )(INTERVAL_PRICISION SPACE_* | SPACE_+) T O SPACE_+( D A Y | H O U R | M I N U T E | S E C O N D INTERVAL_PRICISION?)
     ;
 
 HINT_VALUE
@@ -5094,3 +5094,7 @@ fragment QS_EXCLAM  : '!' .*? '!';
 fragment QS_SHARP   : '#' .*? '#';
 fragment QS_QUOTE   : '\'' .*? '\'';
 fragment QS_DQUOTE  : '"' .*? '"';
+fragment SPACE_ : [ \t\n\r\f];
+fragment INTERVAL_PRICISION : SPACE_*('('|[\uff08])SPACE_*[0-9]+SPACE_*(')'|[\uff09]);
+fragment INTERVAL_SEC_PRICISION : SPACE_*('('|[\uff08])SPACE_*[0-9]+SPACE_*','SPACE_*[0-9]+SPACE_*(')'|[\uff09]);
+fragment WHITESPACE : (SPACE_+|('--'(~[\n\r])*));

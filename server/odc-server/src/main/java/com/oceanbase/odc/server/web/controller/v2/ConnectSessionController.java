@@ -104,42 +104,11 @@ public class ConnectSessionController {
         return Responses.success(sessionService.createByDatabaseId(databaseId));
     }
 
-    /**
-     * 异步执行sql <br>
-     * asyncExecute 和 asyncExecuteQueryData 功能完全一样，区分是为了根据不同场景配置拦截策略 <br>
-     * - asyncExecute 为 SQL 窗口场景 <br>
-     * - asyncExecuteQueryData 为 表数据查询场景
-     *
-     * @param sessionId
-     * @return
-     */
-    @ApiOperation(value = "asyncSqlExecute", notes = "异步执行sql")
-    @RequestMapping(value = {"/sessions/{sessionId}/sqls/asyncExecute"}, method = RequestMethod.POST)
-    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
-    public SuccessResponse<SqlAsyncExecuteResp> asyncSqlExecute(@PathVariable String sessionId,
-            @RequestBody SqlAsyncExecuteReq req) throws Exception {
-        return Responses.success(consoleService.execute(SidUtils.getSessionId(sessionId), req));
-    }
-
     @RequestMapping(value = {"/sessions/{sessionId}/sqls/streamExecute"}, method = RequestMethod.POST)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<SqlAsyncExecuteResp> streamExecute(@PathVariable String sessionId,
             @RequestBody SqlAsyncExecuteReq req) throws Exception {
         return Responses.success(consoleService.streamExecute(SidUtils.getSessionId(sessionId), req, true));
-    }
-
-    /**
-     * 获取异步执行sql的结果 Todo 这里的sqlIds后续需要改成一个string类型的requestId，异步api请求需要有超时机制
-     *
-     * @param sessionId
-     * @return
-     */
-    @ApiOperation(value = "getAsyncSqlExecute", notes = "异步执行获取结果sql")
-    @RequestMapping(value = "/sessions/{sessionId}/sqls/getResult", method = RequestMethod.GET)
-    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
-    public SuccessResponse<List<SqlExecuteResult>> getAsyncSqlExecute(@PathVariable String sessionId,
-            @RequestParam String requestId) {
-        return Responses.success(consoleService.getAsyncResult(SidUtils.getSessionId(sessionId), requestId, null));
     }
 
     @RequestMapping(value = "/sessions/{sessionId}/sqls/getMoreResults", method = RequestMethod.GET)
@@ -240,7 +209,7 @@ public class ConnectSessionController {
      * kill session
      *
      * @param req
-     * @return
+     * @return kill result
      */
     @ApiOperation(value = "kill session", notes = "终止会话接口")
     @RequestMapping(value = "/sessions/killSession", method = RequestMethod.POST)

@@ -61,6 +61,7 @@ import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.session.DefaultDBSessionManage;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
+import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
 import com.oceanbase.odc.service.session.model.BinaryContent;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
@@ -89,8 +90,9 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
     public void getAsyncResult_killSessionSql_successResult() throws Exception {
         String sql = "kill session /*";
         injectAsyncJdbcExecutor(JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
-        SqlAsyncExecuteResp resp = consoleService.execute(sessionid, getSqlAsyncExecuteReq(sql));
-        List<SqlExecuteResult> resultList = consoleService.getAsyncResult(sessionid, resp.getRequestId());
+        SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionid, getSqlAsyncExecuteReq(sql));
+        injectExecuteContext(sessionid, resp.getRequestId(), JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
+        List<SqlExecuteResult> resultList = consoleService.getMoreResults(sessionid, resp.getRequestId()).getResults();
 
         Assert.assertFalse(resultList.isEmpty());
     }
@@ -109,8 +111,9 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
         String sql = "kill session /*";
         JdbcGeneralResult failedResult = JdbcGeneralResult.failedResult(SqlTuple.newTuple(sql), new Exception("test"));
         injectAsyncJdbcExecutor(failedResult);
-        SqlAsyncExecuteResp resp = consoleService.execute(sessionid, getSqlAsyncExecuteReq(sql));
-        List<SqlExecuteResult> resultList = consoleService.getAsyncResult(sessionid, resp.getRequestId());
+        SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionid, getSqlAsyncExecuteReq(sql));
+        injectExecuteContext(sessionid, resp.getRequestId(), failedResult);
+        List<SqlExecuteResult> resultList = consoleService.getMoreResults(sessionid, resp.getRequestId()).getResults();
 
         Assert.assertFalse(resultList.isEmpty());
         Assert.assertSame(SqlExecuteStatus.FAILED, resultList.get(0).getStatus());
@@ -120,8 +123,8 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
     public void getAsyncResult_delimiter_getResultSucceed() throws Exception {
         String sql = "delimiter $$";
         injectAsyncJdbcExecutor(JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
-        SqlAsyncExecuteResp resp = consoleService.execute(sessionid, getSqlAsyncExecuteReq(sql));
-        List<SqlExecuteResult> resultList = consoleService.getAsyncResult(sessionid, resp.getRequestId());
+        SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionid, getSqlAsyncExecuteReq(sql));
+        List<SqlExecuteResult> resultList = consoleService.getMoreResults(sessionid, resp.getRequestId()).getResults();
 
         Assert.assertFalse(resultList.isEmpty());
     }
@@ -130,8 +133,9 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
     public void getAsyncResult_commonSQLForOracle_getResultSucceed() throws Exception {
         String sql = "select * from tableaas";
         injectAsyncJdbcExecutor(JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
-        SqlAsyncExecuteResp resp = consoleService.execute(sessionid, getSqlAsyncExecuteReq(sql));
-        List<SqlExecuteResult> resultList = consoleService.getAsyncResult(sessionid, resp.getRequestId());
+        SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionid, getSqlAsyncExecuteReq(sql));
+        injectExecuteContext(sessionid, resp.getRequestId(), JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
+        List<SqlExecuteResult> resultList = consoleService.getMoreResults(sessionid, resp.getRequestId()).getResults();
 
         Assert.assertFalse(resultList.isEmpty());
     }
@@ -141,8 +145,9 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
         String sql = "select * from tableaas";
         injectAsyncJdbcExecutor(JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)),
                 ConnectType.OB_MYSQL);
-        SqlAsyncExecuteResp resp = consoleService.execute(sessionid, getSqlAsyncExecuteReq(sql));
-        List<SqlExecuteResult> resultList = consoleService.getAsyncResult(sessionid, resp.getRequestId());
+        SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionid, getSqlAsyncExecuteReq(sql));
+        injectExecuteContext(sessionid, resp.getRequestId(), JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
+        List<SqlExecuteResult> resultList = consoleService.getMoreResults(sessionid, resp.getRequestId()).getResults();
 
         Assert.assertFalse(resultList.isEmpty());
     }
@@ -152,8 +157,9 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
         String sql = "select * from table_test";
         JdbcGeneralResult executeResult = getJdbcGeneralResultWithQueryData(sql);
         injectAsyncJdbcExecutor(executeResult, ConnectType.OB_MYSQL);
-        SqlAsyncExecuteResp resp = consoleService.execute(sessionid, getSqlAsyncExecuteReq(sql));
-        List<SqlExecuteResult> resultList = consoleService.getAsyncResult(sessionid, resp.getRequestId());
+        SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionid, getSqlAsyncExecuteReq(sql));
+        injectExecuteContext(sessionid, resp.getRequestId(), executeResult);
+        List<SqlExecuteResult> resultList = consoleService.getMoreResults(sessionid, resp.getRequestId()).getResults();
 
         Assert.assertTrue(resultList.get(0).getResultSetMetaData().isEditable());
     }
@@ -207,6 +213,13 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
         long connectionId = 1L;
         connection.setId(connectionId);
         return connection;
+    }
+
+    private void injectExecuteContext(String sessionId, String requestId, JdbcGeneralResult result) {
+        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionid);
+        AsyncExecuteContext context =
+                (AsyncExecuteContext) ConnectionSessionUtil.getExecuteContext(connectionSession, requestId);
+        context.addSqlExecutionResults(Collections.singletonList(result));
     }
 
     private JdbcGeneralResult getJdbcGeneralResultWithQueryData(String sql) throws SQLException {

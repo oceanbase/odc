@@ -27,14 +27,15 @@ import com.oceanbase.odc.service.common.model.HostProperties;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
 @NoArgsConstructor
+@Slf4j
 public class RouteInfo {
 
-    private static final RestTemplate restTemplate = new RestTemplateBuilder().setConnectTimeout(Duration.ofSeconds(5))
-            .setReadTimeout(Duration.ofSeconds(5)).build();
+    private static final RestTemplate restTemplate = new RestTemplateBuilder().setConnectTimeout(Duration.ofSeconds(3))
+            .setReadTimeout(Duration.ofSeconds(3)).build();
 
     private String hostName;
     private Integer port;
@@ -45,14 +46,11 @@ public class RouteInfo {
         this.port = port;
     }
 
-    public boolean isCurrentNode(@NonNull HostProperties properties) {
-        Integer currentNodePort = properties.getRequestPort();
-        Verify.notNull(properties.getPort(), "Port");
-        if (!Objects.equals(port, currentNodePort)) {
+    public boolean isCurrentNode(Integer currentPort, String currentHost) {
+        if (!Objects.equals(port, currentPort)) {
             return false;
         }
-        return hostName.equalsIgnoreCase(currentNodeHostName())
-                || hostName.equalsIgnoreCase(currentNodeIpAddress(properties));
+        return hostName.equalsIgnoreCase(currentHost);
     }
 
     public static String currentNodeHostName() {
@@ -69,8 +67,21 @@ public class RouteInfo {
             String response = restTemplate.getForObject(url, String.class);
             return response.contains("true");
         } catch (Exception e) {
+            log.warn("test route health check failed, hostName={},port={}", hostName, port, e);
             return false;
         }
+    }
+
+    public boolean isHealthyHost(int retry) {
+        Verify.verify(retry > 0, "retry");
+        for (int i = 0; i < retry; i++) {
+            boolean healthyHost = isHealthyHost();
+            if (healthyHost) {
+                return true;
+            }
+        }
+        log.info("retry {} times, test route health check failed, hostName={},port={}", retry, hostName, port);
+        return false;
     }
 
     public String toString() {
