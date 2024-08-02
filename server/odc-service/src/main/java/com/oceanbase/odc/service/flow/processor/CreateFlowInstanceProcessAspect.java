@@ -146,7 +146,7 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
         }
         PreConditions.notNull(parameters.getTaskId(), "scheduleId");
         ScheduleEntity scheduleEntity =
-                scheduleService.nullSafeGetByIdWithCheckPermission(parameters.getTaskId(), true);
+                scheduleService.nullSafeGetByIdWithCheckPermission(parameters.getTaskId(), false);
         parameters.setType(scheduleEntity.getJobType());
     }
 
