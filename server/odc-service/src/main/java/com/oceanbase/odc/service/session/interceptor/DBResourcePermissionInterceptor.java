@@ -15,10 +15,9 @@
  */
 package com.oceanbase.odc.service.session.interceptor;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -80,24 +79,20 @@ public class DBResourcePermissionInterceptor extends BaseTimeConsumingIntercepto
             return true;
         }
         ConnectionConfig connectionConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
+        Set<String> existedDatabaseNames =
+                databaseService.listDatabasesByConnectionIds(Collections.singleton(connectionConfig.getId()))
+                        .stream().filter(database -> database.getExisted()).map(database -> database.getName())
+                        .collect(Collectors.toSet());
+
         String currentSchema = ConnectionSessionUtil.getCurrentSchema(session);
         Map<DBSchemaIdentity, Set<SqlType>> identity2Types = DBSchemaExtractor.listDBSchemasWithSqlTypes(
                 response.getSqls().stream().map(SqlTuplesWithViolation::getSqlTuple).collect(Collectors.toList()),
-                session.getDialectType(), currentSchema);
-        Map<DBResource, Set<DatabasePermissionType>> resource2PermissionTypes = new HashMap<>();
-        for (Entry<DBSchemaIdentity, Set<SqlType>> entry : identity2Types.entrySet()) {
-            DBSchemaIdentity identity = entry.getKey();
-            Set<SqlType> sqlTypes = entry.getValue();
-            if (CollectionUtils.isNotEmpty(sqlTypes)) {
-                Set<DatabasePermissionType> permissionTypes = sqlTypes.stream().map(DatabasePermissionType::from)
-                        .filter(Objects::nonNull).collect(Collectors.toSet());
-                if (CollectionUtils.isNotEmpty(permissionTypes)) {
-                    resource2PermissionTypes.put(
-                            DBResource.from(connectionConfig, identity.getSchema(), identity.getTable()),
-                            permissionTypes);
-                }
-            }
-        }
+                session.getDialectType(), currentSchema).entrySet().stream()
+                .filter(entry -> Objects.isNull(entry.getKey().getSchema())
+                        || existedDatabaseNames.contains(entry.getKey().getSchema()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<DBResource, Set<DatabasePermissionType>> resource2PermissionTypes =
+                DBResourcePermissionHelper.getDBResource2PermissionTypes(identity2Types, connectionConfig, null);
         List<UnauthorizedDBResource> unauthorizedDBResource = dbResourcePermissionHelper
                 .filterUnauthorizedDBResources(resource2PermissionTypes, false);
         if (CollectionUtils.isNotEmpty(unauthorizedDBResource)) {

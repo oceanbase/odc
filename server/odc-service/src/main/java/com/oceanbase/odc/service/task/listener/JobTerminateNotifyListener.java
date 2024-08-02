@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.event.AbstractEventListener;
-import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
@@ -61,9 +60,8 @@ public class JobTerminateNotifyListener extends AbstractEventListener<JobTermina
             JobEntity jobEntity = taskFrameworkService.find(event.getJi().getId());
             scheduleTaskService.findByJobId(jobEntity.getId())
                     .ifPresent(task -> {
-                        ScheduleEntity schedule = scheduleService.nullSafeGetById(Long.parseLong(task.getJobName()));
-                        broker.enqueueEvent(event.getStatus() == JobStatus.DONE ? eventBuilder.ofSucceededTask(schedule)
-                                : eventBuilder.ofFailedTask(schedule));
+                        broker.enqueueEvent(event.getStatus() == JobStatus.DONE ? eventBuilder.ofSucceededTask(task)
+                                : eventBuilder.ofFailedTask(task));
                     });
         } catch (Exception e) {
             log.warn("Failed to enqueue event.", e);

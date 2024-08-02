@@ -33,9 +33,11 @@ import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.service.dlm.DLMService;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
+import com.oceanbase.odc.service.schedule.alarm.ScheduleAlarmUtils;
 import com.oceanbase.odc.service.schedule.job.DLMJobReq;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.tools.migrator.common.enums.JobType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -75,10 +77,16 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
                                 .get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
                         DLMJobReq.class);
                 scheduleService.refreshScheduleStatus(Long.parseLong(o.getJobName()));
+                if (taskStatus == TaskStatus.FAILED) {
+                    ScheduleAlarmUtils.fail(o.getId());
+                }
+                if (taskStatus == TaskStatus.CANCELED) {
+                    ScheduleAlarmUtils.timeout(o.getId());
+                }
                 // Trigger the data-delete job if necessary after the data-archive task is completed.
-                if (parameters.getJobType() == com.oceanbase.tools.migrator.common.enums.JobType.MIGRATE
-                        && parameters.isDeleteAfterMigration()) {
-                    scheduleService.dataArchiveDelete(Long.parseLong(o.getJobName()), o.getId());
+                if (parameters.getJobType() == JobType.MIGRATE && parameters.isDeleteAfterMigration()
+                        && taskStatus == TaskStatus.DONE) {
+                    scheduleTaskService.triggerDataArchiveDelete(o.getId());
                     log.info("Trigger delete job succeed.");
                 }
             });

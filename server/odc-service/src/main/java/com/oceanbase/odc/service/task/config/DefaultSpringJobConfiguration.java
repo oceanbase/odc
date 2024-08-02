@@ -29,10 +29,11 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
-import com.oceanbase.odc.service.task.caller.K8sJobClient;
+import com.oceanbase.odc.service.task.caller.K8sJobClientSelector;
 import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.schedule.DefaultTaskFrameworkDisabledHandler;
+import com.oceanbase.odc.service.task.schedule.JobCredentialProvider;
 import com.oceanbase.odc.service.task.schedule.StartJobRateLimiter;
 import com.oceanbase.odc.service.task.schedule.StartJobRateLimiterSupport;
 import com.oceanbase.odc.service.task.schedule.provider.DefaultHostUrlProvider;
@@ -40,6 +41,7 @@ import com.oceanbase.odc.service.task.schedule.provider.DefaultJobImageNameProvi
 import com.oceanbase.odc.service.task.service.SpringTransactionManager;
 import com.oceanbase.odc.service.task.service.StdTaskFrameworkService;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
 /**
  * @author yaobin
@@ -70,11 +72,14 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         }
         setTaskFrameworkService(tfs);
         setEventPublisher(publisher);
+
+        setTaskExecutorClient(new TaskExecutorClient());
         setTransactionManager(new SpringTransactionManager(ctx.getBean(TransactionTemplate.class)));
         initJobRateLimiter();
         setTaskFrameworkDisabledHandler(new DefaultTaskFrameworkDisabledHandler());
         setJasyptEncryptorConfigProperties(ctx.getBean(JasyptEncryptorConfigProperties.class));
         setHostProperties(ctx.getBean(HostProperties.class));
+        setJobCredentialProvider(ctx.getBean(JobCredentialProvider.class));
     }
 
     @Override
@@ -88,8 +93,8 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
     }
 
     @Override
-    public K8sJobClient getK8sJobClient() {
-        return ctx.getBean(K8sJobClient.class);
+    public K8sJobClientSelector getK8sJobClientSelector() {
+        return ctx.getBean(K8sJobClientSelector.class);
     }
 
     private void initJobRateLimiter() {

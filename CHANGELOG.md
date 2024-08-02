@@ -1,3 +1,85 @@
+## 4.3.1 (2024-07-31)
+
+### Feature Updates
+
+Risk Control Changes
+
+- Added table-level permission control, allowing project members to have different operation permissions on different tables, including query, change, and export operations, enhancing collaborative control capabilities.
+
+Session Management
+
+- Support for closing sessions/queries has been extended to more scenarios where OBServer is not directly connected.
+    - When connected to OceanBase V4.2.3 and OBProxy V4.2.5 or higher versions, session management is performed using client session capability.
+    - In OceanBase V4.2.1 Oracle mode, session management is handled using anonymous blocks.
+
+OLAP Development
+
+- Added real-time execution profiling, providing visual and interactive presentation of `sql_plan_monitor`.
+    - This feature requires data source version OceanBase V4.2.4 or higher.
+    - Supports analysis not only of completed SQL executions but also real-time analysis of ongoing SQL executions.
+    - Provides graphical, tabular, and text views of execution plans, intuitively displaying operator connections and step sequences.
+    - Global view offers sorting of Top 5 time-consuming operators and overall summary of execution phases, quickly pinpointing performance bottlenecks.
+    - Operator nodes include execution status and detailed information such as CPU, memory, disk, output rows, and node attributes.
+    - For parallel execution nodes, supports sorting by DB time, IO memory, and rows processed, quickly identifying data skew. Supports analysis of both standalone and distributed execution plans.
+    - Newly designed integrated real-time diagnostic page for comprehensive query profiling combining execution plans and end-to-end trace diagnostics.
+
+SQL Development
+
+- During SQL execution, supports viewing execution progress, including total number of executions, current execution count, and trace ID of currently executing SQL. Real-time viewing of completed execution results is also supported.
+- Supports graphical format viewing of OceanBase's logical SQL execution plan.
+
+Data Sources
+
+- Fully compatible with OceanBase V4.2.4, OceanBase V4.3.1, OceanBase V4.3.2.
+
+### Usability Improvements
+
+- Data delete tasks now support editing task configurations.
+- Data source module supports batch import from MySQL, Oracle, and Doris data sources.
+
+### Bug Fixes
+
+Data Lifecycle Management
+
+- Table structure comparison performed even when structure synchronization is not enabled. [#3014](https://github.com/oceanbase/odc/pull/3014)
+
+Change Risk Control
+
+- Automatic authorization rules did not take effect for LoginSuccess events. [#3003](https://github.com/oceanbase/odc/pull/3003)
+
+Import/Export
+
+- In the desktop mode, reinstalling ODC may lead to the unintended import of historical files generated during previous import tasks when initiating new tasks. [#3006](https://github.com/oceanbase/odc/pull/3006)
+
+SQL Check
+
+- When SQL window rules are enabled, commit and rollback buttons in SQL window may become ineffective. [#2985](https://github.com/oceanbase/odc/pull/2985)
+
+SQL Development
+
+- NPE may occur during PL debugging. [#2930](https://github.com/oceanbase/odc/pull/2930)
+- SQL error when modifying session variables for Oracle data sources. [#2872](https://github.com/oceanbase/odc/pull/2872)
+
+Mock Data
+
+- Unable to terminate mock data tasks. [#2850](https://github.com/oceanbase/odc/pull/2850)
+
+Global Object Retrieval
+
+- Object synchronization cannot be stopped. [#2928](https://github.com/obase/odc/pull/2928)
+
+Tickets
+
+- Unable to retrieve SQL check results when check result file does not exist locally. [#2943](https://github.com/oceanbase/odc/pull/2943)
+
+Auditing
+
+- Actual length of `content_ip_address` column values exceeds the column length limit. [#2863](https://github.com/oceanbase/odc/pull/2863)
+
+Other
+
+- When deploying across multiple nodes using process mode to schedule tasks, all tasks may be scheduled to the same node. [#2408](https://github.com/oceanbase/odc/pull/2408)
+
 ## 4.3.0_bp1 (2024-06-24)
 
 ### Usability Improvements

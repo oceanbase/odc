@@ -60,8 +60,17 @@ public class DLMTableStructureSynchronizer {
 
     public static void sync(ConnectionConfig srcConfig, ConnectionConfig tgtConfig,
             String srcTableName, String tgtTableName, Set<DBObjectType> targetType) throws Exception {
+        if (!srcConfig.getDialectType().isMysql() || srcConfig.getDialectType() != tgtConfig.getDialectType()) {
+            log.warn("Table structure is unsupported,sourceDbType={},targetDbType={}", srcConfig.getDialectType(),
+                    tgtConfig.getDialectType());
+            return;
+        }
         DataSource sourceDs = new DruidDataSourceFactory(srcConfig).getDataSource();
         DataSource targetDs = new DruidDataSourceFactory(tgtConfig).getDataSource();
+        if (srcConfig.getDialectType() != tgtConfig.getDialectType()) {
+            log.warn("Different types of databases do not support structural synchronization.");
+            return;
+        }
         try {
             String tgtDbVersion = getDBVersion(tgtConfig.getType(), targetDs);
             String srcDbVersion = getDBVersion(srcConfig.getType(), sourceDs);

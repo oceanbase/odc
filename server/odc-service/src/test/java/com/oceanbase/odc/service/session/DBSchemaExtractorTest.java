@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.session;
 
 import static org.junit.Assert.*;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,6 +60,23 @@ public class DBSchemaExtractorTest {
             }
             System.out.println("Test case: " + testCase.getId() + " passed.");
         }
+    }
+
+    @Test
+    public void listDBSchemasWithSqlTypes_anonymousBlock_listSucceed() {
+        String pl = "DECLARE\n"
+                + "    i VARCHAR2(300);\n"
+                + "BEGIN\n"
+                + "    select ps_auto_refresh_publish_pkg.getloopup_meaning('YES_NO', 'Y') into i from dual;\n"
+                + "    dbms_output.put_line(i);\n"
+                + "END;";
+        Map<DBSchemaIdentity, Set<SqlType>> actual = DBSchemaExtractor.listDBSchemasWithSqlTypes(
+                Collections.singletonList(SqlTuple.newTuple(pl)), DialectType.OB_ORACLE, "aps");
+        Map<DBSchemaIdentity, Set<SqlType>> expect = new HashMap<>();
+        DBSchemaIdentity dbSchemaIdentity = new DBSchemaIdentity();
+        dbSchemaIdentity.setSchema("PS_AUTO_REFRESH_PUBLISH_PKG");
+        expect.put(dbSchemaIdentity, Collections.singleton(SqlType.OTHERS));
+        Assert.assertEquals(expect, actual);
     }
 
     @Data

@@ -26,8 +26,6 @@ import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
-import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -44,8 +42,6 @@ public class PreCheckServiceTaskFailedListener extends BaseStatusModifyListener<
     private FlowInstanceRepository flowInstanceRepository;
     @Autowired
     private ServiceTaskInstanceRepository serviceTaskRepository;
-    @Autowired
-    private ScheduleService scheduleService;
 
     @Override
     protected FlowNodeStatus doModifyStatusOnStart(FlowTaskInstance target) {
@@ -63,7 +59,6 @@ public class PreCheckServiceTaskFailedListener extends BaseStatusModifyListener<
         flowInstanceRepository.updateStatusById(target.getFlowInstanceId(), FlowStatus.PRE_CHECK_FAILED);
         FlowNodeStatus status = FlowNodeStatus.FAILED;
         int affectRows = serviceTaskRepository.updateStatusById(target.getId(), status);
-        scheduleService.updateStatusByFlowInstanceId(target.getFlowInstanceId(), ScheduleStatus.TERMINATION);
         log.info("Modify node instance status successfully, instanceId={}, instanceType={}, affectRows={}",
                 target.getId(), target.getNodeType(), affectRows);
         return status;

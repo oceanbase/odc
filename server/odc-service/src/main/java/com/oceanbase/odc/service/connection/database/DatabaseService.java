@@ -92,6 +92,7 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
+import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.database.model.DatabaseUser;
 import com.oceanbase.odc.service.connection.database.model.DeleteDatabasesReq;
 import com.oceanbase.odc.service.connection.database.model.ModifyDatabaseOwnerReq;
@@ -244,6 +245,14 @@ public class DatabaseService {
         return connectionService.getForConnectionSkipPermissionCheck(database.getConnectionId());
     }
 
+    @SkipAuthorize("odc internal usage")
+    @Transactional(rollbackFor = Exception.class)
+    public ConnectionConfig findDataSourceForTaskById(@NonNull Long id) {
+        DatabaseEntity database = databaseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id));
+        return connectionService.getDecryptedConfig(database.getConnectionId());
+    }
+
     @PreAuthenticate(actions = "read", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public Page<Database> listDatabasesByDataSource(@NonNull Long id, String name, @NonNull Pageable pageable) {
         Specification<DatabaseEntity> specs = DatabaseSpecs
@@ -352,6 +361,8 @@ public class DatabaseService {
             database.setOrganizationId(authenticationFacade.currentOrganizationId());
             database.setLastSyncTime(new Date(System.currentTimeMillis()));
             database.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
+            database.setDialectType(connection.getDialectType());
+            database.setType(DatabaseType.PHYSICAL);
             DatabaseEntity saved = databaseRepository.saveAndFlush(database);
             List<UserResourceRole> userResourceRoles = buildUserResourceRoles(Collections.singleton(saved.getId()),
                     req.getOwnerIds());
