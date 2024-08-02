@@ -144,7 +144,7 @@ public class ProcessJobCaller extends BaseJobCaller {
         if (SystemUtils.getLocalIpAddress().equals(ei.getHost()) && Objects.equals(portString, ei.getPort() + "")) {
             return true;
         }
-        if (!HttpUtil.isOdcHealthy(ei.getHost(), ei.getPort())) {
+        if (!isOdcHealthy(ei.getHost(), ei.getPort())) {
             log.info("Cannot connect to target odc server, executor can be destroyed,jobId={}, identifier={}",
                     ji.getId(), ei);
             return true;
