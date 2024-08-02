@@ -54,6 +54,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
+import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsProjectStatusEnum;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.DataSourceOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
@@ -133,7 +134,7 @@ public abstract class BaseOscTestEnv extends ServiceTestEnv {
 
         OmsProjectProgressResponse projectProgressResponse = new OmsProjectProgressResponse();
         projectProgressResponse.setStatus(OmsProjectStatusEnum.DELETED);
-
+        projectProgressResponse.setIncrSyncCheckpoint(System.currentTimeMillis() / 1000 + 10);
         doReturn(projectProgressResponse).when(projectOpenApiService)
                 .describeProjectProgress(Mockito.any(OmsProjectControlRequest.class));
 
@@ -163,7 +164,8 @@ public abstract class BaseOscTestEnv extends ServiceTestEnv {
         scheduleTaskEntity.setProgressPercentage(0.0);
         scheduleTaskEntity.setResultJson("");
         scheduleTaskEntity.setFireTime(new Date());
-
+        OnlineSchemaChangeScheduleTaskResult result = new OnlineSchemaChangeScheduleTaskResult();
+        scheduleTaskEntity.setResultJson(JsonUtils.toJson(result));
         return scheduleTaskRepository.save(scheduleTaskEntity);
     }
 
