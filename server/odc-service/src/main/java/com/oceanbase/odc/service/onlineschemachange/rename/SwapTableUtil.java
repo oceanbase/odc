@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.onlineschemachange.rename;
 
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.onlineschemachange.model.FullVerificationResult;
 import com.oceanbase.odc.service.onlineschemachange.model.SwapTableType;
@@ -34,5 +35,27 @@ public class SwapTableUtil {
                 fullTransferProgressPercentage.intValue() == 100 &&
                 (fullVerificationResult == FullVerificationResult.CONSISTENT ||
                         fullVerificationResult == FullVerificationResult.UNCHECK);
+    }
+
+    public static String escapeMySQLName(String name) {
+        return escapeName(name, getQuota(DialectType.MYSQL));
+    }
+
+    public static String escapeOracleName(String name) {
+        return escapeName(name, getQuota(DialectType.ORACLE));
+    }
+
+    public static String escapeName(String name, String quota) {
+        return quota + name + quota;
+    }
+
+    public static String getQuota(DialectType dialectType) {
+        switch (dialectType) {
+            case MYSQL:
+            case OB_MYSQL:
+                return "`";
+            default:
+                return "\"";
+        }
     }
 }

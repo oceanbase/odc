@@ -15,31 +15,57 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.rename;
 
+import org.springframework.jdbc.core.JdbcOperations;
+
+import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author yaobin
  * @date 2023-08-02
  * @since 4.2.0
  */
+@Slf4j
 public class LockTableInterceptor implements RenameTableInterceptor {
+
+    private final ConnectionSession connSession;
+
+    private final JdbcOperations jdbcOperations;
+
+    public LockTableInterceptor(ConnectionSession connSession) {
+        this.connSession = connSession;
+        this.jdbcOperations = connSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
+    }
 
     @Override
     public void preRename(RenameTableParameters parameters) {
-
+        String realTableName = SwapTableUtil.escapeName(parameters.getOriginTableName(),
+                SwapTableUtil.getQuota(connSession.getDialectType()));
+        String sql = "lock table  " + realTableName + " write";
+        jdbcOperations.execute(sql);
+        log.info("Execute sql: {} ", sql);
     }
 
     @Override
     public void renameSucceed(RenameTableParameters parameters) {
-
+        unlockTable(parameters);
     }
 
     @Override
     public void renameFailed(RenameTableParameters parameters) {
-
+        unlockTable(parameters);
     }
 
     @Override
     public void postRenamed(RenameTableParameters parameters) {
+        unlockTable(parameters);
+    }
 
+    public void unlockTable(RenameTableParameters parameters) {
+        String sql = "unlock tables";
+        jdbcOperations.execute(sql);
+        log.info("Execute sql: {} ", sql);
     }
 }

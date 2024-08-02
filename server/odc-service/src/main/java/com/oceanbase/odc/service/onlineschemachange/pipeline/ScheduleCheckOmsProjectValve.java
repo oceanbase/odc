@@ -92,7 +92,8 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
                 OnlineSchemaChangeScheduleTaskResult.class);
 
         OmsProjectProgressResponse progress = projectOpenApiService.describeProjectProgress(projectRequest);
-
+        log.info("Osc check increment checkpoint, current ts [{}], checkpoint[{}]", System.currentTimeMillis() / 1000,
+                progress.getIncrSyncCheckpoint());
         ProjectStepResult projectStepResult = new ProjectStepResultChecker(progress, projectSteps,
                 onlineSchemaChangeProperties.isEnableFullVerify(),
                 onlineSchemaChangeProperties.getOms().getCheckProjectStepFailedTimeoutSeconds(),
