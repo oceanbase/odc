@@ -75,6 +75,12 @@ public class ImmediateJobDispatcher implements JobDispatcher {
         jobCaller.destroy(ji);
     }
 
+    @Override
+    public boolean canBeDestroy(JobIdentity ji) {
+        JobCaller jobCaller = getJobCaller(ji, null);
+        return jobCaller.canBeDestroy(ji);
+    }
+
     private JobCaller getJobCaller(JobIdentity ji, JobContext context) {
         JobConfigurationValidator.validComponent();
         TaskFrameworkService taskFrameworkService =
