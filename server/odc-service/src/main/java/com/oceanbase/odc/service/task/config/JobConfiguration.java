@@ -24,15 +24,17 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
-import com.oceanbase.odc.service.task.caller.K8sJobClient;
+import com.oceanbase.odc.service.task.caller.K8sJobClientSelector;
 import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
+import com.oceanbase.odc.service.task.schedule.JobCredentialProvider;
 import com.oceanbase.odc.service.task.schedule.StartJobRateLimiter;
 import com.oceanbase.odc.service.task.schedule.TaskFrameworkDisabledHandler;
 import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.provider.JobImageNameProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.service.TransactionManager;
+import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
 /**
  * @author yaobin
@@ -56,11 +58,13 @@ public interface JobConfiguration {
 
     JobDispatcher getJobDispatcher();
 
-    K8sJobClient getK8sJobClient();
+    K8sJobClientSelector getK8sJobClientSelector();
 
     HostUrlProvider getHostUrlProvider();
 
     TaskFrameworkService getTaskFrameworkService();
+
+    TaskExecutorClient getTaskExecutorClient();
 
     EventPublisher getEventPublisher();
 
@@ -75,4 +79,6 @@ public interface JobConfiguration {
     JasyptEncryptorConfigProperties getJasyptEncryptorConfigProperties();
 
     HostProperties getHostProperties();
+
+    JobCredentialProvider getJobCredentialProvider();
 }

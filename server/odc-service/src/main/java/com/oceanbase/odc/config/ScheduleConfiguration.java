@@ -237,9 +237,9 @@ public class ScheduleConfiguration {
     public ThreadPoolTaskExecutor taskResultPublisherExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         int corePoolSize = Math.max(SystemUtils.availableProcessors() * 2, 8);
-        int MaxPoolSize = Math.max(SystemUtils.availableProcessors() * 8, 64);
+        int maxPoolSize = Math.max(SystemUtils.availableProcessors() * 8, 64);
         executor.setCorePoolSize(corePoolSize);
-        executor.setMaxPoolSize(MaxPoolSize);
+        executor.setMaxPoolSize(maxPoolSize);
         executor.setThreadNamePrefix("task-result-publish-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(5);
@@ -263,6 +263,24 @@ public class ScheduleConfiguration {
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
         executor.initialize();
         log.info("taskFrameworkMonitorExecutor initialized");
+        return executor;
+    }
+
+    @Lazy
+    @Bean(name = "taskResultPullerExecutor")
+    public ThreadPoolTaskExecutor taskResultPullerExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        int corePoolSize = Math.max(SystemUtils.availableProcessors() * 4, 16);
+        int maxPoolSize = Math.max(SystemUtils.availableProcessors() * 16, 128);
+        executor.setCorePoolSize(corePoolSize);
+        executor.setMaxPoolSize(maxPoolSize);
+        executor.setThreadNamePrefix("task-framework-result-puller-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(5);
+        executor.setTaskDecorator(new TraceDecorator<>());
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
+        executor.initialize();
+        log.info("taskResultPullerExecutor initialized");
         return executor;
     }
 

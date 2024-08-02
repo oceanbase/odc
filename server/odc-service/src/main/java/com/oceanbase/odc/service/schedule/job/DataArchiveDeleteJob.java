@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.quartz.JobExecutionContext;
@@ -24,8 +23,6 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
-import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
-import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.schedule.model.DataArchiveClearParameters;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
@@ -66,35 +63,16 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
             return;
         }
 
-        // execute in task framework.
-        if (taskFrameworkProperties.isEnabled()) {
-            DLMJobReq parameters = getDLMJobReq(dataArchiveTask.getJobId());
-            parameters.setJobType(JobType.DELETE);
-            parameters.setScheduleTaskId(taskEntity.getId());
-            Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis());
-            log.info("Publish DLM job to task framework succeed,scheduleTaskId={},jobIdentity={}", taskEntity.getId(),
-                    jobId);
-            scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
-            scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));
-            return;
-        }
-        List<DlmTableUnit> dlmTableUnits = dlmService.findByScheduleTaskId(taskEntity.getId());
-        if (dlmTableUnits.isEmpty()) {
-            dlmTableUnits = dlmService.findByScheduleTaskId(dataArchiveTask.getId());
-            for (int i = 0; i < dlmTableUnits.size(); i++) {
-                dlmTableUnits.get(i)
-                        .setDlmTableUnitId(
-                                DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
-                                        taskEntity.getId(),
-                                        i));
-                dlmTableUnits.get(i).setType(JobType.DELETE);
-                dlmTableUnits.get(i).setStatus(TaskStatus.PREPARING);
-                dlmTableUnits.get(i).setScheduleTaskId(taskEntity.getId());
-            }
-            dlmService.createDlmTableUnits(dlmTableUnits);
-        }
-        executeTask(taskEntity.getId(), dlmTableUnits, dataArchiveParameters.getTimeoutMillis());
-        TaskStatus taskStatus = getTaskStatus(taskEntity.getId());
-        scheduleTaskRepository.updateStatusById(taskEntity.getId(), taskStatus);
+        DLMJobReq parameters = getDLMJobReq(dataArchiveTask.getJobId());
+        parameters.setJobType(JobType.DELETE);
+        parameters.setScheduleTaskId(taskEntity.getId());
+        parameters
+                .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName())));
+        Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis(),
+                dataArchiveParameters.getSourceDatabaseId());
+        log.info("Publish DLM job to task framework succeed,scheduleTaskId={},jobIdentity={}", taskEntity.getId(),
+                jobId);
+        scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
+        scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));
     }
 }

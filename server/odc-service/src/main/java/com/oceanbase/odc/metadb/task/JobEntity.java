@@ -17,8 +17,10 @@ package com.oceanbase.odc.metadb.task;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Map;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -30,6 +32,7 @@ import javax.persistence.Table;
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
+import com.oceanbase.odc.common.jpa.JsonMapConverter;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 
@@ -62,7 +65,8 @@ public class JobEntity implements Serializable {
     private String jobParametersJson;
 
     @Column(name = "job_properties_json")
-    private String jobPropertiesJson;
+    @Convert(converter = JsonMapConverter.class)
+    private Map<String, String> jobProperties;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)

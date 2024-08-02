@@ -54,6 +54,8 @@ import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.schedule.model.ScheduleTask;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.task.TaskService;
@@ -168,7 +170,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     @Override
     protected void onProgressUpdate(Long taskId, TaskService taskService) {
         try {
-            Page<ScheduleTaskEntity> tasks = scheduleTaskService.listTask(Pageable.unpaged(), scheduleId);
+            Page<ScheduleTask> tasks = scheduleTaskService.list(Pageable.unpaged(), scheduleId);
             if (tasks.getSize() == 0) {
                 log.info("List schedule task size is 0 by scheduleId {}.", scheduleId);
                 return;
@@ -182,7 +184,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
             TaskStatus dbStatus = flowTask.getStatus();
 
             Set<Long> currentManualSwapTableEnableTasks = new HashSet<>();
-            for (ScheduleTaskEntity task : tasks) {
+            for (ScheduleTask task : tasks) {
                 OnlineSchemaChangeScheduleTaskResult result = JsonUtils.fromJson(task.getResultJson(),
                         OnlineSchemaChangeScheduleTaskResult.class);
                 if (result.isManualSwapTableEnabled()) {
@@ -209,12 +211,12 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
 
     }
 
-    private void progressStatusUpdate(Page<ScheduleTaskEntity> tasks) {
+    private void progressStatusUpdate(Page<ScheduleTask> tasks) {
         int successfulTask = 0;
         int failedTask = 0;
         boolean canceled = false;
 
-        for (ScheduleTaskEntity task : tasks) {
+        for (ScheduleTask task : tasks) {
             TaskStatus taskStatus = task.getStatus();
             if (taskStatus == TaskStatus.DONE) {
                 successfulTask++;
@@ -234,7 +236,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         }
     }
 
-    private double singleTaskPercentage(ScheduleTaskEntity scheduleTask) {
+    private double singleTaskPercentage(ScheduleTask scheduleTask) {
         double percentage;
         switch (scheduleTask.getStatus()) {
             case PREPARING:
@@ -252,7 +254,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
 
     @Override
     protected boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
-        Optional<ScheduleTaskEntity> runningEntity = scheduleTaskService.listTask(Pageable.unpaged(), scheduleId)
+        Optional<ScheduleTask> runningEntity = scheduleTaskService.list(Pageable.unpaged(), scheduleId)
                 .stream().filter(task -> task.getStatus() == TaskStatus.RUNNING)
                 .findFirst();
         runningEntity.ifPresent(scheduleTask -> taskHandler.terminate(scheduleId, scheduleTask.getId()));
@@ -269,9 +271,9 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     private ScheduleEntity createScheduleEntity(ConnectionConfig connectionConfig,
             OnlineSchemaChangeParameters parameter, String schema, Long databaseId, Long projectId) {
         ScheduleEntity scheduleEntity = new ScheduleEntity();
-        scheduleEntity.setConnectionId(connectionConfig.id());
+        scheduleEntity.setDataSourceId(connectionConfig.id());
         scheduleEntity.setDatabaseName(schema);
-        scheduleEntity.setJobType(JobType.ONLINE_SCHEMA_CHANGE_COMPLETE);
+        scheduleEntity.setType(ScheduleType.ONLINE_SCHEMA_CHANGE_COMPLETE);
         scheduleEntity.setStatus(ScheduleStatus.ENABLED);
         scheduleEntity.setAllowConcurrent(false);
         scheduleEntity.setCreatorId(creatorId);
