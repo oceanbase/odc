@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.objectstorage.cloud.util;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -88,5 +89,21 @@ public class CloudObjectStorageUtil {
         String[] segment = StringUtils.split(objectName, "/");
         String fileName = segment[segment.length - 1];
         return SdkHttpUtils.urlDecode(fileName);
+    }
+
+    public static String generateProjectFilesDictionary(String prefix) {
+        Date date = new Date();
+        StringBuilder builder = new StringBuilder();
+        String digest = BinaryUtil.toBase64String(BinaryUtil.calculateMd5((UUID.randomUUID().toString()).getBytes()));
+        digest = digest.replace("/", "_");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("HH");
+        dateFormat.setTimeZone(TimeZone.getDefault());
+        SimpleDateFormat format = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
+        format.setTimeZone(TimeZone.getDefault());
+        builder.append(prefix)
+                .append(digest).append("/")
+                .append(format.format(date)).append("/")
+                .append(dateFormat.format(date)).append("/");
+        return builder.toString();
     }
 }

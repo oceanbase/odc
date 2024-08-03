@@ -23,6 +23,7 @@ import java.util.List;
 import com.oceanbase.odc.service.objectstorage.cloud.client.CloudException;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadResult;
+import com.oceanbase.odc.service.objectstorage.cloud.model.CopyObjectResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectsRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectsResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.GetObjectRequest;
@@ -62,6 +63,9 @@ public interface CloudObjectStorage {
     default PutObjectResult putObject(String bucketName, String key, File file) {
         return putObject(bucketName, key, file, null);
     }
+
+    CopyObjectResult copyTo(String bucketName, String from, String to)
+            throws CloudException;
 
     DeleteObjectsResult deleteObjects(DeleteObjectsRequest request) throws CloudException;
 

@@ -47,6 +47,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadResult;
+import com.oceanbase.odc.service.objectstorage.cloud.model.CopyObjectResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectsRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectsResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.GetObjectRequest;
@@ -156,10 +157,25 @@ public class AlibabaCloudClient implements CloudClient {
             com.aliyun.oss.model.PutObjectResult ossResult = oss.putObject(bucketName, key, file, objectMetadata);
             PutObjectResult result = new PutObjectResult();
             result.setVersionId(ossResult.getVersionId());
-            result.setVersionId(ossResult.getETag());
+            result.setETag(ossResult.getETag());
             result.setRequestId(ossResult.getRequestId());
             result.setClientCRC(ossResult.getClientCRC());
             result.setServerCRC(ossResult.getServerCRC());
+            return result;
+        });
+    }
+
+    @Override
+    public CopyObjectResult copyTo(String bucketName, String from, String to)
+            throws CloudException {
+        return callOssMethod("Copy object to", () -> {
+            com.aliyun.oss.model.CopyObjectResult copyObjectResult = oss.copyObject(bucketName, from, bucketName, to);
+            CopyObjectResult result = new CopyObjectResult();
+            result.setVersionId(copyObjectResult.getVersionId());
+            result.setVersionId(copyObjectResult.getETag());
+            result.setRequestId(copyObjectResult.getRequestId());
+            result.setClientCRC(copyObjectResult.getClientCRC());
+            result.setServerCRC(copyObjectResult.getServerCRC());
             return result;
         });
     }

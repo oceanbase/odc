@@ -57,6 +57,7 @@ public class DataArchiveTask extends BaseTask<Boolean> {
 
     @Override
     protected void doInit(JobContext context) {
+        log.info("MetaDBConnectionConfig={}", JsonUtils.toJson(JobUtils.getMetaDBConnectionConfig()));
         jobStore = new DLMJobStore(JobUtils.getMetaDBConnectionConfig());
         jobFactory = new DLMJobFactory(jobStore);
         log.info("Init data-archive job env succeed,jobIdentity={}", context.getJobIdentity());

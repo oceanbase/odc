@@ -297,8 +297,29 @@ public enum ErrorCodes implements ErrorCode {
     /**
      * Permission management
      */
-    GrantPermissionFailed;
+    GrantPermissionFailed,
 
+    /**
+     * Project Files
+     */
+
+    /**
+     * 文件编辑version冲突
+     */
+    ProjectFileEditVersionConflict,
+    /**
+     * 文件名称过长
+     */
+    ProjectFileNameTooLong,
+    /**
+     * 文件名称重复
+     */
+    ProjectFileNameDuplicated,
+    /**
+     * 更新文件过多
+     */
+    ProjectFileChangeFileToMuch,
+    ;
 
     @Override
     public String code() {

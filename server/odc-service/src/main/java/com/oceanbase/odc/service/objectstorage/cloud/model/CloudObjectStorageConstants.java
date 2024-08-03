@@ -58,6 +58,16 @@ public class CloudObjectStorageConstants {
     public static final String ODC_SERVER_PREFIX = "ODC-server-";
 
     /**
+     * Project files文件前缀
+     */
+    public static final String ODC_PROJECT_FILES_PREFIX = "ODC-pf-";
+
+    /**
+     * Project files临时文件前缀
+     */
+    public static final String ODC_TEMP_PROJECT_FILES_PREFIX = "ODC-temp-pf-";
+
+    /**
      * 使用 cloud storage 进行中转请求时返回的 header 标头
      */
     public static final String OSS_OBJECT_HEADER = "OssObject";

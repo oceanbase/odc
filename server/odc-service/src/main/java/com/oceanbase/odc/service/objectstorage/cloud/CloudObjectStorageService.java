@@ -52,6 +52,7 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfiguration
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadResult;
+import com.oceanbase.odc.service.objectstorage.cloud.model.CopyObjectResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectsRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectsResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.GetObjectRequest;
@@ -172,6 +173,23 @@ public class CloudObjectStorageService {
         String objectName = generateObjectName(prefix, fileName);
         upload(objectName, file, null);
         return objectName;
+    }
+
+    public void copyTo(@NotBlank String fromObjectName, @NotBlank String toObjectName) throws IOException {
+        verifySupported();
+        try {
+            long startTime = System.currentTimeMillis();
+            CopyObjectResult copyObjectResult = internalEndpointCloudObjectStorage.copyTo(getBucketName(),
+                    fromObjectName, toObjectName);
+            log.info(
+                    "copy object to process is completed, fromObjectName={}, toObjectName={}, durationMS={} ms, result={}",
+                    fromObjectName, toObjectName,
+                    System.currentTimeMillis() - startTime, copyObjectResult);
+        } catch (Exception exception) {
+            log.warn("Failed to copy file,  fromObjectName={}, toObjectName={}",
+                    fromObjectName, toObjectName, exception);
+            throw new IOException(exception);
+        }
     }
 
     public URL generateDownloadUrl(@NotBlank String objectName) throws IOException {

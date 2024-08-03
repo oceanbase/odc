@@ -19,8 +19,11 @@ package com.oceanbase.odc.service.projectfiles;
 import java.util.List;
 import java.util.Set;
 
+import javax.annotation.Resource;
+
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.service.projectfiles.domain.IProjectFileOssGateway;
 import com.oceanbase.odc.service.projectfiles.model.BatchUploadProjectFileReq;
 import com.oceanbase.odc.service.projectfiles.model.FileUploadTempCredentialResp;
 import com.oceanbase.odc.service.projectfiles.model.GenerateProjectFileTempCredentialReq;
@@ -37,8 +40,8 @@ import com.oceanbase.odc.service.projectfiles.model.UpdateProjectFileReq;
  */
 @Service
 public class ProjectFilesServiceFacade implements IProjectFilesService {
-    // @Resource
-    // private IProjectFileOssGateway projectFileOssGateway;
+    @Resource
+    private IProjectFileOssGateway projectFileOssGateway;
 
     /**
      * 生成临时凭证
@@ -49,8 +52,7 @@ public class ProjectFilesServiceFacade implements IProjectFilesService {
      */
     public FileUploadTempCredentialResp generateTempCredential(Long projectId,
             GenerateProjectFileTempCredentialReq req) {
-        return null;
-        // return projectFileOssGateway.generateTempCredential(req.getDurationSeconds());
+        return projectFileOssGateway.generateTempCredential(req.getDurationSeconds());
     }
 
     /**
