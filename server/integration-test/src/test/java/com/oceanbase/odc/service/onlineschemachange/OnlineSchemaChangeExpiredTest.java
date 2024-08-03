@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.onlineschemachange;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import org.junit.Assert;
@@ -37,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.0
  */
 @Slf4j
-@TestPropertySource(properties = "osc-task-expired-after-seconds=1")
+@TestPropertySource(properties = "osc-task-expired-after-seconds=-100")
 public class OnlineSchemaChangeExpiredTest extends OBMySqlOscTestEnv {
 
     @Test
@@ -52,8 +51,7 @@ public class OnlineSchemaChangeExpiredTest extends OBMySqlOscTestEnv {
             List<ScheduleTaskEntity> taskEntities = new ArrayList<>();
             subTaskParameters.forEach(
                     taskParameter -> taskEntities.add(getScheduleTaskEntity(schedule.getId(), taskParameter)));
-            // set 1970-01-01 00:00:01 to expire
-            taskEntities.get(0).setCreateTime(new Date(1));
+            taskEntities.get(0).setStatus(TaskStatus.RUNNING);
             scheduleTaskRepository.save(taskEntities.get(0));
             onlineSchemaChangeTaskHandler.complete(schedule.getId(), taskEntities.get(0).getId());
 

@@ -126,7 +126,7 @@ public class SwapTableNameValve extends BaseValve {
                     checkFailedTimes);
             log.info("Osc check oms increment checkpoint, expect greater than [{}], current is [{}]",
                     safeDataCheckpoint, projectStepResult.getIncrementCheckpoint());
-            if (OmsRequestUtil.OMSTaskReady(projectStepResult)
+            if (OmsRequestUtil.isOmsTaskReady(projectStepResult)
                     && projectStepResult.getIncrementCheckpoint() > safeDataCheckpoint) {
                 return true;
             }

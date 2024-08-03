@@ -56,7 +56,7 @@ public class SwapTableNameValveTest {
                     ArgumentMatchers.any(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString(),
                     ArgumentMatchers.anyString(),
                     ArgumentMatchers.any())).thenReturn(projectStepResult);
-            requestUtil.when(() -> OmsRequestUtil.OMSTaskReady(projectStepResult)).thenReturn(true);
+            requestUtil.when(() -> OmsRequestUtil.isOmsTaskReady(projectStepResult)).thenReturn(true);
             SwapTableNameValve swapTableNameValve = new SwapTableNameValve();
             Assert.assertTrue(swapTableNameValve.isIncrementDataAppliedDone(projectOpenApiService, properties,
                     "uid", "projectID", "db", Collections.emptyMap(), 1000));
@@ -74,7 +74,7 @@ public class SwapTableNameValveTest {
                     ArgumentMatchers.any(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString(),
                     ArgumentMatchers.anyString(),
                     ArgumentMatchers.any())).thenReturn(projectStepResult);
-            requestUtil.when(() -> OmsRequestUtil.OMSTaskReady(projectStepResult)).thenReturn(true);
+            requestUtil.when(() -> OmsRequestUtil.isOmsTaskReady(projectStepResult)).thenReturn(true);
             SwapTableNameValve swapTableNameValve = new SwapTableNameValve();
             long currentTimeMS = System.currentTimeMillis();
             Assert.assertFalse(swapTableNameValve.isIncrementDataAppliedDone(projectOpenApiService, properties,

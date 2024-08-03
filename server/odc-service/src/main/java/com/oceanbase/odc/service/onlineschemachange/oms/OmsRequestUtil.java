@@ -52,7 +52,7 @@ public class OmsRequestUtil {
         return projectRequest;
     }
 
-    public static boolean OMSTaskReady(ProjectStepResult projectStepResult) {
+    public static boolean isOmsTaskReady(ProjectStepResult projectStepResult) {
         return projectStepResult.getTaskStatus() == TaskStatus.DONE
                 && (projectStepResult.getFullVerificationResult() == FullVerificationResult.CONSISTENT ||
                         projectStepResult.getFullVerificationResult() == FullVerificationResult.UNCHECK);
