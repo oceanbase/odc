@@ -43,13 +43,19 @@ public class DefaultJobContext implements JobContext {
     private String jobClass;
 
     /**
-     * odc server host url list
+     * odc server host url list <br>
+     * deprecated, use jobProperties instead
      */
+    @Deprecated
     private List<String> hostUrls;
+
+    /**
+     * job properties
+     */
+    private Map<String, String> jobProperties;
 
     /**
      * task other data
      */
     private Map<String, String> jobParameters;
-
 }

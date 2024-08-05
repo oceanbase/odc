@@ -31,6 +31,7 @@ public class AccessEnvironmentJasyptEncryptorConfigProperties implements JasyptE
     private String prefix;
     private String suffix;
     private String algorithm;
+    // TODO: it is encryption password, not salt
     private String salt;
 
     public AccessEnvironmentJasyptEncryptorConfigProperties() {

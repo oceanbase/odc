@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.task.config;
 
+import com.oceanbase.odc.service.task.enums.TaskMonitorMode;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 
 /**
@@ -26,6 +27,8 @@ public interface TaskFrameworkProperties {
     boolean isEnabled();
 
     TaskRunMode getRunMode();
+
+    TaskMonitorMode getMonitorMode();
 
     String getOdcUrl();
 
@@ -47,6 +50,8 @@ public interface TaskFrameworkProperties {
 
     int getSingleFetchCheckHeartTimeoutJobRows();
 
+    int getSinglePullResultJobRows();
+
     int getMaxHeartTimeoutRetryTimes();
 
     int getQuartzStartDelaySeconds();
@@ -60,6 +65,8 @@ public interface TaskFrameworkProperties {
     String getStartPreparingJobCronExpression();
 
     String getCheckRunningJobCronExpression();
+
+    String getPullTaskResultJobCronExpression();
 
     String getDoCancelingJobCronExpression();
 

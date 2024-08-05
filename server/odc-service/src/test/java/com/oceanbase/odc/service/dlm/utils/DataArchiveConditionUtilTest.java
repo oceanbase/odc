@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import com.oceanbase.odc.service.dlm.model.OffsetConfig;
+import com.oceanbase.odc.service.dlm.model.Operator;
 
 import cn.hutool.core.lang.Assert;
 
@@ -48,7 +49,10 @@ public class DataArchiveConditionUtilTest {
         config.setPattern("yyyy-MM-dd HH:mm:ss|+10m");
         OffsetConfig config2 = new OffsetConfig();
         config2.setName("end");
-        config2.setPattern("yyyy-MM-dd|+1d");
+        config2.setOperator(Operator.PLUS);
+        config2.setDateFormatPattern("yyyy-MM-dd");
+        config2.setUnit("d");
+        config2.setValue(1L);
         List<OffsetConfig> variables = new LinkedList<>();
         variables.add(config);
         variables.add(config2);

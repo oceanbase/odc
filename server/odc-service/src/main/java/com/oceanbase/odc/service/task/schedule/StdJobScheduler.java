@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
+import java.text.MessageFormat;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -30,22 +31,29 @@ import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.TriggerKey;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.concurrent.Await;
 import com.oceanbase.odc.common.event.EventPublisher;
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.alarm.AlarmEventNames;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.enums.TaskMonitorMode;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.DefaultJobCallerListener;
 import com.oceanbase.odc.service.task.schedule.daemon.CheckRunningJob;
 import com.oceanbase.odc.service.task.schedule.daemon.DestroyExecutorJob;
 import com.oceanbase.odc.service.task.schedule.daemon.DoCancelingJob;
+import com.oceanbase.odc.service.task.schedule.daemon.PullTaskResultJob;
 import com.oceanbase.odc.service.task.schedule.daemon.StartPreparingJob;
 import com.oceanbase.odc.service.task.service.JobRunnable;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -62,10 +70,12 @@ import lombok.extern.slf4j.Slf4j;
 public class StdJobScheduler implements JobScheduler {
     private final Scheduler scheduler;
     private final JobConfiguration configuration;
+    private final TaskFrameworkProperties taskFrameworkProperties;
 
     public StdJobScheduler(JobConfiguration configuration) {
         this.configuration = configuration;
         this.scheduler = configuration.getDaemonScheduler();
+        this.taskFrameworkProperties = configuration.getTaskFrameworkProperties();
         validConfiguration(configuration);
         JobConfigurationHolder.setJobConfiguration(configuration);
 
@@ -121,14 +131,20 @@ public class StdJobScheduler implements JobScheduler {
         if (!jobEntity.getStatus().isExecuting()) {
             throw new JobException("Job is not executing, jobId={0}, jobStatus={1}.", jobId, jobEntity.getStatus());
         }
-        String newJobParametersJson = JobUtils.toJson(jobParameters);
+        // partial update
+        Map<String, String> oldJobParameters = JsonUtils.fromJson(jobEntity.getJobParametersJson(),
+                new TypeReference<Map<String, String>>() {});
+        oldJobParameters.putAll(jobParameters);
+        String newJobParametersJson = JobUtils.toJson(oldJobParameters);
         configuration.getTaskFrameworkService().updateJobParameters(jobId, newJobParametersJson);
 
         if (jobEntity.getStatus() == JobStatus.PREPARING) {
             return;
         }
         // send new parameters to executor
-        configuration.getJobDispatcher().modify(JobIdentity.of(jobId), newJobParametersJson);
+        if (jobEntity.getStatus() == JobStatus.RUNNING) {
+            configuration.getJobDispatcher().modify(JobIdentity.of(jobId), newJobParametersJson);
+        }
     }
 
     @Override
@@ -149,6 +165,15 @@ public class StdJobScheduler implements JobScheduler {
             throw new JobException("Cancel job failed, current job {0} status is {1}, can't be cancel.",
                     jobEntity.getId(), jobEntity.getStatus());
         }
+        log.info("Prepare cancel task, jobId={}.", jobEntity.getId());
+        try {
+            configuration.getJobDispatcher().stop(JobIdentity.of(jobEntity.getId()));
+        } catch (JobException e) {
+            log.warn("Stop job occur error: ", e);
+            AlarmUtils.alarm(AlarmEventNames.TASK_CANCELED_FAILED,
+                    MessageFormat.format("Cancel job failed, jobId={0}", jobEntity.getId()));
+            throw new TaskRuntimeException(e);
+        }
         int count = configuration.getTaskFrameworkService().updateJobToCanceling(jobId, jobEntity.getStatus());
         if (count <= 0) {
             throw new JobException("Cancel job failed, current job {0} status is {1}.",
@@ -160,6 +185,7 @@ public class StdJobScheduler implements JobScheduler {
 
     private void initDaemonJob() {
         initCheckRunningJob();
+        initPullTaskResultJob();
         initStartPreparingJob();
         initDoCancelingJob();
         initDestroyExecutorJob();
@@ -170,6 +196,17 @@ public class StdJobScheduler implements JobScheduler {
         initCronJob(key,
                 configuration.getTaskFrameworkProperties().getCheckRunningJobCronExpression(),
                 CheckRunningJob.class);
+    }
+
+    private void initPullTaskResultJob() {
+        TaskMonitorMode monitorMode = taskFrameworkProperties.getMonitorMode();
+        if (monitorMode == TaskMonitorMode.PUSH) {
+            return;
+        }
+        String key = "pullTaskResultJob";
+        initCronJob(key,
+                configuration.getTaskFrameworkProperties().getPullTaskResultJobCronExpression(),
+                PullTaskResultJob.class);
     }
 
     private void initStartPreparingJob() {

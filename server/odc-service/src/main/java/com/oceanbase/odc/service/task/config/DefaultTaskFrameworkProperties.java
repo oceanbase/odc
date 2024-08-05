@@ -20,6 +20,7 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 
+import com.oceanbase.odc.service.task.enums.TaskMonitorMode;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 
 import lombok.Data;
@@ -40,17 +41,20 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
 
     private TaskRunMode runMode;
 
+    private TaskMonitorMode monitorMode = TaskMonitorMode.PUSH;
+
     private String odcUrl;
 
     @NestedConfigurationProperty
     private K8sProperties k8sProperties = new K8sProperties();
 
     // job will be timeout when last report time more than this duration
-    private int jobHeartTimeoutSeconds;
+    private int jobHeartTimeoutSeconds = 300;
 
-    private int executorWaitingToRunThresholdSeconds;
-
-    private int executorWaitingToRunThresholdCount;
+    // TODO: remove unused property executorWaitingToRunThresholdSeconds
+    private int executorWaitingToRunThresholdSeconds = 3;
+    // TODO: remove unused property executorWaitingToRunThresholdCount
+    private int executorWaitingToRunThresholdCount = 10;
 
     // job to be canceled timeout and current status is cancelling
     private int jobCancelTimeoutSeconds = 2 * 60;
@@ -64,6 +68,9 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
 
     // single fetch job rows to check report timeout or not
     private int singleFetchCheckHeartTimeoutJobRows = 30;
+
+    // single fetch job rows to pull task result
+    private int singlePullResultJobRows = 200;
 
     // max retry times after heart timeout
     private int maxHeartTimeoutRetryTimes = 3;
@@ -88,4 +95,5 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
 
     private String destroyExecutorJobCronExpression;
 
+    private String pullTaskResultJobCronExpression;
 }

@@ -65,11 +65,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EmbedServer {
 
-    private RequestHandler requestHandler;
+    private ExecutorRequestHandler requestHandler;
     private Thread thread;
 
     public void start() {
-        requestHandler = new RequestHandler();
+        requestHandler = new ExecutorRequestHandler();
         thread = new Thread(TraceDecoratorUtils.decorate(new Runnable() {
             @Override
             public void run() {
@@ -168,10 +168,10 @@ public class EmbedServer {
         private static final Logger logger = LoggerFactory.getLogger(EmbedHttpServerHandler.class);
 
         private final ThreadPoolExecutor bizThreadPool;
-        private final RequestHandler requestHandler;
+        private final ExecutorRequestHandler requestHandler;
 
-        public EmbedHttpServerHandler(RequestHandler requestHandler, ThreadPoolExecutor bizThreadPool) {
-            this.requestHandler = requestHandler;
+        public EmbedHttpServerHandler(ExecutorRequestHandler executorRequestHandler, ThreadPoolExecutor bizThreadPool) {
+            this.requestHandler = executorRequestHandler;
             this.bizThreadPool = bizThreadPool;
         }
 

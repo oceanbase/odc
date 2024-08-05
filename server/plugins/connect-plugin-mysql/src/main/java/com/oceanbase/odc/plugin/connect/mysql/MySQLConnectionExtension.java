@@ -29,7 +29,7 @@ import org.pf4j.Extension;
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
-import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
+import com.oceanbase.odc.plugin.connect.api.JdbcUrlParser;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
 import com.oceanbase.odc.plugin.connect.mysql.initializer.EnableProfileInitializer;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLConnectionExtension;

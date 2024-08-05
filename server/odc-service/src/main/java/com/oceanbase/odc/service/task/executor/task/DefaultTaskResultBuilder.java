@@ -25,8 +25,7 @@ import com.oceanbase.odc.service.task.util.JobUtils;
  */
 public class DefaultTaskResultBuilder {
 
-    public static DefaultTaskResult build(Task<?> task) {
-
+    public static DefaultTaskResult build(BaseTask<?> task) {
         DefaultTaskResult result = new DefaultTaskResult();
         result.setResultJson(JsonUtils.toJson(task.getTaskResult()));
         result.setStatus(task.getStatus());
