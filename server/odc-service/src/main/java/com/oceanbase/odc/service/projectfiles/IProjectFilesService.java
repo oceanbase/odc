@@ -18,7 +18,7 @@ package com.oceanbase.odc.service.projectfiles;
 import java.util.List;
 import java.util.Set;
 
-import com.oceanbase.odc.service.projectfiles.model.BatchUploadProjectFileReq;
+import com.oceanbase.odc.service.projectfiles.model.BatchUploadProjectFilesReq;
 import com.oceanbase.odc.service.projectfiles.model.ProjectFileMetaResp;
 import com.oceanbase.odc.service.projectfiles.model.ProjectFileResp;
 import com.oceanbase.odc.service.projectfiles.model.UpdateProjectFileReq;
@@ -38,7 +38,7 @@ public interface IProjectFilesService {
 
     List<ProjectFileMetaResp> searchFiles(Long projectId, String nameLike);
 
-    List<ProjectFileMetaResp> batchUploadFiles(Long projectId, BatchUploadProjectFileReq req);
+    List<ProjectFileMetaResp> batchUploadFiles(Long projectId, BatchUploadProjectFilesReq req);
 
     List<ProjectFileMetaResp> batchDeleteFiles(Long projectId, List<String> paths);
 
