@@ -13,25 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.projectfiles.domain;
-
-import java.util.Set;
-
-import com.oceanbase.odc.service.projectfiles.model.FileUploadTempCredentialResp;
+package com.oceanbase.odc.service.projectfiles.constants;
 
 /**
- * 项目文件OSS相关接口
- *
  * @author keyang
- * @date 2024/08/02
+ * @date 2024/08/05
  * @since 4.3.2
  */
-public interface IProjectFileOssGateway {
-    FileUploadTempCredentialResp generateTempCredential(Long durationSeconds);
+public class ProjectFilesConstant {
+    /**
+     * 项目文件搜索数量限制
+     */
+    public static final int PROJECT_FILES_NAME_LIKE_SEARCH_LIMIT = 100;
 
-    void copyTo(String tempObjectKey, Path destination);
-
-    String getContent(String objectKey);
-
-    void batchDelete(Set<String> objectKeys);
+    /**
+     * 文件名长度限制
+     */
+    public static final int NAME_LENGTH_LIMIT = 64;
+    /**
+     * 每次变更数量限制
+     */
+    public static final int CHANGE_FILE_NUM_LIMIT = 2000;
+    /**
+     * 同一级目录文件数量限制
+     */
+    public static final int LEVEL_FILE_NUM_LIMIT = 100;
 }

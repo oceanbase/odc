@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.projectfiles.domain;
 
+import static com.oceanbase.odc.service.projectfiles.constants.ProjectFilesConstant.NAME_LENGTH_LIMIT;
+
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -22,6 +24,7 @@ import java.util.Optional;
 
 import org.apache.commons.collections4.CollectionUtils;
 
+import com.oceanbase.odc.service.projectfiles.exceptions.NameTooLongException;
 import com.oceanbase.odc.service.projectfiles.model.ProjectFileLocation;
 import com.oceanbase.odc.service.projectfiles.model.ProjectFileType;
 import com.oceanbase.odc.service.projectfiles.utils.ProjectFilePathUtil;
@@ -37,10 +40,6 @@ import lombok.Getter;
  */
 @Getter
 public class Path {
-    /**
-     * 文件名长度限制
-     */
-    protected static final int NAME_LENGTH_LIMIT = 64;
 
     List<String> parentPathItems;
     /**
@@ -71,6 +70,10 @@ public class Path {
         Optional<String> pathNameOptional = ProjectFilePathUtil.getPathName(items);
         if (!pathNameOptional.isPresent()) {
             throw new IllegalArgumentException("invalid path : " + path);
+        }
+        if (isExceedNameLengthLimit()) {
+            throw new NameTooLongException("name length is over limit " +
+                    NAME_LENGTH_LIMIT + ", path:" + path);
         }
         this.name = pathNameOptional.get();
         this.type = pathTypeOptional.get();
@@ -155,6 +158,16 @@ public class Path {
     }
 
     /**
+     * path是否包含name
+     *
+     * @param name
+     * @return
+     */
+    public boolean isNameContains(String name) {
+        return this.name.contains(name);
+    }
+
+    /**
      * 判断当前path是否可以重命名
      * 
      * @return
@@ -177,6 +190,15 @@ public class Path {
             }
             return -Integer.compare(o1.getType().getOrder(), o2.getType().getOrder());
         };
+    }
+
+    /**
+     * 根据levelNum排序
+     * 
+     * @return
+     */
+    public static Comparator<Path> getLevelNulComparator() {
+        return Comparator.comparingInt(o -> o.levelNum);
     }
 
     public boolean isFile() {

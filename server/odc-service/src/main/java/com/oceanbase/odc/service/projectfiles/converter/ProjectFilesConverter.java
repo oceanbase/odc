@@ -15,7 +15,11 @@
  */
 package com.oceanbase.odc.service.projectfiles.converter;
 
+import java.util.stream.Collectors;
+
+import com.oceanbase.odc.service.projectfiles.domain.BatchDeleteFilesResult;
 import com.oceanbase.odc.service.projectfiles.domain.ProjectFile;
+import com.oceanbase.odc.service.projectfiles.model.BatchDeleteProjectFilesResp;
 import com.oceanbase.odc.service.projectfiles.model.ProjectFileMetaResp;
 import com.oceanbase.odc.service.projectfiles.model.ProjectFileResp;
 
@@ -43,6 +47,16 @@ public class ProjectFilesConverter {
                 .type(projectFile.getPath().getType())
                 .createTime(projectFile.getCreateTime())
                 .updateTime(projectFile.getUpdateTime())
+                .build();
+    }
+
+    public static BatchDeleteProjectFilesResp convertToBatchDeleteResp(BatchDeleteFilesResult result) {
+        return BatchDeleteProjectFilesResp.builder()
+                .isAllDeleted(result.getFailed().isEmpty())
+                .successFiles(result.getSuccess().stream()
+                        .map(ProjectFilesConverter::convertToMetaResp).collect(Collectors.toList()))
+                .failedFiles(result.getFailed().stream()
+                        .map(ProjectFilesConverter::convertToMetaResp).collect(Collectors.toList()))
                 .build();
     }
 }

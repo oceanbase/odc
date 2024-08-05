@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.projectfiles.infrastructure;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -106,5 +107,10 @@ public class ProjectFileOssGateway implements IProjectFileOssGateway {
     @Override
     public String getContent(String objectKey) {
         return "";
+    }
+
+    @Override
+    public void batchDelete(Set<String> objectKeys) {
+
     }
 }

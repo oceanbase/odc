@@ -319,6 +319,10 @@ public enum ErrorCodes implements ErrorCode {
      * 更新文件过多
      */
     ProjectFileChangeFileToMuch,
+    /**
+     * 同级文件数量超限
+     */
+    ProjectFileExceedSameLevelNumLimit,
     ;
 
     @Override

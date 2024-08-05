@@ -15,10 +15,14 @@
  */
 package com.oceanbase.odc.service.projectfiles.domain;
 
+import static com.oceanbase.odc.service.projectfiles.constants.ProjectFilesConstant.*;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -29,8 +33,8 @@ import com.alibaba.druid.util.StringUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.projectfiles.exceptions.ChangeFileTooMuchLongException;
 import com.oceanbase.odc.service.projectfiles.exceptions.EditVersionConflictException;
+import com.oceanbase.odc.service.projectfiles.exceptions.ExceedSameLevelNumLimitException;
 import com.oceanbase.odc.service.projectfiles.exceptions.NameDuplicatedException;
-import com.oceanbase.odc.service.projectfiles.exceptions.NameTooLongException;
 import com.oceanbase.odc.service.projectfiles.utils.ProjectFilePathUtil;
 
 import lombok.Data;
@@ -44,14 +48,6 @@ import lombok.Data;
  */
 @Data
 public class ProjectFile {
-    /**
-     * 每次变更数量限制
-     */
-    private static final int CHANGE_FILE_NUM_LIMIT = 10000;
-    /**
-     * 同一级目录文件数量限制
-     */
-    private static final int LEVEL_FILE_NUM_LIMIT = 100;
     private Long id;
     private Date createTime;
     private Date updateTime;
@@ -76,7 +72,7 @@ public class ProjectFile {
      */
     private Set<ProjectFile> subFiles;
 
-    public static ProjectFile create(Long projectId, Path path, String objectKey) {
+    public static ProjectFile of(Long projectId, Path path, String objectKey) {
         return new ProjectFile(null, null, null, projectId, path,
                 null, objectKey, null, null);
     }
@@ -114,9 +110,6 @@ public class ProjectFile {
      * @return 级联更改过的子文件列表，若正常返回当前文件的name肯定是被修改过的
      */
     public Set<ProjectFile> rename(Path destination) {
-        if (destination.isExceedNameLengthLimit()) {
-            throw new NameTooLongException("name length is over limit " + Path.NAME_LENGTH_LIMIT);
-        }
         if (!ProjectFilePathUtil.isRenameValid(this.path, destination)) {
             throw new IllegalArgumentException(
                     "invalid path for rename,from:" + this.path + ",destination:" + destination);
@@ -154,7 +147,7 @@ public class ProjectFile {
      */
     public Set<ProjectFile> edit(Path destination, String objectKey, Long readVersion) {
         // 若objectKey变更，需要修改内容，且判断readVersion是否符合条件
-        if (!StringUtils.equals(this.objectKey, objectKey)) {
+        if (this.path.isFile() && !StringUtils.equals(this.objectKey, objectKey)) {
             this.objectKey = objectKey;
             this.readVersion = readVersion;
             this.isChanged = true;
@@ -202,24 +195,55 @@ public class ProjectFile {
         return this.readVersion != null && !this.readVersion.equals(this.version);
     }
 
-    /**
-     * 是否可以在当前path下创建指定path
-     * 
-     * @param subFilePath
-     * @return
-     */
-    public boolean canCreateSubFile(Path subFilePath) {
-        if (CollectionUtils.isEmpty(this.subFiles)) {
-            return true;
-        }
-        for (ProjectFile subFile : this.subFiles) {
-            if (subFile.path.equals(subFilePath)) {
-                return false;
-            }
-        }
-        return true;
+    public ProjectFile create(Path addPath, String objectKey) {
+        return batchCreate(Collections.singletonMap(addPath, objectKey))
+                .stream().findFirst()
+                // 这里肯定能获取到一个创建的ProjectFile，增加异常校验只是为程序的完整性
+                .orElseThrow(() -> new IllegalStateException("unexpected exception"));
     }
 
+    public Set<ProjectFile> batchCreate(Map<Path, String> createPathToObjectKeyMap) {
+        List<ProjectFile> nextLevelFiles = this.getNextLevelFiles();
+        sameLevelFileNumLimitCheck(createPathToObjectKeyMap, nextLevelFiles);
+        createInParentCheck(createPathToObjectKeyMap, nextLevelFiles);
+        return createPathToObjectKeyMap.entrySet().stream().map(
+                entry -> ProjectFile.of(projectId, entry.getKey(), entry.getValue()))
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * 批量创建文件时，同一级目录文件数量限制检查
+     * 
+     * @param createPathToObjectKeyMap 要添加的path及其对应的objectKey的map
+     * @param nextLevelFiles 当前文件的下一级文件列表
+     */
+    private void sameLevelFileNumLimitCheck(Map<Path, String> createPathToObjectKeyMap,
+            List<ProjectFile> nextLevelFiles) {
+
+        if (nextLevelFiles.size() +
+                createPathToObjectKeyMap.size() > LEVEL_FILE_NUM_LIMIT) {
+            throw new ExceedSameLevelNumLimitException(
+                    "create path num exceed limit, create path num: " + createPathToObjectKeyMap.size()
+                            + ", same level exist file num: " + nextLevelFiles.size());
+        }
+    }
+
+    /**
+     * 在父path下创建子文件检查
+     */
+    private void createInParentCheck(Map<Path, String> createPathToObjectKeyMap,
+            List<ProjectFile> nextLevelFiles) {
+        if (CollectionUtils.isEmpty(nextLevelFiles)) {
+            return;
+        }
+        for (ProjectFile subFile : nextLevelFiles) {
+            if (createPathToObjectKeyMap.containsKey(subFile.getPath())) {
+                throw new NameDuplicatedException(
+                        "create path duplicated with with an existing same level file,"
+                                + "exist path: " + subFile.getPath());
+            }
+        }
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -236,5 +260,16 @@ public class ProjectFile {
     @Override
     public int hashCode() {
         return Objects.hash(projectId, path);
+    }
+
+    @Override
+    public String toString() {
+        return "ProjectFile{" +
+                "projectId=" + projectId +
+                ", id=" + id +
+                ", path=" + path +
+                ", version=" + version +
+                ", objectKey='" + objectKey + '\'' +
+                '}';
     }
 }

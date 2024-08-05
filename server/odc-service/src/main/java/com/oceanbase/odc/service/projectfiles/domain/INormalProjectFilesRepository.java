@@ -15,7 +15,9 @@
  */
 package com.oceanbase.odc.service.projectfiles.domain;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * 普通类型项目文件仓储对象
@@ -29,5 +31,13 @@ public interface INormalProjectFilesRepository {
             boolean createDefaultIfNotExist, boolean loadSubFiles,
             boolean loadSameLevelFiles);
 
-    void add(ProjectFile file);
+    List<ProjectFile> listByProjectIdAndPathNameLike(Long projectId, String pathNameLike, int limit);
+
+    List<ProjectFile> listByProjectIdAndPath(Long projectId, Path path, boolean loadSubFiles);
+
+    void batchAdd(Set<ProjectFile> files);
+
+    void batchDelete(Set<Long> ids);
+
+    void batchUpdateById(Set<ProjectFile> files, boolean needAddVersion);
 }
