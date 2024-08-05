@@ -20,6 +20,7 @@ import java.util.Set;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
+import javax.validation.constraints.Size;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,7 +35,8 @@ import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.projectfiles.ProjectFilesServiceFacade;
-import com.oceanbase.odc.service.projectfiles.model.BatchUploadProjectFileReq;
+import com.oceanbase.odc.service.projectfiles.model.BatchDeleteProjectFilesResp;
+import com.oceanbase.odc.service.projectfiles.model.BatchUploadProjectFilesReq;
 import com.oceanbase.odc.service.projectfiles.model.FileUploadTempCredentialResp;
 import com.oceanbase.odc.service.projectfiles.model.GenerateProjectFileTempCredentialReq;
 import com.oceanbase.odc.service.projectfiles.model.ProjectFileMetaResp;
@@ -94,15 +96,15 @@ public class ProjectFilesController {
     @PostMapping("/batchUpload")
     public ListResponse<ProjectFileMetaResp> batchUploadFiles(
             @PathVariable("projectId") Long projectId,
-            @RequestBody BatchUploadProjectFileReq req) {
+            @RequestBody BatchUploadProjectFilesReq req) {
         return Responses.list(projectFilesServiceFacade.batchUploadFiles(projectId, req));
     }
 
     @PostMapping("/batchDelete")
-    public ListResponse<ProjectFileMetaResp> batchDeleteFiles(
+    public SuccessResponse<BatchDeleteProjectFilesResp> batchDeleteFiles(
             @PathVariable("projectId") Long projectId,
-            @RequestBody List<String> paths) {
-        return Responses.list(projectFilesServiceFacade.batchDeleteFiles(projectId, paths));
+            @RequestBody @Size(min = 0, max = 100) List<String> paths) {
+        return Responses.success(projectFilesServiceFacade.batchDeleteFiles(projectId, paths));
     }
 
     @PutMapping("/rename")

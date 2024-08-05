@@ -20,7 +20,8 @@ import java.util.Set;
 
 import org.springframework.stereotype.Service;
 
-import com.oceanbase.odc.service.projectfiles.model.BatchUploadProjectFileReq;
+import com.oceanbase.odc.service.projectfiles.model.BatchDeleteProjectFilesResp;
+import com.oceanbase.odc.service.projectfiles.model.BatchUploadProjectFilesReq;
 import com.oceanbase.odc.service.projectfiles.model.FileUploadTempCredentialResp;
 import com.oceanbase.odc.service.projectfiles.model.GenerateProjectFileTempCredentialReq;
 import com.oceanbase.odc.service.projectfiles.model.ProjectFileMetaResp;
@@ -35,9 +36,7 @@ import com.oceanbase.odc.service.projectfiles.model.UpdateProjectFileReq;
  * @since 4.3.2
  */
 @Service
-public class ProjectFilesServiceFacade implements IProjectFilesService {
-    // @Resource
-    // private IProjectFileOssGateway projectFileOssGateway;
+public class ProjectFilesServiceFacade {
 
     /**
      * 生成临时凭证
@@ -49,7 +48,6 @@ public class ProjectFilesServiceFacade implements IProjectFilesService {
     public FileUploadTempCredentialResp generateTempCredential(Long projectId,
             GenerateProjectFileTempCredentialReq req) {
         return null;
-        // return projectFileOssGateway.generateTempCredential(req.getDurationSeconds());
     }
 
     /**
@@ -60,7 +58,6 @@ public class ProjectFilesServiceFacade implements IProjectFilesService {
      * @param objectKey 对象键
      * @return 文件元数据响应
      */
-    @Override
     public ProjectFileMetaResp createFile(Long projectId, String path, String objectKey) {
         return null;
     }
@@ -68,12 +65,11 @@ public class ProjectFilesServiceFacade implements IProjectFilesService {
     /**
      * 获取文件详情
      *
-     * @param path 文件路径
+     * @param pathStr 文件路径
      * @param projectId 项目ID
      * @return 文件响应
      */
-    @Override
-    public ProjectFileResp getFileDetails(Long projectId, String path) {
+    public ProjectFileResp getFileDetails(Long projectId, String pathStr) {
         return null;
     }
 
@@ -81,11 +77,10 @@ public class ProjectFilesServiceFacade implements IProjectFilesService {
      * 列出文件
      *
      * @param projectId 项目ID
-     * @param path 文件路径
+     * @param pathStr 文件路径
      * @return 文件元数据列表响应
      */
-    @Override
-    public List<ProjectFileMetaResp> listFiles(Long projectId, String path) {
+    public List<ProjectFileMetaResp> listFiles(Long projectId, String pathStr) {
         return null;
     }
 
@@ -96,7 +91,6 @@ public class ProjectFilesServiceFacade implements IProjectFilesService {
      * @param nameLike 文件名模糊匹配
      * @return 文件元数据列表响应
      */
-    @Override
     public List<ProjectFileMetaResp> searchFiles(Long projectId, String nameLike) {
         return null;
     }
@@ -108,8 +102,7 @@ public class ProjectFilesServiceFacade implements IProjectFilesService {
      * @param req 批量上传文件请求
      * @return 文件元数据列表响应
      */
-    @Override
-    public List<ProjectFileMetaResp> batchUploadFiles(Long projectId, BatchUploadProjectFileReq req) {
+    public List<ProjectFileMetaResp> batchUploadFiles(Long projectId, BatchUploadProjectFilesReq req) {
         return null;
     }
 
@@ -120,8 +113,8 @@ public class ProjectFilesServiceFacade implements IProjectFilesService {
      * @param paths 文件路径列表
      * @return 文件元数据列表响应
      */
-    @Override
-    public List<ProjectFileMetaResp> batchDeleteFiles(Long projectId, List<String> paths) {
+
+    public BatchDeleteProjectFilesResp batchDeleteFiles(Long projectId, List<String> paths) {
         return null;
     }
 
@@ -129,12 +122,11 @@ public class ProjectFilesServiceFacade implements IProjectFilesService {
      * 重命名文件
      *
      * @param projectId 项目ID
-     * @param path 文件路径
+     * @param pathStr 文件路径
      * @param destination 新文件路径
      * @return 文件元数据列表响应
      */
-    @Override
-    public List<ProjectFileMetaResp> renameFile(Long projectId, String path, String destination) {
+    public List<ProjectFileMetaResp> renameFile(Long projectId, String pathStr, String destination) {
         return null;
     }
 
@@ -142,12 +134,11 @@ public class ProjectFilesServiceFacade implements IProjectFilesService {
      * 编辑文件
      *
      * @param projectId 项目ID
-     * @param path 文件路径
+     * @param pathStr 文件路径
      * @param req 编辑文件请求
      * @return 文件元数据列表响应
      */
-    @Override
-    public List<ProjectFileMetaResp> editFile(Long projectId, String path, UpdateProjectFileReq req) {
+    public List<ProjectFileMetaResp> editFile(Long projectId, String pathStr, UpdateProjectFileReq req) {
         return null;
     }
 
@@ -158,7 +149,6 @@ public class ProjectFilesServiceFacade implements IProjectFilesService {
      * @param paths 文件路径集合
      * @return 下载链接
      */
-    @Override
     public String batchDownloadFiles(Long projectId, Set<String> paths) {
         return null;
     }
