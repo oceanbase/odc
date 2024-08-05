@@ -38,30 +38,29 @@ public class SwapTableUtil {
                         fullVerificationResult == FullVerificationResult.UNCHECK);
     }
 
-    public static String escapeMySQLName(String name) {
-        return escapeName(name, getQuota(DialectType.MYSQL));
-    }
-
-    public static String escapeOracleName(String name) {
-        return escapeName(name, getQuota(DialectType.ORACLE));
-    }
-
-    public static String escapeName(String name, String quota) {
-        if (StringUtils.startsWith(name, quota) && StringUtils.endsWith(name, quota)) {
-            // already escaped
+    public static String quoteMySQLName(String name) {
+        if (StringUtils.checkMysqlIdentifierQuoted(name)) {
             return name;
         } else {
-            return quota + name + quota;
+            return StringUtils.quoteMysqlIdentifier(name);
         }
     }
 
-    public static String getQuota(DialectType dialectType) {
+    public static String quoteOracleName(String name) {
+        if (StringUtils.checkOracleIdentifierQuoted(name)) {
+            return name;
+        } else {
+            return StringUtils.quoteOracleIdentifier(name);
+        }
+    }
+
+    public static String quoteName(String name, DialectType dialectType) {
         switch (dialectType) {
             case MYSQL:
             case OB_MYSQL:
-                return "`";
+                return quoteMySQLName(name);
             default:
-                return "\"";
+                return quoteOracleName(name);
         }
     }
 }

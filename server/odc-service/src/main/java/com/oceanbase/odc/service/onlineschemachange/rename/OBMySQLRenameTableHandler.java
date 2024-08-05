@@ -66,7 +66,7 @@ public class OBMySQLRenameTableHandler implements RenameTableHandler {
 
 
     private String getWithSchema(String schema, String tableName) {
-        return SwapTableUtil.escapeMySQLName(schema) + "." + SwapTableUtil.escapeMySQLName(tableName);
+        return SwapTableUtil.quoteMySQLName(schema) + "." + SwapTableUtil.quoteMySQLName(tableName);
     }
 
 }

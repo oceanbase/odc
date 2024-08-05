@@ -41,8 +41,8 @@ public class LockTableInterceptor implements RenameTableInterceptor {
 
     @Override
     public void preRename(RenameTableParameters parameters) {
-        String realTableName = SwapTableUtil.escapeName(parameters.getOriginTableName(),
-                SwapTableUtil.getQuota(connSession.getDialectType()));
+        String realTableName = SwapTableUtil.quoteName(parameters.getOriginTableName(),
+                connSession.getDialectType());
         String sql = "lock table  " + realTableName + " write";
         jdbcOperations.execute(sql);
         log.info("Execute sql: {} ", sql);

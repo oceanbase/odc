@@ -26,7 +26,7 @@ import org.junit.Test;
 public class SwapTableUtilTest {
     @Test
     public void testEscapeName() {
-        Assert.assertEquals(SwapTableUtil.escapeMySQLName("name   "), "`name   `");
-        Assert.assertEquals(SwapTableUtil.escapeOracleName("name   "), "\"name   \"");
+        Assert.assertEquals(SwapTableUtil.quoteMySQLName("name   "), "`name   `");
+        Assert.assertEquals(SwapTableUtil.quoteOracleName("name   "), "\"name   \"");
     }
 }
