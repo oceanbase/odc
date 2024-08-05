@@ -31,8 +31,10 @@ import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingRepository;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingRepository;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
+import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -60,17 +62,22 @@ public class LogicalDatabaseSyncManager {
     private DBObjectRepository dbObjectRepository;
     @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
+    @Autowired
+    private ConnectionService connectionService;
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
 
     public void submitExtractLogicalTablesTask(@NotNull Database logicalDatabase) {
         doExecute(() -> executor
                 .submit(new LogicalTableExtractTask(logicalDatabase, databaseRepository, dbRelationRepository,
-                        databaseService, dbObjectRepository, tableRelationRepository, jdbcLockRegistry)));
+                        databaseService, dbObjectRepository, tableRelationRepository, connectionService,
+                        jdbcLockRegistry, authenticationFacade.currentUser())));
     }
 
     public void submitCheckConsistencyTask(@NotNull Long logicalTableId) {
         doExecute(() -> executor
                 .submit(new LogicalTableCheckConsistencyTask(logicalTableId, tableRelationRepository,
-                        databaseService)));
+                        databaseService, connectionService, authenticationFacade.currentUser())));
     }
 
     private Future<?> doExecute(Supplier<Future<?>> supplier) {

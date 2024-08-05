@@ -22,12 +22,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseService;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalTableService;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.CreateLogicalDatabaseReq;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTableTopologyResp;
 
 /**
  * @Author: Lebie
@@ -51,6 +53,14 @@ public class LogicalDatabaseController {
     @RequestMapping(value = "/logicaldatabases/{id:[\\d]+}", method = RequestMethod.GET)
     public SuccessResponse<DetailLogicalDatabaseResp> detail(@PathVariable Long id) {
         return Responses.success(databaseService.detail(id));
+    }
+
+    @RequestMapping(
+            value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/logicaltables/{logicalTableId:[\\d]+}/topologies",
+            method = RequestMethod.GET)
+    public ListResponse<LogicalTableTopologyResp> listLogicalTablesTopologies(@PathVariable Long logicalDatabaseId,
+            @PathVariable Long logicalTableId) {
+        return Responses.list(tableService.listLogicalTableTopologies(logicalDatabaseId, logicalTableId));
     }
 
     @RequestMapping(value = "/logicaldatabases/{id:[\\d]+}", method = RequestMethod.DELETE)

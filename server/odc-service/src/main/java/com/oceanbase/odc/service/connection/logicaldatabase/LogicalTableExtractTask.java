@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.connection.logicaldatabase;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -34,11 +35,15 @@ import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingEntity;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingRepository;
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
+import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.LogicalTableFinder;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalTable;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.NonNull;
@@ -54,27 +59,38 @@ public class LogicalTableExtractTask implements Runnable {
     private final DatabaseMappingRepository dbRelationRepository;
     private final TableMappingRepository tableRelationRepository;
     private final DBObjectRepository dbObjectRepository;
+    private final ConnectionService connectionService;
+    private final User creator;
     private JdbcLockRegistry jdbcLockRegistry;
 
     public LogicalTableExtractTask(@NonNull Database logicalDatabase, @NonNull DatabaseRepository databaseRepository,
             @NonNull DatabaseMappingRepository dbRelationRepository, @NonNull DatabaseService databaseService,
             @NonNull DBObjectRepository dbObjectRepository,
-            @NonNull TableMappingRepository tableRelationRepository,
-            @NonNull JdbcLockRegistry jdbcLockRegistry) {
+            @NonNull TableMappingRepository tableRelationRepository, @NonNull ConnectionService connectionService,
+            @NonNull JdbcLockRegistry jdbcLockRegistry, @NonNull User creator) {
         this.logicalDatabase = logicalDatabase;
         this.dbRelationRepository = dbRelationRepository;
         this.databaseService = databaseService;
         this.dbObjectRepository = dbObjectRepository;
         this.tableRelationRepository = tableRelationRepository;
+        this.connectionService = connectionService;
         this.jdbcLockRegistry = jdbcLockRegistry;
+        this.creator = creator;
     }
 
     @Override
     public void run() {
+        SecurityContextUtils.setCurrentUser(creator);
         List<DatabaseMappingEntity> relations =
                 dbRelationRepository.findByLogicalDatabaseId(logicalDatabase.getId());
         List<Database> physicalDatabases = databaseService.listDatabasesDetailsByIds(
                 relations.stream().map(DatabaseMappingEntity::getPhysicalDatabaseId).collect(Collectors.toList()));
+        Map<Long, ConnectionConfig> id2DataSources = connectionService.listForConnectionSkipPermissionCheck(
+                physicalDatabases.stream().map(database -> database.getDataSource().getId()).collect(
+                        Collectors.toList()))
+                .stream().collect(Collectors.toMap(ConnectionConfig::getId, connection -> connection));
+        physicalDatabases.stream()
+                .forEach(database -> database.setDataSource(id2DataSources.get(database.getDataSource().getId())));
         List<LogicalTable> logicalTables = new LogicalTableFinder(physicalDatabases).find();
         if (CollectionUtils.isEmpty(logicalTables)) {
             return;

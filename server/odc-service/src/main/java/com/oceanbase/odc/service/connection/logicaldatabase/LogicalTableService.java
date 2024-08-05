@@ -47,12 +47,16 @@ import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingEntity;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingRepository;
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.LogicalTableRecognitionUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.BadLogicalTableExpressionException;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.DefaultLogicalTableExpressionParser;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.LogicalTableExpressions;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalTableResp;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTableTopologyResp;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
@@ -94,6 +98,9 @@ public class LogicalTableService {
     @Autowired
     private DBResourcePermissionHelper permissionHelper;
 
+    @Autowired
+    private DatabaseService databaseService;
+
     public List<DetailLogicalTableResp> list(@NotNull Long logicalDatabaseId) {
         DatabaseEntity logicalDatabase =
                 databaseRepository.findById(logicalDatabaseId).orElseThrow(() -> new NotFoundException(
@@ -130,6 +137,29 @@ public class LogicalTableService {
                 inconsistentPhysicalTables.add(dataNode);
             });
             resp.setInconsistentPhysicalTables(inconsistentPhysicalTables);
+            return resp;
+        }).collect(Collectors.toList());
+    }
+
+    public List<LogicalTableTopologyResp> listLogicalTableTopologies(@NotNull Long logicalDatabaseId,
+            @NotNull Long logicalTableId) {
+        Map<Long, List<TableMappingEntity>> physicalDBId2Tables = mappingRepository.findByLogicalTableId(logicalTableId)
+                .stream().collect(Collectors.groupingBy(TableMappingEntity::getPhysicalDatabaseId));
+        Map<Long, List<Database>> id2Databases =
+                databaseService.listDatabasesByIds(physicalDBId2Tables.keySet()).stream().collect(Collectors.groupingBy(
+                        Database::getId));
+        return physicalDBId2Tables.entrySet().stream().map(entry -> {
+            List<TableMappingEntity> tables = entry.getValue();
+            LogicalTableTopologyResp resp = new LogicalTableTopologyResp();
+            resp.setPhysicalDatabase(id2Databases.get(entry.getKey()).get(0));
+            resp.setTableCount(tables.size());
+            resp.setExpression(
+                    LogicalTableRecognitionUtils.recognizeLogicalTablesWithExpression(tables.stream().map(table -> {
+                        DataNode dataNode = new DataNode();
+                        dataNode.setSchemaName(table.getPhysicalDatabaseName());
+                        dataNode.setTableName(table.getPhysicalTableName());
+                        return dataNode;
+                    }).collect(Collectors.toList())).get(0).getFullNameExpression());
             return resp;
         }).collect(Collectors.toList());
     }
