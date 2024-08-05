@@ -33,7 +33,6 @@ import com.oceanbase.odc.service.projectfiles.exceptions.NameDuplicatedException
 import com.oceanbase.odc.service.projectfiles.exceptions.NameTooLongException;
 import com.oceanbase.odc.service.projectfiles.utils.ProjectFilePathUtil;
 
-import lombok.Builder;
 import lombok.Data;
 
 /**
@@ -44,7 +43,6 @@ import lombok.Data;
  * @since 4.3.2
  */
 @Data
-@Builder
 public class ProjectFile {
     /**
      * 每次变更数量限制
