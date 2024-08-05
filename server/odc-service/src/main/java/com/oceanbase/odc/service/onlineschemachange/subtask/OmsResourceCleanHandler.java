@@ -16,8 +16,6 @@
 
 package com.oceanbase.odc.service.onlineschemachange.subtask;
 
-import java.util.concurrent.Executors;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -72,22 +70,21 @@ public class OmsResourceCleanHandler {
         if (projectControlRequest.getId() == null) {
             return;
         }
-        Executors.newSingleThreadExecutor().submit(() -> {
-            try {
+        // task pool allocate without close will cause thread resource leak.
+        // sync release oms project for temporary
+        try {
 
-                OmsProjectProgressResponse response =
-                        projectOpenApiService.describeProjectProgress(projectControlRequest);
-                if (response.getStatus() == OmsProjectStatusEnum.RUNNING) {
-                    projectOpenApiService.stopProject(projectControlRequest);
-                }
-                projectOpenApiService.releaseProject(projectControlRequest);
-                log.info("Release oms project, id {}", projectControlRequest.getId());
-            } catch (Throwable ex) {
-                log.warn("Failed to release oms project, id {}, occur error {}", projectControlRequest.getId(),
-                        ex.getMessage());
+            OmsProjectProgressResponse response =
+                    projectOpenApiService.describeProjectProgress(projectControlRequest);
+            if (response.getStatus() == OmsProjectStatusEnum.RUNNING) {
+                projectOpenApiService.stopProject(projectControlRequest);
             }
-        });
-
+            projectOpenApiService.releaseProject(projectControlRequest);
+            log.info("Release oms project, id {}", projectControlRequest.getId());
+        } catch (Throwable ex) {
+            log.warn("Failed to release oms project, id {}, occur error {}", projectControlRequest.getId(),
+                    ex.getMessage());
+        }
     }
 
 }

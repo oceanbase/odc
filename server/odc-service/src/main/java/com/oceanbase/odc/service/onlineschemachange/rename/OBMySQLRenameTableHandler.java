@@ -56,16 +56,17 @@ public class OBMySQLRenameTableHandler implements RenameTableHandler {
                         getWithSchema(schema, newName),
                         getWithSchema(schema, originName));
         jdbcOperations.execute(renameAllTablesSql);
-        log.info("Renamed {} TO {}, {} TO {}",
+        log.info("Renamed {} TO {}, {} TO {}, sql {}",
                 getWithSchema(schema, originName),
                 getWithSchema(schema, oldName),
                 getWithSchema(schema, newName),
-                getWithSchema(schema, originName));
+                getWithSchema(schema, originName),
+                renameAllTablesSql);
     }
 
 
     private String getWithSchema(String schema, String tableName) {
-        return schema + "." + tableName;
+        return SwapTableUtil.quoteMySQLName(schema) + "." + SwapTableUtil.quoteMySQLName(tableName);
     }
 
 }
