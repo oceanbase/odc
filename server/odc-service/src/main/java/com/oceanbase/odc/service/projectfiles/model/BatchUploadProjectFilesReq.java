@@ -18,6 +18,8 @@ package com.oceanbase.odc.service.projectfiles.model;
 import java.util.Objects;
 import java.util.Set;
 
+import javax.validation.constraints.Size;
+
 import lombok.Data;
 
 /**
@@ -28,11 +30,12 @@ import lombok.Data;
  * @since 4.3.2
  */
 @Data
-public class BatchUploadProjectFileReq {
+public class BatchUploadProjectFilesReq {
+    @Size(min = 1, max = 100)
     private Set<UploadProjectFileTuple> files;
 
     @Data
-    static class UploadProjectFileTuple {
+    public static class UploadProjectFileTuple {
         private String path;
         private String objectKey;
 
@@ -51,6 +54,14 @@ public class BatchUploadProjectFileReq {
         @Override
         public int hashCode() {
             return Objects.hash(path, objectKey);
+        }
+
+        @Override
+        public String toString() {
+            return "UploadProjectFileTuple{" +
+                    "path='" + path + '\'' +
+                    ", objectKey='" + objectKey + '\'' +
+                    '}';
         }
     }
 }
