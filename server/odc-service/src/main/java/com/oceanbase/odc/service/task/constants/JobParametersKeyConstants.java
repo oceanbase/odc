@@ -30,6 +30,8 @@ public class JobParametersKeyConstants {
 
     public static final String META_TASK_PARAMETER_JSON = "metaTaskParameterJson";
 
+    public static final String DLM_RATE_LIMIT_CONFIG = "dlmRateLimitConfig";
+
     public static final String FLOW_INSTANCE_ID = "flowInstanceId";
 
     public static final String CURRENT_SCHEMA = ConnectionSessionConstants.CURRENT_SCHEMA_KEY;

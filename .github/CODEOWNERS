@@ -23,11 +23,16 @@
 /server/odc-core/**/datamasking/    @LuckyPickleZZ
 /server/odc-core/**/datasource/     @yhilmare
 /server/odc-core/**/flow/           @yhilmare
+/server/odc-core/**/alarm/          @LuckyPickleZZ  @yizhouxw
+/server/odc-core/**/authority/      @yhilmare @yizhouxw
+/server/odc-core/**/datamasking/    @LuckyPickleZZ @yhilmare
+/server/odc-core/**/datasource/     @yhilmare @yizhouxw
+/server/odc-core/**/flow/           @yhilmare @yizhouxw
 /server/odc-core/**/migrate/        @yhilmare @yizhouxw
-/server/odc-core/**/session/        @yhilmare
+/server/odc-core/**/session/        @yhilmare @yizhouxw
 /server/odc-core/**/shared/         @yhilmare @yizhouxw
 /server/odc-core/**/sql/            @yhilmare @LuckyPickleZZ
-/server/odc-core/**/task/           @yhilmare @yizhouxw
+/server/odc-core/**/task/           @yhilmare @yizhouxw @guowl3
 
 # service common
 /server/odc-service/                                  @yhilmare @yizhouxw
@@ -52,9 +57,9 @@
 /server/odc-service/**/service/feature/               @MarkPotato777 @yizhouxw
 /server/odc-service/**/service/flow/                  @yhilmare @yizhouxw
 /server/odc-service/**/service/i18n/                  @LuckyPickleZZ
-/server/odc-service/**/service/iam/                   @MarkPotato777 @PeachThinking
+/server/odc-service/**/service/iam/                   @MarkPotato777 @PeachThinking @yhilmare
 /server/odc-service/**/service/info/                  @yhilmare @yizhouxw
-/server/odc-service/**/service/integration/           @yiminpeng @ungreat
+/server/odc-service/**/service/integration/           @yiminpeng @ungreat @yizhouxw
 /server/odc-service/**/service/lab/                   @LuckyPickleZZ @ungreat
 /server/odc-service/**/service/monitor/               @ungreat @yizhouxw
 /server/odc-service/**/service/notification/          @LuckyPickleZZ @MarkPotato777
@@ -77,7 +82,7 @@
 /server/odc-service/**/service/sqlcheck/              @yhilmare @PeachThinking
 /server/odc-service/**/service/structurecompare/      @PeachThinking @yhilmare
 /server/odc-service/**/service/systemconfig/          @MarkPotato777  @yizhouxw
-/server/odc-service/**/service/task/                  @yhilmare @yizhouxw
+/server/odc-service/**/service/task/                  @yhilmare @guowl3 @yizhouxw
 /server/odc-service/**/service/websocket/             @LuckyPickleZZ  @yizhouxw
 
 # plugins

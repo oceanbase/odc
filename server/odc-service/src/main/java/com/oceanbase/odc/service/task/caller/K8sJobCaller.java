@@ -49,11 +49,11 @@ public class K8sJobCaller extends BaseJobCaller {
     public ExecutorIdentifier doStart(JobContext context) throws JobException {
         String jobName = JobUtils.generateExecutorName(context.getJobIdentity());
 
-        String name = client.create(podConfig.getNamespace(), jobName, podConfig.getImage(),
+        String arn = client.create(podConfig.getNamespace(), jobName, podConfig.getImage(),
                 podConfig.getCommand(), podConfig);
 
         return DefaultExecutorIdentifier.builder().namespace(podConfig.getNamespace())
-                .executorName(name).build();
+                .executorName(arn).build();
     }
 
     @Override

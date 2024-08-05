@@ -15,13 +15,13 @@
              如果每个类的 log 对象都基于当前类生成，%logger 可作为 %class 的替代。
         -->
         <Property name="LOG_PATTERN">
-            [%date{yyyy-MM-dd HH:mm:ss.SSS}][%thread][%X{traceId},%X{spanId},%X{requestId}][%level][%class][%line]: %message%n
+            [%date{yyyy-MM-dd HH:mm:ss.SSS z}][%thread][%X{traceId},%X{spanId},%X{requestId}][%level][%class][%line]: %message%n
         </Property>
         <Property name="API_LOG_PATTERN">
-            [%date{yyyy-MM-dd HH:mm:ss.SSS}][%thread][%X{traceId},%X{spanId},%X{requestId}][%level]: %message%n
+            [%date{yyyy-MM-dd HH:mm:ss.SSS z}][%thread][%X{traceId},%X{spanId},%X{requestId}][%level]: %message%n
         </Property>
         <Property name="MONITOR_PATTERN">
-            [%date{yyyy-MM-dd HH:mm:ss.SSS}][%level]: %message%n
+            [%date{yyyy-MM-dd HH:mm:ss.SSS z}][%level]: %message%n
         </Property>
     </Properties>
 
@@ -604,8 +604,8 @@
             <Routes pattern="${ctx:scheduleTaskId}">
                 <Route>
                     <RollingFile name="InfoRolling-${ctx:scheduleTaskId}"
-                                 fileName="${LOG_DIRECTORY}/scheduleTask/${ctx:scheduleId}-${ctx:jobType}/${ctx:scheduleTaskId}/log.all"
-                                 filePattern="${LOG_DIRECTORY}/scheduleTask/${ctx:scheduleId}-${ctx:jobType}/${ctx:scheduleTaskId}/${date:yyyy-MM}/log-%d{yyyy-MM-dd}-%i.all.gz">
+                                 fileName="${LOG_DIRECTORY}/scheduleTask/${ctx:scheduleId}-${ctx:scheduleType}/${ctx:scheduleTaskId}/log.all"
+                                 filePattern="${LOG_DIRECTORY}/scheduleTask/${ctx:scheduleId}-${ctx:scheduleType}/${ctx:scheduleTaskId}/${date:yyyy-MM}/log-%d{yyyy-MM-dd}-%i.all.gz">
                         <PatternLayout>
                             <pattern>%d{yyyy-MM-dd HH:mm:ss} [%p] %m%n</pattern>
                         </PatternLayout>
@@ -626,8 +626,8 @@
             <Routes pattern="${ctx:scheduleTaskId}">
                 <Route>
                     <RollingFile name="WarnRolling-${ctx:scheduleTaskId}"
-                                 fileName="${LOG_DIRECTORY}/scheduleTask/${ctx:scheduleId}-${ctx:jobType}/${ctx:scheduleTaskId}/log.warn"
-                                 filePattern="${LOG_DIRECTORY}/scheduleTask/${ctx:scheduleId}-${ctx:jobType}/${ctx:scheduleTaskId}/${date:yyyy-MM}/log-%d{yyyy-MM-dd}-%i.warn.gz">
+                                 fileName="${LOG_DIRECTORY}/scheduleTask/${ctx:scheduleId}-${ctx:scheduleType}/${ctx:scheduleTaskId}/log.warn"
+                                 filePattern="${LOG_DIRECTORY}/scheduleTask/${ctx:scheduleId}-${ctx:scheduleType}/${ctx:scheduleTaskId}/${date:yyyy-MM}/log-%d{yyyy-MM-dd}-%i.warn.gz">
                         <PatternLayout>
                             <pattern>%d{yyyy-MM-dd HH:mm:ss} [%p] %m%n</pattern>
                         </PatternLayout>

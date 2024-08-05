@@ -23,6 +23,6 @@ import lombok.Data;
  * @Descripition:
  */
 @Data
-public class DataArchiveClearParameters {
+public class DataArchiveClearParameters implements ScheduleTaskParameters {
     private Long dataArchiveTaskId;
 }

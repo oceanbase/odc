@@ -75,7 +75,9 @@ public class OrganizationService {
             return organizations;
         }
         Organization team = organizations.stream()
-                .filter(organization -> organization.getType() == OrganizationType.TEAM)
+                .filter(organization -> organization.getType() == OrganizationType.TEAM
+                        && "${com.oceanbase.odc.builtin-resource.iam.organization.team.description}"
+                                .equals(organization.getDescription()))
                 .findFirst().orElseThrow(() -> new RuntimeException("User doesn't belong to any TEAM organization"));
         return organizations.stream().filter(o -> {
             if (o.getType() == OrganizationType.TEAM) {
