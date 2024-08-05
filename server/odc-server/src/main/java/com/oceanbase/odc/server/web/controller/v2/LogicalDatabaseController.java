@@ -29,6 +29,7 @@ import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseServi
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalTableService;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.CreateLogicalDatabaseReq;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalTableResp;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTableTopologyResp;
 
 /**
@@ -53,6 +54,14 @@ public class LogicalDatabaseController {
     @RequestMapping(value = "/logicaldatabases/{id:[\\d]+}", method = RequestMethod.GET)
     public SuccessResponse<DetailLogicalDatabaseResp> detail(@PathVariable Long id) {
         return Responses.success(databaseService.detail(id));
+    }
+
+    @RequestMapping(
+            value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/logicaltables/{logicalTableId:[\\d]+}",
+            method = RequestMethod.GET)
+    public SuccessResponse<DetailLogicalTableResp> detailLogicalTable(@PathVariable Long logicalDatabaseId,
+            @PathVariable Long logicalTableId) {
+        return Responses.success(tableService.detail(logicalDatabaseId, logicalTableId));
     }
 
     @RequestMapping(
