@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS `integration_git_repository` (
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `creator_id` bigint(20) NOT NULL COMMENT 'creator user id, references iam_user.id',
   `organization_id` bigint(20) NOT NULL COMMENT 'organization id, references iam_organization.id',
-  `project_id` bigint(20) NOT NULL COMMENT 'project id, references collaboration_project.id',
+  `project_id` bigint(20) DEFAULT NULL COMMENT 'project id, references collaboration_project.id',
   `description` varchar(512) DEFAULT NULL COMMENT 'description',
   `name` varchar(512) NOT NULL COMMENT 'repository name',
   `provider_type` varchar(32) NOT NULL COMMENT 'git provider type',
