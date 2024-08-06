@@ -25,7 +25,7 @@ import lombok.Getter;
  * @since 4.3.2
  */
 @Getter
-public enum WorkSheetType {
+public enum WorksheetType {
     GIT_REPO(1),
     DIRECTORY(2),
     FILE(3),
@@ -37,7 +37,7 @@ public enum WorkSheetType {
      */
     final int order;
 
-    WorkSheetType(int order) {
+    WorksheetType(int order) {
         this.order = order;
     }
 }
