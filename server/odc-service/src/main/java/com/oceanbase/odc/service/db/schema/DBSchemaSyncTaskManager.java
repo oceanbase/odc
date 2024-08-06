@@ -18,8 +18,10 @@ package com.oceanbase.odc.service.db.schema;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -29,12 +31,22 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
+import com.oceanbase.odc.metadb.connection.ConnectionEntity;
+import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncProperties;
+import com.oceanbase.odc.service.iam.UserService;
+import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -55,14 +67,34 @@ public class DBSchemaSyncTaskManager {
     private DBSchemaSyncService dbSchemaSyncService;
 
     @Autowired
+    private UserService userService;
+
+    @Autowired
     @Lazy
     private DatabaseService databaseService;
+
+    @Autowired
+    private ConnectionConfigRepository connectionConfigRepository;
 
     @Autowired
     private DBSchemaSyncProperties syncProperties;
 
     @Autowired
     private GlobalSearchProperties globalSearchProperties;
+
+    private final LoadingCache<Long, UserEntity> datasourceId2UserEntity = CacheBuilder.newBuilder().maximumSize(100)
+            .expireAfterWrite(10, TimeUnit.MINUTES)
+            .build(new CacheLoader<Long, UserEntity>() {
+                @Override
+                public UserEntity load(Long datasourceId) {
+                    Optional<ConnectionEntity> optional = connectionConfigRepository.findById(datasourceId);
+                    ConnectionEntity entity = optional.orElseThrow(
+                            () -> new NotFoundException(ResourceType.ODC_CONNECTION, "ConnectionId", datasourceId));
+                    UserEntity userEntity = userService.nullSafeGet(entity.getCreatorId());
+                    userEntity.setOrganizationId(entity.getOrganizationId());
+                    return userEntity;
+                }
+            });
 
     public void submitTaskByDatabases(@NonNull Collection<Database> databases) {
         if (CollectionUtils.isEmpty(databases) || !globalSearchProperties.isEnableGlobalSearch()) {
@@ -91,6 +123,8 @@ public class DBSchemaSyncTaskManager {
     private Callable<Void> generateTask(@NonNull Database database) {
         return () -> {
             try {
+                UserEntity user = datasourceId2UserEntity.get(database.getDataSource().getId());
+                SecurityContextUtils.setCurrentUser(user.getId(), user.getOrganizationId(), user.getAccountName());
                 databaseService.updateObjectSyncStatus(Collections.singleton(database.getId()),
                         DBObjectSyncStatus.SYNCING);
                 if (dbSchemaSyncService.sync(database)) {
@@ -103,6 +137,8 @@ public class DBSchemaSyncTaskManager {
             } catch (Exception e) {
                 databaseService.updateObjectLastSyncTimeAndStatus(database.getId(), DBObjectSyncStatus.FAILED);
                 log.warn("Failed to synchronize schema for database id={}", database.getId(), e);
+            } finally {
+                SecurityContextUtils.clear();
             }
             return null;
         };
