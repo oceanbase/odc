@@ -14,34 +14,39 @@ run-name: Build Artifact triggered by ${{ github.actor }} 🛠️
 on:
   workflow_dispatch:
     inputs:
+      pull_flink_image:
+        description: "Pull flink image"
+        required: true
+        type: boolean
+        default: false
       install_db_browser:
         description: "Install db-browser"
-        required: true
+        required: false
         type: boolean
-        default: true
+        default: false
       install_ob_sql_parser:
         description: "Install ob-sql-parser"
-        required: true
+        required: false
         type: boolean
-        default: true
+        default: false
       build_jar:
         description: "Build jar package"
-        required: true
+        required: false
         type: boolean
         default: false
       build_rpm:
         description: "Build rpm package"
-        required: true
+        required: false
         type: boolean
         default: false
       build_docker:
         description: "Build docker image"
-        required: true
+        required: false
         type: boolean
         default: false
       build_client:
         description: "Build client"
-        required: true
+        required: false
         type: boolean
         default: false
       rpm_release:
@@ -176,6 +181,19 @@ jobs:
           mvn clean install -Dmaven.test.skip=true
           echo "Install ob-sql-parser success"
           popd
+      - name: Pull flink image
+        if: ${{ github.event.inputs.pull_flink_image == 'true'}}
+        run: |
+          echo "Start pull flink image"
+          docker pull flink:1.19.1-scala_2.12-java8
+          docker save -o flink.tar.gz flink:1.19.1-scala_2.12-java8
+          echo "Pull flink image success"
+      - name: Upload flink
+        if: ${{ github.event.inputs.pull_flink_image == 'true'}}
+        uses: actions/upload-artifact@v4
+        with:
+          name: flink.tar.gz
+          path: flink.tar.gz
       - name: Install db-browser
         if: ${{ github.event.inputs.install_db_browser == 'true'}}
         run: |
