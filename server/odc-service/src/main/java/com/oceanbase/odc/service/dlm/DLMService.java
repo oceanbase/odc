@@ -18,12 +18,12 @@ package com.oceanbase.odc.service.dlm;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -90,16 +90,21 @@ public class DLMService {
     }
 
     @SkipAuthorize("odc internal usage")
-    @Transactional(rollbackFor = Exception.class)
-    public void updateStatusByDlmTableUnitId(String dlmTableUnitId, TaskStatus status) {
-        dlmTableUnitRepository.findByDlmTableUnitId(dlmTableUnitId).ifPresent(e -> {
-            e.setStatus(status);
-            if (status == TaskStatus.RUNNING && e.getStartTime() == null) {
-                e.setStartTime(new Date());
-            } else if (status.isTerminated()) {
-                e.setEndTime(new Date());
+    public void createOrUpdateDlmTableUnits(List<DlmTableUnit> dlmTableUnits) {
+        dlmTableUnits.forEach(o -> {
+            Optional<DlmTableUnitEntity> entityOptional = dlmTableUnitRepository.findByDlmTableUnitId(
+                    o.getDlmTableUnitId());
+            DlmTableUnitEntity entity;
+            if (entityOptional.isPresent()) {
+                entity = entityOptional.get();
+                entity.setStatistic(JsonUtils.toJson(o.getStatistic()));
+                entity.setStatus(o.getStatus());
+                entity.setStartTime(o.getStartTime());
+                entity.setEndTime(o.getEndTime());
+            } else {
+                entity = DlmTableUnitMapper.modelToEntity(o);
             }
-            dlmTableUnitRepository.save(e);
+            dlmTableUnitRepository.save(entity);
         });
     }
 
@@ -113,8 +118,12 @@ public class DLMService {
 
     @SkipAuthorize("odc internal usage")
     public TaskStatus getTaskStatus(Long scheduleTaskId) {
-        Set<TaskStatus> collect = findByScheduleTaskId(scheduleTaskId).stream()
-                .map(DlmTableUnit::getStatus).collect(Collectors.toSet());
+        return getTaskStatus(findByScheduleTaskId(scheduleTaskId));
+    }
+
+    public TaskStatus getTaskStatus(List<DlmTableUnit> dlmTableUnits) {
+        Set<TaskStatus> collect = dlmTableUnits.stream().map(DlmTableUnit::getStatus).collect(
+                Collectors.toSet());
         if (collect.contains(TaskStatus.FAILED)) {
             return TaskStatus.FAILED;
         }

@@ -107,6 +107,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.DatabaseSyncManager;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
 import com.oceanbase.odc.service.connection.ssl.ConnectionSSLAdaptor;
 import com.oceanbase.odc.service.connection.util.ConnectionIdList;
@@ -698,6 +699,20 @@ public class ConnectionService {
     }
 
     @SkipAuthorize("odc internal usages")
+    public List<Long> innerListIdByOrganizationIdAndClusterId(@NonNull Long organizationId, String clusterId) {
+        return repository.findByOrganizationIdAndClusterName(organizationId, clusterId).stream()
+                .map(ConnectionEntity::getId)
+                .collect(Collectors.toList());
+    }
+
+    @SkipAuthorize("odc internal usages")
+    public List<Long> innerListIdByOrganizationIdAndTenantId(@NonNull Long organizationId, String tenantId) {
+        return repository.findByOrganizationIdAndTenantName(organizationId, tenantId).stream()
+                .map(ConnectionEntity::getId)
+                .collect(Collectors.toList());
+    }
+
+    @SkipAuthorize("odc internal usages")
     public List<ConnectionConfig> innerListByIds(@NotEmpty Collection<Long> ids) {
         return repository.findByIdIn(ids).stream().map(mapper::entityToModel).collect(Collectors.toList());
     }
@@ -708,6 +723,14 @@ public class ConnectionService {
         adaptConnectionConfig(connection);
         return connection;
     }
+
+    @SkipAuthorize("internal usage")
+    public ConnectionConfig getDecryptedConfig(@NotNull Long id) {
+        ConnectionConfig connection = internalGetSkipUserCheck(id, false, false);
+        connectionEncryption.decryptPasswords(connection);
+        return connection;
+    }
+
 
     @SkipAuthorize("internal usage")
     public List<ConnectionConfig> listForConnectionSkipPermissionCheck(@NotNull Collection<Long> ids) {
@@ -1043,6 +1066,13 @@ public class ConnectionService {
         // Adapter should be called after decrypting passwords.
         environmentAdapter.adaptConfig(connection);
         connectionSSLAdaptor.adapt(connection);
+        OBTenantEndpoint endpoint = connection.getEndpoint();
+        if (Objects.nonNull(endpoint)) {
+            if (StringUtils.isNotBlank(endpoint.getVirtualHost()) && Objects.nonNull(endpoint.getVirtualPort())) {
+                connection.setHost(endpoint.getVirtualHost());
+                connection.setPort(endpoint.getVirtualPort());
+            }
+        }
     }
 
 }

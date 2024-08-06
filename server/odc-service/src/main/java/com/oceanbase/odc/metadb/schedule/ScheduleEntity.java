@@ -31,8 +31,8 @@ import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
-import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 import lombok.Data;
 
@@ -56,7 +56,7 @@ public class ScheduleEntity implements Serializable {
     @Column(name = "organization_id", nullable = false)
     private Long organizationId;
     @Column(name = "connection_id", nullable = false)
-    private Long connectionId;
+    private Long dataSourceId;
     @Column(name = "database_name", nullable = false)
     private String databaseName;
     @Column(name = "database_id", nullable = false)
@@ -74,7 +74,7 @@ public class ScheduleEntity implements Serializable {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "job_type", nullable = false)
-    private JobType jobType;
+    private ScheduleType type;
     @Column(name = "job_parameters_json", nullable = false)
     private String jobParametersJson;
     @Column(name = "trigger_config_json", nullable = false)

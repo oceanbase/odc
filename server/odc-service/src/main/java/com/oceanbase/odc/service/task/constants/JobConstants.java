@@ -47,6 +47,9 @@ public class JobConstants {
 
     public static final int REPORT_TASK_INFO_DELAY_SECONDS = 1;
 
+    /**
+     * TODO: too frequent, need to be optimized, may 10s
+     */
     public static final int REPORT_TASK_HEART_INTERVAL_SECONDS = 3;
 
     public static final int REPORT_TASK_HEART_DELAY_SECONDS = 1;
@@ -61,5 +64,6 @@ public class JobConstants {
 
     public static final String ODC_EXECUTOR_CANNOT_BE_DESTROYED = "odcExecutorCannotBeDestroyed";
 
+    public static final Integer JOB_POD_DEFAULT_LISTEN_PORT = 8080;
 
 }

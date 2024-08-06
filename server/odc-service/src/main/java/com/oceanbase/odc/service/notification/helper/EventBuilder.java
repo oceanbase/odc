@@ -84,7 +84,7 @@ import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter.ApplyTable;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
-import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -173,15 +173,15 @@ public class EventBuilder {
         return event;
     }
 
-    public Event ofSucceededTask(ScheduleEntity schedule) {
-        Event event = ofSchedule(schedule, TaskEvent.EXECUTION_SUCCEEDED);
-        resolveLabels(event.getLabels(), schedule);
+    public Event ofSucceededTask(ScheduleTask scheduleTask) {
+        Event event = ofScheduleTask(scheduleTask, TaskEvent.EXECUTION_SUCCEEDED);
+        resolveLabels(event.getLabels(), scheduleTask);
         return event;
     }
 
-    public Event ofFailedTask(ScheduleEntity schedule) {
-        Event event = ofSchedule(schedule, TaskEvent.EXECUTION_FAILED);
-        resolveLabels(event.getLabels(), schedule);
+    public Event ofFailedTask(ScheduleTask scheduleTask) {
+        Event event = ofScheduleTask(scheduleTask, TaskEvent.EXECUTION_FAILED);
+        resolveLabels(event.getLabels(), scheduleTask);
         return event;
     }
 
@@ -256,25 +256,47 @@ public class EventBuilder {
                 .build();
     }
 
-    private Event ofSchedule(ScheduleEntity schedule, TaskEvent status) {
+
+    private Event ofScheduleTask(ScheduleTask scheduleTask, TaskEvent status) {
+
+        ScheduleEntity schedule = scheduleRepository.findById(Long.valueOf(scheduleTask.getJobName())).get();
         EventLabels labels = new EventLabels();
         labels.putIfNonNull(TASK_STATUS, status.name());
         labels.putIfNonNull(TRIGGER_TIME, LocalDateTime.now().format(DATE_FORMATTER));
         labels.putIfNonNull(REGION, OB_ARN_PARTITION);
         labels.putIfNonNull(DESCRIPTION, schedule.getDescription());
 
-        switch (schedule.getJobType()) {
-            case DATA_ARCHIVE:
-            case DATA_ARCHIVE_DELETE:
-            case DATA_ARCHIVE_ROLLBACK:
-                labels.putIfNonNull(TASK_TYPE, JobType.DATA_ARCHIVE);
-                break;
-            default:
-                labels.putIfNonNull(TASK_TYPE, schedule.getJobType());
-                break;
-        }
+        labels.putIfNonNull(TASK_TYPE, scheduleTask.getJobGroup());
+
         labels.putIfNonNull(TASK_ID, schedule.getId());
-        labels.putIfNonNull(CONNECTION_ID, schedule.getConnectionId());
+        labels.putIfNonNull(CONNECTION_ID, schedule.getDataSourceId());
+        labels.putIfNonNull(CREATOR_ID, schedule.getCreatorId());
+        labels.putIfNonNull(PROJECT_ID, schedule.getProjectId());
+        labels.putIfNonNull(DATABASE_ID, schedule.getDatabaseId());
+        labels.putIfNonNull(DATABASE_NAME, schedule.getDatabaseName());
+
+        return Event.builder()
+                .status(EventStatus.CREATED)
+                .creatorId(schedule.getCreatorId())
+                .organizationId(schedule.getOrganizationId())
+                .projectId(schedule.getProjectId())
+                .triggerTime(new Date())
+                .labels(labels)
+                .build();
+    }
+
+
+    private Event ofSchedule(ScheduleEntity schedule, TaskEvent status) {
+
+        EventLabels labels = new EventLabels();
+        labels.putIfNonNull(TASK_STATUS, status.name());
+        labels.putIfNonNull(TRIGGER_TIME, LocalDateTime.now().format(DATE_FORMATTER));
+        labels.putIfNonNull(REGION, OB_ARN_PARTITION);
+        labels.putIfNonNull(DESCRIPTION, schedule.getDescription());
+
+        labels.putIfNonNull(TASK_TYPE, schedule.getType());
+        labels.putIfNonNull(TASK_ID, schedule.getId());
+        labels.putIfNonNull(CONNECTION_ID, schedule.getDataSourceId());
         labels.putIfNonNull(CREATOR_ID, schedule.getCreatorId());
         labels.putIfNonNull(PROJECT_ID, schedule.getProjectId());
         labels.putIfNonNull(DATABASE_ID, schedule.getDatabaseId());
@@ -340,8 +362,8 @@ public class EventBuilder {
                 if (taskEntity.getTaskType() == TaskType.ASYNC) {
                     DatabaseChangeParameters parameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                             DatabaseChangeParameters.class);
-                    if (Objects.nonNull(parameters.getParentJobType())) {
-                        labels.putIfNonNull(TASK_TYPE, parameters.getParentJobType());
+                    if (Objects.nonNull(parameters.getParentScheduleType())) {
+                        labels.putIfNonNull(TASK_TYPE, parameters.getParentScheduleType());
                         labels.putIfNonNull(TASK_ID, parentInstanceId);
                     } else {
                         labels.putIfNonNull(TASK_ID, flowInstances.get(0).getId());
@@ -379,14 +401,20 @@ public class EventBuilder {
         Long organizationId;
         if (task instanceof TaskEntity) {
             organizationId = ((TaskEntity) task).getOrganizationId();
-        } else {
+        } else if (task instanceof ScheduleEntity) {
             organizationId = ((ScheduleEntity) task).getOrganizationId();
+        } else if (task instanceof ScheduleTask) {
+            // TODO: schedule_task should maintain organizationId
+            organizationId = null;
+        } else {
+            throw new UnexpectedException("task type not supported, taskType={}" + task.getClass().getSimpleName());
         }
         String odcSite = siteUrlResolver.getSiteUrl();
         if (!odcSite.startsWith("http")) {
             odcSite = "http://".concat(odcSite);
         }
-        return String.format(TICKET_URL_TEMPLATE, odcSite, taskId, taskType, organizationId);
+        String organizationIdStr = organizationId == null ? "" : organizationId.toString();
+        return String.format(TICKET_URL_TEMPLATE, odcSite, taskId, taskType, organizationIdStr);
     }
 
 }

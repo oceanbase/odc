@@ -45,4 +45,9 @@ public class DefaultK8sJobResponse implements K8sJobResponse {
      */
     private String resourceStatus;
 
+    /**
+     * pod ip address
+     */
+    private String podIpAddress;
+
 }

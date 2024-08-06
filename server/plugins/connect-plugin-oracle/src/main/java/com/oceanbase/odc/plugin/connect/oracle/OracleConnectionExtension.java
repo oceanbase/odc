@@ -35,7 +35,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
-import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
+import com.oceanbase.odc.plugin.connect.api.JdbcUrlParser;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
 import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLConnectionExtension;

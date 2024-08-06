@@ -32,11 +32,14 @@ import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigEntity;
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigRepository;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @Author：tinker
  * @Date: 2023/8/3 14:06
  * @Descripition:
  */
+@Slf4j
 @Service
 @SkipAuthorize("odc internal usage")
 public class DlmLimiterService {
@@ -62,6 +65,9 @@ public class DlmLimiterService {
     private DlmLimiterConfigRepository limiterConfigRepository;
 
     public DlmLimiterConfigEntity create(RateLimitConfiguration config) {
+        config.setRowLimit(config.getRowLimit() == null ? defaultRowLimit : config.getRowLimit());
+        config.setBatchSize(config.getBatchSize() == null ? defaultBatchSize : config.getBatchSize());
+        config.setDataSizeLimit(config.getDataSizeLimit() == null ? defaultDataSizeLimit : config.getDataSizeLimit());
         checkLimiterConfig(config);
         DlmLimiterConfigEntity entity = mapper.modelToEntity(config);
         return limiterConfigRepository.save(entity);
@@ -74,6 +80,10 @@ public class DlmLimiterService {
         } else {
             return getDefaultLimiterConfig();
         }
+    }
+
+    public Optional<RateLimitConfiguration> findByScheduleId(Long scheduleId) {
+        return limiterConfigRepository.findByOrderId(scheduleId).map(mapper::entityToModel);
     }
 
     public List<RateLimitConfiguration> findByOrderIds(Collection<Long> orderIds) {
