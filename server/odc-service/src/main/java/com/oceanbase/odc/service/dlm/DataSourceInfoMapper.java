@@ -16,10 +16,14 @@
 
 package com.oceanbase.odc.service.dlm;
 
+import java.util.Collections;
+
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.enums.DataBaseType;
@@ -100,11 +104,24 @@ public class DataSourceInfoMapper {
                 dataSourceInfo.setTenantName(connectionConfig.getTenantName());
                 dataSourceInfo.setDatabaseType(DataBaseType.OB_ORACLE);
                 break;
+            case ORACLE:
+                dataSourceInfo.setJdbcUrl(getJdbcUrl(connectionConfig));
+                dataSourceInfo.setDatabaseType(DataBaseType.ORACLE);
+                break;
             default:
                 log.warn(String.format("Unsupported datasource type:%s", connectionConfig.getDialectType()));
                 throw new UnsupportedException(
                         String.format("Unsupported datasource type:%s", connectionConfig.getDialectType()));
         }
         return dataSourceInfo;
+    }
+
+    private static String getJdbcUrl(ConnectionConfig connectionConfig) {
+        JdbcUrlProperty jdbcUrlProperty = new JdbcUrlProperty(connectionConfig.getHost(), connectionConfig.getPort(),
+                connectionConfig.getDefaultSchema(), Collections.emptyMap(),
+                connectionConfig.getSid(),
+                connectionConfig.getServiceName());
+        return ConnectionPluginUtil.getConnectionExtension(connectionConfig.getDialectType())
+                .generateJdbcUrl(jdbcUrlProperty);
     }
 }
