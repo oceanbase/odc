@@ -304,25 +304,25 @@ public enum ErrorCodes implements ErrorCode {
      */
 
     /**
-     * 文件编辑version冲突
+     * version conflict
      */
-    ProjectFileEditVersionConflict,
+    WorksheetEditVersionConflict,
     /**
-     * 文件名称过长
+     * name too long
      */
-    ProjectFileNameTooLong,
+    WorksheetNameTooLong,
     /**
-     * 文件名称重复
+     * name duplication
      */
-    ProjectFileNameDuplicated,
+    WorksheetNameDuplicated,
     /**
-     * 更新文件过多
+     * change to much
      */
-    ProjectFileChangeFileToMuch,
+    WorksheetChangeNumTooMuch,
     /**
-     * 同级文件数量超限
+     * exceed same level num limit
      */
-    ProjectFileExceedSameLevelNumLimit,
+    WorksheetExceedSameLevelNumLimit,
     ;
 
     @Override
