@@ -33,12 +33,12 @@ import lombok.ToString;
 @Data
 public class BatchUploadWorksheetsReq {
     @Size(min = 1, max = 100)
-    private Set<UploadProjectFileTuple> files;
+    private Set<UploadWorksheetTuple> worksheets;
 
     @Data
     @ToString
     @EqualsAndHashCode
-    public static class UploadProjectFileTuple {
+    public static class UploadWorksheetTuple {
         private String path;
         private String objectKey;
     }
