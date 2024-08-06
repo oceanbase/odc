@@ -23,7 +23,7 @@ import org.apache.commons.lang.StringUtils;
 
 import com.oceanbase.odc.service.worksheet.exceptions.NameDuplicatedException;
 import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq;
-import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq.UploadProjectFileTuple;
+import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq.UploadWorksheetTuple;
 
 import lombok.Getter;
 
@@ -40,13 +40,13 @@ public class BatchCreateWorksheets {
      *
      * This is mainly used to report more details when an error occurs
      */
-    private UploadProjectFileTuple tupleGetParentPath;
+    private UploadWorksheetTuple tupleGetParentPath;
     @Getter
     private final Map<Path, String> createPathToObjectKeyMap;
 
     public BatchCreateWorksheets(BatchUploadWorksheetsReq req) {
         createPathToObjectKeyMap = new HashMap<>();
-        for (UploadProjectFileTuple tuple : req.getFiles()) {
+        for (UploadWorksheetTuple tuple : req.getWorksheets()) {
             String pathStr = tuple.getPath();
             String objectKey = tuple.getObjectKey();
             Path path = new Path(pathStr);

@@ -62,7 +62,8 @@ public class RepoWorksheetService implements WorksheetService {
     }
 
     @Override
-    public BatchOperateWorksheetsResult batchUploadWorksheets(Long projectId, BatchCreateWorksheets batchCreateWorksheets) {
+    public BatchOperateWorksheetsResult batchUploadWorksheets(Long projectId,
+            BatchCreateWorksheets batchCreateWorksheets) {
         return null;
     }
 
@@ -77,7 +78,8 @@ public class RepoWorksheetService implements WorksheetService {
     }
 
     @Override
-    public List<Worksheet> editWorksheet(Long projectId, Path path, Path destination, String objectKey, Long readVersion) {
+    public List<Worksheet> editWorksheet(Long projectId, Path path, Path destination, String objectKey,
+            Long readVersion) {
         return Collections.emptyList();
     }
 

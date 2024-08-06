@@ -25,7 +25,7 @@ import java.util.Optional;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.service.worksheet.exceptions.NameTooLongException;
-import com.oceanbase.odc.service.worksheet.model.WorkSheetType;
+import com.oceanbase.odc.service.worksheet.model.WorksheetType;
 import com.oceanbase.odc.service.worksheet.model.WorksheetLocation;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
 
@@ -48,7 +48,7 @@ public class Path {
      */
     Integer levelNum;
     String name;
-    WorkSheetType type;
+    WorksheetType type;
     WorksheetLocation location;
 
     public Path(String path) {
@@ -60,7 +60,7 @@ public class Path {
         if (!locationOptional.isPresent()) {
             throw new IllegalArgumentException("invalid path : " + path);
         }
-        Optional<WorkSheetType> pathTypeOptional = WorksheetPathUtil.getPathType(items);
+        Optional<WorksheetType> pathTypeOptional = WorksheetPathUtil.getPathType(items);
         if (!pathTypeOptional.isPresent()) {
             throw new IllegalArgumentException("invalid path : " + path);
         }
@@ -209,11 +209,11 @@ public class Path {
     }
 
     public boolean isFile() {
-        return this.type == WorkSheetType.FILE;
+        return this.type == WorksheetType.FILE;
     }
 
     public boolean isDirectory() {
-        return this.type != WorkSheetType.FILE;
+        return this.type != WorksheetType.FILE;
     }
 
     public boolean isExceedNameLengthLimit() {

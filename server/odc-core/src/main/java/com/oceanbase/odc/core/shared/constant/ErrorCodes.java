@@ -300,7 +300,7 @@ public enum ErrorCodes implements ErrorCode {
     GrantPermissionFailed,
 
     /**
-     * Project Files
+     * Worksheet
      */
 
     /**

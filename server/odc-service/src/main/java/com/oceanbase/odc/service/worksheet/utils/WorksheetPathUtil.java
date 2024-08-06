@@ -25,7 +25,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
 import com.oceanbase.odc.service.worksheet.domain.Path;
-import com.oceanbase.odc.service.worksheet.model.WorkSheetType;
+import com.oceanbase.odc.service.worksheet.model.WorksheetType;
 import com.oceanbase.odc.service.worksheet.model.WorksheetLocation;
 
 /**
@@ -125,7 +125,7 @@ public class WorksheetPathUtil {
         return WorksheetLocation.getByName(pathItems.get(0));
     }
 
-    public static Optional<WorkSheetType> getPathType(List<String> pathItems) {
+    public static Optional<WorksheetType> getPathType(List<String> pathItems) {
         Optional<WorksheetLocation> locationOptional = getPathLocation(pathItems);
         if (!locationOptional.isPresent()) {
             return Optional.empty();
@@ -142,9 +142,9 @@ public class WorksheetPathUtil {
                         // 所以path=/Repos/是不合法的，/Repos/转换成items长度为2（["Repos","/"]）
                         return Optional.empty();
                     } else if (size == 3) {
-                        return Optional.of(WorkSheetType.GIT_REPO);
+                        return Optional.of(WorksheetType.GIT_REPO);
                     } else {
-                        return Optional.of(WorkSheetType.DIRECTORY);
+                        return Optional.of(WorksheetType.DIRECTORY);
                     }
                 }
                 if (size <= 2) {
@@ -152,17 +152,17 @@ public class WorksheetPathUtil {
                     // 当size<=2时，ptah结构只能为：/Repos、/Repos/RepoName，是不合法的，
                     return Optional.empty();
                 }
-                return Optional.of(WorkSheetType.FILE);
+                return Optional.of(WorksheetType.FILE);
             case WORKSHEETS:
                 if (isEndWithPathSeparator) {
                     // 能到这一步，path结构至少为：/Worksheets/，确定是合法的
-                    return Optional.of(WorkSheetType.DIRECTORY);
+                    return Optional.of(WorksheetType.DIRECTORY);
                 }
                 if (size == 1) {
                     // 长度为1的时候，path结构只能为：/Worksheets，是不合法的
                     return Optional.empty();
                 }
-                return Optional.of(WorkSheetType.FILE);
+                return Optional.of(WorksheetType.FILE);
             default:
                 return Optional.empty();
         }

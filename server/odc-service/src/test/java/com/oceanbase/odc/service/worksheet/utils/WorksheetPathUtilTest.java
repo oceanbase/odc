@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import com.oceanbase.odc.service.worksheet.model.WorkSheetType;
+import com.oceanbase.odc.service.worksheet.model.WorksheetType;
 import com.oceanbase.odc.service.worksheet.model.WorksheetLocation;
 
 @RunWith(Parameterized.class)
@@ -37,11 +37,11 @@ public class WorksheetPathUtilTest {
     private final List<String> expectedItems;
     private final String expectedStandardPath;
     private final String expectedName;
-    private final WorkSheetType expectedType;
+    private final WorksheetType expectedType;
     private final WorksheetLocation expectedLocation;
 
     public WorksheetPathUtilTest(String path, List<String> expectedItems, String expectedStandardPath,
-            String expectedName, WorkSheetType expectedType, WorksheetLocation expectedLocation) {
+            String expectedName, WorksheetType expectedType, WorksheetLocation expectedLocation) {
         this.path = path;
         this.expectedItems = expectedItems;
         this.expectedStandardPath = expectedStandardPath;
@@ -54,31 +54,31 @@ public class WorksheetPathUtilTest {
     public static Iterable<Object[]> data() {
         return Arrays.asList(new Object[][] {
                 {"Repos/path2/file.txt", Arrays.asList("Repos", "path2", "file.txt"), "/Repos/path2/file.txt",
-                        "file.txt", WorkSheetType.FILE, WorksheetLocation.REPOS},
+                        "file.txt", WorksheetType.FILE, WorksheetLocation.REPOS},
                 {"Repos/path2/", Arrays.asList("Repos", "path2", "/"), "/Repos/path2/", "path2",
-                        WorkSheetType.GIT_REPO, WorksheetLocation.REPOS},
+                        WorksheetType.GIT_REPO, WorksheetLocation.REPOS},
                 {"Worksheets/path2", Arrays.asList("Worksheets", "path2"), "/Worksheets/path2", "path2",
-                        WorkSheetType.FILE, WorksheetLocation.WORKSHEETS},
+                        WorksheetType.FILE, WorksheetLocation.WORKSHEETS},
                 {"Worksheets / path2 / file.txt ", Arrays.asList("Worksheets", "path2", "file.txt"),
-                        "/Worksheets/path2/file.txt", "file.txt", WorkSheetType.FILE, WorksheetLocation.WORKSHEETS},
+                        "/Worksheets/path2/file.txt", "file.txt", WorksheetType.FILE, WorksheetLocation.WORKSHEETS},
                 {"Worksheets \\ path2 \\  ", Arrays.asList("Worksheets", "path2", "/"), "/Worksheets/path2/", "path2",
-                        WorkSheetType.DIRECTORY, WorksheetLocation.WORKSHEETS},
+                        WorksheetType.DIRECTORY, WorksheetLocation.WORKSHEETS},
                 {"Worksheets /  ", Arrays.asList("Worksheets", "/"), "/Worksheets/", "Worksheets",
-                        WorkSheetType.DIRECTORY, WorksheetLocation.WORKSHEETS},
+                        WorksheetType.DIRECTORY, WorksheetLocation.WORKSHEETS},
                 {"\\\\Worksheets\\\\ / path2////\\\\ / file.txt ", Arrays.asList("Worksheets", "path2", "file.txt"),
-                        "/Worksheets/path2/file.txt", "file.txt", WorkSheetType.FILE, WorksheetLocation.WORKSHEETS},
+                        "/Worksheets/path2/file.txt", "file.txt", WorksheetType.FILE, WorksheetLocation.WORKSHEETS},
                 {" /Repos/git \\ ", Arrays.asList("Repos", "git", "/"), "/Repos/git/", "git",
-                        WorkSheetType.GIT_REPO, WorksheetLocation.REPOS},
+                        WorksheetType.GIT_REPO, WorksheetLocation.REPOS},
                 {" \\Repos/git / folder1/   ", Arrays.asList("Repos", "git", "folder1", "/"), "/Repos/git/folder1/",
                         "folder1",
-                        WorkSheetType.DIRECTORY, WorksheetLocation.REPOS},
+                        WorksheetType.DIRECTORY, WorksheetLocation.REPOS},
                 {" Repos/git \\ file1   ", Arrays.asList("Repos", "git", "file1"), "/Repos/git/file1", "file1",
-                        WorkSheetType.FILE, WorksheetLocation.REPOS},
+                        WorksheetType.FILE, WorksheetLocation.REPOS},
                 {"/Repos/path2/", Arrays.asList("Repos", "path2", "/"), "/Repos/path2/", "path2",
-                        WorkSheetType.GIT_REPO, WorksheetLocation.REPOS},
+                        WorksheetType.GIT_REPO, WorksheetLocation.REPOS},
                 {"//   ///  ///Repos/  ///  //path2///  /", Arrays.asList("Repos", "path2", "/"), "/Repos/path2/",
                         "path2",
-                        WorkSheetType.GIT_REPO, WorksheetLocation.REPOS},
+                        WorksheetType.GIT_REPO, WorksheetLocation.REPOS},
                 {"//", Arrays.asList("/"), "/", null, null, null},
                 {"", null, null, null, null, null},
                 {null, null, null, null, null, null},
@@ -149,7 +149,7 @@ public class WorksheetPathUtilTest {
      */
     @Test
     public void testGetPathType() {
-        Optional<WorkSheetType> typeOptional = WorksheetPathUtil.getPathType(expectedItems);
+        Optional<WorksheetType> typeOptional = WorksheetPathUtil.getPathType(expectedItems);
         if (!typeOptional.isPresent()) {
             assert expectedType == null;
         } else {
