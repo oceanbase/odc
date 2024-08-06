@@ -52,6 +52,8 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
+import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
+import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties.OmsProperties;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
@@ -65,6 +67,7 @@ import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsProjectContro
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectFullVerifyResultResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectProgressResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectStepVO;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.OmsSwapTableAction;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
@@ -108,6 +111,8 @@ public abstract class BaseOscTestEnv extends ServiceTestEnv {
     protected ConnectionSession connectionSession;
     protected SyncJdbcExecutor jdbcTemplate;
     protected String oscCheckTaskCronExpression = "0/3 * * * * ?";
+    protected OnlineSchemaChangeProperties onlineSchemaChangeProperties;
+    protected OmsSwapTableAction swapTableNameValve;
 
     @Before
     public void beforeEveryTestCase() {
@@ -115,6 +120,15 @@ public abstract class BaseOscTestEnv extends ServiceTestEnv {
         config = TestConnectionUtil.getTestConnectionConfig(connectType);
         connectionSession = TestConnectionUtil.getTestConnectionSession(connectType);
         jdbcTemplate = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
+        this.onlineSchemaChangeProperties = new OnlineSchemaChangeProperties();
+        onlineSchemaChangeProperties.setEnableFullVerify(false);
+        OmsProperties omsProperties = new OmsProperties();
+        omsProperties.setUrl("127.0.0.1:8089");
+        omsProperties.setRegion("default");
+        omsProperties.setAuthorization("auth");
+        onlineSchemaChangeProperties.setOms(omsProperties);
+        swapTableNameValve =
+                new OmsSwapTableAction(dbSessionManager, projectOpenApiService, onlineSchemaChangeProperties);
         mock();
     }
 

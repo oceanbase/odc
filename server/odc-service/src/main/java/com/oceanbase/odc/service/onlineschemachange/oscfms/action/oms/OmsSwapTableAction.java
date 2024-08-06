@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.onlineschemachange.pipeline;
+package com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms;
 
 import java.util.List;
 import java.util.Map;
 
+import javax.validation.constraints.NotNull;
+
 import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.oceanbase.odc.common.json.JsonUtils;
@@ -28,46 +28,57 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
+import com.oceanbase.odc.service.onlineschemachange.fsm.Action;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
 import com.oceanbase.odc.service.onlineschemachange.monitor.DBUserMonitorExecutor;
-import com.oceanbase.odc.service.onlineschemachange.oms.OmsRequestUtil;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepName;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
-import com.oceanbase.odc.service.onlineschemachange.pipeline.ProjectStepResultChecker.ProjectStepResult;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.ProjectStepResultChecker.ProjectStepResult;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 import com.oceanbase.odc.service.onlineschemachange.rename.DefaultRenameTableInvoker;
+import com.oceanbase.odc.service.onlineschemachange.rename.RenameTableHandlers;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
-import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * @author yaobin
- * @date 2023-06-11
- * @since 4.2.0
+ * swap table action
+ * 
+ * @author longpeng.zlp
+ * @date 2024/7/9 11:38
+ * @since 4.3.1
  */
 @Slf4j
-@Component
-public class SwapTableNameValve extends BaseValve {
-    @Autowired
-    private ConnectionService connectionService;
+public class OmsSwapTableAction implements Action<OscActionContext, OscActionResult> {
 
-    @Autowired
-    private DBSessionManageFacade dbSessionManageFacade;
+    private final DBSessionManageFacade dbSessionManageFacade;
 
-    @Autowired
-    private OmsProjectOpenApiService omsProjectOpenApiService;
+    private final OmsProjectOpenApiService projectOpenApiService;
 
-    @Autowired
-    private OnlineSchemaChangeProperties onlineSchemaChangeProperties;
+    private final OnlineSchemaChangeProperties onlineSchemaChangeProperties;
+
+    public OmsSwapTableAction(@NotNull DBSessionManageFacade dbSessionManageFacade,
+            @NotNull OmsProjectOpenApiService projectOpenApiService,
+            @NotNull OnlineSchemaChangeProperties onlineSchemaChangeProperties) {
+        this.dbSessionManageFacade = dbSessionManageFacade;
+        this.projectOpenApiService = projectOpenApiService;
+        this.onlineSchemaChangeProperties = onlineSchemaChangeProperties;
+    }
 
     @Override
-    public void invoke(ValveContext valveContext) {
-        OscValveContext context = (OscValveContext) valveContext;
+    public OscActionResult execute(OscActionContext context) throws Exception {
+        if (!checkOMSProject(context)) {
+            // OMS state abnormal, keep waiting
+            log.info("OSC: swap table waiting for OMS task ready");
+            return new OscActionResult(OscStates.SWAP_TABLE.getState(), null, OscStates.SWAP_TABLE.getState());
+        }
+        // begin swap table
         ScheduleTaskEntity scheduleTask = context.getScheduleTask();
         log.info("Start execute {}, schedule task id {}", getClass().getSimpleName(), scheduleTask.getId());
 
@@ -75,36 +86,55 @@ public class SwapTableNameValve extends BaseValve {
         PreConditions.notNull(taskParameters, "OnlineSchemaChangeScheduleTaskParameters is null");
         OnlineSchemaChangeParameters parameters = context.getParameter();
 
-        ConnectionConfig config = context.getConnectionConfig();
+        ConnectionConfig config = context.getConnectionProvider().connectionConfig();
         DBUserMonitorExecutor userMonitorExecutor = new DBUserMonitorExecutor(config, parameters.getLockUsers());
-        ConnectionSession connectionSession = new DefaultConnectSessionFactory(config).generateSession();
+        ConnectionSession connectionSession = null;
         try {
+            connectionSession = context.getConnectionProvider().createConnectionSession();
             if (enableUserMonitor(parameters.getLockUsers())) {
                 userMonitorExecutor.start();
             }
             ConnectionSessionUtil.setCurrentSchema(connectionSession, taskParameters.getDatabaseName());
             DefaultRenameTableInvoker defaultRenameTableInvoker =
-                    new DefaultRenameTableInvoker(connectionSession, dbSessionManageFacade, () -> {
-                        OnlineSchemaChangeScheduleTaskResult lastResult = JsonUtils.fromJson(
-                                context.getScheduleTask().getResultJson(),
-                                OnlineSchemaChangeScheduleTaskResult.class);
-                        return isIncrementDataAppliedDone(omsProjectOpenApiService,
-                                onlineSchemaChangeProperties,
-                                taskParameters.getUid(), taskParameters.getOmsProjectId(),
-                                taskParameters.getDatabaseName(),
-                                lastResult.getCheckFailedTime(), 25000);
-                    });
+                    new DefaultRenameTableInvoker(connectionSession, dbSessionManageFacade,
+                            RenameTableHandlers.getForeignKeyHandler(connectionSession),
+                            () -> {
+                                OnlineSchemaChangeScheduleTaskResult lastResult = JsonUtils.fromJson(
+                                        context.getScheduleTask().getResultJson(),
+                                        OnlineSchemaChangeScheduleTaskResult.class);
+                                return isIncrementDataAppliedDone(projectOpenApiService,
+                                        onlineSchemaChangeProperties,
+                                        taskParameters.getUid(), taskParameters.getOmsProjectId(),
+                                        taskParameters.getDatabaseName(),
+                                        lastResult.getCheckFailedTime(), 25000);
+                            });
             defaultRenameTableInvoker.invoke(taskParameters, parameters);
-            context.setSwapSucceedCallBack(true);
+            // rename table success, jump to clean resoruce state
+            return new OscActionResult(OscStates.SWAP_TABLE.getState(), null, OscStates.CLEAN_RESOURCE.getState());
         } finally {
             try {
                 if (enableUserMonitor(parameters.getLockUsers())) {
                     userMonitorExecutor.stop();
                 }
             } finally {
-                connectionSession.expire();
+                if (null != connectionSession) {
+                    connectionSession.expire();
+                }
             }
         }
+    }
+
+    protected boolean checkOMSProject(OscActionContext context) {
+        OnlineSchemaChangeScheduleTaskParameters taskParameter = context.getTaskParameter();
+        // get result
+        OnlineSchemaChangeScheduleTaskResult lastResult = JsonUtils.fromJson(context.getScheduleTask().getResultJson(),
+                OnlineSchemaChangeScheduleTaskResult.class);
+        // get oms step result
+        ProjectStepResult projectStepResult =
+                OmsRequestUtil.buildProjectStepResult(projectOpenApiService, onlineSchemaChangeProperties,
+                        taskParameter.getUid(), taskParameter.getOmsProjectId(), taskParameter.getDatabaseName(),
+                        lastResult.getCheckFailedTime());
+        return OmsRequestUtil.isOmsTaskReady(projectStepResult);
     }
 
     /**
@@ -142,5 +172,3 @@ public class SwapTableNameValve extends BaseValve {
         return CollectionUtils.isNotEmpty(lockUsers);
     }
 }
-
-

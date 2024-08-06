@@ -97,6 +97,12 @@ public class OnlineSchemaChangeScheduleTaskParameters {
 
     private RateLimiterConfig rateLimitConfig = new RateLimiterConfig();
 
+    /**
+     * state change for state machine
+     */
+    private String state;
+
+    private String extraInfo;
 
     public String getOriginTableNameWithSchema() {
         return tableNameWithSchema(originTableName);

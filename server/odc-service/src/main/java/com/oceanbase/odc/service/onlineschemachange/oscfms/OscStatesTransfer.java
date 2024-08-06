@@ -13,32 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.onlineschemachange.pipeline;
+package com.oceanbase.odc.service.onlineschemachange.oscfms;
+
+import com.oceanbase.odc.service.onlineschemachange.fsm.StateTransfer;
 
 /**
- * @author yaobin
- * @date 2023-06-10
- * @since 4.2.0
+ * @author longpeng.zlp
+ * @date 2024/7/9 17:54
+ * @since 4.3.1
  */
-public interface Pipeline {
-    /**
-     * basic valve which be invoked latest
-     *
-     * @param basic basic valve
-     */
-    void setBasic(Valve basic);
-
-    /**
-     * add a new valve into pipeline
-     *
-     * @param valve new valve
-     */
-    void addValve(Valve valve);
-
-    /**
-     * pipeline invoke method
-     *
-     * @param context valve execute context
-     */
-    void invoke(ValveContext context);
+public class OscStatesTransfer implements StateTransfer<OscActionContext, OscActionResult> {
+    @Override
+    public String translateToNewState(String currentState, OscActionResult oscActionResult, OscActionContext context) {
+        return oscActionResult.getNextState();
+    }
 }

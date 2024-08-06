@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.onlineschemachange.oms;
+package com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms;
 
 import java.util.List;
 import java.util.Map;
@@ -22,6 +22,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.model.FullVerificationResult;
+import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsProjectStatusEnum;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepName;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.ListOmsProjectFullVerifyResultRequest;
@@ -29,14 +30,15 @@ import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsProjectContro
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectFullVerifyResultResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectProgressResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectStepVO;
-import com.oceanbase.odc.service.onlineschemachange.pipeline.ProjectStepResultChecker;
-import com.oceanbase.odc.service.onlineschemachange.pipeline.ProjectStepResultChecker.ProjectStepResult;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.ProjectStepResultChecker.ProjectStepResult;
 
 import lombok.extern.slf4j.Slf4j;
 
 /**
+ * util for oms request
+ * 
  * @author longpeng.zlp
- * @date 2024/7/29 14:01
+ * @date 2024/7/9 10:36
  * @since 4.3.1
  */
 @Slf4j
@@ -45,20 +47,29 @@ public class OmsRequestUtil {
      *
      * @return
      */
-    public static OmsProjectControlRequest getProjectRequest(String uid, String projectID) {
+    protected static OmsProjectControlRequest getProjectRequest(String uid, String projectID) {
         OmsProjectControlRequest projectRequest = new OmsProjectControlRequest();
         projectRequest.setUid(uid);
         projectRequest.setId(projectID);
         return projectRequest;
     }
 
-    public static boolean isOmsTaskReady(ProjectStepResult projectStepResult) {
+    protected static OmsProjectStatusEnum getProjectProjectStatus(String uid, String projectID,
+            OmsProjectOpenApiService omsProjectOpenApiService) {
+        OmsProjectControlRequest projectRequest = new OmsProjectControlRequest();
+        projectRequest.setUid(uid);
+        projectRequest.setId(projectID);
+        OmsProjectProgressResponse progress = omsProjectOpenApiService.describeProjectProgress(projectRequest);
+        return progress.getStatus();
+    }
+
+    protected static boolean isOmsTaskReady(ProjectStepResult projectStepResult) {
         return projectStepResult.getTaskStatus() == TaskStatus.DONE
                 && (projectStepResult.getFullVerificationResult() == FullVerificationResult.CONSISTENT ||
                         projectStepResult.getFullVerificationResult() == FullVerificationResult.UNCHECK);
     }
 
-    public static ProjectStepResult buildProjectStepResult(OmsProjectOpenApiService omsProjectOpenApiService,
+    protected static ProjectStepResult buildProjectStepResult(OmsProjectOpenApiService omsProjectOpenApiService,
             OnlineSchemaChangeProperties onlineSchemaChangeProperties,
             String uid, String projectID, String databaseName,
             Map<OmsStepName, Long> checkFailedTimes) {
@@ -69,9 +80,9 @@ public class OmsRequestUtil {
             log.debug("Get project step list from projectOpenApiService is {} ", JsonUtils.toJson(projectSteps));
         }
 
-
         OmsProjectProgressResponse progress = omsProjectOpenApiService.describeProjectProgress(projectRequest);
-
+        log.info("Osc check increment checkpoint, current ts [{}], checkpoint[{}]", System.currentTimeMillis() / 1000,
+                progress.getIncrSyncCheckpoint());
         return new ProjectStepResultChecker(progress, projectSteps,
                 onlineSchemaChangeProperties.isEnableFullVerify(),
                 onlineSchemaChangeProperties.getOms().getCheckProjectStepFailedTimeoutSeconds(),
@@ -105,7 +116,7 @@ public class OmsRequestUtil {
 
     /**
      * sleep with exception swallowed
-     * 
+     *
      * @param millionSeconds ms to sleep
      */
     public static void sleep(long millionSeconds) {
