@@ -36,7 +36,8 @@ public enum JobStatus {
     }
 
     public boolean isExecuting() {
-        return JobStatus.PREPARING == this || JobStatus.RUNNING == this || JobStatus.RETRYING == this;
+        return JobStatus.PREPARING == this || JobStatus.RUNNING == this || JobStatus.RETRYING == this
+                || JobStatus.CANCELING == this;
     }
 
     public TaskStatus convertTaskStatus() {

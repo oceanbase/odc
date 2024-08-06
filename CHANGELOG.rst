@@ -1,5 +1,5 @@
-(unreleased)
-------------
+v4.3.1 (2024-07-31)
+-------------------
 
 New
 ~~~
@@ -29,6 +29,28 @@ Changes
 
 Fix
 ~~~
+- Fix(parser): failed to recognize the schema or package name from an
+  anonymous block (#3069) [IL MARE]
+- Fix(table-permission): creating table needs table change permissions
+  (#3057) [pynzzZ]
+- Fix(flow): wrong approval flow for database/table permission apply
+  ticket (#3072) [pynzzZ]
+- Fix(database-permission): wrongly recognize packages as schemas
+  (#3067) [pynzzZ]
+- Fix(dlm): create the target table if the sync table structure is off
+  in MySQL mode (#3050) [guowl3]
+- Fix(table-permission): table permission apply tickets warning log not
+  found (#3049) [pynzzZ]
+- Fix(table-permission): could create tickets when users have no
+  permission to the database (#3046) [pynzzZ]
+- Fix(partition-plan): can not recognize the partition key's data type
+  on mysql mode (#3039) [guowl3]
+- Fix(dlm): several bug related to editing data cleaning (#3033)
+  [guowl3]
+- Fix(table-permission): not select the specific database/table by
+  default when create the permission application ticket (#3035) [pynzzZ]
+- Fix(database): creating databases under the data source failed (#3037)
+  [pynzzZ]
 - Fix(dlm): don't compare the table structure if syncTableStructure is
   off (#3014) [guowl3]
 - Fix(login): set max_login_record_time_minutes default value to 0 in

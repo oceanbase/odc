@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.oceanbase</groupId>
@@ -187,125 +187,260 @@
                     <useNativeGit>${plugin.useNativeGit}</useNativeGit>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>rpm-maven-plugin</artifactId>
-                <version>2.2.0</version>
-                <configuration>
-                    <prefix>${rpm.prefix}</prefix>
-                    <name>${odc-server.rpm.name}</name>
-                    <group>Applications/Databases</group>
-                    <packager>www.oceanbase.com</packager>
-                    <version>${project.version}</version>
-                    <autoRequires>true</autoRequires>
-                    <needarch>true</needarch>
-                    <defaultFilemode>444</defaultFilemode>
-                    <defaultDirmode>755</defaultDirmode>
-                    <defaultUsername>${rpm.username}</defaultUsername>
-                    <defaultGroupname>${rpm.groupname}</defaultGroupname>
-                    <defineStatements>
-                        <defineStatement>_unpackaged_files_terminate_build 0</defineStatement>
-                    </defineStatements>
 
-                    <!--release 参数非必填，缺省行为：artifactId snapshot 结尾时会使用时间戳，不是 snapshot 结尾时默认为 1
-                      参见 https://github.com/mojohaus/rpm-maven-plugin/blob/rpm-maven-plugin-2.1.5/src/site/apt/ident-params.apt#L40-->
-                    <!--<release></release>-->
-
-                    <mappings>
-                        <mapping>
-                            <directory>${rpm.rootdir}</directory>
-                            <sources>
-                                <source>
-                                    <location>${project.basedir}/../../CHANGELOG.md</location>
-                                </source>
-                            </sources>
-                        </mapping>
-                        <mapping>
-                            <directory>${rpm.rootdir}/log</directory>
-                        </mapping>
-                        <mapping>
-                            <directory>${rpm.rootdir}/data</directory>
-                        </mapping>
-                        <mapping>
-                            <directory>${rpm.rootdir}/bin</directory>
-                            <filemode>755</filemode>
-                            <sources>
-                                <source>
-                                    <location>${project.basedir}/../../script/start-odc.sh</location>
-                                </source>
-                                <source>
-                                    <location>${project.basedir}/../../script/start-job.sh</location>
-                                </source>
-                                <source>
-                                    <location>${project.basedir}/../../script/kill-odc.sh</location>
-                                </source>
-                                <source>
-                                    <location>${project.basedir}/../../script/nohup-start-odc.sh</location>
-                                </source>
-                                <source>
-                                    <location>${project.basedir}/../../script/generate-odc-ssl-certificate.sh</location>
-                                </source>
-                                <source>
-                                    <location>${project.basedir}/../../import/obclient.tar.gz</location>
-                                </source>
-                            </sources>
-                        </mapping>
-                        <mapping>
-                            <directory>${rpm.rootdir}/lib</directory>
-                            <sources>
-                                <source>
-                                    <location>target/${project.artifactId}-${project.version}-executable.jar</location>
-                                </source>
-                            </sources>
-                        </mapping>
-                        <mapping>
-                            <directory>${rpm.rootdir}/conf</directory>
-                            <filemode>755</filemode>
-                            <sources>
-                                <source>
-                                    <location>target/classes/log4j2.xml</location>
-                                </source>
-                                <source>
-                                    <location>target/classes/log4j2-task.xml</location>
-                                </source>
-                                <source>
-                                    <location>${project.basedir}/../../distribution/docker/resources/nginx.conf.template</location>
-                                </source>
-                                <source>
-                                    <location>${project.basedir}/../../distribution/docker/resources/nginx.conf.https.template</location>
-                                </source>
-                            </sources>
-                        </mapping>
-                        <mapping>
-                            <directory>${rpm.rootdir}/plugins</directory>
-                            <filemode>755</filemode>
-                            <sources>
-                                <source>
-                                    <location>${project.basedir}/../../distribution/plugins</location>
-                                </source>
-                            </sources>
-                        </mapping>
-                        <mapping>
-                            <directory>${rpm.rootdir}/starters</directory>
-                            <filemode>755</filemode>
-                            <sources>
-                                <source>
-                                    <location>${project.basedir}/../../distribution/starters</location>
-                                </source>
-                            </sources>
-                        </mapping>
-                    </mappings>
-                    <preinstallScriptlet>
-                        <script>echo "installing ${project.name} ${project.version} now"</script>
-                    </preinstallScriptlet>
-                    <postinstallScriptlet>
-                        <script>tar -xvzf ${rpm.rootdir}/bin/obclient.tar.gz -C ${rpm.rootdir} &amp;&amp;
-                            rm -f ${rpm.rootdir}/bin/obclient.tar.gz &amp;&amp;
-                            ln -s ${rpm.rootdir}/obclient/lib/libncurses.so.5 /usr/lib64/libncurses.so.5
-                        </script>
-                    </postinstallScriptlet>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>rpm-maven-plugin</artifactId>
+                        <version>2.2.0</version>
+                        <configuration>
+                            <prefix>${rpm.prefix}</prefix>
+                            <name>${odc-server.rpm.name}</name>
+                            <group>Applications/Databases</group>
+                            <packager>www.oceanbase.com</packager>
+                            <version>${project.version}</version>
+                            <autoRequires>true</autoRequires>
+                            <needarch>true</needarch>
+                            <defaultFilemode>444</defaultFilemode>
+                            <defaultDirmode>755</defaultDirmode>
+                            <defaultUsername>${rpm.username}</defaultUsername>
+                            <defaultGroupname>${rpm.groupname}</defaultGroupname>
+                            <defineStatements>
+                                <defineStatement>_unpackaged_files_terminate_build 0</defineStatement>
+                            </defineStatements>
+
+                            <!--release 参数非必填，缺省行为：artifactId snapshot 结尾时会使用时间戳，不是 snapshot 结尾时默认为 1
+                              参见 https://github.com/mojohaus/rpm-maven-plugin/blob/rpm-maven-plugin-2.1.5/src/site/apt/ident-params.apt#L40-->
+                            <!--<release></release>-->
+
+                            <mappings>
+                                <mapping>
+                                    <directory>${rpm.rootdir}</directory>
+                                    <sources>
+                                        <source>
+                                            <location>${project.basedir}/../../CHANGELOG.md</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                                <mapping>
+                                    <directory>${rpm.rootdir}/log</directory>
+                                </mapping>
+                                <mapping>
+                                    <directory>${rpm.rootdir}/data</directory>
+                                </mapping>
+                                <mapping>
+                                    <directory>${rpm.rootdir}/bin</directory>
+                                    <filemode>755</filemode>
+                                    <sources>
+                                        <source>
+                                            <location>${project.basedir}/../../script/start-odc.sh</location>
+                                        </source>
+                                        <source>
+                                            <location>${project.basedir}/../../script/start-job.sh</location>
+                                        </source>
+                                        <source>
+                                            <location>${project.basedir}/../../script/kill-odc.sh</location>
+                                        </source>
+                                        <source>
+                                            <location>${project.basedir}/../../script/nohup-start-odc.sh</location>
+                                        </source>
+                                        <source>
+                                            <location>${project.basedir}/../../script/generate-odc-ssl-certificate.sh</location>
+                                        </source>
+                                        <source>
+                                            <location>${project.basedir}/../../import/obclient.tar.gz</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                                <mapping>
+                                    <directory>${rpm.rootdir}/lib</directory>
+                                    <sources>
+                                        <source>
+                                            <location>target/${project.artifactId}-${project.version}-executable.jar</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                                <mapping>
+                                    <directory>${rpm.rootdir}/conf</directory>
+                                    <filemode>755</filemode>
+                                    <sources>
+                                        <source>
+                                            <location>target/classes/log4j2.xml</location>
+                                        </source>
+                                        <source>
+                                            <location>target/classes/log4j2-task.xml</location>
+                                        </source>
+                                        <source>
+                                            <location>${project.basedir}/../../distribution/docker/resources/nginx.conf.template</location>
+                                        </source>
+                                        <source>
+                                            <location>${project.basedir}/../../distribution/docker/resources/nginx.conf.https.template</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                                <mapping>
+                                    <directory>${rpm.rootdir}/plugins</directory>
+                                    <filemode>755</filemode>
+                                    <sources>
+                                        <source>
+                                            <location>${project.basedir}/../../distribution/plugins</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                                <mapping>
+                                    <directory>${rpm.rootdir}/starters</directory>
+                                    <filemode>755</filemode>
+                                    <sources>
+                                        <source>
+                                            <location>${project.basedir}/../../distribution/starters</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                            </mappings>
+                            <preinstallScriptlet>
+                                <script>echo "installing ${project.name} ${project.version} now"</script>
+                            </preinstallScriptlet>
+                            <postinstallScriptlet>
+                                <script>
+                                    if [ -d "${rpm.rootdir}/bin/obclient.tar.gz"]; then
+                                    tar -xvzf ${rpm.rootdir}/bin/obclient.tar.gz -C ${rpm.rootdir} &amp;&amp;
+                                    rm -f ${rpm.rootdir}/bin/obclient.tar.gz &amp;&amp;
+                                    ln -s ${rpm.rootdir}/obclient/lib/libncurses.so.5 /usr/lib64/libncurses.so.5
+                                    fi
+                                </script>
+                            </postinstallScriptlet>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>cloud</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>rpm-maven-plugin</artifactId>
+                        <version>2.2.0</version>
+                        <configuration>
+                            <prefix>${rpm.prefix}</prefix>
+                            <name>${odc-server.rpm.name}</name>
+                            <group>Applications/Databases</group>
+                            <packager>www.oceanbase.com</packager>
+                            <version>${project.version}</version>
+                            <autoRequires>true</autoRequires>
+                            <needarch>true</needarch>
+                            <defaultFilemode>444</defaultFilemode>
+                            <defaultDirmode>755</defaultDirmode>
+                            <defaultUsername>${rpm.username}</defaultUsername>
+                            <defaultGroupname>${rpm.groupname}</defaultGroupname>
+                            <defineStatements>
+                                <defineStatement>_unpackaged_files_terminate_build 0</defineStatement>
+                            </defineStatements>
+
+                            <!--release 参数非必填，缺省行为：artifactId snapshot 结尾时会使用时间戳，不是 snapshot 结尾时默认为 1
+                              参见 https://github.com/mojohaus/rpm-maven-plugin/blob/rpm-maven-plugin-2.1.5/src/site/apt/ident-params.apt#L40-->
+                            <!--<release></release>-->
+
+                            <mappings>
+                                <mapping>
+                                    <directory>${rpm.rootdir}</directory>
+                                    <sources>
+                                        <source>
+                                            <location>${project.basedir}/../../CHANGELOG.md</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                                <mapping>
+                                    <directory>${rpm.rootdir}/log</directory>
+                                </mapping>
+                                <mapping>
+                                    <directory>${rpm.rootdir}/data</directory>
+                                </mapping>
+                                <mapping>
+                                    <directory>${rpm.rootdir}/bin</directory>
+                                    <filemode>755</filemode>
+                                    <sources>
+                                        <source>
+                                            <location>${project.basedir}/../../script/start-odc.sh</location>
+                                        </source>
+                                        <source>
+                                            <location>${project.basedir}/../../script/start-job.sh</location>
+                                        </source>
+                                        <source>
+                                            <location>${project.basedir}/../../script/kill-odc.sh</location>
+                                        </source>
+                                        <source>
+                                            <location>${project.basedir}/../../script/nohup-start-odc.sh</location>
+                                        </source>
+                                        <source>
+                                            <location>${project.basedir}/../../script/generate-odc-ssl-certificate.sh</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                                <mapping>
+                                    <directory>${rpm.rootdir}/lib</directory>
+                                    <sources>
+                                        <source>
+                                            <location>target/${project.artifactId}-${project.version}-executable.jar</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                                <mapping>
+                                    <directory>${rpm.rootdir}/conf</directory>
+                                    <filemode>755</filemode>
+                                    <sources>
+                                        <source>
+                                            <location>target/classes/log4j2.xml</location>
+                                        </source>
+                                        <source>
+                                            <location>target/classes/log4j2-task.xml</location>
+                                        </source>
+                                        <source>
+                                            <location>${project.basedir}/../../distribution/docker/resources/nginx.conf.template</location>
+                                        </source>
+                                        <source>
+                                            <location>${project.basedir}/../../distribution/docker/resources/nginx.conf.https.template</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                                <mapping>
+                                    <directory>${rpm.rootdir}/plugins</directory>
+                                    <filemode>755</filemode>
+                                    <sources>
+                                        <source>
+                                            <location>${project.basedir}/../../distribution/plugins</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                                <mapping>
+                                    <directory>${rpm.rootdir}/starters</directory>
+                                    <filemode>755</filemode>
+                                    <sources>
+                                        <source>
+                                            <location>${project.basedir}/../../distribution/starters</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                            </mappings>
+                            <preinstallScriptlet>
+                                <script>echo "installing ${project.name} ${project.version} now"</script>
+                            </preinstallScriptlet>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

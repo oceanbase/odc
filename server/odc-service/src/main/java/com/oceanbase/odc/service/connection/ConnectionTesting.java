@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.connection;
 
-import java.sql.Connection;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Properties;
@@ -81,6 +80,7 @@ public class ConnectionTesting {
     public ConnectionTestResult test(@NotNull @Valid TestConnectionReq req) {
         PreConditions.notNull(req, "req");
         environmentAdapter.adaptConfig(req);
+
         PreConditions.validArgumentState(Objects.nonNull(req.getPassword()),
                 ErrorCodes.ConnectionPasswordMissed, null, "password required for connection without password saved");
         cloudMetadataClient.checkPermission(OBTenant.of(req.getClusterName(),
@@ -235,6 +235,11 @@ public class ConnectionTesting {
         OBTenantEndpoint endpoint = req.getEndpoint();
         if (Objects.nonNull(endpoint) && OceanBaseAccessMode.IC_PROXY == endpoint.getAccessMode()) {
             config.setEndpoint(endpoint);
+            if (org.apache.commons.lang.StringUtils.isNotBlank(endpoint.getVirtualHost())
+                    && Objects.nonNull(endpoint.getVirtualPort())) {
+                config.setHost(endpoint.getVirtualHost());
+                config.setPort(endpoint.getVirtualPort());
+            }
         }
         if (StringUtils.isNotBlank(req.getOBTenantName())) {
             config.setTenantName(req.getOBTenantName());

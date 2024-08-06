@@ -42,6 +42,8 @@ public class PodConfig {
 
     private Map<String, String> environments = new HashMap<>();
 
+    private Map<String, String> labels = new HashMap<>();
+
     private String imagePullPolicy = JobConstants.IMAGE_PULL_POLICY_ALWAYS;
 
     private Long podPendingTimeoutSeconds;

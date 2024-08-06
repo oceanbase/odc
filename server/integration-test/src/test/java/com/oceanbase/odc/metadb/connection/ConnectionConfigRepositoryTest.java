@@ -55,6 +55,18 @@ public class ConnectionConfigRepositoryTest extends ServiceTestEnv {
     }
 
     @Test
+    public void test_innerListIdByOrganizationIdAndClusterId() {
+        ConnectionEntity connection = createEntity(ConnectionVisibleScope.PRIVATE);
+        repository.save(connection);
+        List<ConnectionEntity> entities = repository.findByOrganizationIdAndClusterName(
+                connection.getOrganizationId(), connection.getClusterName());
+        Assert.assertEquals(1, entities.size());
+        entities = repository.findByOrganizationIdAndTenantName(
+                connection.getOrganizationId(), connection.getTenantName());
+        Assert.assertEquals(1, entities.size());
+    }
+
+    @Test
     public void test_findByUpdateTimeBefore_return1() {
         ConnectionEntity connection = createEntity(ConnectionVisibleScope.PRIVATE);
         repository.save(connection);

@@ -16,6 +16,8 @@
 package com.oceanbase.odc.metadb.schedule;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import javax.transaction.Transactional;
 
@@ -37,12 +39,23 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
 public interface ScheduleTaskRepository extends JpaRepository<ScheduleTaskEntity, Long>,
         JpaSpecificationExecutor<ScheduleTaskEntity> {
 
+    List<ScheduleTaskEntity> findByIdIn(Set<Long> id);
+
+    Optional<ScheduleTaskEntity> findByIdAndJobName(Long id, String scheduleId);
+
     List<ScheduleTaskEntity> findByJobNameAndStatusIn(String jobName, List<TaskStatus> statuses);
 
     @Transactional
     @Modifying
     @Query("update ScheduleTaskEntity st set st.status = ?2 where st.id = ?1")
     int updateStatusById(Long id, TaskStatus status);
+
+    @Transactional
+    @Modifying
+    @Query(value = "update schedule_task set status = :#{#newStatus.name()} where id = :id and status in (:previousStatus)",
+            nativeQuery = true)
+    int updateStatusById(@Param("id") Long id, @Param("newStatus") TaskStatus newStatus,
+            @Param("previousStatus") List<String> previousStatus);
 
     @Transactional
     @Modifying
@@ -70,6 +83,10 @@ public interface ScheduleTaskRepository extends JpaRepository<ScheduleTaskEntity
     int updateJobIdById(Long id, Long jobId);
 
     List<ScheduleTaskEntity> findByJobId(Long jobId);
+
+    @Query(value = "select st.* from  ScheduleTaskEntity st where st.jobName in (:jobNames)", nativeQuery = true)
+    List<ScheduleTaskEntity> findByJobNames(@Param("jobNames") Set<String> jobNames);
+
 
     @Transactional
     @Modifying
