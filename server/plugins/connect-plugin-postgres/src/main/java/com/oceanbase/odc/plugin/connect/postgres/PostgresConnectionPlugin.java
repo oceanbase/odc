@@ -21,6 +21,6 @@ import com.oceanbase.odc.plugin.connect.api.BaseConnectionPlugin;
 public class PostgresConnectionPlugin extends BaseConnectionPlugin {
     @Override
     public DialectType getDialectType() {
-        return DialectType.POSTGRE_SQL;
+        return DialectType.POSTGRESQL;
     }
 }

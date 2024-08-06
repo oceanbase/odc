@@ -66,7 +66,7 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public DBDatabase getDatabase(String schemaName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
@@ -82,17 +82,16 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
             database.setCollation(rs.getString("collation"));
             return database;
         });
-
     }
 
     @Override
     public void switchDatabase(String schemaName) {
-
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBObjectIdentity> listUsers() {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
@@ -106,14 +105,12 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
                 + "        JOIN pg_class child ON pg_inherits.inhrelid = child.oid "
                 + "        JOIN pg_namespace nmsp_child ON nmsp_child.oid = child.relnamespace "
                 + "        WHERE nmsp_child.nspname = 'public') ");
-        String sql = sb.toString();
         if (StringUtils.isNotBlank(schemaName)) {
-            sb.append("AND table_catalog").append(" = '%s'");
-            sql = String.format(sb.toString(), schemaName);
+            sb.append("AND table_catalog").append(" = ").append("'").append(schemaName).append("'");
         }
         List<String> tableNames;
         try {
-            tableNames = jdbcOperations.query(sql, (rs, rowNum) -> rs.getString(1));
+            tableNames = jdbcOperations.query(sb.toString(), (rs, rowNum) -> rs.getString(1));
         } catch (BadSqlGrammarException e) {
             if (StringUtils.containsIgnoreCase(e.getMessage(), "Unknown database")) {
                 return Collections.emptyList();
@@ -125,265 +122,267 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public List<String> showTablesLike(String schemaName, String tableNameLike) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBObjectIdentity> listTables(String schemaName, String tableNameLike) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBObjectIdentity> listViews(String schemaName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBObjectIdentity> listAllViews(String viewNameLike) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBObjectIdentity> listAllUserViews() {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBObjectIdentity> listAllSystemViews() {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<String> showSystemViews(String schemaName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBVariable> showVariables() {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBVariable> showSessionVariables() {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBVariable> showGlobalVariables() {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<String> showCharset() {
-        return null;
+        String sql = "select DISTINCT pg_encoding_to_char(collencoding) from pg_collation;";
+        return jdbcOperations.queryForList(sql, String.class);
     }
 
     @Override
     public List<String> showCollation() {
-        return null;
+        String sql = "select DISTINCT collname  from pg_collation;";
+        return jdbcOperations.queryForList(sql, String.class);
     }
 
     @Override
     public List<DBPLObjectIdentity> listFunctions(String schemaName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBPLObjectIdentity> listProcedures(String schemaName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBPLObjectIdentity> listPackages(String schemaName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBPLObjectIdentity> listPackageBodies(String schemaName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBPLObjectIdentity> listTriggers(String schemaName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBPLObjectIdentity> listTypes(String schemaName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBObjectIdentity> listSequences(String schemaName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBObjectIdentity> listSynonyms(String schemaName,
             DBSynonymType synonymType) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public Map<String, List<DBTableColumn>> listTableColumns(
             String schemaName, List<String> tableNames) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBTableColumn> listTableColumns(String schemeName, String tableName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public Map<String, List<DBTableColumn>> listBasicTableColumns(String schemaName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBTableColumn> listBasicTableColumns(String schemaName, String tableName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public Map<String, List<DBTableColumn>> listBasicViewColumns(String schemaName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBTableColumn> listBasicViewColumns(String schemaName, String viewName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public Map<String, List<DBTableColumn>> listBasicColumnsInfo(String schemaName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public Map<String, List<DBTableIndex>> listTableIndexes(String schemaName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public Map<String, List<DBTableConstraint>> listTableConstraints(
             String schemaName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public Map<String, DBTableOptions> listTableOptions(
             String schemaName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public Map<String, DBTablePartition> listTablePartitions(
             @NonNull String schemaName, List<String> tableNames) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBTablePartition> listTableRangePartitionInfo(String tenantName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBTableSubpartitionDefinition> listSubpartitions(
             String schemaName, String tableName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public Boolean isLowerCaseTableName() {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBObjectIdentity> listPartitionTables(String partitionMethod) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBTableConstraint> listTableConstraints(String schemaName, String tableName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public DBTablePartition getPartition(String schemaName, String tableName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBTableIndex> listTableIndexes(String schemaName, String tableName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public String getTableDDL(String schemaName, String tableName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public DBTableOptions getTableOptions(String schemaName, String tableName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public DBTableOptions getTableOptions(String schemaName, String tableName, String ddl) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public List<DBColumnGroupElement> listTableColumnGroups(String schemaName,
             String tableName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public DBView getView(String schemaName, String viewName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public DBFunction getFunction(String schemaName, String functionName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public DBProcedure getProcedure(String schemaName, String procedureName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public DBPackage getPackage(String schemaName, String packageName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public DBTrigger getTrigger(String schemaName, String packageName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public DBType getType(String schemaName, String typeName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public DBSequence getSequence(String schemaName, String sequenceName) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public DBSynonym getSynonym(String schemaName, String synonymName,
             DBSynonymType synonymType) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public Map<String, DBTable> getTables(String schemaName,
             List<String> tableNames) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 }

@@ -21,6 +21,6 @@ import com.oceanbase.odc.plugin.schema.api.BaseSchemaPlugin;
 public class PostgresSchemaPlugin extends BaseSchemaPlugin {
     @Override
     public DialectType getDialectType() {
-        return DialectType.POSTGRE_SQL;
+        return DialectType.POSTGRESQL;
     }
 }

@@ -67,6 +67,7 @@ public class OdcConstants {
     public static final String PRIMARY_KEY_NAME = "PRIMARY";
 
     public static final String MYSQL_DEFAULT_SCHEMA = "information_schema";
+    public static final String POSTGRESQL_DEFAULT_SCHEMA = "postgres";
     public static final String ODC_BACK_URL_PARAM = "odc_back_url";
 
     public static final String TEST_LOGIN_ID_PARAM = "test_login_id";

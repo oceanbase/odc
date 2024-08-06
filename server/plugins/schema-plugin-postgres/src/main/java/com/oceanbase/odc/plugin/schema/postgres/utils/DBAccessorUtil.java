@@ -26,7 +26,7 @@ public class DBAccessorUtil {
     public static DBSchemaAccessor getSchemaAccessor(Connection connection) {
         return DBBrowser.schemaAccessor()
                 .setJdbcOperations(JdbcOperationsUtil.getJdbcOperations(connection))
-                .setType(DialectType.POSTGRE_SQL.getDBBrowserDialectTypeName()).create();
+                .setType(DialectType.POSTGRESQL.getDBBrowserDialectTypeName()).create();
     }
 
 }

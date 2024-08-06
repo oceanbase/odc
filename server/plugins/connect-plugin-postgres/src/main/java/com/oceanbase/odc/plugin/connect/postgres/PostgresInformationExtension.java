@@ -33,7 +33,7 @@ public class PostgresInformationExtension implements InformationExtensionPoint {
         try {
             dbVersion = JdbcOperationsUtil.getJdbcOperations(connection).query(querySql, rs -> {
                 if (!rs.next()) {
-                    return null;
+                    return "";
                 }
                 return rs.getString(1);
             });

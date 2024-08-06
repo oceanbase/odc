@@ -42,7 +42,7 @@ public abstract class AbstractDBBrowserFactory<T> implements DBBrowserFactory<T>
                 return buildForOBMySQL();
             case ODP_SHARDING_OB_MYSQL:
                 return buildForOdpSharding();
-            case POSTGRE_SQL:
+            case POSTGRESQL:
                 return buildForPostgres();
             default:
                 throw new IllegalStateException("Not supported for the type, " + type);

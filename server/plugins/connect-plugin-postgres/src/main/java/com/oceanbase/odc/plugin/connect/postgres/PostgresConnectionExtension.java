@@ -18,6 +18,7 @@ package com.oceanbase.odc.plugin.connect.postgres;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
@@ -26,7 +27,6 @@ import org.apache.commons.lang3.Validate;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.ExceptionUtils;
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
@@ -45,9 +45,6 @@ public class PostgresConnectionExtension extends OBMySQLConnectionExtension {
         Integer port = properties.getPort();
         Validate.notNull(port, "port can not be null");
         String schema = properties.getDefaultSchema();
-        if (StringUtils.isBlank(schema)) {
-            schema = "postgres";
-        }
         return String.format(getJdbcUrlPrefix(), host, port, schema);
     }
 
@@ -88,7 +85,7 @@ public class PostgresConnectionExtension extends OBMySQLConnectionExtension {
 
     @Override
     public List<ConnectionInitializer> getConnectionInitializers() {
-        return null;
+        return Collections.emptyList();
     }
 
 }

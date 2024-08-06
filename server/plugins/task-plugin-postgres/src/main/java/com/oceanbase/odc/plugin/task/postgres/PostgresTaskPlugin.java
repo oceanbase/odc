@@ -21,6 +21,6 @@ import com.oceanbase.odc.plugin.task.api.BaseTaskPlugin;
 public class PostgresTaskPlugin extends BaseTaskPlugin {
     @Override
     public DialectType getDialectType() {
-        return DialectType.POSTGRE_SQL;
+        return DialectType.POSTGRESQL;
     }
 }
