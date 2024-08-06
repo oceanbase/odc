@@ -149,13 +149,14 @@ public class DBSchemaExtractor {
                 visitor.visit(ast.getRoot());
                 identities = visitor.getIdentities();
             }
-            identities = identities.stream().map(e -> {
-                DBSchemaIdentity i = new DBSchemaIdentity(e.getSchema(), e.getTable());
-                String schema = StringUtils.isNotBlank(i.getSchema()) ? i.getSchema() : defaultSchema;
-                i.setSchema(StringUtils.unquoteMySqlIdentifier(schema));
-                i.setTable(StringUtils.unquoteMySqlIdentifier(i.getTable()));
-                return i;
-            }).collect(Collectors.toSet());
+            identities = identities.stream()
+                    .filter(e -> Objects.nonNull(e.getSchema()) || Objects.nonNull(e.getTable())).map(e -> {
+                        DBSchemaIdentity i = new DBSchemaIdentity(e.getSchema(), e.getTable());
+                        String schema = StringUtils.isNotBlank(i.getSchema()) ? i.getSchema() : defaultSchema;
+                        i.setSchema(StringUtils.unquoteMySqlIdentifier(schema));
+                        i.setTable(StringUtils.unquoteMySqlIdentifier(i.getTable()));
+                        return i;
+                    }).collect(Collectors.toSet());
         } else if (dialectType.isOracle()) {
             if (basicResult.isPlDdl() || basicResult instanceof ParseOraclePLResult) {
                 OBOraclePLRelationFactorVisitor visitor = new OBOraclePLRelationFactorVisitor();
