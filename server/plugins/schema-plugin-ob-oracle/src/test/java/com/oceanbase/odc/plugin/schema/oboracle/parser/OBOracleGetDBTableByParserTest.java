@@ -120,7 +120,7 @@ public class OBOracleGetDBTableByParserTest {
                 Assert.assertEquals(TEST_DATABASE_NAME, cons.getReferenceSchemaName());
                 Assert.assertEquals("CONSTRAINT_PRIMARY_BY_PARSER", cons.getReferenceTableName());
                 Assert.assertEquals("COL1", cons.getReferenceColumnNames().get(0));
-                Assert.assertEquals(DBForeignKeyModifyRule.CASCADE, cons.getOnDeleteRule());
+                Assert.assertEquals(DBForeignKeyModifyRule.NO_ACTION, cons.getOnDeleteRule());
             } else if ("unq33".equals(cons.getName())) {
                 Assert.assertEquals(DBConstraintType.UNIQUE_KEY, cons.getType());
                 Assert.assertEquals("COL2", cons.getColumnNames().get(0));
