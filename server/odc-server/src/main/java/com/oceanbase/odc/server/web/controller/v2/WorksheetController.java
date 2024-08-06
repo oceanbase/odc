@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Set;
 
 import javax.annotation.Resource;
-import javax.validation.Valid;
 import javax.validation.constraints.Size;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,99 +33,96 @@ import org.springframework.web.bind.annotation.RestController;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.projectfiles.ProjectFilesServiceFacade;
-import com.oceanbase.odc.service.projectfiles.model.BatchDeleteProjectFilesResp;
-import com.oceanbase.odc.service.projectfiles.model.BatchUploadProjectFilesReq;
-import com.oceanbase.odc.service.projectfiles.model.FileUploadTempCredentialResp;
-import com.oceanbase.odc.service.projectfiles.model.GenerateProjectFileTempCredentialReq;
-import com.oceanbase.odc.service.projectfiles.model.ProjectFileMetaResp;
-import com.oceanbase.odc.service.projectfiles.model.ProjectFileResp;
-import com.oceanbase.odc.service.projectfiles.model.UpdateProjectFileReq;
+import com.oceanbase.odc.service.worksheet.WorksheetServiceFacade;
+import com.oceanbase.odc.service.worksheet.model.BatchOperateWorksheetsResp;
+import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq;
+import com.oceanbase.odc.service.worksheet.model.UpdateWorksheetReq;
+import com.oceanbase.odc.service.worksheet.model.WorksheetMetaResp;
+import com.oceanbase.odc.service.worksheet.model.WorksheetResp;
 
 /**
- * 项目文件管理控制类
+ * project worksheets management controller
  *
  * @author keyangs
  * @date 2024/7/31
  * @since 4.3.2
  */
 @RestController
-@RequestMapping("/api/v2/project/{projectId}/files")
-public class ProjectFilesController {
+@RequestMapping("/api/v2/project/{projectId}/worksheets")
+public class WorksheetController {
 
     @Resource
-    private ProjectFilesServiceFacade projectFilesServiceFacade;
+    private WorksheetServiceFacade worksheetServiceFacade;
 
-    @PostMapping("/generateTempCredential")
-    public SuccessResponse<FileUploadTempCredentialResp> generateTempCredential(
-            @PathVariable("projectId") Long projectId,
-            @Valid @RequestBody GenerateProjectFileTempCredentialReq req) {
-        return Responses.success(projectFilesServiceFacade.generateTempCredential(projectId, req));
+    @PostMapping("/generateUploadUrl")
+    public SuccessResponse<String> generateUploadUrl(
+            @PathVariable("projectId") Long projectId) {
+        return Responses.success(worksheetServiceFacade.generateUploadUrl(projectId));
     }
 
     @PostMapping("/{path}")
-    public SuccessResponse<ProjectFileMetaResp> createFile(
+    public SuccessResponse<WorksheetMetaResp> createWorksheet(
             @PathVariable("projectId") Long projectId,
             @PathVariable("path") String path,
             @RequestParam("objectKey") String objectKey) {
-        return Responses.success(projectFilesServiceFacade.createFile(projectId, path, objectKey));
+        return Responses.success(worksheetServiceFacade.createWorksheet(projectId, path, objectKey));
     }
 
     @GetMapping("/{path}")
-    public SuccessResponse<ProjectFileResp> getFileDetails(
+    public SuccessResponse<WorksheetResp> getWorksheetDetail(
             @PathVariable("path") String path,
             @PathVariable("projectId") Long projectId) {
-        return Responses.success(projectFilesServiceFacade.getFileDetails(projectId, path));
+        return Responses.success(worksheetServiceFacade.getWorksheetDetail(projectId, path));
     }
 
     @GetMapping("/list")
-    public ListResponse<ProjectFileMetaResp> listFiles(
+    public ListResponse<WorksheetMetaResp> listWorksheets(
             @PathVariable("projectId") Long projectId,
             @RequestParam("path") String path) {
-        return Responses.list(projectFilesServiceFacade.listFiles(projectId, path));
+        return Responses.list(worksheetServiceFacade.listWorksheets(projectId, path));
     }
 
     @GetMapping("/search")
-    public ListResponse<ProjectFileMetaResp> searchFiles(
+    public ListResponse<WorksheetMetaResp> searchWorksheets(
             @PathVariable("projectId") Long projectId,
             @RequestParam("nameLike") String nameLike) {
-        return Responses.list(projectFilesServiceFacade.searchFiles(projectId, nameLike));
+        return Responses.list(worksheetServiceFacade.searchWorksheets(projectId, nameLike));
     }
 
     @PostMapping("/batchUpload")
-    public ListResponse<ProjectFileMetaResp> batchUploadFiles(
+    public SuccessResponse<BatchOperateWorksheetsResp> batchUploadWorksheets(
             @PathVariable("projectId") Long projectId,
-            @RequestBody BatchUploadProjectFilesReq req) {
-        return Responses.list(projectFilesServiceFacade.batchUploadFiles(projectId, req));
+            @RequestBody BatchUploadWorksheetsReq req) {
+        return Responses.success(worksheetServiceFacade.batchUploadWorksheets(projectId, req));
     }
 
     @PostMapping("/batchDelete")
-    public SuccessResponse<BatchDeleteProjectFilesResp> batchDeleteFiles(
+    public SuccessResponse<BatchOperateWorksheetsResp> batchDeleteWorksheets(
             @PathVariable("projectId") Long projectId,
             @RequestBody @Size(min = 0, max = 100) List<String> paths) {
-        return Responses.success(projectFilesServiceFacade.batchDeleteFiles(projectId, paths));
+        return Responses.success(worksheetServiceFacade.batchDeleteWorksheets(projectId, paths));
     }
 
     @PutMapping("/rename")
-    public ListResponse<ProjectFileMetaResp> renameFile(
+    public ListResponse<WorksheetMetaResp> renameWorksheet(
             @PathVariable("projectId") Long projectId,
             @RequestParam("path") String path,
             @RequestParam("destination") String destination) {
-        return Responses.list(projectFilesServiceFacade.renameFile(projectId, path, destination));
+        return Responses.list(worksheetServiceFacade.renameWorksheet(projectId, path, destination));
     }
 
     @PutMapping("/{path}")
-    public ListResponse<ProjectFileMetaResp> editFile(
+    public ListResponse<WorksheetMetaResp> editWorksheet(
             @PathVariable("projectId") Long projectId,
             @PathVariable("path") String path,
-            @RequestBody UpdateProjectFileReq req) {
-        return Responses.list(projectFilesServiceFacade.editFile(projectId, path, req));
+            @RequestBody UpdateWorksheetReq req) {
+        return Responses.list(worksheetServiceFacade.editWorksheet(projectId, path, req));
     }
 
     @PostMapping("/batchDownload")
-    public SuccessResponse<String> batchDownloadFiles(
+    public SuccessResponse<String> batchDownloadWorksheets(
             @PathVariable("projectId") Long projectId,
             @RequestBody Set<String> paths) {
-        return Responses.success(projectFilesServiceFacade.batchDownloadFiles(projectId, paths));
+        return Responses.success(worksheetServiceFacade.batchDownloadWorksheets(projectId, paths));
     }
 }

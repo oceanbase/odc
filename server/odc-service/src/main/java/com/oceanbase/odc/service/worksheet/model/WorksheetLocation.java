@@ -13,33 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.projectfiles.model;
+package com.oceanbase.odc.service.worksheet.model;
 
 import java.util.Optional;
 
 import lombok.Getter;
 
 /**
- * 项目文件位置类型
+ * the location type of worksheet
  * 
  * @author keyangs
  * @date 2024/8/1
  * @since 4.3.2
  */
 @Getter
-public enum ProjectFileLocation {
+public enum WorksheetLocation {
+    /**
+     * the worksheet is in directory:/Worksheets/
+     */
     WORKSHEETS("Worksheets"),
+    /**
+     * the worksheet is in directory:/Repos/RepoName/
+     */
     REPOS("Repos");
 
-    final String name;
+    final String value;
 
-    ProjectFileLocation(String value) {
-        this.name = value;
+    WorksheetLocation(String value) {
+        this.value = value;
     }
 
-    public static Optional<ProjectFileLocation> getByName(String name) {
-        for (ProjectFileLocation value : values()) {
-            if (value.getName().equals(name)) {
+    public static Optional<WorksheetLocation> getByName(String name) {
+        for (WorksheetLocation value : values()) {
+            if (value.getValue().equals(name)) {
                 return Optional.of(value);
             }
         }

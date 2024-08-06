@@ -13,32 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.projectfiles.model;
+package com.oceanbase.odc.service.worksheet.model;
 
-import java.util.Date;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.experimental.Accessors;
-import lombok.experimental.SuperBuilder;
 
 /**
- * 文件元数据
- *
- * @author keyangs
- * @date 2024/7/31
+ * @author keyang
+ * @date 2024/08/05
  * @since 4.3.2
  */
 @Data
-@Accessors(chain = true)
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@SuperBuilder
-public class ProjectFileMetaResp {
-    private Date createTime;
-    private Date updateTime;
-    private Long projectId;
-    private String path;
-    private ProjectFileType type;
+public class BatchOperateWorksheetsResp {
+    /**
+     * Is the operation of all worksheets successful.
+     */
+    Boolean isAllSuccessful;
+    List<WorksheetMetaResp> successFiles;
+    List<WorksheetMetaResp> failedFiles;
 }

@@ -13,26 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.projectfiles.model;
-
-import java.util.List;
+package com.oceanbase.odc.service.worksheet.model;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
+import lombok.experimental.SuperBuilder;
 
 /**
- * @author keyang
- * @date 2024/08/05
+ * 文件详情
+ *
+ * @author keyangs
+ * @date 2024/7/31
  * @since 4.3.2
  */
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BatchDeleteProjectFilesResp {
-    Boolean isAllDeleted;
-    List<ProjectFileMetaResp> successFiles;
-    List<ProjectFileMetaResp> failedFiles;
+@Accessors(chain = true)
+@EqualsAndHashCode(callSuper = true)
+public class WorksheetResp extends WorksheetMetaResp {
+    private String content;
+    private Long version;
 }

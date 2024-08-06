@@ -13,21 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.projectfiles.model;
+package com.oceanbase.odc.service.worksheet.model;
 
-import javax.validation.constraints.Max;
-
-import lombok.Data;
+import lombok.Getter;
 
 /**
- * 批量上传文件请求
- *
+ * the type of worksheet
+ * 
  * @author keyangs
  * @date 2024/7/31
  * @since 4.3.2
  */
-@Data
-public class GenerateProjectFileTempCredentialReq {
-    @Max(value = 3600, message = "durationSeconds must be less than or equal to 3600")
-    private Long durationSeconds;
+@Getter
+public enum WorkSheetType {
+    GIT_REPO(1),
+    DIRECTORY(2),
+    FILE(3),
+    ;
+
+    /**
+     * Used to define the priority of sorting between worksheet types, with lower values indicating
+     * higher priority
+     */
+    final int order;
+
+    WorkSheetType(int order) {
+        this.order = order;
+    }
 }
