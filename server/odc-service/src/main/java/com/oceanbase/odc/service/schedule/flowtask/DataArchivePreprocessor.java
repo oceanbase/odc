@@ -100,21 +100,29 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             try {
                 DialectType sourceDbType = sourceSession.getDialectType();
                 DialectType targetDbType = targetSession.getDialectType();
-                InformationExtensionPoint sourceInformation = ConnectionPluginUtil.getInformationExtension(sourceDbType);
-                InformationExtensionPoint targetInformation = ConnectionPluginUtil.getInformationExtension(targetDbType);
-                String sourceDbVersion = sourceSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
-                    sourceInformation::getDBVersion);
-                String targetDbVersion = targetSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
-                    targetInformation::getDBVersion);
-                supportDataArchivingLink(sourceDbType,sourceDbVersion, targetDbType,targetDbVersion);
+                InformationExtensionPoint sourceInformation =
+                        ConnectionPluginUtil.getInformationExtension(sourceDbType);
+                InformationExtensionPoint targetInformation =
+                        ConnectionPluginUtil.getInformationExtension(targetDbType);
+                String sourceDbVersion =
+                        sourceSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
+                                sourceInformation::getDBVersion);
+                String targetDbVersion =
+                        targetSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
+                                targetInformation::getDBVersion);
+                supportDataArchivingLink(sourceDbType, sourceDbVersion, targetDbType, targetDbVersion);
                 if (!dataArchiveParameters.getSyncTableStructure().isEmpty()) {
                     boolean supportedSyncTableStructure = DLMTableStructureSynchronizer.isSupportedSyncTableStructure(
-                        sourceDbType, sourceDbVersion, targetDbType, targetDbVersion);
-                    if(!supportedSyncTableStructure){
-                        log.warn("Synchronization of table structure is unsupported,sourceDbType={},sourceDbVersion={},targetDbType={},targetDbVersion={}", sourceDbType,
-                            sourceDbVersion,targetDbType,targetDbVersion);
-                        throw new UnsupportedException(String.format("Synchronization of table structure is unsupported,sourceDbType=%s,sourceDbVersion=%s,targetDbType=%s,targetDbVersion=%s", sourceDbType,
-                            sourceDbVersion,targetDbType,targetDbVersion));
+                            sourceDbType, sourceDbVersion, targetDbType, targetDbVersion);
+                    if (!supportedSyncTableStructure) {
+                        log.warn(
+                                "Synchronization of table structure is unsupported,sourceDbType={},sourceDbVersion={},targetDbType={},targetDbVersion={}",
+                                sourceDbType,
+                                sourceDbVersion, targetDbType, targetDbVersion);
+                        throw new UnsupportedException(String.format(
+                                "Synchronization of table structure is unsupported,sourceDbType=%s,sourceDbVersion=%s,targetDbType=%s,targetDbVersion=%s",
+                                sourceDbType,
+                                sourceDbVersion, targetDbType, targetDbVersion));
                     }
                 }
                 checkTableAndCondition(sourceSession, sourceDb, dataArchiveParameters.getTables(),
@@ -154,7 +162,8 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
         req.setParentFlowInstanceId(parameters.getTaskId());
     }
 
-    private void supportDataArchivingLink(DialectType sourceDbType,String sourceDbVersion,DialectType targetDbType,String targetDbVersion) {
+    private void supportDataArchivingLink(DialectType sourceDbType, String sourceDbVersion, DialectType targetDbType,
+            String targetDbVersion) {
         if (sourceDbType == DialectType.OB_MYSQL) {
             if (targetDbType != DialectType.OB_MYSQL && targetDbType != DialectType.MYSQL) {
                 throw new UnsupportedException(

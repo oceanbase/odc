@@ -67,9 +67,11 @@ public class DLMTableStructureSynchronizer {
         try {
             String tgtDbVersion = getDBVersion(tgtConfig.getType(), targetDs);
             String srcDbVersion = getDBVersion(srcConfig.getType(), sourceDs);
-            if(!isSupportedSyncTableStructure(srcConfig.getDialectType(),srcDbVersion,tgtConfig.getDialectType(),tgtDbVersion)){
-                log.warn("Synchronization of table structure is unsupported,sourceDbType={},targetDbType={}", srcConfig.getDialectType(),
-                    tgtConfig.getDialectType());
+            if (!isSupportedSyncTableStructure(srcConfig.getDialectType(), srcDbVersion, tgtConfig.getDialectType(),
+                    tgtDbVersion)) {
+                log.warn("Synchronization of table structure is unsupported,sourceDbType={},targetDbType={}",
+                        srcConfig.getDialectType(),
+                        tgtConfig.getDialectType());
                 return;
             }
             DBTableEditor tgtTableEditor = getDBTableEditor(tgtConfig.getType(), tgtDbVersion);
@@ -114,19 +116,20 @@ public class DLMTableStructureSynchronizer {
     }
 
 
-    public static boolean isSupportedSyncTableStructure(DialectType srcType,String srcVersion,DialectType tgtType,String tgtVersion){
+    public static boolean isSupportedSyncTableStructure(DialectType srcType, String srcVersion, DialectType tgtType,
+            String tgtVersion) {
         // only supports MySQL or OBMySQL
-        if(!srcType.isMysql() || !tgtType.isMysql()){
+        if (!srcType.isMysql() || !tgtType.isMysql()) {
             return false;
         }
-        if(srcType != tgtType){
+        if (srcType != tgtType) {
             return false;
         }
         // unsupported MySQL versions below 5.7.0
-        if(srcType == DialectType.MYSQL && isMySQLVersionLessThan570(srcVersion)){
+        if (srcType == DialectType.MYSQL && isMySQLVersionLessThan570(srcVersion)) {
             return false;
         }
-        if(tgtType == DialectType.MYSQL && isMySQLVersionLessThan570(tgtVersion)){
+        if (tgtType == DialectType.MYSQL && isMySQLVersionLessThan570(tgtVersion)) {
             return false;
         }
         return true;
@@ -160,7 +163,7 @@ public class DLMTableStructureSynchronizer {
         }
     }
 
-    private static boolean isMySQLVersionLessThan570(String version){
+    private static boolean isMySQLVersionLessThan570(String version) {
         return VersionUtils.isLessThan(version, "5.7.0");
     }
 
