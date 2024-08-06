@@ -13,55 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.projectfiles.model;
+package com.oceanbase.odc.service.worksheet.model;
 
-import java.util.Objects;
 import java.util.Set;
 
 import javax.validation.constraints.Size;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
- * 批量上传文件请求
+ * the request of batch upload project worksheets
  *
  * @author keyangs
  * @date 2024/7/31
  * @since 4.3.2
  */
 @Data
-public class BatchUploadProjectFilesReq {
+public class BatchUploadWorksheetsReq {
     @Size(min = 1, max = 100)
     private Set<UploadProjectFileTuple> files;
 
     @Data
+    @ToString
+    @EqualsAndHashCode
     public static class UploadProjectFileTuple {
         private String path;
         private String objectKey;
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            UploadProjectFileTuple that = (UploadProjectFileTuple) o;
-            return Objects.equals(path, that.path) && Objects.equals(objectKey, that.objectKey);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(path, objectKey);
-        }
-
-        @Override
-        public String toString() {
-            return "UploadProjectFileTuple{" +
-                    "path='" + path + '\'' +
-                    ", objectKey='" + objectKey + '\'' +
-                    '}';
-        }
     }
 }

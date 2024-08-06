@@ -13,31 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.projectfiles.model;
+package com.oceanbase.odc.service.worksheet.model;
+
+import lombok.Data;
 
 /**
- * 项目文件类型
- * 
+ * update worksheet request
+ *
  * @author keyangs
  * @date 2024/7/31
  * @since 4.3.2
  */
-public enum ProjectFileType {
-    GIT_REPO(1),
-    DIRECTORY(2),
-    FILE(3),
-    ;
-
-    /**
-     * 用以定义ProjectFile类型间排序的优先级，值越小优先级越高
-     */
-    final int order;
-
-    ProjectFileType(int order) {
-        this.order = order;
-    }
-
-    public int getOrder() {
-        return order;
-    }
+@Data
+public class UpdateWorksheetReq {
+    private String destination;
+    private String objectKey;
+    private Long version;
 }
