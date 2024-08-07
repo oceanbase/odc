@@ -134,6 +134,11 @@ public class SqlExecuteResult {
         }
     }
 
+    /**
+     * 初始化可编辑信息
+     *
+     * @return OdcTable 返回可编辑的表格信息
+     */
     public OdcTable initEditableInfo() {
         boolean editable = true;
         OdcTable resultTable = null;
@@ -143,10 +148,12 @@ public class SqlExecuteResult {
         }
         List<JdbcColumnMetaData> fieldMetaDataList = resultSetMetaData.getFieldMetaDataList();
         // if there are more than one column with same name, the result can't be edited
+        // 如果有多个同名列，则结果不可编辑
         List<String> columnNames = new ArrayList<>();
         for (JdbcColumnMetaData odcFieldMetaData : fieldMetaDataList) {
             String tableName = odcFieldMetaData.getTableName();
             // not editable if table not exists, may function
+            // 如果表不存在，则不可编辑
             if (StringUtils.isBlank(tableName)) {
                 editable = false;
                 break;
@@ -170,6 +177,7 @@ public class SqlExecuteResult {
             }
             if (Types.ROWID == odcFieldMetaData.getColumnType()) {
                 // not editable if there is more than one RowId
+                // 如果有多个RowId，则不可编辑
                 if (Objects.nonNull(resultTable)) {
                     editable = false;
                     break;
@@ -178,8 +186,9 @@ public class SqlExecuteResult {
             }
         }
         // if there are more than one table and with no RowId, the result can't be edited
+        // 如果有多个表且没有RowId，则结果不可编辑
         if (CollectionUtils.isEmpty(relatedTablesOrViews)
-                || (Objects.isNull(resultTable) && relatedTablesOrViews.size() > 1)) {
+            || (Objects.isNull(resultTable) && relatedTablesOrViews.size() > 1)) {
             editable = false;
         }
 
@@ -194,15 +203,15 @@ public class SqlExecuteResult {
         resultSetMetaData.setEditable(editable);
         resultSetMetaData.setTable(resultTable);
         // set rows of the table with rowid editable
+        // 设置带有RowId的表格的行为可编辑
         for (JdbcColumnMetaData odcFieldMetaData : resultSetMetaData.getFieldMetaDataList()) {
             odcFieldMetaData.setEditable(
-                    odcFieldMetaData.schemaName().equals(resultTable.getDatabaseName())
-                            && odcFieldMetaData.getTableName().equals(resultTable.getTableName())
-                            && Types.ROWID != odcFieldMetaData.getColumnType());
+                odcFieldMetaData.schemaName().equals(resultTable.getDatabaseName())
+                && odcFieldMetaData.getTableName().equals(resultTable.getTableName())
+                && Types.ROWID != odcFieldMetaData.getColumnType());
         }
         return resultTable;
     }
-
     public void initColumnInfo(@NonNull ConnectionSession connectionSession, OdcTable resultTable,
             @NonNull DBSchemaAccessor schemaAccessor) {
         if (this.resultSetMetaData == null) {

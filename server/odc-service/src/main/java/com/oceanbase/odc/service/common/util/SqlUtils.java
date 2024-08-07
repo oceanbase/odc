@@ -117,28 +117,43 @@ public class SqlUtils {
         return split(connectionSession.getDialectType(), processor, sql, removeCommentPrefix);
     }
 
+    /**
+     * 将SQL语句按照指定的分隔符进行分割，并返回分割后的SQL语句列表
+     *
+     * @param dialectType         SQL方言类型
+     * @param processor           SQL注释处理器
+     * @param sql                 待分割的SQL语句
+     * @param removeCommentPrefix 是否移除注释前缀
+     * @return 分割后的SQL语句列表
+     */
     private static List<OffsetString> split(DialectType dialectType, SqlCommentProcessor processor, String sql,
-            boolean removeCommentPrefix) {
+        boolean removeCommentPrefix) {
+        // 检查分隔符是否为空或空白字符串
         PreConditions.notBlank(processor.getDelimiter(), "delimiter", "Empty or blank delimiter is not allowed");
         if (dialectType.isOracle()
-                && (";".equals(processor.getDelimiter()) || "/".equals(processor.getDelimiter()))) {
+            && (";".equals(processor.getDelimiter()) || "/".equals(processor.getDelimiter()))) {
+            // 如果是Oracle数据库且分隔符为分号或斜杠，则使用SqlSplitter进行分割
             SqlSplitter sqlSplitter = new SqlSplitter(PlSqlLexer.class, processor.getDelimiter(), false);
             sqlSplitter.setRemoveCommentPrefix(removeCommentPrefix);
             List<OffsetString> sqls = sqlSplitter.split(sql);
             processor.setDelimiter(sqlSplitter.getDelimiter());
             return sqls;
         } else {
+            // 否则使用SqlCommentProcessor进行分割
             StringBuffer buffer = new StringBuffer();
             List<OffsetString> sqls = processor.split(buffer, sql);
             String bufferStr = buffer.toString();
             if (bufferStr.trim().length() != 0) {
                 // if buffer is not empty, there will be some errors in syntax
+                // 如果缓冲区不为空，则可能存在语法错误
                 log.info("sql processor's buffer is not empty, there may be some errors. buffer={}", bufferStr);
                 int lastSqlOffset;
                 if (sqls.size() == 0) {
+                    // 如果分割后的SQL语句列表为空，则将缓冲区中的内容作为一个新的SQL语句添加到列表中
                     int index = sql.indexOf(bufferStr.trim(), 0);
                     lastSqlOffset = index == -1 ? 0 : index;
                 } else {
+                    // 否则，计算缓冲区中的内容从哪个SQL语句之后开始
                     int from = sqls.get(sqls.size() - 1).getOffset() + sqls.get(sqls.size() - 1).getStr().length();
                     int index = sql.indexOf(bufferStr.trim(), from);
                     lastSqlOffset = index == -1 ? from : index;
@@ -148,7 +163,6 @@ public class SqlUtils {
             return sqls;
         }
     }
-
     public static SqlStatementIterator iterator(DialectType dialectType, String delimiter, InputStream input,
             Charset charset) {
         SqlCommentProcessor processor = new SqlCommentProcessor(dialectType, true, true);

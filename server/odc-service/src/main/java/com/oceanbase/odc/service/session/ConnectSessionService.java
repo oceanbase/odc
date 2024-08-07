@@ -330,16 +330,29 @@ public class ConnectSessionService {
         return nullSafeGet(sessionId, false);
     }
 
+    /**
+     * 根据sessionId获取ConnectionSession对象
+     *
+     * @param sessionId  Session的ID
+     * @param autoCreate 是否自动创建Session
+     * @return ConnectionSession对象
+     * @throws NotFoundException 如果找不到对应的Session，则抛出NotFoundException异常
+     */
     public ConnectionSession nullSafeGet(@NotNull String sessionId, boolean autoCreate) {
+        // 获取Session对象
         ConnectionSession session = connectionSessionManager.getSession(sessionId);
         if (session == null) {
+            // 如果Session对象为空，则根据sessionId创建Session对象
             CreateSessionReq req = new DefaultConnectSessionIdGenerator().getKeyFromId(sessionId);
             if (!autoCreate
-                    || (!StringUtils.equals(req.getFrom(), stateHostGenerator.getHost()) && !isOBCloudEnvironment())) {
+                || (!StringUtils.equals(req.getFrom(), stateHostGenerator.getHost()) && !isOBCloudEnvironment())) {
+                // 如果不自动创建Session或者当前环境不是OBCloud环境，则抛出NotFoundException异常
                 throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
             }
+            // 获取SessionId对应的锁
             Lock lock = this.sessionId2Lock.computeIfAbsent(sessionId, s -> new ReentrantLock());
             try {
+                // 尝试获取锁，最多等待10秒
                 if (!lock.tryLock(10, TimeUnit.SECONDS)) {
                     throw new IllegalStateException("Session is creating, please wait and retry later");
                 }
@@ -347,20 +360,26 @@ public class ConnectSessionService {
                 throw new IllegalStateException(e);
             }
             try {
+                // 再次获取Session对象
                 session = connectionSessionManager.getSession(sessionId);
                 if (session != null) {
                     return session;
                 }
+                // 如果Session对象仍为空，则创建Session对象
                 session = create(req);
                 ConnectionSessionUtil.setConsoleSessionResetFlag(session, true);
                 return session;
             } finally {
+                // 释放锁
                 lock.unlock();
             }
         }
+        // 如果Session对象不为空，则判断Session的userId是否与当前用户id相同
         if (!Objects.equals(ConnectionSessionUtil.getUserId(session), authenticationFacade.currentUserId())) {
+            // 如果不自动创建Session或者当前环境不是OBCloud环境，则抛出NotFoundException异常
             throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
         }
+        // 取消Session的过期时间
         connectionSessionManager.cancelExpire(session);
         return session;
     }

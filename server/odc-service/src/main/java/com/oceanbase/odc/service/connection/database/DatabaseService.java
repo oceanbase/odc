@@ -213,6 +213,13 @@ public class DatabaseService {
     @Autowired
     private GlobalSearchProperties globalSearchProperties;
 
+    /**
+     * 根据数据库ID获取数据库详情
+     *
+     * @param id 数据库ID
+     * @return 数据库详情
+     * @throws NotFoundException 如果找不到对应的数据库则抛出异常
+     */
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public Database detail(@NonNull Long id) {

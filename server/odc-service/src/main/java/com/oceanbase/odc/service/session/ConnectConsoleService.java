@@ -235,54 +235,76 @@ public class ConnectConsoleService {
         return streamExecute(sessionId, request, true);
     }
 
+    /**
+     * 流式执行SQL异步请求
+     *
+     * @param sessionId        会话ID
+     * @param request          SQL异步执行请求
+     * @param needSqlRuleCheck 是否需要SQL规则检查
+     * @return SQL异步执行响应
+     * @throws Exception 异常
+     */
     public SqlAsyncExecuteResp streamExecute(@NotNull String sessionId,
-            @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlRuleCheck) throws Exception {
+        @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlRuleCheck) throws Exception {
+        // 获取连接会话
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
 
+        // 获取最大SQL长度
         long maxSqlLength = sessionProperties.getMaxSqlLength();
         if (maxSqlLength > 0) {
+            // 判断SQL长度是否超过最大值
             PreConditions.lessThanOrEqualTo("sqlLength", LimitMetric.SQL_LENGTH,
-                    StringUtils.length(request.getSql()), maxSqlLength);
+                StringUtils.length(request.getSql()), maxSqlLength);
         }
+        // 过滤kill会话
         SqlAsyncExecuteResp result = filterKillSession(connectionSession, request);
         if (result != null) {
             return result;
         }
+        // 将SQL分成一句
         List<OffsetString> sqls = request.ifSplitSqls()
-                ? SqlUtils.splitWithOffset(connectionSession, request.getSql(),
-                        sessionProperties.isOracleRemoveCommentPrefix())
-                : Collections.singletonList(new OffsetString(0, request.getSql()));
+            // 如果需要分片执行，则调用SqlUtils工具类的splitWithOffset方法进行分片
+            ? SqlUtils.splitWithOffset(connectionSession, request.getSql(),
+            sessionProperties.isOracleRemoveCommentPrefix())
+            // 如果不需要分片执行，则将原始SQL语句封装为一个List
+            : Collections.singletonList(new OffsetString(0, request.getSql()));
+        // 如果SQL只包含分隔符设置（例如delimiter $$），则执行以下代码
         if (sqls.size() == 0) {
             /**
              * if a sql only contains delimiter setting(eg. delimiter $$), code will do this
              */
             SqlTuple sqlTuple = SqlTuple.newTuple(request.getSql());
             AsyncExecuteContext executeContext =
-                    new AsyncExecuteContext(Collections.singletonList(sqlTuple), new HashMap<>());
+                new AsyncExecuteContext(Collections.singletonList(sqlTuple), new HashMap<>());
             Future<List<JdbcGeneralResult>> successFuture = FutureResult.successResultList(
-                    JdbcGeneralResult.successResult(sqlTuple));
+                JdbcGeneralResult.successResult(sqlTuple));
             executeContext.setFuture(successFuture);
             executeContext.addSqlExecutionResults(successFuture.get());
             String id = ConnectionSessionUtil.setExecuteContext(connectionSession, executeContext);
             return SqlAsyncExecuteResp.newSqlAsyncExecuteResp(id, Collections.singletonList(sqlTuple));
         }
 
+        // 获取最大SQL语句数量，判断是否有最大语句数量限制
         long maxSqlStatementCount = sessionProperties.getMaxSqlStatementCount();
         if (maxSqlStatementCount > 0) {
+            // 判断SQL语句数量是否超过最大值
             PreConditions.lessThanOrEqualTo("sqlStatementCount",
-                    LimitMetric.SQL_STATEMENT_COUNT, sqls.size(), maxSqlStatementCount);
+                LimitMetric.SQL_STATEMENT_COUNT, sqls.size(), maxSqlStatementCount);
         }
 
+        // 生成SQL元组
         List<SqlTuple> sqlTuples = generateSqlTuple(sqls, connectionSession, request);
         SqlAsyncExecuteResp response = SqlAsyncExecuteResp.newSqlAsyncExecuteResp(sqlTuples);
+        // 设置上下文
         Map<String, Object> context = new HashMap<>();
         context.put(SHOW_TABLE_COLUMN_INFO, request.getShowTableColumnInfo());
         context.put(SqlCheckInterceptor.NEED_SQL_CHECK_KEY, needSqlRuleCheck);
         context.put(SqlConsoleInterceptor.NEED_SQL_CONSOLE_CHECK, needSqlRuleCheck);
         AsyncExecuteContext executeContext = new AsyncExecuteContext(sqlTuples, context);
+        // 执行SQL前检查，更新sqlTuples中的stageList
         List<TraceStage> stages = sqlTuples.stream()
-                .map(s -> s.getSqlWatch().start(SqlExecuteStages.SQL_PRE_CHECK))
-                .collect(Collectors.toList());
+            .map(s -> s.getSqlWatch().start(SqlExecuteStages.SQL_PRE_CHECK))
+            .collect(Collectors.toList());
         try {
             if (!sqlInterceptService.preHandle(request, response, connectionSession, executeContext)) {
                 return response;
@@ -296,13 +318,16 @@ public class ConnectConsoleService {
                 }
             }
         }
+        // 检查查询限制
         Integer queryLimit = checkQueryLimit(request.getQueryLimit());
+        // 判断是否继续执行错误
         boolean continueExecutionOnError =
-                Objects.nonNull(request.getContinueExecutionOnError()) ? request.getContinueExecutionOnError()
-                        : userConfigFacade.isContinueExecutionOnError();
+            Objects.nonNull(request.getContinueExecutionOnError()) ? request.getContinueExecutionOnError()
+                : userConfigFacade.isContinueExecutionOnError();
         boolean stopOnError = !continueExecutionOnError;
+        // 创建OdcStatementCallBack对象
         OdcStatementCallBack statementCallBack = new OdcStatementCallBack(sqlTuples, connectionSession,
-                request.getAutoCommit(), queryLimit, stopOnError, executeContext);
+            request.getAutoCommit(), queryLimit, stopOnError, executeContext);
 
         statementCallBack.setDbmsoutputMaxRows(sessionProperties.getDbmsOutputMaxRows());
 
@@ -320,11 +345,16 @@ public class ConnectConsoleService {
                     .add(new OBQueryProfileExecutionListener(connectionSession, profileManager));
         }
 
+        // 创建一个Future对象，用于异步获取JdbcGeneralResult列表
         Future<List<JdbcGeneralResult>> futureResult = connectionSession.getAsyncJdbcExecutor(
-                ConnectionSessionConstants.CONSOLE_DS_KEY).execute(statementCallBack);
+            ConnectionSessionConstants.CONSOLE_DS_KEY).execute(statementCallBack);
+        // 将Future对象设置到executeContext中
         executeContext.setFuture(futureResult);
+        // 将executeContext设置到connectionSession中，并获取其id
         String id = ConnectionSessionUtil.setExecuteContext(connectionSession, executeContext);
+        // 将id设置到response中
         response.setRequestId(id);
+        // 返回response
         return response;
     }
 
@@ -333,18 +363,24 @@ public class ConnectConsoleService {
     }
 
     public AsyncExecuteResultResp getMoreResults(@NotNull String sessionId, String requestId, Integer timeoutSeconds) {
+        // 校验请求ID是否为空
         PreConditions.validArgumentState(Objects.nonNull(requestId), ErrorCodes.SqlRegulationRuleBlocked, null, null);
+        // 获取连接会话
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId);
         AsyncExecuteContext context =
-                (AsyncExecuteContext) ConnectionSessionUtil.getExecuteContext(connectionSession, requestId);
+            (AsyncExecuteContext) ConnectionSessionUtil.getExecuteContext(connectionSession, requestId);
         int gettingResultTimeoutSeconds =
-                Objects.isNull(timeoutSeconds) ? DEFAULT_GET_RESULT_TIMEOUT_SECONDS : timeoutSeconds;
+            Objects.isNull(timeoutSeconds) ? DEFAULT_GET_RESULT_TIMEOUT_SECONDS : timeoutSeconds;
+        // 判断是否需要移除上下文
         boolean shouldRemoveContext = context.isFinished();
+        // 如果出现异常，前端将停止获取更多的结果。在这种情况下，未完成的查询应该被杀死。
         try {
             List<JdbcGeneralResult> resultList =
-                    context.getMoreSqlExecutionResults(gettingResultTimeoutSeconds * 1000L);
+                context.getMoreSqlExecutionResults(gettingResultTimeoutSeconds * 1000L);
+            // 将JdbcGeneralResult转换为SqlExecuteResult
             List<SqlExecuteResult> results = resultList.stream().map(jdbcGeneralResult -> {
                 SqlExecuteResult result = generateResult(connectionSession, jdbcGeneralResult, context.getContextMap());
+                // 执行SQL后置拦截
                 try (TraceStage stage = result.getSqlTuple().getSqlWatch().start(SqlExecuteStages.SQL_AFTER_CHECK)) {
                     sqlInterceptService.afterCompletion(result, connectionSession, context);
                 } catch (Exception e) {
@@ -352,11 +388,13 @@ public class ConnectConsoleService {
                 }
                 return result;
             }).collect(Collectors.toList());
+            // 返回异步执行结果响应
             return new AsyncExecuteResultResp(shouldRemoveContext, context, results);
         } catch (Exception e) {
             shouldRemoveContext = true;
             // Front-end would stop getting more results if there is an exception. In this case the left queries
             // should be killed.
+            // 如果出现异常，前端将停止获取更多的结果。在这种情况下，未完成的查询应该被杀死。
             try {
                 killCurrentQuery(sessionId);
             } catch (Exception ex) {
@@ -364,12 +402,12 @@ public class ConnectConsoleService {
             }
             throw e;
         } finally {
+            // 如果需要移除上下文，则从连接会话中移除执行上下文
             if (shouldRemoveContext) {
                 ConnectionSessionUtil.removeExecuteContext(connectionSession, requestId);
             }
         }
     }
-
     public BinaryContent getBinaryContent(@NotNull String sessionId, @NotNull String sqlId,
             @NotNull Long rowNum, @NotNull Integer colNum, @NotNull Long skip,
             @NotNull Integer len, @NotNull ValueEncodeType format) throws IOException {
@@ -469,9 +507,12 @@ public class ConnectConsoleService {
         return sqls.stream().filter(s -> StringUtils.isNotBlank(s.getStr())).map(sql -> {
             TraceWatch traceWatch = new TraceWatch("SQL-EXEC");
             SqlTuple target = SqlTuple.newTuple(sql.getStr(), sql.getStr(), traceWatch, sql.getOffset());
+            // 开始跟踪解析 SQL 的时间
             try (TraceStage parseSql = traceWatch.start(SqlExecuteStages.PARSE_SQL)) {
+                // 初始化 AST（抽象语法树）
                 target.initAst(AbstractSyntaxTreeFactories.getAstFactory(session.getDialectType(), 0));
             } catch (IOException e) {
+                // 捕获 IO 异常并抛出非法状态异常
                 throw new IllegalStateException(e);
             }
             if (Objects.isNull(request.getQueryLimit())
@@ -546,36 +587,56 @@ public class ConnectConsoleService {
      * observer
      *
      * @param connectionSession connection engine
-     * @param request odc sql object
+     * @param request           odc sql object
      * @return result of sql execution
      */
     private SqlAsyncExecuteResp filterKillSession(ConnectionSession connectionSession, SqlAsyncExecuteReq request)
-            throws Exception {
+        throws Exception {
+        // 获取 SQL 语句并转换为小写
         String sqlScript = request.getSql().trim().toLowerCase();
+        // 如果 SQL 语句不是以 "kill " 开头或不包含 "/*"，则返回 null
         if (!sqlScript.startsWith("kill ") || !sqlScript.contains("/*")) {
             return null;
         }
+        // 将 SQL 语句按 ";" 分割，并过滤掉空白项，然后转换为 SqlTuple 列表
         List<SqlTuple> sqlTuples = SqlTuple.newTuples(
-                Arrays.stream(sqlScript.split(";")).filter(StringUtils::isNotBlank).collect(Collectors.toList()));
+            Arrays.stream(sqlScript.split(";")).filter(StringUtils::isNotBlank).collect(Collectors.toList()));
+        // 执行 kill session 操作，并获取 JdbcGeneralResult 列表
         List<JdbcGeneralResult> results =
-                defaultDbSessionManage.executeKillSession(connectionSession, sqlTuples, sqlScript);
+            defaultDbSessionManage.executeKillSession(connectionSession, sqlTuples, sqlScript);
 
+        // 创建 AsyncExecuteContext 对象
         AsyncExecuteContext executeContext =
-                new AsyncExecuteContext(sqlTuples, new HashMap<>());
+            new AsyncExecuteContext(sqlTuples, new HashMap<>());
+        // 创建 SuccessFuture 对象，并设置执行结果
         Future<List<JdbcGeneralResult>> successFuture = FutureResult.successResult(results);
         executeContext.setFuture(successFuture);
         executeContext.addSqlExecutionResults(successFuture.get());
+        // 将 AsyncExecuteContext 对象设置到 ConnectionSession 中，并返回 SqlAsyncExecuteResp 对象
         String id = ConnectionSessionUtil.setExecuteContext(connectionSession, executeContext);
         return SqlAsyncExecuteResp.newSqlAsyncExecuteResp(id, sqlTuples);
     }
 
+    /**
+     * 生成 SQL 执行结果
+     *
+     * @param connectionSession 数据库连接会话
+     * @param generalResult     普通 SQL 执行结果
+     * @param cxt               上下文参数
+     * @return SQL 执行结果
+     */
     private SqlExecuteResult generateResult(@NonNull ConnectionSession connectionSession,
-            @NonNull JdbcGeneralResult generalResult, @NonNull Map<String, Object> cxt) {
+        @NonNull JdbcGeneralResult generalResult, @NonNull Map<String, Object> cxt) {
+        // 创建 SQL 执行结果对象
         SqlExecuteResult result = new SqlExecuteResult(generalResult);
+        // 获取 SQL 执行时间计时器
         TraceWatch watch = generalResult.getSqlTuple().getSqlWatch();
+        // 初始化可编辑表信息
         OdcTable resultTable = null;
+        // 创建数据库模式访问器
         DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
         try (TraceStage s = watch.start(SqlExecuteStages.INIT_SQL_TYPE)) {
+            // 初始化 SQL 类型
             result.initSqlType(connectionSession.getDialectType());
         } catch (Exception e) {
             log.warn("Failed to init sql type", e);
@@ -587,21 +648,24 @@ public class ConnectConsoleService {
         }
         if (Boolean.TRUE.equals(cxt.get(SHOW_TABLE_COLUMN_INFO))) {
             try (TraceStage s = watch.start(SqlExecuteStages.INIT_COLUMN_INFO)) {
+                // 初始化列信息
                 result.initColumnInfo(connectionSession, resultTable, schemaAccessor);
             } catch (Exception e) {
                 log.warn("Failed to init column comment, reason={}", ExceptionUtils.getSimpleReason(e));
             }
         }
         try (TraceStage s = watch.start(SqlExecuteStages.INIT_WARNING_MESSAGE)) {
+            // 初始化警告信息
             result.initWarningMessage(connectionSession);
         } catch (Exception e) {
             log.warn("Failed to init warning message", e);
         }
         try {
+            // 判断是否支持查询分析
             String version = ConnectionSessionUtil.getVersion(connectionSession);
             result.setWithQueryProfile(OBQueryProfileExecutionListener
-                    .isSqlTypeSupportProfile(generalResult.getSqlTuple()) &&
-                    OBQueryProfileExecutionListener.isObVersionSupportQueryProfile(version));
+                                           .isSqlTypeSupportProfile(generalResult.getSqlTuple()) &&
+                                       OBQueryProfileExecutionListener.isObVersionSupportQueryProfile(version));
         } catch (Exception e) {
             result.setWithQueryProfile(false);
         }
