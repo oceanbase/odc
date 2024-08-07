@@ -29,8 +29,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import com.oceanbase.odc.service.worksheet.model.WorkSheetType;
 import com.oceanbase.odc.service.worksheet.model.WorksheetLocation;
+import com.oceanbase.odc.service.worksheet.model.WorksheetType;
 
 @RunWith(Parameterized.class)
 public class PathTest {
@@ -42,7 +42,7 @@ public class PathTest {
 
     private final String path;
     private final WorksheetLocation expectedLocation;
-    private final WorkSheetType expectedType;
+    private final WorksheetType expectedType;
     private final String expectedName;
     private final Integer expectedLevelNum;
     private final String expectedStandardPath;
@@ -51,7 +51,7 @@ public class PathTest {
 
     public PathTest(String method, String path1, String path2, Integer expectedResult,
 
-            String path, WorksheetLocation expectedLocation, WorkSheetType expectedType, String expectedName,
+            String path, WorksheetLocation expectedLocation, WorksheetType expectedType, String expectedName,
             Integer expectedLevelNum, String expectedStandardPath, List<String> expectedPathItems) {
         this.method = method;
 
@@ -98,30 +98,30 @@ public class PathTest {
 
 
                 {"testConstructor", null, null, null, "Worksheets / path2 / file.txt ", WorksheetLocation.WORKSHEETS,
-                        WorkSheetType.FILE, "file.txt", 3,
-                        "/Worksheets/path2/file.txt", Arrays.asList("Worksheets", "path2", "/")},
+                        WorksheetType.FILE, "file.txt", 3,
+                        "/Worksheets/path2/file.txt", Arrays.asList("Worksheets", "path2")},
                 {"testConstructor", null, null, null, "Worksheets \\ path2 \\  ", WorksheetLocation.WORKSHEETS,
-                        WorkSheetType.DIRECTORY, "path2", 2,
-                        "/Worksheets/path2/", Arrays.asList("Worksheets", "/")},
+                        WorksheetType.DIRECTORY, "path2", 2,
+                        "/Worksheets/path2/", Arrays.asList("Worksheets")},
                 {"testConstructor", null, null, null, "Worksheets /  ", WorksheetLocation.WORKSHEETS,
-                        WorkSheetType.DIRECTORY, "Worksheets", 1,
-                        "/Worksheets/", Arrays.asList("/")},
+                        WorksheetType.DIRECTORY, "Worksheets", 1,
+                        "/Worksheets/", Arrays.asList()},
                 {"testConstructor", null, null, null, "Worksheets / path2 / file.txt ", WorksheetLocation.WORKSHEETS,
-                        WorkSheetType.FILE, "file.txt", 3,
-                        "/Worksheets/path2/file.txt", Arrays.asList("Worksheets", "path2", "/")},
+                        WorksheetType.FILE, "file.txt", 3,
+                        "/Worksheets/path2/file.txt", Arrays.asList("Worksheets", "path2")},
                 {"testConstructor", null, null, null, " /Repos/git \\ ", WorksheetLocation.REPOS,
-                        WorkSheetType.GIT_REPO, "git", 2, "/Repos/git/", Arrays.asList("Repos", "/")},
+                        WorksheetType.GIT_REPO, "git", 2, "/Repos/git/", Arrays.asList("Repos")},
                 {"testConstructor", null, null, null, " \\Repos/git / folder1/   ", WorksheetLocation.REPOS,
-                        WorkSheetType.DIRECTORY, "folder1", 3,
-                        "/Repos/git/folder1/", Arrays.asList("Repos", "git", "/")},
+                        WorksheetType.DIRECTORY, "folder1", 3,
+                        "/Repos/git/folder1/", Arrays.asList("Repos", "git")},
                 {"testConstructor", null, null, null, " Repos/git \\ file1   ", WorksheetLocation.REPOS,
-                        WorkSheetType.FILE, "file1", 3,
-                        "/Repos/git/file1", Arrays.asList("Repos", "git", "/")},
+                        WorksheetType.FILE, "file1", 3,
+                        "/Repos/git/file1", Arrays.asList("Repos", "git")},
                 {"testConstructor", null, null, null, "/Repos/path2/", WorksheetLocation.REPOS,
-                        WorkSheetType.GIT_REPO, "path2", 2, "/Repos/path2/", Arrays.asList("Repos", "/")},
+                        WorksheetType.GIT_REPO, "path2", 2, "/Repos/path2/", Arrays.asList("Repos")},
                 {"testConstructor", null, null, null, "//   ///  ///Repos/  ///  //path2///  /",
-                        WorksheetLocation.REPOS, WorkSheetType.GIT_REPO, "path2", 2,
-                        "/Repos/path2/", Arrays.asList("Repos", "/")},
+                        WorksheetLocation.REPOS, WorksheetType.GIT_REPO, "path2", 2,
+                        "/Repos/path2/", Arrays.asList("Repos")},
                 {"testConstructor", null, null, null, "//", null, null, null, null, null, null},
                 {"testConstructor", null, null, null, "", null, null, null, null, null, null},
                 {"testConstructor", null, null, null, null, null, null, null, null, null, null},
@@ -132,19 +132,19 @@ public class PathTest {
 
                 {"testGetParentPath", null, null, null, "Worksheets / path2 / file.txt ",
                         WorksheetLocation.WORKSHEETS,
-                        WorkSheetType.DIRECTORY, "path2", 2,
-                        null, Arrays.asList("Worksheets", "/")},
+                        WorksheetType.DIRECTORY, "path2", 2,
+                        null, Arrays.asList("Worksheets")},
                 {"testGetParentPath", null, null, null, "Worksheets \\ path2 \\  ", WorksheetLocation.WORKSHEETS,
-                        WorkSheetType.DIRECTORY, "Worksheets", 1,
-                        null, Arrays.asList("/")},
+                        WorksheetType.DIRECTORY, "Worksheets", 1,
+                        null, Arrays.asList()},
                 {"testGetParentPath", null, null, null, "Worksheets /  ", null, null, null, null, null, null},
                 {"testGetParentPath", null, null, null, " /Repos/git \\ ", null, null, null, null, null, null},
                 {"testGetParentPath", null, null, null, " \\Repos/git / folder1/   ", WorksheetLocation.REPOS,
-                        WorkSheetType.GIT_REPO, "git", 2,
-                        null, Arrays.asList("Repos", "/")},
+                        WorksheetType.GIT_REPO, "git", 2,
+                        null, Arrays.asList("Repos")},
                 {"testGetParentPath", null, null, null, " \\Repos/git / folder1/file1   ", WorksheetLocation.REPOS,
-                        WorkSheetType.DIRECTORY, "folder1", 3,
-                        null, Arrays.asList("Repos", "git", "/")},
+                        WorksheetType.DIRECTORY, "folder1", 3,
+                        null, Arrays.asList("Repos", "git")},
         });
     }
 

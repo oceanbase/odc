@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.worksheet.infrastructure;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Set;
 import java.util.UUID;
@@ -31,7 +32,6 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageCon
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.objectstorage.cloud.util.CloudObjectStorageUtil;
 import com.oceanbase.odc.service.worksheet.domain.Path;
-import com.oceanbase.odc.service.worksheet.domain.WorksheetOssGateway;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,14 +42,14 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class ProjectFileOssGateway implements WorksheetOssGateway {
+public class WorksheetOssGateway implements com.oceanbase.odc.service.worksheet.domain.WorksheetOssGateway {
     private static final Long DEFAULT_TOKEN_DURATION_SECONDS = 15 * 60L;
     private static final Long MAX_TOKEN_DURATION_SECONDS = 60 * 60L;
     private final CloudObjectStorageService cloudObjectStorageService;
     private final CloudSecurityTokenService cloudSecurityTokenService;
     private final ObjectStorageConfiguration objectStorageConfiguration;
 
-    public ProjectFileOssGateway(CloudObjectStorageService cloudObjectStorageService,
+    public WorksheetOssGateway(CloudObjectStorageService cloudObjectStorageService,
             @Autowired @Qualifier("publicEndpointCloudClient") CloudSecurityTokenService cloudSecurityTokenService,
             CloudEnvConfigurations cloudEnvConfigurations) {
         this.cloudObjectStorageService = cloudObjectStorageService;
@@ -84,5 +84,20 @@ public class ProjectFileOssGateway implements WorksheetOssGateway {
     @Override
     public void batchDelete(Set<String> objectKeys) {
 
+    }
+
+    @Override
+    public String generateDownloadUrl(String objectKey) {
+        return "";
+    }
+
+    @Override
+    public void downloadToFile(String objectName, File toFile) {
+        cloudObjectStorageService.downloadToFile(objectName, toFile);
+    }
+
+    @Override
+    public String uploadFile(File file, int durationSeconds) {
+        return "";
     }
 }

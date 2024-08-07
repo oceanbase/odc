@@ -27,8 +27,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import com.oceanbase.odc.service.worksheet.model.WorksheetType;
 import com.oceanbase.odc.service.worksheet.model.WorksheetLocation;
+import com.oceanbase.odc.service.worksheet.model.WorksheetType;
 
 @RunWith(Parameterized.class)
 public class WorksheetPathUtilTest {

@@ -285,6 +285,23 @@ public class CloudObjectStorageService {
         return targetFile;
     }
 
+    /**
+     * download to file, if toPath is not a file, throw IllegalArgumentException
+     * 
+     * @param objectName objectName
+     * @param toFile destination file path
+     * @return
+     */
+    public void downloadToFile(@NotBlank String objectName, @NotBlank File toFile) {
+        verifySupported();
+        if (!toFile.isFile()) {
+            throw new IllegalArgumentException("toPath is not a file, toFile=" + toFile);
+        }
+        GetObjectRequest request = new GetObjectRequest(getBucketName(), objectName);
+        internalEndpointCloudObjectStorage.getObject(request, toFile);
+    }
+
+
     ObjectStorageConfiguration getObjectStorageConfiguration() {
         return objectStorageConfiguration;
     }

@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.worksheet.domain;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -39,7 +40,7 @@ public class DivideBatchOperateWorksheets {
     Set<Path> normalPaths = new HashSet<>();
     Set<Path> reposPaths = new HashSet<>();
 
-    public DivideBatchOperateWorksheets(List<String> pathStrList) {
+    public DivideBatchOperateWorksheets(Collection<String> pathStrList) {
         List<Path> sortedPaths =
                 pathStrList.stream().map(Path::new)
                         .sorted(Path.getLevelNulComparator())
@@ -60,6 +61,25 @@ public class DivideBatchOperateWorksheets {
         }
     }
 
+    public int size() {
+        return normalPaths.size() + reposPaths.size();
+    }
+
+    public Optional<Path> findFirst() {
+        if (size() == 0) {
+            return Optional.empty();
+        }
+        return Optional.of(
+                normalPaths.isEmpty() ? reposPaths.iterator().next() : normalPaths.iterator().next());
+    }
+
+    public Set<Path> all() {
+        Set<Path> all = new HashSet<>();
+        all.addAll(normalPaths);
+        all.addAll(reposPaths);
+        return all;
+    }
+
     private boolean isPathNotContainedInDeletedPaths(Set<Path> deletePaths, Path path) {
         if (CollectionUtils.isEmpty(deletePaths)) {
             return false;
@@ -67,4 +87,6 @@ public class DivideBatchOperateWorksheets {
         Optional<Path> parentPath = path.getParentPath();
         return parentPath.filter(deletePaths::contains).isPresent();
     }
+
+
 }

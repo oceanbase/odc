@@ -15,7 +15,9 @@
  */
 package com.oceanbase.odc.service.worksheet.service;
 
+import java.io.File;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
@@ -47,4 +49,9 @@ public interface WorksheetService {
     List<Worksheet> editWorksheet(Long projectId, Path path, Path destination, String objectKey, Long readVersion);
 
     String batchDownloadWorksheets(Long projectId, Set<String> paths);
+
+    String getDownloadUrl(Long projectId, Path path);
+
+    void downloadPathsToDirectory(Long projectId, Set<Path> paths, Optional<Path> commParentPath,
+            File destinationDirectory);
 }

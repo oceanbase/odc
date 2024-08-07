@@ -30,7 +30,7 @@ import com.oceanbase.odc.service.worksheet.service.WorksheetService;
  * @since 4.3.2
  */
 @Component
-public class ProjectFileServiceFactory {
+public class WorksheetServiceFactory {
     @Resource
     private DefaultWorksheetService defaultWorksheetService;
     @Resource

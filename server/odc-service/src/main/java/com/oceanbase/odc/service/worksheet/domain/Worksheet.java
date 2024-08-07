@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.worksheet.domain;
 
-import static com.oceanbase.odc.service.worksheet.constants.ProjectFilesConstant.*;
+import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,6 +35,7 @@ import com.oceanbase.odc.service.worksheet.exceptions.ChangeTooMuchException;
 import com.oceanbase.odc.service.worksheet.exceptions.EditVersionConflictException;
 import com.oceanbase.odc.service.worksheet.exceptions.ExceedSameLevelNumLimitException;
 import com.oceanbase.odc.service.worksheet.exceptions.NameDuplicatedException;
+import com.oceanbase.odc.service.worksheet.exceptions.NameTooLongException;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
 
 import lombok.Data;
@@ -189,7 +190,7 @@ public class Worksheet {
             return false;
         }
         for (Worksheet subFile : sameLevelWorksheets) {
-            if (subFile.path.equals(destination)) {
+            if (StringUtils.equals(subFile.path.getName(), destination.getName())) {
                 return true;
             }
         }
@@ -217,8 +218,9 @@ public class Worksheet {
 
     public Set<Worksheet> batchCreate(Map<Path, String> createPathToObjectKeyMap) {
         List<Worksheet> nextLevelWorksheets = this.getNextLevelFiles();
+        nameTooLongCheck(createPathToObjectKeyMap.keySet());
         sameLevelFileNumLimitCheck(createPathToObjectKeyMap, nextLevelWorksheets);
-        createWorksheetsCheck(createPathToObjectKeyMap, nextLevelWorksheets);
+        duplicatedNameCheck(createPathToObjectKeyMap, nextLevelWorksheets);
         return createPathToObjectKeyMap.entrySet().stream().map(
                 entry -> Worksheet.of(projectId, entry.getKey(), entry.getValue()))
                 .collect(Collectors.toSet());
@@ -243,20 +245,31 @@ public class Worksheet {
     }
 
     /**
-     * Check whether the worksheet paths created in bulk are duplicated with existing workseets
+     * Check whether the worksheet paths created in bulk are duplicated with existing worksheets
      */
-    private void createWorksheetsCheck(Map<Path, String> createPathToObjectKeyMap,
+    private void duplicatedNameCheck(Map<Path, String> createPathToObjectKeyMap,
             List<Worksheet> nextLevelWorksheets) {
         if (CollectionUtils.isEmpty(nextLevelWorksheets)) {
             return;
         }
+        Set<String> willToCreatePathNameSet =
+                createPathToObjectKeyMap.keySet().stream().map(Path::getName).collect(Collectors.toSet());
         for (Worksheet subFile : nextLevelWorksheets) {
-            if (createPathToObjectKeyMap.containsKey(subFile.getPath())) {
+            if (willToCreatePathNameSet.contains(subFile.getPath().getName())) {
                 throw new NameDuplicatedException(
                         "create path duplicated with with an existing same level file,"
                                 + "exist path: " + subFile.getPath());
             }
         }
+    }
+
+    private void nameTooLongCheck(Set<Path> createPaths) {
+        createPaths.forEach(createPath -> {
+            if (createPath.isExceedNameLengthLimit()) {
+                throw new NameTooLongException("name length is over limit " +
+                        NAME_LENGTH_LIMIT + ", path:" + createPath);
+            }
+        });
     }
 
     @Override

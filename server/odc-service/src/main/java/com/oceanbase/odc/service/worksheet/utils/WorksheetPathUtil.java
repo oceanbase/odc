@@ -15,18 +15,24 @@
  */
 package com.oceanbase.odc.service.worksheet.utils;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
+import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.service.worksheet.domain.Path;
-import com.oceanbase.odc.service.worksheet.model.WorksheetType;
 import com.oceanbase.odc.service.worksheet.model.WorksheetLocation;
+import com.oceanbase.odc.service.worksheet.model.WorksheetType;
 
 /**
  *
@@ -38,14 +44,14 @@ public class WorksheetPathUtil {
 
     private static final String OBJECT_STORAGE_BUCKET_NAME_PREFIX = "PROJECT_FILE_";
     /**
-     * 文件路径标准分隔符
+     * standard delimiter of path
      */
     private static final String STANDARD_PATH_SEPARATOR = "/";
 
     /**
-     * 将path分割为一个个item，支持按“/”和“\”进行分割。
+     * Split the path into individual items, supporting splitting by "/" and "\".
      * </p>
-     * 为了区分文件夹和文件，会保留最后一个分隔符
+     * To distinguish between folders and files, the last delimiter will be retained
      * 
      * @param path
      * @return
@@ -73,15 +79,16 @@ public class WorksheetPathUtil {
     }
 
     public static List<String> addSeparatorToItemsEnd(List<String> items) {
-        if (CollectionUtils.isEmpty(items)
-                || !StringUtils.equals(items.get(items.size() - 1), STANDARD_PATH_SEPARATOR)) {
-            items.add(STANDARD_PATH_SEPARATOR);
+        List<String> result = new ArrayList<>(items);
+        if (CollectionUtils.isEmpty(result)
+                || !StringUtils.equals(result.get(result.size() - 1), STANDARD_PATH_SEPARATOR)) {
+            result.add(STANDARD_PATH_SEPARATOR);
         }
-        return items;
+        return result;
     }
 
     /**
-     * 将item转换成标准path
+     * convert item list to standard path
      * 
      * @param pathItems
      * @return
@@ -138,8 +145,8 @@ public class WorksheetPathUtil {
             case REPOS:
                 if (isEndWithPathSeparator) {
                     if (size <= 2) {
-                        // 对于文件夹来说，由于Repos中必须要带有仓库，
-                        // 所以path=/Repos/是不合法的，/Repos/转换成items长度为2（["Repos","/"]）
+                        // For folders, since a repository must be included in the Repos,
+                        // So path=/Repos/ is illegal, converting /Repos/ to items with a length of 2 (["Repos", "/"])
                         return Optional.empty();
                     } else if (size == 3) {
                         return Optional.of(WorksheetType.GIT_REPO);
@@ -148,18 +155,21 @@ public class WorksheetPathUtil {
                     }
                 }
                 if (size <= 2) {
-                    // 对于文件来说，由于Repos中必须要带有仓库，文件一定会在git仓库下，即path结构至少为：/Repos/RepoName/file；
-                    // 当size<=2时，ptah结构只能为：/Repos、/Repos/RepoName，是不合法的，
+                    // For files, since a repository must be included in the Repos,
+                    // the file will always be in the Git repository, with a path structure of at
+                    // least:/Repos/RepoName/file;
+                    // When size<=2, the ptah structure can only be:/Repos,/Repos/RepoName, which is illegal,
                     return Optional.empty();
                 }
                 return Optional.of(WorksheetType.FILE);
             case WORKSHEETS:
                 if (isEndWithPathSeparator) {
-                    // 能到这一步，path结构至少为：/Worksheets/，确定是合法的
+                    // At this point, the path structure should be at least:/Worksheets/, and it should be confirmed to
+                    // be legal
                     return Optional.of(WorksheetType.DIRECTORY);
                 }
                 if (size == 1) {
-                    // 长度为1的时候，path结构只能为：/Worksheets，是不合法的
+                    // When the length is 1, the path structure can only be:/Worksheets, which is illegal
                     return Optional.empty();
                 }
                 return Optional.of(WorksheetType.FILE);
@@ -169,22 +179,88 @@ public class WorksheetPathUtil {
     }
 
     /**
-     * 判断重命名是否合法
+     * Determine whether renaming is legal
      * 
      * @param from
      * @param destination
      * @return
      */
     public static boolean isRenameValid(Path from, Path destination) {
-        // path相同不能重命名
-        // path的parent不同不能重名
-        // path的type不同不能重命名
+        // Same path cannot be renamed
+        // The parents of the from and destination are same nam
+        // Cannot rename paths with different types
         return from != null && destination != null
                 && from.canRename()
                 && destination.canRename()
                 && !from.equals(destination)
                 && CollectionUtils.isEqualCollection(from.getParentPathItems(), destination.getParentPathItems())
                 && from.getType() == destination.getType();
+    }
+
+    public static Optional<Path> findCommonParentPath(Set<Path> paths) {
+        if (CollectionUtils.isEmpty(paths)) {
+            return Optional.empty();
+        }
+        if (paths.size() == 1) {
+            return Optional.of(paths.iterator().next());
+        }
+
+        WorksheetLocation commonLocation = null;
+        int index = 0;
+        Integer commonParentIndex = null;
+        while (true) {
+            String itemAtIndex = null;
+            boolean isContinue = true;
+            for (Path path : paths) {
+                if (commonLocation == null) {
+                    commonLocation = path.getLocation();
+                } else if (commonLocation != path.getLocation()) {
+                    isContinue = false;
+                    break;
+                }
+                if (index == (path.getParentPathItems().size())) {
+                    isContinue = false;
+                    break;
+                }
+                if (itemAtIndex == null) {
+                    itemAtIndex = path.getParentPathItems().get(index);
+                } else if (!StringUtils.equals(itemAtIndex, path.getParentPathItems().get(index))) {
+                    isContinue = false;
+                    break;
+                }
+            }
+            if (!isContinue || itemAtIndex == null) {
+                break;
+            }
+            commonParentIndex = index;
+            index++;
+        }
+        if (commonParentIndex == null) {
+            return Optional.empty();
+        }
+        return paths.iterator().next().getPathAt(commonParentIndex);
+    }
+
+    public static java.nio.file.Path createFileWithParent(String pathStr, boolean isDirectory) {
+        java.nio.file.Path filePath = Paths.get(pathStr);
+        try {
+            java.nio.file.Path parentDir = filePath.getParent();
+            if (parentDir != null) {
+                Files.createDirectories(parentDir); // 创建所有缺失的父目录
+            }
+
+            return isDirectory ? Files.createDirectory(filePath) : Files.createFile(filePath);
+        } catch (IOException e) {
+            throw new InternalServerError("create file error,pathStr: " + pathStr, e);
+        }
+    }
+
+    public static String getWorksheetDownloadDirectory(String directory) {
+        return String.format("%s/%s/%s/", "odc-worksheet-download", UUID.randomUUID(), directory);
+    }
+
+    public static String getWorksheetDownloadZipFile(String directory) {
+        return String.format("%s/%s/%s.zip", "odc-worksheet-download", UUID.randomUUID(), directory);
     }
 
     public static String getObjectStorageBucketName(Long projectId) {

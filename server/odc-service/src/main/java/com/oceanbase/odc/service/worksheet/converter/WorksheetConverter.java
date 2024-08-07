@@ -28,7 +28,7 @@ import com.oceanbase.odc.service.worksheet.model.WorksheetResp;
  * @date 2024/08/02
  * @since 4.3.2
  */
-public class ProjectFilesConverter {
+public class WorksheetConverter {
     public static WorksheetMetaResp convertToMetaResp(Worksheet worksheet) {
         return WorksheetMetaResp.builder().projectId(worksheet.getProjectId())
                 .path(worksheet.getPath().getStandardPath())
@@ -54,9 +54,9 @@ public class ProjectFilesConverter {
         return BatchOperateWorksheetsResp.builder()
                 .isAllSuccessful(result.getFailed().isEmpty())
                 .successFiles(result.getSuccess().stream()
-                        .map(ProjectFilesConverter::convertToMetaResp).collect(Collectors.toList()))
+                        .map(WorksheetConverter::convertToMetaResp).collect(Collectors.toList()))
                 .failedFiles(result.getFailed().stream()
-                        .map(ProjectFilesConverter::convertToMetaResp).collect(Collectors.toList()))
+                        .map(WorksheetConverter::convertToMetaResp).collect(Collectors.toList()))
                 .build();
     }
 }

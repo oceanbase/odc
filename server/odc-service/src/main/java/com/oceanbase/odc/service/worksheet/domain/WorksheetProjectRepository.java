@@ -15,28 +15,11 @@
  */
 package com.oceanbase.odc.service.worksheet.domain;
 
-import java.io.File;
-import java.util.Set;
-
 /**
- * oss interfaces in worksheet
- *
  * @author keyang
- * @date 2024/08/02
+ * @date 2024/08/07
  * @since 4.3.2
  */
-public interface WorksheetOssGateway {
-    String generateUploadUrl(Long projectId);
-
-    void copyTo(String tempObjectKey, Path destination);
-
-    String getContent(String objectKey);
-
-    void batchDelete(Set<String> objectKeys);
-
-    String generateDownloadUrl(String objectKey);
-
-    void downloadToFile(String objectName, File toFile);
-
-    String uploadFile(File file, int durationSeconds);
+public interface WorksheetProjectRepository {
+    String getProjectName(Long projectId);
 }

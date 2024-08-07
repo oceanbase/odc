@@ -15,8 +15,9 @@
  */
 package com.oceanbase.odc.service.worksheet.domain;
 
-import static com.oceanbase.odc.service.worksheet.constants.ProjectFilesConstant.NAME_LENGTH_LIMIT;
+import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.NAME_LENGTH_LIMIT;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -25,8 +26,8 @@ import java.util.Optional;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.service.worksheet.exceptions.NameTooLongException;
-import com.oceanbase.odc.service.worksheet.model.WorksheetType;
 import com.oceanbase.odc.service.worksheet.model.WorksheetLocation;
+import com.oceanbase.odc.service.worksheet.model.WorksheetType;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
 
 import lombok.Getter;
@@ -72,22 +73,18 @@ public class Path {
         if (!pathNameOptional.isPresent()) {
             throw new IllegalArgumentException("invalid path : " + path);
         }
-        if (isExceedNameLengthLimit()) {
-            throw new NameTooLongException("name length is over limit " +
-                    NAME_LENGTH_LIMIT + ", path:" + path);
-        }
         this.name = pathNameOptional.get();
         this.type = pathTypeOptional.get();
         this.location = locationOptional.get();
         this.levelNum = this.isFile() ? items.size() : items.size() - 1;
-        this.parentPathItems = WorksheetPathUtil.addSeparatorToItemsEnd(items.subList(0, levelNum - 1));
+        this.parentPathItems = items.subList(0, levelNum - 1);
     }
 
     public String getStandardPath() {
-        List<String> pathItems = this.parentPathItems.subList(0, this.parentPathItems.size() - 1);
+        List<String> pathItems = new ArrayList<>(this.parentPathItems);
         pathItems.add(name);
         if (this.isDirectory()) {
-            WorksheetPathUtil.addSeparatorToItemsEnd(pathItems);
+            pathItems = WorksheetPathUtil.addSeparatorToItemsEnd(pathItems);
         }
         return WorksheetPathUtil.convertItemsToPath(pathItems)
                 // Under normal circumstances, this exception is not returned.
@@ -97,26 +94,88 @@ public class Path {
     }
 
     /**
-     * Retrieve the parent path, if it is/Worksheets/,/Repos/git/, etc., return empty
+     * Retrieve the parent path, if current is /Worksheets/,/Repos/git/, etc., return empty
      *
      * @return
      */
     public Optional<Path> getParentPath() {
-        boolean canGetParent = false;
-        switch (location) {
-            case WORKSHEETS:
-                canGetParent = levelNum > 1;
-                break;
-            case REPOS:
-                canGetParent = levelNum > 2;
-                break;
-        }
-        if (!canGetParent) {
+        if (isRoot()) {
             return Optional.empty();
         }
-        Optional<String> parentStandardPathOptional = WorksheetPathUtil.convertItemsToPath(this.parentPathItems);
+        Optional<String> parentStandardPathOptional = WorksheetPathUtil.convertItemsToPath(
+                WorksheetPathUtil.addSeparatorToItemsEnd(this.parentPathItems));
         return parentStandardPathOptional.map(Path::new);
 
+    }
+
+    /**
+     * get the prefix path at index
+     * 
+     * @param index
+     * @return
+     */
+    public Optional<Path> getPathAt(int index) {
+        if (index < 0 || index > this.levelNum - 1) {
+            throw new IndexOutOfBoundsException(
+                    "index is out of bounds,index: " + index + ",levelNum: " + this.levelNum);
+        }
+        if (index == this.levelNum - 1) {
+            return Optional.of(this);
+        }
+        if (isRoot()) {
+            return Optional.empty();
+        }
+        boolean canGetPath = true;
+        switch (location) {
+            case WORKSHEETS:
+                canGetPath = index >= 0;
+                break;
+            case REPOS:
+                canGetPath = index >= 1;
+                break;
+        }
+        if (!canGetPath) {
+            return Optional.empty();
+        }
+
+        Optional<String> parentStandardPathOptional = WorksheetPathUtil.convertItemsToPath(
+                WorksheetPathUtil.addSeparatorToItemsEnd(this.parentPathItems.subList(0, index + 1)));
+        return parentStandardPathOptional.map(Path::new);
+    }
+
+    /**
+     * strip the prefix path
+     * 
+     * @param prefixPath
+     * @return
+     */
+    public Optional<String> stripPrefix(Optional<Path> prefixPath) {
+        if (!prefixPath.isPresent()) {
+            return Optional.of(this.getStandardPath());
+        }
+        int prefixPathLevelNum = prefixPath.get().getLevelNum();
+        if (this.levelNum <= prefixPathLevelNum) {
+            return Optional.empty();
+        }
+        List<String> items = new ArrayList<>();
+        for (int i = prefixPathLevelNum; i < this.parentPathItems.size(); i++) {
+            items.add(this.parentPathItems.get(i));
+        }
+        items.add(this.name);
+        if (this.isDirectory()) {
+            items = WorksheetPathUtil.addSeparatorToItemsEnd(items);
+        }
+        return WorksheetPathUtil.convertItemsToPath(items);
+    }
+
+    public boolean isRoot() {
+        switch (location) {
+            case WORKSHEETS:
+                return levelNum <= 1;
+            case REPOS:
+                return levelNum <= 2;
+        }
+        return false;
     }
 
     /**
@@ -131,6 +190,10 @@ public class Path {
      * @return is renamed
      */
     public boolean rename(Path from, Path destination) {
+        if (destination.isExceedNameLengthLimit()) {
+            throw new NameTooLongException("name length is over limit " +
+                    NAME_LENGTH_LIMIT + ", path:" + destination);
+        }
         if (!this.isRenameMatch(from)) {
             return false;
         }
@@ -140,7 +203,7 @@ public class Path {
             return true;
         }
         // This is renaming the sub items of {@param from}
-        this.parentPathItems.set(this.levelNum - 2, destination.name);
+        this.parentPathItems.set(from.levelNum - 1, destination.name);
         return true;
     }
 
@@ -159,9 +222,9 @@ public class Path {
         // current {@link Path} is subset of {@param from}.
         // At this point, {@param from} needs to be of a non file type (with subsets)
         return from.isDirectory() && this.levelNum > from.levelNum
-                && CollectionUtils.isEqualCollection(this.parentPathItems.subList(0, this.levelNum - 2),
+                && CollectionUtils.isEqualCollection(this.parentPathItems.subList(0, from.levelNum - 1),
                         from.parentPathItems.subList(0, from.levelNum - 1))
-                && this.parentPathItems.get(this.levelNum - 2).equals(from.name);
+                && this.parentPathItems.get(from.levelNum - 1).equals(from.name);
     }
 
     /**
@@ -218,6 +281,12 @@ public class Path {
 
     public boolean isExceedNameLengthLimit() {
         return this.getName().length() > NAME_LENGTH_LIMIT;
+    }
+
+    public void canGetDownloadUrlCheck() {
+        if (isDirectory()) {
+            throw new IllegalArgumentException("can not get download url for directory,path" + this);
+        }
     }
 
     @Override

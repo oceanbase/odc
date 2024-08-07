@@ -20,7 +20,7 @@ package com.oceanbase.odc.service.worksheet.constants;
  * @date 2024/08/05
  * @since 4.3.2
  */
-public class ProjectFilesConstant {
+public class WorksheetConstant {
     /**
      * the limit number of project worksheets search
      */
@@ -38,4 +38,9 @@ public class ProjectFilesConstant {
      * the limit number of worksheets in the same level
      */
     public static final int LEVEL_FILE_NUM_LIMIT = 100;
+
+    /**
+     * the duration of download zip file in seconds
+     */
+    public static final int DOWNLOAD_ZIP_DURATION_SECONDS = 60 * 60;
 }

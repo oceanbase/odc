@@ -15,8 +15,9 @@
  */
 package com.oceanbase.odc.service.worksheet.service;
 
-import static com.oceanbase.odc.service.worksheet.constants.ProjectFilesConstant.CHANGE_FILE_NUM_LIMIT;
+import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.CHANGE_FILE_NUM_LIMIT;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.google.common.collect.Iterables;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
@@ -42,6 +44,7 @@ import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.Worksheet;
 import com.oceanbase.odc.service.worksheet.domain.WorksheetOssGateway;
 import com.oceanbase.odc.service.worksheet.exceptions.ChangeTooMuchException;
+import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -75,7 +78,7 @@ public class DefaultWorksheetService implements WorksheetService {
                 normalProjectFilesRepository.findByProjectAndPath(projectId, parentPath.get(),
                         true, true, true, false);
 
-        // 这里不会出现parentFileOptional为空的情况
+        // There will be no situation where parentFileOptional is empty here
         Worksheet prarentprojectWorksheet =
                 parentFileOptional.orElseThrow(() -> new IllegalStateException("unexpected exception,projectId:"
                         + projectId + "parent path:" + parentPath));
@@ -140,8 +143,8 @@ public class DefaultWorksheetService implements WorksheetService {
             Worksheet parentWorksheet =
                     parentFileOptional.orElseThrow(() -> new IllegalStateException("unexpected exception,projectId:"
                             + projectId + "parent path:" + batchCreateWorksheets.getParentPath()));
-            Set<Worksheet> innerWorksheets = parentWorksheet.batchCreate(
-                    batchCreateWorksheets.getCreatePathToObjectKeyMap());
+            Set<Worksheet> innerWorksheets =
+                    parentWorksheet.batchCreate(batchCreateWorksheets.getCreatePathToObjectKeyMap());
             normalProjectFilesRepository.batchAdd(innerWorksheets);
             return innerWorksheets;
         });
@@ -240,5 +243,62 @@ public class DefaultWorksheetService implements WorksheetService {
     @Override
     public String batchDownloadWorksheets(Long projectId, Set<String> paths) {
         return "";
+    }
+
+    @Override
+    public String getDownloadUrl(Long projectId, Path path) {
+        path.canGetDownloadUrlCheck();
+        Optional<Worksheet> fileOptional =
+                normalProjectFilesRepository.findByProjectAndPath(projectId, path,
+                        false, false, false, true);
+        Worksheet worksheet = fileOptional.orElseThrow(
+                () -> new NotFoundException(ErrorCodes.NotFound,
+                        new Object[] {"path", path.toString()},
+                        String.format("path not found by %s=%s", "path", path)));
+        PreConditions.notBlank(worksheet.getObjectKey(), "objectKey");
+        return projectFileOssGateway.generateDownloadUrl(worksheet.getObjectKey());
+    }
+
+    @Override
+    public void downloadPathsToDirectory(Long projectId, Set<Path> paths, Optional<Path> commParentPath,
+            File destinationDirectory) {
+        PreConditions.notEmpty(paths, "paths");
+        PreConditions.notNull(destinationDirectory, "destinationDirectory");
+        PreConditions.assertTrue(destinationDirectory.isDirectory(), "destinationDirectory");
+        for (Path path : paths) {
+            boolean needTooLoadSubFiles = path.isDirectory();
+            Optional<Worksheet> worksheetOptional =
+                    normalProjectFilesRepository.findByProjectAndPath(projectId, path,
+                            false, true, needTooLoadSubFiles, false);
+            // There will be no situation where parentFileOptional is empty here
+            Worksheet worksheet =
+                    worksheetOptional.orElseThrow(() -> new IllegalStateException("unexpected exception,projectId:"
+                            + projectId + " path:" + path));
+            downloadWorksheetToDirectory(projectId, worksheet, commParentPath, destinationDirectory);
+            if (CollectionUtils.isNotEmpty(worksheet.getSubWorksheets())) {
+                for (Worksheet subWorksheet : worksheet.getSubWorksheets()) {
+                    downloadWorksheetToDirectory(projectId, subWorksheet, commParentPath, destinationDirectory);
+                }
+            }
+        }
+    }
+
+    private void downloadWorksheetToDirectory(Long projectId, Worksheet worksheet, Optional<Path> commParentPath,
+            File destinationDirectory) {
+        Optional<String> relativFilePathOptional = worksheet.getPath().stripPrefix(commParentPath);
+        if (!relativFilePathOptional.isPresent()) {
+            log.warn("not download worksheet because of relative file path is empty after strip prefix path,"
+                    + " projectId:{}, worksheet path:{},commonParentPath:{}", projectId, worksheet, commParentPath);
+            return;
+        }
+        if (worksheet.getPath().isFile() && StringUtils.isNotBlank(worksheet.getObjectKey())) {
+            String absoluteFile = destinationDirectory.getAbsolutePath() + relativFilePathOptional.get();
+            java.nio.file.Path filePath = WorksheetPathUtil.createFileWithParent(absoluteFile, false);
+            projectFileOssGateway.downloadToFile(worksheet.getObjectKey(), filePath.toFile());
+        }
+        if (worksheet.getPath().isDirectory()) {
+            String absoluteFile = destinationDirectory.getAbsolutePath() + relativFilePathOptional.get();
+            WorksheetPathUtil.createFileWithParent(absoluteFile, true);
+        }
     }
 }

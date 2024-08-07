@@ -15,9 +15,11 @@
  */
 package com.oceanbase.odc.service.worksheet.service;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.stereotype.Service;
@@ -86,5 +88,16 @@ public class RepoWorksheetService implements WorksheetService {
     @Override
     public String batchDownloadWorksheets(Long projectId, Set<String> paths) {
         return "";
+    }
+
+    @Override
+    public String getDownloadUrl(Long projectId, Path path) {
+        return "";
+    }
+
+    @Override
+    public void downloadPathsToDirectory(Long projectId, Set<Path> paths, Optional<Path> commParentPath,
+            File destinationDirectory) {
+
     }
 }
