@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS `integration_git_repository` (
   `clone_url` varchar(512) NOT NULL COMMENT 'https clone url, like https://github.com/xxx/xxx.git',
   `email` varchar(128) NOT NULL COMMENT 'user email for commit',
   `token` varchar(512) NOT NULL COMMENT 'person access token',
+  `salt` varchar(32) DEFAULT NULL COMMENT 'used to connect the random value used by the encryption and decryption algorithm of the secret field',
   PRIMARY KEY (`id`),
   KEY `integration_git_repository_project_id` (`project_id`)
 ) COMMENT = 'integration git repository';
