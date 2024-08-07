@@ -31,5 +31,5 @@ public class GitProvider {
     private String email;
     @SensitiveInput
     @JsonIgnore
-    private String token;
+    private String personalAccessToken;
 }

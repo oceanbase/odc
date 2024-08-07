@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.git;
 
-import java.util.List;
+package com.oceanbase.odc.service.git;
 
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.stereotype.Service;
+import org.springframework.validation.annotation.Validated;
 
-import com.oceanbase.odc.config.jpa.OdcJpaRepository;
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author: liuyizhuo.lyz
- * @date: 2024/7/29
+ * @date: 2024/8/7
  */
-public interface GitRepoRepository extends OdcJpaRepository<GitRepositoryEntity, Long>,
-        JpaSpecificationExecutor<GitRepositoryEntity> {
+@Service
+@Slf4j
+@Validated
+@SkipAuthorize("internal authenticated")
+public class GitRepoService {
 
-    List<GitRepositoryEntity> findByOrganizationIdAndProjectId(Long organizationId, Long projectId);
+    //public void commit()
 
 }

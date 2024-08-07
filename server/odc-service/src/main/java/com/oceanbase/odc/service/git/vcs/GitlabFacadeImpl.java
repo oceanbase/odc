@@ -62,8 +62,8 @@ public class GitlabFacadeImpl implements VcsFacade {
         for (Map<String, Object> map : (List<Map<String, Object>>) response.getBody()) {
             GitRepository repository = new GitRepository();
             repository.setName((String) map.get("name"));
-            repository.setSshUrl((String) map.get("ssh_url_to_repo"));
-            repository.setCloneUrl((String) map.get("http_url_to_repo"));
+            repository.setSshAddress((String) map.get("ssh_url_to_repo"));
+            repository.setCloneAddress((String) map.get("http_url_to_repo"));
             result.add(repository);
         }
         return result;

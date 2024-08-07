@@ -33,6 +33,6 @@ public class GitRepository extends GitProvider {
     private Long projectId;
     private String name;
     private String description;
-    private String sshUrl;
-    private String cloneUrl;
+    private String sshAddress;
+    private String cloneAddress;
 }

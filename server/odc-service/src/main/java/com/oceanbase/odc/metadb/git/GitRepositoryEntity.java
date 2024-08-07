@@ -72,17 +72,17 @@ public class GitRepositoryEntity {
     @Column(name = "provider_url", nullable = false)
     private String providerUrl;
 
-    @Column(name = "ssh_url", nullable = false)
-    private String sshUrl;
+    @Column(name = "ssh_address", nullable = false)
+    private String sshAddress;
 
-    @Column(name = "clone_url", nullable = false)
-    private String cloneUrl;
+    @Column(name = "clone_address", nullable = false)
+    private String cloneAddress;
 
     @Column(name = "email", nullable = false)
     private String email;
 
-    @Column(name = "token", nullable = false)
-    private String token;
+    @Column(name = "personal_access_token", nullable = false)
+    private String personalAccessToken;
 
     @Column(name = "salt", nullable = false)
     private String salt;
