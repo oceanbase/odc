@@ -68,16 +68,26 @@ public class DefaultTaskManager extends AbstractEventListener<TaskCompleteEvent>
         throw new UnsupportedOperationException("Feature is not supported");
     }
 
+    /**
+     * 提交一个可调用任务并返回一个Future对象
+     *
+     * @param callable 可调用任务
+     * @param <T>      任务返回值类型
+     * @return Future对象
+     * @throws IllegalStateException 如果TaskManager已关闭
+     */
     @Override
     public <T> Future<T> submit(@NonNull Callable<T> callable) {
         if (this.closed) {
             throw new IllegalStateException("TaskManager is closed");
         }
+        // 创建一个可调用任务的Delegator对象
         CallableDelegateTask<T> delegateTask = new CallableDelegateTask<>(this.publisher, callable);
+        // 增加正在运行的任务计数器
         this.liveTaskCounter.incrementAndGet();
+        // 提交可调用任务并返回Future对象
         return this.asyncExecutor.submit(delegateTask);
     }
-
     @Override
     public <T> Future<T> submit(@NonNull Callable<T> callable, long timeout, TimeUnit timeUnit) {
         if (this.closed) {

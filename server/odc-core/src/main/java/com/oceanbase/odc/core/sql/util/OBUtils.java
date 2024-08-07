@@ -423,20 +423,33 @@ public class OBUtils {
      * OceanBase only supports ASH views in versions higher than 4.0. Therefore, this method is not
      * applicable to earlier versions, please use sql_audit instead.
      */
+    /**
+     * 从ASH表中查询traceId
+     *
+     * @param statement   SQL语句执行器
+     * @param sessionIds  会话ID列表
+     * @param connectType 连接类型
+     * @return traceId
+     * @throws SQLException SQL执行异常
+     */
     public static String queryTraceIdFromASH(@NonNull Statement statement,
-            @NonNull List<String> sessionIds, ConnectType connectType) throws SQLException {
+        @NonNull List<String> sessionIds, ConnectType connectType) throws SQLException {
+        // 获取方言类型
         DialectType dialectType = connectType.getDialectType();
+        // 构建SQL语句
         SqlBuilder sqlBuilder = getBuilder(connectType)
-                .append("select trace_id from ")
-                .append(dialectType.isMysql() ? "oceanbase" : "sys")
-                .append(".gv$active_session_history where session_id in (")
-                .append(String.join(",", sessionIds))
-                .append(")")
-                .append(dialectType.isMysql() ? " limit 1" : " and rownum=1");
+            .append("select trace_id from ")
+            .append(dialectType.isMysql() ? "oceanbase" : "sys")
+            .append(".gv$active_session_history where session_id in (")
+            .append(String.join(",", sessionIds))
+            .append(")")
+            .append(dialectType.isMysql() ? " limit 1" : " and rownum=1");
         try (ResultSet rs = statement.executeQuery(sqlBuilder.toString())) {
+            // 判断结果集是否有数据
             if (!rs.next()) {
                 throw new SQLException("No result found in ASH.");
             }
+            // 返回traceId
             return rs.getString(1);
         }
     }

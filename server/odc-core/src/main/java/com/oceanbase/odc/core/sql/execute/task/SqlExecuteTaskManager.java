@@ -50,4 +50,3 @@ public interface SqlExecuteTaskManager extends TaskManager {
      */
     <T> Future<T> submit(@NonNull SqlExecuteCallable<T> callable, long timeout, TimeUnit timeUnit);
 }
-

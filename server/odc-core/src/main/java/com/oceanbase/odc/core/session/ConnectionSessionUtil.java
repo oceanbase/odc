@@ -72,22 +72,34 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ConnectionSessionUtil {
 
+    /**
+     * 记录连接的Socket信息
+     *
+     * @param connection 数据库连接对象
+     * @param scenario   业务场景
+     */
     public static void logSocketInfo(Connection connection, String scenario) {
+        // 判断连接是否为OceanBaseConnection类型
         if (!(connection instanceof OceanBaseConnection)) {
             log.debug("skip log connection socket info due not an OceanBaseConnection, className={}, scenario={}",
-                    connection.getClass().getSimpleName(), scenario);
+                connection.getClass().getSimpleName(), scenario);
             return;
         }
+        // 将连接转换为OceanBaseConnection类型
         OceanBaseConnection obConnection = (OceanBaseConnection) connection;
+        // 获取服务器线程ID
         long serverThreadId = obConnection.getServerThreadId();
+        // 获取Socket对象
         Socket socket = getSocket(connection);
+        // 判断Socket对象是否为空
         if (socket == null) {
             log.warn("skip log connection socket info due null socket, scenario={}, serverThreadId={}",
-                    scenario, serverThreadId);
+                scenario, serverThreadId);
             return;
         }
+        // 记录连接的Socket信息
         log.info("Connection socket info, scenario={}, serverThreadId={}, remoteAddress={}, localAddress={}",
-                scenario, serverThreadId, socket.getRemoteSocketAddress(), socket.getLocalSocketAddress());
+            scenario, serverThreadId, socket.getRemoteSocketAddress(), socket.getLocalSocketAddress());
     }
 
     public static Socket getSocket(Connection connection) {

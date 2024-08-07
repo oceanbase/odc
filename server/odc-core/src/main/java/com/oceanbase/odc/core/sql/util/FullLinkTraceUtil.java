@@ -34,26 +34,45 @@ public class FullLinkTraceUtil {
 
     private final static String TRACE_ID_KEY = "log_trace_id";
 
+    /**
+     * 获取完整链路跟踪详情
+     *
+     * @param statement    SQL语句对象
+     * @param queryTimeout 查询超时时间
+     * @return SqlExecTime 执行时间对象
+     * @throws SQLException SQL异常
+     */
     public static SqlExecTime getFullLinkTraceDetail(Statement statement, int queryTimeout) throws SQLException {
+        // 获取OceanBaseConnection对象
         OceanBaseConnection connection = (OceanBaseConnection) statement.getConnection();
+        // 获取最后一个数据包的接收时间戳
         long lastPacketResponseTimestamp =
-                TimeUnit.MICROSECONDS.convert(connection.getLastPacketResponseTimestamp(),
-                        TimeUnit.MILLISECONDS);
-        long lastPacketSendTimestamp = TimeUnit.MICROSECONDS.convert(connection.getLastPacketSendTimestamp(),
+            TimeUnit.MICROSECONDS.convert(connection.getLastPacketResponseTimestamp(),
                 TimeUnit.MILLISECONDS);
+        // 获取最后一个数据包的发送时间戳
+        long lastPacketSendTimestamp = TimeUnit.MICROSECONDS.convert(connection.getLastPacketSendTimestamp(),
+            TimeUnit.MILLISECONDS);
+        // 保存原始查询超时时间
         int originQueryTimeout = statement.getQueryTimeout();
+        // 设置查询超时时间
         statement.setQueryTimeout(queryTimeout);
         try (ResultSet resultSet = statement.executeQuery("show trace format='json'")) {
+            // 判断是否有跟踪信息
             if (!resultSet.next()) {
                 throw new UnexpectedException("No trace info, maybe value of ob_enable_show_trace is 0.");
             }
+            // 获取跟踪信息的JSON字符串
             String showTraceJson = resultSet.getString(1);
+            // 解析跟踪信息的JSON字符串，获取SqlExecTime对象
             SqlExecTime execDetail = parseSpanList(JsonUtils.fromJsonList(showTraceJson, TraceSpan.class));
 
+            // 设置最后一个数据包的接收时间戳
             execDetail.setLastPacketSendTimestamp(lastPacketSendTimestamp);
+            // 设置最后一个数据包的发送时间戳
             execDetail.setLastPacketResponseTimestamp(lastPacketResponseTimestamp);
             return execDetail;
         } finally {
+            // 恢复原始查询超时时间
             statement.setQueryTimeout(originQueryTimeout);
         }
     }

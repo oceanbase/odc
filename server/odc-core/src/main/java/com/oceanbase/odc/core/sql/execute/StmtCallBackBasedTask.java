@@ -39,14 +39,29 @@ public class StmtCallBackBasedTask<T> extends BaseSqlExecuteCallable<T> {
 
     private final StatementCallback<T> statementCallback;
 
+    /**
+     * 构造函数
+     *
+     * @param dataSource        数据源
+     * @param dataSourceFactory 可克隆的数据源工厂
+     * @param statementCallback 语句回调函数
+     * @param sessionOperations 会话操作
+     */
     public StmtCallBackBasedTask(@NonNull DataSource dataSource,
-            @NonNull CloneableDataSourceFactory dataSourceFactory,
-            @NonNull StatementCallback<T> statementCallback,
-            @NonNull SessionOperations sessionOperations) {
+        @NonNull CloneableDataSourceFactory dataSourceFactory,
+        @NonNull StatementCallback<T> statementCallback,
+        @NonNull SessionOperations sessionOperations) {
         super(dataSource, dataSourceFactory, sessionOperations);
         this.statementCallback = statementCallback;
     }
 
+    /**
+     * 执行任务
+     *
+     * @param connection 数据库连接
+     * @return 执行结果
+     * @throws Exception 异常
+     */
     @Override
     protected T doCall(Connection connection) throws Exception {
         try (Statement statement = connection.createStatement()) {

@@ -52,10 +52,19 @@ public abstract class BaseSqlExecuteCallable<T> implements SqlExecuteCallable<T>
     }
 
     @Override
+    /**
+     * 调用方法
+     * @return T 返回值类型
+     * @throws Exception 异常
+     */
     public T call() throws Exception {
+        // 获取数据库连接
         try (Connection connection = this.dataSource.getConnection()) {
+            // 获取连接ID
             this.connectionIdSupplier.supply(() -> sessionOperations.getConnectionId(connection));
+            // 校验连接ID是否为空
             Verify.notNull(this.connectionIdSupplier.get(), "ConnectionId");
+            // 执行调用方法
             return doCall(connection);
         }
     }
