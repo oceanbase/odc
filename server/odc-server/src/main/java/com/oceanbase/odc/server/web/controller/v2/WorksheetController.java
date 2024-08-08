@@ -109,8 +109,8 @@ public class WorksheetController {
     public ListResponse<WorksheetMetaResp> renameWorksheet(
             @PathVariable("projectId") Long projectId,
             @RequestParam("path") String path,
-            @RequestParam("destination") String destination) {
-        return Responses.list(worksheetServiceFacade.renameWorksheet(projectId, path, destination));
+            @RequestParam("destinationPath") String destinationPath) {
+        return Responses.list(worksheetServiceFacade.renameWorksheet(projectId, path, destinationPath));
     }
 
     @PutMapping("/worksheets/{path}")
