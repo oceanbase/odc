@@ -106,6 +106,11 @@ public class DBStatsAccessorFactory extends AbstractDBBrowserFactory<DBStatsAcce
         return new ODPOBMySQLStatsAccessor(connectionId);
     }
 
+    @Override
+    public DBStatsAccessor buildForPostgres() {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
     private JdbcOperations getJdbcOperations() {
         if (this.jdbcOperations != null) {
             return this.jdbcOperations;

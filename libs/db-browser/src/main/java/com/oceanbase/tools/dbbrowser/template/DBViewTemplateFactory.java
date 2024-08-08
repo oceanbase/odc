@@ -52,4 +52,9 @@ public class DBViewTemplateFactory extends AbstractDBBrowserFactory<DBObjectTemp
         return new MySQLViewTemplate();
     }
 
+    @Override
+    public DBObjectTemplate<DBView> buildForPostgres() {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
 }

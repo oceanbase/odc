@@ -51,4 +51,9 @@ public class DBSequenceEditorFactory extends AbstractDBBrowserFactory<DBObjectEd
         throw new UnsupportedOperationException("Not supported yet");
     }
 
+    @Override
+    public DBObjectEditor<DBSequence> buildForPostgres() {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
 }

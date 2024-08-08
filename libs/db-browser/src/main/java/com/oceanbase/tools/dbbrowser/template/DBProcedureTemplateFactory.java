@@ -52,4 +52,9 @@ public class DBProcedureTemplateFactory extends AbstractDBBrowserFactory<DBObjec
         throw new UnsupportedOperationException("Not supported yet");
     }
 
+    @Override
+    public DBObjectTemplate<DBProcedure> buildForPostgres() {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
 }

@@ -51,4 +51,9 @@ public class DBTriggerTemplateFactory extends AbstractDBBrowserFactory<DBObjectT
         throw new UnsupportedOperationException("Not supported yet");
     }
 
+    @Override
+    public DBObjectTemplate<DBTrigger> buildForPostgres() {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
 }
