@@ -15,7 +15,10 @@
  */
 package com.oceanbase.odc.service.worksheet.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * the request of generating worksheet upload url
@@ -25,6 +28,9 @@ import lombok.Data;
  * @since 4.3.2
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class GenerateWorksheetUploadUrlResp {
     /**
      * the upload url to upload the file to cloud storage, valid for 1 hour
@@ -33,5 +39,5 @@ public class GenerateWorksheetUploadUrlResp {
     /**
      * the object key in cloud storage,to locate uploaded files
      */
-    Long objectId;
+    String objectId;
 }
