@@ -38,29 +38,29 @@ public class WorksheetTestUtil {
         Set<Worksheet> sameLevels =
                 CollectionUtils.isEmpty(sameLevelPaths) ? null : sameLevelPaths.stream().map(pathStr -> {
                     Path temp = new Path(pathStr);
-                    String objectKey = null;
+                    String objectId = null;
                     if (temp.isFile()) {
-                        objectKey = "objectKey_" + nextId();
+                        objectId = "objectId_" + nextId();
                     }
                     return new Worksheet(nextId(), null, null, projectId,
-                            temp, 0L, objectKey, null, null);
+                            temp, 0L, objectId, null, null);
                 }).collect(Collectors.toSet());
         Set<Worksheet> subLevels =
                 CollectionUtils.isEmpty(subPaths) ? null : subPaths.stream().map(pathStr -> {
                     Path temp = new Path(pathStr);
-                    String objectKey = null;
+                    String objectId = null;
                     if (temp.isFile()) {
-                        objectKey = "objectKey_" + nextId();
+                        objectId = "objectId_" + nextId();
                     }
                     return new Worksheet(nextId(), null, null, projectId,
-                            temp, 0L, objectKey, null, null);
+                            temp, 0L, objectId, null, null);
                 }).collect(Collectors.toSet());
-        String objectKey = null;
+        String objectId = null;
         if (new Path(path).isFile()) {
-            objectKey = "objectKey_" + nextId();
+            objectId = "objectId_" + nextId();
         }
         return new Worksheet(nextId(), null, null, projectId,
-                new Path(path), 0L, objectKey, sameLevels, subLevels);
+                new Path(path), 0L, objectId, sameLevels, subLevels);
     }
 
 

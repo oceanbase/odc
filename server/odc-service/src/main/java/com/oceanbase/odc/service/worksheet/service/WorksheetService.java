@@ -32,7 +32,7 @@ import com.oceanbase.odc.service.worksheet.domain.Worksheet;
  */
 public interface WorksheetService {
 
-    Worksheet createWorksheet(Long projectId, Path createPath, String objectKey);
+    Worksheet createWorksheet(Long projectId, Path createPath, String objectId);
 
     Worksheet getWorksheetDetails(Long projectId, Path path);
 
@@ -46,7 +46,7 @@ public interface WorksheetService {
 
     List<Worksheet> renameWorksheet(Long projectId, Path path, Path destinationPath);
 
-    List<Worksheet> editWorksheet(Long projectId, Path path, Path destinationPath, String objectKey, Long readVersion);
+    List<Worksheet> editWorksheet(Long projectId, Path path, Path destinationPath, String objectId, Long readVersion);
 
     String batchDownloadWorksheets(Long projectId, Set<String> paths);
 

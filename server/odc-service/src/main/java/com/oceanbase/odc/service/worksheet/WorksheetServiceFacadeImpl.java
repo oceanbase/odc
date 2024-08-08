@@ -176,7 +176,7 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
         WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
                 path.getLocation());
         List<Worksheet> worksheets =
-                projectFileService.editWorksheet(projectId, path, destPath, req.getObjectKey(), req.getPrevVersion());
+                projectFileService.editWorksheet(projectId, path, destPath, req.getObjectId(), req.getPrevVersion());
         return worksheets.stream()
                 .map(WorksheetConverter::convertToMetaResp)
                 .collect(Collectors.toList());
@@ -219,9 +219,9 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
                 throw new InternalServerError("create file error,"
                         + "downloadDirectoryStr: " + downloadDirectoryStr + ",zipFileStr: " + zipFileStr, e);
             }
-            String zipOssObjectKey = projectFileOssGateway.uploadFile(new File(zipFileStr),
+            String zipOssObjectId = projectFileOssGateway.uploadFile(new File(zipFileStr),
                     WorksheetConstant.DOWNLOAD_ZIP_DURATION_SECONDS);
-            return projectFileOssGateway.generateDownloadUrl(zipOssObjectKey);
+            return projectFileOssGateway.generateDownloadUrl(zipOssObjectId);
         } finally {
             OdcFileUtil.deleteFiles(new File(parentOfDownloadDirectory));
         }

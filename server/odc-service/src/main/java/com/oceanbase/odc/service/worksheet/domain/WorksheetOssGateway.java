@@ -28,13 +28,13 @@ import java.util.Set;
 public interface WorksheetOssGateway {
     String generateUploadUrl(Long projectId);
 
-    void copyTo(String tempObjectKey, Path destinationPath);
+    void copyTo(String tempObjectId, Path destinationPath);
 
-    String getContent(String objectKey);
+    String getContent(String objectId);
 
-    void batchDelete(Set<String> objectKeys);
+    void batchDelete(Set<String> objectIds);
 
-    String generateDownloadUrl(String objectKey);
+    String generateDownloadUrl(String objectId);
 
     void downloadToFile(String objectName, File toFile);
 

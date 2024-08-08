@@ -61,7 +61,7 @@ public class Worksheet {
      */
     private Long readVersion;
     private String content;
-    private String objectKey;
+    private String objectId;
 
     private boolean isChanged = false;
 
@@ -75,13 +75,13 @@ public class Worksheet {
      */
     private Set<Worksheet> subWorksheets;
 
-    public static Worksheet of(Long projectId, Path path, String objectKey) {
+    public static Worksheet of(Long projectId, Path path, String objectId) {
         return new Worksheet(null, null, null, projectId, path,
-                null, objectKey, null, null);
+                null, objectId, null, null);
     }
 
     public Worksheet(Long id, Date createTime, Date updateTime, Long projectId, Path path, Long version,
-            String objectKey, Set<Worksheet> sameLevelWorksheets, Set<Worksheet> subWorksheets) {
+            String objectId, Set<Worksheet> sameLevelWorksheets, Set<Worksheet> subWorksheets) {
         this.id = id;
         this.createTime = createTime;
         this.updateTime = updateTime;
@@ -91,9 +91,9 @@ public class Worksheet {
         this.path = path;
         this.version = version == null ? 0L : version;
         if (path.isFile()) {
-            PreConditions.notBlank(objectKey, "objectKey");
+            PreConditions.notBlank(objectId, "objectId");
         }
-        this.objectKey = objectKey;
+        this.objectId = objectId;
         this.sameLevelWorksheets = sameLevelWorksheets == null ? new HashSet<>() : sameLevelWorksheets;
         this.subWorksheets = subWorksheets == null ? new HashSet<>() : subWorksheets;
 
@@ -144,22 +144,22 @@ public class Worksheet {
     }
 
     /**
-     * Edit the name and content（actually, it's objectKey） of the current worksheet，
+     * Edit the name and content（actually, it's objectId） of the current worksheet，
      *
      * @param destinationPath If the destinationPath for renaming is the same as the current path, do
      *        not rename it
-     * @param objectKey After editing the worksheet content, frontend will upload the worksheet the
-     *        object to OSS with objectKey. If it is the same as the current one, it means that the
+     * @param objectId After editing the worksheet content, frontend will upload the worksheet the
+     *        object to OSS with objectId. If it is the same as the current one, it means that the
      *        content has not been changed
-     * @param readVersion When the frontend reads the file version, if the value of objectKey is not
+     * @param readVersion When the frontend reads the file version, if the value of objectId is not
      *        empty, version verification is required for updating. If version is empty, version
      *        verification is not performed
      * @return all changed worksheets ,contain current
      */
-    public Set<Worksheet> edit(Path destinationPath, String objectKey, Long readVersion) {
-        // 若objectKey变更，需要修改内容，且判断readVersion是否符合条件
-        if (this.path.isFile() && !StringUtils.equals(this.objectKey, objectKey)) {
-            this.objectKey = objectKey;
+    public Set<Worksheet> edit(Path destinationPath, String objectId, Long readVersion) {
+        // 若objectId变更，需要修改内容，且判断readVersion是否符合条件
+        if (this.path.isFile() && !StringUtils.equals(this.objectId, objectId)) {
+            this.objectId = objectId;
             this.readVersion = readVersion;
             this.isChanged = true;
             if (isVersionConflict()) {
@@ -210,20 +210,20 @@ public class Worksheet {
         return this.readVersion != null && !this.readVersion.equals(this.version);
     }
 
-    public Worksheet create(Path addPath, String objectKey) {
-        return batchCreate(Collections.singletonMap(addPath, objectKey))
+    public Worksheet create(Path addPath, String objectId) {
+        return batchCreate(Collections.singletonMap(addPath, objectId))
                 .stream().findFirst()
                 // can definitely obtain a created Worksheet here.
                 // Adding exception checking is only for the integrity of the program
                 .orElseThrow(() -> new IllegalStateException("unexpected exception"));
     }
 
-    public Set<Worksheet> batchCreate(Map<Path, String> createPathToObjectKeyMap) {
+    public Set<Worksheet> batchCreate(Map<Path, String> createPathToObjectIdMap) {
         List<Worksheet> nextLevelWorksheets = this.getNextLevelFiles();
-        nameTooLongCheck(createPathToObjectKeyMap.keySet());
-        sameLevelFileNumLimitCheck(createPathToObjectKeyMap, nextLevelWorksheets);
-        duplicatedNameCheck(createPathToObjectKeyMap, nextLevelWorksheets);
-        return createPathToObjectKeyMap.entrySet().stream().map(
+        nameTooLongCheck(createPathToObjectIdMap.keySet());
+        sameLevelFileNumLimitCheck(createPathToObjectIdMap, nextLevelWorksheets);
+        duplicatedNameCheck(createPathToObjectIdMap, nextLevelWorksheets);
+        return createPathToObjectIdMap.entrySet().stream().map(
                 entry -> Worksheet.of(projectId, entry.getKey(), entry.getValue()))
                 .collect(Collectors.toSet());
     }
@@ -232,16 +232,16 @@ public class Worksheet {
      * When creating worksheets in batch, check the limit on the number of worksheets in the same level
      * directory
      * 
-     * @param createPathToObjectKeyMap The map of the path to be added and its corresponding objectKey
+     * @param createPathToObjectIdMap The map of the path to be added and its corresponding objectId
      * @param nextLevelWorksheets List of the next level worksheets of the current path
      */
-    private void sameLevelFileNumLimitCheck(Map<Path, String> createPathToObjectKeyMap,
+    private void sameLevelFileNumLimitCheck(Map<Path, String> createPathToObjectIdMap,
             List<Worksheet> nextLevelWorksheets) {
 
         if (nextLevelWorksheets.size() +
-                createPathToObjectKeyMap.size() > LEVEL_FILE_NUM_LIMIT) {
+                createPathToObjectIdMap.size() > LEVEL_FILE_NUM_LIMIT) {
             throw new ExceedSameLevelNumLimitException(
-                    "create path num exceed limit, create path num: " + createPathToObjectKeyMap.size()
+                    "create path num exceed limit, create path num: " + createPathToObjectIdMap.size()
                             + ", same level exist file num: " + nextLevelWorksheets.size());
         }
     }
@@ -249,13 +249,13 @@ public class Worksheet {
     /**
      * Check whether the worksheet paths created in bulk are duplicated with existing worksheets
      */
-    private void duplicatedNameCheck(Map<Path, String> createPathToObjectKeyMap,
+    private void duplicatedNameCheck(Map<Path, String> createPathToObjectIdMap,
             List<Worksheet> nextLevelWorksheets) {
         if (CollectionUtils.isEmpty(nextLevelWorksheets)) {
             return;
         }
         Set<String> willToCreatePathNameSet =
-                createPathToObjectKeyMap.keySet().stream().map(Path::getName).collect(Collectors.toSet());
+                createPathToObjectIdMap.keySet().stream().map(Path::getName).collect(Collectors.toSet());
         for (Worksheet subFile : nextLevelWorksheets) {
             if (willToCreatePathNameSet.contains(subFile.getPath().getName())) {
                 throw new NameDuplicatedException(
@@ -298,7 +298,7 @@ public class Worksheet {
                 ", id=" + id +
                 ", path=" + path +
                 ", version=" + version +
-                ", objectKey='" + objectKey + '\'' +
+                ", objectId='" + objectId + '\'' +
                 '}';
     }
 }

@@ -42,7 +42,7 @@ public class RepoWorksheetService implements WorksheetService {
 
     @Override
     @Transactional(rollbackFor = Throwable.class)
-    public Worksheet createWorksheet(Long projectId, Path createPath, String objectKey) {
+    public Worksheet createWorksheet(Long projectId, Path createPath, String objectId) {
         return null;
     }
 
@@ -80,7 +80,7 @@ public class RepoWorksheetService implements WorksheetService {
     }
 
     @Override
-    public List<Worksheet> editWorksheet(Long projectId, Path path, Path destinationPath, String objectKey,
+    public List<Worksheet> editWorksheet(Long projectId, Path path, Path destinationPath, String objectId,
             Long readVersion) {
         return Collections.emptyList();
     }

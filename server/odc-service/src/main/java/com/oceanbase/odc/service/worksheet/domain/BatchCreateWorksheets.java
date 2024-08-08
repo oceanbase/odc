@@ -42,15 +42,15 @@ public class BatchCreateWorksheets {
      */
     private UploadWorksheetTuple tupleGetParentPath;
     @Getter
-    private final Map<Path, String> createPathToObjectKeyMap;
+    private final Map<Path, String> createPathToObjectIdMap;
 
     public BatchCreateWorksheets(BatchUploadWorksheetsReq req) {
-        createPathToObjectKeyMap = new HashMap<>();
+        createPathToObjectIdMap = new HashMap<>();
         for (UploadWorksheetTuple tuple : req.getWorksheets()) {
             String pathStr = tuple.getPath();
-            String objectKey = tuple.getObjectKey();
+            String objectId = tuple.getObjectId();
             Path path = new Path(pathStr);
-            if (path.isFile() && StringUtils.isBlank(objectKey)) {
+            if (path.isFile() && StringUtils.isBlank(objectId)) {
                 throw new IllegalArgumentException("invalid UploadProjectFileTuple : " + tuple);
             }
             Optional<Path> parentPathOptional = path.getParentPath();
@@ -65,11 +65,11 @@ public class BatchCreateWorksheets {
                         "different parent path, tuple1: " + tupleGetParentPath + ", "
                                 + "tuple2: " + tuple);
             }
-            if (createPathToObjectKeyMap.containsKey(path)) {
+            if (createPathToObjectIdMap.containsKey(path)) {
                 throw new NameDuplicatedException(
                         "duplicated path in request,create path: " + tuple.getPath());
             }
-            createPathToObjectKeyMap.put(path, objectKey);
+            createPathToObjectIdMap.put(path, objectId);
         }
     }
 }

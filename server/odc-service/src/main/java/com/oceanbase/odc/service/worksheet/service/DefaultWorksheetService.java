@@ -72,12 +72,12 @@ public class DefaultWorksheetService implements WorksheetService {
 
     @Override
     @Transactional(rollbackFor = Throwable.class)
-    public Worksheet createWorksheet(Long projectId, Path createPath, String objectKey) {
+    public Worksheet createWorksheet(Long projectId, Path createPath, String objectId) {
         Optional<Path> parentPath = createPath.getParentPath();
         if (!parentPath.isPresent()) {
             throw new IllegalArgumentException(
-                    "invalid path, projectId:" + projectId + "path:" + createPath + ",objectKey:"
-                            + objectKey);
+                    "invalid path, projectId:" + projectId + "path:" + createPath + ",objectId:"
+                            + objectId);
         }
         Optional<Worksheet> parentFileOptional =
                 normalProjectFilesRepository.findByProjectAndPath(projectId, parentPath.get(),
@@ -87,10 +87,10 @@ public class DefaultWorksheetService implements WorksheetService {
         Worksheet prarentprojectWorksheet =
                 parentFileOptional.orElseThrow(() -> new IllegalStateException("unexpected exception,projectId:"
                         + projectId + "parent path:" + parentPath));
-        Worksheet createdWorksheet = prarentprojectWorksheet.create(createPath, objectKey);
+        Worksheet createdWorksheet = prarentprojectWorksheet.create(createPath, objectId);
         normalProjectFilesRepository.batchAdd(Collections.singleton(createdWorksheet));
         if (createdWorksheet.getPath().isFile()) {
-            projectFileOssGateway.copyTo(objectKey, createPath);
+            projectFileOssGateway.copyTo(objectId, createPath);
         }
         return createdWorksheet;
     }
@@ -106,8 +106,8 @@ public class DefaultWorksheetService implements WorksheetService {
         }
 
         Worksheet worksheet = fileOptional.get();
-        if (path.isFile() && StringUtils.isNotBlank(worksheet.getObjectKey())) {
-            worksheet.setContent(projectFileOssGateway.getContent(fileOptional.get().getObjectKey()));
+        if (path.isFile() && StringUtils.isNotBlank(worksheet.getObjectId())) {
+            worksheet.setContent(projectFileOssGateway.getContent(fileOptional.get().getObjectId()));
         }
 
         return worksheet;
@@ -149,7 +149,7 @@ public class DefaultWorksheetService implements WorksheetService {
                     parentFileOptional.orElseThrow(() -> new IllegalStateException("unexpected exception,projectId:"
                             + projectId + "parent path:" + batchCreateWorksheets.getParentPath()));
             Set<Worksheet> innerWorksheets =
-                    parentWorksheet.batchCreate(batchCreateWorksheets.getCreatePathToObjectKeyMap());
+                    parentWorksheet.batchCreate(batchCreateWorksheets.getCreatePathToObjectIdMap());
             normalProjectFilesRepository.batchAdd(innerWorksheets);
             return innerWorksheets;
         });
@@ -161,13 +161,13 @@ public class DefaultWorksheetService implements WorksheetService {
         for (Worksheet worksheet : createWorksheets) {
             if (worksheet.getPath().isFile()) {
                 try {
-                    projectFileOssGateway.copyTo(worksheet.getObjectKey(), worksheet.getPath());
+                    projectFileOssGateway.copyTo(worksheet.getObjectId(), worksheet.getPath());
                     batchOperateWorksheetsResult.addSuccess(worksheet);
                 } catch (Exception e) {
                     batchOperateWorksheetsResult.addFailed(worksheet);
-                    log.error("copy file to path failed, projectId:{}, path:{}, objectKey:{}", projectId,
+                    log.error("copy file to path failed, projectId:{}, path:{}, objectId:{}", projectId,
                             worksheet.getPath(),
-                            worksheet.getObjectKey());
+                            worksheet.getObjectId());
                 }
             }
         }
@@ -202,7 +202,7 @@ public class DefaultWorksheetService implements WorksheetService {
                     normalProjectFilesRepository.batchDelete(deleteFiles.stream()
                             .map(Worksheet::getId).collect(Collectors.toSet()));
                     projectFileOssGateway.batchDelete(files.stream()
-                            .map(Worksheet::getObjectKey).collect(Collectors.toSet()));
+                            .map(Worksheet::getObjectId).collect(Collectors.toSet()));
                 });
                 result.addSuccess(files);
             } catch (Throwable e) {
@@ -231,7 +231,7 @@ public class DefaultWorksheetService implements WorksheetService {
 
     @Override
     public List<Worksheet> editWorksheet(Long projectId, Path path, Path destinationPath,
-            String objectKey, Long readVersion) {
+            String objectId, Long readVersion) {
         Optional<Worksheet> fileOptional =
                 normalProjectFilesRepository.findByProjectAndPath(projectId, path,
                         true, true, true, true);
@@ -239,7 +239,7 @@ public class DefaultWorksheetService implements WorksheetService {
                 fileOptional.orElseThrow(() -> new IllegalStateException("unexpected exception,projectId:"
                         + projectId + " path:" + path));
 
-        Set<Worksheet> editedWorksheets = worksheet.edit(destinationPath, objectKey, readVersion);
+        Set<Worksheet> editedWorksheets = worksheet.edit(destinationPath, objectId, readVersion);
         normalProjectFilesRepository.batchUpdateById(editedWorksheets, true);
 
         return new ArrayList<>(editedWorksheets);
@@ -260,8 +260,8 @@ public class DefaultWorksheetService implements WorksheetService {
                 () -> new NotFoundException(ErrorCodes.NotFound,
                         new Object[] {"path", path.toString()},
                         String.format("path not found by %s=%s", "path", path)));
-        PreConditions.notBlank(worksheet.getObjectKey(), "objectKey");
-        return projectFileOssGateway.generateDownloadUrl(worksheet.getObjectKey());
+        PreConditions.notBlank(worksheet.getObjectId(), "objectId");
+        return projectFileOssGateway.generateDownloadUrl(worksheet.getObjectId());
     }
 
     @Override
@@ -296,10 +296,10 @@ public class DefaultWorksheetService implements WorksheetService {
                     + " projectId:{}, worksheet path:{},commonParentPath:{}", projectId, worksheet, commParentPath);
             return;
         }
-        if (worksheet.getPath().isFile() && StringUtils.isNotBlank(worksheet.getObjectKey())) {
+        if (worksheet.getPath().isFile() && StringUtils.isNotBlank(worksheet.getObjectId())) {
             String absoluteFile = destinationDirectory.getAbsolutePath() + relativFilePathOptional.get();
             java.nio.file.Path filePath = WorksheetPathUtil.createFileWithParent(absoluteFile, false);
-            projectFileOssGateway.downloadToFile(worksheet.getObjectKey(), filePath.toFile());
+            projectFileOssGateway.downloadToFile(worksheet.getObjectId(), filePath.toFile());
         }
         if (worksheet.getPath().isDirectory()) {
             String absoluteFile = destinationDirectory.getAbsolutePath() + relativFilePathOptional.get();

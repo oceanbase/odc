@@ -64,30 +64,30 @@ public class WorksheetOssGateway implements com.oceanbase.odc.service.worksheet.
     }
 
     @Override
-    public void copyTo(String tempObjectKey, Path destinationPath) {
+    public void copyTo(String tempObjectId, Path destinationPath) {
         String toObjectName = CloudObjectStorageUtil.generateObjectName(null, UUID.randomUUID().toString(),
                 CloudObjectStorageConstants.ODC_PROJECT_FILES_PREFIX, destinationPath.getStandardPath());
         try {
-            cloudObjectStorageService.copyTo(tempObjectKey, toObjectName);
+            cloudObjectStorageService.copyTo(tempObjectId, toObjectName);
         } catch (IOException ex) {
-            log.warn("Failed to copy object to OSS, tempObjectKey={},destinationPath={}", tempObjectKey,
+            log.warn("Failed to copy object to OSS, tempObjectId={},destinationPath={}", tempObjectId,
                     destinationPath, ex);
             throw new InternalServerError("Failed to put object onto OSS", ex);
         }
     }
 
     @Override
-    public String getContent(String objectKey) {
+    public String getContent(String objectId) {
         return "";
     }
 
     @Override
-    public void batchDelete(Set<String> objectKeys) {
+    public void batchDelete(Set<String> objectIds) {
 
     }
 
     @Override
-    public String generateDownloadUrl(String objectKey) {
+    public String generateDownloadUrl(String objectId) {
         return "";
     }
 
