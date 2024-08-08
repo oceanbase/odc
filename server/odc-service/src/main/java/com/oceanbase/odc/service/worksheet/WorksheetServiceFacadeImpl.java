@@ -76,7 +76,7 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
     }
 
     @Override
-    public List<WorksheetMetaResp> renameWorksheet(Long projectId, String pathStr, String destination) {
+    public List<WorksheetMetaResp> renameWorksheet(Long projectId, String pathStr, String destinationPath) {
         return null;
     }
 
