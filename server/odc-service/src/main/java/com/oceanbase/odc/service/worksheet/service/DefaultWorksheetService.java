@@ -58,12 +58,19 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class DefaultWorksheetService implements WorksheetService {
-    @Resource
-    private DefaultWorksheetRepository normalProjectFilesRepository;
-    @Resource
-    private WorksheetOssGateway projectFileOssGateway;
-    @Resource
-    private TransactionTemplate transactionTemplate;
+
+    public DefaultWorksheetService(
+            TransactionTemplate transactionTemplate,
+            WorksheetOssGateway projectFileOssGateway,
+            DefaultWorksheetRepository normalProjectFilesRepository) {
+        this.transactionTemplate = transactionTemplate;
+        this.projectFileOssGateway = projectFileOssGateway;
+        this.normalProjectFilesRepository = normalProjectFilesRepository;
+    }
+
+    private final DefaultWorksheetRepository normalProjectFilesRepository;
+    private final WorksheetOssGateway projectFileOssGateway;
+    private final TransactionTemplate transactionTemplate;
 
     @Override
     @Transactional(rollbackFor = Throwable.class)

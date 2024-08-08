@@ -18,12 +18,14 @@ package com.oceanbase.odc.service.worksheet.domain;
 import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.NAME_LENGTH_LIMIT;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.odc.service.worksheet.exceptions.NameTooLongException;
 import com.oceanbase.odc.service.worksheet.model.WorksheetLocation;
@@ -106,6 +108,50 @@ public class Path {
                 WorksheetPathUtil.addSeparatorToItemsEnd(this.parentPathItems));
         return parentStandardPathOptional.map(Path::new);
 
+    }
+
+    public boolean isChildOfAny(Path... parents) {
+        if (parents == null || parents.length == 0) {
+            return false;
+        }
+        int len = parents.length;
+        boolean[] continueFlag = new boolean[len];
+
+        for (int i = 0; i < len; i++) {
+            continueFlag[i] = !parents[i].isFile() &&
+                    parents[i].getLevelNum() < this.levelNum;
+        }
+        int index = 0;
+        while (index < this.levelNum - 1) {
+            String indexName = this.parentPathItems.get(index);
+            boolean needContinue = false;
+            for (int i = 0; i < len; i++) {
+                Path parent = parents[i];
+                if (!continueFlag[i]) {
+                    continue;
+                }
+                if (parent.getLevelNum() < index + 1) {
+                    continueFlag[i] = false;
+                    continue;
+                } else if (parent.getLevelNum() == index + 1) {
+                    if (Objects.equals(indexName, parent.getName())) {
+                        return true;
+                    }
+                    continueFlag[i] = false;
+                    continue;
+                }
+                if (!StringUtils.equals(indexName, parent.getParentPathItems().get(index))) {
+                    continueFlag[i] = false;
+                    continue;
+                }
+                needContinue = true;
+            }
+            if (!needContinue) {
+                break;
+            }
+            index++;
+        }
+        return false;
     }
 
     /**

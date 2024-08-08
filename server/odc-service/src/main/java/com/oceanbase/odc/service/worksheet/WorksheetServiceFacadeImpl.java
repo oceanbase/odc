@@ -192,8 +192,9 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
         Optional<Path> commonParentPathOptional =
                 WorksheetPathUtil.findCommonParentPath(divideBatchOperateWorksheets.all());
         String rootDirectoryName = getRootDirectoryName(projectId, commonParentPathOptional);
-        String downloadDirectoryStr = WorksheetPathUtil.getWorksheetDownloadDirectory(rootDirectoryName);
-        String zipFileStr = WorksheetPathUtil.getWorksheetDownloadZipFile(rootDirectoryName);
+        String parentOfDownloadDirectory = WorksheetPathUtil.getWorksheetDownloadDirectory();
+        String downloadDirectoryStr = parentOfDownloadDirectory + rootDirectoryName;
+        String zipFileStr = WorksheetPathUtil.getWorksheetDownloadZipFile(parentOfDownloadDirectory, rootDirectoryName);
         java.nio.file.Path downloadDirectoryPath =
                 WorksheetPathUtil.createFileWithParent(downloadDirectoryStr, true);
         File downloadDirectory = downloadDirectoryPath.toFile();
@@ -210,6 +211,7 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
             }
 
             try {
+                WorksheetPathUtil.createFileWithParent(zipFileStr, false);
                 OdcFileUtil.zip(downloadDirectoryStr, zipFileStr);
             } catch (IOException e) {
                 throw new InternalServerError("create file error,"
@@ -219,8 +221,7 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
                     WorksheetConstant.DOWNLOAD_ZIP_DURATION_SECONDS);
             return projectFileOssGateway.generateDownloadUrl(zipOssObjectKey);
         } finally {
-            OdcFileUtil.deleteFiles(downloadDirectory);
-            OdcFileUtil.deleteFiles(new File(zipFileStr));
+            OdcFileUtil.deleteFiles(new File(parentOfDownloadDirectory));
         }
     }
 

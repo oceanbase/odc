@@ -48,12 +48,12 @@ public class DivideBatchOperateWorksheets {
         for (Path path : sortedPaths) {
             switch (path.getLocation()) {
                 case WORKSHEETS:
-                    if (isPathNotContainedInDeletedPaths(this.normalPaths, path)) {
+                    if (!path.isChildOfAny(this.normalPaths.toArray(new Path[0]))) {
                         this.normalPaths.add(path);
                     }
                     break;
                 case REPOS:
-                    if (isPathNotContainedInDeletedPaths(this.reposPaths, path)) {
+                    if (!path.isChildOfAny(this.reposPaths.toArray(new Path[0]))) {
                         this.reposPaths.add(path);
                     }
                     break;
@@ -80,13 +80,6 @@ public class DivideBatchOperateWorksheets {
         return all;
     }
 
-    private boolean isPathNotContainedInDeletedPaths(Set<Path> deletePaths, Path path) {
-        if (CollectionUtils.isEmpty(deletePaths)) {
-            return false;
-        }
-        Optional<Path> parentPath = path.getParentPath();
-        return parentPath.filter(deletePaths::contains).isPresent();
-    }
 
 
 }

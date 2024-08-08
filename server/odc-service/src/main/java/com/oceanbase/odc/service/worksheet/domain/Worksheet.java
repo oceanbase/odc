@@ -90,7 +90,9 @@ public class Worksheet {
         PreConditions.notNull(path, "path");
         this.path = path;
         this.version = version == null ? 0L : version;
-        PreConditions.notBlank(objectKey, "objectKey");
+        if (path.isFile()) {
+            PreConditions.notBlank(objectKey, "objectKey");
+        }
         this.objectKey = objectKey;
         this.sameLevelWorksheets = sameLevelWorksheets == null ? new HashSet<>() : sameLevelWorksheets;
         this.subWorksheets = subWorksheets == null ? new HashSet<>() : subWorksheets;
