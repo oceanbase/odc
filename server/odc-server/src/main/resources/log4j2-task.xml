@@ -34,6 +34,7 @@
                      filePattern="${LOG_DIRECTORY}/${ctx:taskId}/executor-%d{yyyy-MM-dd}-%i.log">
             <PatternLayout pattern="${LOG_PATTERN}"/>
             <Policies>
+                <OnStartupTriggeringPolicy/>
                 <SizeBasedTriggeringPolicy size="100MB"/>
             </Policies>
             <DefaultRolloverStrategy max="20">
@@ -59,6 +60,7 @@
                             <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
                         </Filters>
                         <Policies>
+                            <OnStartupTriggeringPolicy/>
                             <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
                             <SizeBasedTriggeringPolicy size="10 MB"/>
                         </Policies>
@@ -81,6 +83,7 @@
                             <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
                         </Filters>
                         <Policies>
+                            <OnStartupTriggeringPolicy/>
                             <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
                             <SizeBasedTriggeringPolicy size="10 MB"/>
                         </Policies>
