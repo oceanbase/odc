@@ -23,7 +23,7 @@ import lombok.experimental.Accessors;
 import lombok.experimental.SuperBuilder;
 
 /**
- * 文件详情
+ * the detail of worksheet
  *
  * @author keyangs
  * @date 2024/7/31
@@ -36,6 +36,6 @@ import lombok.experimental.SuperBuilder;
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = true)
 public class WorksheetResp extends WorksheetMetaResp {
-    private String content;
+    private String contentDownloadUrl;
     private Long version;
 }

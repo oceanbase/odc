@@ -22,6 +22,8 @@ import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.service.worksheet.model.BatchOperateWorksheetsResp;
 import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq;
+import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;
+import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlReq;
 import com.oceanbase.odc.service.worksheet.model.UpdateWorksheetReq;
 import com.oceanbase.odc.service.worksheet.model.WorksheetMetaResp;
 import com.oceanbase.odc.service.worksheet.model.WorksheetResp;
@@ -37,7 +39,7 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
 
 
     @Override
-    public String generateUploadUrl(Long projectId) {
+    public GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, GenerateWorksheetUploadUrlReq req) {
         return null;
     }
 

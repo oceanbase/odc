@@ -35,7 +35,7 @@ public class BatchOperateWorksheetsResp {
     /**
      * Is the operation of all worksheets successful.
      */
-    Boolean isAllSuccessful;
-    List<WorksheetMetaResp> successFiles;
+    Boolean allSuccessful;
+    List<WorksheetMetaResp> successfulFiles;
     List<WorksheetMetaResp> failedFiles;
 }
