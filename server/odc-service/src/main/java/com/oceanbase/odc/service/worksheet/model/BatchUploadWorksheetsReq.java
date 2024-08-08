@@ -20,8 +20,6 @@ import java.util.Set;
 import javax.validation.constraints.Size;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
 
 /**
  * the request of batch upload project worksheets
@@ -36,8 +34,6 @@ public class BatchUploadWorksheetsReq {
     private Set<UploadWorksheetTuple> worksheets;
 
     @Data
-    @ToString
-    @EqualsAndHashCode
     public static class UploadWorksheetTuple {
         private String path;
         private String objectKey;

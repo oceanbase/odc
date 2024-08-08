@@ -20,6 +20,8 @@ import java.util.Set;
 
 import com.oceanbase.odc.service.worksheet.model.BatchOperateWorksheetsResp;
 import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq;
+import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;
+import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlReq;
 import com.oceanbase.odc.service.worksheet.model.UpdateWorksheetReq;
 import com.oceanbase.odc.service.worksheet.model.WorksheetMetaResp;
 import com.oceanbase.odc.service.worksheet.model.WorksheetResp;
@@ -37,23 +39,22 @@ import com.oceanbase.odc.service.worksheet.model.WorksheetResp;
  */
 public interface WorksheetServiceFacade {
     /**
-     * generate an oss upload url with an expiration date for upload worksheet content in frontend.
-     *
+     * generate an object storage upload url with an expiration date for upload worksheet content in
+     * frontend.
      *
      * @param projectId project id
-     * @return temp oss upload url
+     * @param req request
+     * @return temp object storage upload url
      */
-    String generateUploadUrl(Long projectId);
+    GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, GenerateWorksheetUploadUrlReq req);
 
     /**
-     * create worksheet.
-     * </p>
-     * the content of worksheet is already uploaded to oss in frontend, and in backend, only need to
-     * save objectKey.
+     * create worksheet. the content of worksheet is already uploaded to object storage in frontend, and
+     * in backend, only need to save objectKey.
      *
      * @param projectId project id
      * @param pathStr worksheet path
-     * @param objectKey the oss objectKey of create worksheet
+     * @param objectKey the object storage objectKey of create worksheet
      * @return mete info of created worksheet
      */
     WorksheetMetaResp createWorksheet(Long projectId, String pathStr, String objectKey);
@@ -130,7 +131,7 @@ public interface WorksheetServiceFacade {
      *
      * @param projectId project id
      * @param paths worksheet path list to download
-     * @return the oss url to download need worksheets
+     * @return the object storage url to download need worksheets
      */
     String batchDownloadWorksheets(Long projectId, Set<String> paths);
 }

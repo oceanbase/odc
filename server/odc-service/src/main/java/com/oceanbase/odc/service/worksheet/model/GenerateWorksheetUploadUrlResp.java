@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,29 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.worksheet.model;
 
-import java.util.List;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 /**
+ * the request of generating worksheet upload url
+ *
  * @author keyang
- * @date 2024/08/05
+ * @date 2024/08/08
  * @since 4.3.2
  */
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class BatchOperateWorksheetsResp {
+public class GenerateWorksheetUploadUrlResp {
     /**
-     * Is the operation of all worksheets successful.
+     * the upload url to upload the file to cloud storage, valid for 1 hour
      */
-    Boolean allSuccessful;
-    List<WorksheetMetaResp> successfulFiles;
-    List<WorksheetMetaResp> failedFiles;
+    String tempUploadUrl;
+    /**
+     * the object key in cloud storage,to locate uploaded files
+     */
+    Long objectKey;
 }

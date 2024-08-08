@@ -46,6 +46,8 @@ import com.oceanbase.odc.service.worksheet.domain.WorksheetProjectRepository;
 import com.oceanbase.odc.service.worksheet.factory.WorksheetServiceFactory;
 import com.oceanbase.odc.service.worksheet.model.BatchOperateWorksheetsResp;
 import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq;
+import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;
+import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlReq;
 import com.oceanbase.odc.service.worksheet.model.UpdateWorksheetReq;
 import com.oceanbase.odc.service.worksheet.model.WorksheetLocation;
 import com.oceanbase.odc.service.worksheet.model.WorksheetMetaResp;
@@ -70,7 +72,7 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
     private WorksheetServiceFactory worksheetServiceFactory;
 
     @Override
-    public String generateUploadUrl(Long projectId) {
+    public GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, GenerateWorksheetUploadUrlReq req) {
         return null;
     }
 
