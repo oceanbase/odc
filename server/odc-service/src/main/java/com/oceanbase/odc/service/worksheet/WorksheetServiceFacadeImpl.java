@@ -74,7 +74,7 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
 
     @Override
     public GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, GenerateWorksheetUploadUrlReq req) {
-        Path path = new Path(req.getFileName());
+        Path path = new Path(req.getPath());
         WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
                 path.getLocation());
         return projectFileService.generateUploadUrl(projectId, path);

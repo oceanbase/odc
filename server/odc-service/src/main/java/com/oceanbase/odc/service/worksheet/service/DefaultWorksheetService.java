@@ -76,8 +76,8 @@ public class DefaultWorksheetService implements WorksheetService {
     public GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, Path path) {
         String bucket = WorksheetUtil.getBucketNameOfWorkSheets(projectId);
         String objectId = WorksheetUtil.getObjectIdOfWorksheets(path);
-        String downloadUrl = objectStorageGateway.generateUploadUrl(bucket, objectId);
-        return new GenerateWorksheetUploadUrlResp();
+        String uploadUrl = objectStorageGateway.generateUploadUrl(bucket, objectId);
+        return GenerateWorksheetUploadUrlResp.builder().uploadUrl(uploadUrl).objectId(objectId).build();
     }
 
     @Override

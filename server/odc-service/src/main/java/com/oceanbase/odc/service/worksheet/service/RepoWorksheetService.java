@@ -51,8 +51,8 @@ public class RepoWorksheetService implements WorksheetService {
     public GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, Path path) {
         String bucket = WorksheetUtil.getBucketNameOfRepos(projectId);
         String objectId = WorksheetUtil.getObjectIdOfRepos(path);
-        String downloadUrl = objectStorageGateway.generateUploadUrl(bucket, objectId);
-        return new GenerateWorksheetUploadUrlResp();
+        String uploadUrl = objectStorageGateway.generateUploadUrl(bucket, objectId);
+        return GenerateWorksheetUploadUrlResp.builder().uploadUrl(uploadUrl).objectId(objectId).build();
     }
 
     @Override
