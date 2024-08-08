@@ -33,5 +33,5 @@ public class GenerateWorksheetUploadUrlResp {
     /**
      * the object key in cloud storage,to locate uploaded files
      */
-    Long objectKey;
+    Long objectId;
 }

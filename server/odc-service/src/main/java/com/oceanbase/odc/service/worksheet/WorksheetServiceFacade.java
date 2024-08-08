@@ -50,14 +50,14 @@ public interface WorksheetServiceFacade {
 
     /**
      * create worksheet. the content of worksheet is already uploaded to object storage in frontend, and
-     * in backend, only need to save objectKey.
+     * in backend, only need to save objectId.
      *
      * @param projectId project id
      * @param pathStr worksheet path
-     * @param objectKey the object storage objectKey of create worksheet
+     * @param objectId the object storage objectId of create worksheet
      * @return mete info of created worksheet
      */
-    WorksheetMetaResp createWorksheet(Long projectId, String pathStr, String objectKey);
+    WorksheetMetaResp createWorksheet(Long projectId, String pathStr, String objectId);
 
     /**
      * get worksheet detail info
