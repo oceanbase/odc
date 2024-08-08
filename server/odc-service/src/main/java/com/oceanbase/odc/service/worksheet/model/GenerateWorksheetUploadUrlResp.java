@@ -33,9 +33,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class GenerateWorksheetUploadUrlResp {
     /**
-     * the upload url to upload the file to cloud storage, valid for 1 hour
+     * the upload url to upload the file to object storage
      */
-    String tempUploadUrl;
+    String uploadUrl;
     /**
      * the object key in cloud storage,to locate uploaded files
      */
