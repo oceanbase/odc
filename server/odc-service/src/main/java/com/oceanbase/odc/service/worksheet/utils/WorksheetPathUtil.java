@@ -32,7 +32,6 @@ import java.util.stream.Stream;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
-import com.aliyun.oss.common.utils.BinaryUtil;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
 import com.oceanbase.odc.service.worksheet.domain.Path;

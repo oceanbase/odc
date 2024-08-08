@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.worksheet.service;
+
+import static com.oceanbase.odc.service.worksheet.utils.WorksheetTestUtil.newDirWorksheet;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.*;
+
+import java.io.File;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -23,14 +30,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.transaction.support.TransactionTemplate;
-
-import java.io.File;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static com.oceanbase.odc.service.worksheet.utils.WorksheetTestUtil.newDirWorksheet;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
 
 import com.oceanbase.odc.service.worksheet.domain.DefaultWorksheetRepository;
 import com.oceanbase.odc.service.worksheet.domain.Path;
@@ -77,24 +76,27 @@ public class DefaultWorksheetServiceTest {
         // Mock
         when(defaultWorksheetRepository.findByProjectAndPath(projectId, new Path("/Worksheets/dir1/"),
                 false, true, true, false))
-                .thenReturn(Optional.of(newDirWorksheet(projectId, "/Worksheets/dir1/", null,
-                        Arrays.asList("/Worksheets/dir1/subdir1/", "/Worksheets/dir1/subdir2/file1",
-                                "/Worksheets/dir1/subdir2/file2"))));
+                        .thenReturn(Optional.of(newDirWorksheet(projectId, "/Worksheets/dir1/", null,
+                                Arrays.asList("/Worksheets/dir1/subdir1/", "/Worksheets/dir1/subdir2/file1",
+                                        "/Worksheets/dir1/subdir2/file2"))));
         when(defaultWorksheetRepository.findByProjectAndPath(projectId, new Path("/Worksheets/dir2/"),
                 false, true, true, false))
-                .thenReturn(Optional.of(newDirWorksheet(projectId, "/Worksheets/dir2/", null, null)));
+                        .thenReturn(Optional.of(newDirWorksheet(projectId, "/Worksheets/dir2/", null, null)));
         when(defaultWorksheetRepository.findByProjectAndPath(projectId, new Path("/Worksheets/dir4/subdir1/"),
                 false, true, true, false))
-                .thenReturn(Optional.of(newDirWorksheet(projectId, "/Worksheets/dir4/subdir1/", null, null)));
+                        .thenReturn(Optional.of(newDirWorksheet(projectId, "/Worksheets/dir4/subdir1/", null, null)));
         when(defaultWorksheetRepository.findByProjectAndPath(projectId, new Path("/Worksheets/dir3/subdir1/file1"),
                 false, true, false, false))
-                .thenReturn(Optional.of(newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file1", null, null)));
+                        .thenReturn(
+                                Optional.of(newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file1", null, null)));
         when(defaultWorksheetRepository.findByProjectAndPath(projectId, new Path("/Worksheets/dir3/subdir1/file2"),
                 false, true, false, false))
-                .thenReturn(Optional.of(newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file2", null, null)));
+                        .thenReturn(
+                                Optional.of(newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file2", null, null)));
         when(defaultWorksheetRepository.findByProjectAndPath(projectId, new Path("/Worksheets/dir3/subdir1/file5"),
                 false, true, false, false))
-                .thenReturn(Optional.of(newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file5", null, null)));
+                        .thenReturn(
+                                Optional.of(newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file5", null, null)));
 
 
         // Test

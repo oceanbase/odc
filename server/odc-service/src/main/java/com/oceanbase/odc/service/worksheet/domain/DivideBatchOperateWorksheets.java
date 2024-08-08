@@ -22,8 +22,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections4.CollectionUtils;
-
 import com.oceanbase.odc.service.worksheet.model.WorksheetLocation;
 
 import lombok.Getter;
