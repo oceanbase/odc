@@ -26,9 +26,11 @@ import lombok.Data;
  */
 @Data
 public class GenerateWorksheetUploadUrlReq {
-    String fileName;
     /**
-     * file size,in bytes
+     * the path of the file to be uploaded,the end item is the file name
+     * <p>
+     * e.g. /worksheets/dir1/files/test.xlsx, the 'test.xlsx' is the file name, and
+     * '/worksheets/dir1/files/' is the upload destination directory
      */
-    Long fileSize;
+    String path;
 }
