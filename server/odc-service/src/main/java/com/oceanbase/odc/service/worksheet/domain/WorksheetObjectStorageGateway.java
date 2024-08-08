@@ -28,8 +28,6 @@ import java.util.Set;
 public interface WorksheetObjectStorageGateway {
     String generateUploadUrl(String bucket, String objectId);
 
-    void copyTo(String tempObjectId, Path destinationPath);
-
     String getContent(String objectId);
 
     void batchDelete(Set<String> objectIds);

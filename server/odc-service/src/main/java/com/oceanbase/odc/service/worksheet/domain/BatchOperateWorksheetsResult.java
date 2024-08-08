@@ -20,7 +20,9 @@ import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * @author keyang
@@ -28,21 +30,25 @@ import lombok.Getter;
  * @since 4.3.2
  */
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
 public class BatchOperateWorksheetsResult {
-    List<Worksheet> success;
-
+    List<Worksheet> successful;
     List<Worksheet> failed;
 
-    public BatchOperateWorksheetsResult() {
-        success = new ArrayList<>();
-        failed = new ArrayList<>();
+    public static BatchOperateWorksheetsResult ofSuccess(List<Worksheet> worksheets) {
+        return new BatchOperateWorksheetsResult(worksheets, null);
+    }
+
+    public static BatchOperateWorksheetsResult ofFailed(List<Worksheet> worksheets) {
+        return new BatchOperateWorksheetsResult(null, worksheets);
     }
 
     public void addResult(BatchOperateWorksheetsResult result) {
         if (result == null) {
             return;
         }
-        addSuccess(result.getSuccess());
+        addSuccess(result.getSuccessful());
         addFailed(result.getFailed());
     }
 
@@ -50,19 +56,28 @@ public class BatchOperateWorksheetsResult {
         if (CollectionUtils.isEmpty(worksheets)) {
             return;
         }
-        success.addAll(worksheets);
+        if (successful == null) {
+            successful = new ArrayList<>();
+        }
+        successful.addAll(worksheets);
     }
 
     public void addSuccess(Worksheet worksheet) {
         if (worksheet == null) {
             return;
         }
-        success.add(worksheet);
+        if (successful == null) {
+            successful = new ArrayList<>();
+        }
+        successful.add(worksheet);
     }
 
     public void addFailed(List<Worksheet> worksheets) {
         if (CollectionUtils.isEmpty(worksheets)) {
             return;
+        }
+        if (failed == null) {
+            failed = new ArrayList<>();
         }
         failed.addAll(worksheets);
     }
@@ -70,6 +85,9 @@ public class BatchOperateWorksheetsResult {
     public void addFailed(Worksheet worksheet) {
         if (worksheet == null) {
             return;
+        }
+        if (failed == null) {
+            failed = new ArrayList<>();
         }
         failed.add(worksheet);
     }

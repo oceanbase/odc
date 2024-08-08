@@ -60,7 +60,7 @@ public class Worksheet {
      * updating
      */
     private Long readVersion;
-    private String content;
+    private String contentDownloadUrl;
     private String objectId;
 
     private boolean isChanged = false;

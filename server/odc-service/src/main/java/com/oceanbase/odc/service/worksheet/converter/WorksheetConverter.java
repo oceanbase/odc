@@ -41,7 +41,7 @@ public class WorksheetConverter {
     public static WorksheetResp convertToResp(Worksheet worksheet) {
         return WorksheetResp.builder()
                 .version(worksheet.getVersion())
-                .contentDownloadUrl(worksheet.getContent())
+                .contentDownloadUrl(worksheet.getContentDownloadUrl())
                 .projectId(worksheet.getProjectId())
                 .path(worksheet.getPath().getStandardPath())
                 .type(worksheet.getPath().getType())
@@ -53,7 +53,7 @@ public class WorksheetConverter {
     public static BatchOperateWorksheetsResp convertToBatchOperateResp(BatchOperateWorksheetsResult result) {
         return BatchOperateWorksheetsResp.builder()
                 .allSuccessful(result.getFailed().isEmpty())
-                .successfulFiles(result.getSuccess().stream()
+                .successfulFiles(result.getSuccessful().stream()
                         .map(WorksheetConverter::convertToMetaResp).collect(Collectors.toList()))
                 .failedFiles(result.getFailed().stream()
                         .map(WorksheetConverter::convertToMetaResp).collect(Collectors.toList()))

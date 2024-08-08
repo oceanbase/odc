@@ -16,24 +16,8 @@
 package com.oceanbase.odc.service.worksheet.infrastructure;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Set;
-import java.util.UUID;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-
-import com.oceanbase.odc.core.shared.exception.InternalServerError;
-import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
-import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.odc.service.objectstorage.cloud.CloudSecurityTokenService;
-import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
-import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
-import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
-import com.oceanbase.odc.service.objectstorage.cloud.util.CloudObjectStorageUtil;
-import com.oceanbase.odc.service.worksheet.domain.Path;
-import com.oceanbase.odc.service.worksheet.utils.WorksheetUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,18 +31,10 @@ import lombok.extern.slf4j.Slf4j;
 public class WorksheetObjectStorageGateway
         implements com.oceanbase.odc.service.worksheet.domain.WorksheetObjectStorageGateway {
 
-    @Autowired
-    private ObjectStorageFacade objectStorageFacade;
-
-
-
     @Override
     public String generateUploadUrl(String bucket, String objectId) {
-        return objectStorageFacade.getDownloadUrl(bucket, objectId);
+        return "";
     }
-
-    @Override
-    public void copyTo(String tempObjectId, Path destinationPath) {}
 
     @Override
     public String getContent(String objectId) {

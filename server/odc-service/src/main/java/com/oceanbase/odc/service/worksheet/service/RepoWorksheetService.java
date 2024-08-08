@@ -36,7 +36,7 @@ import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetUtil;
 
 /**
- * Worksheets下的文件的处理
+ * the handle of worksheets in /Repos/RepoName/
  *
  * @author keyang
  * @date 2024/08/02
@@ -56,7 +56,6 @@ public class RepoWorksheetService implements WorksheetService {
     }
 
     @Override
-    @Transactional(rollbackFor = Throwable.class)
     public Worksheet createWorksheet(Long projectId, Path createPath, String objectId) {
         return null;
     }
