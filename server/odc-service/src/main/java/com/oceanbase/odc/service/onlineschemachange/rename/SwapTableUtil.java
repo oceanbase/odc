@@ -16,9 +16,10 @@
 
 package com.oceanbase.odc.service.onlineschemachange.rename;
 
+import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.onlineschemachange.model.FullVerificationResult;
-import com.oceanbase.odc.service.onlineschemachange.model.SwapTableType;
 
 /**
  * @author yaobin
@@ -27,12 +28,37 @@ import com.oceanbase.odc.service.onlineschemachange.model.SwapTableType;
  */
 public class SwapTableUtil {
 
-    public static boolean isSwapTableEnable(SwapTableType swapTableType, TaskStatus taskStatus,
+    public static boolean isSwapTableReady(TaskStatus taskStatus,
             Double fullTransferProgressPercentage, FullVerificationResult fullVerificationResult) {
-        return swapTableType == SwapTableType.MANUAL &&
-                taskStatus == TaskStatus.RUNNING &&
+        return taskStatus == TaskStatus.RUNNING &&
                 fullTransferProgressPercentage.intValue() == 100 &&
                 (fullVerificationResult == FullVerificationResult.CONSISTENT ||
                         fullVerificationResult == FullVerificationResult.UNCHECK);
+    }
+
+    public static String quoteMySQLName(String name) {
+        if (StringUtils.checkMysqlIdentifierQuoted(name)) {
+            return name;
+        } else {
+            return StringUtils.quoteMysqlIdentifier(name);
+        }
+    }
+
+    public static String quoteOracleName(String name) {
+        if (StringUtils.checkOracleIdentifierQuoted(name)) {
+            return name;
+        } else {
+            return StringUtils.quoteOracleIdentifier(name);
+        }
+    }
+
+    public static String quoteName(String name, DialectType dialectType) {
+        switch (dialectType) {
+            case MYSQL:
+            case OB_MYSQL:
+                return quoteMySQLName(name);
+            default:
+                return quoteOracleName(name);
+        }
     }
 }

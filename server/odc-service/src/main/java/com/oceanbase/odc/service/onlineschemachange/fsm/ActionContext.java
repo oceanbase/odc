@@ -13,19 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.onlineschemachange.pipeline;
+package com.oceanbase.odc.service.onlineschemachange.fsm;
 
 /**
- * @author yaobin
- * @date 2023-06-10
- * @since 4.2.0
+ * context for action execute and state transfer
+ * 
+ * @author longpeng.zlp
+ * @date 2024/7/5 17:25
+ * @since 4.3.1
  */
-public interface Valve {
-
-    void invoke(ValveContext valveContext);
-
-    void setNext(Valve valve);
-
-    Valve getNext();
-
+public interface ActionContext {
 }

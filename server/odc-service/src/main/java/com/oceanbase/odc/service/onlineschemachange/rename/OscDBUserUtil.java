@@ -33,11 +33,12 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 public class OscDBUserUtil {
 
     public static boolean isLockUserRequired(DialectType dialectType, Supplier<String> obVersion) {
+        String version = obVersion.get();
         if (dialectType.isOBMysql()) {
-            return true;
+            // version is null, or version less than 4.2.5
+            return !(version != null && VersionUtils.isGreaterThanOrEqualsTo(version, "4.2.5"));
         } else if (dialectType == DialectType.OB_ORACLE) {
-            String version = obVersion.get();
-            return version != null && !VersionUtils.isGreaterThanOrEqualsTo(obVersion.get(), "4.0.0");
+            return version != null && !VersionUtils.isGreaterThanOrEqualsTo(version, "4.0.0");
         } else {
             throw new UnsupportedException(String.format("Dialect '%s' not supported", dialectType));
         }

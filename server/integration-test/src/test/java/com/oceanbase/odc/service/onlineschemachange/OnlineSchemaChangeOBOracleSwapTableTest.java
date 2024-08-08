@@ -21,18 +21,22 @@ import java.util.function.Consumer;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlType;
 import com.oceanbase.odc.service.onlineschemachange.model.OriginTableCleanStrategy;
-import com.oceanbase.odc.service.onlineschemachange.pipeline.OscValveContext;
-import com.oceanbase.odc.service.onlineschemachange.pipeline.SwapTableNameValve;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.action.ConnectionProvider;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,11 +48,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class OnlineSchemaChangeOBOracleSwapTableTest extends OBOracleOscTestEnv {
 
-    @Autowired
-    private SwapTableNameValve swapTableNameValve;
-
     @Test
-    public void test_osc_swap_table_origin_table_reserved_successful() {
+    public void test_osc_swap_table_origin_table_reserved_successful() throws Exception {
         String originTableName = getOriginTableName();
         executeOscSwapTable(
                 originTableName,
@@ -57,7 +58,7 @@ public class OnlineSchemaChangeOBOracleSwapTableTest extends OBOracleOscTestEnv 
     }
 
     @Test
-    public void test_osc_swap_table_origin_table_drop_successful() {
+    public void test_osc_swap_table_origin_table_drop_successful() throws Exception {
         String originTableName = getOriginTableName();
         executeOscSwapTable(
                 originTableName,
@@ -87,7 +88,7 @@ public class OnlineSchemaChangeOBOracleSwapTableTest extends OBOracleOscTestEnv 
 
     private void executeOscSwapTable(String originTableName,
             Consumer<OnlineSchemaChangeParameters> changeParametersConsumer,
-            Consumer<OnlineSchemaChangeScheduleTaskParameters> resultAssert) {
+            Consumer<OnlineSchemaChangeScheduleTaskParameters> resultAssert) throws Exception {
         createTableForTask(originTableName);
         try {
             OnlineSchemaChangeParameters changeParameters = getOnlineSchemaChangeParameters(originTableName);
@@ -104,14 +105,26 @@ public class OnlineSchemaChangeOBOracleSwapTableTest extends OBOracleOscTestEnv 
             // create new Table
             jdbcTemplate.execute(taskParameters.getNewTableCreateDdl());
 
-            OscValveContext context = new OscValveContext();
-            context.setSchedule(scheduleEntity);
-            context.setScheduleTask(scheduleTaskEntity);
-            context.setTaskParameter(taskParameters);
-            context.setParameter(changeParameters);
-            context.setConnectionConfig(config);
-            swapTableNameValve.invoke(context);
+            OscActionContext swapTableAction = new OscActionContext();
+            swapTableAction.setScheduleTaskRepository(scheduleTaskRepository);
+            swapTableAction.setParameter(changeParameters);
+            swapTableAction.setTaskParameter(taskParameters);
+            swapTableAction.setSchedule(scheduleEntity);
+            swapTableAction.setScheduleTask(scheduleTaskEntity);
+            swapTableAction.setConnectionProvider(new ConnectionProvider() {
+                @Override
+                public ConnectionConfig connectionConfig() {
+                    return config;
+                }
 
+                @Override
+                public ConnectionSession createConnectionSession() {
+                    // connection will released after use
+                    return new DefaultConnectSessionFactory(config).generateSession();
+                }
+            });
+            OscActionResult actionResult = swapTableNameValve.execute(swapTableAction);
+            Assert.assertEquals(actionResult.getNextState(), OscStates.CLEAN_RESOURCE.getState());
             resultAssert.accept(taskParameters);
         } finally {
             dropTableForTask(originTableName);
