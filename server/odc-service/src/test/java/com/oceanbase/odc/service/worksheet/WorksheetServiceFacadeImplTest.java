@@ -17,7 +17,12 @@ package com.oceanbase.odc.service.worksheet;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
@@ -88,7 +93,8 @@ public class WorksheetServiceFacadeImplTest {
         paths.add(path1.getStandardPath());
         paths.add(path2.getStandardPath());
 
-        when(worksheetProjectRepository.getProjectName(projectId)).thenReturn("projectName");
+        lenient().when(worksheetProjectRepository.getProjectName(anyLong()))
+                .thenAnswer(invocation -> "projectName" + invocation.getArgument(0, Long.class));
         when(worksheetServiceFactory.getProjectFileService(WorksheetLocation.WORKSHEETS))
                 .thenReturn(defaultWorksheetService);
         // when(worksheetServiceFactory.getProjectFileService(WorksheetLocation.REPOS))
@@ -101,5 +107,7 @@ public class WorksheetServiceFacadeImplTest {
         String result = worksheetServiceFacade.batchDownloadWorksheets(projectId, paths);
 
         assert StringUtils.isNotBlank(result) && result.endsWith(".zip");
+        // Verify
+        verify(worksheetProjectRepository, times(0)).getProjectName(anyLong());
     }
 }

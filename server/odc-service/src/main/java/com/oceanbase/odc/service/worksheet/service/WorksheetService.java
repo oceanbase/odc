@@ -44,9 +44,9 @@ public interface WorksheetService {
 
     BatchOperateWorksheetsResult batchDeleteWorksheets(Long projectId, Set<Path> paths);
 
-    List<Worksheet> renameWorksheet(Long projectId, Path path, Path destination);
+    List<Worksheet> renameWorksheet(Long projectId, Path path, Path destinationPath);
 
-    List<Worksheet> editWorksheet(Long projectId, Path path, Path destination, String objectKey, Long readVersion);
+    List<Worksheet> editWorksheet(Long projectId, Path path, Path destinationPath, String objectKey, Long readVersion);
 
     String batchDownloadWorksheets(Long projectId, Set<String> paths);
 

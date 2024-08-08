@@ -110,11 +110,11 @@ public interface WorksheetServiceFacade {
      *
      * @param projectId project id
      * @param pathStr worksheet path
-     * @param destination worksheet path after rename.If the destination equals to pathStr ,it will
-     *        throw exception.
+     * @param destinationPath worksheet path after rename.If the destinationPath equals to pathStr ,it
+     *        will throw exception.
      * @return the update worksheet meta list after rename
      */
-    List<WorksheetMetaResp> renameWorksheet(Long projectId, String pathStr, String destination);
+    List<WorksheetMetaResp> renameWorksheet(Long projectId, String pathStr, String destinationPath);
 
     /**
      * edit worksheet

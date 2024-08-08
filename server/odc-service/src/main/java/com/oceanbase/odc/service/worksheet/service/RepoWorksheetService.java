@@ -75,12 +75,12 @@ public class RepoWorksheetService implements WorksheetService {
     }
 
     @Override
-    public List<Worksheet> renameWorksheet(Long projectId, Path path, Path destination) {
+    public List<Worksheet> renameWorksheet(Long projectId, Path path, Path destinationPath) {
         return Collections.emptyList();
     }
 
     @Override
-    public List<Worksheet> editWorksheet(Long projectId, Path path, Path destination, String objectKey,
+    public List<Worksheet> editWorksheet(Long projectId, Path path, Path destinationPath, String objectKey,
             Long readVersion) {
         return Collections.emptyList();
     }

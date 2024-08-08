@@ -109,21 +109,21 @@ public class Worksheet {
     }
 
     /**
-     * rename path of current worksheet to {@param destination}
+     * rename path of current worksheet to {@param destinationPath}
      *
-     * @param destination
+     * @param destinationPath
      * @return all changed worksheets ,contain current
      */
-    public Set<Worksheet> rename(Path destination) {
-        if (!WorksheetPathUtil.isRenameValid(this.path, destination)) {
+    public Set<Worksheet> rename(Path destinationPath) {
+        if (!WorksheetPathUtil.isRenameValid(this.path, destinationPath)) {
             throw new IllegalArgumentException(
-                    "invalid path for rename,from:" + this.path + ",destination:" + destination);
+                    "invalid path for rename,from:" + this.path + ",destinationPath:" + destinationPath);
         }
-        if (this.isRenameDuplicated(destination)) {
+        if (this.isRenameDuplicated(destinationPath)) {
             throw new NameDuplicatedException(
-                    "duplicated path for rename,from:" + this.path + ",destination:" + destination);
+                    "duplicated path for rename,from:" + this.path + ",destinationPath:" + destinationPath);
         }
-        if (this.path.rename(this.path, destination)) {
+        if (this.path.rename(this.path, destinationPath)) {
             this.isChanged = true;
         }
         Set<Worksheet> changedSubFiles = new HashSet<>();
@@ -132,7 +132,7 @@ public class Worksheet {
             return changedSubFiles;
         }
         for (Worksheet subFile : subWorksheets) {
-            if (subFile.path.rename(this.path, destination)) {
+            if (subFile.path.rename(this.path, destinationPath)) {
                 changedSubFiles.add(subFile);
                 subFile.isChanged = true;
             }
@@ -146,8 +146,8 @@ public class Worksheet {
     /**
      * Edit the name and content（actually, it's objectKey） of the current worksheet，
      *
-     * @param destination If the destination for renaming is the same as the current path, do not rename
-     *        it
+     * @param destinationPath If the destinationPath for renaming is the same as the current path, do
+     *        not rename it
      * @param objectKey After editing the worksheet content, frontend will upload the worksheet the
      *        object to OSS with objectKey. If it is the same as the current one, it means that the
      *        content has not been changed
@@ -156,7 +156,7 @@ public class Worksheet {
      *        verification is not performed
      * @return all changed worksheets ,contain current
      */
-    public Set<Worksheet> edit(Path destination, String objectKey, Long readVersion) {
+    public Set<Worksheet> edit(Path destinationPath, String objectKey, Long readVersion) {
         // 若objectKey变更，需要修改内容，且判断readVersion是否符合条件
         if (this.path.isFile() && !StringUtils.equals(this.objectKey, objectKey)) {
             this.objectKey = objectKey;
@@ -170,8 +170,8 @@ public class Worksheet {
 
         Set<Worksheet> changedSubFiles = new HashSet<>();
         // destination和当前path相同，需要修改名称
-        if (!this.path.equals(destination)) {
-            changedSubFiles = rename(destination);
+        if (!this.path.equals(destinationPath)) {
+            changedSubFiles = rename(destinationPath);
         }
 
         if (this.isChanged) {
@@ -182,17 +182,17 @@ public class Worksheet {
     }
 
     /**
-     * Verify if the renamed destination duplicates the existing worksheets path
+     * Verify if the renamed destinationPath duplicates the existing worksheets path
      *
-     * @param destination
+     * @param destinationPath
      * @return true 重复 ;false 不重复
      */
-    public boolean isRenameDuplicated(Path destination) {
+    public boolean isRenameDuplicated(Path destinationPath) {
         if (CollectionUtils.isEmpty(sameLevelWorksheets)) {
             return false;
         }
         for (Worksheet subFile : sameLevelWorksheets) {
-            if (StringUtils.equals(subFile.path.getName(), destination.getName())) {
+            if (StringUtils.equals(subFile.path.getName(), destinationPath.getName())) {
                 return true;
             }
         }

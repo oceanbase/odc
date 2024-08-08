@@ -225,30 +225,30 @@ public class Path {
 
     /**
      * Rename. Only when the current path matches {@param from} will it be renamed as
-     * {@param destination} and return true. If it does not match, no renaming will be performed and
-     * return false The {@param from} and {@param destination} here need to satisfy
+     * {@param destinationPath} and return true. If it does not match, no renaming will be performed and
+     * return false The {@param from} and {@param destinationPath} here need to satisfy
      * {@link WorksheetPathUtil#isRenameValid}, and the reason why this validation is not added here is
      * that it will not duplicate verify when renaming multiple times.
      * 
      * @param from the path need to rename
-     * @param destination path after renamed
+     * @param destinationPath path after renamed
      * @return is renamed
      */
-    public boolean rename(Path from, Path destination) {
-        if (destination.isExceedNameLengthLimit()) {
+    public boolean rename(Path from, Path destinationPath) {
+        if (destinationPath.isExceedNameLengthLimit()) {
             throw new NameTooLongException("name length is over limit " +
-                    NAME_LENGTH_LIMIT + ", path:" + destination);
+                    NAME_LENGTH_LIMIT + ", path:" + destinationPath);
         }
         if (!this.isRenameMatch(from)) {
             return false;
         }
         // This is renaming the {@param from} itself
         if (from.levelNum.equals(this.levelNum)) {
-            this.name = destination.name;
+            this.name = destinationPath.name;
             return true;
         }
         // This is renaming the sub items of {@param from}
-        this.parentPathItems.set(from.levelNum - 1, destination.name);
+        this.parentPathItems.set(from.levelNum - 1, destinationPath.name);
         return true;
     }
 

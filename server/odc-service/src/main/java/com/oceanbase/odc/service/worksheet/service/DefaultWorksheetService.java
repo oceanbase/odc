@@ -215,7 +215,7 @@ public class DefaultWorksheetService implements WorksheetService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public List<Worksheet> renameWorksheet(Long projectId, Path path, Path destination) {
+    public List<Worksheet> renameWorksheet(Long projectId, Path path, Path destinationPath) {
         Optional<Worksheet> fileOptional =
                 normalProjectFilesRepository.findByProjectAndPath(projectId, path,
                         true, true, true, true);
@@ -223,14 +223,14 @@ public class DefaultWorksheetService implements WorksheetService {
                 fileOptional.orElseThrow(() -> new IllegalStateException("unexpected exception,projectId:"
                         + projectId + " path:" + path));
 
-        Set<Worksheet> renamedWorksheets = worksheet.rename(destination);
+        Set<Worksheet> renamedWorksheets = worksheet.rename(destinationPath);
         normalProjectFilesRepository.batchUpdateById(renamedWorksheets, false);
 
         return new ArrayList<>(renamedWorksheets);
     }
 
     @Override
-    public List<Worksheet> editWorksheet(Long projectId, Path path, Path destination,
+    public List<Worksheet> editWorksheet(Long projectId, Path path, Path destinationPath,
             String objectKey, Long readVersion) {
         Optional<Worksheet> fileOptional =
                 normalProjectFilesRepository.findByProjectAndPath(projectId, path,
@@ -239,7 +239,7 @@ public class DefaultWorksheetService implements WorksheetService {
                 fileOptional.orElseThrow(() -> new IllegalStateException("unexpected exception,projectId:"
                         + projectId + " path:" + path));
 
-        Set<Worksheet> editedWorksheets = worksheet.edit(destination, objectKey, readVersion);
+        Set<Worksheet> editedWorksheets = worksheet.edit(destinationPath, objectKey, readVersion);
         normalProjectFilesRepository.batchUpdateById(editedWorksheets, true);
 
         return new ArrayList<>(editedWorksheets);

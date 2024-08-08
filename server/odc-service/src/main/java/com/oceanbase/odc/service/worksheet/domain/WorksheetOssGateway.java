@@ -28,7 +28,7 @@ import java.util.Set;
 public interface WorksheetOssGateway {
     String generateUploadUrl(Long projectId);
 
-    void copyTo(String tempObjectKey, Path destination);
+    void copyTo(String tempObjectKey, Path destinationPath);
 
     String getContent(String objectKey);
 

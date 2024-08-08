@@ -193,19 +193,19 @@ public class WorksheetPathUtil {
      * Determine whether renaming is legal
      * 
      * @param from
-     * @param destination
+     * @param destinationPath
      * @return
      */
-    public static boolean isRenameValid(Path from, Path destination) {
+    public static boolean isRenameValid(Path from, Path destinationPath) {
         // Same path cannot be renamed
-        // The parents of the from and destination are same nam
+        // The parents of the from and destinationPath are same nam
         // Cannot rename paths with different types
-        return from != null && destination != null
+        return from != null && destinationPath != null
                 && from.canRename()
-                && destination.canRename()
-                && !from.equals(destination)
-                && CollectionUtils.isEqualCollection(from.getParentPathItems(), destination.getParentPathItems())
-                && from.getType() == destination.getType();
+                && destinationPath.canRename()
+                && !from.equals(destinationPath)
+                && CollectionUtils.isEqualCollection(from.getParentPathItems(), destinationPath.getParentPathItems())
+                && from.getType() == destinationPath.getType();
     }
 
     public static Optional<Path> findCommonParentPath(Set<Path> paths) {
