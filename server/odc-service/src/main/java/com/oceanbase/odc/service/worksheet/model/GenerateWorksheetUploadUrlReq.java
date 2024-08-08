@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.worksheet.model;
 
+import lombok.Data;
+
 /**
  * the request of generating worksheet upload url
  *
@@ -23,6 +25,7 @@ package com.oceanbase.odc.service.worksheet.model;
  * @date 2024/08/08
  * @since 4.3.2
  */
+@Data
 public class GenerateWorksheetUploadUrlReq {
     String fileName;
     /**
