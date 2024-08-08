@@ -24,10 +24,13 @@ import lombok.Getter;
 
 public enum OBInstanceRoleType implements Translatable {
     // not a primary/standby instance
+    // 普通实例，不是主实例/从实例
     NORMAL("NORMAL"),
 
+    // 主实例
     PRIMARY("PRIMARY"),
 
+    // 物理从实例
     PHYSICAL_STANDBY("PHYSICAL_STANDBY");
 
     @Getter
@@ -37,11 +40,22 @@ public enum OBInstanceRoleType implements Translatable {
         this.value = value;
     }
 
+    /**
+     * 将枚举类型转换为字符串
+     *
+     * @return 返回枚举类型的名称
+     */
     @JsonValue
     public String getName() {
         return this.name();
     }
 
+    /**
+     * 根据字符串值获取枚举类型
+     *
+     * @param value 枚举类型的字符串值
+     * @return 返回对应的枚举类型
+     */
     @JsonCreator
     public static OBInstanceRoleType fromValue(String value) {
         for (OBInstanceRoleType roleType : OBInstanceRoleType.values()) {
@@ -52,6 +66,11 @@ public enum OBInstanceRoleType implements Translatable {
         return OBInstanceRoleType.NORMAL;
     }
 
+    /**
+     * 获取枚举类型的编码
+     *
+     * @return 返回枚举类型的名称
+     */
     @Override
     public String code() {
         return name();

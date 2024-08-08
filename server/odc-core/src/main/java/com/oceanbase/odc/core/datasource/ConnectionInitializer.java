@@ -20,6 +20,7 @@ import java.sql.SQLException;
 
 /**
  * Connection initializer, used to initialize the {@link java.sql.Connection}
+ * 连接初始化程序，用于初始化{@link java.sql.Connection}
  *
  * @author yh263208
  * @date 2021-11-10 15:40

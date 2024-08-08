@@ -28,6 +28,7 @@ public class ConnectionPropertiesBuilder {
     public static final String PASSWORD = "password";
     /**
      * Specifies the administrative user for authentication in oracle JDBC {@link UserRole}
+     * 指定 oracle JDBC UserRole中用于身份验证的管理用户
      */
     public static final String USER_ROLE = "internal_logon";
     private final Properties properties = new Properties();

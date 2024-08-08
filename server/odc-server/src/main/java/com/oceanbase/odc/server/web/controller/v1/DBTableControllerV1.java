@@ -52,14 +52,23 @@ public class DBTableControllerV1 {
     @Autowired
     private ConnectSessionService sessionService;
 
+    /**
+     * 查看表的列表
+     *
+     * @param sid sid示例：sid:1000-1:d:db1
+     * @return 包含OdcDBTable对象的列表
+     */
     @ApiOperation(value = "list", notes = "查看表的列表，sid示例：sid:1000-1:d:db1")
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<List<OdcDBTable>> list(@PathVariable String sid) {
         // sid:1-1:d:database
+        // 解析sid，获取数据库名称
         ResourceIdentifier i = ResourceIDParser.parse(sid);
         String dbName = i.getDatabase();
+        // 获取表列表
         List<DBTable> tables = tableService.listTables(sessionService.nullSafeGet(i.getSid(), true), dbName);
+        // 将DBTable对象转换为OdcDBTable对象，并放入列表中
         return OdcResult.ok(tables.stream().map(OdcDBTable::new).collect(Collectors.toList()));
     }
 

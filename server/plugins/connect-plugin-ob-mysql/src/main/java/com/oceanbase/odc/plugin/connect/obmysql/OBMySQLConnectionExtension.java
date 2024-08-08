@@ -62,10 +62,17 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
     private static final Integer REACHABLE_TIMEOUT_MILLIS = 10000;
 
     @Override
+    /**
+     * 生成JDBC连接URL
+     * @param properties JDBC连接属性
+     * @return JDBC连接URL
+     */
     public String generateJdbcUrl(@NonNull JdbcUrlProperty properties) {
         String host = properties.getHost();
+        // 判断host是否为空，不允许为空
         Validate.notEmpty(host, "host can not be empty");
         Integer port = properties.getPort();
+        // 判断port是否为空，不允许为空
         Validate.notNull(port, "port can not be null");
         String defaultSchema = properties.getDefaultSchema();
 

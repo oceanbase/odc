@@ -57,6 +57,7 @@ import lombok.Setter;
 /**
  * Long connection connection pool factory class, used to construct a long connection connection
  * pool according to the {@link com.oceanbase.odc.service.connection.model.ConnectionConfig}
+ * 长连接连接池工厂类，依赖{@link com.oceanbase.odc.service.connection.model.ConnectionConfig}来构造长连接连接池。
  *
  * @author yh263208
  * @date 2021-11-16 17:29
@@ -65,22 +66,40 @@ import lombok.Setter;
  */
 public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
 
-    private String username;
-    private String password;
-    private String host;
-    private Integer port;
-    private String defaultSchema;
-    private String sid;
-    private String serviceName;
-    protected UserRole userRole;
-    private Map<String, String> parameters;
-    protected final ConnectionConfig connectionConfig;
-    private final Boolean autoCommit;
-    private final boolean initConnection;
+    private         String                   username;
+    // 数据库密码
+    private         String                   password;
+    // 数据库主机地址
+    private         String                   host;
+    // 数据库端口号
+    private         Integer                  port;
+    // 数据库默认模式
+    private         String                   defaultSchema;
+    // 数据库实例ID
+    private         String                   sid;
+    // 数据库服务名
+    private         String                   serviceName;
+    // 数据库用户角色
+    protected       UserRole                 userRole;
+    // 数据库连接参数
+    private         Map<String, String>      parameters;
+    // 数据库连接配置
+    protected final ConnectionConfig         connectionConfig;
+    // 是否自动提交事务
+    private final   Boolean                  autoCommit;
+    // 是否初始化连接
+    private final   boolean                  initConnection;
     @Setter
-    private EventPublisher eventPublisher;
+    private         EventPublisher           eventPublisher;
+    // 数据库连接扩展点
     protected final ConnectionExtensionPoint connectionExtensionPoint;
 
+    /**
+     * 构造函数
+     *
+     * @param connectionConfig 数据库连接配置
+     * @param autoCommit 是否自动提交事务
+     */
     public OBConsoleDataSourceFactory(@NonNull ConnectionConfig connectionConfig, Boolean autoCommit) {
         this(connectionConfig, autoCommit, true);
     }
@@ -102,7 +121,13 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         this.connectionExtensionPoint = ConnectionPluginUtil.getConnectionExtension(connectionConfig.getDialectType());
     }
 
+    /**
+     * 获取JDBC URL
+     *
+     * @return JDBC URL字符串
+     */
     public String getJdbcUrl() {
+        // 调用connectionExtensionPoint的generateJdbcUrl方法，传入getJdbcUrlProperties方法的返回值作为参数
         return connectionExtensionPoint.generateJdbcUrl(getJdbcUrlProperties());
     }
 
@@ -183,6 +208,11 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         return jdbcUrlParams;
     }
 
+    /**
+     * 获取数据源
+     *
+     * @return 数据源
+     */
     @Override
     public DataSource getDataSource() {
         String jdbcUrl = getJdbcUrl();
@@ -198,8 +228,10 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
             dataSource.setConnectionProperties(properties);
         }
         // Set datasource driver class
+        // 设置数据源驱动类
         dataSource.setDriverClassName(connectionExtensionPoint.getDriverClassName());
         // fix arbitrary file reading vulnerability
+        // 修复任意文件读取漏洞
         properties.setProperty("allowLoadLocalInfile", "false");
         properties.setProperty("allowUrlInLocalInfile", "false");
         properties.setProperty("allowLoadLocalInfileInPath", "");
@@ -207,13 +239,16 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         if (autoCommit != null) {
             dataSource.setAutoCommit(autoCommit);
         }
+        // 添加备份实例初始化器
         dataSource.addInitializer(new BackupInstanceInitializer(connectionConfig));
         if (this.initConnection) {
+            // 初始化连接
             List<ConnectionInitializer> initializers = connectionExtensionPoint.getConnectionInitializers();
             if (!CollectionUtils.isEmpty(initializers)) {
                 initializers.forEach(dataSource::addInitializer);
             }
         }
+        // 添加数据源初始化脚本初始化器
         dataSource.addInitializer(new DataSourceInitScriptInitializer(connectionConfig));
         return dataSource;
     }

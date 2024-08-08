@@ -42,19 +42,26 @@ public class BackupInstanceInitializer implements ConnectionInitializer {
 
     @Override
     public void init(Connection connection) throws SQLException {
+        // 判断连接配置的方言类型是否为OceanBase，且实例角色类型是否为物理备份
         if (this.connectionConfig.getDialectType().isOceanbase()
-                && this.connectionConfig.getInstanceRoleType() == OBInstanceRoleType.PHYSICAL_STANDBY) {
+            && this.connectionConfig.getInstanceRoleType() == OBInstanceRoleType.PHYSICAL_STANDBY) {
             long start = System.currentTimeMillis();
+            // 获取OceanBase版本号
             String version = OBUtils.getObVersion(connection);
+            // 如果版本号小于4.0.0
             if (VersionUtils.isLessThan(version, "4.0.0")) {
                 try (Statement statement = connection.createStatement()) {
+                    // 设置查询超时时间为3秒
                     statement.setQueryTimeout(3);
+                    // 执行设置ob_read_consistency='WEAK'的SQL语句
                     statement.execute("set ob_read_consistency='WEAK';");
+                    // 输出初始化完成的日志信息
                     log.info("Backup instance initializer init finished, cost={}ms",
-                            System.currentTimeMillis() - start);
+                        System.currentTimeMillis() - start);
                 } catch (SQLException e) {
+                    // 输出设置ob_read_consistency='WEAK'失败的日志信息
                     log.warn("Failed to set ob_read_consistency='WEAK' for backup instance, error: {}",
-                            e.getMessage());
+                        e.getMessage());
                 }
             }
         }

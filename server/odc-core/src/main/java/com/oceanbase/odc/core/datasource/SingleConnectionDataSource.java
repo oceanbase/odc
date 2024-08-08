@@ -44,6 +44,9 @@ import lombok.extern.slf4j.Slf4j;
  * {@link Connection} is reset, there needs to be a mechanism to notify the external caller. At the
  * same time, some business settings of {@code ODC} need to be considered when initializing the
  * {@link Connection}.
+ * 单连接 {@link javax.sql.DataSource} ，在创建数据源时只会初始化一个数据库连接。
+ * 此数据源的使用场景是在ODC控制台执行SQL，此场景要求数据源保持长连接。
+ * 如果{@link Connection}被重置，需要有机制通知外部调用者。同时初始化{@link Connection}时需要考虑ODC的一些业务设置
  *
  * @author yh263208
  * @date 2021-11-08 16:20
@@ -72,15 +75,22 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         this.autoReconnect = autoReconnect;
     }
 
+    /**
+     * 获取数据库连接
+     *
+     * @return 数据库连接
+     * @throws SQLException SQL异常
+     */
     @Override
     public Connection getConnection() throws SQLException {
         if (Objects.isNull(this.connection)) {
             return innerCreateConnection();
         }
         Lock thisLock = this.lock;
+        // 如果无法获取锁
         if (!tryLock(thisLock)) {
             throw new ConflictException(ErrorCodes.ConnectionOccupied, new Object[] {},
-                    "Connection is occupied, waited " + this.timeOutMillis + " millis");
+                "Connection is occupied, waited " + this.timeOutMillis + " millis");
         }
         try {
             if (this.connection.isClosed() || !this.connection.isValid(getLoginTimeout())) {
@@ -92,6 +102,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
             return getConnectionProxy(this.connection, this.lock);
         } finally {
             log.info("Get connection unlock, lock={}", thisLock.hashCode());
+            // 释放锁
             thisLock.unlock();
         }
     }
@@ -197,16 +208,27 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         }
     }
 
+    /**
+     * 创建数据库连接
+     *
+     * @return 数据库连接
+     * @throws SQLException SQL异常
+     */
     private synchronized Connection innerCreateConnection() throws SQLException {
         if (this.connection != null) {
             throw new IllegalStateException("Connection is not null");
         }
         try {
             Connection connection = newConnectionFromDriver(getUsername(), getPassword());
+            // 准备连接
             prepareConnection(connection);
+            // 将连接保存到成员变量中
             this.connection = connection;
+            // 创建一个可重入锁
             this.lock = new ReentrantLock();
+            // 记录日志
             log.info("Established shared JDBC Connection, lock={}", this.lock.hashCode());
+            // 返回连接代理
             return getConnectionProxy(this.connection, this.lock);
         } catch (Throwable e) {
             throw new SQLException(e);

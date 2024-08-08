@@ -17,10 +17,25 @@ package com.oceanbase.odc.core.shared;
 
 public interface OrganizationIsolated {
 
+    /**
+     * 获取资源类型
+     *
+     * @return 资源类型
+     */
     String resourceType();
 
+    /**
+     * 获取组织ID
+     *
+     * @return 组织ID
+     */
     Long organizationId();
 
+    /**
+     * 获取ID
+     *
+     * @return ID
+     */
     Long id();
 
 }

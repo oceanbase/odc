@@ -95,17 +95,31 @@ public class TableService {
     @Autowired
     private DBResourcePermissionHelper dbResourcePermissionHelper;
 
+    /**
+     * 列出指定数据库中的所有表
+     *
+     * @param params 查询表参数
+     * @return 表列表
+     * @throws SQLException SQL异常
+     * @throws InterruptedException 线程中断异常
+     */
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("permission check inside")
     public List<Table> list(@NonNull @Valid QueryTableParams params) throws SQLException, InterruptedException {
+        // 获取数据库连接信息
         Database database = databaseService.detail(params.getDatabaseId());
+        // 获取连接配置
         ConnectionConfig dataSource = database.getDataSource();
+        // 创建OBConsoleDataSourceFactory对象
         OBConsoleDataSourceFactory factory = new OBConsoleDataSourceFactory(dataSource, true);
         try (SingleConnectionDataSource ds = (SingleConnectionDataSource) factory.getDataSource();
-                Connection conn = ds.getConnection()) {
+            Connection conn = ds.getConnection()) {
+            // 获取表扩展点
             TableExtensionPoint point = SchemaPluginUtil.getTableExtension(dataSource.getDialectType());
+            // 获取最新的表名列表
             Set<String> latestTableNames = point.list(conn, database.getName())
-                    .stream().map(DBObjectIdentity::getName).collect(Collectors.toSet());
+                .stream().map(DBObjectIdentity::getName).collect(Collectors.toSet());
+            // 如果当前用户是个人版组织，则返回所有表的权限类型为所有权限类型
             if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
                 return latestTableNames.stream().map(tableName -> {
                     Table table = new Table();
@@ -114,13 +128,16 @@ public class TableService {
                     return table;
                 }).collect(Collectors.toList());
             }
+            // 获取数据库中已存在的表列表
             List<DBObjectEntity> tables =
-                    dbObjectRepository.findByDatabaseIdAndType(params.getDatabaseId(), DBObjectType.TABLE);
+                dbObjectRepository.findByDatabaseIdAndType(params.getDatabaseId(), DBObjectType.TABLE);
             Set<String> existTableNames = tables.stream().map(DBObjectEntity::getName).collect(Collectors.toSet());
+            // 如果最新的表名列表与已存在的表名列表不一致，则同步数据库中的表
             if (latestTableNames.size() != existTableNames.size() || !existTableNames.containsAll(latestTableNames)) {
                 syncDBTables(conn, database, dataSource.getDialectType());
                 tables = dbObjectRepository.findByDatabaseIdAndType(params.getDatabaseId(), DBObjectType.TABLE);
             }
+            // 将实体列表转换为模型列表
             return entitiesToModels(tables, database, params.getIncludePermittedAction());
         }
     }

@@ -36,6 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Basic data source, used to implement several low-frequency usage methods in the data source
  * interface
+ * 基础数据源，用于实现数据源接口中几种低频的使用方法
  *
  * @author yh263208
  * @date 2021-11-09 15:59
@@ -114,6 +115,7 @@ public abstract class BaseDriverBasedDataSource implements DataSource {
     /**
      * Build properties for the Driver, including the given username and password (if any), and obtain a
      * corresponding Connection.
+     * 为驱动构建属性，包括给定的用户名和密码（如果有），并获取相应的连接
      *
      * @param username the name of the user
      * @param password the password to use
@@ -121,31 +123,43 @@ public abstract class BaseDriverBasedDataSource implements DataSource {
      * @throws SQLException in case of failure
      */
     protected Connection newConnectionFromDriver(String username, String password)
-            throws ClassNotFoundException, SQLException {
+        throws ClassNotFoundException, SQLException {
+        // 创建一个属性集合，用于存储合并后的属性
         Properties mergedProps = new Properties();
+        // 获取连接属性
         Properties connProps = getConnectionProperties();
+        // 如果连接属性不为空，则将其添加到合并属性集合中
         if (connProps != null) {
             mergedProps.putAll(connProps);
         }
+        // 如果用户名不为空，则将其添加到合并属性集合中
         if (username != null) {
             mergedProps.setProperty("user", username);
         }
+        // 如果密码不为空，则将其添加到合并属性集合中
         if (password != null) {
             mergedProps.setProperty("password", password);
         }
+        // 通过合并属性集合获取连接
         Connection con = newConnectionFromDriver(mergedProps);
         try {
+            // 调用连接创建事件监听器的回调方法
             onConnectionCreated(con);
         } catch (Throwable throwable) {
+            // 如果回调方法执行失败，则记录警告日志
             log.warn("The connection creation event listener callback method failed to execute", throwable);
         }
+        // 如果目录不为空，则设置连接的目录
         if (this.catalog != null) {
             con.setCatalog(this.catalog);
         }
+        // 如果模式不为空，则设置连接的模式
         if (this.schema != null) {
             con.setSchema(this.schema);
         }
+        // 初始化连接
         initConnection(con);
+        // 返回连接
         return con;
     }
 
