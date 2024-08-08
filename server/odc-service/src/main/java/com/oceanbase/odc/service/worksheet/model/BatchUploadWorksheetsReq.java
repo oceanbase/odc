@@ -36,6 +36,6 @@ public class BatchUploadWorksheetsReq {
     @Data
     public static class UploadWorksheetTuple {
         private String path;
-        private String objectKey;
+        private String objectId;
     }
 }
