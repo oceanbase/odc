@@ -19,14 +19,14 @@ import java.io.File;
 import java.util.Set;
 
 /**
- * oss interfaces in worksheet
+ * object storage interfaces in worksheet
  *
  * @author keyang
  * @date 2024/08/02
  * @since 4.3.2
  */
-public interface WorksheetOssGateway {
-    String generateUploadUrl(Long projectId);
+public interface WorksheetObjectStorageGateway {
+    String generateUploadUrl(String bucket, String objectId);
 
     void copyTo(String tempObjectId, Path destinationPath);
 

@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
+import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudSecurityTokenService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
@@ -32,6 +33,7 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageCon
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.objectstorage.cloud.util.CloudObjectStorageUtil;
 import com.oceanbase.odc.service.worksheet.domain.Path;
+import com.oceanbase.odc.service.worksheet.utils.WorksheetUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,39 +44,21 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class WorksheetOssGateway implements com.oceanbase.odc.service.worksheet.domain.WorksheetOssGateway {
-    private static final Long DEFAULT_TOKEN_DURATION_SECONDS = 15 * 60L;
-    private static final Long MAX_TOKEN_DURATION_SECONDS = 60 * 60L;
-    private final CloudObjectStorageService cloudObjectStorageService;
-    private final CloudSecurityTokenService cloudSecurityTokenService;
-    private final ObjectStorageConfiguration objectStorageConfiguration;
+public class WorksheetObjectStorageGateway
+        implements com.oceanbase.odc.service.worksheet.domain.WorksheetObjectStorageGateway {
 
-    public WorksheetOssGateway(CloudObjectStorageService cloudObjectStorageService,
-            @Autowired @Qualifier("publicEndpointCloudClient") CloudSecurityTokenService cloudSecurityTokenService,
-            CloudEnvConfigurations cloudEnvConfigurations) {
-        this.cloudObjectStorageService = cloudObjectStorageService;
-        this.cloudSecurityTokenService = cloudSecurityTokenService;
-        this.objectStorageConfiguration = cloudEnvConfigurations.getObjectStorageConfiguration();
+    @Autowired
+    private ObjectStorageFacade objectStorageFacade;
+
+
+
+    @Override
+    public String generateUploadUrl(String bucket, String objectId) {
+        return objectStorageFacade.getDownloadUrl(bucket, objectId);
     }
 
     @Override
-    public String generateUploadUrl(Long durationSeconds) {
-
-        return "";
-    }
-
-    @Override
-    public void copyTo(String tempObjectId, Path destinationPath) {
-        String toObjectName = CloudObjectStorageUtil.generateObjectName(null, UUID.randomUUID().toString(),
-                CloudObjectStorageConstants.ODC_PROJECT_FILES_PREFIX, destinationPath.getStandardPath());
-        try {
-            cloudObjectStorageService.copyTo(tempObjectId, toObjectName);
-        } catch (IOException ex) {
-            log.warn("Failed to copy object to OSS, tempObjectId={},destinationPath={}", tempObjectId,
-                    destinationPath, ex);
-            throw new InternalServerError("Failed to put object onto OSS", ex);
-        }
-    }
+    public void copyTo(String tempObjectId, Path destinationPath) {}
 
     @Override
     public String getContent(String objectId) {
@@ -93,7 +77,7 @@ public class WorksheetOssGateway implements com.oceanbase.odc.service.worksheet.
 
     @Override
     public void downloadToFile(String objectName, File toFile) {
-        cloudObjectStorageService.downloadToFile(objectName, toFile);
+
     }
 
     @Override

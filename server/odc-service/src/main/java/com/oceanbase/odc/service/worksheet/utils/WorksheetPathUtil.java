@@ -45,19 +45,10 @@ import com.oceanbase.odc.service.worksheet.model.WorksheetType;
  * @since 4.3.2
  */
 public class WorksheetPathUtil {
-
-    private static final String OBJECT_STORAGE_BUCKET_NAME_PREFIX = "PROJECT_FILE_";
     /**
      * standard delimiter of path
      */
     private static final String STANDARD_PATH_SEPARATOR = "/";
-    /**
-     * Worksheet download directory
-     *
-     */
-    private static final String WORKSHEET_DOWNLOAD_DIRECTORY =
-            CloudObjectStorageConstants.TEMP_DIR + "/worksheet_download";
-    private static final String WORKSHEET_DATE_FORMAT = "yyyyMMddHHmmss";
 
     /**
      * Split the path into individual items, supporting splitting by "/" and "\".
@@ -264,24 +255,5 @@ public class WorksheetPathUtil {
         } catch (IOException e) {
             throw new InternalServerError("create file error,pathStr: " + pathStr, e);
         }
-    }
-
-
-    public static String getWorksheetDownloadDirectory() {
-        int hashCode = UUID.randomUUID().hashCode();
-        SimpleDateFormat format = new SimpleDateFormat(WORKSHEET_DATE_FORMAT);
-        format.setTimeZone(TimeZone.getDefault());
-        return String.format("%s/%s/", WORKSHEET_DOWNLOAD_DIRECTORY,
-                format.format(new Date()) + hashCode);
-    }
-
-    public static String getWorksheetDownloadZipFile(String directory, String fileName) {
-        return String.format("%s/%s.zip",
-                directory,
-                fileName);
-    }
-
-    public static String getObjectStorageBucketName(Long projectId) {
-        return OBJECT_STORAGE_BUCKET_NAME_PREFIX + projectId;
     }
 }

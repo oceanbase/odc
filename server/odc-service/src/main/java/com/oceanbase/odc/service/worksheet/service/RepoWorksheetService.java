@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.annotation.Resource;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,9 @@ import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
 import com.oceanbase.odc.service.worksheet.domain.BatchOperateWorksheetsResult;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.Worksheet;
+import com.oceanbase.odc.service.worksheet.domain.WorksheetObjectStorageGateway;
+import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;
+import com.oceanbase.odc.service.worksheet.utils.WorksheetUtil;
 
 /**
  * Worksheets下的文件的处理
@@ -39,6 +44,16 @@ import com.oceanbase.odc.service.worksheet.domain.Worksheet;
  */
 @Service
 public class RepoWorksheetService implements WorksheetService {
+    @Resource
+    private WorksheetObjectStorageGateway objectStorageGateway;
+
+    @Override
+    public GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, Path path) {
+        String bucket = WorksheetUtil.getBucketNameOfRepos(projectId);
+        String objectId = WorksheetUtil.getObjectIdOfRepos(path);
+        String downloadUrl = objectStorageGateway.generateUploadUrl(bucket, objectId);
+        return new GenerateWorksheetUploadUrlResp();
+    }
 
     @Override
     @Transactional(rollbackFor = Throwable.class)

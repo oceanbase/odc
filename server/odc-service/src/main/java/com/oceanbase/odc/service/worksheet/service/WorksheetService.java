@@ -24,6 +24,7 @@ import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
 import com.oceanbase.odc.service.worksheet.domain.BatchOperateWorksheetsResult;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.Worksheet;
+import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;
 
 /**
  * @author keyang
@@ -31,6 +32,7 @@ import com.oceanbase.odc.service.worksheet.domain.Worksheet;
  * @since 4.3.2
  */
 public interface WorksheetService {
+    GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, Path path);
 
     Worksheet createWorksheet(Long projectId, Path createPath, String objectId);
 

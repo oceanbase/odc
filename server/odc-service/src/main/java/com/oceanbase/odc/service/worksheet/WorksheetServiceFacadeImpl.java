@@ -41,7 +41,7 @@ import com.oceanbase.odc.service.worksheet.domain.DivideBatchOperateWorksheets;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.WorkSheetsSearch;
 import com.oceanbase.odc.service.worksheet.domain.Worksheet;
-import com.oceanbase.odc.service.worksheet.domain.WorksheetOssGateway;
+import com.oceanbase.odc.service.worksheet.domain.WorksheetObjectStorageGateway;
 import com.oceanbase.odc.service.worksheet.domain.WorksheetProjectRepository;
 import com.oceanbase.odc.service.worksheet.factory.WorksheetServiceFactory;
 import com.oceanbase.odc.service.worksheet.model.BatchOperateWorksheetsResp;
@@ -54,6 +54,7 @@ import com.oceanbase.odc.service.worksheet.model.WorksheetMetaResp;
 import com.oceanbase.odc.service.worksheet.model.WorksheetResp;
 import com.oceanbase.odc.service.worksheet.service.WorksheetService;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
+import com.oceanbase.odc.service.worksheet.utils.WorksheetUtil;
 
 /**
  *
@@ -66,14 +67,17 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
     @Resource
     private WorksheetProjectRepository worksheetProjectRepository;
     @Resource
-    private WorksheetOssGateway projectFileOssGateway;
+    private WorksheetObjectStorageGateway projectFileOssGateway;
 
     @Resource
     private WorksheetServiceFactory worksheetServiceFactory;
 
     @Override
     public GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, GenerateWorksheetUploadUrlReq req) {
-        return null;
+        Path path = new Path(req.getFileName());
+        WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
+                path.getLocation());
+        return projectFileService.generateUploadUrl(projectId, path);
     }
 
 
@@ -194,9 +198,9 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
         Optional<Path> commonParentPathOptional =
                 WorksheetPathUtil.findCommonParentPath(divideBatchOperateWorksheets.all());
         String rootDirectoryName = getRootDirectoryName(projectId, commonParentPathOptional);
-        String parentOfDownloadDirectory = WorksheetPathUtil.getWorksheetDownloadDirectory();
+        String parentOfDownloadDirectory = WorksheetUtil.getWorksheetDownloadDirectory();
         String downloadDirectoryStr = parentOfDownloadDirectory + rootDirectoryName;
-        String zipFileStr = WorksheetPathUtil.getWorksheetDownloadZipFile(parentOfDownloadDirectory, rootDirectoryName);
+        String zipFileStr = WorksheetUtil.getWorksheetDownloadZipPath(parentOfDownloadDirectory, rootDirectoryName);
         java.nio.file.Path downloadDirectoryPath =
                 WorksheetPathUtil.createFileWithParent(downloadDirectoryStr, true);
         File downloadDirectory = downloadDirectoryPath.toFile();
