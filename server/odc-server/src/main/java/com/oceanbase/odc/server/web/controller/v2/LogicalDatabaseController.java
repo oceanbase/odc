@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.service.common.response.ListResponse;
@@ -62,6 +63,13 @@ public class LogicalDatabaseController {
     public SuccessResponse<DetailLogicalTableResp> detailLogicalTable(@PathVariable Long logicalDatabaseId,
             @PathVariable Long logicalTableId) {
         return Responses.success(tableService.detail(logicalDatabaseId, logicalTableId));
+    }
+
+    @RequestMapping(
+        value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/previewLogicalTableTopologies", method = RequestMethod.POST)
+    public ListResponse<LogicalTableTopologyResp> previewLogicalTableTopologies(@PathVariable Long logicalDatabaseId,
+        @RequestParam(name = "expression") String expression) {
+        return Responses.list(tableService.previewLogicalTableTopologies(logicalDatabaseId, expression));
     }
 
     @RequestMapping(
