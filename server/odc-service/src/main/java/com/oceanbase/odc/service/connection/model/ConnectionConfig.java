@@ -368,6 +368,8 @@ public class ConnectionConfig
             case OB_MYSQL:
             case ODP_SHARDING_OB_MYSQL:
                 return OdcConstants.MYSQL_DEFAULT_SCHEMA;
+            case POSTGRESQL:
+                return OdcConstants.POSTGRESQL_DEFAULT_CONN_DATABASE;
             default:
                 return null;
         }

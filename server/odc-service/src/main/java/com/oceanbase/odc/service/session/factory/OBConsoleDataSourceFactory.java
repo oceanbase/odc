@@ -318,7 +318,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
                 if (StringUtils.isNotEmpty(defaultSchema)) {
                     return getSchema(defaultSchema, connectionConfig.getDialectType());
                 }
-                return getSchema(OdcConstants.POSTGRESQL_DEFAULT_SCHEMA, connectionConfig.getDialectType());
+                return getSchema(OdcConstants.POSTGRESQL_DEFAULT_CONN_DATABASE, connectionConfig.getDialectType());
             default:
                 return null;
         }

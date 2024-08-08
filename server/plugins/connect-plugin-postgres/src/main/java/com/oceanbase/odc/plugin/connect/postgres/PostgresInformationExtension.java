@@ -29,22 +29,11 @@ public class PostgresInformationExtension implements InformationExtensionPoint {
     @Override
     public String getDBVersion(Connection connection) {
         String querySql = "SELECT current_setting('server_version');";
-        String dbVersion;
         try {
-            dbVersion = JdbcOperationsUtil.getJdbcOperations(connection).query(querySql, rs -> {
-                if (!rs.next()) {
-                    return "";
-                }
-                return rs.getString(1);
-            });
+            return JdbcOperationsUtil.getJdbcOperations(connection).queryForObject(querySql, String.class);
         } catch (Exception e) {
-            throw new BadRequestException(ErrorCodes.QueryDBVersionFailed,
-                    new Object[] {e.getMessage()}, e.getMessage());
-        }
-        if (dbVersion == null) {
             throw new BadRequestException(ErrorCodes.QueryDBVersionFailed,
                     new Object[] {"Result set is empty"}, "Result set is empty");
         }
-        return dbVersion;
     }
 }

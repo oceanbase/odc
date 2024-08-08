@@ -144,7 +144,7 @@ public class AbstractDlmPreprocessor implements Preprocessor {
             }
             SqlBuilder sqlBuilder = dbType.isMysql() ? new MySQLSqlBuilder() : new OracleSqlBuilder();
             if (dbType.isPostgreSql()) {
-                sqlBuilder.append("SELECT 1 FROM ").identifier("public", table.getTableName());
+                sqlBuilder.append("SELECT 1 FROM ").identifier(table.getTableName());
             } else {
                 sqlBuilder.append("SELECT 1 FROM ").identifier(database.getName(), table.getTableName());
             }

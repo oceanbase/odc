@@ -34,7 +34,6 @@
         <module>task-plugin-ob-mysql</module>
         <module>task-plugin-ob-oracle</module>
         <module>task-plugin-oracle</module>
-        <module>task-plugin-postgres</module>
     </modules>
     <properties>
         <maven-assembly-plugin.version>2.4</maven-assembly-plugin.version>
