@@ -16,9 +16,11 @@
 package com.oceanbase.odc.service.git;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -27,7 +29,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections.IteratorUtils;
-import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.CreateBranchCommand.SetupUpstreamMode;
 import org.eclipse.jgit.api.Git;
@@ -68,7 +69,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date: 2024/7/30
  */
 @Slf4j
-public class GitClientOperator {
+public class GitClientOperator implements Closeable {
     private static final byte[] EMPTY_BYTES = new byte[0];
 
     private final Git git;
@@ -130,21 +131,11 @@ public class GitClientOperator {
         return newRef.getName();
     }
 
-    public void pull(String branch, boolean abortWhenConflicting) throws GitAPIException, IOException {
-        PullResult pullResult = git.pull()
+    public PullResult pull(String branch) throws GitAPIException, IOException {
+        return git.pull()
                 .setRemoteBranchName(branch)
                 .setProgressMonitor(new TextProgressMonitor(new LogProgressWriter()))
                 .call();
-        if (abortWhenConflicting && pullResult.getMergeResult() != null &&
-                MapUtils.isNotEmpty(pullResult.getMergeResult().getConflicts())) {
-            log.warn("conflicts detected, aborting merge. conflict files:{}",
-                    pullResult.getMergeResult().getConflicts().keySet());
-            git.reset().setMode(ResetType.HARD).call();
-            return;
-        }
-        Verify.verify(pullResult.isSuccessful(),
-                String.format("pull failed, detail:[fetchResult:%s, mergeResult:%s]",
-                        pullResult.getFetchResult().getMessages(), pullResult.getMergeResult().toString()));
     }
 
     /**
@@ -177,7 +168,11 @@ public class GitClientOperator {
                 .collect(Collectors.toList());
     }
 
-    public List<GitDiff> diff() throws IOException {
+    /**
+     * {@link DiffFormatter#scan} method could not detect conflicted files, so we use
+     * {@link org.eclipse.jgit.api.DiffCommand} as complement
+     */
+    public List<GitDiff> diff() throws IOException, GitAPIException {
         List<GitDiff> changes = new ArrayList<>();
 
         Repository repository = git.getRepository();
@@ -216,6 +211,12 @@ public class GitClientOperator {
                 changes.add(diff);
             }
         }
+        Set<String> conflicts = git.status().call().getConflicting();
+        for (GitDiff diff : changes) {
+            if (conflicts.contains(diff.getNewPath())) {
+                diff.setState(FileChangeType.C);
+            }
+        }
         return changes;
     }
 
@@ -236,6 +237,7 @@ public class GitClientOperator {
                 break;
             case R:
             case M:
+            case C:
             default:
                 newText = new RawText(FileUtils.readFileToByteArray(new File(newPath)));
                 oldText = new RawText(getFileContent("HEAD", oldPath).getBytes());
@@ -285,6 +287,35 @@ public class GitClientOperator {
                 .setMode(ResetType.HARD)
                 .setRef(version)
                 .call();
+    }
+
+    public ByteArrayOutputStream getDiffForPatch() throws GitAPIException {
+        List<DiffEntry> diffs = git.diff().setCached(true).call();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (DiffFormatter formatter = new DiffFormatter(out)) {
+            formatter.setRepository(git.getRepository());
+            diffs.forEach(d -> {
+                try {
+                    formatter.format(d);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+        return out;
+    }
+
+    public void applyDiff(InputStream in) throws GitAPIException {
+        git.apply().setPatch(in).call();
+    }
+
+    public File getRepoDir() {
+        return git.getRepository().getDirectory().getParentFile();
+    }
+
+    @Override
+    public void close() {
+        git.close();
     }
 
     private CanonicalTreeParser prepareTreeParser(String ref) throws IOException {
