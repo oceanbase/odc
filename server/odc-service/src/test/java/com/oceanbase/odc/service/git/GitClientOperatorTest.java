@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.git;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -23,6 +24,7 @@ import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.ResetCommand.ResetType;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Ref;
@@ -143,6 +145,27 @@ public class GitClientOperatorTest {
         getOperator().resetHard(lastCommitId);
 
         Assert.assertEquals("select 1 from dual",
+                FileUtils.readFileToString(new File(PROJECT_WORKDIR, "test.sql"), StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void test_diffAndPatch_success() throws IOException, GitAPIException {
+        Git git = getGit();
+        GitClientOperator operator = getOperator();
+
+        FileUtils.write(new File(PROJECT_WORKDIR, "test.sql"), "this is updated", StandardCharsets.UTF_8);
+        git.add().addFilepattern("test.sql").call();
+
+        String diff = operator.getDiffForPatch().toString();
+
+        git.reset()
+                .setMode(ResetType.HARD)
+                .setRef("HEAD")
+                .call();
+        Assert.assertTrue(git.status().call().isClean());
+
+        operator.applyDiff(new ByteArrayInputStream(diff.getBytes(StandardCharsets.UTF_8)));
+        Assert.assertEquals("this is updated",
                 FileUtils.readFileToString(new File(PROJECT_WORKDIR, "test.sql"), StandardCharsets.UTF_8));
     }
 
