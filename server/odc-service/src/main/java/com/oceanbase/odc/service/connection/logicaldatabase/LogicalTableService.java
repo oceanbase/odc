@@ -57,7 +57,6 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.LogicalTableRecognitionUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalTable;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.BadLogicalTableExpressionException;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.DefaultLogicalTableExpressionParser;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.LogicalTableExpressions;
@@ -71,7 +70,6 @@ import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.sqlparser.SyntaxErrorException;
 
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -242,13 +240,15 @@ public class LogicalTableService {
                 databaseRepository.findById(baseTable.getPhysicalDatabaseId()).orElseThrow(() -> new NotFoundException(
                         ResourceType.ODC_DATABASE, "id", baseTable.getPhysicalDatabaseId()));
 
-        TableExtensionPoint tableExtensionPoint = SchemaPluginUtil.getTableExtension(logicalDatabase.getDialectType());
+        TableExtensionPoint tableExtensionPoint =
+                SchemaPluginUtil.getTableExtension(logicalDatabase.getConnectType().getDialectType());
         if (tableExtensionPoint == null) {
-            throw new UnsupportedOperationException("Unsupported dialect " + logicalDatabase.getDialectType());
+            throw new UnsupportedOperationException(
+                    "Unsupported dialect " + logicalDatabase.getConnectType().getDialectType());
         }
         try (Connection connection = new DruidDataSourceFactory(
                 connectionService.getForConnectionSkipPermissionCheck(physicalDatabase.getConnectionId()))
-                .getDataSource().getConnection()) {
+                        .getDataSource().getConnection()) {
             resp.setBasePhysicalTable(tableExtensionPoint.getDetail(connection, physicalDatabase.getName(),
                     baseTable.getPhysicalTableName()));
         } catch (Exception e) {

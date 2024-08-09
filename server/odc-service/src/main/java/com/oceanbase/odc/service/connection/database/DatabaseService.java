@@ -361,7 +361,7 @@ public class DatabaseService {
             database.setOrganizationId(authenticationFacade.currentOrganizationId());
             database.setLastSyncTime(new Date(System.currentTimeMillis()));
             database.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
-            database.setDialectType(connection.getDialectType());
+            database.setConnectType(connection.getType());
             database.setType(DatabaseType.PHYSICAL);
             DatabaseEntity saved = databaseRepository.saveAndFlush(database);
             List<UserResourceRole> userResourceRoles = buildUserResourceRoles(Collections.singleton(saved.getId()),

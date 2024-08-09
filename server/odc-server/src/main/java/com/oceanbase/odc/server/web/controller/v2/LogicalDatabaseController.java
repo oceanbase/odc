@@ -66,9 +66,10 @@ public class LogicalDatabaseController {
     }
 
     @RequestMapping(
-        value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/previewLogicalTableTopologies", method = RequestMethod.POST)
+            value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/previewLogicalTableTopologies",
+            method = RequestMethod.POST)
     public ListResponse<LogicalTableTopologyResp> previewLogicalTableTopologies(@PathVariable Long logicalDatabaseId,
-        @RequestParam(name = "expression") String expression) {
+            @RequestParam(name = "expression") String expression) {
         return Responses.list(tableService.previewLogicalTableTopologies(logicalDatabaseId, expression));
     }
 

@@ -27,6 +27,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
 import com.oceanbase.odc.core.shared.OrganizationIsolated;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
@@ -98,6 +100,12 @@ public class Database implements SecurityResource, OrganizationIsolated, Seriali
 
     @JsonProperty(access = Access.READ_ONLY)
     private Date objectLastSyncTime;
+
+    @JsonProperty(access = Access.READ_ONLY)
+    private DialectType dialectType;
+
+    @JsonProperty(access = Access.READ_ONLY)
+    private ConnectType connectType;
 
     private List<InnerUser> owners;
 

@@ -128,7 +128,7 @@ public class LogicalDatabaseService {
         logicalDatabase.setEnvironmentId(basePhysicalDatabase.getEnvironmentId());
         logicalDatabase.setDatabaseId(StringUtils.uuid());
         logicalDatabase.setType(DatabaseType.LOGICAL);
-        logicalDatabase.setDialectType(baseConnection.getDialectType());
+        logicalDatabase.setConnectType(baseConnection.getType());
         logicalDatabase.setSyncStatus(DatabaseSyncStatus.INITIALIZED);
         logicalDatabase.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
         logicalDatabase.setExisted(true);
@@ -165,7 +165,7 @@ public class LogicalDatabaseService {
         resp.setId(logicalDatabase.getId());
         resp.setName(logicalDatabase.getName());
         resp.setAlias(logicalDatabase.getAlias());
-        resp.setDialectType(logicalDatabase.getDialectType());
+        resp.setDialectType(logicalDatabase.getConnectType().getDialectType());
         resp.setEnvironment(environment);
         resp.setPhysicalDatabases(physicalDatabases);
         resp.setLogicalTables(tableService.list(logicalDatabase.getId()));
