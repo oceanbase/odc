@@ -16,14 +16,11 @@
 package com.oceanbase.odc.service.git.repo;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.concurrent.locks.Lock;
-
-import javax.annotation.PostConstruct;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.errors.GitAPIException;

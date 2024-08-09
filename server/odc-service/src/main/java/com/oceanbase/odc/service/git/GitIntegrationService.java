@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.git;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
@@ -30,6 +31,7 @@ import com.oceanbase.odc.common.crypto.TextEncryptor;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.git.GitRepoRepository;
 import com.oceanbase.odc.metadb.git.GitRepositoryEntity;
@@ -81,6 +83,15 @@ public class GitIntegrationService {
     public List<GitRepository> batchCreate(@NotNull Long projectId, @NotNull List<GitRepository> repositories) {
         long organizationId = authenticationFacade.currentOrganizationId();
         long creatorId = authenticationFacade.currentUserId();
+
+        Set<String> reposInMeta = gitRepoRepository.findByOrganizationIdAndProjectId(organizationId, projectId)
+                .stream().map(GitRepositoryEntity::getSshAddress).collect(Collectors.toSet());
+        repositories.forEach(r -> {
+            if (reposInMeta.contains(r.getSshAddress())) {
+                throw new BadRequestException(String.format("repository %s already exists", r.getSshAddress()));
+            }
+        });
+
         List<GitRepositoryEntity> entities = repositories.stream()
                 .map(r -> {
                     GitRepositoryEntity entity = modelToEntity(r);
@@ -100,7 +111,7 @@ public class GitIntegrationService {
         PreConditions.notNull(repository.getEmail(), "repository.email");
         PreConditions.notNull(repository.getPersonalAccessToken(), "repository.token");
         GitRepositoryEntity entity = nullSafeGet(repoId);
-        entity.setEmail(entity.getEmail());
+        entity.setEmail(repository.getEmail());
         TextEncryptor encryptor = getEncryptor(entity.getOrganizationId(), entity.getSalt());
         entity.setPersonalAccessToken(encryptor.encrypt(repository.getPersonalAccessToken()));
         GitRepositoryEntity updated = gitRepoRepository.saveAndFlush(entity);
