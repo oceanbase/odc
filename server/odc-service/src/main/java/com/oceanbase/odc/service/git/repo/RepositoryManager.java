@@ -22,6 +22,8 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.concurrent.locks.Lock;
 
+import javax.annotation.PostConstruct;
+
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +46,7 @@ import com.oceanbase.odc.metadb.git.GitRepositoryStageEntity;
 import com.oceanbase.odc.service.encryption.EncryptionFacade;
 import com.oceanbase.odc.service.git.GitClientOperator;
 import com.oceanbase.odc.service.git.GitIntegrationService;
+import com.oceanbase.odc.service.git.model.GitIntegrationProperties;
 import com.oceanbase.odc.service.git.model.RepoState;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
@@ -57,8 +60,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 public class RepositoryManager {
-    private static final long MAX_CACHED_SIZE = 100;
-    private static final long CACHED_DURATION_MINUTES = 24 * 60;
     private static final String LOCK_FORMAT = "repo-lock-%s-%s";
     private static final String GIT_REPO_DIR =
             Paths.get(MoreObjects.firstNonNull(SystemUtils.getEnvOrProperty("file.storage.dir"), "./data"), "repos")
@@ -78,14 +79,16 @@ public class RepositoryManager {
     private JdbcLockRegistry jdbcLockRegistry;
     @Autowired
     private GitIntegrationService integrationService;
+    @Autowired
+    private GitIntegrationProperties gitIntegrationProperties;
 
     /**
      * Use {@code repoId}、{@code userId} to identify repository
      */
     private final LoadingCache<Pair<Long, Long>, GitClientOperator> operatorCache =
             Caffeine.newBuilder()
-                    .maximumSize(MAX_CACHED_SIZE)
-                    .expireAfterAccess(Duration.ofMillis(CACHED_DURATION_MINUTES))
+                    .maximumSize(gitIntegrationProperties.getGitRepositoryMaxCachedSize())
+                    .expireAfterAccess(Duration.ofMinutes(gitIntegrationProperties.getGitRepositoryPreserveMinutes()))
                     .removalListener((pair, operator, cause) -> {
                         if (operator != null) {
                             deleteRepo((GitClientOperator) operator);
@@ -93,6 +96,15 @@ public class RepositoryManager {
                         }
                     })
                     .build(this::createGitOperator);
+
+    @PostConstruct
+    public void init() {
+        try {
+            FileUtils.cleanDirectory(new File(GIT_REPO_DIR));
+        } catch (IOException e) {
+            log.warn("failed to clean git repo directory {}", GIT_REPO_DIR);
+        }
+    }
 
     public GitClientOperator getOperator(Long repoId, Long userId) {
         return operatorCache.get(new Pair<>(repoId, userId));
