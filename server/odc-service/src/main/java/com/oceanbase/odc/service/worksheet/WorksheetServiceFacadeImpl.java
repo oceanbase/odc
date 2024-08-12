@@ -62,11 +62,6 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
     }
 
     @Override
-    public List<WorksheetMetaResp> searchWorksheets(Long projectId, String nameLike) {
-        return null;
-    }
-
-    @Override
     public BatchOperateWorksheetsResp batchUploadWorksheets(Long projectId, BatchUploadWorksheetsReq req) {
         return null;
     }

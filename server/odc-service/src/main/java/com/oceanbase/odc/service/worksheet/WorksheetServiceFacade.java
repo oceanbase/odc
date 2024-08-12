@@ -80,15 +80,6 @@ public interface WorksheetServiceFacade {
     List<WorksheetMetaResp> listWorksheets(Long projectId, ListWorksheetsReq req);
 
     /**
-     * search project worksheets by nameLike in project
-     *
-     * @param projectId project id
-     * @param nameLike query criteria for fuzzy matching of worksheet name
-     * @return fit worksheet meta list.It will return empty if the nameLike is blank.
-     */
-    List<WorksheetMetaResp> searchWorksheets(Long projectId, String nameLike);
-
-    /**
      * batch upload worksheets in a directory.
      *
      * @param projectId project id
