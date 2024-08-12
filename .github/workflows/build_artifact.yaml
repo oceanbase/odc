@@ -192,8 +192,8 @@ jobs:
         if: ${{ github.event.inputs.pull_flink_image == 'true'}}
         uses: actions/upload-artifact@v4
         with:
-          name: flink.tar.gz
-          path: flink.tar.gz
+          name: dinky.tar.gz
+          path: dinky.tar.gz
       - name: Install db-browser
         if: ${{ github.event.inputs.install_db_browser == 'true'}}
         run: |
