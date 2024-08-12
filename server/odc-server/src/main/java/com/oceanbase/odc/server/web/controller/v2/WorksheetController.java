@@ -38,6 +38,7 @@ import com.oceanbase.odc.service.worksheet.model.BatchOperateWorksheetsResp;
 import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq;
 import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlReq;
 import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;
+import com.oceanbase.odc.service.worksheet.model.ListWorksheetsReq;
 import com.oceanbase.odc.service.worksheet.model.UpdateWorksheetReq;
 import com.oceanbase.odc.service.worksheet.model.WorksheetMetaResp;
 import com.oceanbase.odc.service.worksheet.model.WorksheetResp;
@@ -50,7 +51,7 @@ import com.oceanbase.odc.service.worksheet.model.WorksheetResp;
  * @since 4.3.2
  */
 @RestController
-@RequestMapping("/api/v2/project/{projectId}/worksheet")
+@RequestMapping("/api/v2/project/{projectId}")
 public class WorksheetController {
 
     @Resource
@@ -62,10 +63,10 @@ public class WorksheetController {
         return Responses.success(worksheetServiceFacade.generateUploadUrl(projectId, req));
     }
 
-    @PostMapping("/worksheets/{path}")
+    @PostMapping("/worksheets")
     public SuccessResponse<WorksheetMetaResp> createWorksheet(
             @PathVariable("projectId") Long projectId,
-            @PathVariable("path") String path,
+            @RequestParam("path") String path,
             @RequestParam("objectKey") String objectKey) {
         return Responses.success(worksheetServiceFacade.createWorksheet(projectId, path, objectKey));
     }
@@ -77,11 +78,11 @@ public class WorksheetController {
         return Responses.success(worksheetServiceFacade.getWorksheetDetail(projectId, path));
     }
 
-    @GetMapping("/worksheets/")
+    @GetMapping("/worksheets")
     public ListResponse<WorksheetMetaResp> listWorksheets(
             @PathVariable("projectId") Long projectId,
-            @RequestParam("path") String path) {
-        return Responses.list(worksheetServiceFacade.listWorksheets(projectId, path));
+            @RequestParam ListWorksheetsReq req) {
+        return Responses.list(worksheetServiceFacade.listWorksheets(projectId, req));
     }
 
     @GetMapping("/worksheets/search")
@@ -105,7 +106,7 @@ public class WorksheetController {
         return Responses.success(worksheetServiceFacade.batchDeleteWorksheets(projectId, paths));
     }
 
-    @PutMapping("/worksheets/rename")
+    @PostMapping("/worksheets/rename")
     public ListResponse<WorksheetMetaResp> renameWorksheet(
             @PathVariable("projectId") Long projectId,
             @RequestParam("path") String path,
