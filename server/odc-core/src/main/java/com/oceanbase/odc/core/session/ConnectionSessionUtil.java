@@ -377,6 +377,15 @@ public class ConnectionSessionUtil {
         return queryCache.get(sqlId);
     }
 
+    public static void setLogicalSession(@NonNull ConnectionSession connectionSession,
+            @NonNull Boolean logicalSession) {
+        connectionSession.setAttribute(ConnectionSessionConstants.IS_LOGICAL_SESSION, logicalSession);
+    }
+
+    public static Boolean getLogicalSession(@NonNull ConnectionSession connectionSession) {
+        return (Boolean) connectionSession.getAttribute(ConnectionSessionConstants.IS_LOGICAL_SESSION);
+    }
+
     public static void setBinaryDataManager(@NonNull ConnectionSession connectionSession,
             @NonNull BinaryDataManager dataManager) {
         connectionSession.setAttribute(ConnectionSessionConstants.BINARY_FILE_MANAGER_KEY, dataManager);

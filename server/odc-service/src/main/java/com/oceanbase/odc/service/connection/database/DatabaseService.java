@@ -943,8 +943,10 @@ public class DatabaseService {
         if (Objects.nonNull(entity.getProjectId())) {
             model.setProject(projectService.detail(entity.getProjectId()));
         }
-        model.setDataSource(connectionService.getForConnectionSkipPermissionCheck(entity.getConnectionId()));
-        model.setEnvironment(environmentService.detailSkipPermissionCheck(model.getDataSource().getEnvironmentId()));
+        if (entity.getConnectionId() != null) {
+            model.setDataSource(connectionService.getForConnectionSkipPermissionCheck(entity.getConnectionId()));
+        }
+        model.setEnvironment(environmentService.detailSkipPermissionCheck(entity.getEnvironmentId()));
         if (includesPermittedAction) {
             model.setAuthorizedPermissionTypes(
                     permissionHelper.getDBPermissions(Collections.singleton(entity.getId())).get(entity.getId()));

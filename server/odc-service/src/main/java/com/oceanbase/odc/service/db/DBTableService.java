@@ -39,6 +39,7 @@ import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.core.sql.parser.DropStatement;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
+import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.model.GenerateTableDDLResp;
@@ -46,6 +47,7 @@ import com.oceanbase.odc.service.db.model.GenerateUpdateTableDDLReq;
 import com.oceanbase.odc.service.db.model.UpdateTableDdlCheck;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
@@ -124,10 +126,15 @@ public class DBTableService {
     }
 
     public GenerateTableDDLResp generateCreateDDL(@NotNull ConnectionSession session, @NotNull DBTable table) {
-        String ddl = session.getSyncJdbcExecutor(
-                ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<String>) con -> getTableExtensionPoint(session).generateCreateDDL(con,
-                        table));
+        String ddl;
+        if (new DefaultConnectSessionIdGenerator().getKeyFromId(session.getId()).getLogicalSession()) {
+            ddl = DBAccessorUtil.getTableEditor("4.0.0", session.getDialectType()).generateCreateObjectDDL(table);
+        } else {
+            ddl = session.getSyncJdbcExecutor(
+                    ConnectionSessionConstants.BACKEND_DS_KEY)
+                    .execute((ConnectionCallback<String>) con -> getTableExtensionPoint(session).generateCreateDDL(con,
+                            table));
+        }
         return GenerateTableDDLResp.builder()
                 .sql(ddl)
                 .currentIdentity(TableIdentity.of(table.getSchemaName(), table.getName()))
@@ -137,10 +144,16 @@ public class DBTableService {
 
     public GenerateTableDDLResp generateUpdateDDL(@NotNull ConnectionSession session,
             @NotNull GenerateUpdateTableDDLReq req) {
-        String ddl = session.getSyncJdbcExecutor(
-                ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<String>) con -> getTableExtensionPoint(session).generateUpdateDDL(con,
-                        req.getPrevious(), req.getCurrent()));
+        String ddl;
+        if (new DefaultConnectSessionIdGenerator().getKeyFromId(session.getId()).getLogicalSession()) {
+            ddl = DBAccessorUtil.getTableEditor("4.0.0", session.getDialectType())
+                    .generateUpdateObjectDDL(req.getPrevious(), req.getCurrent());
+        } else {
+            ddl = session.getSyncJdbcExecutor(
+                    ConnectionSessionConstants.BACKEND_DS_KEY)
+                    .execute((ConnectionCallback<String>) con -> getTableExtensionPoint(session).generateUpdateDDL(con,
+                            req.getPrevious(), req.getCurrent()));
+        }
         return GenerateTableDDLResp.builder()
                 .sql(ddl)
                 .currentIdentity(TableIdentity.of(req.getCurrent().getSchemaName(), req.getCurrent().getName()))

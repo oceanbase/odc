@@ -23,6 +23,7 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
 import com.oceanbase.odc.core.session.ConnectionSessionIdGenerator;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.session.LogicalConnectionSession;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.service.connection.model.CreateSessionReq;
@@ -58,8 +59,11 @@ public class LogicalConnectionSessionFactory implements ConnectionSessionFactory
     @Override
     public ConnectionSession generateSession() {
         try {
-            return new LogicalConnectionSession(idGenerator.generateId(this.createSessionReq), this.connectType,
-                    this.sessionTimeoutMillis);
+            ConnectionSession connectionSession =
+                    new LogicalConnectionSession(idGenerator.generateId(this.createSessionReq), this.connectType,
+                            this.sessionTimeoutMillis);
+            ConnectionSessionUtil.setLogicalSession(connectionSession, Boolean.TRUE);
+            return connectionSession;
         } catch (Exception e) {
             log.warn("Failed to create connection session", e);
             throw new IllegalStateException(e);

@@ -90,6 +90,7 @@ import com.oceanbase.odc.service.feature.AllFeatures;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.queryprofile.OBQueryProfileManager;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
 import com.oceanbase.odc.service.session.interceptor.SqlCheckInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlConsoleInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlExecuteInterceptorService;
@@ -238,7 +239,9 @@ public class ConnectConsoleService {
     public SqlAsyncExecuteResp streamExecute(@NotNull String sessionId,
             @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlRuleCheck) throws Exception {
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
-
+        if (new DefaultConnectSessionIdGenerator().getKeyFromId(sessionId).getLogicalSession()) {
+            return new SqlAsyncExecuteResp(true);
+        }
         long maxSqlLength = sessionProperties.getMaxSqlLength();
         if (maxSqlLength > 0) {
             PreConditions.lessThanOrEqualTo("sqlLength", LimitMetric.SQL_LENGTH,

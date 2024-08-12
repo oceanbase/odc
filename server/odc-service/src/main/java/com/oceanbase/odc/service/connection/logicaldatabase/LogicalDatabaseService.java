@@ -156,11 +156,7 @@ public class LogicalDatabaseService {
 
         Environment environment = environmentService.detailSkipPermissionCheck(logicalDatabase.getEnvironmentId());
 
-        Set<Long> physicalDBIds =
-                databaseMappingRepository.findByLogicalDatabaseId(logicalDatabase.getId()).stream()
-                        .map(DatabaseMappingEntity::getPhysicalDatabaseId).collect(Collectors.toSet());
-        List<Database> physicalDatabases = databaseService.listDatabasesByIds(physicalDBIds);
-
+        List<Database> physicalDatabases = listPhysicalDatabaseIds(logicalDatabase.getId());
         DetailLogicalDatabaseResp resp = new DetailLogicalDatabaseResp();
         resp.setId(logicalDatabase.getId());
         resp.setName(logicalDatabase.getName());
@@ -171,6 +167,21 @@ public class LogicalDatabaseService {
         resp.setLogicalTables(tableService.list(logicalDatabase.getId()));
 
         return resp;
+    }
+
+    public List<Database> listPhysicalDatabaseIds(@NotNull Long logicalDatabaseId) {
+        Set<Long> physicalDBIds =
+                databaseMappingRepository.findByLogicalDatabaseId(logicalDatabaseId).stream()
+                        .map(DatabaseMappingEntity::getPhysicalDatabaseId).collect(Collectors.toSet());
+        return databaseService.listDatabasesByIds(physicalDBIds);
+    }
+
+    public Set<Long> listDataSourceIds(@NotNull Long logicalDatabaseId) {
+        Set<Long> physicalDBIds =
+                databaseMappingRepository.findByLogicalDatabaseId(logicalDatabaseId).stream()
+                        .map(DatabaseMappingEntity::getPhysicalDatabaseId).collect(Collectors.toSet());
+        return databaseRepository.findAllById(physicalDBIds).stream().map(DatabaseEntity::getConnectionId)
+                .collect(Collectors.toSet());
     }
 
     @Transactional(rollbackFor = Exception.class)

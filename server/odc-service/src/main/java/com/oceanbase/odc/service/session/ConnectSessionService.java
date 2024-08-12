@@ -78,6 +78,7 @@ import com.oceanbase.odc.service.connection.ConnectionTesting;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
+import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.CreateSessionReq;
@@ -153,6 +154,8 @@ public class ConnectSessionService {
     @Autowired
     private UserConfigFacade userConfigFacade;
     @Autowired
+    private LogicalDatabaseService logicalDatabaseService;
+    @Autowired
     private StateHostGenerator stateHostGenerator;
     private final Map<String, Lock> sessionId2Lock = new ConcurrentHashMap<>();
 
@@ -213,6 +216,25 @@ public class ConnectSessionService {
     @SkipAuthorize("check permission internally")
     public CreateSessionResp createByDatabaseId(@NotNull Long databaseId) {
         ConnectionSession session = create(null, databaseId);
+        Boolean logicalSession = ConnectionSessionUtil.getLogicalSession(session);
+        if (Objects.nonNull(logicalSession) && logicalSession) {
+            Long dataSourceId = logicalDatabaseService.listDataSourceIds(databaseId).stream().findFirst()
+                    .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "ID", databaseId));
+            ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
+            ConnectionSessionFactory sessionFactory = new DefaultConnectSessionFactory(connection);
+            ConnectionSession physicalSession = sessionFactory.generateSession();
+            try {
+                return CreateSessionResp.builder()
+                        .sessionId(session.getId())
+                        .supports(configService.getSupportFeatures(physicalSession))
+                        .dataTypeUnits(configService.getDatatypeList(physicalSession))
+                        .charsets(charsetService.listCharset(physicalSession))
+                        .collations(charsetService.listCollation(physicalSession))
+                        .build();
+            } finally {
+                physicalSession.expire();
+            }
+        }
         return CreateSessionResp.builder()
                 .sessionId(session.getId())
                 .supports(configService.getSupportFeatures(session))
