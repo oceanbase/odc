@@ -35,6 +35,7 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.StorageObject;
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadObjectTemporaryCredential;
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadPartRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadPartResult;
+import com.oceanbase.odc.service.objectstorage.lifecycle.Lifecycle;
 
 public class NullCloudClient implements CloudClient {
     @Override
@@ -72,6 +73,11 @@ public class NullCloudClient implements CloudClient {
     @Override
     public PutObjectResult putObject(String bucketName, String key, File file, ObjectMetadata metadata)
             throws CloudException {
+        throw new UnsupportedException();
+    }
+
+    @Override
+    public void setLifecycle(String bucketName, String key, Lifecycle lifecycle) {
         throw new UnsupportedException();
     }
 

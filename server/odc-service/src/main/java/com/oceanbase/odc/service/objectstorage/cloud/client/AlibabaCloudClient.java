@@ -33,9 +33,12 @@ import javax.validation.constraints.NotNull;
 import com.aliyun.oss.HttpMethod;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.model.GeneratePresignedUrlRequest;
+import com.aliyun.oss.model.LifecycleRule;
+import com.aliyun.oss.model.LifecycleRule.RuleStatus;
 import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ResponseHeaderOverrides;
+import com.aliyun.oss.model.SetBucketLifecycleRequest;
 import com.aliyuncs.IAcsClient;
 import com.aliyuncs.exceptions.ClientException;
 import com.aliyuncs.http.MethodType;
@@ -63,6 +66,8 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.UploadObjectTemporary
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadPartRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadPartResult;
 import com.oceanbase.odc.service.objectstorage.cloud.util.CloudObjectStorageUtil;
+import com.oceanbase.odc.service.objectstorage.lifecycle.Lifecycle;
+import com.oceanbase.odc.service.objectstorage.lifecycle.Strategy;
 
 public class AlibabaCloudClient implements CloudClient {
     private final OSS oss;
@@ -151,7 +156,7 @@ public class AlibabaCloudClient implements CloudClient {
     @Override
     public PutObjectResult putObject(String bucketName, String key, File file, ObjectMetadata metadata)
             throws CloudException {
-        return callOssMethod("Put object", () -> {
+        PutObjectResult putObject = callOssMethod("Put object", () -> {
             com.aliyun.oss.model.ObjectMetadata objectMetadata = toOss(metadata);
             com.aliyun.oss.model.PutObjectResult ossResult = oss.putObject(bucketName, key, file, objectMetadata);
             PutObjectResult result = new PutObjectResult();
@@ -162,6 +167,25 @@ public class AlibabaCloudClient implements CloudClient {
             result.setServerCRC(ossResult.getServerCRC());
             return result;
         });
+        setLifecycle(bucketName, key, metadata.getLifecycle());
+        return putObject;
+    }
+
+    @Override
+    public void setLifecycle(String bucketName, String key, Lifecycle lifecycle) {
+        if (lifecycle == null) {
+            return;
+        }
+        LifecycleRule rule = null;
+        if (Objects.requireNonNull(lifecycle.getStrategy()) == Strategy.EXPIRED_AFTER_LAST_MODIFIED) {
+            String ruleId = "odc-expired-after-last-modified-rule";
+            rule = new LifecycleRule(ruleId, key, RuleStatus.Enabled, lifecycle.getExpirationDays());
+        }
+        if (rule == null) {
+            return;
+        }
+        SetBucketLifecycleRequest request = new SetBucketLifecycleRequest(bucketName);
+        callOssMethod("Set bucket lifecycle", () -> oss.setBucketLifecycle(request));
     }
 
     @Override

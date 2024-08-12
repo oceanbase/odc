@@ -24,6 +24,7 @@ import java.util.TreeMap;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectTagging.Tag;
+import com.oceanbase.odc.service.objectstorage.lifecycle.Lifecycle;
 
 import lombok.Data;
 
@@ -39,6 +40,8 @@ public class ObjectMetadata {
      * for mark object temp while put object, works with LifeCycle policy
      */
     private ObjectTagging tagging;
+
+    private Lifecycle lifecycle;
 
     public static ObjectMetadata temp() {
         ObjectMetadata metadata = new ObjectMetadata();
