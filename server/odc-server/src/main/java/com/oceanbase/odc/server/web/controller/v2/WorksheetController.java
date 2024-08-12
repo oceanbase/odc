@@ -85,13 +85,6 @@ public class WorksheetController {
         return Responses.list(worksheetServiceFacade.listWorksheets(projectId, req));
     }
 
-    @GetMapping("/worksheets/search")
-    public ListResponse<WorksheetMetaResp> searchWorksheets(
-            @PathVariable("projectId") Long projectId,
-            @RequestParam("nameLike") String nameLike) {
-        return Responses.list(worksheetServiceFacade.searchWorksheets(projectId, nameLike));
-    }
-
     @PostMapping("/worksheets/batchUpload")
     public SuccessResponse<BatchOperateWorksheetsResp> batchUploadWorksheets(
             @PathVariable("projectId") Long projectId,
