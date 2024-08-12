@@ -24,15 +24,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
-import com.oceanbase.odc.service.objectstorage.CloudEnvironmentObjectStorageFacade;
-import com.oceanbase.odc.service.objectstorage.LocalObjectStorageFacade;
-import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorage;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.objectstorage.operator.ObjectBlockOperator;
 
-import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Configuration
