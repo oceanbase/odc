@@ -25,7 +25,6 @@ import java.util.Set;
 import javax.annotation.Resource;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
 import com.oceanbase.odc.service.worksheet.domain.BatchOperateWorksheetsResult;
@@ -67,14 +66,9 @@ public class RepoWorksheetService implements WorksheetService {
     }
 
     @Override
-    public List<Worksheet> listWorksheets(Long projectId, Path path) {
+    public List<Worksheet> listWorksheets(Long projectId, Path path, Integer depth, String nameLike) {
 
         return new ArrayList<>();
-    }
-
-    @Override
-    public List<Worksheet> searchWorksheets(Long projectId, String nameLike, int limit) {
-        return Collections.emptyList();
     }
 
     @Override

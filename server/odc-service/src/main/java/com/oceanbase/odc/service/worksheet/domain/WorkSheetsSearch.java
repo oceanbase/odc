@@ -33,32 +33,32 @@ import lombok.Getter;
  */
 @Getter
 public class WorkSheetsSearch {
-    List<Worksheet> files;
+    List<Worksheet> worksheets;
     String nameLike;
 
-    @SafeVarargs
-    public WorkSheetsSearch(String nameLike, List<Worksheet>... filesArray) {
-        files = new ArrayList<>();
-        for (List<Worksheet> filesItem : filesArray) {
-            if (CollectionUtils.isNotEmpty(filesItem)) {
-                files.addAll(filesItem);
-            }
-        }
+    public WorkSheetsSearch(String nameLike) {
+        worksheets = new ArrayList<>();
         this.nameLike = nameLike;
+    }
+
+    public void addAll(List<Worksheet> worksheets) {
+        if (CollectionUtils.isNotEmpty(worksheets)) {
+            this.worksheets.addAll(worksheets);
+        }
     }
 
     /**
      * 对files中的名称进行模糊匹配，并排序
      * 
-     * @param nameLike
      * @return
      */
-    public List<Worksheet> searchByNameLike(String nameLike) {
-        if (CollectionUtils.isEmpty(files) || StringUtils.isBlank(nameLike)) {
+    public List<Worksheet> searchByNameLike(int limit) {
+        if (CollectionUtils.isEmpty(worksheets) || StringUtils.isBlank(nameLike)) {
             return new ArrayList<>();
         }
-        return files.stream().filter(file -> file.getPath().isNameContains(nameLike))
+        return worksheets.stream().filter(file -> file.getPath().isNameContains(nameLike))
                 .sorted((o1, o2) -> Path.getPathSameLevelComparator().compare(o1.getPath(), o2.getPath()))
+                .limit(limit)
                 .collect(Collectors.toList());
     }
 }

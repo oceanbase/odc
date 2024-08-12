@@ -27,7 +27,7 @@ import java.util.Set;
  * @since 4.3.2
  */
 public interface DefaultWorksheetRepository {
-    Optional<Worksheet> findByProjectAndPath(Long projectId, Path path, boolean isAddWriteLock,
+    Optional<Worksheet> findByProjectAndPath(Long projectId, Path path, String nameLike, boolean isAddWriteLock,
             boolean createDefaultIfNotExist, boolean loadSubFiles,
             boolean loadSameLevelFiles);
 

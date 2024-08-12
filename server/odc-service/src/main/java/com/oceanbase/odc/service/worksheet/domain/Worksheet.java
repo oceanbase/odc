@@ -99,11 +99,14 @@ public class Worksheet {
 
     }
 
-    public List<Worksheet> getNextLevelFiles() {
+    public List<Worksheet> getSubWorksheetsInDepth(Integer depth) {
+        PreConditions.notNull(depth, "depth");
+        PreConditions.assertTrue(depth >= 0, "depth");
         if (CollectionUtils.isEmpty(subWorksheets)) {
             return new ArrayList<>();
         }
-        return subWorksheets.stream().filter(file -> file.getPath().getLevelNum().equals(this.path.levelNum + 1))
+        return subWorksheets.stream()
+                .filter(file -> depth == 0 || file.getPath().getLevelNum() <= this.path.levelNum + depth)
                 .sorted((o1, o2) -> Path.getPathSameLevelComparator().compare(o1.getPath(), o2.getPath()))
                 .collect(Collectors.toList());
     }
@@ -219,7 +222,7 @@ public class Worksheet {
     }
 
     public Set<Worksheet> batchCreate(Map<Path, String> createPathToObjectIdMap) {
-        List<Worksheet> nextLevelWorksheets = this.getNextLevelFiles();
+        List<Worksheet> nextLevelWorksheets = this.getSubWorksheetsInDepth(1);
         nameTooLongCheck(createPathToObjectIdMap.keySet());
         sameLevelFileNumLimitCheck(createPathToObjectIdMap, nextLevelWorksheets);
         duplicatedNameCheck(createPathToObjectIdMap, nextLevelWorksheets);

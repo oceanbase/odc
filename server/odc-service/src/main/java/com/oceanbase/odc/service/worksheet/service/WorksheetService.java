@@ -38,9 +38,7 @@ public interface WorksheetService {
 
     Worksheet getWorksheetDetails(Long projectId, Path path);
 
-    List<Worksheet> listWorksheets(Long projectId, Path path);
-
-    List<Worksheet> searchWorksheets(Long projectId, String nameLike, int limit);
+    List<Worksheet> listWorksheets(Long projectId, Path path, Integer depth, String nameLike);
 
     BatchOperateWorksheetsResult batchUploadWorksheets(Long projectId, BatchCreateWorksheets batchCreateWorksheets);
 

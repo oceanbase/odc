@@ -47,11 +47,11 @@ import com.oceanbase.odc.service.worksheet.service.RepoWorksheetService;
 public class WorksheetServiceFacadeImplTest {
 
     @Mock
-    private WorksheetProjectRepository    worksheetProjectRepository;
+    private WorksheetProjectRepository worksheetProjectRepository;
     @Mock
     private WorksheetObjectStorageGateway projectFileOssGateway;
     @Mock
-    private WorksheetServiceFactory       worksheetServiceFactory;
+    private WorksheetServiceFactory worksheetServiceFactory;
     @Mock
     private DefaultWorksheetService defaultWorksheetService;
     @Mock

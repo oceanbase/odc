@@ -19,7 +19,6 @@ import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.PR
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -103,31 +102,23 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
 
     @Override
     public List<WorksheetMetaResp> listWorksheets(Long projectId, ListWorksheetsReq req) {
-        Path path = new Path(pathStr);
-        WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
-                path.getLocation());
-        List<Worksheet> worksheets = projectFileService.listWorksheets(projectId, path);
-        return worksheets.stream()
-                .map(WorksheetConverter::convertToMetaResp)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<WorksheetMetaResp> searchWorksheets(Long projectId, String nameLike) {
-        if (StringUtils.isBlank(nameLike)) {
-            return new ArrayList<>();
+        Integer depth = req.getDepth() == null ? 1 : req.getDepth();
+        Path path = null;
+        if (StringUtils.isNotBlank(req.getPath())) {
+            path = new Path(req.getPath());
         }
-        WorksheetService repoProjectFileService =
-                worksheetServiceFactory.getProjectFileService(WorksheetLocation.REPOS);
-        WorksheetService normalProjectFileService =
-                worksheetServiceFactory.getProjectFileService(WorksheetLocation.WORKSHEETS);
-        WorkSheetsSearch workSheetsSearch = new WorkSheetsSearch(nameLike,
-                normalProjectFileService.searchWorksheets(projectId, nameLike, PROJECT_FILES_NAME_LIKE_SEARCH_LIMIT),
-                repoProjectFileService.searchWorksheets(projectId, nameLike, PROJECT_FILES_NAME_LIKE_SEARCH_LIMIT));
-        List<Worksheet> worksheets = workSheetsSearch.searchByNameLike(nameLike);
+        WorkSheetsSearch workSheetsSearch = new WorkSheetsSearch(req.getNameLike());
+        if (path == null || path.getLocation() == WorksheetLocation.REPOS) {
+            workSheetsSearch.addAll(worksheetServiceFactory.getProjectFileService(WorksheetLocation.REPOS)
+                    .listWorksheets(projectId, path, depth, req.getNameLike()));
+        }
+        if (path == null || path.getLocation() == WorksheetLocation.WORKSHEETS) {
+            workSheetsSearch.addAll(worksheetServiceFactory.getProjectFileService(WorksheetLocation.WORKSHEETS)
+                    .listWorksheets(projectId, path, depth, req.getNameLike()));
+        }
+        List<Worksheet> worksheets = workSheetsSearch.searchByNameLike(PROJECT_FILES_NAME_LIKE_SEARCH_LIMIT);
         return worksheets.stream()
                 .map(WorksheetConverter::convertToMetaResp)
-                .limit(PROJECT_FILES_NAME_LIKE_SEARCH_LIMIT)
                 .collect(Collectors.toList());
     }
 
