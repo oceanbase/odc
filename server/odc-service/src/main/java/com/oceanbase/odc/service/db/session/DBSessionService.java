@@ -29,6 +29,7 @@ import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.model.OdcDBSession;
 import com.oceanbase.odc.core.sql.util.OdcDBSessionRowMapper;
@@ -53,6 +54,9 @@ public class DBSessionService {
     }
 
     public DBSession currentSession(@NonNull ConnectionSession connectionSession) {
+        if (ConnectionSessionUtil.getLogicalSession(connectionSession)) {
+            return null;
+        }
         try {
             DBStatsAccessor accessor = DBStatsAccessors.create(connectionSession);
             return accessor.currentSession();

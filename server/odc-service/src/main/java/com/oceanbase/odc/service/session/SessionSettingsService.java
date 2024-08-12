@@ -52,9 +52,12 @@ public class SessionSettingsService {
     private SessionProperties sessionProperties;
 
     public SessionSettings getSessionSettings(@NotNull ConnectionSession session) {
-        JdbcOperations jdbcOperations = session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
-        Boolean autocommit = jdbcOperations.execute(Connection::getAutoCommit);
         SessionSettings settings = new SessionSettings();
+        Boolean autocommit = false;
+        if (!ConnectionSessionUtil.getLogicalSession(session)) {
+            JdbcOperations jdbcOperations = session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
+            autocommit = jdbcOperations.execute(Connection::getAutoCommit);
+        }
         settings.setAutocommit(autocommit);
         settings.setObVersion(ConnectionSessionUtil.getVersion(session));
         settings.setDelimiter(ConnectionSessionUtil.getSqlCommentProcessor(session).getDelimiter());
@@ -68,13 +71,15 @@ public class SessionSettingsService {
             PreConditions.lessThanOrEqualTo("queryLimit", LimitMetric.TRANSACTION_QUERY_LIMIT,
                     settings.getQueryLimit(), sessionProperties.getResultSetMaxRows());
         }
-        JdbcOperations jdbcOperations = session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
-        Boolean autocommit = jdbcOperations.execute(Connection::getAutoCommit);
-        if (!Objects.equals(autocommit, settings.getAutocommit())) {
-            jdbcOperations.execute((ConnectionCallback<Void>) conn -> {
-                conn.setAutoCommit(settings.getAutocommit());
-                return null;
-            });
+        if (!ConnectionSessionUtil.getLogicalSession(session)) {
+            JdbcOperations jdbcOperations = session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
+            Boolean autocommit = jdbcOperations.execute(Connection::getAutoCommit);
+            if (!Objects.equals(autocommit, settings.getAutocommit())) {
+                jdbcOperations.execute((ConnectionCallback<Void>) conn -> {
+                    conn.setAutoCommit(settings.getAutocommit());
+                    return null;
+                });
+            }
         }
         SqlCommentProcessor processor = ConnectionSessionUtil.getSqlCommentProcessor(session);
         if (!settings.getDelimiter().equals(processor.getDelimiter())) {
