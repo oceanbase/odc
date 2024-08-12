@@ -48,6 +48,7 @@ import com.oceanbase.odc.service.worksheet.model.BatchOperateWorksheetsResp;
 import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq;
 import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlReq;
 import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;
+import com.oceanbase.odc.service.worksheet.model.ListWorksheetsReq;
 import com.oceanbase.odc.service.worksheet.model.UpdateWorksheetReq;
 import com.oceanbase.odc.service.worksheet.model.WorksheetLocation;
 import com.oceanbase.odc.service.worksheet.model.WorksheetMetaResp;
@@ -101,7 +102,7 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
     }
 
     @Override
-    public List<WorksheetMetaResp> listWorksheets(Long projectId, String pathStr) {
+    public List<WorksheetMetaResp> listWorksheets(Long projectId, ListWorksheetsReq req) {
         Path path = new Path(pathStr);
         WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
                 path.getLocation());

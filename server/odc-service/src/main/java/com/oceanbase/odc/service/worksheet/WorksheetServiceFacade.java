@@ -22,6 +22,7 @@ import com.oceanbase.odc.service.worksheet.model.BatchOperateWorksheetsResp;
 import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq;
 import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlReq;
 import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;
+import com.oceanbase.odc.service.worksheet.model.ListWorksheetsReq;
 import com.oceanbase.odc.service.worksheet.model.UpdateWorksheetReq;
 import com.oceanbase.odc.service.worksheet.model.WorksheetMetaResp;
 import com.oceanbase.odc.service.worksheet.model.WorksheetResp;
@@ -73,10 +74,10 @@ public interface WorksheetServiceFacade {
      *
      *
      * @param projectId project id
-     * @param pathStr worksheet path
+     * @param req request
      * @return the next level worksheet meta list.If the worksheet path is worksheet,return empty.
      */
-    List<WorksheetMetaResp> listWorksheets(Long projectId, String pathStr);
+    List<WorksheetMetaResp> listWorksheets(Long projectId, ListWorksheetsReq req);
 
     /**
      * search project worksheets by nameLike in project
