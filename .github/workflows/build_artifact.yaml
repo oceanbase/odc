@@ -185,8 +185,8 @@ jobs:
         if: ${{ github.event.inputs.pull_flink_image == 'true'}}
         run: |
           echo "Start pull flink image"
-          docker pull flink:1.19.1-scala_2.12-java8
-          docker save -o flink.tar.gz flink:1.19.1-scala_2.12-java8
+          docker pull dinkydocker/dinky-standalone-server:1.1.0-flink1.17
+          docker save -o dinky.tar.gz dinkydocker/dinky-standalone-server:1.1.0-flink1.17
           echo "Pull flink image success"
       - name: Upload flink
         if: ${{ github.event.inputs.pull_flink_image == 'true'}}
