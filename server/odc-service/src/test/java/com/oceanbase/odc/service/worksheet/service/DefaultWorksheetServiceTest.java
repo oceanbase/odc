@@ -78,34 +78,34 @@ public class DefaultWorksheetServiceTest {
         // Mock
         when(worksheetRepository.findByProjectIdAndPath(projectId, new Path("/Worksheets/dir1/"),
                 null, false, true, true, false))
-                        .thenReturn(Optional.of(newDirWorksheet(projectId, "/Worksheets/dir1/", null,
-                                Arrays.asList("/Worksheets/dir1/subdir1/", "/Worksheets/dir1/subdir2/file1",
-                                        "/Worksheets/dir1/subdir2/file2"))));
+                .thenReturn(Optional.of(newDirWorksheet(projectId, "/Worksheets/dir1/", null,
+                        Arrays.asList("/Worksheets/dir1/subdir1/", "/Worksheets/dir1/subdir2/file1",
+                                "/Worksheets/dir1/subdir2/file2"))));
         when(worksheetRepository.findByProjectIdAndPath(projectId, new Path("/Worksheets/dir2/"),
                 null, false, true, true, false))
-                        .thenReturn(Optional.of(newDirWorksheet(projectId, "/Worksheets/dir2/", null, null)));
+                .thenReturn(Optional.of(newDirWorksheet(projectId, "/Worksheets/dir2/", null, null)));
         when(worksheetRepository.findByProjectIdAndPath(projectId, new Path("/Worksheets/dir4/subdir1/"),
                 null, false, true, true, false))
-                        .thenReturn(Optional.of(newDirWorksheet(projectId, "/Worksheets/dir4/subdir1/", null, null)));
+                .thenReturn(Optional.of(newDirWorksheet(projectId, "/Worksheets/dir4/subdir1/", null, null)));
         when(worksheetRepository.findByProjectIdAndPath(projectId, new Path("/Worksheets/dir3/subdir1/file1"),
                 null, false, true, false, false))
-                        .thenReturn(
-                                Optional.of(newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file1", null, null)));
+                .thenReturn(
+                        Optional.of(newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file1", null, null)));
         when(worksheetRepository.findByProjectIdAndPath(projectId, new Path("/Worksheets/dir3/subdir1/file2"),
                 null, false, true, false, false))
-                        .thenReturn(
-                                Optional.of(newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file2", null, null)));
+                .thenReturn(
+                        Optional.of(newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file2", null, null)));
         when(worksheetRepository.findByProjectIdAndPath(projectId, new Path("/Worksheets/dir3/subdir1/file5"),
                 null, false, true, false, false))
-                        .thenReturn(
-                                Optional.of(newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file5", null, null)));
+                .thenReturn(
+                        Optional.of(newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file5", null, null)));
 
 
         // Test
         defaultWorksheetService.downloadPathsToDirectory(projectId, paths, commParentPath, destinationDirectory);
 
         // Verify
-        verify(worksheetRepository, times(6)).findByProjectIdAndPath(anyLong(), any(Path.class), anyString(),
+        verify(worksheetRepository, times(6)).findByProjectIdAndPath(anyLong(), any(Path.class), any(),
                 anyBoolean(),
                 anyBoolean(), anyBoolean(), anyBoolean());
         verify(worksheetObjectStorageGateway, times(5)).downloadToFile(anyString(), any(File.class));

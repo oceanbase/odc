@@ -42,7 +42,24 @@ import lombok.Data;
 import lombok.Setter;
 
 /**
- * worksheet
+ * worksheet handle.
+ * 
+ * <pre>
+ * <code>
+ * /Worksheets/
+ *  |__folder1/
+ *      |__file2.sql
+ *      |__folder4
+ *  |__folder3/
+ *      |__file3.sql
+ *  |__file1.sql
+ * </code>
+ * </pre>
+ * 
+ * For the worksheet example above,if the current Worksheet path is /Worksheets/folder1/, then the
+ * paths of sameLevelWorksheets are <code>[/Worksheets/folder3/,/Worksheets/file1.sql]</code>, and
+ * the paths of subWorksheets are
+ * <code>[/Worksheets/folder1/folder4/,/Worksheets/folder1/file2.sql]</code>.
  *
  * @author keyangs
  * @date 2024/8/1
@@ -131,24 +148,23 @@ public class Worksheet {
             throw new NameDuplicatedException(
                     "duplicated path for rename,from:" + this.path + ",destinationPath:" + destinationPath);
         }
+        Set<Worksheet> changedWorksheets = new HashSet<>();
+        if (CollectionUtils.isNotEmpty(subWorksheets)) {
+            for (Worksheet subFile : subWorksheets) {
+                if (subFile.path.rename(this.path, destinationPath)) {
+                    changedWorksheets.add(subFile);
+                    subFile.isChanged = true;
+                }
+                if (changedWorksheets.size() > CHANGE_FILE_NUM_LIMIT - 1) {
+                    throw new ChangeTooMuchException("change num is over limit " + CHANGE_FILE_NUM_LIMIT);
+                }
+            }
+        }
         if (this.path.rename(this.path, destinationPath)) {
             this.isChanged = true;
+            changedWorksheets.add(this);
         }
-        Set<Worksheet> changedSubFiles = new HashSet<>();
-        changedSubFiles.add(this);
-        if (CollectionUtils.isEmpty(subWorksheets)) {
-            return changedSubFiles;
-        }
-        for (Worksheet subFile : subWorksheets) {
-            if (subFile.path.rename(this.path, destinationPath)) {
-                changedSubFiles.add(subFile);
-                subFile.isChanged = true;
-            }
-            if (changedSubFiles.size() > CHANGE_FILE_NUM_LIMIT) {
-                throw new ChangeTooMuchException("change num is over limit " + CHANGE_FILE_NUM_LIMIT);
-            }
-        }
-        return changedSubFiles;
+        return changedWorksheets;
     }
 
     /**

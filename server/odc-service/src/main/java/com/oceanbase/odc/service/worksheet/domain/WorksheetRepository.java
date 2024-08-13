@@ -31,9 +31,9 @@ public interface WorksheetRepository {
             boolean createDefaultIfNotExist, boolean loadSubFiles,
             boolean loadSameLevelFiles);
 
-    List<Worksheet> listByProjectIdAndPath(Long projectId, Path path);
+    List<Worksheet> listWithSubsByProjectIdAndPath(Long projectId, Path path);
 
-    void batchAdd(Set<Worksheet> files);
+    void batchAdd(Set<Worksheet> worksheets);
 
     void batchDelete(Set<Long> ids);
 

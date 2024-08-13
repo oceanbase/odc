@@ -72,11 +72,11 @@ public class DefaultWorksheetRepository implements WorksheetRepository {
             queryPath = queryPath.getParentPath().orElseGet(() -> null);
         }
         if (queryPath != null) {
-            sql.append(" AND object_name = :objectName");
+            sql.append(" AND object_name like :objectName");
             params.put("objectName", queryPath.getStandardPath() + "%");
         }
         if (StringUtils.isNotBlank(nameLike)) {
-            sql.append(" AND object_name = :objectName");
+            sql.append(" AND object_name like :objectName");
             params.put("objectName", "%" + nameLike + "%");
         }
         if (isAddWriteLock) {
@@ -99,17 +99,17 @@ public class DefaultWorksheetRepository implements WorksheetRepository {
 
 
     @Override
-    public List<Worksheet> listByProjectIdAndPath(Long projectId, Path path) {
+    public List<Worksheet> listWithSubsByProjectIdAndPath(Long projectId, Path path) {
         CriteriaBuilder criteriaBuilder = metadataRepository.getEntityManager().getCriteriaBuilder();
         CriteriaQuery<ObjectMetadataEntity> criteriaQuery = criteriaBuilder.createQuery(ObjectMetadataEntity.class);
         Root<ObjectMetadataEntity> root = criteriaQuery.from(ObjectMetadataEntity.class);
-
         List<Predicate> predicates = new ArrayList<>();
         predicates
-                .add(criteriaBuilder.like(root.get("bucketName"), WorksheetUtil.getBucketNameOfWorkSheets(projectId)));
+                .add(criteriaBuilder.equal(root.get("bucketName"), WorksheetUtil.getBucketNameOfWorkSheets(projectId)));
         if (path != null) {
             predicates.add(criteriaBuilder.like(root.get("objectName"), path.getStandardPath() + "%"));
         }
+        criteriaQuery.select(root).where(predicates.toArray(new Predicate[0]));
         TypedQuery<ObjectMetadataEntity> typedQuery = metadataRepository.getEntityManager().createQuery(criteriaQuery);
         List<ObjectMetadataEntity> resultList = typedQuery.getResultList();
         if (CollectionUtils.isEmpty(resultList)) {
@@ -119,12 +119,12 @@ public class DefaultWorksheetRepository implements WorksheetRepository {
     }
 
     @Override
-    public void batchAdd(Set<Worksheet> files) {
-        if (CollectionUtils.isEmpty(files)) {
+    public void batchAdd(Set<Worksheet> worksheets) {
+        if (CollectionUtils.isEmpty(worksheets)) {
             return;
         }
         List<ObjectMetadataEntity> entities =
-                files.stream().map(WorksheetConverter::toEntity).collect(Collectors.toList());
+                worksheets.stream().map(WorksheetConverter::toEntity).collect(Collectors.toList());
         metadataRepository.saveAll(entities);
     }
 

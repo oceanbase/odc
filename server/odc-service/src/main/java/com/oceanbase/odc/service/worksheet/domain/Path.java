@@ -121,6 +121,21 @@ public class Path {
 
     }
 
+    public List<Path> getAllNotRootParents() {
+        // the parent of /Worksheets/ and /Worksheets/file1 is root path, so return empty
+        if (this.levelNum <= getRootLevelNum() + 1) {
+            return new ArrayList<>();
+        }
+        List<Path> result = new ArrayList<>();
+        for (int i = getRootLevelNum() + 1; i <= this.levelNum - 1; i++) {
+            Optional<String> parentStandardPathOptional = WorksheetPathUtil.convertItemsToPath(
+                    WorksheetPathUtil.addSeparatorToItemsEnd(this.parentPathItems.subList(0, i)));
+            parentStandardPathOptional.map(Path::new).ifPresent(result::add);
+        }
+        return result;
+
+    }
+
     public boolean isChildOfAny(Path... parents) {
         if (parents == null || parents.length == 0) {
             return false;
@@ -233,13 +248,17 @@ public class Path {
     }
 
     public boolean isRoot() {
+        return levelNum <= getRootLevelNum();
+    }
+
+    public int getRootLevelNum() {
         switch (location) {
             case WORKSHEETS:
-                return levelNum <= 1;
+                return 1;
             case REPOS:
-                return levelNum <= 2;
+                return 2;
         }
-        return false;
+        return 0;
     }
 
     /**
@@ -284,7 +303,7 @@ public class Path {
             return true;
         }
         // current {@link Path} is subset of {@param from}.
-        // At this point, {@param from} needs to be of a non file type (with subsets)
+        // At this point, {@param from} needs to be directory type (with subsets)
         return from.isDirectory() && this.levelNum > from.levelNum
                 && CollectionUtils.isEqualCollection(this.parentPathItems.subList(0, from.levelNum - 1),
                         from.parentPathItems.subList(0, from.levelNum - 1))

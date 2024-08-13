@@ -89,6 +89,7 @@ public class DefaultWorksheetService implements WorksheetService {
                     "invalid path, projectId:" + projectId + "path:" + createPath + ",objectId:"
                             + objectId);
         }
+
         Optional<Worksheet> parentFileOptional =
                 normalWorksheetRepository.findByProjectIdAndPath(projectId, parentPath.get(), null,
                         true, true, true, false);
@@ -159,7 +160,7 @@ public class DefaultWorksheetService implements WorksheetService {
         List<Worksheet> deleteFiles = new ArrayList<>();
         for (Path path : paths) {
             List<Worksheet> files =
-                    normalWorksheetRepository.listByProjectIdAndPath(projectId, path);
+                    normalWorksheetRepository.listWithSubsByProjectIdAndPath(projectId, path);
             deleteFiles.addAll(files);
         }
         if (deleteFiles.size() > CHANGE_FILE_NUM_LIMIT) {
