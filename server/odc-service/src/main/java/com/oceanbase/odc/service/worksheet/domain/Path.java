@@ -53,6 +53,18 @@ public class Path {
     WorksheetType type;
     WorksheetLocation location;
 
+    protected Path() {}
+
+    public static Path root() {
+        Path path = new Path();
+        path.name = null;
+        path.type = null;
+        path.location = null;
+        path.levelNum = 0;
+        path.parentPathItems = new ArrayList<>();
+        return path;
+    }
+
     public Path(String path) {
         List<String> items = WorksheetPathUtil.splitPathToItems(path);
         if (items.isEmpty()) {

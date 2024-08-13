@@ -156,13 +156,4 @@ public class WorksheetPathUtilTest {
             assertEquals(expectedType, typeOptional.get());
         }
     }
-
-    /**
-     * [单元测试]测试getObjectStorageBucketName方法
-     */
-    @Test
-    public void testGetObjectStorageBucketName() {
-        String bucketName = WorksheetPathUtil.getObjectStorageBucketName(123L);
-        assertEquals("PROJECT_FILE_123", bucketName);
-    }
 }

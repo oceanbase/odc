@@ -89,7 +89,7 @@ public class DefaultWorksheetRepository implements WorksheetRepository {
         }
         List<ObjectMetadataEntity> entities = query.getResultList();
         if (CollectionUtils.isEmpty(entities)) {
-            return Optional.empty();
+            entities = Collections.emptyList();
         }
         Worksheet worksheet = WorksheetConverter.toDomainFromEntities(entities, projectId, path,
                 createDefaultIfNotExist, loadSubFiles, loadSameLevelFiles);

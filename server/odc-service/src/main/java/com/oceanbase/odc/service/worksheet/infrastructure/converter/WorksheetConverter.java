@@ -38,7 +38,7 @@ public class WorksheetConverter {
     public static Worksheet toDomain(ObjectMetadataEntity entity) {
         return new Worksheet(entity.getId(), entity.getCreateTime(), entity.getUpdateTime(),
                 WorksheetUtil.getProjectIdOfWorkSheets(entity.getBucketName()),
-                new Path(entity.getBucketName()), entity.getCreatorId(),
+                new Path(entity.getObjectName()), entity.getCreatorId(),
                 entity.getVersion(), entity.getObjectId(), null, null);
     }
 
@@ -62,7 +62,7 @@ public class WorksheetConverter {
                         subLevelMap.put(entityPath, worksheet);
                     }
                 }
-                if (isSameLevel && loadSameLevelFiles) {
+                if (!isSelf && isSameLevel && loadSameLevelFiles) {
                     Worksheet worksheet = toDomain(entity);
                     Worksheet existWorksheet = sameLevelMap.get(entityPath);
                     if (existWorksheet == null ||
@@ -82,7 +82,7 @@ public class WorksheetConverter {
             }
         }
         if (self == null && createDefaultIfNotExist) {
-            self = Worksheet.of(projectId, path, null, null);
+            self = Worksheet.of(projectId, path == null ? Path.root() : path, null, null);
         }
         if (self == null) {
             return null;
