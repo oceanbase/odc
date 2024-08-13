@@ -47,7 +47,6 @@ import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
 import com.oceanbase.odc.core.authority.permission.Permission;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
 import com.oceanbase.odc.core.session.ConnectionSessionRepository;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
