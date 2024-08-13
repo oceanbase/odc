@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -32,6 +33,8 @@ import com.oceanbase.odc.service.connection.logicaldatabase.model.CreateLogicalD
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalTableResp;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTableTopologyResp;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.PreviewSqlReq;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.PreviewSqlResp;
 
 /**
  * @Author: Lebie
@@ -104,5 +107,12 @@ public class LogicalDatabaseController {
     public SuccessResponse<Boolean> checkLogicalTable(@PathVariable Long logicalDatabaseId,
             @PathVariable Long logicalTableId) {
         return Responses.success(tableService.checkStructureConsistency(logicalDatabaseId, logicalTableId));
+    }
+
+
+    @RequestMapping(value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/previewSqls", method = RequestMethod.POST)
+    public SuccessResponse<PreviewSqlResp> previewSqls(@PathVariable Long logicalDatabaseId,
+        @RequestBody PreviewSqlReq req) {
+        throw new NotImplementedException();
     }
 }
