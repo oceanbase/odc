@@ -168,7 +168,7 @@ public class LogicalTableService {
                 .collect(Collectors.groupingBy(Database::getName));
         Map<String, List<DataNode>> schemaName2DataNodes =
                 resolve(expression).stream().collect(Collectors.groupingBy(DataNode::getSchemaName));
-        Verify.verify(name2Databases.entrySet().containsAll(schemaName2DataNodes.entrySet()),
+        Verify.verify(name2Databases.keySet().containsAll(schemaName2DataNodes.keySet()),
                 "The expression contains physical databases that not belong to the logical database");
         return schemaName2DataNodes.entrySet().stream().map(entry -> {
             LogicalTableTopologyResp resp = new LogicalTableTopologyResp();
