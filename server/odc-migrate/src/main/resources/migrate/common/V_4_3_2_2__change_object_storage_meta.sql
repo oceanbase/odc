@@ -1,2 +1,2 @@
 ALTER TABLE `objectstorage_object_metadata` ADD COLUMN `version` bigint DEFAULT 0 COMMENT '编辑版本' NOT NULL;
-alter table `index_buckect_name_object_name` add index `objectstorage_object_metadata` (`bucket_name`, `object_name`);
+alter table `objectstorage_object_metadata` add index `index_buckect_name_object_name` (`bucket_name`, `object_name`);
