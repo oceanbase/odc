@@ -28,8 +28,9 @@ import javax.persistence.Table;
 
 import com.oceanbase.odc.service.git.model.RepoState;
 
-import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 
 /**
  * @author: liuyizhuo.lyz
@@ -38,7 +39,8 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "integration_git_repository_stage")
-@Builder
+@NoArgsConstructor
+@Accessors(chain = true)
 public class GitRepositoryStageEntity {
 
     @Id

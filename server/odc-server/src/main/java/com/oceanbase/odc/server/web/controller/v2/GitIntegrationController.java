@@ -20,12 +20,12 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
@@ -41,8 +41,8 @@ import io.swagger.annotations.ApiOperation;
  * @author: liuyizhuo.lyz
  * @date: 2024/8/9
  */
-@Controller
-@RequestMapping("/api/v2/integration/{projectId}/repos")
+@RestController
+@RequestMapping("/api/v2/project/{projectId}/integration/repos")
 public class GitIntegrationController {
 
     @Autowired

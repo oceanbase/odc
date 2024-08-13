@@ -35,16 +35,16 @@ public interface GitRepoStageRepository extends OdcJpaRepository<GitRepositorySt
 
     @Modifying
     @Transactional
-    @Query(value = "update GitRepositoryStageEntity as s set s.state=:#{#stage.state.name()},s.branch=:#{#stage.branch},"
+    @Query(value = "update GitRepositoryStageEntity as s set s.state=:#{#stage.state},s.branch=:#{#stage.branch},"
             + "s.lastCommitId=:#{#stage.lastCommitId},s.diffPatchStorage=:#{#stage.diffPatchStorage} "
             + "where s.id=:#{#stage.id}")
     int update(@Param("stage") GitRepositoryStageEntity stage);
 
     @Modifying
     @Transactional
-    @Query(value = "update GitRepositoryStageEntity as s set s.state=:#{#stage.state.name()},s.branch=:#{#stage.branch},"
+    @Query(value = "update GitRepositoryStageEntity as s set s.state=:#{#stage.state},s.branch=:#{#stage.branch},"
             + "s.lastCommitId=:#{#stage.lastCommitId},s.diffPatchStorage=:#{#stage.diffPatchStorage} "
-            + "where and s.organizationId=:#{#stage.organizationId} and s.repoId=:#{#stage.repoId} and "
+            + "where s.organizationId=:#{#stage.organizationId} and s.repoId=:#{#stage.repoId} and "
             + "s.userId=:#{#stage.userId}")
     int updateByOrganizationIdAndRepoIdAndUserId(@Param("stage") GitRepositoryStageEntity stage);
 

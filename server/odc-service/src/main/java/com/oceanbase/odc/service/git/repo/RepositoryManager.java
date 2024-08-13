@@ -35,6 +35,7 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.MoreObjects;
 import com.oceanbase.odc.common.crypto.TextEncryptor;
 import com.oceanbase.odc.common.lang.Pair;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -79,29 +80,30 @@ public class RepositoryManager {
     private JdbcLockRegistry jdbcLockRegistry;
     @Autowired
     private GitIntegrationService integrationService;
-    @Autowired
-    private GitIntegrationProperties gitIntegrationProperties;
 
     /**
      * Use {@code repoId}、{@code userId} to identify repository
      */
-    private final LoadingCache<Pair<Long, Long>, GitClientOperator> operatorCache =
-            Caffeine.newBuilder()
-                    .maximumSize(gitIntegrationProperties.getGitRepositoryMaxCachedSize())
-                    .expireAfterAccess(Duration.ofMinutes(gitIntegrationProperties.getGitRepositoryPreserveMinutes()))
-                    .removalListener((pair, operator, cause) -> {
-                        if (operator != null) {
-                            deleteRepo((GitClientOperator) operator);
-                            ((GitClientOperator) operator).close();
-                        }
-                    })
-                    .build(this::createGitOperator);
+    private final LoadingCache<Pair<Long, Long>, GitClientOperator> operatorCache;
+
+    public RepositoryManager(@Autowired GitIntegrationProperties gitIntegrationProperties) {
+        operatorCache = Caffeine.newBuilder()
+                .maximumSize(gitIntegrationProperties.getGitRepositoryMaxCachedSize())
+                .expireAfterAccess(Duration.ofMinutes(gitIntegrationProperties.getGitRepositoryPreserveMinutes()))
+                .removalListener((pair, operator, cause) -> {
+                    if (operator != null) {
+                        deleteRepo((GitClientOperator) operator);
+                        ((GitClientOperator) operator).close();
+                    }
+                })
+                .build(this::createGitOperator);
+    }
 
     @PostConstruct
     public void init() {
         try {
             FileUtils.cleanDirectory(new File(GIT_REPO_DIR));
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.warn("failed to clean git repo directory {}", GIT_REPO_DIR);
         }
     }
@@ -170,15 +172,16 @@ public class RepositoryManager {
     private void restoreRepo(GitRepositoryStageEntity stageInfo, GitClientOperator operator)
             throws GitAPIException, IOException {
         Verify.notNull(stageInfo.getBranch(), "stage.branch");
-        Verify.notNull(stageInfo.getDiffPatchStorage(), "stage.diffPatchStorage");
         Verify.notNull(stageInfo.getLastCommitId(), "stage.lastCommitId");
 
         operator.checkout(stageInfo.getBranch());
         operator.resetHard(stageInfo.getLastCommitId());
 
-        byte[] diff = objectStorageService.readContent(stageInfo.getDiffPatchStorage());
-        operator.applyDiff(new ByteArrayInputStream(diff));
-        operator.add(".");
+        if (StringUtils.isEmpty(stageInfo.getDiffPatchStorage())) {
+            byte[] diff = objectStorageService.readContent(stageInfo.getDiffPatchStorage());
+            operator.applyDiff(new ByteArrayInputStream(diff));
+            operator.add(".");
+        }
     }
 
     private void deleteRepo(GitClientOperator operator) {
@@ -198,12 +201,12 @@ public class RepositoryManager {
     }
 
     private GitRepositoryStageEntity newStageInfo(Long repoId, Long userId) {
-        return GitRepositoryStageEntity.builder()
-                .state(RepoState.INITIALIZING)
-                .organizationId(authenticationFacade.currentOrganizationId())
-                .repoId(repoId)
-                .userId(userId)
-                .build();
+        GitRepositoryStageEntity stageInfo = new GitRepositoryStageEntity();
+        stageInfo.setState(RepoState.INITIALIZING)
+                .setOrganizationId(authenticationFacade.currentOrganizationId())
+                .setRepoId(repoId)
+                .setUserId(userId);
+        return stageInfo;
     }
 
 }

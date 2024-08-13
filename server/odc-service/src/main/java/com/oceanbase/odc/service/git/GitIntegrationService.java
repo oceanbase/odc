@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.git;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -144,7 +145,9 @@ public class GitIntegrationService {
     private GitRepositoryEntity modelToEntity(GitRepository repo) {
         GitRepositoryEntity entity = gitRepositoryMapper.modelToEntity(repo);
         String salt = encryptionFacade.generateSalt();
-        TextEncryptor encryptor = getEncryptor(repo.getOrganizationId(), salt);
+        Long organizationId = Objects.isNull(repo.getOrganizationId()) ? authenticationFacade.currentOrganizationId()
+                : repo.getOrganizationId();
+        TextEncryptor encryptor = getEncryptor(organizationId, salt);
         PreConditions.notNull(encryptor, "encryptor");
         entity.setPersonalAccessToken(encryptor.encrypt(repo.getPersonalAccessToken()));
         entity.setSalt(salt);
