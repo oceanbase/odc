@@ -17,17 +17,21 @@ package com.oceanbase.odc.service.git;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.oceanbase.odc.AuthorityTestEnv;
 import com.oceanbase.odc.common.crypto.TextEncryptor;
+import com.oceanbase.odc.common.security.PasswordUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.metadb.git.GitRepoRepository;
 import com.oceanbase.odc.metadb.git.GitRepositoryEntity;
@@ -36,6 +40,8 @@ import com.oceanbase.odc.service.git.model.GitRepository;
 import com.oceanbase.odc.service.git.model.GitRepositoryMapper;
 import com.oceanbase.odc.service.git.model.QueryGitRepositoryParams;
 import com.oceanbase.odc.service.git.model.VcsProvider;
+import com.oceanbase.odc.service.iam.OrganizationService;
+import com.oceanbase.odc.service.iam.model.Organization;
 
 /**
  * @author: liuyizhuo.lyz
@@ -50,11 +56,16 @@ public class GitIntegrationServiceTest extends AuthorityTestEnv {
     private GitIntegrationService integrationService;
     @Autowired
     private EncryptionFacade encryptionFacade;
+    @MockBean
+    private OrganizationService organizationService;
 
     private Long repoId;
 
     @Before
     public void setUp() {
+        Organization organization = new Organization();
+        organization.setSecret(PasswordUtils.random(32));
+        Mockito.when(organizationService.get(Mockito.any())).thenReturn(Optional.of(organization));
         GitRepositoryEntity saved = gitRepoRepository.saveAndFlush(modelToEntity(getRepo()));
         repoId = saved.getId();
     }
