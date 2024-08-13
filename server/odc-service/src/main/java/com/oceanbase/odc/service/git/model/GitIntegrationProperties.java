@@ -30,10 +30,10 @@ import lombok.Data;
 @Data
 public class GitIntegrationProperties {
 
-    @Value("${git.repository.preserve.minutes:1440}")
+    @Value("${odc.integration.git.repository-retention-minutes:1440}")
     private Long gitRepositoryPreserveMinutes = 1440L;
 
-    @Value("${git.repository.max.cached.size:1000}")
+    @Value("${odc.integration.git.repository-max-cached-size:1000}")
     private Long gitRepositoryMaxCachedSize = 1000L;
 
 }

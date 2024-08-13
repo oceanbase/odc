@@ -62,9 +62,10 @@ public class GitIntegrationController {
         return Responses.paginated(integrationService.list(projectId, params, pageable));
     }
 
-    @ApiOperation(value = "listCandidates", notes = "List all candidate repos from vsc provider")
-    @RequestMapping(value = "/candidates", method = RequestMethod.POST)
-    public List<GitRepository> listCandidates(@PathVariable Long projectId, @RequestBody GitProvider provider) {
+    @ApiOperation(value = "listCandidateRepositories", notes = "List all candidate repos from vsc provider")
+    @RequestMapping(value = "/listCandidateRepositories", method = RequestMethod.POST)
+    public List<GitRepository> listCandidateRepositories(@PathVariable Long projectId,
+            @RequestBody GitProvider provider) {
         return integrationService.listCandidates(provider);
     }
 

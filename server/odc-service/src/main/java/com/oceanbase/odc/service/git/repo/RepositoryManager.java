@@ -16,10 +16,12 @@
 package com.oceanbase.odc.service.git.repo;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.concurrent.locks.Lock;
 
 import javax.annotation.PostConstruct;
@@ -112,15 +114,42 @@ public class RepositoryManager {
         return operatorCache.get(new Pair<>(repoId, userId));
     }
 
+    public void storeRepo(GitClientOperator operator, Long repoId, Long userId) throws GitAPIException, IOException {
+        Lock lock = tryLock(repoId, userId);
+        try {
+            String objectKey = null;
+            try (ByteArrayOutputStream diffStream = operator.getDiffForPatch()) {
+                byte[] bytes = diffStream.toByteArray();
+                if (bytes.length == 0) {
+                    return;
+                }
+                if (Objects.nonNull(objectStorageService) && objectStorageService.supported()) {
+                    objectKey = objectStorageService.uploadTemp("repo-" + repoId + "-" + userId,
+                            new ByteArrayInputStream(bytes));
+                }
+            }
+            GitRepositoryStageEntity stageInfo = new GitRepositoryStageEntity();
+            stageInfo.setBranch(operator.currentBranch())
+                    .setLastCommitId(operator.lastCommitId())
+                    .setDiffPatchStorage(objectKey)
+                    .setState(RepoState.UNCOMMITTED)
+                    .setOrganizationId(authenticationFacade.currentOrganizationId())
+                    .setRepoId(repoId)
+                    .setUserId(userId);
+            stageRepository.updateByOrganizationIdAndRepoIdAndUserId(stageInfo);
+        } finally {
+            lock.unlock();
+        }
+    }
+
     private GitClientOperator createGitOperator(Pair<Long, Long> pair) throws IOException, GitAPIException {
         File repo = getRepoDir(pair.left, pair.right);
         FileUtils.forceMkdir(repo);
         String[] children = repo.list();
-        if (children.length == 0) {
-            return initRepo(repo, pair.left, pair.right);
+        if (children.length > 0) {
+            FileUtils.cleanDirectory(repo);
         }
-        Verify.equals(1, children.length, "found more than one repositories");
-        return new GitClientOperator(new File(repo, children[0]));
+        return initRepo(repo, pair.left, pair.right);
     }
 
     private GitClientOperator initRepo(File dir, Long repoId, Long userId) throws GitAPIException, IOException {

@@ -102,7 +102,7 @@ public class GitIntegrationService {
                     return entity;
                 })
                 .collect(Collectors.toList());
-        List<GitRepositoryEntity> saved = gitRepoRepository.saveAll(entities);
+        List<GitRepositoryEntity> saved = gitRepoRepository.batchCreate(entities);
 
         log.info("batch created git repositories, projectId={}, size={}", projectId, saved.size());
         return saved.stream().map(this::entityToModel).collect(Collectors.toList());
