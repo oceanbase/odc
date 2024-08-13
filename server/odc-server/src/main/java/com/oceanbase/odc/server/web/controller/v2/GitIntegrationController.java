@@ -42,7 +42,7 @@ import io.swagger.annotations.ApiOperation;
  * @date: 2024/8/9
  */
 @RestController
-@RequestMapping("/api/v2/project/{projectId}/integration/repos")
+@RequestMapping("/api/v2/collaboration/projects/{projectId}/repos")
 public class GitIntegrationController {
 
     @Autowired

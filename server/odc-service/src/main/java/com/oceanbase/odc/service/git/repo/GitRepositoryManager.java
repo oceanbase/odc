@@ -62,7 +62,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class RepositoryManager {
+public class GitRepositoryManager {
     private static final String LOCK_FORMAT = "repo-lock-%s-%s";
     private static final String GIT_REPO_DIR =
             Paths.get(MoreObjects.firstNonNull(SystemUtils.getEnvOrProperty("file.storage.dir"), "./data"), "repos")
@@ -88,7 +88,7 @@ public class RepositoryManager {
      */
     private final LoadingCache<Pair<Long, Long>, GitClientOperator> operatorCache;
 
-    public RepositoryManager(@Autowired GitIntegrationProperties gitIntegrationProperties) {
+    public GitRepositoryManager(@Autowired GitIntegrationProperties gitIntegrationProperties) {
         operatorCache = Caffeine.newBuilder()
                 .maximumSize(gitIntegrationProperties.getGitRepositoryMaxCachedSize())
                 .expireAfterAccess(Duration.ofMinutes(gitIntegrationProperties.getGitRepositoryPreserveMinutes()))
