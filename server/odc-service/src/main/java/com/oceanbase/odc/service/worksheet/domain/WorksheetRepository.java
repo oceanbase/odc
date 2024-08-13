@@ -26,14 +26,12 @@ import java.util.Set;
  * @date 2024/8/1
  * @since 4.3.2
  */
-public interface DefaultWorksheetRepository {
-    Optional<Worksheet> findByProjectAndPath(Long projectId, Path path, String nameLike, boolean isAddWriteLock,
+public interface WorksheetRepository {
+    Optional<Worksheet> findByProjectIdAndPath(Long projectId, Path path, String nameLike, boolean isAddWriteLock,
             boolean createDefaultIfNotExist, boolean loadSubFiles,
             boolean loadSameLevelFiles);
 
-    List<Worksheet> listByProjectIdAndPathNameLike(Long projectId, String pathNameLike, int limit);
-
-    List<Worksheet> listByProjectIdAndPath(Long projectId, Path path, boolean loadSubFiles);
+    List<Worksheet> listByProjectIdAndPath(Long projectId, Path path);
 
     void batchAdd(Set<Worksheet> files);
 

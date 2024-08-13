@@ -43,7 +43,7 @@ public class WorksheetTestUtil {
                         objectId = "objectId_" + nextId();
                     }
                     return new Worksheet(nextId(), null, null, projectId,
-                            temp, 0L, objectId, null, null);
+                            temp, 1L, 0L, objectId, null, null);
                 }).collect(Collectors.toSet());
         Set<Worksheet> subLevels =
                 CollectionUtils.isEmpty(subPaths) ? null : subPaths.stream().map(pathStr -> {
@@ -53,14 +53,14 @@ public class WorksheetTestUtil {
                         objectId = "objectId_" + nextId();
                     }
                     return new Worksheet(nextId(), null, null, projectId,
-                            temp, 0L, objectId, null, null);
+                            temp, 1L, 0L, objectId, null, null);
                 }).collect(Collectors.toSet());
         String objectId = null;
         if (new Path(path).isFile()) {
             objectId = "objectId_" + nextId();
         }
         return new Worksheet(nextId(), null, null, projectId,
-                new Path(path), 0L, objectId, sameLevels, subLevels);
+                new Path(path), 1L, 0L, objectId, sameLevels, subLevels);
     }
 
 

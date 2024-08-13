@@ -19,17 +19,15 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.service.objectstorage.model.ObjectUploadStatus;
 
-public interface ObjectMetadataRepository extends JpaSpecificationExecutor<ObjectMetadataEntity>,
-        JpaRepository<ObjectMetadataEntity, String> {
+public interface ObjectMetadataRepository extends OdcJpaRepository<ObjectMetadataEntity, Long> {
 
     /**
      * 根据文件 ID 获取文件元数据

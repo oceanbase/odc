@@ -39,6 +39,7 @@ import com.oceanbase.odc.service.worksheet.exceptions.NameTooLongException;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
 
 import lombok.Data;
+import lombok.Setter;
 
 /**
  * worksheet
@@ -54,6 +55,7 @@ public class Worksheet {
     private Date updateTime;
     private Long projectId;
     private Path path;
+    private Long creatorId;
     private Long version;
     /**
      * When reading the version, if this value is not empty, version verification is required when
@@ -69,18 +71,20 @@ public class Worksheet {
      * Same level worksheets in the same parent directory as the current worksheet, excluding the
      * current worksheet
      */
+    @Setter
     private Set<Worksheet> sameLevelWorksheets;
     /**
      * all sub worksheets of current worksheet
      */
+    @Setter
     private Set<Worksheet> subWorksheets;
 
-    public static Worksheet of(Long projectId, Path path, String objectId) {
-        return new Worksheet(null, null, null, projectId, path,
+    public static Worksheet of(Long projectId, Path path, String objectId, Long creatorId) {
+        return new Worksheet(null, null, null, projectId, path, creatorId,
                 null, objectId, null, null);
     }
 
-    public Worksheet(Long id, Date createTime, Date updateTime, Long projectId, Path path, Long version,
+    public Worksheet(Long id, Date createTime, Date updateTime, Long projectId, Path path, Long creatorId, Long version,
             String objectId, Set<Worksheet> sameLevelWorksheets, Set<Worksheet> subWorksheets) {
         this.id = id;
         this.createTime = createTime;
@@ -89,6 +93,7 @@ public class Worksheet {
         this.projectId = projectId;
         PreConditions.notNull(path, "path");
         this.path = path;
+        this.creatorId = creatorId;
         this.version = version == null ? 0L : version;
         if (path.isFile()) {
             PreConditions.notBlank(objectId, "objectId");
@@ -227,7 +232,7 @@ public class Worksheet {
         sameLevelFileNumLimitCheck(createPathToObjectIdMap, nextLevelWorksheets);
         duplicatedNameCheck(createPathToObjectIdMap, nextLevelWorksheets);
         return createPathToObjectIdMap.entrySet().stream().map(
-                entry -> Worksheet.of(projectId, entry.getKey(), entry.getValue()))
+                entry -> Worksheet.of(projectId, entry.getKey(), entry.getValue(), creatorId))
                 .collect(Collectors.toSet());
     }
 

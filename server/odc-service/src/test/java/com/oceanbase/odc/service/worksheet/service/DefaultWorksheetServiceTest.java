@@ -31,9 +31,9 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import com.oceanbase.odc.service.worksheet.domain.DefaultWorksheetRepository;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.WorksheetObjectStorageGateway;
+import com.oceanbase.odc.service.worksheet.domain.WorksheetRepository;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetUtil;
 
@@ -41,7 +41,7 @@ import com.oceanbase.odc.service.worksheet.utils.WorksheetUtil;
 public class DefaultWorksheetServiceTest {
 
     @Mock
-    private DefaultWorksheetRepository defaultWorksheetRepository;
+    private WorksheetRepository worksheetRepository;
 
     @Mock
     private WorksheetObjectStorageGateway worksheetObjectStorageGateway;
@@ -55,7 +55,7 @@ public class DefaultWorksheetServiceTest {
         MockitoAnnotations.initMocks(this);
         defaultWorksheetService =
                 new DefaultWorksheetService(transactionTemplate, worksheetObjectStorageGateway,
-                        defaultWorksheetRepository);
+                        worksheetRepository);
     }
 
     Long projectId = 1L;
@@ -76,26 +76,26 @@ public class DefaultWorksheetServiceTest {
                 WorksheetUtil.getWorksheetDownloadDirectory() + "project1", true).toFile();
 
         // Mock
-        when(defaultWorksheetRepository.findByProjectAndPath(projectId, new Path("/Worksheets/dir1/"),
+        when(worksheetRepository.findByProjectIdAndPath(projectId, new Path("/Worksheets/dir1/"),
                 null, false, true, true, false))
                         .thenReturn(Optional.of(newDirWorksheet(projectId, "/Worksheets/dir1/", null,
                                 Arrays.asList("/Worksheets/dir1/subdir1/", "/Worksheets/dir1/subdir2/file1",
                                         "/Worksheets/dir1/subdir2/file2"))));
-        when(defaultWorksheetRepository.findByProjectAndPath(projectId, new Path("/Worksheets/dir2/"),
+        when(worksheetRepository.findByProjectIdAndPath(projectId, new Path("/Worksheets/dir2/"),
                 null, false, true, true, false))
                         .thenReturn(Optional.of(newDirWorksheet(projectId, "/Worksheets/dir2/", null, null)));
-        when(defaultWorksheetRepository.findByProjectAndPath(projectId, new Path("/Worksheets/dir4/subdir1/"),
+        when(worksheetRepository.findByProjectIdAndPath(projectId, new Path("/Worksheets/dir4/subdir1/"),
                 null, false, true, true, false))
                         .thenReturn(Optional.of(newDirWorksheet(projectId, "/Worksheets/dir4/subdir1/", null, null)));
-        when(defaultWorksheetRepository.findByProjectAndPath(projectId, new Path("/Worksheets/dir3/subdir1/file1"),
+        when(worksheetRepository.findByProjectIdAndPath(projectId, new Path("/Worksheets/dir3/subdir1/file1"),
                 null, false, true, false, false))
                         .thenReturn(
                                 Optional.of(newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file1", null, null)));
-        when(defaultWorksheetRepository.findByProjectAndPath(projectId, new Path("/Worksheets/dir3/subdir1/file2"),
+        when(worksheetRepository.findByProjectIdAndPath(projectId, new Path("/Worksheets/dir3/subdir1/file2"),
                 null, false, true, false, false))
                         .thenReturn(
                                 Optional.of(newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file2", null, null)));
-        when(defaultWorksheetRepository.findByProjectAndPath(projectId, new Path("/Worksheets/dir3/subdir1/file5"),
+        when(worksheetRepository.findByProjectIdAndPath(projectId, new Path("/Worksheets/dir3/subdir1/file5"),
                 null, false, true, false, false))
                         .thenReturn(
                                 Optional.of(newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file5", null, null)));
@@ -105,7 +105,7 @@ public class DefaultWorksheetServiceTest {
         defaultWorksheetService.downloadPathsToDirectory(projectId, paths, commParentPath, destinationDirectory);
 
         // Verify
-        verify(defaultWorksheetRepository, times(6)).findByProjectAndPath(anyLong(), any(Path.class), anyString(),
+        verify(worksheetRepository, times(6)).findByProjectIdAndPath(anyLong(), any(Path.class), anyString(),
                 anyBoolean(),
                 anyBoolean(), anyBoolean(), anyBoolean());
         verify(worksheetObjectStorageGateway, times(5)).downloadToFile(anyString(), any(File.class));

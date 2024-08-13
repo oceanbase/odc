@@ -153,6 +153,13 @@ public class Path {
         return false;
     }
 
+    public boolean isSameLevel(Path path) {
+        if (!this.levelNum.equals(path.getLevelNum())) {
+            return false;
+        }
+        return CollectionUtils.isEqualCollection(this.parentPathItems, path.getParentPathItems());
+    }
+
     /**
      * get the prefix path at index
      * 

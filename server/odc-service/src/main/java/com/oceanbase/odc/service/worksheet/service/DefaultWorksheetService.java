@@ -37,10 +37,10 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
 import com.oceanbase.odc.service.worksheet.domain.BatchOperateWorksheetsResult;
-import com.oceanbase.odc.service.worksheet.domain.DefaultWorksheetRepository;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.Worksheet;
 import com.oceanbase.odc.service.worksheet.domain.WorksheetObjectStorageGateway;
+import com.oceanbase.odc.service.worksheet.domain.WorksheetRepository;
 import com.oceanbase.odc.service.worksheet.exceptions.ChangeTooMuchException;
 import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
@@ -62,13 +62,13 @@ public class DefaultWorksheetService implements WorksheetService {
     public DefaultWorksheetService(
             TransactionTemplate transactionTemplate,
             WorksheetObjectStorageGateway objectStorageGateway,
-            DefaultWorksheetRepository normalWorksheetRepository) {
+            WorksheetRepository normalWorksheetRepository) {
         this.transactionTemplate = transactionTemplate;
         this.objectStorageGateway = objectStorageGateway;
         this.normalWorksheetRepository = normalWorksheetRepository;
     }
 
-    private final DefaultWorksheetRepository normalWorksheetRepository;
+    private final WorksheetRepository normalWorksheetRepository;
     private final WorksheetObjectStorageGateway objectStorageGateway;
     private final TransactionTemplate transactionTemplate;
 
@@ -90,7 +90,7 @@ public class DefaultWorksheetService implements WorksheetService {
                             + objectId);
         }
         Optional<Worksheet> parentFileOptional =
-                normalWorksheetRepository.findByProjectAndPath(projectId, parentPath.get(), null,
+                normalWorksheetRepository.findByProjectIdAndPath(projectId, parentPath.get(), null,
                         true, true, true, false);
 
         // There will be no situation where parentFileOptional is empty here
@@ -105,7 +105,7 @@ public class DefaultWorksheetService implements WorksheetService {
     @Override
     public Worksheet getWorksheetDetails(Long projectId, Path path) {
         Optional<Worksheet> worksheetOptional =
-                normalWorksheetRepository.findByProjectAndPath(projectId, path,
+                normalWorksheetRepository.findByProjectIdAndPath(projectId, path,
                         null, false, false, false, false);
         if (!worksheetOptional.isPresent()) {
             throw new NotFoundException(ErrorCodes.NotFound, new Object[] {"path"},
@@ -124,7 +124,7 @@ public class DefaultWorksheetService implements WorksheetService {
     @Override
     public List<Worksheet> listWorksheets(Long projectId, Path path, Integer depth, String nameLike) {
         Optional<Worksheet> worksheetOptional =
-                normalWorksheetRepository.findByProjectAndPath(projectId, path,
+                normalWorksheetRepository.findByProjectIdAndPath(projectId, path,
                         null, false, true, true, false);
         if (!worksheetOptional.isPresent()) {
             throw new NotFoundException(ErrorCodes.NotFound, new Object[] {"path"},
@@ -139,7 +139,7 @@ public class DefaultWorksheetService implements WorksheetService {
     public BatchOperateWorksheetsResult batchUploadWorksheets(Long projectId,
             BatchCreateWorksheets batchCreateWorksheets) {
         Optional<Worksheet> parentFileOptional =
-                normalWorksheetRepository.findByProjectAndPath(projectId,
+                normalWorksheetRepository.findByProjectIdAndPath(projectId,
                         batchCreateWorksheets.getParentPath(),
                         null, true, true, true, false);
 
@@ -159,7 +159,7 @@ public class DefaultWorksheetService implements WorksheetService {
         List<Worksheet> deleteFiles = new ArrayList<>();
         for (Path path : paths) {
             List<Worksheet> files =
-                    normalWorksheetRepository.listByProjectIdAndPath(projectId, path, true);
+                    normalWorksheetRepository.listByProjectIdAndPath(projectId, path);
             deleteFiles.addAll(files);
         }
         if (deleteFiles.size() > CHANGE_FILE_NUM_LIMIT) {
@@ -191,7 +191,7 @@ public class DefaultWorksheetService implements WorksheetService {
     @Transactional(rollbackFor = Exception.class)
     public List<Worksheet> renameWorksheet(Long projectId, Path path, Path destinationPath) {
         Optional<Worksheet> worksheetOptional =
-                normalWorksheetRepository.findByProjectAndPath(projectId, path,
+                normalWorksheetRepository.findByProjectIdAndPath(projectId, path,
                         null, true, true, true, true);
         Worksheet worksheet =
                 worksheetOptional.orElseThrow(() -> new IllegalStateException("unexpected exception,projectId:"
@@ -207,7 +207,7 @@ public class DefaultWorksheetService implements WorksheetService {
     public List<Worksheet> editWorksheet(Long projectId, Path path, Path destinationPath,
             String objectId, Long readVersion) {
         Optional<Worksheet> worksheetOptional =
-                normalWorksheetRepository.findByProjectAndPath(projectId, path,
+                normalWorksheetRepository.findByProjectIdAndPath(projectId, path,
                         null, true, true, true, true);
         Worksheet worksheet =
                 worksheetOptional.orElseThrow(() -> new IllegalStateException("unexpected exception,projectId:"
@@ -228,7 +228,7 @@ public class DefaultWorksheetService implements WorksheetService {
     public String getDownloadUrl(Long projectId, Path path) {
         path.canGetDownloadUrlCheck();
         Optional<Worksheet> worksheetOptional =
-                normalWorksheetRepository.findByProjectAndPath(projectId, path,
+                normalWorksheetRepository.findByProjectIdAndPath(projectId, path,
                         null, false, false, false, true);
         Worksheet worksheet = worksheetOptional.orElseThrow(
                 () -> new NotFoundException(ErrorCodes.NotFound,
@@ -247,7 +247,7 @@ public class DefaultWorksheetService implements WorksheetService {
         for (Path path : paths) {
             boolean needTooLoadSubFiles = path.isDirectory();
             Optional<Worksheet> worksheetOptional =
-                    normalWorksheetRepository.findByProjectAndPath(projectId, path,
+                    normalWorksheetRepository.findByProjectIdAndPath(projectId, path,
                             null, false, true, needTooLoadSubFiles, false);
             // There will be no situation where parentFileOptional is empty here
             Worksheet worksheet =

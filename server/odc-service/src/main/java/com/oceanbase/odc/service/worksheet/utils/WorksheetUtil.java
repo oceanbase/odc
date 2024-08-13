@@ -20,6 +20,8 @@ import java.util.Date;
 import java.util.TimeZone;
 import java.util.UUID;
 
+import org.apache.commons.lang.StringUtils;
+
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
 import com.oceanbase.odc.service.objectstorage.cloud.util.CloudObjectStorageUtil;
 import com.oceanbase.odc.service.worksheet.domain.Path;
@@ -56,6 +58,18 @@ public class WorksheetUtil {
     public static String getBucketNameOfWorkSheets(Long projectId) {
         return WORKSHEETS_BUCKET_NAME_PREFIX + projectId;
     }
+
+    public static Long getProjectIdOfWorkSheets(String bucketName) {
+        if (StringUtils.isBlank(bucketName) || bucketName.length() <= WORKSHEETS_BUCKET_NAME_PREFIX.length()) {
+            throw new IllegalArgumentException("bucketName is blank or illegal,bucketName: " + bucketName);
+        }
+        try {
+            return Long.parseLong(bucketName.substring(WORKSHEETS_BUCKET_NAME_PREFIX.length()));
+        } catch (NumberFormatException nfe) {
+            throw new IllegalArgumentException("bucketName is illegal,can't convert to Long,bucketName: " + bucketName);
+        }
+    }
+
 
     public static String getObjectIdOfWorksheets(Path path) {
         return CloudObjectStorageUtil.generateObjectName(null, UUID.randomUUID().toString(),
