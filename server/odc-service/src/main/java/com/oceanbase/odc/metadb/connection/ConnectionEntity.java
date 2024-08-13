@@ -289,4 +289,11 @@ public class ConnectionEntity {
     @Column(name = "user_role")
     @Enumerated(value = EnumType.STRING)
     private UserRole userRole;
+
+    /**
+     * 数据库名称
+     */
+    @Column(name = "database_name")
+    private String databaseName;
+
 }

@@ -73,6 +73,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     private String sid;
     private String serviceName;
     protected UserRole userRole;
+    private String databaseName;
     private Map<String, String> parameters;
     protected final ConnectionConfig connectionConfig;
     private final Boolean autoCommit;
@@ -98,6 +99,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         this.sid = connectionConfig.getSid();
         this.serviceName = connectionConfig.getServiceName();
         this.userRole = connectionConfig.getUserRole();
+        this.databaseName = connectionConfig.getDatabaseName();
         this.parameters = getJdbcParams(connectionConfig);
         this.connectionExtensionPoint = ConnectionPluginUtil.getConnectionExtension(connectionConfig.getDialectType());
     }
@@ -108,7 +110,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
 
     private JdbcUrlProperty getJdbcUrlProperties() {
         return new JdbcUrlProperty(this.host, this.port, this.defaultSchema, this.parameters, this.sid,
-                this.serviceName);
+                this.serviceName, this.databaseName);
     }
 
     public static String getUsername(@NonNull ConnectionConfig connectionConfig) {
@@ -318,7 +320,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
                 if (StringUtils.isNotEmpty(defaultSchema)) {
                     return getSchema(defaultSchema, connectionConfig.getDialectType());
                 }
-                return getSchema(OdcConstants.POSTGRESQL_DEFAULT_CONN_DATABASE, connectionConfig.getDialectType());
+                return getSchema(OdcConstants.POSTGRESQL_DEFAULT_SCHEMA, connectionConfig.getDialectType());
             default:
                 return null;
         }

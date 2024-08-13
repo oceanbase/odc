@@ -123,6 +123,11 @@ public class ConnectionConfig
     private UserRole userRole;
 
     /**
+     * 该参数表示一个数据库实例
+     */
+    private String databaseName;
+
+    /**
      * 连接类型
      * 
      * @since 3.3.0
@@ -369,7 +374,7 @@ public class ConnectionConfig
             case ODP_SHARDING_OB_MYSQL:
                 return OdcConstants.MYSQL_DEFAULT_SCHEMA;
             case POSTGRESQL:
-                return OdcConstants.POSTGRESQL_DEFAULT_CONN_DATABASE;
+                return OdcConstants.POSTGRESQL_DEFAULT_SCHEMA;
             default:
                 return null;
         }
@@ -489,6 +494,7 @@ public class ConnectionConfig
         if (Objects.nonNull(userRole)) {
             target.setUserRole(userRole.name());
         }
+        target.setDatabaseName(databaseName);
         target.setJdbcUrlParameters(getJdbcUrlParameters());
         return target;
     }

@@ -203,7 +203,7 @@ public class ConnectionTesting {
     private JdbcUrlProperty getJdbcUrlProperties(ConnectionConfig config, String schema) {
         return new JdbcUrlProperty(config.getHost(), config.getPort(), schema,
                 OBConsoleDataSourceFactory.getJdbcParams(config), config.getSid(),
-                config.getServiceName());
+                config.getServiceName(), config.getDatabaseName());
     }
 
     private Properties getTestConnectionProperties(ConnectionConfig config) {
@@ -231,6 +231,7 @@ public class ConnectionTesting {
         config.setSid(req.getSid());
         config.setServiceName(req.getServiceName());
         config.setUserRole(req.getUserRole());
+        config.setDatabaseName(req.getDatabaseName());
 
         OBTenantEndpoint endpoint = req.getEndpoint();
         if (Objects.nonNull(endpoint) && OceanBaseAccessMode.IC_PROXY == endpoint.getAccessMode()) {

@@ -143,11 +143,7 @@ public class AbstractDlmPreprocessor implements Preprocessor {
                 throw new UnsupportedException();
             }
             SqlBuilder sqlBuilder = dbType.isMysql() ? new MySQLSqlBuilder() : new OracleSqlBuilder();
-            if (dbType.isPostgreSql()) {
-                sqlBuilder.append("SELECT 1 FROM ").identifier(table.getTableName());
-            } else {
-                sqlBuilder.append("SELECT 1 FROM ").identifier(database.getName(), table.getTableName());
-            }
+            sqlBuilder.append("SELECT 1 FROM ").identifier(database.getName(), table.getTableName());
             if (StringUtils.isNotEmpty(table.getConditionExpression())) {
                 sqlBuilder.append(" WHERE ")
                         .append(DataArchiveConditionUtil.parseCondition(table.getConditionExpression(),

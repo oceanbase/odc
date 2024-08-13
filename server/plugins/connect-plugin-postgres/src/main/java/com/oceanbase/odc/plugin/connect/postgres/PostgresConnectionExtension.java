@@ -27,6 +27,7 @@ import org.apache.commons.lang3.Validate;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.ExceptionUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
@@ -44,8 +45,16 @@ public class PostgresConnectionExtension extends OBMySQLConnectionExtension {
         Validate.notEmpty(host, "host can not be null");
         Integer port = properties.getPort();
         Validate.notNull(port, "port can not be null");
+        String databaseName = properties.getDatabaseName();
+        Validate.notEmpty(databaseName, "database name can not be null");
         String schema = properties.getDefaultSchema();
-        return String.format(getJdbcUrlPrefix(), host, port, schema);
+
+        StringBuilder jdbcUrl = new StringBuilder();
+        jdbcUrl.append("jdbc:postgresql://").append(host).append(":").append(port).append("/").append(databaseName);
+        if (StringUtils.isNotBlank(schema)) {
+            jdbcUrl.append("?currentSchema=").append(schema);
+        }
+        return jdbcUrl.toString();
     }
 
     @Override
@@ -71,11 +80,6 @@ public class PostgresConnectionExtension extends OBMySQLConnectionExtension {
             Throwable rootCause = ExceptionUtils.getRootCause(e);
             return TestResult.unknownError(rootCause);
         }
-    }
-
-    @Override
-    protected String getJdbcUrlPrefix() {
-        return "jdbc:postgresql://%s:%d/%s";
     }
 
     @Override

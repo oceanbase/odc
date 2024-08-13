@@ -36,14 +36,17 @@ public class JdbcUrlProperty {
     private String sid;
     private String serviceName;
 
+    private String databaseName;
+
     public JdbcUrlProperty(@NonNull String host, @NonNull Integer port, String defaultSchema,
-            Map<String, String> jdbcParameters, String sid, String serviceName) {
+            Map<String, String> jdbcParameters, String sid, String serviceName, String databaseName) {
         this.host = host;
         this.port = port;
         this.defaultSchema = defaultSchema;
         this.jdbcParameters = jdbcParameters;
         this.sid = sid;
         this.serviceName = serviceName;
+        this.databaseName = databaseName;
     }
 
     public JdbcUrlProperty(@NonNull String host, @NonNull Integer port, String defaultSchema,

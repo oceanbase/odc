@@ -18,6 +18,8 @@ package com.oceanbase.tools.dbbrowser.schema.postgre;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -60,7 +62,9 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public List<String> showDatabases() {
-        String sql = "SELECT datname FROM pg_database;";
+        String sql = "SELECT schema_name FROM information_schema.schemata "
+                + "where schema_name not like 'pg_%' "
+                + "and schema_name <> 'information_schema'";
         return jdbcOperations.queryForList(sql, String.class);
     }
 
@@ -71,17 +75,26 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public List<DBDatabase> listDatabases() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("SELECT datname AS database_name,pg_encoding_to_char(encoding) AS character_set,"
-                + "datcollate AS collation FROM pg_database;");
-        return jdbcOperations.query(sb.toString(), (rs, rowNum) -> {
-            DBDatabase database = new DBDatabase();
-            database.setId(rs.getString("database_name"));
-            database.setName(rs.getString("database_name"));
-            database.setCharset(rs.getString("character_set"));
-            database.setCollation(rs.getString("collation"));
-            return database;
+        List<String> schemas = showDatabases();
+        String sql = "SELECT "
+                + "    datcollate AS collation, "
+                + "    pg_encoding_to_char(encoding) AS charset "
+                + "FROM pg_database "
+                + "WHERE datname = current_database();";
+        AtomicReference<String> charset = new AtomicReference<>();
+        AtomicReference<String> collation = new AtomicReference<>();
+        jdbcOperations.query(sql, rs -> {
+            collation.set(rs.getString(1));
+            charset.set(rs.getString(2));
         });
+        return schemas.stream().map(schema -> {
+            DBDatabase database = new DBDatabase();
+            database.setId(schema);
+            database.setName(schema);
+            database.setCollation(collation.get());
+            database.setCharset(charset.get());
+            return database;
+        }).collect(Collectors.toList());
     }
 
     @Override
@@ -97,22 +110,14 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     @Override
     public List<String> showTables(String schemaName) {
         StringBuilder sb = new StringBuilder();
-        sb.append("SELECT table_name FROM information_schema.tables "
-                + "WHERE table_schema = 'public' AND table_type = 'BASE TABLE'");
-        sb.append(" AND table_name NOT IN ("
-                + "        SELECT child.relname "
-                + "        FROM pg_inherits "
-                + "        JOIN pg_class child ON pg_inherits.inhrelid = child.oid "
-                + "        JOIN pg_namespace nmsp_child ON nmsp_child.oid = child.relnamespace "
-                + "        WHERE nmsp_child.nspname = 'public') ");
-        if (StringUtils.isNotBlank(schemaName)) {
-            sb.append("AND table_catalog").append(" = ").append("'").append(schemaName).append("'");
-        }
+        sb.append("select table_name from information_schema.tables where table_schema = ");
+        sb.append("'").append(schemaName).append("'");
+        sb.append(" and table_type = 'BASE TABLE';");
         List<String> tableNames;
         try {
             tableNames = jdbcOperations.query(sb.toString(), (rs, rowNum) -> rs.getString(1));
         } catch (BadSqlGrammarException e) {
-            if (StringUtils.containsIgnoreCase(e.getMessage(), "Unknown database")) {
+            if (StringUtils.containsIgnoreCase(e.getMessage(), "Unknown schema")) {
                 return Collections.emptyList();
             }
             throw e;

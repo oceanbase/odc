@@ -116,6 +116,11 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
      */
     private UserRole userRole;
 
+    /**
+     * 该参数表示数据库名称
+     */
+    private String databaseName;
+
     @JsonIgnore
     private transient OBTenantEndpoint endpoint;
 
@@ -182,6 +187,7 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
         req.setSid(connection.getSid());
         req.setServiceName(connection.getServiceName());
         req.setUserRole(connection.getUserRole());
+        req.setDatabaseName(connection.getDatabaseName());
         req.setSessionInitScript(connection.getSessionInitScript());
         req.setJdbcUrlParameters(connection.getJdbcUrlParameters());
         return req;

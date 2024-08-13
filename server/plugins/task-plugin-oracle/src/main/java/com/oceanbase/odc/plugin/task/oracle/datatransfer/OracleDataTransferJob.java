@@ -61,7 +61,8 @@ public class OracleDataTransferJob extends MySQLDataTransferJob {
                 connectionInfo.getSchema(),
                 new HashMap<>(),
                 connectionInfo.getSid(),
-                connectionInfo.getServiceName());
+                connectionInfo.getServiceName(),
+                connectionInfo.getDatabaseName());
         if (MapUtils.isNotEmpty(connectionInfo.getJdbcUrlParameters())) {
             connectionInfo.getJdbcUrlParameters().forEach(
                     (key, value) -> properties.getJdbcParameters().put(key, value.toString()));
