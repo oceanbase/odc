@@ -48,7 +48,7 @@ public class PureObjectStorageConfiguration {
     private long blockSplitLength = 1024 * 1024L;
 
     @Primary
-    @Bean("objectStorageFacade")
+    @Bean("pureObjectStorage")
     @RefreshScope
     public PureObjectStorage pureObjectStorage() {
         log.info("pureObjectStorage is initializing");
