@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -35,6 +36,7 @@ import com.google.common.collect.Iterables;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
 import com.oceanbase.odc.service.worksheet.domain.BatchOperateWorksheetsResult;
 import com.oceanbase.odc.service.worksheet.domain.Path;
@@ -62,15 +64,22 @@ public class DefaultWorksheetService implements WorksheetService {
     public DefaultWorksheetService(
             TransactionTemplate transactionTemplate,
             WorksheetObjectStorageGateway objectStorageGateway,
-            WorksheetRepository normalWorksheetRepository) {
+            WorksheetRepository normalWorksheetRepository,
+            AuthenticationFacade authenticationFacade) {
         this.transactionTemplate = transactionTemplate;
         this.objectStorageGateway = objectStorageGateway;
         this.normalWorksheetRepository = normalWorksheetRepository;
+        this.authenticationFacade = authenticationFacade;
     }
 
     private final WorksheetRepository normalWorksheetRepository;
     private final WorksheetObjectStorageGateway objectStorageGateway;
     private final TransactionTemplate transactionTemplate;
+    private final AuthenticationFacade authenticationFacade;
+
+    private long currentUserId() {
+        return authenticationFacade.currentUserId();
+    }
 
     @Override
     public GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, Path path) {
@@ -98,7 +107,7 @@ public class DefaultWorksheetService implements WorksheetService {
         Worksheet prarentprojectWorksheet =
                 parentFileOptional.orElseThrow(() -> new IllegalStateException("unexpected exception,projectId:"
                         + projectId + "parent path:" + parentPath));
-        Worksheet createdWorksheet = prarentprojectWorksheet.create(createPath, objectId);
+        Worksheet createdWorksheet = prarentprojectWorksheet.create(createPath, objectId, currentUserId());
         normalWorksheetRepository.batchAdd(Collections.singleton(createdWorksheet));
         return createdWorksheet;
     }
@@ -132,7 +141,7 @@ public class DefaultWorksheetService implements WorksheetService {
                     "can't find path, projectId:" + projectId + "path:" + path);
         }
         Worksheet worksheet = worksheetOptional.get();
-        return worksheet.getSubWorksheetsInDepth(depth);
+        return worksheet.getSubWorksheetsInDepth(depth, true);
     }
 
     @Override
@@ -149,7 +158,7 @@ public class DefaultWorksheetService implements WorksheetService {
                 parentFileOptional.orElseThrow(() -> new IllegalStateException("unexpected exception,projectId:"
                         + projectId + "parent path:" + batchCreateWorksheets.getParentPath()));
         Set<Worksheet> innerWorksheets =
-                parentWorksheet.batchCreate(batchCreateWorksheets.getCreatePathToObjectIdMap());
+                parentWorksheet.batchCreate(batchCreateWorksheets.getCreatePathToObjectIdMap(), currentUserId());
         normalWorksheetRepository.batchAdd(innerWorksheets);
 
         return BatchOperateWorksheetsResult.ofSuccess(new ArrayList<>(innerWorksheets));

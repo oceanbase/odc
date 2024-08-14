@@ -31,6 +31,7 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.WorksheetObjectStorageGateway;
 import com.oceanbase.odc.service.worksheet.domain.WorksheetRepository;
@@ -47,6 +48,8 @@ public class DefaultWorksheetServiceTest {
     private WorksheetObjectStorageGateway worksheetObjectStorageGateway;
     @Mock
     private TransactionTemplate transactionTemplate;
+    @Mock
+    private AuthenticationFacade authenticationFacade;
 
     private DefaultWorksheetService defaultWorksheetService;
 
@@ -55,7 +58,7 @@ public class DefaultWorksheetServiceTest {
         MockitoAnnotations.initMocks(this);
         defaultWorksheetService =
                 new DefaultWorksheetService(transactionTemplate, worksheetObjectStorageGateway,
-                        worksheetRepository);
+                        worksheetRepository, authenticationFacade);
     }
 
     Long projectId = 1L;

@@ -18,10 +18,12 @@ package com.oceanbase.odc.service.worksheet.domain;
 import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.NAME_LENGTH_LIMIT;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -58,11 +60,28 @@ public class Path {
     public static Path root() {
         Path path = new Path();
         path.name = null;
-        path.type = null;
+        path.type = WorksheetType.DIRECTORY;
         path.location = null;
         path.levelNum = 0;
         path.parentPathItems = new ArrayList<>();
         return path;
+    }
+
+    public static Path ofFile(String... items) {
+        return new Path(Arrays.stream(items).collect(Collectors.toList()));
+    }
+
+    public static Path ofFile(List<String> items) {
+        return new Path(items);
+    }
+
+    public static Path ofDirectory(String... items) {
+        return new Path(WorksheetPathUtil.addSeparatorToItemsEnd(
+                Arrays.stream(items).collect(Collectors.toList())));
+    }
+
+    public static Path ofDirectory(List<String> items) {
+        return new Path(WorksheetPathUtil.addSeparatorToItemsEnd(items));
     }
 
     public Path(String path) {
@@ -70,21 +89,36 @@ public class Path {
         if (items.isEmpty()) {
             throw new IllegalArgumentException("invalid path : " + path);
         }
+        try {
+            initWithItems(items);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("invalid path : " + path);
+        }
+    }
+
+    public Path(List<String> items) {
+        initWithItems(items);
+    }
+
+    private void initWithItems(List<String> items) {
+        if (CollectionUtils.isEmpty(items)) {
+            throw new IllegalArgumentException("items can't be empty");
+        }
         Optional<WorksheetLocation> locationOptional = WorksheetPathUtil.getPathLocation(items);
         if (!locationOptional.isPresent()) {
-            throw new IllegalArgumentException("invalid path : " + path);
+            throw new IllegalArgumentException("invalid items : " + items);
         }
         Optional<WorksheetType> pathTypeOptional = WorksheetPathUtil.getPathType(items);
         if (!pathTypeOptional.isPresent()) {
-            throw new IllegalArgumentException("invalid path : " + path);
+            throw new IllegalArgumentException("invalid items : " + items);
         }
         Optional<String> standardPathOptional = WorksheetPathUtil.convertItemsToPath(items);
         if (!standardPathOptional.isPresent()) {
-            throw new IllegalArgumentException("invalid path : " + path);
+            throw new IllegalArgumentException("invalid items : " + items);
         }
         Optional<String> pathNameOptional = WorksheetPathUtil.getPathName(items);
         if (!pathNameOptional.isPresent()) {
-            throw new IllegalArgumentException("invalid path : " + path);
+            throw new IllegalArgumentException("invalid items : " + items);
         }
         this.name = pathNameOptional.get();
         this.type = pathTypeOptional.get();
@@ -180,11 +214,12 @@ public class Path {
         return false;
     }
 
-    public boolean isSameLevel(Path path) {
-        if (!this.levelNum.equals(path.getLevelNum())) {
+    public boolean isSameParentAtPrevLevel(Path path) {
+        if (this.levelNum < path.getLevelNum()) {
             return false;
         }
-        return CollectionUtils.isEqualCollection(this.parentPathItems, path.getParentPathItems());
+        return CollectionUtils.isEqualCollection(this.parentPathItems.subList(0, path.getLevelNum() - 1),
+                path.getParentPathItems());
     }
 
     /**
@@ -201,25 +236,10 @@ public class Path {
         if (index == this.levelNum - 1) {
             return Optional.of(this);
         }
-        if (isRoot()) {
+        if (index < getRootLevelNum() - 1) {
             return Optional.empty();
         }
-        boolean canGetPath = true;
-        switch (location) {
-            case WORKSHEETS:
-                canGetPath = index >= 0;
-                break;
-            case REPOS:
-                canGetPath = index >= 1;
-                break;
-        }
-        if (!canGetPath) {
-            return Optional.empty();
-        }
-
-        Optional<String> parentStandardPathOptional = WorksheetPathUtil.convertItemsToPath(
-                WorksheetPathUtil.addSeparatorToItemsEnd(this.parentPathItems.subList(0, index + 1)));
-        return parentStandardPathOptional.map(Path::new);
+        return Optional.of(Path.ofDirectory(this.parentPathItems.subList(0, index + 1)));
     }
 
     /**

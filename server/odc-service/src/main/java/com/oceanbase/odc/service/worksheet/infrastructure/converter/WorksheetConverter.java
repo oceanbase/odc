@@ -45,14 +45,14 @@ public class WorksheetConverter {
     public static Worksheet toDomainFromEntities(List<ObjectMetadataEntity> entities, Long projectId,
             Path path, boolean createDefaultIfNotExist,
             boolean loadSubFiles, boolean loadSameLevelFiles) {
-        Map<Path, Worksheet> sameLevelMap = new HashMap<>();
+        Map<Path, Worksheet> sameParentAtPrevLevelMap = new HashMap<>();
         Map<Path, Worksheet> subLevelMap = new HashMap<>();
         Worksheet self = null;
         for (ObjectMetadataEntity entity : entities) {
             try {
                 Path entityPath = new Path(entity.getObjectName());
                 boolean isSubLevel = path == null || entityPath.isChildOfAny(path);
-                boolean isSameLevel = path != null && entityPath.isSameLevel(path);
+                boolean isSamePrevParent = path != null && entityPath.isSameParentAtPrevLevel(path);
                 boolean isSelf = entityPath.equals(path);
                 if (isSubLevel && loadSubFiles) {
                     Worksheet worksheet = toDomain(entity);
@@ -62,12 +62,12 @@ public class WorksheetConverter {
                         subLevelMap.put(entityPath, worksheet);
                     }
                 }
-                if (!isSelf && isSameLevel && loadSameLevelFiles) {
+                if (!isSelf && !isSubLevel && isSamePrevParent && loadSameLevelFiles) {
                     Worksheet worksheet = toDomain(entity);
-                    Worksheet existWorksheet = sameLevelMap.get(entityPath);
+                    Worksheet existWorksheet = sameParentAtPrevLevelMap.get(entityPath);
                     if (existWorksheet == null ||
                             existWorksheet.getUpdateTime().before(worksheet.getUpdateTime())) {
-                        sameLevelMap.put(entityPath, worksheet);
+                        sameParentAtPrevLevelMap.put(entityPath, worksheet);
                     }
                 }
                 if (isSelf) {
@@ -91,7 +91,7 @@ public class WorksheetConverter {
             self.setSubWorksheets(new HashSet<>(subLevelMap.values()));
         }
         if (loadSameLevelFiles) {
-            self.setSameLevelWorksheets(new HashSet<>(sameLevelMap.values()));
+            self.setSameParentAtPrevLevelWorksheets(new HashSet<>(sameParentAtPrevLevelMap.values()));
         }
         return self;
     }

@@ -68,7 +68,7 @@ public class WorksheetConverterTest {
         assertEquals(projectId, result.getProjectId());
         assertEquals(path, result.getPath());
         assert CollectionUtils.isEmpty(result.getSubWorksheets());
-        assert CollectionUtils.isEmpty(result.getSameLevelWorksheets());
+        assert CollectionUtils.isEmpty(result.getSameParentAtPrevLevelWorksheets());
 
         result =
                 WorksheetConverter.toDomainFromEntities(new ArrayList<>(), projectId, path, false,
@@ -94,7 +94,7 @@ public class WorksheetConverterTest {
         assertEquals(projectId, result.getProjectId());
         assertEquals(path, result.getPath());
         assert CollectionUtils.isEmpty(result.getSubWorksheets());
-        assert CollectionUtils.isEmpty(result.getSameLevelWorksheets());
+        assert CollectionUtils.isEmpty(result.getSameParentAtPrevLevelWorksheets());
     }
 
 
@@ -138,7 +138,7 @@ public class WorksheetConverterTest {
         assert CollectionUtils.isEqualCollection(
                 Arrays.asList(sameLevelEntity1, sameLevelEntity2).stream()
                         .map(WorksheetConverter::toDomain).collect(Collectors.toSet()),
-                result.getSameLevelWorksheets());
+                result.getSameParentAtPrevLevelWorksheets());
 
         result = WorksheetConverter.toDomainFromEntities(entities, projectId, path, false,
                 false, true);
@@ -146,11 +146,11 @@ public class WorksheetConverterTest {
         assert CollectionUtils.isEqualCollection(
                 Arrays.asList(sameLevelEntity1, sameLevelEntity2).stream()
                         .map(WorksheetConverter::toDomain).collect(Collectors.toSet()),
-                result.getSameLevelWorksheets());
+                result.getSameParentAtPrevLevelWorksheets());
 
         result = WorksheetConverter.toDomainFromEntities(entities, projectId, path, false,
                 false, false);
         assert CollectionUtils.isEmpty(result.getSubWorksheets());
-        assert CollectionUtils.isEmpty(result.getSameLevelWorksheets());
+        assert CollectionUtils.isEmpty(result.getSameParentAtPrevLevelWorksheets());
     }
 }

@@ -20,12 +20,15 @@ import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -36,6 +39,7 @@ import com.oceanbase.odc.service.worksheet.exceptions.EditVersionConflictExcepti
 import com.oceanbase.odc.service.worksheet.exceptions.ExceedSameLevelNumLimitException;
 import com.oceanbase.odc.service.worksheet.exceptions.NameDuplicatedException;
 import com.oceanbase.odc.service.worksheet.exceptions.NameTooLongException;
+import com.oceanbase.odc.service.worksheet.model.WorksheetLocation;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
 
 import lombok.Data;
@@ -50,16 +54,15 @@ import lombok.Setter;
  *  |__folder1/
  *      |__file2.sql
  *      |__folder4
+ *          |__file5.sql
  *  |__folder3/
  *      |__file3.sql
  *  |__file1.sql
  * </code>
  * </pre>
  * 
- * For the worksheet example above,if the current Worksheet path is /Worksheets/folder1/, then the
- * paths of sameLevelWorksheets are <code>[/Worksheets/folder3/,/Worksheets/file1.sql]</code>, and
- * the paths of subWorksheets are
- * <code>[/Worksheets/folder1/folder4/,/Worksheets/folder1/file2.sql]</code>.
+ * The above is an example worksheet tree in this class. The example current worksheet path is
+ * <code>/Worksheets/folder1/</code>.
  *
  * @author keyangs
  * @date 2024/8/1
@@ -85,13 +88,21 @@ public class Worksheet {
     private boolean isChanged = false;
 
     /**
-     * Same level worksheets in the same parent directory as the current worksheet, excluding the
-     * current worksheet
+     * The parent path is same at current path previous level between sameParentAtPrevLevelWorksheets
+     * and current worksheet, excluding the current and sub worksheets.
+     * <p>
+     * for example in this class, the paths of sameParentAtPrevLevelWorksheets are
+     * <code>[/Worksheets/folder3/,/Worksheets/folder3/file3.sql,/Worksheets/file1.sql]</code>.
+     * </p>
      */
     @Setter
-    private Set<Worksheet> sameLevelWorksheets;
+    private Set<Worksheet> sameParentAtPrevLevelWorksheets;
     /**
-     * all sub worksheets of current worksheet
+     * All sub worksheets of current worksheet.
+     * <p>
+     * for example in this class,the paths of subWorksheets are
+     * <code>[/Worksheets/folder1/folder4/,/Worksheets/folder1/file2.sql]</code>.
+     * </p>
      */
     @Setter
     private Set<Worksheet> subWorksheets;
@@ -102,7 +113,7 @@ public class Worksheet {
     }
 
     public Worksheet(Long id, Date createTime, Date updateTime, Long projectId, Path path, Long creatorId, Long version,
-            String objectId, Set<Worksheet> sameLevelWorksheets, Set<Worksheet> subWorksheets) {
+            String objectId, Set<Worksheet> sameParentAtPrevLevelWorksheets, Set<Worksheet> subWorksheets) {
         this.id = id;
         this.createTime = createTime;
         this.updateTime = updateTime;
@@ -116,21 +127,74 @@ public class Worksheet {
             PreConditions.notBlank(objectId, "objectId");
         }
         this.objectId = objectId;
-        this.sameLevelWorksheets = sameLevelWorksheets == null ? new HashSet<>() : sameLevelWorksheets;
+        this.sameParentAtPrevLevelWorksheets =
+                sameParentAtPrevLevelWorksheets == null ? new HashSet<>() : sameParentAtPrevLevelWorksheets;
         this.subWorksheets = subWorksheets == null ? new HashSet<>() : subWorksheets;
 
     }
 
-    public List<Worksheet> getSubWorksheetsInDepth(Integer depth) {
+    public List<Worksheet> getSubWorksheetsInDepth(Integer depth, Boolean needToExtractNotExistParent) {
         PreConditions.notNull(depth, "depth");
         PreConditions.assertTrue(depth >= 0, "depth");
         if (CollectionUtils.isEmpty(subWorksheets)) {
             return new ArrayList<>();
         }
         return subWorksheets.stream()
-                .filter(file -> depth == 0 || file.getPath().getLevelNum() <= this.path.levelNum + depth)
+                .flatMap(worksheet -> needToExtractNotExistParent
+                        ? splitWorksheetWithLevelNumBiggerThanCurrent(worksheet).stream()
+                        : Stream.of(worksheet))
+                .filter(worksheet -> depth == 0 || worksheet.getPath().getLevelNum() <= this.path.levelNum + depth)
+                .collect(Collectors.toMap(Worksheet::getPath, w -> w, (w1, w2) -> {
+                    if (w1.getId() == null && w2.getId() == null) {
+                        if (w1.getCreateTime() == null) {
+                            return w2;
+                        } else if (w2.getCreateTime() == null) {
+                            return w1;
+                        }
+                        return w1.getCreateTime().compareTo(w2.getCreateTime()) > 0 ? w2 : w1;
+                    }
+                    if (w1.getId() != null && w2.getId() != null) {
+                        if (w1.getUpdateTime() == null) {
+                            return w2;
+                        } else if (w2.getUpdateTime() == null) {
+                            return w1;
+                        }
+                        return w1.getUpdateTime().compareTo(w2.getUpdateTime()) > 0 ? w1 : w2;
+                    }
+                    if (w1.getId() == null) {
+                        return w2;
+                    }
+                    return w1;
+                })).values().stream()
                 .sorted((o1, o2) -> Path.getPathSameLevelComparator().compare(o1.getPath(), o2.getPath()))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * split {@param worksheet} to get every level parent worksheets,and the level num of paren
+     * worksheets should bigger than the level num of current worksheet.
+     * <p>
+     * for example: current worksheet path is <code>/Worksheets/dir1/</code>, the split worksheet is
+     * <code>/Worksheets/dir1/dir2/file1</code>, and the result worksheets are
+     * <code>[/Worksheets/dir1/dir2/,/Worksheets/dir1/dir2/file1]</code>
+     * </p>
+     * 
+     * @param worksheet the worksheet need to split
+     * @return
+     */
+    private List<Worksheet> splitWorksheetWithLevelNumBiggerThanCurrent(Worksheet worksheet) {
+        List<Worksheet> result = new ArrayList<>();
+        int currentWorksheetDepth = this.path.getLevelNum();
+        for (Path parentPath : worksheet.getPath().getAllNotRootParents()) {
+            if (parentPath.getLevelNum() <= currentWorksheetDepth) {
+                continue;
+            }
+            Worksheet parentWorksheet = new Worksheet(null, worksheet.getCreateTime(), worksheet.getUpdateTime(),
+                    this.projectId, parentPath, worksheet.getCreatorId(), 0L, null, null, null);
+            result.add(parentWorksheet);
+        }
+        result.add(worksheet);
+        return result;
     }
 
     /**
@@ -140,13 +204,14 @@ public class Worksheet {
      * @return all changed worksheets ,contain current
      */
     public Set<Worksheet> rename(Path destinationPath) {
+        nameTooLongCheck(Collections.singleton(destinationPath));
         if (!WorksheetPathUtil.isRenameValid(this.path, destinationPath)) {
             throw new IllegalArgumentException(
                     "invalid path for rename,from:" + this.path + ",destinationPath:" + destinationPath);
         }
         if (this.isRenameDuplicated(destinationPath)) {
             throw new NameDuplicatedException(
-                    "duplicated path for rename,from:" + this.path + ",destinationPath:" + destinationPath);
+                    "duplicated path name for rename,from:" + this.path + ",destinationPath:" + destinationPath);
         }
         Set<Worksheet> changedWorksheets = new HashSet<>();
         if (CollectionUtils.isNotEmpty(subWorksheets)) {
@@ -181,7 +246,8 @@ public class Worksheet {
      * @return all changed worksheets ,contain current
      */
     public Set<Worksheet> edit(Path destinationPath, String objectId, Long readVersion) {
-        // 若objectId变更，需要修改内容，且判断readVersion是否符合条件
+        // if the objectId changes, it is necessary to modify the content and determine whether the
+        // readVersion meets the criteria
         if (this.path.isFile() && !StringUtils.equals(this.objectId, objectId)) {
             this.objectId = objectId;
             this.readVersion = readVersion;
@@ -193,7 +259,7 @@ public class Worksheet {
         }
 
         Set<Worksheet> changedSubFiles = new HashSet<>();
-        // destination和当前path相同，需要修改名称
+        // destination and current path are the same, name needs to be changed
         if (!this.path.equals(destinationPath)) {
             changedSubFiles = rename(destinationPath);
         }
@@ -206,17 +272,27 @@ public class Worksheet {
     }
 
     /**
-     * Verify if the renamed destinationPath duplicates the existing worksheets path
+     * Verify if the renamed destinationPath duplicates the existing worksheets path.
+     * <p>
+     * <b>annotation: if the destinationPath is parent of any worksheet path in
+     * sameParentAtPrevLevelWorksheets(even if the destination does not exist in
+     * sameParentAtPrevLevelWorksheets), is also rename duplicated.The reason for handling this is，the
+     * name of the sub worksheets for renaming the directory may duplicate with the name of the sub
+     * worksheet for destination </b>
+     * </p>
      *
-     * @param destinationPath
-     * @return true 重复 ;false 不重复
+     * @param destinationPath the destination path to rename
+     * @return true duplicated ;false not duplicated
      */
     public boolean isRenameDuplicated(Path destinationPath) {
-        if (CollectionUtils.isEmpty(sameLevelWorksheets)) {
+        if (CollectionUtils.isEmpty(sameParentAtPrevLevelWorksheets)) {
             return false;
         }
-        for (Worksheet subFile : sameLevelWorksheets) {
-            if (StringUtils.equals(subFile.path.getName(), destinationPath.getName())) {
+        for (Worksheet worksheet : sameParentAtPrevLevelWorksheets) {
+            // same name with destination(whatever the worksheet.path is a file or a folder)
+            if (StringUtils.equals(worksheet.path.name, destinationPath.name)
+                    // the worksheet.path is a child of the destination
+                    || (destinationPath.isDirectory() && worksheet.path.isChildOfAny(destinationPath))) {
                 return true;
             }
         }
@@ -234,21 +310,21 @@ public class Worksheet {
         return this.readVersion != null && !this.readVersion.equals(this.version);
     }
 
-    public Worksheet create(Path addPath, String objectId) {
-        return batchCreate(Collections.singletonMap(addPath, objectId))
+    public Worksheet create(Path addPath, String objectId, Long creatorId) {
+        return batchCreate(Collections.singletonMap(addPath, objectId), creatorId)
                 .stream().findFirst()
                 // can definitely obtain a created Worksheet here.
                 // Adding exception checking is only for the integrity of the program
                 .orElseThrow(() -> new IllegalStateException("unexpected exception"));
     }
 
-    public Set<Worksheet> batchCreate(Map<Path, String> createPathToObjectIdMap) {
-        List<Worksheet> nextLevelWorksheets = this.getSubWorksheetsInDepth(1);
+    public Set<Worksheet> batchCreate(Map<Path, String> createPathToObjectIdMap, Long creatorId) {
+        List<Worksheet> nextLevelWorksheets = this.getSubWorksheetsInDepth(1, true);
         nameTooLongCheck(createPathToObjectIdMap.keySet());
         sameLevelFileNumLimitCheck(createPathToObjectIdMap, nextLevelWorksheets);
         duplicatedNameCheck(createPathToObjectIdMap, nextLevelWorksheets);
         return createPathToObjectIdMap.entrySet().stream().map(
-                entry -> Worksheet.of(projectId, entry.getKey(), entry.getValue(), creatorId))
+                entry -> Worksheet.of(this.projectId, entry.getKey(), entry.getValue(), creatorId))
                 .collect(Collectors.toSet());
     }
 
@@ -263,7 +339,7 @@ public class Worksheet {
             List<Worksheet> nextLevelWorksheets) {
 
         if (nextLevelWorksheets.size() +
-                createPathToObjectIdMap.size() > LEVEL_FILE_NUM_LIMIT) {
+                createPathToObjectIdMap.size() > SAME_LEVEL_NUM_LIMIT) {
             throw new ExceedSameLevelNumLimitException(
                     "create path num exceed limit, create path num: " + createPathToObjectIdMap.size()
                             + ", same level exist file num: " + nextLevelWorksheets.size());
@@ -278,13 +354,25 @@ public class Worksheet {
         if (CollectionUtils.isEmpty(nextLevelWorksheets)) {
             return;
         }
-        Set<String> willToCreatePathNameSet =
-                createPathToObjectIdMap.keySet().stream().map(Path::getName).collect(Collectors.toSet());
-        for (Worksheet subFile : nextLevelWorksheets) {
-            if (willToCreatePathNameSet.contains(subFile.getPath().getName())) {
+        Map<String, Path> willToCreatePathNameToPathMap =
+                createPathToObjectIdMap.keySet().stream().collect(
+                        Collectors.toMap(Path::getName, Function.identity(),
+                                (p1, p2) -> {
+                                    throw new NameDuplicatedException(
+                                            "create path name duplicated ,path1:" + p1 + ",path2:" + p2);
+                                }));
+        for (Worksheet worksheet : nextLevelWorksheets) {
+            Path willToCreatePath = willToCreatePathNameToPathMap.get(worksheet.getPath().getName());
+            // if the id of the worksheet is empty, it means that the worksheet was extracted from its sub
+            // worksheet and not actually created. Therefore, even if there is a directory with the same name in
+            // the path that needs to be created, it can still be created and is not considered a duplicate name
+            if (worksheet.getId() == null && (willToCreatePath == null || willToCreatePath.isDirectory())) {
+                continue;
+            }
+            if (willToCreatePathNameToPathMap.containsKey(worksheet.getPath().getName())) {
                 throw new NameDuplicatedException(
-                        "create path duplicated with with an existing same level file,"
-                                + "exist path: " + subFile.getPath());
+                        "create path name duplicated with with an existing same level file,"
+                                + "exist path: " + worksheet.getPath());
             }
         }
     }
@@ -317,7 +405,7 @@ public class Worksheet {
 
     @Override
     public String toString() {
-        return "ProjectFile{" +
+        return "Worksheet{" +
                 "projectId=" + projectId +
                 ", id=" + id +
                 ", path=" + path +

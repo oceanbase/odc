@@ -37,7 +37,7 @@ public class WorksheetConstant {
     /**
      * the limit number of worksheets in the same level
      */
-    public static final int LEVEL_FILE_NUM_LIMIT = 100;
+    public static final int SAME_LEVEL_NUM_LIMIT  = 100;
 
     /**
      * the duration of download zip file in seconds
