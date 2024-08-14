@@ -534,7 +534,7 @@ public class ScheduleService {
     }
 
     @Deprecated
-    public ScheduleDetailRespHist detailScheduleHist(Long scheduleId){
+    public ScheduleDetailRespHist detailScheduleHist(Long scheduleId) {
         Schedule schedule = nullSafeGetByIdWithCheckPermission(scheduleId);
         return scheduleResponseMapperFactory.generateHistoryScheduleDetail(schedule);
     }

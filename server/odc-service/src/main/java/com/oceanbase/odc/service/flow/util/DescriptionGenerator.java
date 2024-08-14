@@ -63,10 +63,10 @@ public class DescriptionGenerator {
         if (StringUtils.isEmpty(req.getDescription())) {
             Locale locale = LocaleContextHolder.getLocale();
             String descFormat = Symbols.LEFT_BRACKET.getLocalizedMessage() + "%s"
-                                + Symbols.RIGHT_BRACKET.getLocalizedMessage() + "%s.%s";
+                    + Symbols.RIGHT_BRACKET.getLocalizedMessage() + "%s.%s";
             req.setDescription(MessageTemplateProcessor.getLocalMessage(locale, String.format(descFormat,
-                req.getEnvironmentName(), req.getConnectionName(),
-                req.getDatabaseName())));
+                    req.getEnvironmentName(), req.getConnectionName(),
+                    req.getDatabaseName())));
         }
     }
 }
