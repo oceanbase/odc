@@ -98,6 +98,13 @@ public class ConnectSessionController {
         return Responses.success(sessionService.createByDataSourceId(dataSourceId));
     }
 
+    /**
+     * createSessionByDatabase
+     * 根据数据库创建连接会话
+     *
+     * @param databaseId 数据库ID
+     * @return SuccessResponse<CreateSessionResp> 创建会话的响应结果
+     */
     @ApiOperation(value = "createSessionByDatabase", notes = "create connect session by a Database")
     @RequestMapping(value = "/databases/{databaseId:[\\d]+}/sessions", method = RequestMethod.POST)
     public SuccessResponse<CreateSessionResp> createSessionByDatabase(@PathVariable Long databaseId) {

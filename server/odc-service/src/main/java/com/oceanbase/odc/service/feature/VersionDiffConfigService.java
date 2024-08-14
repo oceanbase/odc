@@ -93,45 +93,75 @@ public class VersionDiffConfigService {
         return datatypes;
     }
 
+    /**
+     * 获取支持的特性列表
+     *
+     * @param connectionSession 数据库连接会话
+     * @return 支持的特性列表
+     */
     public List<OBSupport> getSupportFeatures(ConnectionSession connectionSession) {
+        // 创建OBSupport列表
         List<OBSupport> obSupportList = new ArrayList<>();
+        // 创建VersionDiffConfig对象
         VersionDiffConfig config = new VersionDiffConfig();
+        // 设置数据库模式
         config.setDbMode(getDbMode(connectionSession));
+        // 查询VersionDiffConfig列表，查元数据库中的表odc_version_diff_config
         List<VersionDiffConfig> list = this.versionDiffConfigDAO.query(config);
+        // 获取当前ob版本
         String currentVersion = ConnectionSessionUtil.getVersion(connectionSession);
+        // 判断连接类型是否支持存储过程
         boolean supportsProcedure =
-                AllFeatures.getByConnectType(connectionSession.getConnectType()).supportsProcedure();
+            AllFeatures.getByConnectType(connectionSession.getConnectType()).supportsProcedure();
+        // 获取所有系统配置
         List<Configuration> systemConfigs = systemConfigService.listAll();
+        // 遍历VersionDiffConfig列表
         for (VersionDiffConfig diffConfig : list) {
+            // 获取配置项key并转换为小写
             String configKey = diffConfig.getConfigKey().toLowerCase();
+            // 判断是否为OBSupport类型的配置项
             if (configKey.startsWith(SUPPORT_PREFIX)) {
+                // 创建OBSupport对象并添加到列表中
                 OBSupport obSupport = new OBSupport();
                 obSupportList.add(obSupport);
+                // 设置OBSupport的支持类型
                 obSupport.setSupportType(configKey);
+                // 判断系统配置中是否存在该配置项且值为false
                 if (systemConfigs.stream().anyMatch(configuration -> configuration.getKey().equalsIgnoreCase(configKey)
-                        && "false".equalsIgnoreCase(configuration.getValue()))) {
+                                                                     && "false".equalsIgnoreCase(
+                    configuration.getValue()))) {
+                    // 如果存在，则不支持该配置项
                     obSupport.setSupport(false);
                     continue;
                 }
+                // 判断当前版本是否大于等于最小版本
                 if (VersionUtils.isGreaterThanOrEqualsTo(currentVersion, diffConfig.getMinVersion())) {
+                    // 获取配置项值
                     String configValue = diffConfig.getConfigValue();
+                    // 如果配置项值为true，则支持该配置项
                     if ("true".equalsIgnoreCase(configValue)) {
                         obSupport.setSupport(true);
                     }
                 }
                 // fix support_procedure for oceanbase-ce version
+                // 修复oceanbase-ce版本的support_procedure
                 if ((SUPPORT_PROCEDURE.equalsIgnoreCase(configKey) || SUPPORT_FUNCTION.equalsIgnoreCase(configKey))
-                        && DialectType.OB_MYSQL == connectionSession.getDialectType()
-                        && obSupport.isSupport()) {
+                    && DialectType.OB_MYSQL == connectionSession.getDialectType()
+                    && obSupport.isSupport()) {
+                    // 如果连接类型不支持存储过程，则不支持该配置项
                     if (!supportsProcedure) {
+                        // 如果存在，则不支持该配置项
                         obSupport.setSupport(false);
                     }
                 }
+                // pl_debug的支持情况
                 if (SUPPORT_PL_DEBUG.equalsIgnoreCase(configKey) && !isPLDebugSupport(connectionSession)) {
+                    // 如果存在，则不支持该配置项
                     obSupport.setSupport(false);
                 }
             }
         }
+        // 返回OBSupport列表
         return obSupportList;
     }
 

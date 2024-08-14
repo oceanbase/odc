@@ -144,6 +144,9 @@ public class DefaultConnectionSession implements ConnectionSession {
         return this.expired;
     }
 
+    /**
+     * 使连接会话过期
+     */
     @Override
     public synchronized void expire() {
         if (log.isDebugEnabled()) {
@@ -153,8 +156,11 @@ public class DefaultConnectionSession implements ConnectionSession {
             this.expiredTime = new Date();
         }
         this.expired = true;
+        // 关闭任务管理器
         closeTaskManager();
+        // 关闭数据源
         closeDataSource();
+        // 关闭二进制文件管理器
         closeBinaryFileManager();
         File sessionLevelDir = null;
         try {
@@ -164,11 +170,11 @@ public class DefaultConnectionSession implements ConnectionSession {
             }
             if (log.isDebugEnabled()) {
                 log.debug("Session-level storage directory was deleted successfully, sessionId={}, dir={}",
-                        this.id, sessionLevelDir);
+                    this.id, sessionLevelDir);
             }
         } catch (IOException exception) {
             log.warn("Failed to delete session level directory, dir={}, sessionId={}",
-                    sessionLevelDir, this.id, exception);
+                sessionLevelDir, this.id, exception);
         }
         log.info("Connection session was closed successfully, sessionId={}", this.id);
     }

@@ -205,9 +205,17 @@ public class ConnectSessionService {
                 .build();
     }
 
+    /**
+     * 根据数据库ID创建会话
+     *
+     * @param databaseId 数据库ID
+     * @return CreateSessionResp 创建会话的响应结果
+     */
     @SkipAuthorize("check permission internally")
     public CreateSessionResp createByDatabaseId(@NotNull Long databaseId) {
+        // 创建连接会话
         ConnectionSession session = create(null, databaseId);
+        // 构建创建会话的响应结果
         return CreateSessionResp.builder()
                 .sessionId(session.getId())
                 .supports(configService.getSupportFeatures(session))
@@ -222,74 +230,111 @@ public class ConnectSessionService {
         return create(new CreateSessionReq(dataSourceId, databaseId, null));
     }
 
+    /**
+     * 创建连接会话
+     *
+     * @param req 创建会话请求
+     * @return 连接会话
+     */
     @SkipAuthorize("check permission internally")
     public ConnectionSession create(@NotNull CreateSessionReq req) {
         Long dataSourceId;
         String schemaName;
         if (req.getDbId() != null) {
             // create session by database id
+            // 获取数据库详情
             Database database = databaseService.detail(req.getDbId());
+            // 如果当前用户所属组织类型为团队
             if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.TEAM) {
+                // 如果数据库未分配到项目，则抛出权限拒绝异常
                 if (Objects.isNull(database.getProject())) {
                     throw new AccessDeniedException();
                 }
+                // 获取数据库权限
                 Map<Long, Set<DatabasePermissionType>> id2PermissionTypes =
                         permissionHelper.getDBPermissions(Collections.singleton(req.getDbId()));
+                // 如果数据库权限不存在或为空，则抛出权限拒绝异常
                 if (!id2PermissionTypes.containsKey(req.getDbId()) || id2PermissionTypes.get(req.getDbId()).isEmpty()) {
                     throw new AccessDeniedException();
                 }
             }
+            // 设置schema名称和数据源ID
             schemaName = database.getName();
             dataSourceId = database.getDataSource().getId();
         } else {
             // create session by datasource id
+            // 检查数据源ID是否为空
             PreConditions.notNull(req.getDsId(), "DatasourceId");
+            // 获取所需权限
             Permission requiredPermission = this.securityManager.getPermissionByActions(
                     new DefaultSecurityResource(req.getDsId().toString(), ResourceType.ODC_CONNECTION.name()),
                     Collections.singletonList("update"));
+            // 检查是否有所需权限
             this.securityManager.checkPermission(requiredPermission);
+            // 清空schemaName
             schemaName = null;
+            // 设置dataSourceId为请求中的数据源ID
             dataSourceId = req.getDsId();
         }
+        // 前置检查会话限制
         preCheckSessionLimit();
+        // 获取数据库连接配置
         ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
+        // 检查云元数据权限
         cloudMetadataClient.checkPermission(OBTenant.of(connection.getClusterName(),
                 connection.getTenantName()), connection.getInstanceType(), false, CloudPermissionAction.READONLY);
+        // 检查连接密码是否为空
         PreConditions.validArgumentState(Objects.nonNull(connection.getPassword()),
                 ErrorCodes.ConnectionPasswordMissed, null, "password required for connection without password saved");
+        // 如果schemaName不为空且数据库方言类型为Oracle，则对schemaName进行转义
         if (StringUtils.isNotBlank(schemaName) && connection.getDialectType().isOracle()) {
             schemaName = com.oceanbase.odc.common.util.StringUtils.quoteOracleIdentifier(schemaName);
         }
+        // 检查当前组织的水平数据权限
         horizontalDataPermissionValidator.checkCurrentOrganization(connection);
+        // 记录日志，开始创建会话
         log.info("Begin to create session, connectionId={}, name={}", connection.id(), connection.getName());
+        // 获取当前用户对该数据源的所有权限操作
         Set<String> actions = authorizationFacade.getAllPermittedActions(authenticationFacade.currentUser(),
                 ResourceType.ODC_CONNECTION, "" + dataSourceId);
+        // 设置连接的权限操作
         connection.setPermittedActions(actions);
+        // 创建SqlExecuteTaskManagerFactory对象
         SqlExecuteTaskManagerFactory factory =
                 new SqlExecuteTaskManagerFactory(this.monitorTaskManager, "console", 1);
+        // 如果schemaName不为空，则设置连接的默认模式
         if (StringUtils.isNotEmpty(schemaName)) {
             connection.setDefaultSchema(schemaName);
         }
         // TODO: query from use config service
+        // 创建一个默认的连接会话工厂
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(
                 connection, getAutoCommit(connection), factory);
+        // 创建一个默认的连接会话ID生成器
         DefaultConnectSessionIdGenerator idGenerator = new DefaultConnectSessionIdGenerator();
+        // 设置数据库ID
         idGenerator.setDatabaseId(req.getDbId());
+        // 设置固定的真实ID
         idGenerator.setFixRealId(StringUtils.isBlank(req.getRealId()) ? null : req.getRealId());
+        // 如果请求中有来源并且当前环境是OB云环境，则设置主机为请求中的来源，否则设置主机为状态主机生成器的主机
         if (Objects.nonNull(req.getFrom()) && isOBCloudEnvironment()) {
             idGenerator.setHost(req.getFrom());
         } else {
             idGenerator.setHost(stateHostGenerator.getHost());
         }
         sessionFactory.setIdGenerator(idGenerator);
+        // 计算会话超时时间
         long timeoutMillis = TimeUnit.MILLISECONDS.convert(sessionProperties.getTimeoutMins(), TimeUnit.MINUTES);
         timeoutMillis = timeoutMillis + this.connectionSessionManager.getScanIntervalMillis();
+        // 设置会话超时时间
         sessionFactory.setSessionTimeoutMillis(timeoutMillis);
+        // 启动连接会话
         ConnectionSession session = connectionSessionManager.start(sessionFactory);
         if (session == null) {
             throw new BadRequestException("Failed to create a session");
         }
         try {
+            // 初始化会话
             initSession(session, connection);
             log.info("Connect session created, connectionId={}, session={}", dataSourceId, session);
             return session;
@@ -435,20 +480,35 @@ public class ConnectSessionService {
         return "ON".equalsIgnoreCase(userConfigFacade.getMysqlAutoCommitMode());
     }
 
+    /**
+     * 初始化会话
+     *
+     * @param connectionSession 数据库连接会话
+     * @param connectionConfig  数据库连接配置
+     */
     private void initSession(ConnectionSession connectionSession, ConnectionConfig connectionConfig) {
+        // 创建 SQL 注释处理器
         SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(), true, true);
+        // 设置分隔符
         processor.setDelimiter(userConfigFacade.getDefaultDelimiter());
+        // 将 SQL 注释处理器设置到连接会话中
         ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
 
+        // 设置查询限制
         ConnectionSessionUtil.setQueryLimit(connectionSession, userConfigFacade.getDefaultQueryLimit());
+        // 设置用户 ID
         ConnectionSessionUtil.setUserId(connectionSession, authenticationFacade.currentUserId());
+        // 如果数据库方言是 Oracle，则初始化控制台会话时区
         if (connectionSession.getDialectType().isOracle()) {
             ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession, connectProperties.getDefaultTimeZone());
         }
+        // 获取环境 ID
         Long envId = connectionConfig.getEnvironmentId();
         if (envId != null) {
+            // 根据环境 ID 查询环境实体
             Optional<EnvironmentEntity> optional = this.environmentRepository.findById(envId);
             if (optional.isPresent() && optional.get().getRulesetId() != null) {
+                // 将规则集 ID 设置到连接会话中
                 ConnectionSessionUtil.setRuleSetId(connectionSession, optional.get().getRulesetId());
             }
         }
@@ -466,23 +526,35 @@ public class ConnectSessionService {
         return session;
     }
 
+    /**
+     * 预检查会话限制
+     */
     private void preCheckSessionLimit() {
+        // 获取用户最大会话数
         long maxCount = sessionProperties.getUserMaxCount();
+        // 如果会话限制被启用
         if (labProperties.isSessionLimitEnabled()) {
+            // 如果当前用户的会话数已经达到上限
             if (!limitService.allowCreateSession(authenticationFacade.currentUserIdStr())) {
+                // 抛出超过限制的异常
                 String errMsg = String.format("Actual %s exceeds limit: %s, please wait, current waiting number: %s",
                         LimitMetric.USER_COUNT.getLocalizedMessage(), maxCount,
                         limitService.queryWaitingNum(authenticationFacade.currentUserIdStr()));
                 throw new OverLimitException(LimitMetric.USER_COUNT, (double) maxCount, errMsg);
             }
+            // 更新总用户数
             limitService.updateTotalUserCountMap(authenticationFacade.currentUserIdStr());
         }
+        // 获取单个会话最大数
         long sessMaxCount = sessionProperties.getSingleSessionMaxCount();
+        // 如果单个会话最大数大于等于0
         if (sessMaxCount >= 0) {
             try {
+                // 检查会话数是否超过单个会话最大数
                 PreConditions.lessThanOrEqualTo("sessionCount", LimitMetric.SESSION_COUNT,
                         limitService.incrementSessionCount(authenticationFacade.currentUserIdStr()), sessMaxCount);
             } catch (OverLimitException ex) {
+                // 如果会话数超过单个会话最大数，则减少会话数并抛出异常
                 limitService.decrementSessionCount(authenticationFacade.currentUserIdStr());
                 throw ex;
             }

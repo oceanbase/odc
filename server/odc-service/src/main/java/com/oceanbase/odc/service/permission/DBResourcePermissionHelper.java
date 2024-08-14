@@ -163,23 +163,30 @@ public class DBResourcePermissionHelper {
             return ret;
         }
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
+            // 如果当前用户是个人用户，则给所有数据库赋予所有权限
             for (Long databaseId : databaseIds) {
                 ret.put(databaseId, new HashSet<>(DatabasePermissionType.all()));
             }
             return ret;
         }
+        // 否则，根据用户的权限获取可访问的项目id集合
         List<DatabaseEntity> entities = databaseRepository.findByIdIn(databaseIds);
         Set<Long> projectIds = getPermittedProjectIds();
+        // 获取数据库id到权限类型的映射
         Map<Long, Set<DatabasePermissionType>> id2PermissionTypes = getInnerDBPermissionTypes(databaseIds);
         for (DatabaseEntity e : entities) {
             if (e.getProjectId() == null) {
+                // 如果数据库id不在权限类型映射中，则权限为空
                 ret.put(e.getId(), new HashSet<>());
             } else if (projectIds.contains(e.getProjectId())) {
+                // 如果数据库所属项目在用户的可访问项目id集合中，则给予所有权限
                 ret.put(e.getId(), new HashSet<>(DatabasePermissionType.all()));
             } else {
                 if (id2PermissionTypes.containsKey(e.getId())) {
+                    // 否则，根据数据库id获取权限类型集合
                     ret.put(e.getId(), id2PermissionTypes.get(e.getId()));
                 } else {
+                    // 如果数据库id不在权限类型映射中，则权限为空
                     ret.put(e.getId(), new HashSet<>());
                 }
             }

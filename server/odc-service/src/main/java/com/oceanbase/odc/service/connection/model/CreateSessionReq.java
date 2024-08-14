@@ -37,16 +37,32 @@ import lombok.ToString;
 @ToString
 @NoArgsConstructor
 public class CreateSessionReq implements Serializable {
-
-    private Long dbId;
-    private Long dsId;
+    // 数据库ID
+    private Long   dbId;
+    // 数据源ID
+    private Long   dsId;
+    // 真实ID
     private String realId;
+    // 来源
     private String from;
 
+    /**
+     * 根据连接配置创建会话请求
+     *
+     * @param connectionConfig 连接配置
+     * @return 创建会话请求
+     */
     public static CreateSessionReq from(@NonNull ConnectionConfig connectionConfig) {
         return new CreateSessionReq(connectionConfig.getId(), null, null);
     }
 
+    /**
+     * 构造函数
+     *
+     * @param dsId   数据源ID
+     * @param dbId   数据库ID
+     * @param realId 真实ID
+     */
     public CreateSessionReq(Long dsId, Long dbId, String realId) {
         this.dbId = dbId;
         this.dsId = dsId;

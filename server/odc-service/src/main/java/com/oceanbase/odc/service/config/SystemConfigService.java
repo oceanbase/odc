@@ -109,10 +109,18 @@ public class SystemConfigService {
         return false;
     }
 
+    /**
+     * 根据key前缀查询配置
+     *
+     * @param keyPrefix key前缀
+     * @return 配置列表
+     */
     @SkipAuthorize("odc internal usage")
     public List<Configuration> queryByKeyPrefix(String keyPrefix) {
+        // 从系统配置仓库中查询指定key前缀的配置实体列表
         List<SystemConfigEntity> configEntities = systemConfigRepository.queryByKeyPrefix(keyPrefix);
         return ConfigurationUtils.fromEntity(configEntities).stream().peek(config -> {
+            // 遍历所有配置消费者，并执行其accept方法
             for (Consumer<Configuration> consumer : getConfigurationConsumer()) {
                 consumer.accept(config);
             }

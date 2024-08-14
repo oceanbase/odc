@@ -160,9 +160,17 @@ public class SessionLimitService {
         return this.userId2SessionCountMap.computeIfAbsent(userId, t -> new AtomicInteger(0)).incrementAndGet();
     }
 
+    /**
+     * 减少指定用户的会话数量
+     *
+     * @param userId 用户ID
+     */
     public void decrementSessionCount(String userId) {
+        // 检查用户ID是否为空
         PreConditions.notNull(userId, "userId");
+        // 使用computeIfPresent方法更新userId对应的会话数量
         userId2SessionCountMap.computeIfPresent(userId, (id, sessionCount) -> {
+            // 如果会话数量减1后小于0，记录警告日志并抛出异常
             if (sessionCount.decrementAndGet() < 0) {
                 log.warn("session count is less than 0");
                 throw new UnexpectedException("session count is less than 0");
