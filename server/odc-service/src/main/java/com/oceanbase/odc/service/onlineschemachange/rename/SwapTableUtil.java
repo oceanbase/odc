@@ -52,6 +52,16 @@ public class SwapTableUtil {
         }
     }
 
+    public static String unquoteName(String name, DialectType dialectType) {
+        switch (dialectType) {
+            case MYSQL:
+            case OB_MYSQL:
+                return StringUtils.unquoteMySqlIdentifier(name);
+            default:
+                return StringUtils.unquoteOracleIdentifier(name);
+        }
+    }
+
     public static String quoteName(String name, DialectType dialectType) {
         switch (dialectType) {
             case MYSQL:

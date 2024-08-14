@@ -51,6 +51,7 @@ public class OscTestUtil {
                 "set time_zone = '+08:00'"));
         taskParameters.setNewTableName("ghost_test_table");
         taskParameters.setOriginTableName("test_table");
+        taskParameters.setRenamedTableName("old_test_table");
         taskParameters.setOriginTableCreateDdl("create table `test_table`("
                 + " id int not null primary key,"
                 + " name varchar(20)"

@@ -32,6 +32,8 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties.OmsProperties;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
@@ -44,11 +46,14 @@ import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectStepV
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscTestUtil;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.action.ConnectionProvider;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.ProjectStepResultChecker.ProjectStepResult;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 import com.oceanbase.odc.service.onlineschemachange.rename.DefaultRenameTableInvoker;
 import com.oceanbase.odc.service.onlineschemachange.rename.RenameTableHandler;
+import com.oceanbase.odc.service.onlineschemachange.rename.RenameTableHandlers;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 /**
  * @author longpeng.zlp
@@ -88,23 +93,64 @@ public class OmsSwapTableActionTest {
     }
 
     @Test
-    public void testDefaultRenameTableInvoker() {
+    public void testDefaultRenameTableInvoked() {
+        DBSchemaAccessor dbSchemaAccessor = Mockito.mock(DBSchemaAccessor.class);
+        Mockito.when(dbSchemaAccessor.showTablesLike("testDB", "test_table")).thenReturn(Arrays.asList("test_table"));
+        Mockito.when(dbSchemaAccessor.showTablesLike("testDB", "ghost_test_table"))
+                .thenReturn(Arrays.asList("ghost_test_table"));
+        Mockito.when(dbSchemaAccessor.showTablesLike("testDB", "old_test_table")).thenReturn(Arrays.asList());
+        MockRenameTableHandler mockRenameTableHandler = new MockRenameTableHandler();
+        doInvoke(dbSchemaAccessor, mockRenameTableHandler);
+        Assert.assertEquals(mockRenameTableHandler.renamePair.size(), 1);
+        Assert.assertEquals(mockRenameTableHandler.renamePair.get(0), "ghost_test_table");
+    }
+
+    @Test
+    public void testDefaultRenameTableNotInvoked() {
+        DBSchemaAccessor dbSchemaAccessor = Mockito.mock(DBSchemaAccessor.class);
+        Mockito.when(dbSchemaAccessor.showTablesLike("testDB", "test_table")).thenReturn(Arrays.asList("test_table"));
+        Mockito.when(dbSchemaAccessor.showTablesLike("testDB", "ghost_test_table")).thenReturn(Arrays.asList());
+        Mockito.when(dbSchemaAccessor.showTablesLike("testDB", "old_test_table"))
+                .thenReturn(Arrays.asList("old_test_table"));
+        MockRenameTableHandler mockRenameTableHandler = new MockRenameTableHandler();
+        doInvoke(dbSchemaAccessor, mockRenameTableHandler);
+        Assert.assertEquals(mockRenameTableHandler.renamePair.size(), 0);
+    }
+
+    private void doInvoke(DBSchemaAccessor dbSchemaAccessor, MockRenameTableHandler mockRenameTableHandler) {
         ConnectionSession connectionSession = Mockito.mock(ConnectionSession.class);
         Mockito.when(connectionSession.getDialectType()).thenReturn(DialectType.OB_MYSQL);
         Mockito.when(connectionSession.getAttribute(ConnectionSessionConstants.OB_VERSION)).thenReturn("3.4.0");
         Mockito.when(connectionSession.getSyncJdbcExecutor(
                 ArgumentMatchers.anyString())).thenReturn(Mockito.mock(SyncJdbcExecutor.class));
-        MockRenameTableHandler mockRenameTableHandler = new MockRenameTableHandler();
+        ConnectionProvider connectionProvider = new ConnectionProvider() {
+            @Override
+            public ConnectionConfig connectionConfig() {
+                return null;
+            }
+
+            @Override
+            public ConnectionSession createConnectionSession() {
+                return connectionSession;
+            }
+        };
+
         DefaultRenameTableInvoker renameTableInvoker =
-                new DefaultRenameTableInvoker(connectionSession, dbSessionManageFacade, mockRenameTableHandler,
+                new DefaultRenameTableInvoker(connectionProvider, dbSessionManageFacade,
                         () -> true);
         OnlineSchemaChangeParameters parameters = OscTestUtil.createOscParameters();
         parameters.setSwapTableNameRetryTimes(1);
-        renameTableInvoker.invoke(
-                OscTestUtil.createTaskParameters(DialectType.OB_MYSQL, OscStates.SWAP_TABLE.getState()),
-                parameters);
-        Assert.assertEquals(mockRenameTableHandler.renamePair.size(), 1);
-        Assert.assertEquals(mockRenameTableHandler.renamePair.get(0), "ghost_test_table");
+        try (MockedStatic<DBSchemaAccessors> mockedStatic = Mockito.mockStatic(DBSchemaAccessors.class);
+                MockedStatic<RenameTableHandlers> mockRenameTableStatic =
+                        Mockito.mockStatic(RenameTableHandlers.class);) {
+            mockedStatic.when(() -> RenameTableHandlers.getForeignKeyHandler(ArgumentMatchers.any()))
+                    .thenReturn(mockRenameTableHandler);
+            mockRenameTableStatic.when(() -> DBSchemaAccessors.create(ArgumentMatchers.any()))
+                    .thenReturn(dbSchemaAccessor);
+            renameTableInvoker.invoke(
+                    OscTestUtil.createTaskParameters(DialectType.OB_MYSQL, OscStates.SWAP_TABLE.getState()),
+                    parameters);
+        }
     }
 
     @Test
