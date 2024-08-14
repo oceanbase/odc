@@ -112,7 +112,7 @@ public class LogicalDatabaseController {
 
     @RequestMapping(value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/previewSqls", method = RequestMethod.POST)
     public SuccessResponse<PreviewSqlResp> previewSqls(@PathVariable Long logicalDatabaseId,
-        @RequestBody PreviewSqlReq req) {
+            @RequestBody PreviewSqlReq req) {
         throw new NotImplementedException();
     }
 }

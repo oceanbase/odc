@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.server.web.controller.v2;
 
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,11 +21,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
-import com.oceanbase.odc.service.common.response.ListResponse;
-import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.connection.logicaldatabase.task.model.SchemaChangeRecord;
-import com.oceanbase.odc.service.schedule.model.ScheduleChangeLog;
 
 /**
  * @Author: Lebie
