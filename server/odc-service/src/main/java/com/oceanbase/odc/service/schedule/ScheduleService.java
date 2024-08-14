@@ -66,10 +66,13 @@ import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
+import com.oceanbase.odc.service.flow.util.DescriptionGenerator;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
+import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.Organization;
+import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
@@ -86,8 +89,10 @@ import com.oceanbase.odc.service.schedule.model.ScheduleChangeLog;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
+import com.oceanbase.odc.service.schedule.model.ScheduleDetailRespHist;
 import com.oceanbase.odc.service.schedule.model.ScheduleMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleOverview;
+import com.oceanbase.odc.service.schedule.model.ScheduleOverviewHist;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
@@ -165,6 +170,9 @@ public class ScheduleService {
     @Autowired
     private DlmLimiterService dlmLimiterService;
 
+    @Autowired
+    private UserService userService;
+
     private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
 
 
@@ -181,6 +189,7 @@ public class ScheduleService {
             ScheduleEntity entity = new ScheduleEntity();
 
             entity.setProjectId(req.getCreateScheduleReq().getProjectId());
+            DescriptionGenerator.generateScheduleDescription(req.getCreateScheduleReq());
             entity.setDescription(req.getCreateScheduleReq().getDescription());
             entity.setJobParametersJson(JsonUtils.toJson(req.getCreateScheduleReq().getParameters()));
             entity.setTriggerConfigJson(JsonUtils.toJson(req.getCreateScheduleReq().getTriggerConfig()));
@@ -522,6 +531,34 @@ public class ScheduleService {
     public ScheduleDetailResp detailSchedule(Long scheduleId) {
         Schedule schedule = nullSafeGetByIdWithCheckPermission(scheduleId);
         return scheduleResponseMapperFactory.generateScheduleDetailResp(schedule);
+    }
+
+    @Deprecated
+    public ScheduleDetailRespHist detailScheduleHist(Long scheduleId){
+        Schedule schedule = nullSafeGetByIdWithCheckPermission(scheduleId);
+        return scheduleResponseMapperFactory.generateHistoryScheduleDetail(schedule);
+    }
+
+    public Page<ScheduleOverviewHist> list(@NotNull Pageable pageable, @NotNull QueryScheduleParams params) {
+        if (StringUtils.isNotBlank(params.getCreator())) {
+            params.setCreatorIds(userService.getUsersByFuzzyNameWithoutPermissionCheck(
+                    params.getCreator()).stream().map(User::getId).collect(Collectors.toSet()));
+        }
+        if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
+            Set<Long> projectIds = params.getProjectId() == null
+                    ? projectService.getMemberProjectIds(authenticationFacade.currentUserId())
+                    : Collections.singleton(params.getProjectId());
+            if (projectIds.isEmpty()) {
+                return Page.empty();
+            }
+            params.setProjectIds(projectIds);
+        }
+        params.setOrganizationId(authenticationFacade.currentOrganizationId());
+        Page<ScheduleEntity> returnValue = scheduleRepository.find(pageable, params);
+        Map<Long, ScheduleOverviewHist> scheduleId2Overview =
+                scheduleResponseMapperFactory.generateHistoryScheduleList(returnValue.getContent());
+        return returnValue.isEmpty() ? Page.empty()
+                : returnValue.map(o -> scheduleId2Overview.get(o.getId()));
     }
 
     public Page<ScheduleOverview> listScheduleOverview(@NotNull Pageable pageable,

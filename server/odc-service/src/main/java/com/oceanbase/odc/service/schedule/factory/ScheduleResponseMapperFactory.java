@@ -21,15 +21,24 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.alibaba.fastjson.JSON;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.constant.FlowStatus;
+import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
+import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
+import com.oceanbase.odc.metadb.flow.UserTaskInstanceEntity;
+import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.metadb.schedule.LatestTaskMappingEntity;
 import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
@@ -45,13 +54,17 @@ import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
+import com.oceanbase.odc.service.flow.ApprovalPermissionService;
+import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.schedule.model.DataArchiveAttributes;
 import com.oceanbase.odc.service.schedule.model.DataDeleteAttributes;
 import com.oceanbase.odc.service.schedule.model.Schedule;
 import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
+import com.oceanbase.odc.service.schedule.model.ScheduleDetailRespHist;
 import com.oceanbase.odc.service.schedule.model.ScheduleOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleOverviewAttributes;
+import com.oceanbase.odc.service.schedule.model.ScheduleOverviewHist;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
@@ -83,6 +96,11 @@ public class ScheduleResponseMapperFactory {
     private LatestTaskMappingRepository latestTaskMappingRepository;
     @Autowired
     private DlmLimiterService limiterService;
+
+    @Autowired
+    private FlowInstanceRepository flowInstanceRepository;
+    @Autowired
+    private ApprovalPermissionService approvalPermissionService;
 
 
 
@@ -149,6 +167,111 @@ public class ScheduleResponseMapperFactory {
             }
             return overview;
         }).collect(Collectors.toMap(ScheduleOverview::getScheduleId, o -> o));
+    }
+
+    public ScheduleDetailRespHist generateHistoryScheduleDetail(Schedule schedule) {
+        ScheduleDetailRespHist resp = new ScheduleDetailRespHist();
+        resp.setId(schedule.getId());
+        resp.setType(schedule.getType());
+        resp.setStatus(schedule.getStatus());
+
+        resp.setProjectId(schedule.getProjectId());
+        resp.setJobParameters(schedule.getParameters());
+        resp.setTriggerConfig(schedule.getTriggerConfig());
+        resp.setNextFireTimes(QuartzCronExpressionUtils.getNextFiveFireTimes(schedule.getTriggerConfig()));
+        userRepository.findById(schedule.getCreatorId()).ifPresent(user -> resp.setCreator(new InnerUser(user)));
+        resp.setCreateTime(schedule.getCreateTime());
+        resp.setUpdateTime(schedule.getUpdateTime());
+        resp.setDescription(schedule.getDescription());
+
+
+        Set<Long> approvableFlowInstanceIds = approvalPermissionService.getApprovableApprovalInstances()
+                .stream()
+                .filter(entity -> FlowNodeStatus.EXECUTING == entity.getStatus())
+                .map(UserTaskInstanceEntity::getFlowInstanceId).collect(Collectors.toSet());
+        List<Long> approveInstanceIds = flowInstanceRepository.findByFlowInstanceIdsAndTaskType(
+                approvableFlowInstanceIds, TaskType.ALTER_SCHEDULE).stream().filter(
+                        entity -> Objects.equals(
+                                entity.getParentInstanceId(), schedule.getId()))
+                .map(FlowInstanceEntity::getId).collect(
+                        Collectors.toList());
+        if (approveInstanceIds.isEmpty()) {
+            resp.setApprovable(false);
+        } else {
+            resp.setApprovable(true);
+            resp.setApproveInstanceId(approveInstanceIds.get(0));
+            Map<Long, Set<UserEntity>> flowInstanceId2Candidates =
+                    approvalPermissionService
+                            .getCandidatesByFlowInstanceIds(Collections.singleton(resp.getApproveInstanceId()));
+            if (!flowInstanceId2Candidates.get(resp.getApproveInstanceId()).isEmpty()) {
+                resp.setCandidateApprovers(flowInstanceId2Candidates.get(resp.getApproveInstanceId()).stream()
+                        .map(InnerUser::new).collect(Collectors.toSet()));
+            }
+        }
+
+        resp.setMisfireStrategy(schedule.getMisfireStrategy());
+        resp.setAllowConcurrent(schedule.getAllowConcurrent());
+        return resp;
+    }
+
+    public Map<Long, ScheduleOverviewHist> generateHistoryScheduleList(@NonNull Collection<ScheduleEntity> schedules) {
+        if (schedules.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        // user
+        Set<Long> creators = schedules.stream().map(ScheduleEntity::getCreatorId).collect(Collectors.toSet());
+        List<UserEntity> userEntities = userRepository.findByUserIds(creators);
+        Map<Long, UserEntity> userEntityMap = userEntities.stream().collect(
+                Collectors.toMap(UserEntity::getId, userEntity -> userEntity));
+
+        Set<Long> scheduleIds = schedules.stream().map(ScheduleEntity::getId).collect(Collectors.toSet());
+
+        // approval
+        Set<Long> approvableFlowInstanceIds = approvalPermissionService.getApprovableApprovalInstances()
+                .stream()
+                .filter(entity -> FlowNodeStatus.EXECUTING == entity.getStatus())
+                .map(UserTaskInstanceEntity::getFlowInstanceId).collect(Collectors.toSet());
+        List<FlowInstanceEntity> flowInstances = flowInstanceRepository.findByFlowInstanceIdsAndTaskType(
+                approvableFlowInstanceIds, TaskType.ALTER_SCHEDULE);
+        Map<Long, Long> scheduleId2ApprovalInstanceId =
+                flowInstances.stream().filter(entity -> entity.getParentInstanceId() != null).collect(
+                        Collectors.toMap(FlowInstanceEntity::getParentInstanceId, FlowInstanceEntity::getId,
+                                (oldValue, newValue) -> oldValue));
+
+        Map<Long, Long> scheduleId2FlowInstanceId = flowInstanceRepository.findByScheduleIdAndStatus(scheduleIds,
+                FlowStatus.APPROVING).stream().collect(
+                        Collectors.toMap(FlowInstanceEntity::getParentInstanceId, FlowInstanceEntity::getId));
+
+        Map<Long, Set<UserEntity>> flowInstanceId2Candidates =
+                approvalPermissionService.getCandidatesByFlowInstanceIds(scheduleId2FlowInstanceId.values());
+
+        Map<Long, Set<UserEntity>> scheduleId2Candidates = scheduleId2FlowInstanceId.entrySet().stream()
+                .filter(entry -> flowInstanceId2Candidates.get(entry.getValue()) != null).collect(
+                        Collectors.toMap(Entry::getKey, entry -> flowInstanceId2Candidates.get(entry.getValue())));
+
+        return schedules.stream().map(schedule -> {
+            ScheduleOverviewHist resp = new ScheduleOverviewHist();
+            resp.setId(schedule.getId());
+            resp.setType(schedule.getType());
+            resp.setStatus(schedule.getStatus());
+            UserEntity user = userEntityMap.get(schedule.getCreatorId());
+            if (user != null) {
+                resp.setCreator(new InnerUser(user));
+            }
+            resp.setCreateTime(schedule.getCreateTime());
+            resp.setDescription(schedule.getDescription());
+
+            Long approveInstanceId = scheduleId2ApprovalInstanceId.get(schedule.getId());
+            resp.setApprovable(approveInstanceId != null);
+            resp.setApproveInstanceId(approveInstanceId);
+
+            Set<UserEntity> candidates = scheduleId2Candidates.get(schedule.getId());
+            if (CollectionUtils.isNotEmpty(candidates)) {
+                resp.setCandidateApprovers(candidates.stream().map(InnerUser::new).collect(Collectors.toSet()));
+            }
+            return resp;
+        }).collect(Collectors.toMap(ScheduleOverviewHist::getId, o -> o));
     }
 
     private Map<Long, ScheduleOverviewAttributes> generateAttributes(Collection<ScheduleEntity> schedules) {
