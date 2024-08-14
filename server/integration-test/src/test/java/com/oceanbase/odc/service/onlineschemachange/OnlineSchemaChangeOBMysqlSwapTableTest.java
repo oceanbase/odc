@@ -117,7 +117,7 @@ public class OnlineSchemaChangeOBMysqlSwapTableTest extends OBMySqlOscTestEnv {
                 this::checkSwapTableAndRenameDrop);
     }
 
-    // table has renamed and old table id dropped
+    // table has renamed and old table is dropped
     @Test
     public void test_osc_swap_table_origin_table_drop_successful3() throws Exception {
         String originTableName = getOriginTableName();
@@ -137,7 +137,7 @@ public class OnlineSchemaChangeOBMysqlSwapTableTest extends OBMySqlOscTestEnv {
                 this::checkSwapTableAndRenameDrop);
     }
 
-    // table has renamed and old table id dropped
+    // table has renamed and old table is dropped
     @Test
     public void test_osc_swap_table_exception() throws Exception {
         expectedException.expect(IllegalStateException.class);
