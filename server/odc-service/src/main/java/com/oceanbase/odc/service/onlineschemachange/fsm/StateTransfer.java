@@ -13,25 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.onlineschemachange.pipeline;
-
-import java.util.function.Supplier;
+package com.oceanbase.odc.service.onlineschemachange.fsm;
 
 /**
- * @author yaobin
- * @date 2023-08-09
- * @since 4.2.0
+ * state transfer
+ * 
+ * @author longpeng.zlp
+ * @date 2024/7/5 17:40
+ * @since 4.3.1
  */
-public interface DataSourceCreator {
-
+public interface StateTransfer<Context extends ActionContext, ActionResult> {
     /**
-     * try to create datasource and return datasource id when condition is receive before timeout
      *
-     * @param createDataSource to create datasource and return datasource id
-     * @param condition precondition
-     * @param timeout wait precondition timeout
-     * @return
+     * @param currentState current state has done
+     * @param result input from {@link Action#execute}
+     * @param context context of FSM
+     * @return next state to handle. May change or stay
      */
-    String create(Supplier<String> createDataSource, Supplier<Boolean> condition, int timeout);
+    String translateToNewState(String currentState, ActionResult result, Context context);
 }

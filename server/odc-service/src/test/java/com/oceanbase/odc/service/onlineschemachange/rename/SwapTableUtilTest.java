@@ -13,12 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.onlineschemachange.pipeline;
+package com.oceanbase.odc.service.onlineschemachange.rename;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
- * @author yaobin
- * @date 2023-06-11
- * @since 4.2.0
+ * @author longpeng.zlp
+ * @date 2024/8/2 10:20
+ * @since 4.3.1
  */
-public interface ValveContext {
+public class SwapTableUtilTest {
+    @Test
+    public void testEscapeName() {
+        Assert.assertEquals(SwapTableUtil.quoteMySQLName("name   "), "`name   `");
+        Assert.assertEquals(SwapTableUtil.quoteOracleName("name   "), "\"name   \"");
+    }
 }

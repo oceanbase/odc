@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.service.db.browser.DBObjectOperators;
@@ -45,9 +46,14 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
     private final RenameTableHandler renameTableHandler;
     private final ConnectionSession connectionSession;
     private final RenameBackHandler renameBackHandler;
+    /**
+     * supply if oms project has all data replicated
+     */
+    private final Supplier<Boolean> dataReplicatedSupplier;
 
     public DefaultRenameTableInvoker(ConnectionSession connSession,
-            DBSessionManageFacade dbSessionManageFacade) {
+            DBSessionManageFacade dbSessionManageFacade, RenameTableHandler renameTableHandler,
+            Supplier<Boolean> dataReplicatedSupplier) {
         List<RenameTableInterceptor> interceptors = new LinkedList<>();
 
         LockRenameTableFactory lockRenameTableFactory = new LockRenameTableFactory();
@@ -57,8 +63,9 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
         interceptors.add(new ForeignKeyInterceptor(connSession));
         this.interceptors = interceptors;
         this.connectionSession = connSession;
-        this.renameTableHandler = RenameTableHandlers.getForeignKeyHandler(connSession);
+        this.renameTableHandler = renameTableHandler;
         this.renameBackHandler = new RenameBackHandler(renameTableHandler);
+        this.dataReplicatedSupplier = dataReplicatedSupplier;
     }
 
     @Override
@@ -95,11 +102,15 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
         }
     }
 
+    // TODO(): connection may need rebuild if exception thrown
     private boolean doTryRename(OnlineSchemaChangeScheduleTaskParameters taskParameters,
             RenameTableParameters renameTableParameters, AtomicInteger retryTime) {
         boolean succeed = false;
         try {
             preRename(renameTableParameters);
+            if (!dataReplicatedSupplier.get()) {
+                throw new RuntimeException("increment data not applied to ghost table yet");
+            }
             renameTableHandler.rename(taskParameters.getDatabaseName(), taskParameters.getOriginTableName(),
                     taskParameters.getRenamedTableName(), taskParameters.getNewTableName());
             succeed = true;
