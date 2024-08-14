@@ -176,7 +176,8 @@ public class ProjectStepResultChecker {
                 // save checkpoint
                 // every 10 seconds
                 // max gap time is 20, we set to 25 to let it pass.
-                        && (null != chkInTimestamp && Math.abs(currentSeconds - chkInTimestamp) <= 25);
+                        && (null != chkInTimestamp && (chkInTimestamp > currentSeconds
+                                || Math.abs(currentSeconds - chkInTimestamp) <= 25));
             case FULL_VERIFIER:
                 return enableFullVerify && status == OmsStepStatus.RUNNING && competedFunc.apply(progress);
             default:

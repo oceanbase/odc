@@ -24,8 +24,6 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -42,7 +40,6 @@ import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.ProjectStepResultChecker.ProjectStepResult;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 import com.oceanbase.odc.service.onlineschemachange.rename.DefaultRenameTableInvoker;
-import com.oceanbase.odc.service.onlineschemachange.rename.RenameTableHandlers;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 
 import lombok.extern.slf4j.Slf4j;
@@ -88,16 +85,12 @@ public class OmsSwapTableAction implements Action<OscActionContext, OscActionRes
 
         ConnectionConfig config = context.getConnectionProvider().connectionConfig();
         DBUserMonitorExecutor userMonitorExecutor = new DBUserMonitorExecutor(config, parameters.getLockUsers());
-        ConnectionSession connectionSession = null;
         try {
-            connectionSession = context.getConnectionProvider().createConnectionSession();
             if (enableUserMonitor(parameters.getLockUsers())) {
                 userMonitorExecutor.start();
             }
-            ConnectionSessionUtil.setCurrentSchema(connectionSession, taskParameters.getDatabaseName());
             DefaultRenameTableInvoker defaultRenameTableInvoker =
-                    new DefaultRenameTableInvoker(connectionSession, dbSessionManageFacade,
-                            RenameTableHandlers.getForeignKeyHandler(connectionSession),
+                    new DefaultRenameTableInvoker(context.getConnectionProvider(), dbSessionManageFacade,
                             () -> {
                                 OnlineSchemaChangeScheduleTaskResult lastResult = JsonUtils.fromJson(
                                         context.getScheduleTask().getResultJson(),
@@ -112,14 +105,8 @@ public class OmsSwapTableAction implements Action<OscActionContext, OscActionRes
             // rename table success, jump to clean resoruce state
             return new OscActionResult(OscStates.SWAP_TABLE.getState(), null, OscStates.CLEAN_RESOURCE.getState());
         } finally {
-            try {
-                if (enableUserMonitor(parameters.getLockUsers())) {
-                    userMonitorExecutor.stop();
-                }
-            } finally {
-                if (null != connectionSession) {
-                    connectionSession.expire();
-                }
+            if (enableUserMonitor(parameters.getLockUsers())) {
+                userMonitorExecutor.stop();
             }
         }
     }

@@ -148,7 +148,7 @@ public abstract class BaseOscTestEnv extends ServiceTestEnv {
 
         OmsProjectProgressResponse projectProgressResponse = new OmsProjectProgressResponse();
         projectProgressResponse.setStatus(OmsProjectStatusEnum.DELETED);
-        projectProgressResponse.setIncrSyncCheckpoint(System.currentTimeMillis() / 1000 + 10);
+        projectProgressResponse.setIncrSyncCheckpoint(System.currentTimeMillis() / 1000 + 1000);
         doReturn(projectProgressResponse).when(projectOpenApiService)
                 .describeProjectProgress(Mockito.any(OmsProjectControlRequest.class));
 
