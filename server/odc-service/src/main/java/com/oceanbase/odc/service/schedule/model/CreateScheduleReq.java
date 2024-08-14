@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.oceanbase.odc.service.connection.logicaldatabase.task.model.LogicalDatabaseChangeParameters;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.schedule.processor.ScheduleChangePreprocessor;
@@ -43,7 +44,8 @@ public class CreateScheduleReq {
     @JsonTypeInfo(use = Id.NAME, include = As.EXTERNAL_PROPERTY, property = "type")
     @JsonSubTypes(value = {
             @JsonSubTypes.Type(value = DataArchiveParameters.class, name = "DATA_ARCHIVE"),
-            @JsonSubTypes.Type(value = DataDeleteParameters.class, name = "DATA_DELETE")
+            @JsonSubTypes.Type(value = DataDeleteParameters.class, name = "DATA_DELETE"),
+            @JsonSubTypes.Type(value = LogicalDatabaseChangeParameters.class, name = "LOGICAL_DATABASE_CHANGE")
     })
     @NotNull
     private ScheduleTaskParameters parameters;
