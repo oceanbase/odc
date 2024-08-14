@@ -34,7 +34,6 @@ import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
-import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 import lombok.extern.slf4j.Slf4j;
@@ -112,7 +111,7 @@ public class ScheduleChangePreprocessor implements InitializingBean {
                 DataDeleteParameters parameters = (DataDeleteParameters) req.getParameters();
                 return parameters.getDatabaseId();
             }
-            case SQL_PLAN:{
+            case SQL_PLAN: {
                 DatabaseChangeParameters parameters = (DatabaseChangeParameters) req.getParameters();
                 return parameters.getDatabaseId();
             }
