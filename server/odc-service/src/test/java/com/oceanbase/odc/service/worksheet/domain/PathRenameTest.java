@@ -54,7 +54,8 @@ public class PathRenameTest {
                         new Path("/Worksheets/Sheet2/"), new Path("/Worksheets/Sheet2/"), true},
                 new Object[] {new Path("/Worksheets/Sheet1/SubSheet1"), new Path("/Worksheets/Sheet1/"),
                         new Path("/Worksheets/Sheet2/"), new Path("/Worksheets/Sheet2/SubSheet1"), true},
-                // 测试场景：from和destination虽然符合重命名条件，但是path和from不匹配，不能重命名
+                // test cases: although 'from' and 'destination' meet the renaming criteria, 'path' and 'from' do
+                // not match and cannot be renamed
                 new Object[] {new Path("/Worksheets/Sheet1/"), new Path("/Worksheets/Sheet1/file1"),
                         new Path("/Worksheets/Sheet1/file2"), new Path("/Worksheets/Sheet1/"), false},
                 new Object[] {new Path("/Worksheets/Sheet1/file3"), new Path("/Worksheets/Sheet1/file1"),
@@ -65,28 +66,29 @@ public class PathRenameTest {
                         new Path("/Worksheets/Sheet1/SubSheet1/SubFile1"),
                         new Path("/Worksheets/Sheet1/SubSheet1/SubFile2"), new Path("/Worksheets/Sheet1/SubSheet1"),
                         false},
-                // 测试场景：/Worksheets/文件夹不能能重命名
+                // test cases: /Worksheets/ folder cannot be renamed
                 new Object[] {new Path("/Worksheets/"), new Path("/Worksheets/"),
                         new Path("/Worksheets/sheet/"), new Path("/Worksheets/"), false},
-                // 测试场景：path和from不匹配，不能重命名
+                // test cases: 'path' and 'from' do not match, cannot be renamed
                 new Object[] {new Path("/Worksheets/Sheet1/SubSheet1"), new Path("/Worksheets/Sheet1"),
                         new Path("/Worksheets/Sheet1/SubSheet2"), new Path("/Worksheets/Sheet1/SubSheet1"), false},
-                // 测试场景：from和destination不符合重命名条件，不能重命名
+                // test cases: 'from' and 'destination' do not meet the renaming criteria and cannot be renamed
                 new Object[] {new Path("/Worksheets/Sheet2/SubSheet1"), new Path("/Worksheets/Sheet2/SubSheet1"),
                         new Path("/Worksheets/Sheet1/SubSheet2"), new Path("/Worksheets/Sheet2/SubSheet1"), false},
-                // 测试场景：path和from不匹配，不能重命名
+                // test cases: 'path' and 'from' do not match, cannot be renamed
                 new Object[] {new Path("/Worksheets/Sheet1/SubSheet1/SubFile1"),
                         new Path("/Worksheets/Sheet1/SubSheet1"), new Path("/Worksheets/Sheet1/SubSheet1/SubFile2"),
                         new Path("/Worksheets/Sheet1/SubSheet1/SubFile1"), false},
 
-                // Repos相关测试
+                // For Repos
                 new Object[] {new Path("/Repos/git1/Sheet1"), new Path("/Repos/git1/Sheet1"),
                         new Path("/Repos/git1/Sheet2"), new Path("/Repos/git1/Sheet2"), true},
                 new Object[] {new Path("/Repos/git1/Sheet1/"), new Path("/Repos/git1/Sheet1/"),
                         new Path("/Repos/git1/Sheet2/"), new Path("/Repos/git1/Sheet2/"), true},
                 new Object[] {new Path("/Repos/git1/Sheet1/SubSheet1"), new Path("/Repos/git1/Sheet1/"),
                         new Path("/Repos/git1/Sheet2/"), new Path("/Repos/git1/Sheet2/SubSheet1"), true},
-                // 测试场景：from和destination虽然符合重命名条件，但是path和from不匹配，不能重命名
+                // test cases: although 'from' and 'destination' meet the renaming criteria, 'path' and 'from' do
+                // not match and cannot be renamed
                 new Object[] {new Path("/Repos/git1/Sheet1/"), new Path("/Repos/git1/Sheet1/file1"),
                         new Path("/Repos/git1/Sheet1/file2"), new Path("/Repos/git1/Sheet1/"), false},
                 new Object[] {new Path("/Repos/git1/Sheet1/file3"), new Path("/Repos/git1/Sheet1/file1"),
@@ -97,16 +99,16 @@ public class PathRenameTest {
                         new Path("/Repos/git1/Sheet1/SubSheet1/SubFile1"),
                         new Path("/Repos/git1/Sheet1/SubSheet1/SubFile2"), new Path("/Repos/git1/Sheet1/SubSheet1"),
                         false},
-                // 测试场景：/Repos/git1/文件夹不能能重命名
+                // test cases: /Repos/git1/ folder cannot be renamed
                 new Object[] {new Path("/Repos/git1/"), new Path("/Repos/git1/"),
                         new Path("/Repos/git12/"), new Path("/Repos/git1/"), false},
-                // 测试场景：path和from不匹配，不能重命名
+                // test cases: 'path' and 'from' do not match, cannot be renamed
                 new Object[] {new Path("/Repos/git1/Sheet1/SubSheet1"), new Path("/Repos/git1/Sheet1"),
                         new Path("/Repos/git1/Sheet1/SubSheet2"), new Path("/Repos/git1/Sheet1/SubSheet1"), false},
-                // 测试场景：from和destination不符合重命名条件，不能重命名
+                // test cases: 'from' and 'destination' do not meet the renaming criteria and cannot be renamed
                 new Object[] {new Path("/Repos/git1/Sheet2/SubSheet1"), new Path("/Repos/git1/Sheet2/SubSheet1"),
                         new Path("/Repos/git1/Sheet1/SubSheet2"), new Path("/Repos/git1/Sheet2/SubSheet1"), false},
-                // 测试场景：path和from不匹配，不能重命名
+                // test cases: 'path' and 'from' do not match, cannot be renamed
                 new Object[] {new Path("/Repos/git1/Sheet1/SubSheet1/SubFile1"),
                         new Path("/Repos/git1/Sheet1/SubSheet1"), new Path("/Repos/git1/Sheet1/SubSheet1/SubFile2"),
                         new Path("/Repos/git1/Sheet1/SubSheet1/SubFile1"), false});

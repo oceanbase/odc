@@ -33,15 +33,15 @@ public class PathGetPathAtTest {
     private final int index;
     private final Optional<Path> expectedResultPath;
     private final Boolean hasException;
-    private final boolean expectedIsRoot;
+    private final boolean expectedIsSystemDefine;
 
     public PathGetPathAtTest(String pathStr, int index, String expectedResult, Boolean hasException,
-            Boolean expectedIsRoot) {
+            Boolean expectedIsSystemDefine) {
         this.index = index;
         this.path = new Path(pathStr);
         this.expectedResultPath = expectedResult == null ? Optional.empty() : Optional.of(new Path(expectedResult));
         this.hasException = hasException;
-        this.expectedIsRoot = expectedIsRoot;
+        this.expectedIsSystemDefine = expectedIsSystemDefine;
     }
 
     @Parameters
@@ -52,7 +52,7 @@ public class PathGetPathAtTest {
                 new Object[] {"/Worksheets/folder1/file1", 2, "/Worksheets/folder1/file1", false, false},
                 new Object[] {"/Worksheets/folder1/file1", 3, null, true, false},
 
-                new Object[] {"/Repos/repo/folder1/file1", 0, null, false, false},
+                new Object[] {"/Repos/repo/folder1/file1", 0, "/Repos/", false, true},
                 new Object[] {"/Repos/repo/folder1/file1", 1, "/Repos/repo/", false, true},
                 new Object[] {"/Repos/repo/folder1/file1", 2, "/Repos/repo/folder1/", false, false},
                 new Object[] {"/Repos/repo/folder1/file1", 3, "/Repos/repo/folder1/file1", false, false},
@@ -65,8 +65,8 @@ public class PathGetPathAtTest {
             Optional<Path> result = path.getPathAt(index);
             assertEquals(expectedResultPath, result);
             assert !hasException;
-            if (result.isPresent() || expectedIsRoot) {
-                assertEquals(expectedIsRoot, result.get().isRoot());
+            if (result.isPresent() || expectedIsSystemDefine) {
+                assertEquals(expectedIsSystemDefine, result.get().isSystemDefine());
             }
         } catch (Exception e) {
             if (!hasException) {

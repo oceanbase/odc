@@ -37,10 +37,12 @@ public class WorksheetConstant {
     /**
      * the limit number of worksheets in the same level
      */
-    public static final int SAME_LEVEL_NUM_LIMIT  = 100;
+    public static final int SAME_LEVEL_NUM_LIMIT = 100;
 
     /**
      * the duration of download zip file in seconds
      */
     public static final int DOWNLOAD_ZIP_DURATION_SECONDS = 60 * 60;
+
+    public static final String ROOT_PATH_NAME = "";
 }

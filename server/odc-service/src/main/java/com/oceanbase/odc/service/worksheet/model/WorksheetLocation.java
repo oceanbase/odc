@@ -29,11 +29,15 @@ import lombok.Getter;
 @Getter
 public enum WorksheetLocation {
     /**
+     * only for directory: /
+     */
+    ROOT("/"),
+    /**
      * the worksheet is in directory:/Worksheets/
      */
     WORKSHEETS("Worksheets"),
     /**
-     * the worksheet is in directory:/Repos/RepoName/
+     * the worksheet is in directory:/Repos/
      */
     REPOS("Repos");
 
@@ -43,7 +47,7 @@ public enum WorksheetLocation {
         this.value = value;
     }
 
-    public static Optional<WorksheetLocation> getByName(String name) {
+    public static Optional<WorksheetLocation> getByValue(String name) {
         for (WorksheetLocation value : values()) {
             if (value.getValue().equals(name)) {
                 return Optional.of(value);

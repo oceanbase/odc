@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.worksheet.utils;
 
+import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.ROOT_PATH_NAME;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
@@ -64,7 +65,7 @@ public class WorksheetPathUtilTest {
                 {"Worksheets \\ path2 \\  ", Arrays.asList("Worksheets", "path2", "/"), "/Worksheets/path2/", "path2",
                         WorksheetType.DIRECTORY, WorksheetLocation.WORKSHEETS},
                 {"Worksheets /  ", Arrays.asList("Worksheets", "/"), "/Worksheets/", "Worksheets",
-                        WorksheetType.DIRECTORY, WorksheetLocation.WORKSHEETS},
+                        WorksheetType.WORKSHEETS, WorksheetLocation.WORKSHEETS},
                 {"\\\\Worksheets\\\\ / path2////\\\\ / file.txt ", Arrays.asList("Worksheets", "path2", "file.txt"),
                         "/Worksheets/path2/file.txt", "file.txt", WorksheetType.FILE, WorksheetLocation.WORKSHEETS},
                 {" /Repos/git \\ ", Arrays.asList("Repos", "git", "/"), "/Repos/git/", "git",
@@ -79,22 +80,20 @@ public class WorksheetPathUtilTest {
                 {"//   ///  ///Repos/  ///  //path2///  /", Arrays.asList("Repos", "path2", "/"), "/Repos/path2/",
                         "path2",
                         WorksheetType.GIT_REPO, WorksheetLocation.REPOS},
-                {"//", Arrays.asList("/"), "/", null, null, null},
+                {"//", Arrays.asList("/"), "/", ROOT_PATH_NAME, WorksheetType.ROOT, WorksheetLocation.ROOT},
                 {"", null, null, null, null, null},
                 {null, null, null, null, null, null},
                 {"/folder1/", Arrays.asList("folder1", "/"), "/folder1/", "folder1", null, null},
                 {"/Worksheets", Arrays.asList("Worksheets"), "/Worksheets", "Worksheets", null,
                         WorksheetLocation.WORKSHEETS},
                 {"/Repos/git", Arrays.asList("Repos", "git"), "/Repos/git", "git", null, WorksheetLocation.REPOS},
-                {"/Repos/", Arrays.asList("Repos", "/"), "/Repos/", "Repos", null, WorksheetLocation.REPOS},
+                {"/Repos/", Arrays.asList("Repos", "/"), "/Repos/", "Repos", WorksheetType.REPOS,
+                        WorksheetLocation.REPOS},
                 {"path1/path2/", Arrays.asList("path1", "path2", "/"), "/path1/path2/", "path2", null, null},
                 {"path1/path2////", Arrays.asList("path1", "path2", "/"), "/path1/path2/", "path2", null, null},
         });
     }
 
-    /**
-     * [单元测试]测试splitPathToItems方法
-     */
     @Test
     public void testSplitPathToItems() {
         List<String> items = WorksheetPathUtil.splitPathToItems(path);
@@ -105,9 +104,6 @@ public class WorksheetPathUtilTest {
         }
     }
 
-    /**
-     * [单元测试]测试convertItemsToPath方法
-     */
     @Test
     public void testConvertItemsToPath() {
         Optional<String> standardPathOptional = WorksheetPathUtil.convertItemsToPath(expectedItems);
@@ -118,9 +114,6 @@ public class WorksheetPathUtilTest {
         }
     }
 
-    /**
-     * [单元测试]测试getPathName方法
-     */
     @Test
     public void testGetPathName() {
         Optional<String> nameOptional = WorksheetPathUtil.getPathName(expectedItems);
@@ -131,9 +124,6 @@ public class WorksheetPathUtilTest {
         }
     }
 
-    /**
-     * [单元测试]测试getPathLocation方法
-     */
     @Test
     public void testGetPathLocation() {
         Optional<WorksheetLocation> locationOptional = WorksheetPathUtil.getPathLocation(expectedItems);
@@ -144,9 +134,6 @@ public class WorksheetPathUtilTest {
         }
     }
 
-    /**
-     * [单元测试]测试getPathType方法
-     */
     @Test
     public void testGetPathType() {
         Optional<WorksheetType> typeOptional = WorksheetPathUtil.getPathType(expectedItems);

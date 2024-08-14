@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.worksheet.domain;
 
 import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.NAME_LENGTH_LIMIT;
+import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.ROOT_PATH_NAME;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,6 +45,10 @@ import lombok.Getter;
  */
 @Getter
 public class Path {
+    private static final int ROOT_LEVEL_NUM = 0;
+    private static final int WORKSHEETS_LEVEL_NUM = 1;
+    private static final int REPOS_LEVEL_NUM = 1;
+    private static final int GIT_REPO_LEVEL_NUM = 2;
 
     List<String> parentPathItems;
     /**
@@ -59,10 +64,30 @@ public class Path {
 
     public static Path root() {
         Path path = new Path();
-        path.name = null;
-        path.type = WorksheetType.DIRECTORY;
-        path.location = null;
+        path.name = ROOT_PATH_NAME;
+        path.type = WorksheetType.ROOT;
+        path.location = WorksheetLocation.ROOT;
         path.levelNum = 0;
+        path.parentPathItems = new ArrayList<>();
+        return path;
+    }
+
+    public static Path worksheets() {
+        Path path = new Path();
+        path.name = WorksheetLocation.WORKSHEETS.getValue();
+        path.type = WorksheetType.WORKSHEETS;
+        path.location = WorksheetLocation.WORKSHEETS;
+        path.levelNum = 1;
+        path.parentPathItems = new ArrayList<>();
+        return path;
+    }
+
+    public static Path repos() {
+        Path path = new Path();
+        path.name = WorksheetLocation.REPOS.getValue();
+        path.type = WorksheetType.REPOS;
+        path.location = WorksheetLocation.REPOS;
+        path.levelNum = 1;
         path.parentPathItems = new ArrayList<>();
         return path;
     }
@@ -124,12 +149,14 @@ public class Path {
         this.type = pathTypeOptional.get();
         this.location = locationOptional.get();
         this.levelNum = this.isFile() ? items.size() : items.size() - 1;
-        this.parentPathItems = items.subList(0, levelNum - 1);
+        this.parentPathItems = levelNum > 0 ? items.subList(0, levelNum - 1) : new ArrayList<>();;
     }
 
     public String getStandardPath() {
         List<String> pathItems = new ArrayList<>(this.parentPathItems);
-        pathItems.add(name);
+        if (!isRoot()) {
+            pathItems.add(name);
+        }
         if (this.isDirectory()) {
             pathItems = WorksheetPathUtil.addSeparatorToItemsEnd(pathItems);
         }
@@ -141,7 +168,8 @@ public class Path {
     }
 
     /**
-     * Retrieve the parent path, if current is /Worksheets/,/Repos/git/, etc., return empty
+     * Retrieve the parent path, if current is /Worksheets/,/Repos/,/Repos/git/, etc., when current is /
+     * return empty
      *
      * @return
      */
@@ -149,22 +177,21 @@ public class Path {
         if (isRoot()) {
             return Optional.empty();
         }
-        Optional<String> parentStandardPathOptional = WorksheetPathUtil.convertItemsToPath(
-                WorksheetPathUtil.addSeparatorToItemsEnd(this.parentPathItems));
-        return parentStandardPathOptional.map(Path::new);
+        return Optional.of(new Path(WorksheetPathUtil.addSeparatorToItemsEnd(this.parentPathItems)));
 
     }
 
     public List<Path> getAllNotRootParents() {
-        // the parent of /Worksheets/ and /Worksheets/file1 is root path, so return empty
-        if (this.levelNum <= getRootLevelNum() + 1) {
+        if (isSystemDefine()) {
             return new ArrayList<>();
         }
         List<Path> result = new ArrayList<>();
-        for (int i = getRootLevelNum() + 1; i <= this.levelNum - 1; i++) {
-            Optional<String> parentStandardPathOptional = WorksheetPathUtil.convertItemsToPath(
-                    WorksheetPathUtil.addSeparatorToItemsEnd(this.parentPathItems.subList(0, i)));
-            parentStandardPathOptional.map(Path::new).ifPresent(result::add);
+        for (int i = 0; i < this.levelNum - 1; i++) {
+            Path parent = Path.ofDirectory(this.parentPathItems.subList(0, i + 1));
+            if (parent.isSystemDefine()) {
+                continue;
+            }
+            result.add(parent);
         }
         return result;
 
@@ -236,9 +263,6 @@ public class Path {
         if (index == this.levelNum - 1) {
             return Optional.of(this);
         }
-        if (index < getRootLevelNum() - 1) {
-            return Optional.empty();
-        }
         return Optional.of(Path.ofDirectory(this.parentPathItems.subList(0, index + 1)));
     }
 
@@ -268,17 +292,23 @@ public class Path {
     }
 
     public boolean isRoot() {
-        return levelNum <= getRootLevelNum();
+        return this.location == WorksheetLocation.ROOT;
     }
 
-    public int getRootLevelNum() {
-        switch (location) {
-            case WORKSHEETS:
-                return 1;
-            case REPOS:
-                return 2;
-        }
-        return 0;
+    public boolean isWorksheets() {
+        return this.location == WorksheetLocation.WORKSHEETS && this.type == WorksheetType.WORKSHEETS;
+    }
+
+    public boolean isRepos() {
+        return this.location == WorksheetLocation.REPOS && this.type == WorksheetType.REPOS;
+    }
+
+    public boolean isGitRepo() {
+        return this.location == WorksheetLocation.REPOS && this.type == WorksheetType.GIT_REPO;
+    }
+
+    public boolean isSystemDefine() {
+        return isRoot() || isRepos() || isWorksheets() || isGitRepo();
     }
 
     /**

@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.worksheet.utils;
 
+import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.ROOT_PATH_NAME;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -117,58 +119,72 @@ public class WorksheetPathUtil {
         boolean isEndWithPathSeparator =
                 StringUtils.equals(pathItems.get(pathItems.size() - 1), STANDARD_PATH_SEPARATOR);
         if (isEndWithPathSeparator) {
-            return size == 1 ? Optional.empty() : Optional.of(pathItems.get(size - 2));
+            return size == 1 ? Optional.of(ROOT_PATH_NAME) : Optional.of(pathItems.get(size - 2));
         }
         return Optional.of(pathItems.get(size - 1));
     }
 
-    public static Optional<WorksheetLocation> getPathLocation(List<String> pathItems) {
-        if (CollectionUtils.isEmpty(pathItems)) {
+    public static Optional<WorksheetLocation> getPathLocation(List<String> standardPathItems) {
+        if (CollectionUtils.isEmpty(standardPathItems)) {
             return Optional.empty();
         }
-        return WorksheetLocation.getByName(pathItems.get(0));
+        return WorksheetLocation.getByValue(standardPathItems.get(0));
     }
 
-    public static Optional<WorksheetType> getPathType(List<String> pathItems) {
-        Optional<WorksheetLocation> locationOptional = getPathLocation(pathItems);
+    public static Optional<WorksheetType> getPathType(List<String> standardPathItems) {
+        Optional<WorksheetLocation> locationOptional = getPathLocation(standardPathItems);
         if (!locationOptional.isPresent()) {
             return Optional.empty();
         }
-        int size = pathItems.size();
+        int size = standardPathItems.size();
         boolean isEndWithPathSeparator =
-                StringUtils.equals(pathItems.get(pathItems.size() - 1), STANDARD_PATH_SEPARATOR);
+                StringUtils.equals(standardPathItems.get(standardPathItems.size() - 1), STANDARD_PATH_SEPARATOR);
 
         switch (locationOptional.get()) {
+            case ROOT:
+                if (size != 1) {
+                    return Optional.empty();
+                }
+                return Optional.of(WorksheetType.ROOT);
             case REPOS:
+                // the formats of REPOS are:
+                // [Repos,/],[Repos,RepoName,...,/],[Repos,RepoName,file,...],[Repos,RepoName,folder,...,/]
+
+                if (size == 1) {
+                    // for standardPathItems = [Repos],it's invalid.
+                    return Optional.empty();
+                }
                 if (isEndWithPathSeparator) {
-                    if (size <= 2) {
-                        // For folders, since a repository must be included in the Repos,
-                        // So path=/Repos/ is illegal, converting /Repos/ to items with a length of 2 (["Repos", "/"])
-                        return Optional.empty();
+                    if (size == 2) {
+                        return Optional.of(WorksheetType.REPOS);
                     } else if (size == 3) {
                         return Optional.of(WorksheetType.GIT_REPO);
                     } else {
                         return Optional.of(WorksheetType.DIRECTORY);
                     }
                 }
-                if (size <= 2) {
-                    // For files, since a repository must be included in the Repos,
-                    // the file will always be in the Git repository, with a path structure of at
-                    // least:/Repos/RepoName/file;
-                    // When size<=2, the ptah structure can only be:/Repos,/Repos/RepoName, which is illegal,
+                if (size == 2) {
+                    // for standardPathItems = [Repos,RepoName],it's invalid.
                     return Optional.empty();
                 }
                 return Optional.of(WorksheetType.FILE);
             case WORKSHEETS:
-                if (isEndWithPathSeparator) {
-                    // At this point, the path structure should be at least:/Worksheets/, and it should be confirmed to
-                    // be legal
-                    return Optional.of(WorksheetType.DIRECTORY);
-                }
+                // the formats of WORKSHEETS are:
+                // [Worksheets,/],[Worksheets,folder,...,/],[Worksheets,file,...]
+
                 if (size == 1) {
-                    // When the length is 1, the path structure can only be:/Worksheets, which is illegal
+                    // for standardPathItems = [Worksheets],it's invalid.
                     return Optional.empty();
                 }
+                if (isEndWithPathSeparator) {
+                    if (size == 2) {
+                        // [Worksheets,/]
+                        return Optional.of(WorksheetType.WORKSHEETS);
+                    }
+                    // [Worksheets,folder,...,/]
+                    return Optional.of(WorksheetType.DIRECTORY);
+                }
+                // [Worksheets,file,...]
                 return Optional.of(WorksheetType.FILE);
             default:
                 return Optional.empty();

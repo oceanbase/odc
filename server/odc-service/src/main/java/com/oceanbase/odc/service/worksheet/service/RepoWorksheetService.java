@@ -35,7 +35,7 @@ import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetUtil;
 
 /**
- * the handle of worksheets in /Repos/RepoName/
+ * the handle of worksheets in /Repos/
  *
  * @author keyang
  * @date 2024/08/02

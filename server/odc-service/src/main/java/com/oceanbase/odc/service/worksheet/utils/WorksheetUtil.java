@@ -41,11 +41,11 @@ public class WorksheetUtil {
      */
     public static final String WORKSHEETS_OBJECT_ID_PREFIX = "ODC-worksheets-";
     /**
-     * the bucketName prefix of worksheets which start with /Repos/RepoName/
+     * the bucketName prefix of worksheets which start with /Repos/
      */
     private static final String REPOS_BUCKET_NAME_PREFIX = "PROJECT_REPOS_";
     /**
-     * the objectId prefix of worksheet which start with /Repos/RepoName/
+     * the objectId prefix of worksheet which start with /Repos/
      */
     public static final String REPOS_OBJECT_ID_PREFIX = "ODC-repos-";
     /**

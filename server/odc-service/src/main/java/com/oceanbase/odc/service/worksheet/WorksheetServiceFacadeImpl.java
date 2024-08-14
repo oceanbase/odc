@@ -224,7 +224,7 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
     }
 
     private String getRootDirectoryName(Long projectId, Optional<Path> commonParentPathOptional) {
-        if (!commonParentPathOptional.isPresent() || commonParentPathOptional.get().isRoot()) {
+        if (!commonParentPathOptional.isPresent() || commonParentPathOptional.get().isSystemDefine()) {
             return worksheetProjectRepository.getProjectName(projectId);
         }
         return commonParentPathOptional.get().getName();
