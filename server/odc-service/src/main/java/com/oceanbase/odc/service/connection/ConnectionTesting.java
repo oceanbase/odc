@@ -214,8 +214,14 @@ public class ConnectionTesting {
         ConnectionConfig config = new ConnectionConfig();
         if (StringUtils.equals("sys", req.getTenantName())) {
             config.setType(ConnectType.OB_MYSQL);
+            if (req.getType() != ConnectType.OB_MYSQL) {
+                config.setDefaultSchema("ROOT");
+            } else {
+                config.setDefaultSchema(req.getDefaultSchema());
+            }
         } else {
             config.setType(req.getType());
+            config.setDefaultSchema(req.getDefaultSchema());
         }
         config.setHost(req.getHost());
         config.setPort(req.getPort());
@@ -223,7 +229,6 @@ public class ConnectionTesting {
         config.setTenantName(req.getTenantName());
         config.setUsername(req.getUsername());
         config.setPassword(req.getPassword());
-        config.setDefaultSchema(req.getDefaultSchema());
         config.setSessionInitScript(req.getSessionInitScript());
         config.setJdbcUrlParameters(req.getJdbcUrlParameters());
         config.setSid(req.getSid());
