@@ -16,30 +16,18 @@
 
 package com.oceanbase.odc.service.connection.logicaldatabase.task.model;
 
-import java.util.List;
-
-import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.session.model.SqlExecuteResult;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 
 import lombok.Data;
 
 /**
  * @Author: Lebie
- * @Date: 2024/8/13 17:17
+ * @Date: 2024/8/14 17:32
  * @Description: []
  */
 @Data
-public class SchemaChangeRecord {
-    private Database database;
-
-    private ConnectionConfig dataSource;
-
-    private List<SqlExecuteResult> sqlTuples;
-
-    private Integer sqlCount;
-
-    private Integer completedSqlCount;
-
-    private SchemaChangeRecordStatus status;
+public class LogicalDatabaseChangeParameters implements ScheduleTaskParameters {
+    private String sqlContent;
+    private String delimiter = ";";
+    private Long timeoutMillis = 172800000L;
 }

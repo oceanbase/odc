@@ -17,40 +17,37 @@
 package com.oceanbase.odc.server.web.controller.v2;
 
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
-import com.oceanbase.odc.service.common.response.PaginatedResponse;
+import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.connection.logicaldatabase.model.PreviewSqlReq;
-import com.oceanbase.odc.service.connection.logicaldatabase.model.PreviewSqlResp;
 import com.oceanbase.odc.service.connection.logicaldatabase.task.model.SchemaChangeRecord;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeLog;
 
 /**
  * @Author: Lebie
- * @Date: 2024/8/13 15:49
+ * @Date: 2024/8/14 17:22
  * @Description: []
  */
 @RestController
 @RequestMapping("/api/v2/logicaldatabase")
 public class LogicalDatabaseChangeController {
-
-    @RequestMapping(value = "/schemaChanges/{schemaChangeId:[\\d]+}/records", method = RequestMethod.GET)
-    public PaginatedResponse<SchemaChangeRecord> listSchemaChangeRecords(@PathVariable Long schemaChangeId) {
+    @RequestMapping(value = "/databaseChangeTasks/{id:[\\d]+}", method = RequestMethod.GET)
+    public SuccessResponse<SchemaChangeRecord> detailPhysicalDatabaseChangeTask(@PathVariable Long id) {
         throw new NotImplementedException();
     }
 
-    @RequestMapping(value = "/schemaChanges/{schemaChangeId:[\\d]+}/records/{recordId:[\\d]+}", method = RequestMethod.GET)
-    public SuccessResponse<SchemaChangeRecord> detailSchemaChangeRecord(@PathVariable Long schemaChangeId, @PathVariable Long recordId) {
+    @RequestMapping(value = "/databaseChangeTasks/{id:[\\d]+}/skip", method = RequestMethod.POST)
+    public SuccessResponse<Boolean> skipPhysicalDatabaseChangeTask(@PathVariable Long id) {
         throw new NotImplementedException();
     }
 
-    @RequestMapping(value = "/schemaChanges/{schemaChangeId:[\\d]+}/records/{recordId:[\\d]+}/skip", method = RequestMethod.POST)
-    public SuccessResponse<Boolean> skipSchemaChangeRecord(@PathVariable Long schemaChangeId, @PathVariable Long recordId) {
+    @RequestMapping(value = "/databaseChangeTasks/{id:[\\d]+}/terminate", method = RequestMethod.POST)
+    public SuccessResponse<Boolean> terminatePhysicalDatabaseChangeTask(@PathVariable Long id) {
         throw new NotImplementedException();
     }
 }
