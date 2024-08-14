@@ -81,7 +81,7 @@ public class OmsRequestUtil {
         }
 
         OmsProjectProgressResponse progress = omsProjectOpenApiService.describeProjectProgress(projectRequest);
-        log.info("Osc check increment checkpoint, current ts [{}], checkpoint[{}]", System.currentTimeMillis() / 1000,
+        log.info("Osc check increment checkpoint, current ts = {}, checkpoint = {}", System.currentTimeMillis() / 1000,
                 progress.getIncrSyncCheckpoint());
         return new ProjectStepResultChecker(progress, projectSteps,
                 onlineSchemaChangeProperties.isEnableFullVerify(),

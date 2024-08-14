@@ -154,7 +154,7 @@ public class OmsSwapTableAction implements Action<OscActionContext, OscActionRes
                     onlineSchemaChangeProperties, uid, omsProjectID,
                     databaseName,
                     checkFailedTimes);
-            log.info("Osc check oms increment checkpoint, expect greater than [{}], current is [{}]",
+            log.info("Osc check oms increment checkpoint, expect greater than {}, current = {}",
                     safeDataCheckpoint, projectStepResult.getIncrementCheckpoint());
             if (OmsRequestUtil.isOmsTaskReady(projectStepResult)
                     && projectStepResult.getIncrementCheckpoint() > safeDataCheckpoint) {
