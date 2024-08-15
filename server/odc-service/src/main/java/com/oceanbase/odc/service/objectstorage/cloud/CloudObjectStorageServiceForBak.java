@@ -49,6 +49,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
+import com.oceanbase.odc.service.objectstorage.client.CloudObjectStorageClient;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadRequest;
@@ -65,7 +66,6 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.PutObjectResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadPartRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadPartResult;
 import com.oceanbase.odc.service.objectstorage.cloud.util.CloudObjectStorageUtil;
-import com.oceanbase.odc.service.objectstorage.client.CloudObjectStorageClient;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;

@@ -47,7 +47,6 @@ public class LocalFileOperatorTest extends ServiceTestEnv {
 
     private static final String BUCKET = "test-bucket";
 
-    //@InjectMocks
     private LocalFileOperator localFileOperator;
 
     @Before

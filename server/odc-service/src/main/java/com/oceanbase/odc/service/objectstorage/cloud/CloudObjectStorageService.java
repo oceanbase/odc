@@ -36,12 +36,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.service.objectstorage.client.CloudObjectStorageClient;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectTagging;
 import com.oceanbase.odc.service.objectstorage.cloud.util.CloudObjectStorageUtil;
-import com.oceanbase.odc.service.objectstorage.client.CloudObjectStorageClient;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;

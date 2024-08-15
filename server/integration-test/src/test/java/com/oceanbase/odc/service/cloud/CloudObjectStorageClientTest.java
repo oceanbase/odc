@@ -18,8 +18,8 @@ package com.oceanbase.odc.service.cloud;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.oceanbase.odc.service.objectstorage.cloud.client.NullCloudClient;
 import com.oceanbase.odc.service.objectstorage.client.CloudObjectStorageClient;
+import com.oceanbase.odc.service.objectstorage.cloud.client.NullCloudClient;
 
 public class CloudObjectStorageClientTest {
     private CloudObjectStorageClient service =
