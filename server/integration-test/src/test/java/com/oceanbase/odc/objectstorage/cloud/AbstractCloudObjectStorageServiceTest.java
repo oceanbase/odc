@@ -82,6 +82,14 @@ abstract class AbstractCloudObjectStorageServiceTest {
     }
 
     @Test
+    public void uploadTemp_ByFileNameAndFile() throws IOException {
+        objectName = cloudObjectStorageService.uploadTemp("test", new File(TEST_FILE_PATH));
+
+        tempFile = cloudObjectStorageService.downloadToTempFile(objectName);
+        Assert.assertEquals("test0001", readFirstLine(tempFile));
+    }
+
+    @Test
     public void upload_ByFileNameAndFileCNZH() throws IOException {
         objectName = cloudObjectStorageService.upload("中文名称.txt", new File(TEST_FILE_CN_ZH_PATH));
 
