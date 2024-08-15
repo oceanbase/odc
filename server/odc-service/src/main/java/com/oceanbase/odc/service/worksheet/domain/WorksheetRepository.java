@@ -37,5 +37,5 @@ public interface WorksheetRepository {
 
     void batchDelete(Set<Long> ids);
 
-    void batchUpdateById(Set<Worksheet> files, boolean needAddVersion);
+    void batchUpdateById(Set<Worksheet> files);
 }

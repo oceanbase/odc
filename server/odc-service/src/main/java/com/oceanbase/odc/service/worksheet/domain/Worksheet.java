@@ -41,6 +41,7 @@ import com.oceanbase.odc.service.worksheet.exceptions.NameTooLongException;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
 
 import lombok.Data;
+import lombok.Getter;
 import lombok.Setter;
 
 /**
@@ -93,7 +94,6 @@ public class Worksheet {
      * <code>[/Worksheets/folder3/,/Worksheets/folder3/file3.sql,/Worksheets/file1.sql]</code>.
      * </p>
      */
-    @Setter
     private Set<Worksheet> sameParentAtPrevLevelWorksheets;
     /**
      * All sub worksheets of current worksheet.
@@ -102,7 +102,6 @@ public class Worksheet {
      * <code>[/Worksheets/folder1/folder4/,/Worksheets/folder1/file2.sql]</code>.
      * </p>
      */
-    @Setter
     private Set<Worksheet> subWorksheets;
 
     public static Worksheet of(Long projectId, Path path, String objectId, Long creatorId) {
@@ -245,8 +244,7 @@ public class Worksheet {
      * @return all changed worksheets ,contain current
      */
     public Set<Worksheet> edit(Path destinationPath, String objectId, Long readVersion) {
-        // if the objectId changes, it is necessary to modify the content and determine whether the
-        // readVersion meets the criteria
+        // if the objectId is changed, will to determine whether the readVersion meets the criteria
         if (this.path.isFile() && !StringUtils.equals(this.objectId, objectId)) {
             this.objectId = objectId;
             this.readVersion = readVersion;
@@ -255,6 +253,7 @@ public class Worksheet {
                 throw new EditVersionConflictException("version conflict,current version:" + this.version
                         + ",read version:" + this.readVersion + ",path:" + this.path);
             }
+            this.version++;
         }
 
         Set<Worksheet> changedSubFiles = new HashSet<>();

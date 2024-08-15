@@ -64,7 +64,7 @@ public class DefaultWorksheetRepository implements WorksheetRepository {
         StringBuilder sql = new StringBuilder("SELECT * FROM objectstorage_object_metadata WHERE ");
 
         Map<String, Object> params = new HashMap<>();
-        sql.append(" AND bucket_name = :bucketName");
+        sql.append(" bucket_name = :bucketName");
         params.put("bucketName", WorksheetUtil.getBucketNameOfWorkSheets(projectId));
 
         Path queryPath = path;
@@ -137,7 +137,7 @@ public class DefaultWorksheetRepository implements WorksheetRepository {
     }
 
     @Override
-    public void batchUpdateById(Set<Worksheet> files, boolean needAddVersion) {
+    public void batchUpdateById(Set<Worksheet> files) {
         if (CollectionUtils.isEmpty(files)) {
             return;
         }

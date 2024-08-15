@@ -30,6 +30,7 @@ import java.util.Set;
 
 import com.oceanbase.odc.service.worksheet.constants.WorksheetConstant;
 import com.oceanbase.odc.service.worksheet.exceptions.ChangeTooMuchException;
+import com.oceanbase.odc.service.worksheet.exceptions.EditVersionConflictException;
 import com.oceanbase.odc.service.worksheet.exceptions.ExceedSameLevelNumLimitException;
 import com.oceanbase.odc.service.worksheet.exceptions.NameDuplicatedException;
 import com.oceanbase.odc.service.worksheet.exceptions.NameTooLongException;
@@ -37,6 +38,7 @@ import com.oceanbase.odc.service.worksheet.exceptions.NameTooLongException;
 public class WorksheetTest {
     final static Long projectId = 1L;
     long id = 0L;
+    Long defaultVersion = 1L;
 
     private Worksheet newWorksheet(String path) {
         return newWorksheet(projectId, new Path(path), "objectId", 1L);
@@ -44,7 +46,7 @@ public class WorksheetTest {
 
     public Worksheet newWorksheet(Long projectId, Path path, String objectId, Long creatorId) {
         return new Worksheet(id++, new Date(), new Date(), projectId, path, creatorId,
-                null, objectId, null, null);
+                defaultVersion, objectId, null, null);
     }
 
     @Test
@@ -272,5 +274,53 @@ public class WorksheetTest {
                 "objectId2");
         assertThrows(NameTooLongException.class,
                 () -> worksheet.batchCreate(createPathToObjectIdMap, 1001L));
+    }
+
+
+    @Test
+    public void testEdit_Normal() {
+        Worksheet worksheet = newWorksheet("/Worksheets/folder1/file1.sql");
+
+        // no change
+        String originalObjectId = worksheet.getObjectId();
+        Set<Worksheet> editedWorksheets =
+                worksheet.edit(worksheet.getPath(), originalObjectId, worksheet.getVersion());
+        assertEquals(0, editedWorksheets.size());
+        assertEquals(originalObjectId, worksheet.getObjectId());
+        assertEquals(null, worksheet.getReadVersion());
+        assertEquals(defaultVersion, worksheet.getVersion());
+        assertFalse(worksheet.isChanged());
+
+        // only content,not change name
+        String newObjectId = "newObjectId" + id++;
+        editedWorksheets =
+                worksheet.edit(worksheet.getPath(), newObjectId, worksheet.getVersion());
+        assertEquals(1, editedWorksheets.size());
+        assertEquals(newObjectId, worksheet.getObjectId());
+        assertEquals(defaultVersion, worksheet.getReadVersion());
+        assertEquals(new Long(defaultVersion + 1L), worksheet.getVersion());
+        assertTrue(worksheet.isChanged());
+
+        // change content,and name
+        newObjectId = "newObjectId" + id++;
+        Path newPath = new Path("/Worksheets/folder1/file2.sql");
+        editedWorksheets =
+                worksheet.edit(newPath, newObjectId, worksheet.getVersion());
+        assertEquals(1, editedWorksheets.size());
+        assertEquals(newPath, worksheet.getPath());
+        assertEquals(newObjectId, worksheet.getObjectId());
+        assertEquals(new Long(defaultVersion + 1L), worksheet.getReadVersion());
+        assertEquals(new Long(defaultVersion + 2L), worksheet.getVersion());
+        assertTrue(worksheet.isChanged());
+    }
+
+    @Test
+    public void testEdit_VersionConflict() {
+        Worksheet worksheet = newWorksheet("/Worksheets/file.sql");
+        worksheet.setVersion(2L);
+        Path destinationPath = new Path("/Worksheets/file.sql");
+        String objectId = "newObjectId";
+        Long readVersion = 1L;
+        assertThrows(EditVersionConflictException.class, () -> worksheet.edit(destinationPath, objectId, readVersion));
     }
 }

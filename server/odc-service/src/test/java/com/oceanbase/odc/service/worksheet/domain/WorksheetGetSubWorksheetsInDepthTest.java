@@ -19,9 +19,7 @@ package com.oceanbase.odc.service.worksheet.domain;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -37,7 +35,7 @@ import com.oceanbase.odc.core.shared.exception.BadArgumentException;
  * @date 2024/08/15
  * @since 4.3.2
  */
-public class WorksheetForQueryTest {
+public class WorksheetGetSubWorksheetsInDepthTest {
     final static Long projectId = 1L;
     long id = 0L;
 

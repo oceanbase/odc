@@ -208,11 +208,12 @@ public class DefaultWorksheetService implements WorksheetService {
                         + projectId + " path:" + path));
 
         Set<Worksheet> renamedWorksheets = worksheet.rename(destinationPath);
-        normalWorksheetRepository.batchUpdateById(renamedWorksheets, false);
+        normalWorksheetRepository.batchUpdateById(renamedWorksheets);
 
         return new ArrayList<>(renamedWorksheets);
     }
 
+    @Transactional(rollbackFor = Throwable.class)
     @Override
     public List<Worksheet> editWorksheet(Long projectId, Path path, Path destinationPath,
             String objectId, Long readVersion) {
@@ -224,7 +225,7 @@ public class DefaultWorksheetService implements WorksheetService {
                         + projectId + " path:" + path));
 
         Set<Worksheet> editedWorksheets = worksheet.edit(destinationPath, objectId, readVersion);
-        normalWorksheetRepository.batchUpdateById(editedWorksheets, true);
+        normalWorksheetRepository.batchUpdateById(editedWorksheets);
 
         return new ArrayList<>(editedWorksheets);
     }
