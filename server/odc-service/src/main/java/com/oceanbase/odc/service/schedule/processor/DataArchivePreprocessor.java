@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.schedule.processor;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
@@ -105,31 +104,16 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
                 sourceInformation::getDBVersion);
         String targetDbVersion = targetSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
                 targetInformation::getDBVersion);
-        if (sourceDbType == DialectType.OB_MYSQL) {
-            if (targetDbType != DialectType.OB_MYSQL && targetDbType != DialectType.MYSQL) {
+        if (sourceDbType.isMysql()) {
+            if (!targetDbType.isMysql()) {
                 throw new UnsupportedException(
                         String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
             }
         }
-        // Cannot supports archive from mysql to ob.
-        if (sourceDbType == DialectType.MYSQL) {
-            if (targetDbType != DialectType.OB_MYSQL && targetDbType != DialectType.MYSQL) {
+        if (sourceDbType.isOracle()) {
+            if (!targetDbType.isOracle()) {
                 throw new UnsupportedException(
                         String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
-            }
-        }
-        if (sourceDbType == DialectType.OB_ORACLE) {
-            if (targetDbType != DialectType.OB_ORACLE) {
-                throw new UnsupportedException(
-                        String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
-            }
-            if (VersionUtils.isGreaterThanOrEqualsTo(sourceDbVersion, "4.3.0")) {
-                throw new UnsupportedException(
-                        String.format("Unsupported OB Version:%s", sourceDbVersion));
-            }
-            if (VersionUtils.isGreaterThanOrEqualsTo(targetDbVersion, "4.3.0")) {
-                throw new UnsupportedException(
-                        String.format("Unsupported OB Version:%s", targetDbVersion));
             }
         }
     }
