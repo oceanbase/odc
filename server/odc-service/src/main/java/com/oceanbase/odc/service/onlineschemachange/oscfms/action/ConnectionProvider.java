@@ -13,32 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.onlineschemachange.pipeline;
+package com.oceanbase.odc.service.onlineschemachange.oscfms.action;
+
+import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
 /**
- * @author yaobin
- * @date 2023-06-10
- * @since 4.2.0
+ * provide raw connection
+ * 
+ * @author longpeng.zlp
+ * @date 2024/7/25 19:18
+ * @since 4.3.1
  */
-public interface Pipeline {
+public interface ConnectionProvider {
     /**
-     * basic valve which be invoked latest
-     *
-     * @param basic basic valve
+     * get connection config of the provider
      */
-    void setBasic(Valve basic);
+    ConnectionConfig connectionConfig();
 
     /**
-     * add a new valve into pipeline
-     *
-     * @param valve new valve
+     * create new connection session
+     * 
+     * @return
      */
-    void addValve(Valve valve);
-
-    /**
-     * pipeline invoke method
-     *
-     * @param context valve execute context
-     */
-    void invoke(ValveContext context);
+    ConnectionSession createConnectionSession();
 }
