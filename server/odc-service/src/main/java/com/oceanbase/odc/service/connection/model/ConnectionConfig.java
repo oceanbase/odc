@@ -123,7 +123,7 @@ public class ConnectionConfig
     private UserRole userRole;
 
     /**
-     * 该参数表示一个数据库实例
+     * 该参数表示一个数据库实例, currently used only for Postgres
      */
     private String databaseName;
 

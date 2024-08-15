@@ -117,7 +117,7 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
     private UserRole userRole;
 
     /**
-     * 该参数表示数据库名称
+     * 该参数表示数据库名称, currently used only for Postgres
      */
     private String databaseName;
 
