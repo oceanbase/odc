@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.dlm;
 
+import java.util.Collections;
+
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
@@ -119,11 +121,12 @@ public class DataSourceInfoMapper {
 
     private static String getJdbcUrl(ConnectionConfig config, String schema) {
         JdbcUrlProperty jdbcUrlProperties = new JdbcUrlProperty(config.getHost(), config.getPort(), schema,
-                OBConsoleDataSourceFactory.getJdbcParams(config), config.getSid(),
+                Collections.emptyMap(), config.getSid(),
                 config.getServiceName(), config.getDatabaseName());
         ConnectionExtensionPoint connectionExtensionPoint =
                 ConnectionPluginUtil.getConnectionExtension(config.getDialectType());
-        return connectionExtensionPoint.generateJdbcUrl(jdbcUrlProperties);
+        String jdbcUrl = connectionExtensionPoint.generateJdbcUrl(jdbcUrlProperties);
+        return jdbcUrl + "&stringtype=unspecified";
     }
 
 }

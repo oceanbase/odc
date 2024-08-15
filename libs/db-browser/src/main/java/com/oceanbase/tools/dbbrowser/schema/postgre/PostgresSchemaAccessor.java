@@ -112,7 +112,9 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
         StringBuilder sb = new StringBuilder();
         sb.append("select table_name from information_schema.tables where table_schema = ");
         sb.append("'").append(schemaName).append("'");
-        sb.append(" and table_type = 'BASE TABLE';");
+        sb.append(" and table_type = 'BASE TABLE' ");
+        sb.append(" and table_name not in (SELECT relname FROM pg_class c ");
+        sb.append(" JOIN pg_inherits i ON c.oid = i.inhrelid);");
         List<String> tableNames;
         try {
             tableNames = jdbcOperations.query(sb.toString(), (rs, rowNum) -> rs.getString(1));
