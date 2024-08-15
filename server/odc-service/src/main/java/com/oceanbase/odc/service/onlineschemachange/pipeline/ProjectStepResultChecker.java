@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.onlineschemachange.model.FullVerificationResult;
@@ -107,6 +108,7 @@ public class ProjectStepResultChecker {
         fillMigrateResult();
         checkerVerifyResult();
         evaluateTaskPercentage();
+        checkerResult.setIncrementCheckpoint(progressResponse.getIncrSyncCheckpoint());
         return checkerResult;
     }
 
@@ -155,14 +157,26 @@ public class ProjectStepResultChecker {
         return finished;
     }
 
-    private boolean checkStepFinished(OmsStepName name) {
-        OmsStepStatus status = currentProjectStepMap.get(name).getStatus();
-        Integer progress = currentProjectStepMap.get(name).getProgress();
+    @VisibleForTesting
+    protected boolean checkStepFinished(OmsStepName name) {
+        OmsProjectStepVO omsProjectStepVO = currentProjectStepMap.get(name);
+        if (null == omsProjectStepVO) {
+            return true;
+        }
+        OmsStepStatus status = omsProjectStepVO.getStatus();
+        Integer progress = omsProjectStepVO.getProgress();
         Function<Integer, Boolean> competedFunc = (p -> p != null && p == 100);
-
+        // TODO(lx): check the time gap between local machine and remote database
+        long currentSeconds = System.currentTimeMillis() / 1000;
         switch (name) {
             case INCR_TRANSFER:
-                return status == OmsStepStatus.MONITORING && competedFunc.apply(progress);
+                Long chkInTimestamp = progressResponse.getIncrSyncCheckpoint();
+                return status == OmsStepStatus.MONITORING && competedFunc.apply(progress)
+                // why set check value to 25 seconds. cause oms collect checkpoint every 10 seconds and oms writer
+                // save checkpoint
+                // every 10 seconds
+                // max gap time is 20, we set to 25 to let it pass.
+                        && (null != chkInTimestamp && Math.abs(currentSeconds - chkInTimestamp) <= 25);
             case FULL_VERIFIER:
                 return enableFullVerify && status == OmsStepStatus.RUNNING && competedFunc.apply(progress);
             default:
@@ -327,6 +341,7 @@ public class ProjectStepResultChecker {
 
         private Map<OmsStepName, Long> checkFailedTime;
 
+        private Long incrementCheckpoint;
     }
 }
 

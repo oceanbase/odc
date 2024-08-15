@@ -16,6 +16,7 @@
 package com.oceanbase.odc.metadb.schedule;
 
 import java.util.List;
+import java.util.Optional;
 
 import javax.transaction.Transactional;
 
@@ -38,6 +39,11 @@ public interface ScheduleTaskRepository extends JpaRepository<ScheduleTaskEntity
         JpaSpecificationExecutor<ScheduleTaskEntity> {
 
     List<ScheduleTaskEntity> findByJobNameAndStatusIn(String jobName, List<TaskStatus> statuses);
+
+    @Query(value = "select * from schedule_task where job_name=:jobName and job_group = :jobGroup order by id desc limit 1",
+            nativeQuery = true)
+    Optional<ScheduleTaskEntity> getLatestScheduleTaskByJobNameAndJobGroup(@Param("jobName") String jobName,
+            @Param("jobGroup") String jobGroup);
 
     @Transactional
     @Modifying
