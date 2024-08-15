@@ -90,12 +90,12 @@ public class AbstractDlmPreprocessor implements Preprocessor {
         } else if (connectionSession.getDialectType().isPostgreSql()) {
             sqlBuilder = new MySQLSqlBuilder();
             sqlBuilder.append(String.format("SELECT DISTINCT c.relname AS table_name "
-                                            + "FROM pg_class c "
-                                            + "JOIN pg_namespace n ON n.oid = c.relnamespace "
-                                            + "JOIN pg_index i ON c.oid = i.indrelid "
-                                            + "WHERE i.indisunique = TRUE "
-                                            + "  AND (c.relkind = 'r' or c.relkind = 'p') "
-                                            + "  AND n.nspname = '%s'; ", databaseName));
+                    + "FROM pg_class c "
+                    + "JOIN pg_namespace n ON n.oid = c.relnamespace "
+                    + "JOIN pg_index i ON c.oid = i.indrelid "
+                    + "WHERE i.indisunique = TRUE "
+                    + "  AND (c.relkind = 'r' or c.relkind = 'p') "
+                    + "  AND n.nspname = '%s'; ", databaseName));
         } else {
             sqlBuilder = new OracleSqlBuilder();
             sqlBuilder.append(

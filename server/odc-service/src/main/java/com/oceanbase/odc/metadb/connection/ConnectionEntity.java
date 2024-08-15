@@ -291,9 +291,9 @@ public class ConnectionEntity {
     private UserRole userRole;
 
     /**
-     * 数据库名称
+     * PostgreSQL 连接方式特有的参数，该参数表示数据库的一个实例
      */
-    @Column(name = "database_name")
-    private String databaseName;
+    @Column(name = "catalog_name")
+    private String catalogName;
 
 }

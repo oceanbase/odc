@@ -73,7 +73,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     private String sid;
     private String serviceName;
     protected UserRole userRole;
-    private String databaseName;
+    private String catalogName;
     private Map<String, String> parameters;
     protected final ConnectionConfig connectionConfig;
     private final Boolean autoCommit;
@@ -99,7 +99,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         this.sid = connectionConfig.getSid();
         this.serviceName = connectionConfig.getServiceName();
         this.userRole = connectionConfig.getUserRole();
-        this.databaseName = connectionConfig.getDatabaseName();
+        this.catalogName = connectionConfig.getCatalogName();
         this.parameters = getJdbcParams(connectionConfig);
         this.connectionExtensionPoint = ConnectionPluginUtil.getConnectionExtension(connectionConfig.getDialectType());
     }
@@ -110,7 +110,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
 
     private JdbcUrlProperty getJdbcUrlProperties() {
         return new JdbcUrlProperty(this.host, this.port, this.defaultSchema, this.parameters, this.sid,
-                this.serviceName, this.databaseName);
+                this.serviceName, this.catalogName);
     }
 
     public static String getUsername(@NonNull ConnectionConfig connectionConfig) {

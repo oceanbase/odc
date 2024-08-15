@@ -23,6 +23,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
@@ -117,9 +118,10 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
     private UserRole userRole;
 
     /**
-     * 该参数表示数据库名称, currently used only for Postgres
+     * PostgreSQL 连接方式特有的参数，该参数表示一个数据库
      */
-    private String databaseName;
+    @JsonAlias({"catalogName", "databaseName"})
+    private String catalogName;
 
     @JsonIgnore
     private transient OBTenantEndpoint endpoint;
@@ -187,7 +189,7 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
         req.setSid(connection.getSid());
         req.setServiceName(connection.getServiceName());
         req.setUserRole(connection.getUserRole());
-        req.setDatabaseName(connection.getDatabaseName());
+        req.setCatalogName(connection.getCatalogName());
         req.setSessionInitScript(connection.getSessionInitScript());
         req.setJdbcUrlParameters(connection.getJdbcUrlParameters());
         return req;

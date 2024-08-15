@@ -45,12 +45,12 @@ public class PostgresConnectionExtension extends OBMySQLConnectionExtension {
         Validate.notEmpty(host, "host can not be null");
         Integer port = properties.getPort();
         Validate.notNull(port, "port can not be null");
-        String databaseName = properties.getDatabaseName();
-        Validate.notEmpty(databaseName, "database name can not be null");
+        String catalogName = properties.getCatalogName();
+        Validate.notEmpty(catalogName, "catalog name can not be null");
         String schema = properties.getDefaultSchema();
 
         StringBuilder jdbcUrl = new StringBuilder();
-        jdbcUrl.append("jdbc:postgresql://").append(host).append(":").append(port).append("/").append(databaseName);
+        jdbcUrl.append("jdbc:postgresql://").append(host).append(":").append(port).append("/").append(catalogName);
         if (StringUtils.isNotBlank(schema)) {
             jdbcUrl.append("?currentSchema=").append(schema);
         }

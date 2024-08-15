@@ -80,7 +80,7 @@ public class ConnectionInfo {
 
     private String userRole;
 
-    private String databaseName;
+    private String catalogName;
 
     private Map<String, Object> jdbcUrlParameters;
 
