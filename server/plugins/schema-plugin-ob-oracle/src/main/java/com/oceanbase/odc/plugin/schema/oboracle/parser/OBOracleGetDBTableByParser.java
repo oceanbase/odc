@@ -171,7 +171,7 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
                             constraint.setOnDeleteRule(foreignConstraint.getReference().getDeleteOption() != null
                                     ? DBForeignKeyModifyRule
                                             .fromValue(foreignConstraint.getReference().getDeleteOption().toString())
-                                    : DBForeignKeyModifyRule.CASCADE);
+                                    : DBForeignKeyModifyRule.NO_ACTION);
                         } else {
                             if (item.isPrimaryKey()) {
                                 constraint.setType(DBConstraintType.PRIMARY_KEY);
@@ -224,7 +224,7 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
                     constraint.setOnDeleteRule(foreignConstraint.getReference().getDeleteOption() != null
                             ? DBForeignKeyModifyRule
                                     .fromValue(foreignConstraint.getReference().getDeleteOption().toString())
-                            : DBForeignKeyModifyRule.CASCADE);
+                            : DBForeignKeyModifyRule.NO_ACTION);
                 } else {
                     if (outOfLineConstraint.isPrimaryKey()) {
                         constraint.setType(DBConstraintType.PRIMARY_KEY);

@@ -28,6 +28,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.DLMConfiguration;
+import com.oceanbase.odc.service.dlm.DLMTableStructureSynchronizer;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -85,9 +86,34 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
                 if (parameters.isFullDatabase()) {
                     parameters.setTables(getAllTables(sourceSession, sourceDb.getName()));
                 }
-                supportDataArchivingLink(sourceSession, targetSession);
-                checkTableAndCondition(sourceSession, sourceDb, parameters.getTables(),
-                        parameters.getVariables());
+                DialectType sourceDbType = sourceSession.getDialectType();
+                DialectType targetDbType = targetSession.getDialectType();
+                InformationExtensionPoint sourceInformation =
+                        ConnectionPluginUtil.getInformationExtension(sourceDbType);
+                InformationExtensionPoint targetInformation =
+                        ConnectionPluginUtil.getInformationExtension(targetDbType);
+                String sourceDbVersion =
+                        sourceSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
+                                sourceInformation::getDBVersion);
+                String targetDbVersion =
+                        targetSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
+                                targetInformation::getDBVersion);
+                supportDataArchivingLink(sourceDbType, sourceDbVersion, targetDbType, targetDbVersion);
+                if (!parameters.getSyncTableStructure().isEmpty()) {
+                    boolean supportedSyncTableStructure = DLMTableStructureSynchronizer.isSupportedSyncTableStructure(
+                            sourceDbType, sourceDbVersion, targetDbType, targetDbVersion);
+                    if (!supportedSyncTableStructure) {
+                        log.warn(
+                                "Synchronization of table structure is unsupported,sourceDbType={},sourceDbVersion={},targetDbType={},targetDbVersion={}",
+                                sourceDbType,
+                                sourceDbVersion, targetDbType, targetDbVersion);
+                        throw new UnsupportedException(String.format(
+                                "Synchronization of table structure is unsupported,sourceDbType=%s,sourceDbVersion=%s,targetDbType=%s,targetDbVersion=%s",
+                                sourceDbType,
+                                sourceDbVersion, targetDbType, targetDbVersion));
+                    }
+                }
+                checkTableAndCondition(sourceSession, sourceDb, parameters.getTables(), parameters.getVariables());
             } finally {
                 sourceSession.expire();
                 targetSession.expire();
@@ -96,15 +122,8 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
         }
     }
 
-    private void supportDataArchivingLink(ConnectionSession sourceSession, ConnectionSession targetSession) {
-        DialectType sourceDbType = sourceSession.getDialectType();
-        DialectType targetDbType = targetSession.getDialectType();
-        InformationExtensionPoint sourceInformation = ConnectionPluginUtil.getInformationExtension(sourceDbType);
-        InformationExtensionPoint targetInformation = ConnectionPluginUtil.getInformationExtension(targetDbType);
-        String sourceDbVersion = sourceSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
-                sourceInformation::getDBVersion);
-        String targetDbVersion = targetSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
-                targetInformation::getDBVersion);
+    private void supportDataArchivingLink(DialectType sourceDbType, String sourceDbVersion, DialectType targetDbType,
+            String targetDbVersion) {
         if (sourceDbType == DialectType.OB_MYSQL) {
             if (targetDbType != DialectType.OB_MYSQL && targetDbType != DialectType.MYSQL) {
                 throw new UnsupportedException(

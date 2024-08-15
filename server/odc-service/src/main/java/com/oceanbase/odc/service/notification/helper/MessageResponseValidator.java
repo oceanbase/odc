@@ -35,7 +35,8 @@ public class MessageResponseValidator {
         if (responseValidation.startsWith("{") && responseValidation.endsWith("}")) {
             return validateJsonMessage(trimMessage, responseValidation);
         }
-        return Pattern.matches(responseValidation, trimMessage);
+        Pattern pattern = Pattern.compile(responseValidation, Pattern.DOTALL);
+        return pattern.matcher(trimMessage).matches();
     }
 
     private static Boolean validateJsonMessage(String message, String responseValidation) {

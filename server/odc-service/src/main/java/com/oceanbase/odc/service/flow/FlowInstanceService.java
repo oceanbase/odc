@@ -754,7 +754,12 @@ public class FlowInstanceService {
         if (req.getTaskType() == TaskType.EXPORT) {
             DataTransferConfig parameters = (DataTransferConfig) req.getParameters();
             Map<DBResource, Set<DatabasePermissionType>> resource2Types = new HashMap<>();
-            if (CollectionUtils.isNotEmpty(parameters.getExportDbObjects())) {
+            if (parameters.isExportAllObjects()) {
+                ConnectionConfig config = connectionService.getBasicWithoutPermissionCheck(req.getConnectionId());
+                resource2Types.put(
+                        DBResource.from(config, req.getDatabaseName(), null, ResourceType.ODC_DATABASE),
+                        DatabasePermissionType.from(TaskType.EXPORT));
+            } else if (CollectionUtils.isNotEmpty(parameters.getExportDbObjects())) {
                 ConnectionConfig config = connectionService.getBasicWithoutPermissionCheck(req.getConnectionId());
                 parameters.getExportDbObjects().forEach(item -> {
                     if (item.getDbObjectType() == ObjectType.TABLE) {
@@ -764,11 +769,6 @@ public class FlowInstanceService {
                                 DatabasePermissionType.from(TaskType.EXPORT));
                     }
                 });
-            } else if (parameters.isExportAllObjects()) {
-                ConnectionConfig config = connectionService.getBasicWithoutPermissionCheck(req.getConnectionId());
-                resource2Types.put(
-                        DBResource.from(config, req.getDatabaseName(), null, ResourceType.ODC_DATABASE),
-                        DatabasePermissionType.from(TaskType.EXPORT));
             }
             List<UnauthorizedDBResource> unauthorizedDBResources = this.permissionHelper
                     .filterUnauthorizedDBResources(resource2Types, false);
