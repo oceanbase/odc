@@ -31,7 +31,7 @@ public class PathGetPathAtTest {
 
     private final Path path;
     private final int index;
-    private final Optional<Path> expectedResultPath;
+    private final Path expectedResultPath;
     private final Boolean hasException;
     private final boolean expectedIsSystemDefine;
 
@@ -39,7 +39,7 @@ public class PathGetPathAtTest {
             Boolean expectedIsSystemDefine) {
         this.index = index;
         this.path = new Path(pathStr);
-        this.expectedResultPath = expectedResult == null ? Optional.empty() : Optional.of(new Path(expectedResult));
+        this.expectedResultPath = expectedResult == null ? null : new Path(expectedResult);
         this.hasException = hasException;
         this.expectedIsSystemDefine = expectedIsSystemDefine;
     }
@@ -62,11 +62,11 @@ public class PathGetPathAtTest {
     @Test
     public void testGetPathAt() {
         try {
-            Optional<Path> result = path.getPathAt(index);
+            Path result = path.getPathAt(index);
             assertEquals(expectedResultPath, result);
             assert !hasException;
-            if (result.isPresent() || expectedIsSystemDefine) {
-                assertEquals(expectedIsSystemDefine, result.get().isSystemDefine());
+            if (expectedIsSystemDefine) {
+                assertEquals(expectedIsSystemDefine, result.isSystemDefine());
             }
         } catch (Exception e) {
             if (!hasException) {

@@ -57,7 +57,7 @@ public class WorkSheetsSearch {
             return new ArrayList<>();
         }
         return worksheets.stream().filter(file -> file.getPath().isNameContains(nameLike))
-                .sorted((o1, o2) -> Path.getPathSameLevelComparator().compare(o1.getPath(), o2.getPath()))
+                .sorted((o1, o2) -> Path.getPathComparator().compare(o1.getPath(), o2.getPath()))
                 .limit(limit)
                 .collect(Collectors.toList());
     }

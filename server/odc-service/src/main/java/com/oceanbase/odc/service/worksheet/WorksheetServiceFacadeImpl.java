@@ -187,9 +187,9 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
             return worksheetServiceFactory.getProjectFileService(downloadPath.getLocation())
                     .getDownloadUrl(projectId, downloadPath);
         }
-        Optional<Path> commonParentPathOptional =
+        Path commonParentPath =
                 WorksheetPathUtil.findCommonParentPath(divideBatchOperateWorksheets.all());
-        String rootDirectoryName = getRootDirectoryName(projectId, commonParentPathOptional);
+        String rootDirectoryName = getRootDirectoryName(projectId, commonParentPath);
         String parentOfDownloadDirectory = WorksheetUtil.getWorksheetDownloadDirectory();
         String downloadDirectoryStr = parentOfDownloadDirectory + rootDirectoryName;
         String zipFileStr = WorksheetUtil.getWorksheetDownloadZipPath(parentOfDownloadDirectory, rootDirectoryName);
@@ -200,12 +200,12 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
             if (CollectionUtils.isNotEmpty(divideBatchOperateWorksheets.getNormalPaths())) {
                 worksheetServiceFactory.getProjectFileService(WorksheetLocation.WORKSHEETS)
                         .downloadPathsToDirectory(projectId, divideBatchOperateWorksheets.getNormalPaths(),
-                                commonParentPathOptional, downloadDirectory);
+                                commonParentPath, downloadDirectory);
             }
             if (CollectionUtils.isNotEmpty(divideBatchOperateWorksheets.getReposPaths())) {
                 worksheetServiceFactory.getProjectFileService(WorksheetLocation.REPOS)
                         .downloadPathsToDirectory(projectId, divideBatchOperateWorksheets.getReposPaths(),
-                                commonParentPathOptional, downloadDirectory);
+                                commonParentPath, downloadDirectory);
             }
 
             try {
@@ -223,10 +223,13 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
         }
     }
 
-    private String getRootDirectoryName(Long projectId, Optional<Path> commonParentPathOptional) {
-        if (!commonParentPathOptional.isPresent() || commonParentPathOptional.get().isSystemDefine()) {
+    private String getRootDirectoryName(Long projectId, Path commonParentPath) {
+        if (commonParentPath.isGitRepo()) {
+            return commonParentPath.getName();
+        }
+        if (commonParentPath.isSystemDefine()) {
             return worksheetProjectRepository.getProjectName(projectId);
         }
-        return commonParentPathOptional.get().getName();
+        return commonParentPath.getName();
     }
 }

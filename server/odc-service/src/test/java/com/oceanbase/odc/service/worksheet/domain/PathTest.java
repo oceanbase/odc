@@ -72,30 +72,34 @@ public class PathTest {
     @Parameters
     public static Iterable<Object[]> data() {
         return Arrays.asList(new Object[][] {
-                // 测试场景：类型相同，名称相同
-                {"testGetPathSameLevelComparator", "/Worksheets/folder1/", "/Worksheets/folder1/", 0, null, null, null,
+                {"testGetPathComparator", "/Worksheets/folder1/", "/Worksheets/folder1/", 0, null, null, null,
                         null, null, null, null},
-                {"testGetPathSameLevelComparator", "/Repos/git1/file2", "/Repos/git1/file2", 0, null, null, null, null,
+                {"testGetPathComparator", "/Repos/git1/file2", "/Repos/git1/file2", 0, null, null, null, null,
                         null, null, null},
-                // 测试场景：类型相同，名称不同
-                {"testGetPathSameLevelComparator", "/Worksheets/folder1/", "/Worksheets/folder2/", -1, null, null, null,
+                {"testGetPathComparator", "/Worksheets/folder1/", "/Worksheets/folder2/", -1, null, null, null,
                         null, null, null, null},
-                {"testGetPathSameLevelComparator", "/Worksheets/file1", "/Worksheets/file2", -1, null, null, null, null,
+                {"testGetPathComparator", "/Worksheets/file1", "/Worksheets/file2", -1, null, null, null, null,
                         null, null, null},
-                {"testGetPathSameLevelComparator", "/Repos/git1/file2", "/Repos/git1/file1", 1, null, null, null, null,
+                {"testGetPathComparator", "/Repos/git1/file2", "/Repos/git1/file1", 1, null, null, null, null,
                         null, null, null},
-                {"testGetPathSameLevelComparator", "/Repos/git1/", "/Repos/git2/", -1, null, null, null, null, null,
+                {"testGetPathComparator", "/Repos/git1/", "/Repos/git2/", -1, null, null, null, null, null,
                         null, null},
-                // 测试场景：类型不同
-                // File<Directory
-                {"testGetPathSameLevelComparator", "/Worksheets/folder1", "/Worksheets/folder1/", -1, null, null, null,
+                // Directory before file
+                {"testGetPathComparator", "/Worksheets/folder1", "/Worksheets/folder1/", 1, null, null, null,
                         null, null, null, null},
-                // Git_Repo>Directory
-                {"testGetPathSameLevelComparator", "/Repos/git1/", "/Worksheets/git1/", 1, null, null, null, null, null,
-                        null, null},
-                // Git_Repo>File
-                {"testGetPathSameLevelComparator", "/Repos/git1/", "/Worksheets/file1", 1, null, null, null, null, null,
-                        null, null},
+                {"testGetPathComparator", "/Repos/git1/file1", "/Repos/git1/folder1/", 1, null, null, null,
+                        null, null, null, null},
+                // Worksheets before Repos
+                {"testGetPathComparator", "/Worksheets/", "/Repos/", -1, null, null, null,
+                        null, null, null, null},
+                // pre parent not equal
+                {"testGetPathComparator", "/Worksheets/file1", "/Worksheets/folder1/folder2/", 1, null, null, null,
+                        null, null, null, null},
+                {"testGetPathComparator", "/Worksheets/folder1/file1", "/Worksheets/folder2/folder2/", -1, null, null,
+                        null, null, null, null, null},
+                // one is parent
+                {"testGetPathComparator", "/Worksheets/folder1/folder4/", "/Worksheets/folder1/folder4/file5.sql/", -1, null, null,
+                 null, null, null, null, null},
 
 
                 {"testConstructor", null, null, null, "Worksheets / path2 / file.txt ", WorksheetLocation.WORKSHEETS,
@@ -155,26 +159,18 @@ public class PathTest {
         });
     }
 
-    /**
-     * [单元测试]测试getPathSameLevelComparator方法
-     */
     @Test
-    public void testGetPathSameLevelComparator() {
-        if (!StringUtils.equals(method, "testGetPathSameLevelComparator")) {
+    public void testGetPathComparator() {
+        if (!StringUtils.equals(method, "testGetPathComparator")) {
             return;
         }
-        Comparator<Path> comparator = Path.getPathSameLevelComparator();
+        Comparator<Path> comparator = Path.getPathComparator();
         Path o1 = new Path(path1);
         Path o2 = new Path(path2);
         Integer result = comparator.compare(o1, o2);
         assertEquals(expectedResult, result);
     }
 
-
-
-    /**
-     * [单元测试]测试构造函数
-     */
     @Test
     public void testConstructor() {
         if (!StringUtils.equals(method, "testConstructor")) {

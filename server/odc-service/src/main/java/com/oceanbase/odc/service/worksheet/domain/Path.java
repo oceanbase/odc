@@ -21,6 +21,7 @@ import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.RO
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -255,15 +256,15 @@ public class Path {
      * @param index
      * @return
      */
-    public Optional<Path> getPathAt(int index) {
+    public Path getPathAt(int index) {
         if (index < 0 || index > this.levelNum - 1) {
             throw new IndexOutOfBoundsException(
                     "index is out of bounds,index: " + index + ",levelNum: " + this.levelNum);
         }
         if (index == this.levelNum - 1) {
-            return Optional.of(this);
+            return this;
         }
-        return Optional.of(Path.ofDirectory(this.parentPathItems.subList(0, index + 1)));
+        return Path.ofDirectory(this.parentPathItems.subList(0, index + 1));
     }
 
     /**
@@ -272,11 +273,11 @@ public class Path {
      * @param prefixPath
      * @return
      */
-    public Optional<String> stripPrefix(Optional<Path> prefixPath) {
-        if (!prefixPath.isPresent()) {
+    public Optional<String> stripPrefix(Path prefixPath) {
+        if (prefixPath.isRoot()) {
             return Optional.of(this.getStandardPath());
         }
-        int prefixPathLevelNum = prefixPath.get().getLevelNum();
+        int prefixPathLevelNum = prefixPath.getLevelNum();
         if (this.levelNum <= prefixPathLevelNum) {
             return Optional.empty();
         }
@@ -382,17 +383,37 @@ public class Path {
     }
 
     /**
-     * Path sorted comparator, sorted by type+name
+     * Path sorted comparator, sorted by type+name(in the next level common parent).
      *
      * @return
      */
-    public static Comparator<Path> getPathSameLevelComparator() {
+    public static Comparator<Path> getPathComparator() {
         return (o1, o2) -> {
-            if (o1.getType() == o2.getType()) {
-                return o1.getName().compareTo(o2.getName());
+            if (o1.equals(o2)) {
+                return 0;
             }
-            return -Integer.compare(o1.getType().getOrder(), o2.getType().getOrder());
+            Path commonParentPath = WorksheetPathUtil.findCommonParentPath(
+                    new HashSet<>(Arrays.asList(o1, o2)));
+            int sameLevel = commonParentPath.levelNum;
+            if (sameLevel == o1.levelNum) {
+                return -1;
+            } else if (sameLevel == o2.levelNum) {
+                return 1;
+            }
+            return compareAtSameLevelWithSamePrevParent(o1.getPathAt(sameLevel),
+                    o2.getPathAt(sameLevel));
         };
+    }
+
+    private static int compareAtSameLevelWithSamePrevParent(Path o1, Path o2) {
+        if (!o1.levelNum.equals(o2.levelNum)) {
+            throw new IllegalArgumentException("level num is not same,o1:" + o1 + ",o2:" + o2);
+        }
+
+        if (o1.type == o2.type) {
+            return o1.name.compareTo(o2.name);
+        }
+        return Integer.compare(o1.type.getOrder(), o2.type.getOrder());
     }
 
     /**
@@ -400,7 +421,7 @@ public class Path {
      * 
      * @return
      */
-    public static Comparator<Path> getLevelNulComparator() {
+    public static Comparator<Path> getLevelNumComparator() {
         return Comparator.comparingInt(o -> o.levelNum);
     }
 

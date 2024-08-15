@@ -74,7 +74,7 @@ public class DefaultWorksheetServiceTest {
                 "/Worksheets/dir3/subdir1/file2",
                 "/Worksheets/dir3/subdir1/file5");
         Set<Path> paths = pathStrList.stream().map(Path::new).collect(Collectors.toSet());
-        Optional<Path> commParentPath = Optional.empty();
+        Path commParentPath = Path.root();
         File destinationDirectory = WorksheetPathUtil.createFileWithParent(
                 WorksheetUtil.getWorksheetDownloadDirectory() + "project1", true).toFile();
 

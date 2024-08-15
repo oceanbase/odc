@@ -20,7 +20,6 @@ import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +38,6 @@ import com.oceanbase.odc.service.worksheet.exceptions.EditVersionConflictExcepti
 import com.oceanbase.odc.service.worksheet.exceptions.ExceedSameLevelNumLimitException;
 import com.oceanbase.odc.service.worksheet.exceptions.NameDuplicatedException;
 import com.oceanbase.odc.service.worksheet.exceptions.NameTooLongException;
-import com.oceanbase.odc.service.worksheet.model.WorksheetLocation;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
 
 import lombok.Data;
@@ -143,7 +141,8 @@ public class Worksheet {
                 .flatMap(worksheet -> needToExtractNotExistParent
                         ? splitWorksheetWithLevelNumBiggerThanCurrent(worksheet).stream()
                         : Stream.of(worksheet))
-                .filter(worksheet -> depth == 0 || worksheet.getPath().getLevelNum() <= this.path.levelNum + depth)
+                .filter(worksheet -> depth == 0
+                        || (long) worksheet.getPath().getLevelNum() <= (long) this.path.levelNum + (long) depth)
                 .collect(Collectors.toMap(Worksheet::getPath, w -> w, (w1, w2) -> {
                     if (w1.getId() == null && w2.getId() == null) {
                         if (w1.getCreateTime() == null) {
@@ -166,7 +165,7 @@ public class Worksheet {
                     }
                     return w1;
                 })).values().stream()
-                .sorted((o1, o2) -> Path.getPathSameLevelComparator().compare(o1.getPath(), o2.getPath()))
+                .sorted((o1, o2) -> Path.getPathComparator().compare(o1.getPath(), o2.getPath()))
                 .collect(Collectors.toList());
     }
 

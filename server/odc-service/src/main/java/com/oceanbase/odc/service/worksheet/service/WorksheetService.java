@@ -52,6 +52,6 @@ public interface WorksheetService {
 
     String getDownloadUrl(Long projectId, Path path);
 
-    void downloadPathsToDirectory(Long projectId, Set<Path> paths, Optional<Path> commParentPath,
+    void downloadPathsToDirectory(Long projectId, Set<Path> paths, Path commParentPath,
             File destinationDirectory);
 }

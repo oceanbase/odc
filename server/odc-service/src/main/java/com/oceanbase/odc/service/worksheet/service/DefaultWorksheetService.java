@@ -249,10 +249,11 @@ public class DefaultWorksheetService implements WorksheetService {
     }
 
     @Override
-    public void downloadPathsToDirectory(Long projectId, Set<Path> paths, Optional<Path> commParentPath,
+    public void downloadPathsToDirectory(Long projectId, Set<Path> paths, Path commParentPath,
             File destinationDirectory) {
         PreConditions.notEmpty(paths, "paths");
         PreConditions.notNull(destinationDirectory, "destinationDirectory");
+        PreConditions.notNull(commParentPath, "commParentPath");
         PreConditions.assertTrue(destinationDirectory.isDirectory(), "destinationDirectory");
         for (Path path : paths) {
             boolean needTooLoadSubFiles = path.isDirectory();
@@ -272,7 +273,7 @@ public class DefaultWorksheetService implements WorksheetService {
         }
     }
 
-    private void downloadWorksheetToDirectory(Long projectId, Worksheet worksheet, Optional<Path> commParentPath,
+    private void downloadWorksheetToDirectory(Long projectId, Worksheet worksheet, Path commParentPath,
             File destinationDirectory) {
         Optional<String> relativePathOptional = worksheet.getPath().stripPrefix(commParentPath);
         if (!relativePathOptional.isPresent()) {

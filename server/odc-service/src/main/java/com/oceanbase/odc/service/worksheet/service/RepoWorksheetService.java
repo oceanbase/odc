@@ -19,7 +19,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import javax.annotation.Resource;
@@ -104,7 +103,7 @@ public class RepoWorksheetService implements WorksheetService {
     }
 
     @Override
-    public void downloadPathsToDirectory(Long projectId, Set<Path> paths, Optional<Path> commParentPath,
+    public void downloadPathsToDirectory(Long projectId, Set<Path> paths, Path commParentPath,
             File destinationDirectory) {
 
     }

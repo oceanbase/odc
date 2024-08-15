@@ -210,19 +210,19 @@ public class WorksheetPathUtil {
                 && from.getType() == destinationPath.getType();
     }
 
-    public static Optional<Path> findCommonParentPath(Set<Path> paths) {
+    public static Path findCommonParentPath(Set<Path> paths) {
         if (CollectionUtils.isEmpty(paths)) {
-            return Optional.empty();
+            throw new IllegalArgumentException("paths is empty");
         }
         if (paths.size() == 1) {
-            return Optional.of(paths.iterator().next());
+            return paths.iterator().next();
         }
 
         WorksheetLocation commonLocation = null;
         int index = 0;
         Integer commonParentIndex = null;
         while (true) {
-            String itemAtIndex = null;
+            Path pathAtIndex = null;
             boolean isContinue = true;
             for (Path path : paths) {
                 if (commonLocation == null) {
@@ -231,25 +231,25 @@ public class WorksheetPathUtil {
                     isContinue = false;
                     break;
                 }
-                if (index == (path.getParentPathItems().size())) {
+                if (index == path.getLevelNum()) {
                     isContinue = false;
                     break;
                 }
-                if (itemAtIndex == null) {
-                    itemAtIndex = path.getParentPathItems().get(index);
-                } else if (!StringUtils.equals(itemAtIndex, path.getParentPathItems().get(index))) {
+                if (pathAtIndex == null) {
+                    pathAtIndex = path.getPathAt(index);
+                } else if (!pathAtIndex.equals(path.getPathAt(index))) {
                     isContinue = false;
                     break;
                 }
             }
-            if (!isContinue || itemAtIndex == null) {
+            if (!isContinue || pathAtIndex == null) {
                 break;
             }
             commonParentIndex = index;
             index++;
         }
         if (commonParentIndex == null) {
-            return Optional.empty();
+            return Path.root();
         }
         return paths.iterator().next().getPathAt(commonParentIndex);
     }

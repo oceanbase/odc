@@ -41,7 +41,7 @@ public class DivideBatchOperateWorksheets {
     public DivideBatchOperateWorksheets(Collection<String> pathStrList) {
         List<Path> sortedPaths =
                 pathStrList.stream().map(Path::new)
-                        .sorted(Path.getLevelNulComparator())
+                        .sorted(Path.getLevelNumComparator())
                         .distinct().collect(Collectors.toList());
         for (Path path : sortedPaths) {
             switch (path.getLocation()) {

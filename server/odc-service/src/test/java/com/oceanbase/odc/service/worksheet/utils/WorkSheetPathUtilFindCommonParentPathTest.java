@@ -35,9 +35,9 @@ import com.oceanbase.odc.service.worksheet.domain.Path;
 public class WorkSheetPathUtilFindCommonParentPathTest {
 
     private final Set<Path> paths;
-    private final Optional<Path> expectedResult;
+    private final Path expectedResult;
 
-    public WorkSheetPathUtilFindCommonParentPathTest(Set<Path> paths, Optional<Path> expectedResult) {
+    public WorkSheetPathUtilFindCommonParentPathTest(Set<Path> paths, Path expectedResult) {
         this.paths = paths;
         this.expectedResult = expectedResult;
     }
@@ -46,24 +46,31 @@ public class WorkSheetPathUtilFindCommonParentPathTest {
     public static List<Object[]> data() {
         return Arrays.asList(
                 // Empty paths
-                new Object[] {Collections.emptySet(), Optional.empty()},
+                new Object[] {Collections.emptySet(), null},
 
                 // Single path
                 new Object[] {Collections.singleton(new Path("/Worksheets/Sheet1")),
-                        Optional.of(new Path("/Worksheets/Sheet1"))},
+                        new Path("/Worksheets/Sheet1")},
 
                 // Multiple paths with common parent
                 new Object[] {
                         new HashSet<>(Arrays.asList(
                                 new Path("/Worksheets/Sheet1/SubSheet1"),
                                 new Path("/Worksheets/Sheet1/SubSheet2"))),
-                        Optional.of(new Path("/Worksheets/Sheet1/"))
+                        new Path("/Worksheets/Sheet1/")
+                },
+                // One is parent
+                new Object[] {
+                        new HashSet<>(Arrays.asList(
+                                new Path("/Worksheets/Sheet1/SubSheet1/"),
+                                new Path("/Worksheets/Sheet1/SubSheet1/file1"))),
+                        new Path("/Worksheets/Sheet1/SubSheet1/")
                 },
                 new Object[] {
                         new HashSet<>(Arrays.asList(
                                 new Path("/Worksheets/Sheet1/SubSheet1"),
                                 new Path("/Worksheets/Sheet2/SubSheet2"))),
-                        Optional.of(new Path("/Worksheets/"))
+                        new Path("/Worksheets/")
                 },
                 new Object[] {
                         new HashSet<>(Arrays.asList(
@@ -74,7 +81,7 @@ public class WorkSheetPathUtilFindCommonParentPathTest {
                                 new Path("/Worksheets/Sheet2/SubSheet2"),
                                 new Path("/Worksheets/Sheet2/SubSheet2"),
                                 new Path("/Worksheets/Sheet1/SubSheet2"))),
-                        Optional.of(new Path("/Worksheets/"))
+                        new Path("/Worksheets/")
                 },
                 new Object[] {
                         new HashSet<>(Arrays.asList(
@@ -85,7 +92,7 @@ public class WorkSheetPathUtilFindCommonParentPathTest {
                                 new Path("/Worksheets/Sheet2/SubSheet2/SubSheet2"),
                                 new Path("/Worksheets/Sheet2/SubSheet2/SubSheet2"),
                                 new Path("/Worksheets/Sheet2/SubSheet2/SubSheet2"))),
-                        Optional.of(new Path("/Worksheets/Sheet2/SubSheet2/"))
+                        new Path("/Worksheets/Sheet2/SubSheet2/")
                 },
 
                 // Multiple paths without common parent
@@ -93,14 +100,18 @@ public class WorkSheetPathUtilFindCommonParentPathTest {
                         new HashSet<>(Arrays.asList(
                                 new Path("/Worksheets/Sheet1/SubSheet1"),
                                 new Path("/Repos/Repo/SubSheet2"))),
-                        Optional.empty()
+                        Path.root()
                 });
 
     }
 
     @Test
     public void testFindCommonParentPath() {
-        Optional<Path> result = WorksheetPathUtil.findCommonParentPath(paths);
-        assertEquals(expectedResult, result);
+        try {
+            Path result = WorksheetPathUtil.findCommonParentPath(paths);
+            assertEquals(expectedResult, result);
+        } catch (Exception e) {
+            assert expectedResult == null;
+        }
     }
 }
