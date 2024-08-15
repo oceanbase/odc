@@ -237,7 +237,7 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
     /**
      * if origin table exists and ghost table not exists, then we assume that rename operation has done.
      * the following rename operation should be ignored, cause it will always failed.
-     * 
+     *
      * @param schemaName schema name
      * @param originTable table name
      * @param ghostTable ghost table prepare switch to origin table, eg __osc_gho_origin_table
