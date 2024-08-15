@@ -32,6 +32,8 @@ public class Schedule {
 
     private Long id;
 
+    private String name;
+
     private Long dataSourceId;
 
     private Long databaseId;

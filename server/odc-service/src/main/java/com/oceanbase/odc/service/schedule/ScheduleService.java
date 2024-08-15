@@ -180,6 +180,7 @@ public class ScheduleService {
             validateTriggerConfig(req.getCreateScheduleReq().getTriggerConfig());
             ScheduleEntity entity = new ScheduleEntity();
 
+            entity.setName(req.getCreateScheduleReq().getName());
             entity.setProjectId(req.getCreateScheduleReq().getProjectId());
             entity.setDescription(req.getCreateScheduleReq().getDescription());
             entity.setJobParametersJson(JsonUtils.toJson(req.getCreateScheduleReq().getParameters()));
@@ -227,7 +228,8 @@ public class ScheduleService {
 
         Long approvalFlowInstanceId = createApprovalFlow();
 
-        if (approvalFlowInstanceId == null) {
+        // database change is not executed for the moment
+        if (approvalFlowInstanceId == null && targetSchedule.getType() != ScheduleType.SQL_PLAN) {
             executeChangeSchedule(req);
         }
 

@@ -15,39 +15,13 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
-import java.util.Date;
-import java.util.Map;
-
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.service.common.model.InnerUser;
+import com.oceanbase.odc.service.connection.database.model.Database;
 
 import lombok.Data;
 
-/**
- * @Author：tinker
- * @Date: 2024/6/8 13:30
- * @Descripition:
- */
-
-
-
 @Data
-public class ScheduleOverview {
+public class DatabaseChangeAttributes implements ScheduleOverviewAttributes {
 
-    private Long scheduleId;
-
-    private String scheduleName;
-
-    private InnerUser creator;
-
-    private TriggerConfig triggerConfig;
-
-    private Map<String, Object> attributes;
-
-    private ScheduleStatus status;
-
-    private Date latestFireTime;
-
-    private TaskStatus latestExecutionStatus;
+    private Database dataBaseInfo;
 
 }
