@@ -82,9 +82,7 @@ public abstract class AbstractDlmJob implements OdcJob {
         Database db = databaseService.detail(databaseId);
         ConnectionConfig config = databaseService.findDataSourceForTaskById(databaseId);
         DataSourceInfo dataSourceInfo = DataSourceInfoMapper.toDataSourceInfo(config, db.getName());
-        if (config.getDialectType() != DialectType.POSTGRESQL) {
-            dataSourceInfo.setDatabaseName(db.getName());
-        }
+        dataSourceInfo.setDatabaseName(db.getName());
         return dataSourceInfo;
     }
 

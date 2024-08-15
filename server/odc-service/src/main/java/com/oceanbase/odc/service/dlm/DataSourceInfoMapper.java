@@ -107,9 +107,8 @@ public class DataSourceInfoMapper {
                 break;
             case POSTGRESQL:
                 dataSourceInfo.setFullUserName(connectionConfig.getUsername());
-                dataSourceInfo.setDatabaseName(connectionConfig.getDatabaseName());
-                dataSourceInfo.setDatabaseType(DataBaseType.POSTGRESQL);
                 dataSourceInfo.setJdbcUrl(getJdbcUrl(connectionConfig, schemaName));
+                dataSourceInfo.setDatabaseType(DataBaseType.POSTGRESQL);
                 break;
             default:
                 log.warn(String.format("Unsupported datasource type:%s", connectionConfig.getDialectType()));
