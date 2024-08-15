@@ -259,13 +259,24 @@ public class DataTransferService {
         return upload(uploadFile.getInputStream(), uploadFile.getOriginalFilename());
     }
 
+    /**
+     * 获取导出对象的名称
+     *
+     * @param databaseId 数据库ID
+     * @param objectTypes 对象类型集合
+     * @return 包含对象类型和对应对象名称的Map
+     * @throws SQLException SQL异常
+     */
     public Map<ObjectType, Set<String>> getExportObjectNames(
             @NonNull Long databaseId, Set<ObjectType> objectTypes) throws SQLException {
+        // 获取数据库对象
         Database database = databaseService.detail(databaseId);
+        // 如果数据库所属项目为空且当前用户所属组织类型为团队，则抛出访问被拒绝异常
         if (Objects.isNull(database.getProject())
                 && authenticationFacade.currentUser().getOrganizationType() == OrganizationType.TEAM) {
             throw new AccessDeniedException();
         }
+        // 获取数据库连接配置
         ConnectionConfig connection = database.getDataSource();
 
         /*
@@ -273,15 +284,18 @@ public class DataTransferService {
          */
         Set<ObjectType> supportedObjectTypes = TaskPluginUtil.getDataTransferExtension(connection.getDialectType())
                 .getSupportedObjectTypes(connection.toConnectionInfo());
+        // 如果对象类型集合为空，则使用支持的对象类型集合
         if (CollectionUtils.isEmpty(objectTypes)) {
             objectTypes = supportedObjectTypes;
         } else {
+            // 取两个集合的交集作为对象类型集合
             objectTypes = SetUtils.intersection(objectTypes, supportedObjectTypes);
         }
 
         try (DBObjectNameAccessor accessor = DBObjectNameAccessor.getInstance(connection, database.getName())) {
             Map<ObjectType, Set<String>> returnVal = new HashMap<>();
             for (ObjectType objectType : objectTypes) {
+                // 获取指定对象类型的对象名称集合
                 returnVal.putIfAbsent(objectType, accessor.getObjectNames(objectType));
             }
             return returnVal;

@@ -42,15 +42,15 @@ public class StmtCallBackBasedTask<T> extends BaseSqlExecuteCallable<T> {
     /**
      * 构造函数
      *
-     * @param dataSource        数据源
+     * @param dataSource 数据源
      * @param dataSourceFactory 可克隆的数据源工厂
      * @param statementCallback 语句回调函数
      * @param sessionOperations 会话操作
      */
     public StmtCallBackBasedTask(@NonNull DataSource dataSource,
-        @NonNull CloneableDataSourceFactory dataSourceFactory,
-        @NonNull StatementCallback<T> statementCallback,
-        @NonNull SessionOperations sessionOperations) {
+            @NonNull CloneableDataSourceFactory dataSourceFactory,
+            @NonNull StatementCallback<T> statementCallback,
+            @NonNull SessionOperations sessionOperations) {
         super(dataSource, dataSourceFactory, sessionOperations);
         this.statementCallback = statementCallback;
     }

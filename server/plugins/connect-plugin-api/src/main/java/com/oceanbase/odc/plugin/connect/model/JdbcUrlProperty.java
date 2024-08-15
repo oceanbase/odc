@@ -26,24 +26,24 @@ import lombok.NonNull;
  */
 @Data
 public class JdbcUrlProperty {
-    private String              host;
+    private String host;
     // 数据库端口号
-    private Integer             port;
+    private Integer port;
     // 默认模式
-    private String              defaultSchema;
+    private String defaultSchema;
     // JDBC参数
     private Map<String, String> jdbcParameters;
     /**
      * For oracle only
      */
     // Oracle System Identifier 在oracle8i以前，标识数据库的一个实例。sid是对内的，是实例级别的
-    private String              sid;
+    private String sid;
     // SERVICE_name是对外的，是数据库级别的一个名字，用来告诉外面的人，我数据库叫"SERVICE_NAME"
-    private String              serviceName;
+    private String serviceName;
 
     // 构造函数2，不包含sid和serviceName属性
     public JdbcUrlProperty(@NonNull String host, @NonNull Integer port, String defaultSchema,
-        Map<String, String> jdbcParameters, String sid, String serviceName) {
+            Map<String, String> jdbcParameters, String sid, String serviceName) {
         this.host = host;
         this.port = port;
         this.defaultSchema = defaultSchema;
@@ -54,7 +54,7 @@ public class JdbcUrlProperty {
 
     // 构造函数2，不包含sid和serviceName属性
     public JdbcUrlProperty(@NonNull String host, @NonNull Integer port, String defaultSchema,
-        Map<String, String> jdbcParameters) {
+            Map<String, String> jdbcParameters) {
         this.host = host;
         this.port = port;
         this.defaultSchema = defaultSchema;

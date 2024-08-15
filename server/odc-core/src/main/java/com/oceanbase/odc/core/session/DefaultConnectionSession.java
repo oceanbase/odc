@@ -170,11 +170,11 @@ public class DefaultConnectionSession implements ConnectionSession {
             }
             if (log.isDebugEnabled()) {
                 log.debug("Session-level storage directory was deleted successfully, sessionId={}, dir={}",
-                    this.id, sessionLevelDir);
+                        this.id, sessionLevelDir);
             }
         } catch (IOException exception) {
             log.warn("Failed to delete session level directory, dir={}, sessionId={}",
-                sessionLevelDir, this.id, exception);
+                    sessionLevelDir, this.id, exception);
         }
         log.info("Connection session was closed successfully, sessionId={}", this.id);
     }

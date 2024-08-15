@@ -112,7 +112,7 @@ public class VersionDiffConfigService {
         String currentVersion = ConnectionSessionUtil.getVersion(connectionSession);
         // 判断连接类型是否支持存储过程
         boolean supportsProcedure =
-            AllFeatures.getByConnectType(connectionSession.getConnectType()).supportsProcedure();
+                AllFeatures.getByConnectType(connectionSession.getConnectType()).supportsProcedure();
         // 获取所有系统配置
         List<Configuration> systemConfigs = systemConfigService.listAll();
         // 遍历VersionDiffConfig列表
@@ -128,8 +128,8 @@ public class VersionDiffConfigService {
                 obSupport.setSupportType(configKey);
                 // 判断系统配置中是否存在该配置项且值为false
                 if (systemConfigs.stream().anyMatch(configuration -> configuration.getKey().equalsIgnoreCase(configKey)
-                                                                     && "false".equalsIgnoreCase(
-                    configuration.getValue()))) {
+                        && "false".equalsIgnoreCase(
+                                configuration.getValue()))) {
                     // 如果存在，则不支持该配置项
                     obSupport.setSupport(false);
                     continue;
@@ -146,8 +146,8 @@ public class VersionDiffConfigService {
                 // fix support_procedure for oceanbase-ce version
                 // 修复oceanbase-ce版本的support_procedure
                 if ((SUPPORT_PROCEDURE.equalsIgnoreCase(configKey) || SUPPORT_FUNCTION.equalsIgnoreCase(configKey))
-                    && DialectType.OB_MYSQL == connectionSession.getDialectType()
-                    && obSupport.isSupport()) {
+                        && DialectType.OB_MYSQL == connectionSession.getDialectType()
+                        && obSupport.isSupport()) {
                     // 如果连接类型不支持存储过程，则不支持该配置项
                     if (!supportsProcedure) {
                         // 如果存在，则不支持该配置项

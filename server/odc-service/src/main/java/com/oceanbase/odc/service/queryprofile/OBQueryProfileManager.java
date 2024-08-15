@@ -65,27 +65,27 @@ public class OBQueryProfileManager {
     /**
      * 提交查询配置文件
      *
-     * @param session    数据库连接会话
-     * @param traceId    查询跟踪ID
+     * @param session 数据库连接会话
+     * @param traceId 查询跟踪ID
      * @param sessionIds 会话ID列表
      */
     public void submit(ConnectionSession session, @NonNull String traceId, List<String> sessionIds) {
         executor.execute(() -> {
             // 判断会话是否过期或者查询配置文件是否已经存在，如果是则直接返回
             if (session.isExpired()
-                || ConnectionSessionUtil.getBinaryContentMetadata(session, PROFILE_KEY_PREFIX + traceId) != null) {
+                    || ConnectionSessionUtil.getBinaryContentMetadata(session, PROFILE_KEY_PREFIX + traceId) != null) {
                 return;
             }
             try {
                 // 通过同步JDBC执行器获取查询配置文件
                 SqlExplain profile = session.getSyncJdbcExecutor(BACKEND_DS_KEY).execute(
-                    (ConnectionCallback<SqlExplain>) conn -> ConnectionPluginUtil
-                        .getDiagnoseExtension(session.getConnectType().getDialectType())
-                        .getQueryProfileByTraceIdAndSessIds(conn, traceId, sessionIds));
+                        (ConnectionCallback<SqlExplain>) conn -> ConnectionPluginUtil
+                                .getDiagnoseExtension(session.getConnectType().getDialectType())
+                                .getQueryProfileByTraceIdAndSessIds(conn, traceId, sessionIds));
                 BinaryDataManager binaryDataManager = ConnectionSessionUtil.getBinaryDataManager(session);
                 // 将查询配置文件写入二进制数据管理器
                 BinaryContentMetaData metaData = binaryDataManager.write(
-                    new ByteArrayInputStream(JsonUtils.toJson(profile).getBytes()));
+                        new ByteArrayInputStream(JsonUtils.toJson(profile).getBytes()));
                 String key = PROFILE_KEY_PREFIX + traceId;
                 // 将查询配置文件的元数据设置到会话中
                 ConnectionSessionUtil.setBinaryContentMetadata(session, key, metaData);

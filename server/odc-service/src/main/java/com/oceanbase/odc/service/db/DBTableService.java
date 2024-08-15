@@ -85,18 +85,31 @@ public class DBTableService {
         return tableNames;
     }
 
+    /**
+     * 获取数据库表对象
+     *
+     * @param connectionSession 数据库连接会话
+     * @param schemaName 数据库名称
+     * @param tableName 数据库表名称
+     * @return 数据库表对象
+     * @throws UnexpectedException 查询表信息失败时抛出异常
+     */
     public DBTable getTable(@NotNull ConnectionSession connectionSession, String schemaName,
             @NotBlank String tableName) {
+        // 创建数据库模式访问器
         DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
+        // 判断表是否存在
         PreConditions.validExists(ResourceType.OB_TABLE, "tableName", tableName,
                 () -> schemaAccessor.showTables(schemaName).stream().filter(name -> name.equals(tableName))
                         .collect(Collectors.toList()).size() > 0);
         try {
+            // 执行查询表信息的操作
             return connectionSession.getSyncJdbcExecutor(
                     ConnectionSessionConstants.BACKEND_DS_KEY)
                     .execute((ConnectionCallback<DBTable>) con -> getTableExtensionPoint(connectionSession)
                             .getDetail(con, schemaName, tableName));
         } catch (Exception e) {
+            // 查询表信息失败时记录日志并抛出异常
             log.warn("Query table information failed, table name=%s.", e);
             throw new UnexpectedException(String
                     .format("Query table information failed, table name=%s, error massage=%s", tableName,

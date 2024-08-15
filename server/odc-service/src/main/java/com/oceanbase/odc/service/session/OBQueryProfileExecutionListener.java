@@ -65,8 +65,8 @@ public class OBQueryProfileExecutionListener implements SqlExecutionListener {
      * 当执行结束时调用此方法
      *
      * @param sqlTuple SQL语句和参数的元组
-     * @param results  执行结果列表
-     * @param context  异步执行上下文
+     * @param results 执行结果列表
+     * @param context 异步执行上下文
      */
     @Override
     public void onExecutionEnd(SqlTuple sqlTuple, List<JdbcGeneralResult> results, AsyncExecuteContext context) {
@@ -74,7 +74,7 @@ public class OBQueryProfileExecutionListener implements SqlExecutionListener {
         JdbcGeneralResult firstResult = results.get(0);
         // 判断第一个执行结果的traceId是否不为空，当前SQL类型是否支持分布式分析，以及sessionIds是否不为空
         if (StringUtils.isNotEmpty(firstResult.getTraceId()) && isSqlTypeSupportProfile(sqlTuple)
-            && CollectionUtils.isNotEmpty(sessionIds)) {
+                && CollectionUtils.isNotEmpty(sessionIds)) {
             profileManager.submit(session, firstResult.getTraceId(), sessionIds);
         }
     }
@@ -86,7 +86,7 @@ public class OBQueryProfileExecutionListener implements SqlExecutionListener {
      * 在执行SQL之后调用此方法
      *
      * @param sqlTuple SQL语句和参数的元组
-     * @param context  异步执行上下文
+     * @param context 异步执行上下文
      */
     public void onExecutionStartAfter(SqlTuple sqlTuple, AsyncExecuteContext context) {
         // 如果会话ID列表为空或SQL类型不支持分布式事务，则直接返回
@@ -95,7 +95,7 @@ public class OBQueryProfileExecutionListener implements SqlExecutionListener {
         }
         // 从后端数据源中查询TraceId
         String traceId = session.getSyncJdbcExecutor(BACKEND_DS_KEY).execute((StatementCallback<String>) stmt -> OBUtils
-            .queryTraceIdFromASH(stmt, sessionIds, session.getConnectType()));
+                .queryTraceIdFromASH(stmt, sessionIds, session.getConnectType()));
         // 如果查询到了TraceId，则将其设置到异步执行上下文中
         if (StringUtils.isNotEmpty(traceId)) {
             context.setCurrentExecutingSqlTraceId(traceId);

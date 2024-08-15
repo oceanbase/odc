@@ -188,7 +188,7 @@ public class SqlExecuteResult {
         // if there are more than one table and with no RowId, the result can't be edited
         // 如果有多个表且没有RowId，则结果不可编辑
         if (CollectionUtils.isEmpty(relatedTablesOrViews)
-            || (Objects.isNull(resultTable) && relatedTablesOrViews.size() > 1)) {
+                || (Objects.isNull(resultTable) && relatedTablesOrViews.size() > 1)) {
             editable = false;
         }
 
@@ -206,12 +206,13 @@ public class SqlExecuteResult {
         // 设置带有RowId的表格的行为可编辑
         for (JdbcColumnMetaData odcFieldMetaData : resultSetMetaData.getFieldMetaDataList()) {
             odcFieldMetaData.setEditable(
-                odcFieldMetaData.schemaName().equals(resultTable.getDatabaseName())
-                && odcFieldMetaData.getTableName().equals(resultTable.getTableName())
-                && Types.ROWID != odcFieldMetaData.getColumnType());
+                    odcFieldMetaData.schemaName().equals(resultTable.getDatabaseName())
+                            && odcFieldMetaData.getTableName().equals(resultTable.getTableName())
+                            && Types.ROWID != odcFieldMetaData.getColumnType());
         }
         return resultTable;
     }
+
     public void initColumnInfo(@NonNull ConnectionSession connectionSession, OdcTable resultTable,
             @NonNull DBSchemaAccessor schemaAccessor) {
         if (this.resultSetMetaData == null) {

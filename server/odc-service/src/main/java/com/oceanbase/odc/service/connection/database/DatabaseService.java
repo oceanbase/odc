@@ -223,18 +223,23 @@ public class DatabaseService {
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public Database detail(@NonNull Long id) {
+        // 通过数据库ID获取数据库信息
         Database database = entityToModel(databaseRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
+        // 检查当前用户是否有该数据库的水平权限
         horizontalDataPermissionValidator.checkCurrentOrganization(database);
+        // 如果数据库所属项目不为空且项目ID不为空，则检查当前用户是否有该项目的权限
         if (Objects.nonNull(database.getProject()) && Objects.nonNull(database.getProject().getId())) {
             projectPermissionValidator.checkProjectRole(database.getProject().getId(), ResourceRoleName.all());
             return database;
         }
+        // 否则，检查当前用户是否有读取该数据源的权限
         Permission requiredPermission = this.securityManager
                 .getPermissionByActions(database.getDataSource(), Collections.singletonList("read"));
         if (this.securityManager.isPermitted(requiredPermission)) {
             return database;
         }
+        // 如果当前用户没有足够的权限，则抛出异常
         throw new NotFoundException(ResourceType.ODC_DATABASE, "id", id);
     }
 

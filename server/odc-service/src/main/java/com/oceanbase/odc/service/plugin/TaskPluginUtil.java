@@ -24,19 +24,43 @@ import com.oceanbase.odc.plugin.task.api.partitionplan.AutoPartitionExtensionPoi
 
 public class TaskPluginUtil {
 
+    /**
+     * 获取OdcPluginManager实例
+     *
+     * @return OdcPluginManager实例
+     */
     public static OdcPluginManager<DialectType> getOdcPluginManager() {
         PluginService pluginService = new PluginService();
         return pluginService.getTaskPluginManager();
     }
 
+    /**
+     * 获取数据传输扩展点
+     *
+     * @param dialectType 方言类型
+     * @return 数据传输扩展点
+     */
     public static DataTransferExtensionPoint getDataTransferExtension(DialectType dialectType) {
         return getSingletonExtension(dialectType, DataTransferExtensionPoint.class);
     }
 
+    /**
+     * 获取自动分区扩展点
+     *
+     * @param dialectType 方言类型
+     * @return 自动分区扩展点
+     */
     public static AutoPartitionExtensionPoint getAutoPartitionExtensionPoint(DialectType dialectType) {
         return getSingletonExtension(dialectType, AutoPartitionExtensionPoint.class);
     }
 
+    /**
+     * 获取单例扩展点
+     *
+     * @param dialectType 方言类型
+     * @param type 扩展点类型
+     * @return 单例扩展点
+     */
     public static <T extends ExtensionPoint> T getSingletonExtension(DialectType dialectType, Class<T> type) {
         return getOdcPluginManager().getSingletonExtension(dialectType, type);
     }

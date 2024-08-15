@@ -75,6 +75,7 @@ public class DBResourcePermissionInterceptor extends BaseTimeConsumingIntercepto
     @Override
     /**
      * 处理前的操作
+     * 
      * @param request SqlAsyncExecuteReq对象，表示异步执行SQL请求
      * @param response SqlAsyncExecuteResp对象，表示异步执行SQL响应
      * @param session ConnectionSession对象，表示数据库连接会话
@@ -83,7 +84,7 @@ public class DBResourcePermissionInterceptor extends BaseTimeConsumingIntercepto
      * @throws Exception 异常
      */
     public boolean doPreHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
-        @NonNull ConnectionSession session, @NonNull AsyncExecuteContext context) throws Exception {
+            @NonNull ConnectionSession session, @NonNull AsyncExecuteContext context) throws Exception {
         // 判断当前用户是否为个人版用户，如果是则直接通过认证
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             return true;
@@ -92,9 +93,9 @@ public class DBResourcePermissionInterceptor extends BaseTimeConsumingIntercepto
         ConnectionConfig connectionConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
         // 获取已存在的数据库名称集合
         Set<String> existedDatabaseNames =
-            databaseService.listDatabasesByConnectionIds(Collections.singleton(connectionConfig.getId()))
-                .stream().filter(database -> database.getExisted()).map(database -> database.getName())
-                .collect(Collectors.toSet());
+                databaseService.listDatabasesByConnectionIds(Collections.singleton(connectionConfig.getId()))
+                        .stream().filter(database -> database.getExisted()).map(database -> database.getName())
+                        .collect(Collectors.toSet());
 
         // 获取当前模式
         String currentSchema = ConnectionSessionUtil.getCurrentSchema(session);
@@ -102,15 +103,15 @@ public class DBResourcePermissionInterceptor extends BaseTimeConsumingIntercepto
         Map<DBSchemaIdentity, Set<SqlType>> identity2Types = DBSchemaExtractor.listDBSchemasWithSqlTypes(
                 response.getSqls().stream().map(SqlTuplesWithViolation::getSqlTuple).collect(Collectors.toList()),
                 session.getDialectType(), currentSchema).entrySet().stream()
-            .filter(entry -> Objects.isNull(entry.getKey().getSchema())
-                             || existedDatabaseNames.contains(entry.getKey().getSchema()))
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .filter(entry -> Objects.isNull(entry.getKey().getSchema())
+                        || existedDatabaseNames.contains(entry.getKey().getSchema()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         // 获取数据库资源和权限类型的映射关系
         Map<DBResource, Set<DatabasePermissionType>> resource2PermissionTypes =
-            DBResourcePermissionHelper.getDBResource2PermissionTypes(identity2Types, connectionConfig, null);
+                DBResourcePermissionHelper.getDBResource2PermissionTypes(identity2Types, connectionConfig, null);
         // 过滤未授权的数据库资源
         List<UnauthorizedDBResource> unauthorizedDBResource = dbResourcePermissionHelper
-            .filterUnauthorizedDBResources(resource2PermissionTypes, false);
+                .filterUnauthorizedDBResources(resource2PermissionTypes, false);
         // 如果存在未授权的数据库资源，则设置响应的未授权数据库资源并返回false，否则返回true
         if (CollectionUtils.isNotEmpty(unauthorizedDBResource)) {
             response.setUnauthorizedDBResources(unauthorizedDBResource);

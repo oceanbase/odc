@@ -68,14 +68,24 @@ public class OBMySQLDataTransferExtension implements DataTransferExtensionPoint 
         throw new IllegalArgumentException("Illegal transfer type " + config.getTransferType());
     }
 
+    /**
+     * 获取支持的对象类型集合
+     *
+     * @param connectionInfo 数据库连接信息
+     * @return 支持的对象类型集合
+     * @throws SQLException SQL异常
+     */
     @Override
     public Set<ObjectType> getSupportedObjectTypes(ConnectionInfo connectionInfo) throws SQLException {
         Set<ObjectType> types =
                 SetUtils.hashSet(ObjectType.TABLE, ObjectType.VIEW, ObjectType.FUNCTION, ObjectType.PROCEDURE);
 
+        // 获取数据源并获取连接
         try (SingleConnectionDataSource dataSource = ConnectionUtil.getDataSource(connectionInfo, "");
                 Connection connection = dataSource.getConnection()) {
+            // 获取数据库版本
             String dbVersion = PluginUtil.getInformationExtension(connectionInfo).getDBVersion(connection);
+            // 判断数据库版本是否大于等于4.0.0，如果是则添加SEQUENCE到支持的对象类型集合中
             if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "4.0.0")) {
                 types.add(ObjectType.SEQUENCE);
             }

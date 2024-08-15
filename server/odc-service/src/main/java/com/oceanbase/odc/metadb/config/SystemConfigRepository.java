@@ -35,8 +35,8 @@ public interface SystemConfigRepository extends OdcJpaRepository<SystemConfigEnt
         PreConditions.notNull(keyPrefix, "keyPrefix");
         // SQL查询语句
         String sql = "SELECT `application`, `profile`, `key`, `value`, `create_time`, `update_time`, `description` "
-                     + "FROM `config_system_configuration` "
-                     + "WHERE `application`='odc' AND `profile`='default' AND `label`='master' AND `key` LIKE ?";
+                + "FROM `config_system_configuration` "
+                + "WHERE `application`='odc' AND `profile`='default' AND `label`='master' AND `key` LIKE ?";
         // 执行查询并返回结果
         return getJdbcTemplate().query(sql, new BeanPropertyRowMapper<>(SystemConfigEntity.class), keyPrefix + "%");
     }

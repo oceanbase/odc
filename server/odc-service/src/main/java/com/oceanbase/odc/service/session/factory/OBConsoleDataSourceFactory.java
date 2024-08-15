@@ -66,31 +66,31 @@ import lombok.Setter;
  */
 public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
 
-    private         String                   username;
+    private String username;
     // 数据库密码
-    private         String                   password;
+    private String password;
     // 数据库主机地址
-    private         String                   host;
+    private String host;
     // 数据库端口号
-    private         Integer                  port;
+    private Integer port;
     // 数据库默认模式
-    private         String                   defaultSchema;
+    private String defaultSchema;
     // 数据库实例ID
-    private         String                   sid;
+    private String sid;
     // 数据库服务名
-    private         String                   serviceName;
+    private String serviceName;
     // 数据库用户角色
-    protected       UserRole                 userRole;
+    protected UserRole userRole;
     // 数据库连接参数
-    private         Map<String, String>      parameters;
+    private Map<String, String> parameters;
     // 数据库连接配置
-    protected final ConnectionConfig         connectionConfig;
+    protected final ConnectionConfig connectionConfig;
     // 是否自动提交事务
-    private final   Boolean                  autoCommit;
+    private final Boolean autoCommit;
     // 是否初始化连接
-    private final   boolean                  initConnection;
+    private final boolean initConnection;
     @Setter
-    private         EventPublisher           eventPublisher;
+    private EventPublisher eventPublisher;
     // 数据库连接扩展点
     protected final ConnectionExtensionPoint connectionExtensionPoint;
 

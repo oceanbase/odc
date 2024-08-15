@@ -57,8 +57,17 @@ public class DBObjectNameAccessor implements AutoCloseable {
         this.dialectType = session.getDialectType();
     }
 
+    /**
+     * 获取DBObjectNameAccessor实例
+     *
+     * @param connection 数据库连接配置
+     * @param schema 数据库模式名称
+     * @return DBObjectNameAccessor实例
+     */
     public static DBObjectNameAccessor getInstance(@NonNull ConnectionConfig connection, @NonNull String schema) {
+        // 生成数据库会话
         ConnectionSession session = new DefaultConnectSessionFactory(connection).generateSession();
+        // 返回DBObjectNameAccessor实例
         return new DBObjectNameAccessor(session, schema);
     }
 

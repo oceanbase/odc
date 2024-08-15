@@ -147,10 +147,20 @@ public class ConnectConsoleService {
     @Autowired
     private OBQueryProfileManager profileManager;
 
+    /**
+     * 查询表或视图数据
+     *
+     * @param sessionId 会话ID
+     * @param req 查询表或视图数据请求
+     * @return SqlExecuteResult SQL执行结果
+     * @throws Exception 异常
+     */
     public SqlExecuteResult queryTableOrViewData(@NotNull String sessionId,
             @NotNull @Valid QueryTableOrViewDataReq req) throws Exception {
+        // 获取连接会话
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
         SqlBuilder sqlBuilder;
+        // 获取方言类型
         DialectType dialectType = connectionSession.getConnectType().getDialectType();
         if (dialectType.isMysql()) {
             sqlBuilder = new MySQLSqlBuilder();
@@ -161,6 +171,7 @@ public class ConnectConsoleService {
         } else {
             throw new IllegalArgumentException("Unsupported dialect type, " + dialectType);
         }
+        // 拼接SQL语句
         sqlBuilder.append("SELECT ");
         if (req.isAddROWID() && connectionSession.getDialectType().isOracle()) {
             sqlBuilder.append(" t.ROWID, ");
@@ -168,6 +179,7 @@ public class ConnectConsoleService {
         sqlBuilder.append(" t.* ").append(" FROM ")
                 .schemaPrefixIfNotBlank(req.getSchemaName()).identifier(req.getTableOrViewName()).append(" t");
 
+        // 检查查询限制
         Integer queryLimit = checkQueryLimit(req.getQueryLimit());
         if (DialectType.OB_ORACLE == connectionSession.getDialectType()) {
             String version = ConnectionSessionUtil.getVersion(connectionSession);
@@ -182,9 +194,11 @@ public class ConnectConsoleService {
             sqlBuilder.append(" LIMIT ").append(queryLimit.toString());
         }
 
+        // 异步执行SQL语句
         SqlAsyncExecuteReq asyncExecuteReq = new SqlAsyncExecuteReq();
         asyncExecuteReq.setSql(sqlBuilder.toString());
         // avoid rewrite while execute
+        // 避免在执行时重写
         asyncExecuteReq.setAddROWID(false);
         asyncExecuteReq.setQueryLimit(queryLimit);
         asyncExecuteReq.setShowTableColumnInfo(true);
@@ -193,6 +207,7 @@ public class ConnectConsoleService {
         // SqlAsyncExecuteResp resp = execute(sessionId, asyncExecuteReq, false);
         SqlAsyncExecuteResp resp = streamExecute(sessionId, asyncExecuteReq, false);
 
+        // 处理未授权的数据库资源
         List<UnauthorizedDBResource> unauthorizedDBResources = resp.getUnauthorizedDBResources();
         if (CollectionUtils.isNotEmpty(unauthorizedDBResources)) {
             UnauthorizedDBResource unauthorizedDBResource = unauthorizedDBResources.get(0);
@@ -202,12 +217,14 @@ public class ConnectConsoleService {
                     "Lack permission for the database with id " + unauthorizedDBResource.getDatabaseId());
         }
 
+        // 获取结果
         String requestId = resp.getRequestId();
         ConnectionConfig connConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
 
         List<SqlExecuteResult> results =
                 getMoreResults(sessionId, requestId, connConfig.queryTimeoutSeconds()).getResults();
 
+        // 处理结果集超时
         if (CollectionUtils.isEmpty(results)) {
             String sqlId = resp.getSqls().get(0).getSqlTuple().getSqlId();
             throw new RequestTimeoutException(String
@@ -238,14 +255,14 @@ public class ConnectConsoleService {
     /**
      * 流式执行SQL异步请求
      *
-     * @param sessionId        会话ID
-     * @param request          SQL异步执行请求
+     * @param sessionId 会话ID
+     * @param request SQL异步执行请求
      * @param needSqlRuleCheck 是否需要SQL规则检查
      * @return SQL异步执行响应
      * @throws Exception 异常
      */
     public SqlAsyncExecuteResp streamExecute(@NotNull String sessionId,
-        @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlRuleCheck) throws Exception {
+            @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlRuleCheck) throws Exception {
         // 获取连接会话
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
 
@@ -254,7 +271,7 @@ public class ConnectConsoleService {
         if (maxSqlLength > 0) {
             // 判断SQL长度是否超过最大值
             PreConditions.lessThanOrEqualTo("sqlLength", LimitMetric.SQL_LENGTH,
-                StringUtils.length(request.getSql()), maxSqlLength);
+                    StringUtils.length(request.getSql()), maxSqlLength);
         }
         // 过滤kill会话
         SqlAsyncExecuteResp result = filterKillSession(connectionSession, request);
@@ -263,11 +280,11 @@ public class ConnectConsoleService {
         }
         // 将SQL分成一句
         List<OffsetString> sqls = request.ifSplitSqls()
-            // 如果需要分片执行，则调用SqlUtils工具类的splitWithOffset方法进行分片
-            ? SqlUtils.splitWithOffset(connectionSession, request.getSql(),
-            sessionProperties.isOracleRemoveCommentPrefix())
-            // 如果不需要分片执行，则将原始SQL语句封装为一个List
-            : Collections.singletonList(new OffsetString(0, request.getSql()));
+                // 如果需要分片执行，则调用SqlUtils工具类的splitWithOffset方法进行分片
+                ? SqlUtils.splitWithOffset(connectionSession, request.getSql(),
+                        sessionProperties.isOracleRemoveCommentPrefix())
+                // 如果不需要分片执行，则将原始SQL语句封装为一个List
+                : Collections.singletonList(new OffsetString(0, request.getSql()));
         // 如果SQL只包含分隔符设置（例如delimiter $$），则执行以下代码
         if (sqls.size() == 0) {
             /**
@@ -275,9 +292,9 @@ public class ConnectConsoleService {
              */
             SqlTuple sqlTuple = SqlTuple.newTuple(request.getSql());
             AsyncExecuteContext executeContext =
-                new AsyncExecuteContext(Collections.singletonList(sqlTuple), new HashMap<>());
+                    new AsyncExecuteContext(Collections.singletonList(sqlTuple), new HashMap<>());
             Future<List<JdbcGeneralResult>> successFuture = FutureResult.successResultList(
-                JdbcGeneralResult.successResult(sqlTuple));
+                    JdbcGeneralResult.successResult(sqlTuple));
             executeContext.setFuture(successFuture);
             executeContext.addSqlExecutionResults(successFuture.get());
             String id = ConnectionSessionUtil.setExecuteContext(connectionSession, executeContext);
@@ -289,7 +306,7 @@ public class ConnectConsoleService {
         if (maxSqlStatementCount > 0) {
             // 判断SQL语句数量是否超过最大值
             PreConditions.lessThanOrEqualTo("sqlStatementCount",
-                LimitMetric.SQL_STATEMENT_COUNT, sqls.size(), maxSqlStatementCount);
+                    LimitMetric.SQL_STATEMENT_COUNT, sqls.size(), maxSqlStatementCount);
         }
 
         // 生成SQL元组
@@ -303,8 +320,8 @@ public class ConnectConsoleService {
         AsyncExecuteContext executeContext = new AsyncExecuteContext(sqlTuples, context);
         // 执行SQL前检查，更新sqlTuples中的stageList
         List<TraceStage> stages = sqlTuples.stream()
-            .map(s -> s.getSqlWatch().start(SqlExecuteStages.SQL_PRE_CHECK))
-            .collect(Collectors.toList());
+                .map(s -> s.getSqlWatch().start(SqlExecuteStages.SQL_PRE_CHECK))
+                .collect(Collectors.toList());
         try {
             if (!sqlInterceptService.preHandle(request, response, connectionSession, executeContext)) {
                 return response;
@@ -322,12 +339,12 @@ public class ConnectConsoleService {
         Integer queryLimit = checkQueryLimit(request.getQueryLimit());
         // 判断是否继续执行错误
         boolean continueExecutionOnError =
-            Objects.nonNull(request.getContinueExecutionOnError()) ? request.getContinueExecutionOnError()
-                : userConfigFacade.isContinueExecutionOnError();
+                Objects.nonNull(request.getContinueExecutionOnError()) ? request.getContinueExecutionOnError()
+                        : userConfigFacade.isContinueExecutionOnError();
         boolean stopOnError = !continueExecutionOnError;
         // 创建OdcStatementCallBack对象
         OdcStatementCallBack statementCallBack = new OdcStatementCallBack(sqlTuples, connectionSession,
-            request.getAutoCommit(), queryLimit, stopOnError, executeContext);
+                request.getAutoCommit(), queryLimit, stopOnError, executeContext);
 
         statementCallBack.setDbmsoutputMaxRows(sessionProperties.getDbmsOutputMaxRows());
 
@@ -347,7 +364,7 @@ public class ConnectConsoleService {
 
         // 创建一个Future对象，用于异步获取JdbcGeneralResult列表
         Future<List<JdbcGeneralResult>> futureResult = connectionSession.getAsyncJdbcExecutor(
-            ConnectionSessionConstants.CONSOLE_DS_KEY).execute(statementCallBack);
+                ConnectionSessionConstants.CONSOLE_DS_KEY).execute(statementCallBack);
         // 将Future对象设置到executeContext中
         executeContext.setFuture(futureResult);
         // 将executeContext设置到connectionSession中，并获取其id
@@ -368,15 +385,15 @@ public class ConnectConsoleService {
         // 获取连接会话
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId);
         AsyncExecuteContext context =
-            (AsyncExecuteContext) ConnectionSessionUtil.getExecuteContext(connectionSession, requestId);
+                (AsyncExecuteContext) ConnectionSessionUtil.getExecuteContext(connectionSession, requestId);
         int gettingResultTimeoutSeconds =
-            Objects.isNull(timeoutSeconds) ? DEFAULT_GET_RESULT_TIMEOUT_SECONDS : timeoutSeconds;
+                Objects.isNull(timeoutSeconds) ? DEFAULT_GET_RESULT_TIMEOUT_SECONDS : timeoutSeconds;
         // 判断是否需要移除上下文
         boolean shouldRemoveContext = context.isFinished();
         // 如果出现异常，前端将停止获取更多的结果。在这种情况下，未完成的查询应该被杀死。
         try {
             List<JdbcGeneralResult> resultList =
-                context.getMoreSqlExecutionResults(gettingResultTimeoutSeconds * 1000L);
+                    context.getMoreSqlExecutionResults(gettingResultTimeoutSeconds * 1000L);
             // 将JdbcGeneralResult转换为SqlExecuteResult
             List<SqlExecuteResult> results = resultList.stream().map(jdbcGeneralResult -> {
                 SqlExecuteResult result = generateResult(connectionSession, jdbcGeneralResult, context.getContextMap());
@@ -408,6 +425,7 @@ public class ConnectConsoleService {
             }
         }
     }
+
     public BinaryContent getBinaryContent(@NotNull String sessionId, @NotNull String sqlId,
             @NotNull Long rowNum, @NotNull Integer colNum, @NotNull Long skip,
             @NotNull Integer len, @NotNull ValueEncodeType format) throws IOException {
@@ -587,11 +605,11 @@ public class ConnectConsoleService {
      * observer
      *
      * @param connectionSession connection engine
-     * @param request           odc sql object
+     * @param request odc sql object
      * @return result of sql execution
      */
     private SqlAsyncExecuteResp filterKillSession(ConnectionSession connectionSession, SqlAsyncExecuteReq request)
-        throws Exception {
+            throws Exception {
         // 获取 SQL 语句并转换为小写
         String sqlScript = request.getSql().trim().toLowerCase();
         // 如果 SQL 语句不是以 "kill " 开头或不包含 "/*"，则返回 null
@@ -600,14 +618,14 @@ public class ConnectConsoleService {
         }
         // 将 SQL 语句按 ";" 分割，并过滤掉空白项，然后转换为 SqlTuple 列表
         List<SqlTuple> sqlTuples = SqlTuple.newTuples(
-            Arrays.stream(sqlScript.split(";")).filter(StringUtils::isNotBlank).collect(Collectors.toList()));
+                Arrays.stream(sqlScript.split(";")).filter(StringUtils::isNotBlank).collect(Collectors.toList()));
         // 执行 kill session 操作，并获取 JdbcGeneralResult 列表
         List<JdbcGeneralResult> results =
-            defaultDbSessionManage.executeKillSession(connectionSession, sqlTuples, sqlScript);
+                defaultDbSessionManage.executeKillSession(connectionSession, sqlTuples, sqlScript);
 
         // 创建 AsyncExecuteContext 对象
         AsyncExecuteContext executeContext =
-            new AsyncExecuteContext(sqlTuples, new HashMap<>());
+                new AsyncExecuteContext(sqlTuples, new HashMap<>());
         // 创建 SuccessFuture 对象，并设置执行结果
         Future<List<JdbcGeneralResult>> successFuture = FutureResult.successResult(results);
         executeContext.setFuture(successFuture);
@@ -621,12 +639,12 @@ public class ConnectConsoleService {
      * 生成 SQL 执行结果
      *
      * @param connectionSession 数据库连接会话
-     * @param generalResult     普通 SQL 执行结果
-     * @param cxt               上下文参数
+     * @param generalResult 普通 SQL 执行结果
+     * @param cxt 上下文参数
      * @return SQL 执行结果
      */
     private SqlExecuteResult generateResult(@NonNull ConnectionSession connectionSession,
-        @NonNull JdbcGeneralResult generalResult, @NonNull Map<String, Object> cxt) {
+            @NonNull JdbcGeneralResult generalResult, @NonNull Map<String, Object> cxt) {
         // 创建 SQL 执行结果对象
         SqlExecuteResult result = new SqlExecuteResult(generalResult);
         // 获取 SQL 执行时间计时器
@@ -664,8 +682,8 @@ public class ConnectConsoleService {
             // 判断是否支持查询分析
             String version = ConnectionSessionUtil.getVersion(connectionSession);
             result.setWithQueryProfile(OBQueryProfileExecutionListener
-                                           .isSqlTypeSupportProfile(generalResult.getSqlTuple()) &&
-                                       OBQueryProfileExecutionListener.isObVersionSupportQueryProfile(version));
+                    .isSqlTypeSupportProfile(generalResult.getSqlTuple()) &&
+                    OBQueryProfileExecutionListener.isObVersionSupportQueryProfile(version));
         } catch (Exception e) {
             result.setWithQueryProfile(false);
         }

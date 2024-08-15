@@ -38,9 +38,9 @@ import lombok.ToString;
 @NoArgsConstructor
 public class CreateSessionReq implements Serializable {
     // 数据库ID
-    private Long   dbId;
+    private Long dbId;
     // 数据源ID
-    private Long   dsId;
+    private Long dsId;
     // 真实ID
     private String realId;
     // 来源
@@ -59,8 +59,8 @@ public class CreateSessionReq implements Serializable {
     /**
      * 构造函数
      *
-     * @param dsId   数据源ID
-     * @param dbId   数据库ID
+     * @param dsId 数据源ID
+     * @param dbId 数据库ID
      * @param realId 真实ID
      */
     public CreateSessionReq(Long dsId, Long dbId, String realId) {

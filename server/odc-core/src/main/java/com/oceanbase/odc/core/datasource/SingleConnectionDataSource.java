@@ -43,8 +43,7 @@ import lombok.extern.slf4j.Slf4j;
  * {@code ODC} console. This scenario requires the data source to maintain a long connection. If the
  * {@link Connection} is reset, there needs to be a mechanism to notify the external caller. At the
  * same time, some business settings of {@code ODC} need to be considered when initializing the
- * {@link Connection}.
- * 单连接 {@link javax.sql.DataSource} ，在创建数据源时只会初始化一个数据库连接。
+ * {@link Connection}. 单连接 {@link javax.sql.DataSource} ，在创建数据源时只会初始化一个数据库连接。
  * 此数据源的使用场景是在ODC控制台执行SQL，此场景要求数据源保持长连接。
  * 如果{@link Connection}被重置，需要有机制通知外部调用者。同时初始化{@link Connection}时需要考虑ODC的一些业务设置
  *
@@ -90,7 +89,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         // 如果无法获取锁
         if (!tryLock(thisLock)) {
             throw new ConflictException(ErrorCodes.ConnectionOccupied, new Object[] {},
-                "Connection is occupied, waited " + this.timeOutMillis + " millis");
+                    "Connection is occupied, waited " + this.timeOutMillis + " millis");
         }
         try {
             if (this.connection.isClosed() || !this.connection.isValid(getLoginTimeout())) {

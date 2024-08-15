@@ -100,7 +100,7 @@ public class DefaultSqlExecuteTaskManager extends DefaultTaskManager implements 
      * 提交一个可调用的任务给执行器，并返回一个表示未完成任务的对象。
      *
      * @param callable 可调用的任务
-     * @param <T>      任务执行结果的类型
+     * @param <T> 任务执行结果的类型
      * @return 表示未完成任务的对象
      */
     @Override

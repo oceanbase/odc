@@ -99,8 +99,7 @@ public class ConnectSessionController {
     }
 
     /**
-     * createSessionByDatabase
-     * 根据数据库创建连接会话
+     * createSessionByDatabase 根据数据库创建连接会话
      *
      * @param databaseId 数据库ID
      * @return SuccessResponse<CreateSessionResp> 创建会话的响应结果

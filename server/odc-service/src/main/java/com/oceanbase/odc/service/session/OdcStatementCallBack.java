@@ -220,7 +220,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                 if (returnVal.stream().noneMatch(r -> r.getStatus() == SqlExecuteStatus.FAILED) || !stopWhenError) {
                     // 判断当前线程是否被中断或者控制台会话是否已经kill查询
                     if (Thread.currentThread().isInterrupted()
-                        || ConnectionSessionUtil.isConsoleSessionKillQuery(connectionSession)) {
+                            || ConnectionSessionUtil.isConsoleSessionKillQuery(connectionSession)) {
                         // 如果有失败的SQL语句且needStopWhenError为true，则将结果设置为已取消，并调用onExecutionCancelled方法
                         executeResults = Collections.singletonList(JdbcGeneralResult.canceledResult(sqlTuple));
                         onExecutionCancelled(sqlTuple, executeResults);
@@ -241,7 +241,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                 returnVal.addAll(executeResults);
             }
             Optional<JdbcGeneralResult> failed = returnVal
-                .stream().filter(r -> r.getStatus() == SqlExecuteStatus.FAILED).findFirst();
+                    .stream().filter(r -> r.getStatus() == SqlExecuteStatus.FAILED).findFirst();
             if (failed.isPresent()) {
                 throw failed.get().getThrown();
             }
@@ -301,15 +301,15 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
     /**
      * 执行SQL语句并返回结果
      *
-     * @param statement   SQL语句
-     * @param sqlTuple    SQL语句元数据
+     * @param statement SQL语句
+     * @param sqlTuple SQL语句元数据
      * @param isResultSet 是否为结果集
      * @return 执行结果列表
      * @throws SQLException SQL异常
      * @throws IOException IO异常
      */
     private List<JdbcGeneralResult> consumeStatement(Statement statement, SqlTuple sqlTuple, boolean isResultSet)
-        throws SQLException, IOException {
+            throws SQLException, IOException {
         boolean existWarnings = false;
         List<JdbcGeneralResult> executeResults = new ArrayList<>();
         if (connectionSession.getDialectType() == DialectType.OB_ORACLE && Objects.nonNull(statement.getWarnings())) {
@@ -331,14 +331,14 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                     executeResult.setQueryResult(jdbcQueryResult);
                     // 创建ResultSetVirtualTable对象
                     ResultSetVirtualTable virtualTable = new ResultSetVirtualTable(copiedTuple.getSqlId(),
-                        maxCachedLines, maxCachedSize, cachePredicate);
+                            maxCachedLines, maxCachedSize, cachePredicate);
                     long line = 0;
                     while (resultSet.next()) {
                         // 将结果集中的数据添加到jdbcQueryResult中
                         jdbcQueryResult.addLine(resultSet);
                         // 将结果集中的数据添加到virtualTable中
                         virtualTable.addLine((line++), resultSet,
-                            new ResultSetCachedElementFactory(resultSet, binaryDataManager));
+                                new ResultSetCachedElementFactory(resultSet, binaryDataManager));
                     }
                     if (virtualTable.count() != 0) {
                         // 将virtualTable设置到connectionSession中
@@ -391,8 +391,8 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
      * 执行SQL语句
      *
      * @param statement SQL语句
-     * @param sqlTuple  SQL语句元数据
-     * @param latch     CountDownLatch计数器
+     * @param sqlTuple SQL语句元数据
+     * @param latch CountDownLatch计数器
      * @return JdbcGeneralResult列表
      */
     protected List<JdbcGeneralResult> doExecuteSql(Statement statement, SqlTuple sqlTuple, CountDownLatch latch) {
@@ -419,13 +419,13 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             // 使用ps协议
             String preparedSql = OBJECT_VALUE_PATTERN.matcher(sql).replaceAll("?");
             log.info(
-                "Load_file call is detected in sql, use ps protocol to rewrite "
-                + "the original sql, originalSql={}, modifiedSql={}",
-                sql, preparedSql);
+                    "Load_file call is detected in sql, use ps protocol to rewrite "
+                            + "the original sql, originalSql={}, modifiedSql={}",
+                    sql, preparedSql);
             List<FunctionDefinition> definitions = retrieveFunctionCalls(sql);
             log.info("There is a function call in sql, functions={}", definitions);
             try (PreparedStatement preparedStatement = statement.getConnection().prepareStatement(preparedSql);
-                TraceStage stage = sqlTuple.getSqlWatch().start(SqlExecuteStages.EXECUTE)) {
+                    TraceStage stage = sqlTuple.getSqlWatch().start(SqlExecuteStages.EXECUTE)) {
                 for (int i = 0; i < definitions.size(); i++) {
                     FunctionDefinition definition = definitions.get(i);
                     if ("load_file".equalsIgnoreCase(definition.getFunctionName())) {
@@ -535,7 +535,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             SqlExecTime executeDetails = new SqlExecTime();
             // 判断是否使用全链路追踪，以及数据库版本和方言类型是否支持全链路追踪
             if (useFullLinkTrace && VersionUtils.isGreaterThanOrEqualsTo(version, "4.2") &&
-                connectionSession.getDialectType().isOceanbase()) {
+                    connectionSession.getDialectType().isOceanbase()) {
                 try {
                     // 获取全链路追踪详情
                     executeDetails = FullLinkTraceUtil.getFullLinkTraceDetail(statement, fullLinkTraceTimeout);
@@ -549,12 +549,12 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             } else {
                 // 获取执行详情
                 executeDetails = ConnectionPluginUtil.getTraceExtension(connectionSession.getDialectType())
-                    .getExecuteDetail(statement, version);
+                        .getExecuteDetail(statement, version);
                 // 获取全链路追踪详情失败
                 executeDetails.setWithFullLinkTrace(false);
                 executeDetails.setTraceEmptyReason(
-                    useFullLinkTrace ? ErrorCodes.ObFullLinkTraceNotSupported.getLocalizedMessage(null)
-                        : ErrorCodes.ObFullLinkTraceNotEnabled.getLocalizedMessage(null));
+                        useFullLinkTrace ? ErrorCodes.ObFullLinkTraceNotSupported.getLocalizedMessage(null)
+                                : ErrorCodes.ObFullLinkTraceNotEnabled.getLocalizedMessage(null));
             }
             // 缓存跨度信息
             cacheTraceSpan(executeDetails.getTraceSpan());
@@ -567,7 +567,8 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             log.warn("Query sql execute details failed, reason={}", ex.getMessage());
         }
         // 返回 null
-        return null;    }
+        return null;
+    }
 
     private void setExecuteTraceStage(TraceWatch traceWatch, SqlExecTime executeDetails, StopWatch stopWatch) {
         // 判断执行微秒数是否为空
@@ -575,17 +576,17 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             return;
             // 判断最后一次数据包发送或者接收的时间戳是否为空
         } else if (executeDetails.getLastPacketSendTimestamp() == null
-                   || executeDetails.getLastPacketResponseTimestamp() == null) {
+                || executeDetails.getLastPacketResponseTimestamp() == null) {
             // 记录数据库服务器执行 SQL 的阶段
             try (EditableTraceStage dbServerExecute =
-                traceWatch.startEditableStage(SqlExecuteStages.DB_SERVER_EXECUTE_SQL)) {
+                    traceWatch.startEditableStage(SqlExecuteStages.DB_SERVER_EXECUTE_SQL)) {
                 dbServerExecute.setStartTime(traceWatch.getByTaskName(SqlExecuteStages.EXECUTE).get(0).getStartTime(),
-                    TimeUnit.MICROSECONDS);
+                        TimeUnit.MICROSECONDS);
                 dbServerExecute.setTime(executeDetails.getExecuteMicroseconds(), TimeUnit.MICROSECONDS);
             }
             // 计算持续时间的阶段
             try (EditableTraceStage calculateDuration =
-                traceWatch.startEditableStage(SqlExecuteStages.CALCULATE_DURATION)) {
+                    traceWatch.startEditableStage(SqlExecuteStages.CALCULATE_DURATION)) {
                 calculateDuration.adapt(stopWatch);
             }
             return;
@@ -598,7 +599,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
 
         // 计算网络消耗
         long networkConsumption =
-            lastPacketResponseTimestamp - lastPacketSendTimestamp - executeDetails.getElapsedMicroseconds();
+                lastPacketResponseTimestamp - lastPacketSendTimestamp - executeDetails.getElapsedMicroseconds();
 
         // 记录 JDBC 准备的阶段
         try (EditableTraceStage jdbcPrepare = traceWatch.startEditableStage(SqlExecuteStages.JDBC_PREPARE)) {
@@ -616,19 +617,19 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             // 假设网络发送和接收的时间相同
             obServerWait.setStartTime(lastPacketSendTimestamp + networkConsumption / 2, TimeUnit.MICROSECONDS);
             obServerWait.setTime(executeDetails.getElapsedMicroseconds() - executeDetails.getExecuteMicroseconds(),
-                TimeUnit.MICROSECONDS);
+                    TimeUnit.MICROSECONDS);
         }
         // 记录ob服务器执行sql耗时
         try (EditableTraceStage obServerExecute =
-            traceWatch.startEditableStage(SqlExecuteStages.DB_SERVER_EXECUTE_SQL)) {
+                traceWatch.startEditableStage(SqlExecuteStages.DB_SERVER_EXECUTE_SQL)) {
             obServerExecute.setStartTime(
-                lastPacketResponseTimestamp - networkConsumption / 2 - executeDetails.getExecuteMicroseconds(),
-                TimeUnit.MICROSECONDS);
+                    lastPacketResponseTimestamp - networkConsumption / 2 - executeDetails.getExecuteMicroseconds(),
+                    TimeUnit.MICROSECONDS);
             obServerExecute.setTime(executeDetails.getExecuteMicroseconds(), TimeUnit.MICROSECONDS);
         }
         // 计算持续时间的阶段
         try (EditableTraceStage calculateDuration =
-            traceWatch.startEditableStage(SqlExecuteStages.CALCULATE_DURATION)) {
+                traceWatch.startEditableStage(SqlExecuteStages.CALCULATE_DURATION)) {
             calculateDuration.adapt(stopWatch);
         }
     }
@@ -707,7 +708,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
      * 当 SQL 执行结束时调用此方法
      *
      * @param sqlTuple SQL 执行上下文和参数
-     * @param results  SQL 执行结果列表
+     * @param results SQL 执行结果列表
      */
     private void onExecutionEnd(SqlTuple sqlTuple, List<JdbcGeneralResult> results) {
         // 如果上下文不为空，则将 SQL 执行结果添加到上下文中
@@ -729,18 +730,18 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
      * 在执行开始后指定的毫秒数后执行监听器
      *
      * @param sqlTuple SQL元组
-     * @param latch    计数器闭锁
+     * @param latch 计数器闭锁
      * @return Void
      */
     private Void onExecutionStartAfterMillis(SqlTuple sqlTuple, CountDownLatch latch) {
         long startTs = System.currentTimeMillis();
         // 获取所有指定了执行开始后的毫秒数的监听器，并按照毫秒数排序
         List<SqlExecutionListener> sortedListeners = listeners.stream()
-            .filter(listener -> listener.getOnExecutionStartAfterMillis() != null
-                                && listener.getOnExecutionStartAfterMillis() > 0)
-            .sorted(Comparator
-                .comparingLong(SqlExecutionListener::getOnExecutionStartAfterMillis))
-            .collect(Collectors.toList());
+                .filter(listener -> listener.getOnExecutionStartAfterMillis() != null
+                        && listener.getOnExecutionStartAfterMillis() > 0)
+                .sorted(Comparator
+                        .comparingLong(SqlExecutionListener::getOnExecutionStartAfterMillis))
+                .collect(Collectors.toList());
         for (SqlExecutionListener listener : sortedListeners) {
             long waitTs = System.currentTimeMillis() - startTs;
             Long expectedTs = listener.getOnExecutionStartAfterMillis();

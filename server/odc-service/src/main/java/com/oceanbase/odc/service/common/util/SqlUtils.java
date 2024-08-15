@@ -120,18 +120,18 @@ public class SqlUtils {
     /**
      * 将SQL语句按照指定的分隔符进行分割，并返回分割后的SQL语句列表
      *
-     * @param dialectType         SQL方言类型
-     * @param processor           SQL注释处理器
-     * @param sql                 待分割的SQL语句
+     * @param dialectType SQL方言类型
+     * @param processor SQL注释处理器
+     * @param sql 待分割的SQL语句
      * @param removeCommentPrefix 是否移除注释前缀
      * @return 分割后的SQL语句列表
      */
     private static List<OffsetString> split(DialectType dialectType, SqlCommentProcessor processor, String sql,
-        boolean removeCommentPrefix) {
+            boolean removeCommentPrefix) {
         // 检查分隔符是否为空或空白字符串
         PreConditions.notBlank(processor.getDelimiter(), "delimiter", "Empty or blank delimiter is not allowed");
         if (dialectType.isOracle()
-            && (";".equals(processor.getDelimiter()) || "/".equals(processor.getDelimiter()))) {
+                && (";".equals(processor.getDelimiter()) || "/".equals(processor.getDelimiter()))) {
             // 如果是Oracle数据库且分隔符为分号或斜杠，则使用SqlSplitter进行分割
             SqlSplitter sqlSplitter = new SqlSplitter(PlSqlLexer.class, processor.getDelimiter(), false);
             sqlSplitter.setRemoveCommentPrefix(removeCommentPrefix);
@@ -163,6 +163,7 @@ public class SqlUtils {
             return sqls;
         }
     }
+
     public static SqlStatementIterator iterator(DialectType dialectType, String delimiter, InputStream input,
             Charset charset) {
         SqlCommentProcessor processor = new SqlCommentProcessor(dialectType, true, true);

@@ -113,12 +113,12 @@ public class TableService {
         // 创建OBConsoleDataSourceFactory对象
         OBConsoleDataSourceFactory factory = new OBConsoleDataSourceFactory(dataSource, true);
         try (SingleConnectionDataSource ds = (SingleConnectionDataSource) factory.getDataSource();
-            Connection conn = ds.getConnection()) {
+                Connection conn = ds.getConnection()) {
             // 获取表扩展点
             TableExtensionPoint point = SchemaPluginUtil.getTableExtension(dataSource.getDialectType());
             // 获取最新的表名列表
             Set<String> latestTableNames = point.list(conn, database.getName())
-                .stream().map(DBObjectIdentity::getName).collect(Collectors.toSet());
+                    .stream().map(DBObjectIdentity::getName).collect(Collectors.toSet());
             // 如果当前用户是个人版组织，则返回所有表的权限类型为所有权限类型
             if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
                 return latestTableNames.stream().map(tableName -> {
@@ -130,7 +130,7 @@ public class TableService {
             }
             // 获取数据库中已存在的表列表
             List<DBObjectEntity> tables =
-                dbObjectRepository.findByDatabaseIdAndType(params.getDatabaseId(), DBObjectType.TABLE);
+                    dbObjectRepository.findByDatabaseIdAndType(params.getDatabaseId(), DBObjectType.TABLE);
             Set<String> existTableNames = tables.stream().map(DBObjectEntity::getName).collect(Collectors.toSet());
             // 如果最新的表名列表与已存在的表名列表不一致，则同步数据库中的表
             if (latestTableNames.size() != existTableNames.size() || !existTableNames.containsAll(latestTableNames)) {

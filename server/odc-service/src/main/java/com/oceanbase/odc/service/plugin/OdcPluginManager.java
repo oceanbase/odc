@@ -36,9 +36,19 @@ public class OdcPluginManager<V> {
         this.pluginFinder = pluginFinder;
     }
 
+    /**
+     * 获取指定对象的指定类型的扩展点列表
+     *
+     * @param object 指定对象
+     * @param type 指定类型
+     * @param <T> 泛型，表示扩展点的类型
+     * @return 指定对象的指定类型的扩展点列表
+     */
     public <T extends ExtensionPoint> List<T> getExtensions(
             @NonNull V object, @NonNull Class<T> type) {
+        // 通过指定对象获取对应的插件ID
         String pluginId = pluginFinder.findPluginIdBy(object);
+        // 返回指定插件ID和指定类型的扩展点列表
         return pluginManager.getExtensions(type, pluginId);
     }
 

@@ -378,7 +378,7 @@ public class ConnectSessionService {
     /**
      * 根据sessionId获取ConnectionSession对象
      *
-     * @param sessionId  Session的ID
+     * @param sessionId Session的ID
      * @param autoCreate 是否自动创建Session
      * @return ConnectionSession对象
      * @throws NotFoundException 如果找不到对应的Session，则抛出NotFoundException异常
@@ -390,7 +390,7 @@ public class ConnectSessionService {
             // 如果Session对象为空，则根据sessionId创建Session对象
             CreateSessionReq req = new DefaultConnectSessionIdGenerator().getKeyFromId(sessionId);
             if (!autoCreate
-                || (!StringUtils.equals(req.getFrom(), stateHostGenerator.getHost()) && !isOBCloudEnvironment())) {
+                    || (!StringUtils.equals(req.getFrom(), stateHostGenerator.getHost()) && !isOBCloudEnvironment())) {
                 // 如果不自动创建Session或者当前环境不是OBCloud环境，则抛出NotFoundException异常
                 throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
             }
@@ -484,7 +484,7 @@ public class ConnectSessionService {
      * 初始化会话
      *
      * @param connectionSession 数据库连接会话
-     * @param connectionConfig  数据库连接配置
+     * @param connectionConfig 数据库连接配置
      */
     private void initSession(ConnectionSession connectionSession, ConnectionConfig connectionConfig) {
         // 创建 SQL 注释处理器

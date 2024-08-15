@@ -37,7 +37,7 @@ public class FullLinkTraceUtil {
     /**
      * 获取完整链路跟踪详情
      *
-     * @param statement    SQL语句对象
+     * @param statement SQL语句对象
      * @param queryTimeout 查询超时时间
      * @return SqlExecTime 执行时间对象
      * @throws SQLException SQL异常
@@ -47,11 +47,11 @@ public class FullLinkTraceUtil {
         OceanBaseConnection connection = (OceanBaseConnection) statement.getConnection();
         // 获取最后一个数据包的接收时间戳
         long lastPacketResponseTimestamp =
-            TimeUnit.MICROSECONDS.convert(connection.getLastPacketResponseTimestamp(),
-                TimeUnit.MILLISECONDS);
+                TimeUnit.MICROSECONDS.convert(connection.getLastPacketResponseTimestamp(),
+                        TimeUnit.MILLISECONDS);
         // 获取最后一个数据包的发送时间戳
         long lastPacketSendTimestamp = TimeUnit.MICROSECONDS.convert(connection.getLastPacketSendTimestamp(),
-            TimeUnit.MILLISECONDS);
+                TimeUnit.MILLISECONDS);
         // 保存原始查询超时时间
         int originQueryTimeout = statement.getQueryTimeout();
         // 设置查询超时时间

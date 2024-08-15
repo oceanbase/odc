@@ -64,6 +64,7 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
     @Override
     /**
      * 生成JDBC连接URL
+     * 
      * @param properties JDBC连接属性
      * @return JDBC连接URL
      */
