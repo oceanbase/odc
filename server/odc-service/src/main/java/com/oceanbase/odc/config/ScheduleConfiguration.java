@@ -85,19 +85,33 @@ public class ScheduleConfiguration {
         return executor;
     }
 
+    /**
+     * 创建一个名为"loaderdumperExecutor"的线程池任务执行器
+     *
+     * @return ThreadPoolTaskExecutor 线程池任务执行器
+     */
     @Bean(name = "loaderdumperExecutor")
     public ThreadPoolTaskExecutor loaderdumperExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        // 获取CPU核心数，设置线程池的核心线程数和最大线程数
         int poolSize = Math.max(SystemUtils.availableProcessors(), 5);
         executor.setCorePoolSize(poolSize);
         executor.setMaxPoolSize(poolSize);
+        // 设置队列容量为0，不使用任务队列
         executor.setQueueCapacity(0);
+        // 设置线程名前缀
         executor.setThreadNamePrefix("loader-dumper-");
+        // 等待任务完成后关闭线程池
         executor.setWaitForTasksToCompleteOnShutdown(true);
+        // 设置等待时间
         executor.setAwaitTerminationSeconds(5);
+        // 设置任务拦截器
         executor.setTaskDecorator(new TraceDecorator<>());
+        // 设置拒绝策略
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
+        // 初始化线程池
         executor.initialize();
+        // 打印日志
         log.info("loaderdumperExecutor initialized");
         return executor;
     }

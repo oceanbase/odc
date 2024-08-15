@@ -1255,8 +1255,16 @@ public class FlowInstanceService {
         dataTransferTaskInitHooks.add(hook);
     }
 
+    /**
+     * 消费数据传输钩子方法
+     *
+     * @param config 数据传输配置
+     * @param taskId 数据传输任务ID
+     */
     private void consumeDataTransferHook(DataTransferConfig config, Long taskId) {
+        // 创建数据传输任务初始化事件
         DataTransferTaskInitEvent event = new DataTransferTaskInitEvent(taskId, config);
+        // 遍历数据传输任务初始化钩子列表，并执行每个钩子
         for (Consumer<DataTransferTaskInitEvent> hook : dataTransferTaskInitHooks) {
             hook.accept(event);
         }

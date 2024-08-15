@@ -73,23 +73,34 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
 
     @Override
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
+        // 打印日志，表示数据传输任务开始了
         log.info("Data transfer task starts, taskId={}", taskId);
+        // 获取数据传输配置
         DataTransferConfig config = FlowTaskUtil.getDataTransferParameter(execution);
+        // 设置模式名称
         config.setSchemaName(FlowTaskUtil.getSchemaName(execution));
+        // 如果连接ID为空，则设置连接ID
         if (config.getConnectionId() == null) {
             config.setConnectionId(FlowTaskUtil.getConnectionConfig(execution).id());
         }
+        // 获取任务实体
         TaskEntity taskEntity = taskService.detail(taskId);
+        // 创建执行器信息
         ExecutorInfo executor = new ExecutorInfo(hostProperties);
+        // 获取任务提交者
         ExecutorInfo submitter = FlowTaskUtil.getTaskSubmitter(execution);
+        // 如果任务类型是导入任务，且任务提交者不为空且不是当前执行器，则需要通过HTTP GET获取导入文件
         if (taskEntity.getTaskType() == TaskType.IMPORT && submitter != null && !submitter.equals(executor)) {
             /**
              * 导入任务不在当前机器上，需要进行 {@code HTTP GET} 获取导入文件
              */
             odcInternalFileService.getExternalImportFiles(taskEntity, submitter, config.getImportFileName());
         }
+        // 设置执行超时时间
         config.setExecutionTimeoutSeconds(taskEntity.getExecutionExpirationIntervalSeconds());
+        // 创建数据传输上下文
         context = dataTransferService.create(taskId + "", config);
+        // 启动任务
         taskService.start(taskId, context.getStatus());
         return null;
     }

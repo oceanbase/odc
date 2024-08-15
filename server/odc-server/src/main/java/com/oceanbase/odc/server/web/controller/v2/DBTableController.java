@@ -69,12 +69,20 @@ public class DBTableController {
         }
     }
 
+    /**
+     * 获取表信息
+     *
+     * @param sessionId    会话ID
+     * @param databaseName 数据库名称
+     * @param tableName    表名称
+     * @return 包含表信息的成功响应
+     */
     @GetMapping(value = {"/{sessionId}/databases/{databaseName}/tables/{tableName}",
-            "/{sessionId}/currentDatabase/tables/{tableName}"})
+                         "/{sessionId}/currentDatabase/tables/{tableName}"})
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<DBTable> getTable(@PathVariable String sessionId,
-            @PathVariable(required = false) String databaseName,
-            @PathVariable String tableName) {
+        @PathVariable(required = false) String databaseName,
+        @PathVariable String tableName) {
         Base64.Decoder decoder = Base64.getDecoder();
         tableName = new String(decoder.decode(tableName));
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);

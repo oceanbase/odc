@@ -114,66 +114,94 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
     @Getter
     private DataTransferJob job;
 
+    /**
+     * 调用方法
+     *
+     * @return DataTransferTaskResult 数据传输任务结果
+     * @throws Exception 异常
+     */
     @Override
     public DataTransferTaskResult call() throws Exception {
         try {
+            // 将日志路径放入TraceContextHolder中
             TraceContextHolder.put(DataTransferConstants.LOG_PATH_NAME, logDir.getPath());
+            // 设置当前用户
             SecurityContextUtils.setCurrentUser(creator);
 
             List<URL> inputs = Collections.emptyList();
             if (config.getTransferType() == DataTransferType.IMPORT) {
+                // 复制输入文件
                 inputs = copyInputFiles();
+                // 加载清单文件
                 loadManifest();
             } else {
+                // 设置掩码配置
                 setMaskConfig();
             }
 
+            // 根据连接类型获取数据传输扩展并生成任务
             job = TaskPluginUtil
-                    .getDataTransferExtension(config.getConnectionInfo().getConnectType().getDialectType())
-                    .generate(config, workingDir, logDir, inputs);
+                .getDataTransferExtension(config.getConnectionInfo().getConnectType().getDialectType())
+                .generate(config, workingDir, logDir, inputs);
 
+            // 执行任务
             DataTransferTaskResult result = job.call();
 
+            // 验证任务执行结果
             validateSuccessful(result);
 
             if (config.getTransferType() == DataTransferType.IMPORT) {
+                // 异常处理，无论任务类型如何，都清理文件
                 clearWorkingDir();
             } else {
                 if (config.getDataTransferFormat() != DataTransferFormat.SQL) {
                     // save csv config to MANIFEST
+                    // 将csv配置保存到清单文件中
                     Path manifest = Paths.get(workingDir.getPath(), "data", ExportOutput.MANIFEST);
                     SerializeUtils.serializeObjectByKryo(new Manifest(getDumpParameterForManifest()),
-                            manifest.toString());
+                        manifest.toString());
                 }
+                // 处理输出
                 handleOutput(result);
             }
 
             return result;
 
         } catch (Exception e) {
+            // 记录日志
             log.warn("Failed to run data transfer task.", e);
             LOGGER.warn("Failed to run data transfer task.", e);
             // clean up files on exception, no matter what type the task is
+            // 异常处理，无论任务类型如何，都清理文件
             clearWorkingDir();
             throw e;
 
         } finally {
+            // 清空TraceContextHolder和SecurityContextUtils
             TraceContextHolder.clear();
             SecurityContextUtils.clear();
         }
     }
 
+    /**
+     * 复制输入文件
+     *
+     * @return 输入文件的URL列表
+     * @throws Exception
+     */
     private List<URL> copyInputFiles() throws Exception {
         /*
          * move import files
          */
         List<String> importFileNames = config.getImportFileName();
         if (config.isCompressed()) {
+            // 如果是压缩文件，则复制导入的压缩文件
             ExportOutput exportOutput = copyImportZip(importFileNames, workingDir);
             List<DataTransferObject> objects = new ArrayList<>();
             List<DumpDBObject> dumpDbObjects = exportOutput.getDumpDbObjects();
             List<URL> inputs = new ArrayList<>();
             for (DumpDBObject dbObject : dumpDbObjects) {
+                // 遍历每个数据库对象的输出文件
                 dbObject.getOutputFiles().forEach(abstractOutputFile -> {
                     DataTransferObject transferObject = new DataTransferObject();
                     transferObject.setDbObjectType(dbObject.getObjectType());
@@ -188,6 +216,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
             config.setExportDbObjects(objects);
             return inputs;
         } else {
+            // 如果不是压缩文件，则复制导入的脚本文件
             return copyImportScripts(importFileNames, config.getDataTransferFormat(), workingDir);
         }
     }
@@ -208,60 +237,92 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         }
     }
 
+    /**
+     * 设置数据脱敏配置
+     *
+     * @throws Exception
+     */
     private void setMaskConfig() throws Exception {
+        // 获取配置文件中的模式名称
         String schemaName = config.getSchemaName();
+        // 创建一个空的Map，用于存储表名和列名的对应关系
         Map<String, List<String>> tableName2ColumnNames = new HashMap<>();
+        // 创建一个连接会话
         ConnectionSession connectionSession = new DefaultConnectSessionFactory(connectionConfig).generateSession();
         try {
+            // 创建一个DBSchemaAccessor对象
             DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
             List<String> tableNames;
+            // 判断是否导出所有对象
             if (config.isExportAllObjects()) {
+                // 获取符合条件的表名列表
                 tableNames = accessor.showTablesLike(schemaName, null).stream()
-                        .filter(name -> !StringUtils.endsWithIgnoreCase(name, OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
-                        .collect(Collectors.toList());
+                    .filter(name -> !StringUtils.endsWithIgnoreCase(name, OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
+                    .collect(Collectors.toList());
             } else {
+                // 获取需要导出的对象的表名的集合
                 tableNames = config.getExportDbObjects().stream()
-                        .filter(o -> Objects.equals(ObjectType.TABLE, o.getDbObjectType()))
-                        .map(DataTransferObject::getObjectName)
-                        .collect(Collectors.toList());
+                    .filter(o -> Objects.equals(ObjectType.TABLE, o.getDbObjectType()))
+                    .map(DataTransferObject::getObjectName)
+                    .collect(Collectors.toList());
             }
+            // 遍历表名集合
             for (String tableName : tableNames) {
+                // 获取表的列名集合
                 List<String> tableColumns = accessor.listTableColumns(schemaName, tableName).stream()
-                        .map(DBTableColumn::getName).collect(Collectors.toList());
+                    .map(DBTableColumn::getName).collect(Collectors.toList());
+                // 将表名和列名的对应关系添加到Map中
                 tableName2ColumnNames.put(tableName, tableColumns);
+                // 忽略异常
             }
         } finally {
             try {
+                // 关闭连接会话
                 connectionSession.expire();
             } catch (Exception e) {
                 // eat exception
+                // 忽略异常
             }
         }
-
+        // 获取敏感列和对应的脱敏算法
         Map<SensitiveColumn, MaskingAlgorithm> sensitiveColumn2Algorithm = maskingService
-                .listColumnsAndMaskingAlgorithm(config.getDatabaseId(), tableName2ColumnNames.keySet());
+            .listColumnsAndMaskingAlgorithm(config.getDatabaseId(), tableName2ColumnNames.keySet());
+        // 如果没有敏感列，则直接返回
         if (sensitiveColumn2Algorithm.isEmpty()) {
             return;
         }
+        // 将敏感列转换为表列和对应的脱敏算法的映射关系
         Map<TableColumn, MaskingAlgorithm> column2Algorithm = sensitiveColumn2Algorithm.keySet().stream()
-                .collect(Collectors.toMap(c -> new TableColumn(c.getTableName(), c.getColumnName()),
-                        sensitiveColumn2Algorithm::get, (c1, c2) -> c1));
+            .collect(Collectors.toMap(c -> new TableColumn(c.getTableName(), c.getColumnName()),
+                sensitiveColumn2Algorithm::get, (c1, c2) -> c1));
+        // 创建数据脱敏工厂
         DataMaskerFactory maskerFactory = new DataMaskerFactory();
+        // 创建脱敏配置map
         Map<TableIdentity, Map<String, AbstractDataMasker>> maskConfigMap = new HashMap<>();
+        // 遍历表名和列名的映射关系
         for (String tableName : tableName2ColumnNames.keySet()) {
+            // 创建列和对应的脱敏器的映射关系
             Map<String, AbstractDataMasker> column2Masker = new HashMap<>();
+            // 遍历表中的所有列
             for (String columnName : tableName2ColumnNames.get(tableName)) {
+                // 获取列对应的脱敏算法
                 MaskingAlgorithm algorithm = column2Algorithm.get(new TableColumn(tableName, columnName));
+                // 如果脱敏算法为空，则跳过当前列
                 if (Objects.isNull(algorithm)) {
                     continue;
                 }
+                // 将脱敏算法转换为脱敏配置
                 MaskConfig maskConfig = MaskingAlgorithmUtil.toSingleFieldMaskConfig(algorithm, columnName);
+                // 创建脱敏器
                 AbstractDataMasker masker =
-                        maskerFactory.createDataMasker(MaskValueType.SINGLE_VALUE.name(), maskConfig);
+                    maskerFactory.createDataMasker(MaskValueType.SINGLE_VALUE.name(), maskConfig);
+                // 将脱敏器添加到列和脱敏器的映射关系中
                 column2Masker.put(columnName, masker);
             }
+            // 将表和列的映射关系添加到脱敏配置map中
             maskConfigMap.put(TableIdentity.of(schemaName, tableName), column2Masker);
         }
+        // 设置脱敏配置到配置对象中
         config.setMaskConfig(maskConfigMap);
     }
 

@@ -67,16 +67,30 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
         this.logDir = logDir;
     }
 
+    /**
+     * 生成参数对象
+     *
+     * @return 生成的参数对象
+     * @throws IOException IO异常
+     */
     public T generate() throws IOException {
+        // 调用doGenerate方法生成参数对象
         T parameter = doGenerate(workingDir);
+        // 设置日志路径
         parameter.setLogPath(logDir.getPath());
+        // 设置会话信息
         setSessionInfo(parameter);
+        // 设置初始化SQL语句
         setInitSqls(parameter);
+        // 设置文件配置
         setFileConfig(parameter, workingDir);
+        // 设置线程数
         parameter.setThreads(3);
+        // 如果数据传输格式不是SQL，则设置CSV信息
         if (transferConfig.getDataTransferFormat() != DataTransferFormat.SQL) {
             setCsvInfo(parameter);
         }
+        // 返回生成的参数对象
         return parameter;
     }
 
