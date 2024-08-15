@@ -339,7 +339,7 @@ public class FlowInstanceService {
                 }
             }
             scheduleService.changeSchedule(scheduleChangeParams);
-            return Collections.emptyList();
+            return Collections.singletonList(FlowInstanceDetailResp.withIdAndType(-1L, TaskType.ALTER_SCHEDULE));
         }
         if (createReq.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
             ApplyDatabaseParameter parameter = (ApplyDatabaseParameter) createReq.getParameters();

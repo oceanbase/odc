@@ -24,6 +24,7 @@ import com.oceanbase.odc.core.shared.OrganizationIsolated;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.service.common.model.InnerUser;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 
 import lombok.Data;
@@ -65,6 +66,7 @@ public class ScheduleDetailRespHist implements OrganizationIsolated {
 
 
 
+    private Database database;
     private boolean approvable;
     private Long organizationId;
     private Long approveInstanceId;

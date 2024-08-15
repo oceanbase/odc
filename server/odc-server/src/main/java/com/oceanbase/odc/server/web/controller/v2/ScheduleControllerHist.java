@@ -37,11 +37,10 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
-import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleDetailRespHist;
 import com.oceanbase.odc.service.schedule.model.ScheduleOverviewHist;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
-import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailRespHist;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
@@ -95,9 +94,9 @@ public class ScheduleControllerHist {
 
     @RequestMapping(value = "/scheduleConfigs/{scheduleId:[\\d]+}/scheduleTask/{scheduleTaskId:[\\d]+}",
             method = RequestMethod.GET)
-    public SuccessResponse<ScheduleTaskDetailResp> detailScheduleTask(@PathVariable Long scheduleId,
+    public SuccessResponse<ScheduleTaskDetailRespHist> detailScheduleTask(@PathVariable Long scheduleId,
             @PathVariable Long scheduleTaskId) {
-        return Responses.single(scheduleService.detailScheduleTask(scheduleId, scheduleTaskId));
+        return Responses.single(scheduleService.detailScheduleTaskHist(scheduleId, scheduleTaskId));
     }
 
     @RequestMapping(value = "/{id:[\\d]+}/jobs/async/batchGetDownloadUrl", method = RequestMethod.POST)

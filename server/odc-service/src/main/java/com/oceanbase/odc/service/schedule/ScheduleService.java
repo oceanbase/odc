@@ -96,6 +96,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleOverviewHist;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailRespHist;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
@@ -526,6 +527,22 @@ public class ScheduleService {
     public ScheduleTaskDetailResp detailScheduleTask(Long scheduleId, Long scheduleTaskId) {
         Schedule schedule = nullSafeGetByIdWithCheckPermission(scheduleId);
         return scheduleTaskService.getScheduleTaskDetailResp(scheduleTaskId, schedule.getId());
+    }
+
+    @Deprecated
+    public ScheduleTaskDetailRespHist detailScheduleTaskHist(Long scheduleId, Long scheduleTaskId) {
+        Schedule schedule = nullSafeGetByIdWithCheckPermission(scheduleId);
+        ScheduleTaskDetailResp detailResp = scheduleTaskService.getScheduleTaskDetailResp(scheduleTaskId,
+                schedule.getId());
+        ScheduleTaskDetailRespHist returnValue = new ScheduleTaskDetailRespHist();
+        returnValue.setId(detailResp.getId());
+        returnValue.setCreateTime(detailResp.getCreateTime());
+        returnValue.setStatus(detailResp.getStatus());
+        returnValue.setUpdateTime(detailResp.getUpdateTime());
+        returnValue.setJobName(schedule.getId().toString());
+        returnValue.setJobGroup(detailResp.getType().name());
+        returnValue.setExecutionDetails(detailResp.getExecutionDetails());
+        return returnValue;
     }
 
     public ScheduleDetailResp detailSchedule(Long scheduleId) {

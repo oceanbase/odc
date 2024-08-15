@@ -169,6 +169,7 @@ public class ScheduleResponseMapperFactory {
         }).collect(Collectors.toMap(ScheduleOverview::getScheduleId, o -> o));
     }
 
+    @Deprecated
     public ScheduleDetailRespHist generateHistoryScheduleDetail(Schedule schedule) {
         ScheduleDetailRespHist resp = new ScheduleDetailRespHist();
         resp.setId(schedule.getId());
@@ -183,7 +184,12 @@ public class ScheduleResponseMapperFactory {
         resp.setCreateTime(schedule.getCreateTime());
         resp.setUpdateTime(schedule.getUpdateTime());
         resp.setDescription(schedule.getDescription());
+        resp.setJobParameters(detailParameters(schedule));
 
+        List<Database> databaseByIds = getDatabaseByIds(Collections.singleton(schedule.getDatabaseId()));
+        if (!databaseByIds.isEmpty()) {
+            resp.setDatabase(databaseByIds.get(0));
+        }
 
         Set<Long> approvableFlowInstanceIds = approvalPermissionService.getApprovableApprovalInstances()
                 .stream()
@@ -214,6 +220,7 @@ public class ScheduleResponseMapperFactory {
         return resp;
     }
 
+    @Deprecated
     public Map<Long, ScheduleOverviewHist> generateHistoryScheduleList(@NonNull Collection<ScheduleEntity> schedules) {
         if (schedules.isEmpty()) {
             return Collections.emptyMap();
