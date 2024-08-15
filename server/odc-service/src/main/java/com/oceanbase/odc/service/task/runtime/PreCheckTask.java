@@ -54,7 +54,7 @@ import com.oceanbase.odc.service.regulation.ruleset.model.RuleMetadata;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleType;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
-import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.odc.service.sqlcheck.DefaultSqlChecker;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
@@ -164,7 +164,7 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
             sqlContent = params.getSql();
         } else if (taskType == TaskType.ALTER_SCHEDULE) {
             AlterScheduleParameters params = JsonUtils.fromJson(paramJson, AlterScheduleParameters.class);
-            if (params.getType() != JobType.SQL_PLAN) {
+            if (params.getType() != ScheduleType.SQL_PLAN) {
                 return;
             }
             DatabaseChangeParameters dcParams = (DatabaseChangeParameters) params.getScheduleTaskParameters();
@@ -185,7 +185,7 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
             params = JsonUtils.fromJson(paramJson, DatabaseChangeParameters.class);
         } else if (taskType == TaskType.ALTER_SCHEDULE) {
             AlterScheduleParameters asParams = JsonUtils.fromJson(paramJson, AlterScheduleParameters.class);
-            if (asParams.getType() != JobType.SQL_PLAN) {
+            if (asParams.getType() != ScheduleType.SQL_PLAN) {
                 return;
             }
             params = (DatabaseChangeParameters) asParams.getScheduleTaskParameters();
