@@ -23,6 +23,7 @@ import org.quartz.JobExecutionContext;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
@@ -80,8 +81,10 @@ public abstract class AbstractDlmJob implements OdcJob {
     public DataSourceInfo getDataSourceInfo(Long databaseId) {
         Database db = databaseService.detail(databaseId);
         ConnectionConfig config = databaseService.findDataSourceForTaskById(databaseId);
-        DataSourceInfo dataSourceInfo = DataSourceInfoMapper.toDataSourceInfo(config);
-        dataSourceInfo.setDatabaseName(db.getName());
+        DataSourceInfo dataSourceInfo = DataSourceInfoMapper.toDataSourceInfo(config, db.getName());
+        if (config.getDialectType() != DialectType.POSTGRESQL) {
+            dataSourceInfo.setDatabaseName(db.getName());
+        }
         return dataSourceInfo;
     }
 

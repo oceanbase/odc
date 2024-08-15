@@ -19,7 +19,10 @@ package com.oceanbase.odc.service.dlm;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
+import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.enums.DataBaseType;
@@ -62,7 +65,7 @@ public class DataSourceInfoMapper {
         return connectionConfig;
     }
 
-    public static DataSourceInfo toDataSourceInfo(ConnectionConfig connectionConfig) {
+    public static DataSourceInfo toDataSourceInfo(ConnectionConfig connectionConfig, String schemaName) {
         DataSourceInfo dataSourceInfo = new DataSourceInfo();
         dataSourceInfo.setDatabaseName(connectionConfig.getDefaultSchema());
         dataSourceInfo.setQueryTimeout(connectionConfig.queryTimeoutSeconds());
@@ -102,7 +105,9 @@ public class DataSourceInfoMapper {
                 break;
             case POSTGRESQL:
                 dataSourceInfo.setFullUserName(connectionConfig.getUsername());
+                dataSourceInfo.setDatabaseName(connectionConfig.getDatabaseName());
                 dataSourceInfo.setDatabaseType(DataBaseType.POSTGRESQL);
+                dataSourceInfo.setJdbcUrl(getJdbcUrl(connectionConfig, schemaName));
                 break;
             default:
                 log.warn(String.format("Unsupported datasource type:%s", connectionConfig.getDialectType()));
@@ -111,4 +116,14 @@ public class DataSourceInfoMapper {
         }
         return dataSourceInfo;
     }
+
+    private static String getJdbcUrl(ConnectionConfig config, String schema) {
+        JdbcUrlProperty jdbcUrlProperties = new JdbcUrlProperty(config.getHost(), config.getPort(), schema,
+                OBConsoleDataSourceFactory.getJdbcParams(config), config.getSid(),
+                config.getServiceName(), config.getDatabaseName());
+        ConnectionExtensionPoint connectionExtensionPoint =
+                ConnectionPluginUtil.getConnectionExtension(config.getDialectType());
+        return connectionExtensionPoint.generateJdbcUrl(jdbcUrlProperties);
+    }
+
 }
