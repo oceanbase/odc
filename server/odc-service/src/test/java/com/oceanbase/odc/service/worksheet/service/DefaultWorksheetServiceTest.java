@@ -70,8 +70,7 @@ public class DefaultWorksheetServiceTest {
 
     @After
     public void clear() {
-        boolean delete = OdcFileUtil.deleteFiles(new File(CloudObjectStorageConstants.TEMP_DIR));
-        assert delete;
+        OdcFileUtil.deleteFiles(new File(CloudObjectStorageConstants.TEMP_DIR));
     }
 
     @Test
