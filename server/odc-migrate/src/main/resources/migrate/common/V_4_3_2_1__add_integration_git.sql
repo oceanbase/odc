@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS `integration_git_repository_stage` (
   `organization_id` bigint(20) NOT NULL COMMENT 'organization id, references iam_organization.id',
   `repo_id` bigint(20) NOT NULL COMMENT 'git repository id, references integration_git_repository.id',
   `state` varchar(32) NOT NULL COMMENT 'local repository state',
-  `branch` varchar(512) NOT NULL COMMENT 'last edit branch',
+  `branch` varchar(512) DEFAULT NULL COMMENT 'last edit branch',
   `last_commit_id` varchar(64) DEFAULT NULL COMMENT 'git commit revision number',
   `diff_patch_storage` varchar(512) DEFAULT NULL COMMENT 'storage information of patch file',
   `user_id` bigint(20) NOT NULL COMMENT 'user id, references iam_user.id',

@@ -64,9 +64,7 @@
   default_schema: default_schema
   sqls:
     - select func();
-  expected:
-    - schema: default_schema
-      table: ~
+  expected: [ ]
 - id: 9
   dialect_type: OB_MYSQL
   default_schema: default_schema
@@ -76,9 +74,7 @@
       `str2` VARCHAR ( 45 )) RETURNS VARCHAR ( 128 ) BEGIN
       RETURN ( SELECT concat( str1, str2 ) FROM DUAL );
       END;
-  expected:
-    - schema: default_schema
-      table: ~
+  expected: [ ]
 - id: 10
   dialect_type: OB_MYSQL
   default_schema: default_schema
@@ -162,9 +158,7 @@
   default_schema: DEFAULT_SCHEMA
   sqls:
     - SELECT FUNC() FROM DUAL;
-  expected:
-    - schema: DEFAULT_SCHEMA
-      table: ~
+  expected: [ ]
 - id: 20
   dialect_type: OB_ORACLE
   default_schema: DEFAULT_SCHEMA
@@ -174,9 +168,7 @@
       BEGIN
       RETURN INPUT_NUMBER + 1;
       END INCREMENT_BY_ONE;
-  expected:
-    - schema: DEFAULT_SCHEMA
-      table: ~
+  expected: [ ]
 - id: 21
   dialect_type: OB_ORACLE
   default_schema: DEFAULT_SCHEMA

@@ -19,9 +19,7 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Proxy.Type;
 import java.util.Locale;
-import java.util.Map;
 
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -33,7 +31,6 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.notification.helper.MessageResponseValidator;
 import com.oceanbase.odc.service.notification.helper.MessageTemplateProcessor;
 import com.oceanbase.odc.service.notification.model.ChannelType;
@@ -64,8 +61,8 @@ public class HttpSender implements MessageSender {
         RestTemplate restTemplate = getRestTemplate(channelConfig);
         HttpMethod httpMethod = channelConfig.getHttpMethod() == null ? HttpMethod.POST : channelConfig.getHttpMethod();
         HttpEntity<String> request = new HttpEntity<>(getBody(message), getHeaders(message));
-        ResponseEntity<Map> response =
-                restTemplate.exchange(getUrl(message), httpMethod, request, Map.class);
+        ResponseEntity<String> response =
+                restTemplate.exchange(getUrl(message), httpMethod, request, String.class);
         return checkResponse(message, response);
     }
 
@@ -96,15 +93,15 @@ public class HttpSender implements MessageSender {
         return resolveTemplate(message, channelConfig.getBodyTemplate());
     }
 
-    protected MessageSendResult checkResponse(Message message, ResponseEntity<Map> response) {
+    protected MessageSendResult checkResponse(Message message, ResponseEntity<String> response) {
         if (response.getStatusCode() != HttpStatus.OK) {
             String errorMessage =
-                    response.getBody() == null ? "HttpCode:" + response.getStatusCode() : response.getBody().toString();
+                    response.getBody() == null ? "HttpCode:" + response.getStatusCode() : response.getBody();
             return MessageSendResult.ofFail(errorMessage);
         }
         WebhookChannelConfig channelConfig = (WebhookChannelConfig) message.getChannel().getChannelConfig();
         String responseValidation = channelConfig.getResponseValidation();
-        String content = MapUtils.isEmpty(response.getBody()) ? "" : JsonUtils.toJson(response.getBody());
+        String content = StringUtils.isEmpty(response.getBody()) ? "" : response.getBody();
         if (StringUtils.isEmpty(responseValidation) || "{}".equals(responseValidation)
                 || MessageResponseValidator.validateMessage(content, responseValidation)) {
             return MessageSendResult.ofSuccess();
