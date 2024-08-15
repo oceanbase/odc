@@ -23,6 +23,7 @@ import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,7 +32,9 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.WorksheetObjectStorageGateway;
 import com.oceanbase.odc.service.worksheet.domain.WorksheetRepository;
@@ -40,7 +43,7 @@ import com.oceanbase.odc.service.worksheet.utils.WorksheetUtil;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DefaultWorksheetServiceTest {
-
+    Long projectId = 1L;
     @Mock
     private WorksheetRepository worksheetRepository;
 
@@ -52,6 +55,7 @@ public class DefaultWorksheetServiceTest {
     private AuthenticationFacade authenticationFacade;
 
     private DefaultWorksheetService defaultWorksheetService;
+    private File destinationDirectory;
 
     @Before
     public void setUp() {
@@ -59,9 +63,16 @@ public class DefaultWorksheetServiceTest {
         defaultWorksheetService =
                 new DefaultWorksheetService(transactionTemplate, worksheetObjectStorageGateway,
                         worksheetRepository, authenticationFacade);
+        destinationDirectory = WorksheetPathUtil.createFileWithParent(
+                WorksheetUtil.getWorksheetDownloadDirectory() + "project1", true).toFile();
+
     }
 
-    Long projectId = 1L;
+    @After
+    public void clear() {
+        boolean delete = OdcFileUtil.deleteFiles(new File(CloudObjectStorageConstants.TEMP_DIR));
+        assert delete;
+    }
 
     @Test
     public void testDownloadPathsToDirectory_NormalCase() {
@@ -75,8 +86,6 @@ public class DefaultWorksheetServiceTest {
                 "/Worksheets/dir3/subdir1/file5");
         Set<Path> paths = pathStrList.stream().map(Path::new).collect(Collectors.toSet());
         Path commParentPath = Path.root();
-        File destinationDirectory = WorksheetPathUtil.createFileWithParent(
-                WorksheetUtil.getWorksheetDownloadDirectory() + "project1", true).toFile();
 
         // Mock
         when(worksheetRepository.findByProjectIdAndPath(projectId, new Path("/Worksheets/dir1/"),

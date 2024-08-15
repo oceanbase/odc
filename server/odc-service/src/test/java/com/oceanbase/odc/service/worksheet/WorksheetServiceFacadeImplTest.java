@@ -29,12 +29,15 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.oceanbase.odc.service.common.util.OdcFileUtil;
+import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.WorksheetObjectStorageGateway;
 import com.oceanbase.odc.service.worksheet.domain.WorksheetProjectRepository;
@@ -45,7 +48,7 @@ import com.oceanbase.odc.service.worksheet.service.RepoWorksheetService;
 
 @RunWith(MockitoJUnitRunner.class)
 public class WorksheetServiceFacadeImplTest {
-
+    Long projectId = 1L;
     @Mock
     private WorksheetProjectRepository worksheetProjectRepository;
     @Mock
@@ -59,7 +62,12 @@ public class WorksheetServiceFacadeImplTest {
 
     @InjectMocks
     private WorksheetServiceFacadeImpl worksheetServiceFacade;
-    Long projectId = 1L;
+
+    @After
+    public void clear() {
+        boolean delete = OdcFileUtil.deleteFiles(new File(CloudObjectStorageConstants.TEMP_DIR));
+        assert delete;
+    }
 
     /**
      * single file download

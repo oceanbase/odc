@@ -259,7 +259,7 @@ public class WorksheetPathUtil {
         try {
             java.nio.file.Path parentDir = filePath.getParent();
             if (parentDir != null) {
-                Files.createDirectories(parentDir); // 创建所有缺失的父目录
+                Files.createDirectories(parentDir);
             }
 
             return isDirectory ? Files.createDirectory(filePath) : Files.createFile(filePath);
