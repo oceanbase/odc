@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.objectstorage.pure;
+package com.oceanbase.odc.service.objectstorage.client;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +24,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
-import com.oceanbase.odc.service.objectstorage.lifecycle.Lifecycle;
+import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectTagging;
 
 /**
  * only for the logic of object storage ,not include the processing of metadata.
@@ -35,12 +35,12 @@ import com.oceanbase.odc.service.objectstorage.lifecycle.Lifecycle;
  * @date 2024/08/09
  * @since 4.3.2
  */
-public interface PureObjectStorage {
+public interface ObjectStorageClient {
     URL getDownloadUrl(@NotBlank String objectName, Long expirationSeconds);
 
     URL getUploadUrl(@NotBlank String objectName);
 
-    void putObject(@NotBlank String objectName, @NotNull File file, Lifecycle lifecycle) throws IOException;
+    void putObject(@NotBlank String objectName, @NotNull File file, ObjectTagging objectTagging) throws IOException;
 
     byte[] readContent(@NotBlank String objectName) throws IOException;
 

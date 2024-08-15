@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.objectstorage.pure;
+package com.oceanbase.odc.service.objectstorage.client;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Configuration
 @Slf4j
-public class PureObjectStorageConfiguration {
+public class ObjectStorageClientConfiguration {
     @Autowired
     private CloudEnvConfigurations cloudEnvConfigurations;
 
@@ -48,22 +48,20 @@ public class PureObjectStorageConfiguration {
     private long blockSplitLength = 1024 * 1024L;
 
     @Primary
-    @Bean("pureObjectStorage")
+    @Bean("objectStorageClient")
     @RefreshScope
-    public PureObjectStorage pureObjectStorage() {
-        log.info("pureObjectStorage is initializing");
+    public ObjectStorageClient objectStorageClient() {
+        log.info("objectStorageClient is initializing");
         CloudProvider cloudProvider = cloudEnvConfigurations.getObjectStorageConfiguration().getCloudProvider();
-        return CloudProvider.NONE == cloudProvider ? localPureObjectStorage() : cloudPureObjectStorage();
+        return CloudProvider.NONE == cloudProvider ? localObjectStorageClient() : cloudObjectStorageClient();
     }
 
-    private CloudPureObjectStorage cloudPureObjectStorage() {
-        return new CloudPureObjectStorage(publicEndpointCloudObjectStorage, internalEndpointCloudObjectStorage,
+    private CloudObjectStorageClient cloudObjectStorageClient() {
+        return new CloudObjectStorageClient(publicEndpointCloudObjectStorage, internalEndpointCloudObjectStorage,
                 cloudEnvConfigurations.getObjectStorageConfiguration());
     }
 
-    private LocalPureObjectStorage localPureObjectStorage() {
-        return new LocalPureObjectStorage(blockOperator, blockSplitLength);
+    private LocalObjectStorageClient localObjectStorageClient() {
+        return new LocalObjectStorageClient(blockOperator, blockSplitLength);
     }
-
-
 }

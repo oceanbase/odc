@@ -19,11 +19,11 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.oceanbase.odc.service.objectstorage.cloud.client.NullCloudClient;
-import com.oceanbase.odc.service.objectstorage.pure.CloudPureObjectStorage;
+import com.oceanbase.odc.service.objectstorage.client.CloudObjectStorageClient;
 
-public class CloudPureObjectStorageTest {
-    private CloudPureObjectStorage service =
-            new CloudPureObjectStorage(new NullCloudClient(), new NullCloudClient(), null);
+public class CloudObjectStorageClientTest {
+    private CloudObjectStorageClient service =
+            new CloudObjectStorageClient(new NullCloudClient(), new NullCloudClient(), null);
 
     @Test
     public void calculatePartSize_LessThanPartCount_MINSIZE() {

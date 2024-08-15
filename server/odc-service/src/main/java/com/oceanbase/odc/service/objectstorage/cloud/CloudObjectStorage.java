@@ -34,7 +34,6 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.PutObjectResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.StorageObject;
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadPartRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadPartResult;
-import com.oceanbase.odc.service.objectstorage.lifecycle.Lifecycle;
 
 /**
  * Cloud object storage
@@ -60,7 +59,7 @@ public interface CloudObjectStorage {
 
     PutObjectResult putObject(String bucketName, String key, File file, ObjectMetadata metadata) throws CloudException;
 
-    void setLifecycle(String bucketName, String key, Lifecycle lifecycle);
+    void setExpiredAfterLastModified(String bucketName, String prefixForMatchObjectName, int expiredDaya);
 
     default PutObjectResult putObject(String bucketName, String key, File file) {
         return putObject(bucketName, key, file, null);

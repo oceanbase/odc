@@ -24,11 +24,16 @@ import java.util.TreeMap;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectTagging.Tag;
-import com.oceanbase.odc.service.objectstorage.lifecycle.Lifecycle;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ObjectMetadata {
     private Map<String, String> userMetadata = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     private Long contentLength;
@@ -40,8 +45,6 @@ public class ObjectMetadata {
      * for mark object temp while put object, works with LifeCycle policy
      */
     private ObjectTagging tagging;
-
-    private Lifecycle lifecycle;
 
     public static ObjectMetadata temp() {
         ObjectMetadata metadata = new ObjectMetadata();

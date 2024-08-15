@@ -30,6 +30,8 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.lang.Validate;
+
 import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
@@ -69,8 +71,6 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.UploadObjectTemporary
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadPartRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadPartResult;
 import com.oceanbase.odc.service.objectstorage.cloud.util.CloudObjectStorageUtil;
-import com.oceanbase.odc.service.objectstorage.lifecycle.Lifecycle;
-import com.oceanbase.odc.service.objectstorage.lifecycle.Strategy;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -184,27 +184,20 @@ public class AmazonCloudClient implements CloudClient {
             result.setVersionId(s3Result.getETag());
             return result;
         });
-        setLifecycle(bucketName, key, metadata.getLifecycle());
         return putObject;
     }
 
     @Override
-    public void setLifecycle(String bucketName, String key, Lifecycle lifecycle) {
-        if (lifecycle == null) {
-            return;
-        }
-        Rule rule = null;
-        if (Objects.requireNonNull(lifecycle.getStrategy()) == Strategy.EXPIRED_AFTER_LAST_MODIFIED) {
-            String ruleId = "odc-expired-after-last-modified-rule";
-            rule = new Rule();
-            rule.setId(ruleId);
-            rule.setStatus(BucketLifecycleConfiguration.ENABLED);
-            rule.setExpirationInDays(lifecycle.getExpirationDays());
-            rule.setFilter(new LifecycleFilter().withPredicate(new LifecyclePrefixPredicate(key)));
-        }
-        if (rule == null) {
-            return;
-        }
+    public void setExpiredAfterLastModified(String bucketName, String prefixForMatchObjectName, int expiredDaya) {
+        Validate.isTrue(expiredDaya > 0, "expiredDaya must be greater than 0");
+
+        String ruleId = "odc-expired-after-last-modified-rule";
+        Rule rule = new Rule();
+        rule.setId(ruleId);
+        rule.setStatus(BucketLifecycleConfiguration.ENABLED);
+        rule.setExpirationInDays(expiredDaya);
+        rule.setFilter(new LifecycleFilter().withPredicate(new LifecyclePrefixPredicate(prefixForMatchObjectName)));
+
         BucketLifecycleConfiguration bucketLifecycleConfiguration = new BucketLifecycleConfiguration();
         bucketLifecycleConfiguration.setRules(Collections.singletonList(rule));
         callAmazonMethod("Set bucket lifecycle", () -> {

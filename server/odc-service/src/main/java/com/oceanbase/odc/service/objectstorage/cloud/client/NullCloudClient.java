@@ -35,7 +35,6 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.StorageObject;
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadObjectTemporaryCredential;
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadPartRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadPartResult;
-import com.oceanbase.odc.service.objectstorage.lifecycle.Lifecycle;
 
 public class NullCloudClient implements CloudClient {
     @Override
@@ -77,7 +76,7 @@ public class NullCloudClient implements CloudClient {
     }
 
     @Override
-    public void setLifecycle(String bucketName, String key, Lifecycle lifecycle) {
+    public void setExpiredAfterLastModified(String bucketName, String prefixForMatchObjectName, int expiredDaya) {
         throw new UnsupportedException();
     }
 

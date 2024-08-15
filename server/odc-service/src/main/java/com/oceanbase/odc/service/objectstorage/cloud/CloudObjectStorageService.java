@@ -39,9 +39,9 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
+import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectTagging;
 import com.oceanbase.odc.service.objectstorage.cloud.util.CloudObjectStorageUtil;
-import com.oceanbase.odc.service.objectstorage.lifecycle.Lifecycle;
-import com.oceanbase.odc.service.objectstorage.pure.CloudPureObjectStorage;
+import com.oceanbase.odc.service.objectstorage.client.CloudObjectStorageClient;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +54,7 @@ import lombok.extern.slf4j.Slf4j;
 public class CloudObjectStorageService {
     private final File tempDirectory = new File(
             CloudObjectStorageConstants.TEMP_DIR);
-    private final CloudPureObjectStorage pureObjectStorage;
+    private final CloudObjectStorageClient cloudObjectStorageClient;
 
     @Autowired
     public CloudObjectStorageService(
@@ -69,9 +69,9 @@ public class CloudObjectStorageService {
     public CloudObjectStorageService(CloudObjectStorage publicEndpointCloudObjectStorage,
             CloudObjectStorage internalEndpointCloudObjectStorage,
             ObjectStorageConfiguration objectStorageConfiguration) {
-        pureObjectStorage = new CloudPureObjectStorage(publicEndpointCloudObjectStorage,
+        cloudObjectStorageClient = new CloudObjectStorageClient(publicEndpointCloudObjectStorage,
                 internalEndpointCloudObjectStorage, objectStorageConfiguration);
-        if (this.pureObjectStorage.supported()) {
+        if (this.cloudObjectStorageClient.supported()) {
             createTempDirectory();
             log.info("Cloud object storage initialized");
         } else {
@@ -80,11 +80,11 @@ public class CloudObjectStorageService {
     }
 
     public boolean supported() {
-        return pureObjectStorage.supported();
+        return cloudObjectStorageClient.supported();
     }
 
     public String getBucketName() {
-        return pureObjectStorage.getBucketName();
+        return cloudObjectStorageClient.getBucketName();
     }
 
     public String upload(@NotBlank String fileName, @NonNull InputStream input) throws IOException {
@@ -95,19 +95,19 @@ public class CloudObjectStorageService {
 
     public String upload(@NotBlank String fileName, @NonNull File file) throws IOException {
         String objectName = generateObjectName(fileName);
-        pureObjectStorage.putObject(objectName, file, null);
+        cloudObjectStorageClient.putObject(objectName, file, null);
         return objectName;
     }
 
     public String uploadTemp(@NotBlank String fileName, @NonNull InputStream input) throws IOException {
         String objectName = generateObjectName(fileName);
-        upload(objectName, input, Lifecycle.temp());
+        upload(objectName, input, ObjectTagging.temp());
         return objectName;
     }
 
     public String uploadTemp(@NotBlank String fileName, @NonNull File file) throws IOException {
         String objectName = generateObjectName(fileName);
-        pureObjectStorage.putObject(objectName, file, Lifecycle.temp());
+        cloudObjectStorageClient.putObject(objectName, file, ObjectTagging.temp());
         return objectName;
     }
 
@@ -129,7 +129,7 @@ public class CloudObjectStorageService {
 
     public String upload(@NotBlank String prefix, @NotBlank String fileName, @NonNull File file) throws IOException {
         String objectName = generateObjectName(prefix, fileName);
-        pureObjectStorage.putObject(objectName, file, null);
+        cloudObjectStorageClient.putObject(objectName, file, null);
         return objectName;
     }
 
@@ -138,11 +138,11 @@ public class CloudObjectStorageService {
     }
 
     public URL generateDownloadUrl(@NotBlank String objectName, Long expirationSeconds) throws IOException {
-        return pureObjectStorage.getDownloadUrl(objectName, expirationSeconds);
+        return cloudObjectStorageClient.getDownloadUrl(objectName, expirationSeconds);
     }
 
     public URL generateUploadUrl(@NotBlank String objectName) {
-        return pureObjectStorage.getUploadUrl(objectName);
+        return cloudObjectStorageClient.getUploadUrl(objectName);
     }
 
     /**
@@ -153,7 +153,7 @@ public class CloudObjectStorageService {
      * @throws IOException 目标对象不存在或读取内容失败
      */
     public byte[] readContent(@NotBlank String objectName) throws IOException {
-        return pureObjectStorage.readContent(objectName);
+        return cloudObjectStorageClient.readContent(objectName);
     }
 
     /**
@@ -176,7 +176,7 @@ public class CloudObjectStorageService {
      * @throws IOException
      */
     public List<String> delete(@NotEmpty List<String> objectNames) throws IOException {
-        return pureObjectStorage.deleteObjects(objectNames);
+        return cloudObjectStorageClient.deleteObjects(objectNames);
     }
 
     /**
@@ -189,7 +189,7 @@ public class CloudObjectStorageService {
         String absolute = tempDirectory.getAbsolutePath() + "/" + UUID.randomUUID() + ".tmp";
         File targetFile = new File(absolute);
         try {
-            pureObjectStorage.downloadToFile(objectName, targetFile);
+            cloudObjectStorageClient.downloadToFile(objectName, targetFile);
             return targetFile;
         } catch (IOException e) {
             throw new RuntimeException("download to temp file failed,objectName=" + objectName, e);
@@ -197,12 +197,12 @@ public class CloudObjectStorageService {
     }
 
     ObjectStorageConfiguration getObjectStorageConfiguration() {
-        return pureObjectStorage.getObjectStorageConfiguration();
+        return cloudObjectStorageClient.getObjectStorageConfiguration();
     }
 
-    private void upload(@NotBlank String objectName, @NonNull InputStream input, Lifecycle metadata)
+    private void upload(@NotBlank String objectName, @NonNull InputStream input, ObjectTagging objectTagging)
             throws IOException {
-        pureObjectStorage.verifySupported();
+        cloudObjectStorageClient.verifySupported();
         String tempFilePath = tempDirectory.getAbsolutePath() + "/" + UUID.randomUUID() + ".tmp";
         FileOutputStream output = new FileOutputStream(tempFilePath);
         try {
@@ -213,7 +213,7 @@ public class CloudObjectStorageService {
         }
         File file = new File(tempFilePath);
         try {
-            pureObjectStorage.putObject(objectName, file, metadata);
+            cloudObjectStorageClient.putObject(objectName, file, objectTagging);
         } finally {
             FileUtils.forceDelete(file);
         }

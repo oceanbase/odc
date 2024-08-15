@@ -65,7 +65,7 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.PutObjectResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadPartRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadPartResult;
 import com.oceanbase.odc.service.objectstorage.cloud.util.CloudObjectStorageUtil;
-import com.oceanbase.odc.service.objectstorage.pure.CloudPureObjectStorage;
+import com.oceanbase.odc.service.objectstorage.client.CloudObjectStorageClient;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -75,8 +75,8 @@ import lombok.extern.slf4j.Slf4j;
  * <p>
  * The change between {@link CloudObjectStorageServiceForBak} and {@link CloudObjectStorageService}
  * is that， the logic for operating cloud storage objects in {@link CloudObjectStorageService} has
- * been extracted to {@link CloudPureObjectStorage}, allowing upper level businesses to use
- * {@link CloudPureObjectStorage} to operate cloud storage objects more flexibly.
+ * been extracted to {@link CloudObjectStorageClient}, allowing upper level businesses to use
+ * {@link CloudObjectStorageClient} to operate cloud storage objects more flexibly.
  *
  * @author keyang
  * @date 2024/08/09

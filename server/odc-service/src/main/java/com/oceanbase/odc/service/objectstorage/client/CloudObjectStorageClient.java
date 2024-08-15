@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.objectstorage.pure;
+package com.oceanbase.odc.service.objectstorage.client;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -48,11 +48,11 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.InitiateMultipartUplo
 import com.oceanbase.odc.service.objectstorage.cloud.model.InitiateMultipartUploadResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectMetadata;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
+import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectTagging;
 import com.oceanbase.odc.service.objectstorage.cloud.model.PartETag;
 import com.oceanbase.odc.service.objectstorage.cloud.model.PutObjectResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadPartRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadPartResult;
-import com.oceanbase.odc.service.objectstorage.lifecycle.Lifecycle;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -64,7 +64,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.3.2
  */
 @Slf4j
-public class CloudPureObjectStorage implements PureObjectStorage {
+public class CloudObjectStorageClient implements ObjectStorageClient {
     private static final Pattern IS_OBJECT_NAME_LEGAL = Pattern.compile("([a-zA-Z_0-9]/)*");
     public static final int MIN_PRESIGNED_URL_EXPIRATION_SECONDS = 5 * 60;
     public static final int PRESIGNED_UPLOAD_URL_EXPIRATION_SECONDS = 30 * 60;
@@ -74,7 +74,7 @@ public class CloudPureObjectStorage implements PureObjectStorage {
     @Getter
     private final ObjectStorageConfiguration objectStorageConfiguration;
 
-    public CloudPureObjectStorage(CloudObjectStorage publicEndpointCloudObjectStorage,
+    public CloudObjectStorageClient(CloudObjectStorage publicEndpointCloudObjectStorage,
             CloudObjectStorage internalEndpointCloudObjectStorage,
             ObjectStorageConfiguration objectStorageConfiguration) {
         this.publicEndpointCloudObjectStorage = publicEndpointCloudObjectStorage;
@@ -112,10 +112,9 @@ public class CloudPureObjectStorage implements PureObjectStorage {
     }
 
     @Override
-    public void putObject(String objectName, File file, Lifecycle lifecycle) throws IOException {
+    public void putObject(String objectName, File file, ObjectTagging objectTagging) throws IOException {
         verifySupported();
-        ObjectMetadata metadata =
-                lifecycle == null ? Lifecycle.permanent().toObjectMetadata() : lifecycle.toObjectMetadata();
+        ObjectMetadata metadata = ObjectMetadata.builder().tagging(objectTagging).build();
         try {
             innerUpload(objectName, file, metadata);
         } catch (IOException e) {

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.objectstorage.pure;
+package com.oceanbase.odc.service.objectstorage.client;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -26,7 +26,7 @@ import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
 
-import com.oceanbase.odc.service.objectstorage.lifecycle.Lifecycle;
+import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectTagging;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.objectstorage.operator.ObjectBlockIterator;
 import com.oceanbase.odc.service.objectstorage.operator.ObjectBlockOperator;
@@ -36,12 +36,12 @@ import com.oceanbase.odc.service.objectstorage.operator.ObjectBlockOperator;
  * @date 2024/08/09
  * @since 4.3.2
  */
-public class LocalPureObjectStorage implements PureObjectStorage {
+public class LocalObjectStorageClient implements ObjectStorageClient {
 
     private ObjectBlockOperator blockOperator;
     private long blockSplitLength;
 
-    public LocalPureObjectStorage(ObjectBlockOperator blockOperator, long blockSplitLength) {
+    public LocalObjectStorageClient(ObjectBlockOperator blockOperator, long blockSplitLength) {
         this.blockOperator = blockOperator;
         this.blockSplitLength = blockSplitLength;
     }
@@ -57,7 +57,7 @@ public class LocalPureObjectStorage implements PureObjectStorage {
     }
 
     @Override
-    public void putObject(String objectName, File file, Lifecycle lifecycle) throws IOException {
+    public void putObject(String objectName, File file, ObjectTagging objectTagging) throws IOException {
         ObjectMetadata metadata = new ObjectMetadata();
         metadata.setObjectId(objectName);
         metadata.setSplitLength(blockSplitLength);

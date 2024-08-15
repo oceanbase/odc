@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.text.ParseException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,8 @@ import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+
+import org.apache.commons.lang.Validate;
 
 import com.aliyun.oss.HttpMethod;
 import com.aliyun.oss.OSS;
@@ -66,8 +69,6 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.UploadObjectTemporary
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadPartRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadPartResult;
 import com.oceanbase.odc.service.objectstorage.cloud.util.CloudObjectStorageUtil;
-import com.oceanbase.odc.service.objectstorage.lifecycle.Lifecycle;
-import com.oceanbase.odc.service.objectstorage.lifecycle.Strategy;
 
 public class AlibabaCloudClient implements CloudClient {
     private final OSS oss;
@@ -167,24 +168,18 @@ public class AlibabaCloudClient implements CloudClient {
             result.setServerCRC(ossResult.getServerCRC());
             return result;
         });
-        setLifecycle(bucketName, key, metadata.getLifecycle());
         return putObject;
     }
 
     @Override
-    public void setLifecycle(String bucketName, String key, Lifecycle lifecycle) {
-        if (lifecycle == null) {
-            return;
-        }
-        LifecycleRule rule = null;
-        if (Objects.requireNonNull(lifecycle.getStrategy()) == Strategy.EXPIRED_AFTER_LAST_MODIFIED) {
-            String ruleId = "odc-expired-after-last-modified-rule";
-            rule = new LifecycleRule(ruleId, key, RuleStatus.Enabled, lifecycle.getExpirationDays());
-        }
-        if (rule == null) {
-            return;
-        }
+    public void setExpiredAfterLastModified(String bucketName, String prefixForMatchObjectName, int expiredDaya) {
+        Validate.isTrue(expiredDaya > 0, "expiredDaya must be greater than 0");
+
+        String ruleId = "odc-expired-after-last-modified-rule";
+        LifecycleRule rule = new LifecycleRule(ruleId, prefixForMatchObjectName, RuleStatus.Enabled, expiredDaya);
+
         SetBucketLifecycleRequest request = new SetBucketLifecycleRequest(bucketName);
+        request.setLifecycleRules(Collections.singletonList(rule));
         callOssMethod("Set bucket lifecycle", () -> oss.setBucketLifecycle(request));
     }
 
