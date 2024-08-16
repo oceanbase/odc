@@ -121,7 +121,7 @@ public class ScheduleControllerHist {
     }
 
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/rollback",
-        method = RequestMethod.PUT)
+            method = RequestMethod.PUT)
     public SuccessResponse<Boolean> rollbackTask(@PathVariable Long scheduleId, @PathVariable Long taskId) {
         scheduleService.rollbackTask(scheduleId, taskId);
         return Responses.success(Boolean.TRUE);

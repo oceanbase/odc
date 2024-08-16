@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.schedule.processor;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
@@ -29,9 +28,7 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.DLMConfiguration;
 import com.oceanbase.odc.service.dlm.DLMTableStructureSynchronizer;
-import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
-import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
@@ -131,7 +128,7 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
         if (sourceDbType.isOracle()) {
             if (!targetDbType.isOracle()) {
                 throw new UnsupportedException(
-                    String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
+                        String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
             }
         }
     }

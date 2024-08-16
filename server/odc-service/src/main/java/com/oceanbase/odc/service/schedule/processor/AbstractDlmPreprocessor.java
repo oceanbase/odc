@@ -110,9 +110,9 @@ public class AbstractDlmPreprocessor implements Preprocessor {
         // Ensure the conditions are valid when executing.
         sqlMap.forEach((key, value) -> {
             try {
-                if(connectionSession.getDialectType() == DialectType.ORACLE){
-                    syncJdbcExecutor.execute("EXPLAIN PLAN FOR "+value);
-                }else{
+                if (connectionSession.getDialectType() == DialectType.ORACLE) {
+                    syncJdbcExecutor.execute("EXPLAIN PLAN FOR " + value);
+                } else {
                     syncJdbcExecutor.execute("explain " + value);
                 }
             } catch (Exception e) {
