@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @ScheduleTaskPreprocessor(type = ScheduleType.SQL_PLAN)
-public class DatabaseChangePreprocessor implements Preprocessor {
+public class SqlPlanPreprocessor implements Preprocessor {
 
     @Override
     public void process(ScheduleChangeParams req) {

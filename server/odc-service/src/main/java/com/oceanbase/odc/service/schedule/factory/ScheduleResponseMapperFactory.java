@@ -46,11 +46,9 @@ import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
-import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.schedule.model.DataArchiveAttributes;
 import com.oceanbase.odc.service.schedule.model.DataDeleteAttributes;
-import com.oceanbase.odc.service.schedule.model.DatabaseChangeAttributes;
 import com.oceanbase.odc.service.schedule.model.Schedule;
 import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleOverview;
@@ -58,6 +56,8 @@ import com.oceanbase.odc.service.schedule.model.ScheduleOverviewAttributes;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
+import com.oceanbase.odc.service.sqlplan.model.SqlPlanAttributes;
+import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 
 import lombok.NonNull;
 
@@ -214,17 +214,17 @@ public class ScheduleResponseMapperFactory {
                 case SQL_PLAN: {
                     Set<Long> databaseIds = new HashSet<>();
                     v.forEach(o -> {
-                        DatabaseChangeParameters parameters = JsonUtils.fromJson(o.getJobParametersJson(),
-                                DatabaseChangeParameters.class);
+                        SqlPlanParameters parameters = JsonUtils.fromJson(o.getJobParametersJson(),
+                                SqlPlanParameters.class);
                         databaseIds.add(parameters.getDatabaseId());
                     });
                     Map<Long, Database> id2Database = getDatabaseByIds(databaseIds).stream().collect(
                             Collectors.toMap(Database::getId, o -> o));
                     v.forEach(o -> {
-                        DatabaseChangeParameters parameters = JsonUtils.fromJson(o.getJobParametersJson(),
-                                DatabaseChangeParameters.class);
-                        DatabaseChangeAttributes attributes = new DatabaseChangeAttributes();
-                        attributes.setDataBaseInfo(id2Database.get(parameters.getDatabaseId()));
+                        SqlPlanParameters parameters = JsonUtils.fromJson(o.getJobParametersJson(),
+                                SqlPlanParameters.class);
+                        SqlPlanAttributes attributes = new SqlPlanAttributes();
+                        attributes.setDatabaseInfo(id2Database.get(parameters.getDatabaseId()));
                         id2Attributes.put(o.getId(), attributes);
                     });
                     break;
@@ -278,7 +278,7 @@ public class ScheduleResponseMapperFactory {
                 return parameters;
             }
             case SQL_PLAN: {
-                DatabaseChangeParameters parameters = (DatabaseChangeParameters) schedule.getParameters();
+                SqlPlanParameters parameters = (SqlPlanParameters) schedule.getParameters();
                 Map<Long, Database> id2Database = getDatabaseByIds(
                         Stream.of(parameters.getDatabaseId()).collect(
                                 Collectors.toSet())).stream().collect(Collectors.toMap(Database::getId, o -> o));

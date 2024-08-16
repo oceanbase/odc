@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
+package com.oceanbase.odc.service.sqlplan.model;
 
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.schedule.model.ScheduleOverviewAttributes;
 
 import lombok.Data;
 
 @Data
-public class DatabaseChangeAttributes implements ScheduleOverviewAttributes {
+public class SqlPlanAttributes implements ScheduleOverviewAttributes {
 
-    private Database dataBaseInfo;
+    private Database databaseInfo;
 
 }

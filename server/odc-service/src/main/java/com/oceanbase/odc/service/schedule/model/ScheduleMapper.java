@@ -25,7 +25,7 @@ import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
-import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
+import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 
 /**
  * @Author：tinker
@@ -52,7 +52,7 @@ public interface ScheduleMapper {
             case DATA_DELETE:
                 return JsonUtils.fromJson(entity.getJobParametersJson(), DataDeleteParameters.class);
             case SQL_PLAN:
-                return JsonUtils.fromJson(entity.getJobParametersJson(), DatabaseChangeParameters.class);
+                return JsonUtils.fromJson(entity.getJobParametersJson(), SqlPlanParameters.class);
             default:
                 throw new UnsupportedException();
         }

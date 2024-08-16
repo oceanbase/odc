@@ -228,8 +228,7 @@ public class ScheduleService {
 
         Long approvalFlowInstanceId = createApprovalFlow();
 
-        // database change is not executed for the moment
-        if (approvalFlowInstanceId == null && targetSchedule.getType() != ScheduleType.SQL_PLAN) {
+        if (approvalFlowInstanceId == null) {
             executeChangeSchedule(req);
         }
 
@@ -302,6 +301,11 @@ public class ScheduleService {
             }
             default:
                 throw new UnsupportedException();
+        }
+
+        if (targetSchedule.getType() == ScheduleType.SQL_PLAN) {
+            log.info("sql plan is not executed for the moment");
+            return;
         }
 
         // start change quartzJob
