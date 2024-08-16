@@ -66,7 +66,7 @@ public class DataSourceInfoMapper {
         return connectionConfig;
     }
 
-    public static DataSourceInfo toDataSourceInfo(ConnectionConfig connectionConfig) {
+    public static DataSourceInfo toDataSourceInfo(ConnectionConfig connectionConfig, String schemaName) {
         DataSourceInfo dataSourceInfo = new DataSourceInfo();
         dataSourceInfo.setDatabaseName(connectionConfig.getDefaultSchema());
         dataSourceInfo.setQueryTimeout(connectionConfig.queryTimeoutSeconds());
@@ -104,6 +104,13 @@ public class DataSourceInfoMapper {
                 dataSourceInfo.setTenantName(connectionConfig.getTenantName());
                 dataSourceInfo.setDatabaseType(DataBaseType.OB_ORACLE);
                 break;
+            case POSTGRESQL:
+                dataSourceInfo.setFullUserName(connectionConfig.getUsername());
+                connectionConfig.setDefaultSchema(schemaName);
+                String jdbcUrl = getJdbcUrl(connectionConfig) + "&stringtype=unspecified";
+                dataSourceInfo.setJdbcUrl(jdbcUrl);
+                dataSourceInfo.setDatabaseType(DataBaseType.POSTGRESQL);
+                break;
             case ORACLE:
                 dataSourceInfo.setJdbcUrl(getJdbcUrl(connectionConfig));
                 dataSourceInfo.setDatabaseType(DataBaseType.ORACLE);
@@ -121,7 +128,7 @@ public class DataSourceInfoMapper {
         JdbcUrlProperty jdbcUrlProperty = new JdbcUrlProperty(connectionConfig.getHost(), connectionConfig.getPort(),
                 connectionConfig.getDefaultSchema(), Collections.emptyMap(),
                 connectionConfig.getSid(),
-                connectionConfig.getServiceName());
+                connectionConfig.getServiceName(), connectionConfig.getCatalogName());
         return ConnectionPluginUtil.getConnectionExtension(connectionConfig.getDialectType())
                 .generateJdbcUrl(jdbcUrlProperty);
     }

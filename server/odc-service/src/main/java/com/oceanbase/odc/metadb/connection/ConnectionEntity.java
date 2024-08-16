@@ -289,4 +289,11 @@ public class ConnectionEntity {
     @Column(name = "user_role")
     @Enumerated(value = EnumType.STRING)
     private UserRole userRole;
+
+    /**
+     * PostgreSQL 连接方式特有的参数，该参数表示数据库的一个实例
+     */
+    @Column(name = "catalog_name")
+    private String catalogName;
+
 }
