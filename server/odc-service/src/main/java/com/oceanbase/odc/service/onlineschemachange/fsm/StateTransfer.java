@@ -13,12 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.onlineschemachange.pipeline;
+package com.oceanbase.odc.service.onlineschemachange.fsm;
 
 /**
- * @author yaobin
- * @date 2023-06-11
- * @since 4.2.0
+ * state transfer
+ * 
+ * @author longpeng.zlp
+ * @date 2024/7/5 17:40
+ * @since 4.3.1
  */
-public interface ValveContext {
+public interface StateTransfer<Context extends ActionContext, ActionResult> {
+    /**
+     *
+     * @param currentState current state has done
+     * @param result input from {@link Action#execute}
+     * @param context context of FSM
+     * @return next state to handle. May change or stay
+     */
+    String translateToNewState(String currentState, ActionResult result, Context context);
 }

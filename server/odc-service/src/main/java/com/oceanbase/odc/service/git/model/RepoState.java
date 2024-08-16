@@ -13,25 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.onlineschemachange.pipeline;
-
-import java.util.function.Supplier;
+package com.oceanbase.odc.service.git.model;
 
 /**
- * @author yaobin
- * @date 2023-08-09
- * @since 4.2.0
+ * @author: liuyizhuo.lyz
+ * @date: 2024/8/7
  */
-public interface DataSourceCreator {
+public enum RepoState {
 
-    /**
-     * try to create datasource and return datasource id when condition is receive before timeout
-     *
-     * @param createDataSource to create datasource and return datasource id
-     * @param condition precondition
-     * @param timeout wait precondition timeout
-     * @return
-     */
-    String create(Supplier<String> createDataSource, Supplier<Boolean> condition, int timeout);
+    INITIALIZING,
+
+    CLEAN,
+
+    UNCOMMITTED
+
 }

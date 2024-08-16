@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.git.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.oceanbase.odc.common.json.SensitiveInput;
 
 import lombok.Data;
@@ -30,6 +30,6 @@ public class GitProvider {
     private String providerUrl;
     private String email;
     @SensitiveInput
-    @JsonIgnore
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String personalAccessToken;
 }

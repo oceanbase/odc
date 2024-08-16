@@ -13,24 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.onlineschemachange.pipeline;
+package com.oceanbase.odc.service.onlineschemachange.oscfms;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 /**
- * @author yaobin
- * @date 2023-06-10
- * @since 4.2.0
+ * @author longpeng.zlp
+ * @date 2024/7/8 11:27
+ * @since 4.3.1
  */
-public abstract class BaseValve implements Valve {
-
-    protected Valve next = null;
-
-    @Override
-    public void setNext(Valve valve) {
-        this.next = valve;
-    }
-
-    @Override
-    public Valve getNext() {
-        return next;
-    }
+@Data
+@AllArgsConstructor
+public class OscActionResult {
+    // current state
+    private String currentState;
+    // current sub event
+    private String extraInfo;
+    // current next event
+    private String nextState;
 }

@@ -20,19 +20,26 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.junit.rules.ExpectedException;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlType;
 import com.oceanbase.odc.service.onlineschemachange.model.OriginTableCleanStrategy;
-import com.oceanbase.odc.service.onlineschemachange.pipeline.OscValveContext;
-import com.oceanbase.odc.service.onlineschemachange.pipeline.SwapTableNameValve;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.action.ConnectionProvider;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
+import com.oceanbase.odc.service.onlineschemachange.rename.SwapTableUtil;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,32 +50,118 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class OnlineSchemaChangeOBMysqlSwapTableTest extends OBMySqlOscTestEnv {
-
-    @Autowired
-    private SwapTableNameValve swapTableNameValve;
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
-    public void test_osc_swap_table_origin_table_reserved_successful() {
+    public void test_osc_swap_table_origin_table_reserved_successful() throws Exception {
         String originTableName = getOriginTableName();
         executeOscSwapTable(
                 originTableName,
+                (orgTableName, ghostTableDDL, ghostTableName, renameTable) -> {
+                    // create ghost table only
+                    jdbcTemplate.execute(ghostTableDDL);
+                },
                 c -> c.setOriginTableCleanStrategy(OriginTableCleanStrategy.ORIGIN_TABLE_RENAME_AND_RESERVED),
+
+                this::checkSwapTableAndRenameReserved);
+    }
+
+    // table has renamed
+    @Test
+    public void test_osc_swap_table_origin_table_reserved_successful2() throws Exception {
+        String originTableName = getOriginTableName();
+        executeOscSwapTable(
+                originTableName,
+                (orgTableName, ghostTableDDL, ghostTableName, renameTable) -> {
+                    // create ghost table
+                    jdbcTemplate.execute(ghostTableDDL);
+                    // rename to orgTable
+                    renameTable(orgTableName, renameTable);
+                    // rename ghost to orgTable
+                    renameTable(ghostTableName, orgTableName);
+                },
+                c -> c.setOriginTableCleanStrategy(OriginTableCleanStrategy.ORIGIN_TABLE_RENAME_AND_RESERVED),
+
                 this::checkSwapTableAndRenameReserved);
     }
 
     @Test
-    public void test_osc_swap_table_origin_table_drop_successful() {
+    public void test_osc_swap_table_origin_table_drop_successful() throws Exception {
         String originTableName = getOriginTableName();
         executeOscSwapTable(
                 originTableName,
+                (orgTableName, ghostTableDDL, ghostTableName, renameTable) -> {
+                    // create ghost table
+                    jdbcTemplate.execute(ghostTableDDL);
+                },
+                c -> c.setOriginTableCleanStrategy(OriginTableCleanStrategy.ORIGIN_TABLE_DROP),
+                this::checkSwapTableAndRenameDrop);
+    }
+
+    // table has renamed
+    @Test
+    public void test_osc_swap_table_origin_table_drop_successful2() throws Exception {
+        String originTableName = getOriginTableName();
+        executeOscSwapTable(
+                originTableName,
+                (orgTableName, ghostTableDDL, ghostTableName, renameTable) -> {
+                    // create ghost table
+                    jdbcTemplate.execute(ghostTableDDL);
+                    // rename to orgTable
+                    renameTable(orgTableName, renameTable);
+                    // rename ghost to orgTable
+                    renameTable(ghostTableName, orgTableName);
+                },
+                c -> c.setOriginTableCleanStrategy(OriginTableCleanStrategy.ORIGIN_TABLE_DROP),
+                this::checkSwapTableAndRenameDrop);
+    }
+
+    // table has renamed and old table is dropped
+    @Test
+    public void test_osc_swap_table_origin_table_drop_successful3() throws Exception {
+        String originTableName = getOriginTableName();
+        executeOscSwapTable(
+                originTableName,
+                (orgTableName, ghostTableDDL, ghostTableName, renameTable) -> {
+                    // create ghost table
+                    jdbcTemplate.execute(ghostTableDDL);
+                    // rename to orgTable
+                    renameTable(orgTableName, renameTable);
+                    // rename ghost to orgTable
+                    renameTable(ghostTableName, orgTableName);
+                    // drop old table
+                    dropTableForTask(renameTable);
+                },
+                c -> c.setOriginTableCleanStrategy(OriginTableCleanStrategy.ORIGIN_TABLE_DROP),
+                this::checkSwapTableAndRenameDrop);
+    }
+
+    // table has renamed and old table is dropped
+    @Test
+    public void test_osc_swap_table_exception() throws Exception {
+        expectedException.expect(IllegalStateException.class);
+        expectedException.expectMessage("Swap table name failed after");
+        String originTableName = getOriginTableName();
+        executeOscSwapTable(
+                originTableName,
+                (orgTableName, ghostTableDDL, ghostTableName, renameTable) -> {
+                    // create ghost table
+                    jdbcTemplate.execute(ghostTableDDL);
+                    // rename to orgTable
+                    renameTable(orgTableName, renameTable);
+                    // create origin table again
+                    createTableForTask(orgTableName);
+                },
                 c -> c.setOriginTableCleanStrategy(OriginTableCleanStrategy.ORIGIN_TABLE_DROP),
                 this::checkSwapTableAndRenameDrop);
     }
 
 
     private void executeOscSwapTable(String originTableName,
+            TestTableInitializer testTableInitializer,
             Consumer<OnlineSchemaChangeParameters> changeParametersConsumer,
-            Consumer<OnlineSchemaChangeScheduleTaskParameters> resultAssert) {
+            Consumer<OnlineSchemaChangeScheduleTaskParameters> resultAssert) throws Exception {
         createTableForTask(originTableName);
         try {
             OnlineSchemaChangeParameters changeParameters = getOnlineSchemaChangeParameters(originTableName);
@@ -82,17 +175,29 @@ public class OnlineSchemaChangeOBMysqlSwapTableTest extends OBMySqlOscTestEnv {
             OnlineSchemaChangeScheduleTaskParameters taskParameters = subTaskParameters.get(0);
 
             ScheduleTaskEntity scheduleTaskEntity = getScheduleTaskEntity(scheduleEntity.getId(), taskParameters);
-            // create new Table
-            jdbcTemplate.execute(taskParameters.getNewTableCreateDdl());
+            testTableInitializer.initTable(taskParameters.getOriginTableNameUnwrapped(),
+                    taskParameters.getNewTableCreateDdl(),
+                    taskParameters.getNewTableNameUnwrapped(), taskParameters.getRenamedTableNameUnwrapped());
+            OscActionContext swapTableAction = new OscActionContext();
+            swapTableAction.setScheduleTaskRepository(scheduleTaskRepository);
+            swapTableAction.setParameter(changeParameters);
+            swapTableAction.setTaskParameter(taskParameters);
+            swapTableAction.setSchedule(scheduleEntity);
+            swapTableAction.setScheduleTask(scheduleTaskEntity);
+            swapTableAction.setConnectionProvider(new ConnectionProvider() {
+                @Override
+                public ConnectionConfig connectionConfig() {
+                    return config;
+                }
 
-            OscValveContext context = new OscValveContext();
-            context.setSchedule(scheduleEntity);
-            context.setScheduleTask(scheduleTaskEntity);
-            context.setTaskParameter(taskParameters);
-            context.setParameter(changeParameters);
-            context.setConnectionConfig(config);
-            swapTableNameValve.invoke(context);
-
+                @Override
+                public ConnectionSession createConnectionSession() {
+                    // connection will released after use
+                    return new DefaultConnectSessionFactory(config).generateSession();
+                }
+            });
+            OscActionResult actionResult = swapTableNameValve.execute(swapTableAction);
+            Assert.assertEquals(actionResult.getNextState(), OscStates.CLEAN_RESOURCE.getState());
             resultAssert.accept(taskParameters);
         } finally {
             dropTableForTask(originTableName);
@@ -115,4 +220,13 @@ public class OnlineSchemaChangeOBMysqlSwapTableTest extends OBMySqlOscTestEnv {
         return changeParameters;
     }
 
+    private void renameTable(String originTable, String targetTable) {
+        String sql = String.format("rename table %s to %s", SwapTableUtil.quoteMySQLName(originTable),
+                SwapTableUtil.quoteMySQLName(targetTable));
+        jdbcTemplate.execute(sql);
+    }
+
+    private interface TestTableInitializer {
+        void initTable(String originTable, String ghostTableDDL, String ghostTableName, String renamedTableName);
+    }
 }

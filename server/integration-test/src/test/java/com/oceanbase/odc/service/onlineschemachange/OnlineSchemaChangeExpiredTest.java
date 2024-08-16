@@ -17,19 +17,11 @@ package com.oceanbase.odc.service.onlineschemachange;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.quartz.JobKey;
-import org.quartz.SchedulerException;
-import org.quartz.SchedulerListener;
-import org.quartz.TriggerListener;
-import org.quartz.listeners.SchedulerListenerSupport;
 import org.springframework.test.context.TestPropertySource;
 
-import com.oceanbase.odc.common.concurrent.Await;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
@@ -44,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.0
  */
 @Slf4j
-@TestPropertySource(properties = "osc-task-expired-after-seconds=1")
+@TestPropertySource(properties = "osc-task-expired-after-seconds=-100")
 public class OnlineSchemaChangeExpiredTest extends OBMySqlOscTestEnv {
 
     @Test
@@ -59,37 +51,17 @@ public class OnlineSchemaChangeExpiredTest extends OBMySqlOscTestEnv {
             List<ScheduleTaskEntity> taskEntities = new ArrayList<>();
             subTaskParameters.forEach(
                     taskParameter -> taskEntities.add(getScheduleTaskEntity(schedule.getId(), taskParameter)));
-            onlineSchemaChangeTaskHandler.start(schedule.getId(), taskEntities.get(0).getId());
+            taskEntities.get(0).setStatus(TaskStatus.RUNNING);
+            scheduleTaskRepository.save(taskEntities.get(0));
+            onlineSchemaChangeTaskHandler.complete(schedule.getId(), taskEntities.get(0).getId());
 
-            TriggerListener triggerListener = new TriggerListenerFactory().generateTriggerListener(
-                    schedule.getId(), c -> {
-                        try {
-                            log.info("schedule id {} to sleep {} milliseconds", schedule.getId(), 1000);
-                            TimeUnit.MILLISECONDS.sleep(1000);
-
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-            scheduler.getListenerManager().addTriggerListener(triggerListener);
-
-            AtomicBoolean scheduleDeleted = new AtomicBoolean(false);
-            SchedulerListener listener = new SchedulerListenerSupport() {
-                @Override
-                public void jobDeleted(JobKey jobKey) {
-                    scheduleDeleted.getAndSet(true);
-                }
-            };
-
-            scheduler.getListenerManager().addSchedulerListener(listener);
-            Await.await().timeout(60).until(scheduleDeleted::get).build().start();
             Assert.assertEquals(2, taskEntities.size());
             Assert.assertEquals(TaskStatus.CANCELED,
                     scheduleTaskRepository.findById(taskEntities.get(0).getId()).get().getStatus());
             Assert.assertEquals(TaskStatus.PREPARING,
                     scheduleTaskRepository.findById(taskEntities.get(1).getId()).get().getStatus());
 
-        } catch (SchedulerException e) {
+        } catch (Throwable e) {
             throw new RuntimeException(e);
         } finally {
             dropTableForMultiTask();

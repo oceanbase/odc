@@ -21,14 +21,22 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.db.browser.DBObjectOperators;
+import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OriginTableCleanStrategy;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.action.ConnectionProvider;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,52 +47,35 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class DefaultRenameTableInvoker implements RenameTableInvoker {
+    private final ConnectionProvider connectionProvider;
+    private final DBSessionManageFacade dbSessionManageFacade;
+    /**
+     * supply if oms project has all data replicated
+     */
+    private final Supplier<Boolean> dataReplicatedSupplier;
 
-    private final List<RenameTableInterceptor> interceptors;
-
-    private final RenameTableHandler renameTableHandler;
-    private final ConnectionSession connectionSession;
-    private final RenameBackHandler renameBackHandler;
-
-    public DefaultRenameTableInvoker(ConnectionSession connSession,
-            DBSessionManageFacade dbSessionManageFacade) {
-        List<RenameTableInterceptor> interceptors = new LinkedList<>();
-
-        LockRenameTableFactory lockRenameTableFactory = new LockRenameTableFactory();
-        RenameTableInterceptor lockInterceptor =
-                lockRenameTableFactory.generate(connSession, dbSessionManageFacade);
-        interceptors.add(lockInterceptor);
-        interceptors.add(new ForeignKeyInterceptor(connSession));
-        this.interceptors = interceptors;
-        this.connectionSession = connSession;
-        this.renameTableHandler = RenameTableHandlers.getForeignKeyHandler(connSession);
-        this.renameBackHandler = new RenameBackHandler(renameTableHandler);
+    public DefaultRenameTableInvoker(ConnectionProvider connectionProvider,
+            DBSessionManageFacade dbSessionManageFacade,
+            Supplier<Boolean> dataReplicatedSupplier) {
+        this.connectionProvider = connectionProvider;
+        this.dbSessionManageFacade = dbSessionManageFacade;
+        this.dataReplicatedSupplier = dataReplicatedSupplier;
     }
 
     @Override
     public void invoke(OnlineSchemaChangeScheduleTaskParameters taskParameters,
             OnlineSchemaChangeParameters parameters) {
-        RenameTableParameters renameTableParameters = getRenameTableParameters(taskParameters, parameters);
-        try {
-            retryRename(taskParameters, parameters, renameTableParameters);
-            dropOldTable(renameTableParameters, taskParameters);
-        } finally {
-            renameBackHandler.renameBack(connectionSession, taskParameters);
-        }
-    }
-
-    private void retryRename(OnlineSchemaChangeScheduleTaskParameters taskParameters,
-            OnlineSchemaChangeParameters parameters, RenameTableParameters renameTableParameters) {
-
         Integer swapTableNameRetryTimes = parameters.getSwapTableNameRetryTimes();
         if (swapTableNameRetryTimes == 0) {
             swapTableNameRetryTimes = 1;
         }
-
         AtomicInteger retryTime = new AtomicInteger();
-        boolean succeed;
+        RenameTableParameters renameTableParameters = getRenameTableParameters(taskParameters, parameters);
+
+        boolean succeed = false;
         do {
-            succeed = doTryRename(taskParameters, renameTableParameters, retryTime);
+            // try whole rename table flow
+            succeed = tryRenameTable(connectionProvider, taskParameters, renameTableParameters, retryTime);
         } while (!succeed && retryTime.incrementAndGet() < swapTableNameRetryTimes);
 
         if (!succeed) {
@@ -95,23 +86,74 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
         }
     }
 
-    private boolean doTryRename(OnlineSchemaChangeScheduleTaskParameters taskParameters,
+    private boolean tryRenameTable(ConnectionProvider connectionProvider,
+            OnlineSchemaChangeScheduleTaskParameters taskParameters,
             RenameTableParameters renameTableParameters, AtomicInteger retryTime) {
+        // every retry use whole new connection session, in case session not valid for some reason (eg
+        // server not valid)
+        ConnectionSession connectionSession = null;
+        try {
+            connectionSession = connectionProvider.createConnectionSession();
+            // set session schema env
+            ConnectionSessionUtil.setCurrentSchema(connectionSession, taskParameters.getDatabaseName());
+            // check if swap table has done
+            boolean hasSwapTableDone = hasSwapTableDone(connectionSession, renameTableParameters.getSchemaName(),
+                    renameTableParameters.getOriginTableName(), renameTableParameters.getNewTableName());
+            // prepare swap table environment
+            List<RenameTableInterceptor> interceptors = new LinkedList<>();
+            LockRenameTableFactory lockRenameTableFactory = new LockRenameTableFactory();
+            RenameTableInterceptor lockInterceptor =
+                    lockRenameTableFactory.generate(connectionSession, dbSessionManageFacade);
+            interceptors.add(lockInterceptor);
+            interceptors.add(new ForeignKeyInterceptor(connectionSession));
+            RenameTableHandler renameTableHandler = RenameTableHandlers.getForeignKeyHandler(connectionSession);
+            RenameBackHandler renameBackHandler = new RenameBackHandler(renameTableHandler);
+            // do try rename table
+            if (!hasSwapTableDone) {
+                hasSwapTableDone = doTryRename(connectionSession, taskParameters, renameTableParameters,
+                        renameTableHandler, renameBackHandler, interceptors,
+                        retryTime);
+            }
+            // swap table failed
+            if (!hasSwapTableDone) {
+                // try to rollback rename action if failed
+                renameBackHandler.renameBack(connectionSession, taskParameters);
+            } else {
+                // try drop old table if succeed
+                dropOldTable(connectionSession, renameTableParameters, taskParameters);
+            }
+            return hasSwapTableDone;
+        } finally {
+            if (null != connectionSession) {
+                connectionSession.expire();
+            }
+        }
+    }
+
+    private boolean doTryRename(ConnectionSession connectionSession,
+            OnlineSchemaChangeScheduleTaskParameters taskParameters,
+            RenameTableParameters renameTableParameters, RenameTableHandler renameTableHandler,
+            RenameBackHandler renameBackHandler,
+            List<RenameTableInterceptor> interceptors,
+            AtomicInteger retryTime) {
         boolean succeed = false;
         try {
-            preRename(renameTableParameters);
+            preRename(interceptors, renameTableParameters);
+            if (!dataReplicatedSupplier.get()) {
+                throw new RuntimeException("increment data not applied to ghost table yet");
+            }
             renameTableHandler.rename(taskParameters.getDatabaseName(), taskParameters.getOriginTableName(),
                     taskParameters.getRenamedTableName(), taskParameters.getNewTableName());
             succeed = true;
-            renameSucceed(renameTableParameters);
+            renameSucceed(interceptors, renameTableParameters);
         } catch (Exception e) {
             log.warn(MessageFormat.format("Swap table name occur error, retry time {0}",
                     retryTime.get()), e);
             renameBackHandler.renameBack(connectionSession, taskParameters);
-            renameFailed(renameTableParameters);
+            renameFailed(interceptors, renameTableParameters);
         } finally {
             try {
-                postRenamed(renameTableParameters);
+                postRenamed(interceptors, renameTableParameters);
             } catch (Throwable throwable) {
                 // ignore
             }
@@ -138,37 +180,80 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
                 .build();
     }
 
-    private void preRename(RenameTableParameters parameters) {
+    private void preRename(List<RenameTableInterceptor> interceptors, RenameTableParameters parameters) {
         interceptors.forEach(r -> r.preRename(parameters));
     }
 
-    private void renameSucceed(RenameTableParameters parameters) {
-        reverseConsumerInterceptor(r -> r.renameSucceed(parameters));
+    private void renameSucceed(List<RenameTableInterceptor> interceptors, RenameTableParameters parameters) {
+        reverseConsumerInterceptor(interceptors, r -> r.renameSucceed(parameters));
     }
 
-    private void renameFailed(RenameTableParameters parameters) {
-        reverseConsumerInterceptor(r -> r.renameFailed(parameters));
+    private void renameFailed(List<RenameTableInterceptor> interceptors, RenameTableParameters parameters) {
+        reverseConsumerInterceptor(interceptors, r -> r.renameFailed(parameters));
     }
 
-    private void postRenamed(RenameTableParameters parameters) {
-        reverseConsumerInterceptor(r -> r.postRenamed(parameters));
+    private void postRenamed(List<RenameTableInterceptor> interceptors, RenameTableParameters parameters) {
+        reverseConsumerInterceptor(interceptors, r -> r.postRenamed(parameters));
     }
 
-    private void reverseConsumerInterceptor(Consumer<RenameTableInterceptor> interceptorConsumer) {
+    private void reverseConsumerInterceptor(List<RenameTableInterceptor> interceptors,
+            Consumer<RenameTableInterceptor> interceptorConsumer) {
         ListIterator<RenameTableInterceptor> listIterator = interceptors.listIterator(interceptors.size());
         while (listIterator.hasPrevious()) {
             interceptorConsumer.accept(listIterator.previous());
         }
     }
 
-    private void dropOldTable(RenameTableParameters parameters,
+    protected void dropOldTable(ConnectionSession connectionSession, RenameTableParameters parameters,
             OnlineSchemaChangeScheduleTaskParameters taskParameters) {
         if (parameters.getOriginTableCleanStrategy() == OriginTableCleanStrategy.ORIGIN_TABLE_DROP) {
             log.info("Because origin table clean strategy is {}, so we drop the old table. ",
                     parameters.getOriginTableCleanStrategy());
-            DBObjectOperators.create(connectionSession)
-                    .drop(DBObjectType.TABLE, parameters.getSchemaName(),
-                            taskParameters.getRenamedTableNameUnwrapped());
+            // table has been dropped
+            if (!isTableExisted(connectionSession, parameters.getSchemaName(),
+                    taskParameters.getRenamedTableNameUnwrapped())) {
+                log.info("{}.{} has been dropped, drop table not needed", parameters.getSchemaName(),
+                        taskParameters.getRenamedTableNameUnwrapped());
+            } else {
+                // try real drop table
+                DBObjectOperators.create(connectionSession)
+                        .drop(DBObjectType.TABLE, parameters.getSchemaName(),
+                                taskParameters.getRenamedTableNameUnwrapped());
+            }
         }
+    }
+
+    /**
+     * detect if table existed
+     */
+    protected boolean isTableExisted(ConnectionSession connectionSession, String schemaName, String tableName) {
+        DBSchemaAccessor dbSchemaAccessor = DBSchemaAccessors.create(connectionSession);
+        DialectType dialectType = connectionSession.getDialectType();
+        List<String> renamedTable = dbSchemaAccessor.showTablesLike(SwapTableUtil.unquoteName(schemaName, dialectType),
+                SwapTableUtil.unquoteName(tableName, dialectType));
+        return CollectionUtils.isNotEmpty(renamedTable);
+    }
+
+    /**
+     * if origin table exists and ghost table not exists, then we assume that rename operation has done.
+     * the following rename operation should be ignored, cause it will always failed.
+     *
+     * @param schemaName schema name
+     * @param originTable table name
+     * @param ghostTable ghost table prepare switch to origin table, eg __osc_gho_origin_table
+     * @return true, if has swapped
+     */
+    protected boolean hasSwapTableDone(ConnectionSession connectionSession, String schemaName, String originTable,
+            String ghostTable) {
+        DBSchemaAccessor dbSchemaAccessor = DBSchemaAccessors.create(connectionSession);
+        DialectType dialectType = connectionSession.getDialectType();
+        List<String> originTableList =
+                dbSchemaAccessor.showTablesLike(SwapTableUtil.unquoteName(schemaName, dialectType),
+                        SwapTableUtil.unquoteName(originTable, dialectType));
+        List<String> ghostTableList = dbSchemaAccessor.showTablesLike(
+                SwapTableUtil.unquoteName(schemaName, dialectType), SwapTableUtil.unquoteName(ghostTable, dialectType));
+        // origin table exist, ghost table not exist
+        return CollectionUtils.isNotEmpty(originTableList)
+                && !CollectionUtils.isNotEmpty(ghostTableList);
     }
 }
