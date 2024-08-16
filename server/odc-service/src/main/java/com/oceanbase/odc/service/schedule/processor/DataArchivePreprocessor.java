@@ -128,18 +128,10 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
                         String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
             }
         }
-        if (sourceDbType == DialectType.OB_ORACLE) {
-            if (targetDbType != DialectType.OB_ORACLE) {
+        if (sourceDbType.isOracle()) {
+            if (!targetDbType.isOracle()) {
                 throw new UnsupportedException(
-                        String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
-            }
-            if (VersionUtils.isGreaterThanOrEqualsTo(sourceDbVersion, "4.3.0")) {
-                throw new UnsupportedException(
-                        String.format("Unsupported OB Version:%s", sourceDbVersion));
-            }
-            if (VersionUtils.isGreaterThanOrEqualsTo(targetDbVersion, "4.3.0")) {
-                throw new UnsupportedException(
-                        String.format("Unsupported OB Version:%s", targetDbVersion));
+                    String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
             }
         }
     }
