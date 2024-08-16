@@ -128,7 +128,7 @@ public class DataSourceInfoMapper {
         JdbcUrlProperty jdbcUrlProperty = new JdbcUrlProperty(connectionConfig.getHost(), connectionConfig.getPort(),
                 connectionConfig.getDefaultSchema(), Collections.emptyMap(),
                 connectionConfig.getSid(),
-                connectionConfig.getServiceName(),connectionConfig.getCatalogName());
+                connectionConfig.getServiceName(), connectionConfig.getCatalogName());
         return ConnectionPluginUtil.getConnectionExtension(connectionConfig.getDialectType())
                 .generateJdbcUrl(jdbcUrlProperty);
     }
