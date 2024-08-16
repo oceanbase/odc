@@ -62,8 +62,15 @@ public class DLMTableStructureSynchronizer {
 
     public static void sync(ConnectionConfig srcConfig, ConnectionConfig tgtConfig,
             String srcTableName, String tgtTableName, Set<DBObjectType> targetType) throws Exception {
-        DataSource sourceDs = new DruidDataSourceFactory(srcConfig).getDataSource();
-        DataSource targetDs = new DruidDataSourceFactory(tgtConfig).getDataSource();
+        DataSource sourceDs;
+        DataSource targetDs;
+        try{
+            sourceDs = new DruidDataSourceFactory(srcConfig).getDataSource();
+            targetDs = new DruidDataSourceFactory(tgtConfig).getDataSource();
+        }catch (Exception e){
+            log.warn("Create datasource failed when sync table structure.",e);
+            return;
+        }
         if (srcConfig.getDialectType() != tgtConfig.getDialectType()) {
             log.warn("Different types of databases do not support structural synchronization.");
             return;
