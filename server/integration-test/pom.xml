@@ -97,9 +97,6 @@
                         <include>**/*Test.java</include>
                         <include>**/com/oceanbase/odc/**/*IT.java</include>
                     </includes>
-                    <excludes>
-                        <exclude>**/com/oceanbase/odc/objectstorage/cloud/**</exclude>
-                    </excludes>
                 </configuration>
             </plugin>
         </plugins>

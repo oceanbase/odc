@@ -15,12 +15,15 @@
  */
 package com.oceanbase.odc.objectstorage.cloud;
 
+import org.junit.Ignore;
+
 import com.oceanbase.odc.ITConfigurations;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudResourceConfigurations;
 import com.oceanbase.odc.service.objectstorage.cloud.client.CloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 
+@Ignore
 public class S3ObjectStorageServiceIT extends AbstractCloudObjectStorageServiceTest {
     @Override
     CloudObjectStorageService createCloudObjectStorageService() {

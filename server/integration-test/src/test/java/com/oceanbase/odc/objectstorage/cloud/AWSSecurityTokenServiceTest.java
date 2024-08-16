@@ -19,6 +19,7 @@ import java.io.File;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.amazonaws.auth.AWSSessionCredentials;
@@ -36,6 +37,7 @@ import com.oceanbase.odc.service.objectstorage.cloud.client.CloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadObjectTemporaryCredential;
 
+@Ignore
 public class AWSSecurityTokenServiceTest {
     private static final String FILE_NAME = "src/test/resources/data/test0001.txt";
     private static final String FILE_NAME_CN_ZH = "src/test/resources/data/中文名称.txt";
