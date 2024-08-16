@@ -48,8 +48,6 @@ public interface WorksheetService {
 
     List<Worksheet> editWorksheet(Long projectId, Path path, Path destinationPath, String objectId, Long readVersion);
 
-    String batchDownloadWorksheets(Long projectId, Set<String> paths);
-
     String getDownloadUrl(Long projectId, Path path);
 
     void downloadPathsToDirectory(Long projectId, Set<Path> paths, Path commParentPath,

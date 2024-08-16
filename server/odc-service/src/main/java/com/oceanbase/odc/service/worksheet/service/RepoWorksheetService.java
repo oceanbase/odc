@@ -93,11 +93,6 @@ public class RepoWorksheetService implements WorksheetService {
     }
 
     @Override
-    public String batchDownloadWorksheets(Long projectId, Set<String> paths) {
-        return "";
-    }
-
-    @Override
     public String getDownloadUrl(Long projectId, Path path) {
         return "";
     }

@@ -19,7 +19,9 @@ import java.util.Set;
 
 import javax.validation.constraints.Size;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * the request of batch upload project worksheets
@@ -34,6 +36,8 @@ public class BatchUploadWorksheetsReq {
     private Set<UploadWorksheetTuple> worksheets;
 
     @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class UploadWorksheetTuple {
         private String path;
         private String objectId;

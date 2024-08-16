@@ -121,7 +121,7 @@ public class DefaultWorksheetRepositoryTest {
 
         worksheet = defaultWorksheetRepository.findByProjectIdAndPath(projectId,
                 new Path("/Worksheets/folder3/"),
-                null, false, true, true, true);
+                "", false, true, true, true);
         assert worksheet.isPresent();
         assert worksheet.get().getPath().equals(new Path("/Worksheets/folder3/"));
         assert worksheet.get().getId() == null;

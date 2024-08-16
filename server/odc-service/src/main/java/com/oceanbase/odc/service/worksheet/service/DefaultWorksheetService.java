@@ -93,7 +93,7 @@ public class DefaultWorksheetService implements WorksheetService {
     @Transactional(rollbackFor = Throwable.class)
     public Worksheet createWorksheet(Long projectId, Path createPath, String objectId) {
         Optional<Path> parentPath = createPath.getParentPath();
-        if (!parentPath.isPresent()) {
+        if (createPath.isSystemDefine() || !parentPath.isPresent()) {
             throw new IllegalArgumentException(
                     "invalid path, projectId:" + projectId + "path:" + createPath + ",objectId:"
                             + objectId);
@@ -135,7 +135,7 @@ public class DefaultWorksheetService implements WorksheetService {
     public List<Worksheet> listWorksheets(Long projectId, Path path, Integer depth, String nameLike) {
         Optional<Worksheet> worksheetOptional =
                 normalWorksheetRepository.findByProjectIdAndPath(projectId, path,
-                        null, false, true, true, false);
+                        nameLike, false, true, true, false);
         if (!worksheetOptional.isPresent()) {
             throw new NotFoundException(ErrorCodes.NotFound, new Object[] {"path"},
                     "can't find path, projectId:" + projectId + "path:" + path);
@@ -228,11 +228,6 @@ public class DefaultWorksheetService implements WorksheetService {
         normalWorksheetRepository.batchUpdateById(editedWorksheets);
 
         return new ArrayList<>(editedWorksheets);
-    }
-
-    @Override
-    public String batchDownloadWorksheets(Long projectId, Set<String> paths) {
-        return "";
     }
 
     @Override
