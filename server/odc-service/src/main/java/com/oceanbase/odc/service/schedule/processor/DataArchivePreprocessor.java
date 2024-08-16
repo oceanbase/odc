@@ -48,14 +48,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @ScheduleTaskPreprocessor(type = ScheduleType.DATA_ARCHIVE)
 public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
-    @Autowired
-    private AuthenticationFacade authenticationFacade;
 
     @Autowired
     private DatabaseService databaseService;
-
-    @Autowired
-    private DlmLimiterService limiterService;
 
     @Autowired
     private DLMConfiguration dlmConfiguration;
@@ -72,10 +67,6 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
             // permission to access it.
             Database sourceDb = databaseService.detail(parameters.getSourceDatabaseId());
             Database targetDb = databaseService.detail(parameters.getTargetDataBaseId());
-            if (!parameters.getSyncTableStructure().isEmpty()) {
-                supportSyncTableStructure(sourceDb.getDataSource().getDialectType(), targetDb.getDataSource()
-                        .getDialectType());
-            }
             ConnectionConfig sourceDs = sourceDb.getDataSource();
             sourceDs.setDefaultSchema(sourceDb.getName());
             ConnectionSessionFactory sourceSessionFactory = new DefaultConnectSessionFactory(sourceDs);
@@ -162,16 +153,5 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
         parameters.setScanBatchSize(dlmConfiguration.getDefaultScanBatchSize());
         parameters.setQueryTimeout(dlmConfiguration.getTaskConnectionQueryTimeout());
         parameters.setShardingStrategy(dlmConfiguration.getShardingStrategy());
-    }
-
-    private void supportSyncTableStructure(DialectType srcDbType, DialectType tgtDbType) {
-        if (srcDbType != tgtDbType) {
-            throw new UnsupportedException(
-                    "Different types of databases do not support table structure synchronization.");
-        }
-        if (!srcDbType.isMysql()) {
-            throw new UnsupportedException(
-                    String.format("The database does not support table structure synchronization,type=%s", srcDbType));
-        }
     }
 }

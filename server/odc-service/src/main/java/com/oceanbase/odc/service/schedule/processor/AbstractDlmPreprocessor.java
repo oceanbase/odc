@@ -110,7 +110,11 @@ public class AbstractDlmPreprocessor implements Preprocessor {
         // Ensure the conditions are valid when executing.
         sqlMap.forEach((key, value) -> {
             try {
-                syncJdbcExecutor.execute("explain " + value);
+                if(connectionSession.getDialectType() == DialectType.ORACLE){
+                    syncJdbcExecutor.execute("EXPLAIN PLAN FOR "+value);
+                }else{
+                    syncJdbcExecutor.execute("explain " + value);
+                }
             } catch (Exception e) {
                 log.warn("Test condition failed,sql={}", value, e);
                 throw new IllegalArgumentException(String.format("Condition is not supported!TableName=%s,Condition=%s",
