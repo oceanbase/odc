@@ -28,6 +28,7 @@ import javax.sql.DataSource;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.browser.DBTableEditors;
@@ -40,6 +41,7 @@ import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.util.VersionUtils;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 
 import lombok.extern.slf4j.Slf4j;
@@ -60,11 +62,6 @@ public class DLMTableStructureSynchronizer {
 
     public static void sync(ConnectionConfig srcConfig, ConnectionConfig tgtConfig,
             String srcTableName, String tgtTableName, Set<DBObjectType> targetType) throws Exception {
-        if (!srcConfig.getDialectType().isMysql() || srcConfig.getDialectType() != tgtConfig.getDialectType()) {
-            log.warn("Table structure is unsupported,sourceDbType={},targetDbType={}", srcConfig.getDialectType(),
-                    tgtConfig.getDialectType());
-            return;
-        }
         DataSource sourceDs = new DruidDataSourceFactory(srcConfig).getDataSource();
         DataSource targetDs = new DruidDataSourceFactory(tgtConfig).getDataSource();
         if (srcConfig.getDialectType() != tgtConfig.getDialectType()) {
@@ -74,6 +71,13 @@ public class DLMTableStructureSynchronizer {
         try {
             String tgtDbVersion = getDBVersion(tgtConfig.getType(), targetDs);
             String srcDbVersion = getDBVersion(srcConfig.getType(), sourceDs);
+            if (!isSupportedSyncTableStructure(srcConfig.getDialectType(), srcDbVersion, tgtConfig.getDialectType(),
+                    tgtDbVersion)) {
+                log.warn("Synchronization of table structure is unsupported,sourceDbType={},targetDbType={}",
+                        srcConfig.getDialectType(),
+                        tgtConfig.getDialectType());
+                return;
+            }
             DBTableEditor tgtTableEditor = getDBTableEditor(tgtConfig.getType(), tgtDbVersion);
             DBSchemaAccessor srcAccessor = getDBSchemaAccessor(srcConfig.getType(), sourceDs, srcDbVersion);
             DBSchemaAccessor tgtAccessor = getDBSchemaAccessor(tgtConfig.getType(), targetDs, tgtDbVersion);
@@ -116,6 +120,27 @@ public class DLMTableStructureSynchronizer {
     }
 
 
+    public static boolean isSupportedSyncTableStructure(DialectType srcType, String srcVersion, DialectType tgtType,
+            String tgtVersion) {
+        // only supports MySQL or OBMySQL
+        if (!srcType.isMysql() || !tgtType.isMysql()) {
+            return false;
+        }
+        if (srcType != tgtType) {
+            return false;
+        }
+        // unsupported MySQL versions below 5.7.0
+        if (srcType == DialectType.MYSQL && isMySQLVersionLessThan570(srcVersion)) {
+            return false;
+        }
+        if (tgtType == DialectType.MYSQL && isMySQLVersionLessThan570(tgtVersion)) {
+            return false;
+        }
+        return true;
+    }
+
+
+
     private static String getDBVersion(ConnectType connectType, DataSource dataSource) throws SQLException {
         return ConnectionPluginUtil.getInformationExtension(connectType.getDialectType())
                 .getDBVersion(dataSource.getConnection());
@@ -140,6 +165,10 @@ public class DLMTableStructureSynchronizer {
                 log.warn("Structure comparison failed to close dataSource!", e);
             }
         }
+    }
+
+    private static boolean isMySQLVersionLessThan570(String version) {
+        return VersionUtils.isLessThan(version, "5.7.0");
     }
 
 }
