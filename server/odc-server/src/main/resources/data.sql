@@ -840,3 +840,8 @@ VALUES ('odc.permission-check.whitelist.database.ob-oracle',
             'dbms_trusted_certificate_manager, dbms_workload_repository, dbms_xplan',
         'Permission check whitelist for database in OB Oracle dialect type')
 ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.integration.git.repository-retention-minutes',
+ '1440', 'The longest time ODC can cache repository copies') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.integration.git.repository-max-cached-size',
+ '1000', 'The maximum number of repository copies cached in ODC') ON DUPLICATE KEY UPDATE `id`=`id`;

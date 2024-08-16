@@ -78,8 +78,8 @@ public class FeishuSender extends HttpSender {
     }
 
     @Override
-    protected MessageSendResult checkResponse(Message message, ResponseEntity response) {
-        Map<String, Object> body = (Map) response.getBody();
+    protected MessageSendResult checkResponse(Message message, ResponseEntity<String> response) {
+        Map<String, Object> body = JsonUtils.fromJsonMap(response.getBody(), String.class, Object.class);
         if (Objects.isNull(body)) {
             return MessageSendResult.ofFail("empty response from Feishu");
         }
