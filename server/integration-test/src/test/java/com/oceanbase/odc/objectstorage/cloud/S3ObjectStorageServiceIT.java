@@ -21,7 +21,7 @@ import com.oceanbase.odc.service.objectstorage.cloud.CloudResourceConfigurations
 import com.oceanbase.odc.service.objectstorage.cloud.client.CloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 
-public class S3ObjcetStorageServiceIT extends AbstractCloudObjectStorageServiceTest {
+public class S3ObjectStorageServiceIT extends AbstractCloudObjectStorageServiceTest {
     @Override
     CloudObjectStorageService createCloudObjectStorageService() {
         ObjectStorageConfiguration configuration = ITConfigurations.getS3Configuration();

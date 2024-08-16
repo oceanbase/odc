@@ -21,10 +21,10 @@ import com.oceanbase.odc.service.objectstorage.cloud.CloudResourceConfigurations
 import com.oceanbase.odc.service.objectstorage.cloud.client.CloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 
-public class COSObjcetStorageServiceIT extends AbstractCloudObjectStorageServiceTest {
+public class OBSObjectStorageServiceIT extends AbstractCloudObjectStorageServiceTest {
     @Override
     CloudObjectStorageService createCloudObjectStorageService() {
-        ObjectStorageConfiguration configuration = ITConfigurations.getCOSConfiguration();
+        ObjectStorageConfiguration configuration = ITConfigurations.getOBSConfiguration();
         CloudClient cloudClient = new CloudResourceConfigurations().publicEndpointCloudClient(() -> configuration);
         CloudClient internalCloudClient =
                 new CloudResourceConfigurations().internalEndpointCloudClient(() -> configuration);
