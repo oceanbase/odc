@@ -149,13 +149,14 @@ public class DBSchemaExtractor {
                 visitor.visit(ast.getRoot());
                 identities = visitor.getIdentities();
             }
-            identities = identities.stream().map(e -> {
-                DBSchemaIdentity i = new DBSchemaIdentity(e.getSchema(), e.getTable());
-                String schema = StringUtils.isNotBlank(i.getSchema()) ? i.getSchema() : defaultSchema;
-                i.setSchema(StringUtils.unquoteMySqlIdentifier(schema));
-                i.setTable(StringUtils.unquoteMySqlIdentifier(i.getTable()));
-                return i;
-            }).collect(Collectors.toSet());
+            identities = identities.stream()
+                    .filter(e -> Objects.nonNull(e.getSchema()) || Objects.nonNull(e.getTable())).map(e -> {
+                        DBSchemaIdentity i = new DBSchemaIdentity(e.getSchema(), e.getTable());
+                        String schema = StringUtils.isNotBlank(i.getSchema()) ? i.getSchema() : defaultSchema;
+                        i.setSchema(StringUtils.unquoteMySqlIdentifier(schema));
+                        i.setTable(StringUtils.unquoteMySqlIdentifier(i.getTable()));
+                        return i;
+                    }).collect(Collectors.toSet());
         } else if (dialectType.isOracle()) {
             if (basicResult.isPlDdl() || basicResult instanceof ParseOraclePLResult) {
                 OBOraclePLRelationFactorVisitor visitor = new OBOraclePLRelationFactorVisitor();
@@ -166,24 +167,25 @@ public class DBSchemaExtractor {
                 visitor.visit(ast.getRoot());
                 identities = visitor.getIdentities();
             }
-            identities = identities.stream().map(e -> {
-                DBSchemaIdentity i = new DBSchemaIdentity(e.getSchema(), e.getTable());
-                String schema = StringUtils.isNotBlank(i.getSchema()) ? i.getSchema() : defaultSchema;
-                if (StringUtils.startsWith(schema, "\"") && StringUtils.endsWith(schema, "\"")) {
-                    schema = StringUtils.unquoteOracleIdentifier(schema);
-                } else {
-                    schema = StringUtils.upperCase(schema);
-                }
-                String table = StringUtils.isNotBlank(i.getTable()) ? i.getTable() : null;
-                if (StringUtils.startsWith(table, "\"") && StringUtils.endsWith(table, "\"")) {
-                    table = StringUtils.unquoteOracleIdentifier(table);
-                } else {
-                    table = StringUtils.upperCase(table);
-                }
-                i.setSchema(schema);
-                i.setTable(table);
-                return i;
-            }).collect(Collectors.toSet());
+            identities = identities.stream()
+                    .filter(e -> Objects.nonNull(e.getSchema()) || Objects.nonNull(e.getTable())).map(e -> {
+                        DBSchemaIdentity i = new DBSchemaIdentity(e.getSchema(), e.getTable());
+                        String schema = StringUtils.isNotBlank(i.getSchema()) ? i.getSchema() : defaultSchema;
+                        if (StringUtils.startsWith(schema, "\"") && StringUtils.endsWith(schema, "\"")) {
+                            schema = StringUtils.unquoteOracleIdentifier(schema);
+                        } else {
+                            schema = StringUtils.upperCase(schema);
+                        }
+                        String table = StringUtils.isNotBlank(i.getTable()) ? i.getTable() : null;
+                        if (StringUtils.startsWith(table, "\"") && StringUtils.endsWith(table, "\"")) {
+                            table = StringUtils.unquoteOracleIdentifier(table);
+                        } else {
+                            table = StringUtils.upperCase(table);
+                        }
+                        i.setSchema(schema);
+                        i.setTable(table);
+                        return i;
+                    }).collect(Collectors.toSet());
         }
         return identities;
     }

@@ -100,7 +100,7 @@ public abstract class BaseOmsClient implements OmsClient {
                     : ErrorCodes.BadRequest;
             throw new OmsException(errorCode, responseEntity.toString(), null, responseEntity.getStatusCode());
         }
-        log.info("process oms request = {} with response = {}", requestParams, responseEntity.getBody());
+        log.info("process oms request [{}] with response [{}]", requestParams, responseEntity.getBody());
         OmsApiReturnResult<T> result = JsonUtils.fromJsonIgnoreMissingProperty(responseEntity.getBody(), typeReference);
         if (result == null) {
             throw new UnexpectedException("Parse oms result occur error, result=" + responseEntity.getBody());

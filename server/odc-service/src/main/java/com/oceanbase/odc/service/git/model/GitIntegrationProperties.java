@@ -15,21 +15,25 @@
  */
 package com.oceanbase.odc.service.git.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.oceanbase.odc.common.json.SensitiveInput;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.context.annotation.Configuration;
 
 import lombok.Data;
 
 /**
  * @author: liuyizhuo.lyz
- * @date: 2024/7/30
+ * @date: 2024/8/9
  */
+@Configuration
+@RefreshScope
 @Data
-public class GitProvider {
-    private VcsProvider providerType;
-    private String providerUrl;
-    private String email;
-    @SensitiveInput
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    private String personalAccessToken;
+public class GitIntegrationProperties {
+
+    @Value("${odc.integration.git.repository-retention-minutes:1440}")
+    private Long gitRepositoryPreserveMinutes = 1440L;
+
+    @Value("${odc.integration.git.repository-max-cached-size:1000}")
+    private Long gitRepositoryMaxCachedSize = 1000L;
+
 }

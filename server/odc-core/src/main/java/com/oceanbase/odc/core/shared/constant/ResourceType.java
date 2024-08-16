@@ -95,6 +95,8 @@ public enum ResourceType implements Translatable {
     ODC_NOTIFICATION_POLICY,
     ODC_NOTIFICATION_MESSAGE,
 
+    ODC_GIT_REPOSITORY,
+
     ODC_DATABASE_CHANGE_ORDER_TEMPLATE,
 
 

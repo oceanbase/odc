@@ -45,13 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DataDeletePreprocessor extends AbstractDlmPreprocessor {
 
     @Autowired
-    private AuthenticationFacade authenticationFacade;
-
-    @Autowired
     private DatabaseService databaseService;
-
-    @Autowired
-    private DlmLimiterService limiterService;
 
     @Autowired
     private DLMConfiguration dlmConfiguration;

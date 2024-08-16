@@ -15,21 +15,27 @@
  */
 package com.oceanbase.odc.service.git.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.oceanbase.odc.common.json.SensitiveInput;
+import java.util.List;
 
-import lombok.Data;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * @author: liuyizhuo.lyz
- * @date: 2024/7/30
+ * @date: 2024/7/29
  */
-@Data
-public class GitProvider {
-    private VcsProvider providerType;
-    private String providerUrl;
-    private String email;
-    @SensitiveInput
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    private String personalAccessToken;
+@Getter
+@Setter
+@Builder
+public class QueryGitRepositoryParams {
+
+    private String fuzzyName;
+
+    private List<VcsProvider> providers;
+
+    private Long projectId;
+
+    private Long organizationId;
+
 }
