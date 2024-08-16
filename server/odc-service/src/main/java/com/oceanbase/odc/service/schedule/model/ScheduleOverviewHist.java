@@ -16,37 +16,39 @@
 package com.oceanbase.odc.service.schedule.model;
 
 import java.util.Date;
+import java.util.Set;
 
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.common.i18n.Internationalizable;
+import com.oceanbase.odc.service.common.model.InnerUser;
 
 import lombok.Data;
 
 /**
  * @Author：tinker
- * @Date: 2024/6/19 14:31
+ * @Date: 2024/8/14 18:44
  * @Descripition:
  */
 
-
 @Data
-public class ScheduleTaskOverview {
+public class ScheduleOverviewHist {
 
     private Long id;
 
-    private ScheduleTaskType type;
+    private ScheduleType type;
 
-    private TaskStatus status;
+    private ScheduleStatus status;
+
+    private InnerUser creator;
+
+    private Set<InnerUser> candidateApprovers;
 
     private Date createTime;
 
-    private Date updateTime;
+    private Long approveInstanceId;
 
-    /**
-     * Only used in version 4.3.2, it will be deleted after version 4.3.3.
-     */
-    private String jobGroup;
+    private boolean approvable;
 
-    public String getJobGroup() {
-        return type == null ? null : type.name();
-    }
+    @Internationalizable
+    private String description;
+
 }

@@ -25,9 +25,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.DLMConfiguration;
-import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
-import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
@@ -45,13 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DataDeletePreprocessor extends AbstractDlmPreprocessor {
 
     @Autowired
-    private AuthenticationFacade authenticationFacade;
-
-    @Autowired
     private DatabaseService databaseService;
-
-    @Autowired
-    private DlmLimiterService limiterService;
 
     @Autowired
     private DLMConfiguration dlmConfiguration;

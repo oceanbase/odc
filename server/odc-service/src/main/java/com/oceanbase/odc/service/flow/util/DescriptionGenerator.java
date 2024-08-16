@@ -28,6 +28,7 @@ import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.notification.helper.MessageTemplateProcessor;
+import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 
 /**
  * @Author：tinker
@@ -55,6 +56,17 @@ public class DescriptionGenerator {
                         req.getEnvironmentName(), req.getConnectionName(),
                         req.getDatabaseName())));
             }
+        }
+    }
+
+    public static void generateScheduleDescription(CreateScheduleReq req) {
+        if (StringUtils.isEmpty(req.getDescription())) {
+            Locale locale = LocaleContextHolder.getLocale();
+            String descFormat = Symbols.LEFT_BRACKET.getLocalizedMessage() + "%s"
+                    + Symbols.RIGHT_BRACKET.getLocalizedMessage() + "%s.%s";
+            req.setDescription(MessageTemplateProcessor.getLocalMessage(locale, String.format(descFormat,
+                    req.getEnvironmentName(), req.getConnectionName(),
+                    req.getDatabaseName())));
         }
     }
 }

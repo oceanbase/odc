@@ -39,7 +39,7 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
 
     @Transactional
     @Query(value = "update job_job set "
-            + " executor_endpoint=:executorEndpoint ,"
+            + " executor_endpoint=:executorEndpoint "
             + " where id=:id and status =:#{#oldStatus.name()}", nativeQuery = true)
     @Modifying
     int updateExecutorEndpoint(@Param("id") Long id, @Param("executorEndpoint") String executorEndpoint,

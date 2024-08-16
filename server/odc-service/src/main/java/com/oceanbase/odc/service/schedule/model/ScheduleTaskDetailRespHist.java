@@ -23,30 +23,25 @@ import lombok.Data;
 
 /**
  * @Author：tinker
- * @Date: 2024/6/19 14:31
+ * @Date: 2024/6/25 15:20
  * @Descripition:
  */
 
-
 @Data
-public class ScheduleTaskOverview {
+public class ScheduleTaskDetailRespHist {
 
     private Long id;
 
-    private ScheduleTaskType type;
-
     private TaskStatus status;
+
+    private String executionDetails;
 
     private Date createTime;
 
     private Date updateTime;
 
-    /**
-     * Only used in version 4.3.2, it will be deleted after version 4.3.3.
-     */
+    private String jobName;
+
     private String jobGroup;
 
-    public String getJobGroup() {
-        return type == null ? null : type.name();
-    }
 }
