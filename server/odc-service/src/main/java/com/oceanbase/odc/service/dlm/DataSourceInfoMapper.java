@@ -116,13 +116,12 @@ public class DataSourceInfoMapper {
         }
         return dataSourceInfo;
     }
-
     private static String getJdbcUrl(ConnectionConfig connectionConfig) {
         JdbcUrlProperty jdbcUrlProperty = new JdbcUrlProperty(connectionConfig.getHost(), connectionConfig.getPort(),
-                connectionConfig.getDefaultSchema(), Collections.emptyMap(),
-                connectionConfig.getSid(),
-                connectionConfig.getServiceName());
+            connectionConfig.getDefaultSchema(), Collections.emptyMap(),
+            connectionConfig.getSid(),
+            connectionConfig.getServiceName());
         return ConnectionPluginUtil.getConnectionExtension(connectionConfig.getDialectType())
-                .generateJdbcUrl(jdbcUrlProperty);
+            .generateJdbcUrl(jdbcUrlProperty);
     }
 }
