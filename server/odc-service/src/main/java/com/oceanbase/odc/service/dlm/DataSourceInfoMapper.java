@@ -21,7 +21,6 @@ import java.util.Collections;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
@@ -107,8 +106,15 @@ public class DataSourceInfoMapper {
                 break;
             case POSTGRESQL:
                 dataSourceInfo.setFullUserName(connectionConfig.getUsername());
-                dataSourceInfo.setJdbcUrl(getJdbcUrl(connectionConfig, schemaName));
+                connectionConfig.setDefaultSchema(schemaName);
+                String jdbcUrl = getJdbcUrl(connectionConfig) + "&stringtype=unspecified";
+                dataSourceInfo.setJdbcUrl(jdbcUrl);
                 dataSourceInfo.setDatabaseType(DataBaseType.POSTGRESQL);
+                break;
+            case ORACLE:
+                dataSourceInfo.setJdbcUrl(getJdbcUrl(connectionConfig));
+                dataSourceInfo.setDatabaseType(DataBaseType.ORACLE);
+                dataSourceInfo.setFullUserName(connectionConfig.getUsername());
                 break;
             default:
                 log.warn(String.format("Unsupported datasource type:%s", connectionConfig.getDialectType()));
@@ -118,14 +124,12 @@ public class DataSourceInfoMapper {
         return dataSourceInfo;
     }
 
-    private static String getJdbcUrl(ConnectionConfig config, String schema) {
-        JdbcUrlProperty jdbcUrlProperties = new JdbcUrlProperty(config.getHost(), config.getPort(), schema,
-                Collections.emptyMap(), config.getSid(),
-                config.getServiceName(), config.getCatalogName());
-        ConnectionExtensionPoint connectionExtensionPoint =
-                ConnectionPluginUtil.getConnectionExtension(config.getDialectType());
-        String jdbcUrl = connectionExtensionPoint.generateJdbcUrl(jdbcUrlProperties);
-        return jdbcUrl + "&stringtype=unspecified";
+    private static String getJdbcUrl(ConnectionConfig connectionConfig) {
+        JdbcUrlProperty jdbcUrlProperty = new JdbcUrlProperty(connectionConfig.getHost(), connectionConfig.getPort(),
+                connectionConfig.getDefaultSchema(), Collections.emptyMap(),
+                connectionConfig.getSid(),
+                connectionConfig.getServiceName(),connectionConfig.getCatalogName());
+        return ConnectionPluginUtil.getConnectionExtension(connectionConfig.getDialectType())
+                .generateJdbcUrl(jdbcUrlProperty);
     }
-
 }

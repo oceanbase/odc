@@ -120,6 +120,14 @@ public class ScheduleControllerHist {
         return Responses.ok(Boolean.TRUE);
     }
 
+    @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/rollback",
+            method = RequestMethod.PUT)
+    public SuccessResponse<Boolean> rollbackTask(@PathVariable Long scheduleId, @PathVariable Long taskId) {
+        scheduleService.rollbackTask(scheduleId, taskId);
+        return Responses.success(Boolean.TRUE);
+
+    }
+
 
     @ApiOperation(value = "GetScheduleTaskLog", notes = "获取计划任务日志")
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/log", method = RequestMethod.GET)
