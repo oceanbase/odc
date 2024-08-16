@@ -38,22 +38,6 @@ import com.oceanbase.odc.service.common.util.IgnoreResponseErrorHandler;
 @Configuration
 public class RestTemplateConfig {
 
-    @Value("${server.port:8989}")
-    private Integer serverPort;
-
-    /**
-     * internal proxy for aliyun generic api
-     */
-    @Bean("internalProxyRestTemplate")
-    public RestTemplate internalProxyRestTemplate() {
-        return new RestTemplateBuilder()
-                .rootUri("http://localhost:" + serverPort)
-                .setConnectTimeout(Duration.ofSeconds(1))
-                .setReadTimeout(Duration.ofSeconds(60))
-                .errorHandler(new IgnoreResponseErrorHandler())
-                .build();
-    }
-
     @Bean("vpcRestTemplate")
     public RestTemplate vpcRestTemplate() {
         StringHttpMessageConverter stringHttpMc = new StringHttpMessageConverter(Charset.forName("UTF-8"));
