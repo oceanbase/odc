@@ -22,6 +22,7 @@ import java.util.Map;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.objectstorage.ObjectMetadataEntity;
+import com.oceanbase.odc.service.objectstorage.model.ObjectUploadStatus;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.Worksheet;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetUtil;
@@ -98,12 +99,15 @@ public class WorksheetConverter {
 
     public static ObjectMetadataEntity toEntity(Worksheet worksheet) {
         ObjectMetadataEntity entity = new ObjectMetadataEntity();
-        entity.setId(worksheet.getId());
+        if (worksheet.getId() != null) {
+            entity.setId(worksheet.getId());
+        }
         entity.setBucketName(WorksheetUtil.getBucketNameOfWorkSheets(worksheet.getProjectId()));
-        entity.setBucketName(worksheet.getPath().toString());
+        entity.setObjectName(worksheet.getPath().toString());
         entity.setCreatorId(worksheet.getCreatorId());
         entity.setVersion(worksheet.getVersion());
         entity.setObjectId(worksheet.getObjectId());
+        entity.setStatus(ObjectUploadStatus.FINISHED);
         return entity;
     }
 }

@@ -120,7 +120,7 @@ public class Worksheet {
         this.path = path;
         this.creatorId = creatorId;
         this.version = version == null ? 0L : version;
-        if (path.isFile()) {
+        if (path.isFile() && id != null) {
             PreConditions.notBlank(objectId, "objectId");
         }
         this.objectId = objectId;

@@ -36,10 +36,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.metadb.objectstorage.ObjectMetadataEntity;
 import com.oceanbase.odc.metadb.objectstorage.ObjectMetadataRepository;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.Worksheet;
+import com.oceanbase.odc.service.worksheet.domain.WorksheetId;
 import com.oceanbase.odc.service.worksheet.domain.WorksheetRepository;
 import com.oceanbase.odc.service.worksheet.infrastructure.converter.WorksheetConverter;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetUtil;
@@ -96,19 +98,16 @@ public class DefaultWorksheetRepository implements WorksheetRepository {
         return Optional.ofNullable(worksheet);
     }
 
-
-
     @Override
     public List<Worksheet> listWithSubsByProjectIdAndPath(Long projectId, Path path) {
+        PreConditions.notNull(path, "path");
         CriteriaBuilder criteriaBuilder = metadataRepository.getEntityManager().getCriteriaBuilder();
         CriteriaQuery<ObjectMetadataEntity> criteriaQuery = criteriaBuilder.createQuery(ObjectMetadataEntity.class);
         Root<ObjectMetadataEntity> root = criteriaQuery.from(ObjectMetadataEntity.class);
         List<Predicate> predicates = new ArrayList<>();
         predicates
                 .add(criteriaBuilder.equal(root.get("bucketName"), WorksheetUtil.getBucketNameOfWorkSheets(projectId)));
-        if (path != null) {
-            predicates.add(criteriaBuilder.like(root.get("objectName"), path.getStandardPath() + "%"));
-        }
+        predicates.add(criteriaBuilder.like(root.get("objectName"), path.getStandardPath() + "%"));
         criteriaQuery.select(root).where(predicates.toArray(new Predicate[0]));
         TypedQuery<ObjectMetadataEntity> typedQuery = metadataRepository.getEntityManager().createQuery(criteriaQuery);
         List<ObjectMetadataEntity> resultList = typedQuery.getResultList();
@@ -125,7 +124,17 @@ public class DefaultWorksheetRepository implements WorksheetRepository {
         }
         List<ObjectMetadataEntity> entities =
                 worksheets.stream().map(WorksheetConverter::toEntity).collect(Collectors.toList());
-        metadataRepository.saveAll(entities);
+        metadataRepository.saveAllAndFlush(entities);
+        setEntityIdToDomain(worksheets, entities);
+    }
+
+    private static void setEntityIdToDomain(Set<Worksheet> worksheets, List<ObjectMetadataEntity> entities) {
+        Map<WorksheetId, Long> worksheetIdToRowIdMap = entities.stream().collect(
+                Collectors.toMap(o -> new WorksheetId(o.getBucketName(), o.getObjectName()),
+                        ObjectMetadataEntity::getId, (o1, o2) -> o1));
+        for (Worksheet worksheet : worksheets) {
+            worksheet.setId(worksheetIdToRowIdMap.get(new WorksheetId(worksheet.getProjectId(), worksheet.getPath())));
+        }
     }
 
     @Override
@@ -143,6 +152,6 @@ public class DefaultWorksheetRepository implements WorksheetRepository {
         }
         List<ObjectMetadataEntity> entities =
                 files.stream().map(WorksheetConverter::toEntity).collect(Collectors.toList());
-        metadataRepository.saveAll(entities);
+        metadataRepository.saveAllAndFlush(entities);
     }
 }
