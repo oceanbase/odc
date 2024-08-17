@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.core.authority.auth;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * Default strategy
  *
@@ -23,16 +25,21 @@ package com.oceanbase.odc.core.authority.auth;
  * @since ODC_release_3.2.0
  * @see PermissionStrategy
  */
+@Slf4j
 public class DefaultPermissionStrategy implements PermissionStrategy {
 
     @Override
     public boolean decide(SecurityContext context) {
+        log.info("==========context:{}==========",context);
         if (context == null) {
+            log.info("==========context is null==========");
             return false;
         }
         if (context.isPrivileged()) {
+            log.info("==========true==========");
             return true;
         }
+        log.info("==========context.isAllDenied():{}",context.isAllDenied());
         return !context.isAllDenied();
     }
 
