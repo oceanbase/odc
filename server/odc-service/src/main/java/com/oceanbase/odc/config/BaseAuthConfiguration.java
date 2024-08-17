@@ -44,6 +44,8 @@ import com.oceanbase.odc.service.iam.auth.EmptySessionManager;
 import com.oceanbase.odc.service.iam.auth.OdcSecurityManager;
 import com.oceanbase.odc.service.iam.auth.OrganizationIsolatedValueProvider;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * {@link BaseAuthConfiguration}
  *
@@ -51,6 +53,7 @@ import com.oceanbase.odc.service.iam.auth.OrganizationIsolatedValueProvider;
  * @date 2022-07-07 16:47
  * @since ODC_release_3.4.0
  */
+@Slf4j
 public abstract class BaseAuthConfiguration {
 
     @Bean
@@ -60,6 +63,8 @@ public abstract class BaseAuthConfiguration {
             AuthenticationFacade authenticationFacade) {
         Collection<Authorizer> authorizers = authorizers(permissionRepository, permissionMapper, resourceRoleRepository,
                 resourceRoleBasedPermissionExtractor);
+        log.info("==============BaseAuthConfiguration==============authorizers.size():{}, authorizers:{}",
+                authorizers.size(), authorizers);
         DefaultAuthorizerManager authorizerManager = new DefaultAuthorizerManager(authorizers);
         PermissionStrategy permissionStrategy = permissionStrategy();
         AuthenticatorManager authenticatorManager = new DefaultAuthenticatorManager(authenticators());

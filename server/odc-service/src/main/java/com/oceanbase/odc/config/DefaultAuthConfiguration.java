@@ -15,16 +15,16 @@
  */
 package com.oceanbase.odc.config;
 
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 
 import com.oceanbase.odc.core.authority.auth.Authorizer;
 import com.oceanbase.odc.metadb.iam.PermissionRepository;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
 import com.oceanbase.odc.service.iam.ResourcePermissionExtractor;
 import com.oceanbase.odc.service.iam.ResourceRoleBasedPermissionExtractor;
-import com.oceanbase.odc.service.iam.auth.DefaultAuthorizer;
-import com.oceanbase.odc.service.iam.auth.ResourceRoleAuthorizer;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * {@link DefaultAuthConfiguration}
@@ -34,14 +34,15 @@ import com.oceanbase.odc.service.iam.auth.ResourceRoleAuthorizer;
  * @since ODC_release_3.4.0
  * @see BaseAuthConfiguration
  */
+@Slf4j
 public class DefaultAuthConfiguration extends BaseAuthConfiguration {
 
     @Override
     protected Collection<Authorizer> authorizers(PermissionRepository permissionRepository,
             ResourcePermissionExtractor resourcePermissionExtractor, UserResourceRoleRepository resourceRoleRepository,
             ResourceRoleBasedPermissionExtractor resourceRoleBasedPermissionExtractor) {
-        return Arrays.asList(new DefaultAuthorizer(permissionRepository, resourcePermissionExtractor),
-                new ResourceRoleAuthorizer(resourceRoleRepository, resourceRoleBasedPermissionExtractor));
+        log.info("==================== DefaultAuthConfiguration ====================");
+        return Collections.emptyList();
     }
 
 }

@@ -247,6 +247,7 @@ public class ConnectSessionService {
             Permission requiredPermission = this.securityManager.getPermissionByActions(
                     new DefaultSecurityResource(req.getDsId().toString(), ResourceType.ODC_CONNECTION.name()),
                     Collections.singletonList("update"));
+            log.info("===============requiredPermission:{}", requiredPermission);
             this.securityManager.checkPermission(requiredPermission);
             schemaName = null;
             dataSourceId = req.getDsId();

@@ -29,11 +29,14 @@ import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
 import com.oceanbase.odc.service.iam.ResourceRoleBasedPermissionExtractor;
 import com.oceanbase.odc.service.iam.model.User;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @Author: Lebie
  * @Date: 2023/4/24 17:35
  * @Description: []
  */
+@Slf4j
 public class ResourceRoleAuthorizer extends BaseAuthorizer {
     protected final UserResourceRoleRepository repository;
     protected final ResourceRoleBasedPermissionExtractor permissionMapper;
@@ -63,6 +66,12 @@ public class ResourceRoleAuthorizer extends BaseAuthorizer {
         }
         Collection<ResourceRoleBasedPermission> permissionCollection =
                 permissionMapper.getResourcePermissions(resourceRoles);
+        log.info("==========ResourceRoleAuthorizer");
+        try {
+            throw new RuntimeException();
+        } catch (Exception e) {
+            log.info("====ResourceRoleAuthorizer==================", e);
+        }
         for (Permission permission : permissions) {
             boolean accessDenied = true;
             for (ResourceRoleBasedPermission resourceRoleBasedPermission : permissionCollection) {

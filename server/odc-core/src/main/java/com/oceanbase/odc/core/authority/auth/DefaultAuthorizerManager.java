@@ -63,6 +63,7 @@ public class DefaultAuthorizerManager implements AuthorizerManager {
         } catch (AuthenticationException e) {
             return null;
         }
+        log.info("===================authorizers.size():{}, authorizers:{}", authorizers.size(), authorizers);
         for (Authorizer authorizer : this.authorizers) {
             if (context.isTerminated() || context.isPrivileged()) {
                 return context;
@@ -85,6 +86,12 @@ public class DefaultAuthorizerManager implements AuthorizerManager {
         SecurityContext context = permit(subject, permissions);
         if (strategy.decide(context)) {
             return context;
+        }
+        try {
+            throw new RuntimeException();
+        } catch (Exception e) {
+            log.info("=======strategy:{}, subject:{}", strategy, subject);
+            log.info("===========e:", e);
         }
         throw new AccessDeniedException(permissions);
     }

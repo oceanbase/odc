@@ -29,6 +29,8 @@ import com.oceanbase.odc.metadb.iam.PermissionRepository;
 import com.oceanbase.odc.service.iam.ResourcePermissionExtractor;
 import com.oceanbase.odc.service.iam.model.User;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * Implements for <code>Authorizer</code>, just for ODC application
  *
@@ -37,6 +39,7 @@ import com.oceanbase.odc.service.iam.model.User;
  * @since ODC-release_3.2.0
  * @see Authorizer
  */
+@Slf4j
 public class DefaultAuthorizer extends BaseAuthorizer {
 
     protected final PermissionRepository repository;
@@ -62,6 +65,12 @@ public class DefaultAuthorizer extends BaseAuthorizer {
         }
         Collection<Permission> permissionCollection =
                 permissionMapper.getResourcePermissions(permissionEntities);
+        log.info("===========DefaultAuthorizer");
+        try {
+            throw new RuntimeException();
+        } catch (Exception e) {
+            log.info("====DefaultAuthorizer==================", e);
+        }
         for (Permission permission : permissions) {
             boolean accessDenied = true;
             for (Permission resourcePermission : permissionCollection) {
