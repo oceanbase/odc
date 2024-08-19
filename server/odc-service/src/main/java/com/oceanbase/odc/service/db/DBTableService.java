@@ -31,6 +31,7 @@ import org.springframework.stereotype.Service;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
@@ -47,7 +48,6 @@ import com.oceanbase.odc.service.db.model.GenerateUpdateTableDDLReq;
 import com.oceanbase.odc.service.db.model.UpdateTableDdlCheck;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
-import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
@@ -127,7 +127,7 @@ public class DBTableService {
 
     public GenerateTableDDLResp generateCreateDDL(@NotNull ConnectionSession session, @NotNull DBTable table) {
         String ddl;
-        if (new DefaultConnectSessionIdGenerator().getKeyFromId(session.getId()).getLogicalSession()) {
+        if (ConnectionSessionUtil.getLogicalSession(session)) {
             ddl = DBAccessorUtil.getTableEditor("4.0.0", session.getDialectType()).generateCreateObjectDDL(table);
         } else {
             ddl = session.getSyncJdbcExecutor(
@@ -145,7 +145,7 @@ public class DBTableService {
     public GenerateTableDDLResp generateUpdateDDL(@NotNull ConnectionSession session,
             @NotNull GenerateUpdateTableDDLReq req) {
         String ddl;
-        if (new DefaultConnectSessionIdGenerator().getKeyFromId(session.getId()).getLogicalSession()) {
+        if (ConnectionSessionUtil.getLogicalSession(session)) {
             ddl = DBAccessorUtil.getTableEditor("4.0.0", session.getDialectType())
                     .generateUpdateObjectDDL(req.getPrevious(), req.getCurrent());
         } else {
