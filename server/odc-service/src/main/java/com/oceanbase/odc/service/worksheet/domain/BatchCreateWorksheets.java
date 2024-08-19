@@ -66,8 +66,8 @@ public class BatchCreateWorksheets {
                                 + "tuple2: " + tuple);
             }
             if (createPathToObjectIdMap.containsKey(path)) {
-                throw new NameDuplicatedException(
-                        "duplicated path in request,create path: " + tuple.getPath());
+                throw new NameDuplicatedException(new Object[] {path.getName()},
+                        "duplicated path in request,create path: " + tuple.getPath(), null);
             }
             createPathToObjectIdMap.put(path, objectId);
         }

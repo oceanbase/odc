@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.worksheet.exceptions;
 
+import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.SAME_LEVEL_NUM_LIMIT;
+
 import org.springframework.http.HttpStatus;
 
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
@@ -34,9 +36,8 @@ public class ExceedSameLevelNumLimitException extends HttpException implements N
     }
 
     public ExceedSameLevelNumLimitException(String message, Throwable throwable) {
-        this(new Object[] {message}, message, throwable);
+        this(new Object[] {SAME_LEVEL_NUM_LIMIT}, message, throwable);
     }
-
 
     public ExceedSameLevelNumLimitException(Object[] args, String message, Throwable throwable) {
         super(ErrorCodes.WorksheetExceedSameLevelNumLimit, args, message, throwable);

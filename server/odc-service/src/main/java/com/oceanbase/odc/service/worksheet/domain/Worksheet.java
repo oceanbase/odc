@@ -206,8 +206,8 @@ public class Worksheet {
                     "invalid path for rename,from:" + this.path + ",destinationPath:" + destinationPath);
         }
         if (this.isRenameDuplicated(destinationPath)) {
-            throw new NameDuplicatedException(
-                    "duplicated path name for rename,from:" + this.path + ",destinationPath:" + destinationPath);
+            throw new NameDuplicatedException(new Object[] {destinationPath.getName()},
+                    "duplicated path name for rename,from:" + this.path + ",destinationPath:" + destinationPath, null);
         }
         Set<Worksheet> changedWorksheets = new HashSet<>();
         if (CollectionUtils.isNotEmpty(subWorksheets)) {
@@ -354,8 +354,8 @@ public class Worksheet {
                 createPathToObjectIdMap.keySet().stream().collect(
                         Collectors.toMap(Path::getName, Function.identity(),
                                 (p1, p2) -> {
-                                    throw new NameDuplicatedException(
-                                            "create path name duplicated ,path1:" + p1 + ",path2:" + p2);
+                                    throw new NameDuplicatedException(new Object[] {p1.getName()},
+                                            "create path name duplicated ,path1:" + p1 + ",path2:" + p2, null);
                                 }));
         for (Worksheet worksheet : nextLevelWorksheets) {
             Path willToCreatePath = willToCreatePathNameToPathMap.get(worksheet.getPath().getName());
@@ -366,9 +366,10 @@ public class Worksheet {
                 continue;
             }
             if (willToCreatePathNameToPathMap.containsKey(worksheet.getPath().getName())) {
-                throw new NameDuplicatedException(
+                throw new NameDuplicatedException(new Object[] {worksheet.getPath().getName()},
                         "create path name duplicated with with an existing same level file,"
-                                + "exist path: " + worksheet.getPath());
+                                + "exist path: " + worksheet.getPath(),
+                        null);
             }
         }
     }

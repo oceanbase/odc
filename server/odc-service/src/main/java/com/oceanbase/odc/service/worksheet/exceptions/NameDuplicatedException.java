@@ -34,9 +34,8 @@ public class NameDuplicatedException extends HttpException implements NonTransie
     }
 
     public NameDuplicatedException(String message, Throwable throwable) {
-        this(new Object[] {message}, message, throwable);
+        this(new Object[] {""}, message, throwable);
     }
-
 
     public NameDuplicatedException(Object[] args, String message, Throwable throwable) {
         super(ErrorCodes.WorksheetNameDuplicated, args, message, throwable);

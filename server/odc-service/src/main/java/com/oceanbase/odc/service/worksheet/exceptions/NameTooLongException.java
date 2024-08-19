@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.worksheet.exceptions;
 
+import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.NAME_LENGTH_LIMIT;
+
 import org.springframework.http.HttpStatus;
 
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
@@ -34,7 +36,7 @@ public class NameTooLongException extends HttpException implements NonTransient 
     }
 
     public NameTooLongException(String message, Throwable throwable) {
-        this(new Object[] {message}, message, throwable);
+        this(new Object[] {NAME_LENGTH_LIMIT}, message, throwable);
     }
 
 

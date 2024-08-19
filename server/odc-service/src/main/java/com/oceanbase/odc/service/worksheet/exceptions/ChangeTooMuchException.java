@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.worksheet.exceptions;
 
+import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.CHANGE_FILE_NUM_LIMIT;
+
 import org.springframework.http.HttpStatus;
 
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
@@ -34,7 +36,7 @@ public class ChangeTooMuchException extends HttpException implements NonTransien
     }
 
     public ChangeTooMuchException(String message, Throwable throwable) {
-        this(new Object[] {message}, message, throwable);
+        this(new Object[] {CHANGE_FILE_NUM_LIMIT}, message, throwable);
     }
 
 
