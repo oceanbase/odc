@@ -194,7 +194,7 @@ public class LogicalDatabaseService {
 
         databaseRepository.deleteById(id);
         Set<Long> physicalDBIds = databaseMappingRepository.findByLogicalDatabaseId(id).stream()
-                .map(DatabaseMappingEntity::getId).collect(
+                .map(DatabaseMappingEntity::getPhysicalDatabaseId).collect(
                         Collectors.toSet());
         databaseMappingRepository.deleteByLogicalDatabaseId(id);
         dbObjectRepository.deleteByDatabaseIdIn(Collections.singleton(id));
