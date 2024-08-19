@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.objectstorage.cloud;
+package com.oceanbase.odc.service.objectstorage.cloud;
 
 import java.io.File;
 
@@ -22,12 +22,9 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import com.amazonaws.auth.AWSSessionCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicSessionCredentials;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.PutObjectResult;
+import com.aliyun.oss.OSS;
+import com.aliyun.oss.OSSClientBuilder;
+import com.aliyun.oss.model.PutObjectResult;
 import com.oceanbase.odc.ITConfigurations;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudResourceConfigurations;
@@ -38,7 +35,7 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfigur
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadObjectTemporaryCredential;
 
 @Ignore
-public class AWSSecurityTokenServiceTest {
+public class AlibabaCloudSecurityTokenServiceTest {
     private static final String FILE_NAME = "src/test/resources/data/test0001.txt";
     private static final String FILE_NAME_CN_ZH = "src/test/resources/data/中文名称.txt";
     private static ObjectStorageConfiguration configuration;
@@ -46,7 +43,7 @@ public class AWSSecurityTokenServiceTest {
 
     @BeforeClass
     public static void beforeClass() {
-        configuration = ITConfigurations.getS3Configuration();
+        configuration = ITConfigurations.getOssConfiguration();
         CloudClient cloudClient = new CloudResourceConfigurations().publicEndpointCloudClient(() -> configuration);
         CloudClient internalCloudClient =
                 new CloudResourceConfigurations().internalEndpointCloudClient(() -> configuration);
@@ -65,26 +62,17 @@ public class AWSSecurityTokenServiceTest {
         generateTempCredential("中文名称.txt", FILE_NAME_CN_ZH);
     }
 
-    public void generateTempCredential(String fileName, String filePath) {
+    private void generateTempCredential(String fileName, String filepath) {
         GenerateTempCredentialReq req = new GenerateTempCredentialReq();
         req.setFileName(fileName);
         UploadObjectTemporaryCredential credential = service.generateTempCredential(req);
 
-        AWSSessionCredentials sessionCredentials = new BasicSessionCredentials(
-                credential.getAccessKeyId(), credential.getAccessKeySecret(),
-                credential.getSecurityToken());
-
-        AmazonS3 s3 = AmazonS3ClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(sessionCredentials))
-                .withRegion(credential.getRegion())
-                .disableChunkedEncoding()
-                .build();
-
+        OSS oss = new OSSClientBuilder().build(credential.getEndpoint(), credential.getAccessKeyId(),
+                credential.getAccessKeySecret(), credential.getSecurityToken());
         PutObjectResult putObjectResult =
-                s3.putObject(configuration.getBucketName(), credential.getFilePath(), new File(filePath));
+                oss.putObject(configuration.getBucketName(), credential.getFilePath(), new File(filepath));
 
-        Assert.assertNotNull(putObjectResult.getETag());
+        Assert.assertEquals(putObjectResult.getClientCRC(), putObjectResult.getServerCRC());
     }
-
 
 }

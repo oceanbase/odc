@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.cloud;
+package com.oceanbase.odc.service.objectstorage.cloud;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -76,6 +76,14 @@ abstract class AbstractCloudObjectStorageServiceTest {
     @Test
     public void upload_ByFileNameAndFile() throws IOException {
         objectName = cloudObjectStorageService.upload("test", new File(TEST_FILE_PATH));
+
+        tempFile = cloudObjectStorageService.downloadToTempFile(objectName);
+        Assert.assertEquals("test0001", readFirstLine(tempFile));
+    }
+
+    @Test
+    public void uploadTemp_ByFileNameAndFile() throws IOException {
+        objectName = cloudObjectStorageService.uploadTemp("test", new File(TEST_FILE_PATH));
 
         tempFile = cloudObjectStorageService.downloadToTempFile(objectName);
         Assert.assertEquals("test0001", readFirstLine(tempFile));

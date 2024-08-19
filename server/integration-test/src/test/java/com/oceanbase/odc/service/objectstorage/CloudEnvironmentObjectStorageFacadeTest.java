@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
+import com.oceanbase.odc.service.objectstorage.CloudEnvironmentObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.objectstorage.operator.LocalFileOperator;
