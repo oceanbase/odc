@@ -80,4 +80,34 @@ public class DataArchiveParameters implements ScheduleTaskParameters {
     private RateLimitConfiguration rateLimit;
 
     private boolean fullDatabase = false;
+
+    /**
+     * Only used in version 4.3.2, it will be deleted after version 4.3.3
+     */
+    @JsonProperty(access = Access.READ_ONLY)
+    private String sourceDatabaseName;
+    @JsonProperty(access = Access.READ_ONLY)
+    private String targetDatabaseName;
+    @JsonProperty(access = Access.READ_ONLY)
+    private String sourceDataSourceName;
+    @JsonProperty(access = Access.READ_ONLY)
+    private String targetDataSourceName;
+
+    public String getSourceDatabaseName() {
+        return sourceDatabase == null ? null : sourceDatabase.getName();
+    }
+
+    public String getTargetDatabaseName() {
+        return targetDatabase == null ? null : targetDatabase.getName();
+    }
+
+    public String getSourceDataSourceName() {
+        return sourceDatabase == null || sourceDatabase.getDataSource() == null ? null
+                : sourceDatabase.getDataSource().getName();
+    }
+
+    public String getTargetDataSourceName() {
+        return targetDatabase == null || targetDatabase.getDataSource() == null ? null
+                : targetDatabase.getDataSource().getName();
+    }
 }

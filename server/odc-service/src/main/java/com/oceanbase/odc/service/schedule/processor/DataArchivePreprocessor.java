@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.schedule.processor;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
@@ -29,9 +28,7 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.DLMConfiguration;
 import com.oceanbase.odc.service.dlm.DLMTableStructureSynchronizer;
-import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
-import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
@@ -48,14 +45,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @ScheduleTaskPreprocessor(type = ScheduleType.DATA_ARCHIVE)
 public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
-    @Autowired
-    private AuthenticationFacade authenticationFacade;
 
     @Autowired
     private DatabaseService databaseService;
-
-    @Autowired
-    private DlmLimiterService limiterService;
 
     @Autowired
     private DLMConfiguration dlmConfiguration;
@@ -72,10 +64,6 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
             // permission to access it.
             Database sourceDb = databaseService.detail(parameters.getSourceDatabaseId());
             Database targetDb = databaseService.detail(parameters.getTargetDataBaseId());
-            if (!parameters.getSyncTableStructure().isEmpty()) {
-                supportSyncTableStructure(sourceDb.getDataSource().getDialectType(), targetDb.getDataSource()
-                        .getDialectType());
-            }
             ConnectionConfig sourceDs = sourceDb.getDataSource();
             sourceDs.setDefaultSchema(sourceDb.getName());
             ConnectionSessionFactory sourceSessionFactory = new DefaultConnectSessionFactory(sourceDs);
@@ -137,18 +125,10 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
                         String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
             }
         }
-        if (sourceDbType == DialectType.OB_ORACLE) {
-            if (targetDbType != DialectType.OB_ORACLE) {
+        if (sourceDbType.isOracle()) {
+            if (!targetDbType.isOracle()) {
                 throw new UnsupportedException(
                         String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
-            }
-            if (VersionUtils.isGreaterThanOrEqualsTo(sourceDbVersion, "4.3.0")) {
-                throw new UnsupportedException(
-                        String.format("Unsupported OB Version:%s", sourceDbVersion));
-            }
-            if (VersionUtils.isGreaterThanOrEqualsTo(targetDbVersion, "4.3.0")) {
-                throw new UnsupportedException(
-                        String.format("Unsupported OB Version:%s", targetDbVersion));
             }
         }
     }
@@ -162,16 +142,5 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
         parameters.setScanBatchSize(dlmConfiguration.getDefaultScanBatchSize());
         parameters.setQueryTimeout(dlmConfiguration.getTaskConnectionQueryTimeout());
         parameters.setShardingStrategy(dlmConfiguration.getShardingStrategy());
-    }
-
-    private void supportSyncTableStructure(DialectType srcDbType, DialectType tgtDbType) {
-        if (srcDbType != tgtDbType) {
-            throw new UnsupportedException(
-                    "Different types of databases do not support table structure synchronization.");
-        }
-        if (!srcDbType.isMysql()) {
-            throw new UnsupportedException(
-                    String.format("The database does not support table structure synchronization,type=%s", srcDbType));
-        }
     }
 }

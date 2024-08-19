@@ -67,6 +67,7 @@ public class OdcConstants {
     public static final String PRIMARY_KEY_NAME = "PRIMARY";
 
     public static final String MYSQL_DEFAULT_SCHEMA = "information_schema";
+    public static final String POSTGRESQL_DEFAULT_SCHEMA = "public";
     public static final String ODC_BACK_URL_PARAM = "odc_back_url";
 
     public static final String TEST_LOGIN_ID_PARAM = "test_login_id";
@@ -84,6 +85,10 @@ public class OdcConstants {
      * Oracle driver class name
      */
     public static final String ORACLE_DRIVER_CLASS_NAME = "oracle.jdbc.driver.OracleDriver";
+    /**
+     * postgreSql driver class name
+     */
+    public static final String POSTGRES_DRIVER_CLASS_NAME = "org.postgresql.Driver";
 
     /**
      * Parameters name

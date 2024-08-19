@@ -76,4 +76,9 @@ public class DBTablePartitionEditorFactory extends AbstractDBBrowserFactory<DBTa
         return new MySQLDBTablePartitionEditor();
     }
 
+    @Override
+    public DBTablePartitionEditor buildForPostgres() {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
 }
