@@ -116,5 +116,5 @@ public class ObjectMetadataEntity {
      * edit version,used for conflict check
      */
     @Column(name = "version", nullable = false)
-    private Long version;
+    private long version;
 }
