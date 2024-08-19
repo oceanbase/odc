@@ -84,6 +84,7 @@ import com.oceanbase.odc.metadb.iam.UserTablePermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserTablePermissionRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.collaboration.environment.model.QueryEnvironmentParam;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.collaboration.project.model.QueryProjectParams;
@@ -886,6 +887,9 @@ public class DatabaseService {
         Map<Long, List<ConnectionConfig>> connectionId2Connections = connectionService.mapByIdIn(entities.stream()
                 .map(DatabaseEntity::getConnectionId).collect(Collectors.toSet()));
         Map<Long, Set<DatabasePermissionType>> databaseId2PermittedActions = new HashMap<>();
+        Map<Long, Environment> id2Environments = environmentService.list(
+                QueryEnvironmentParam.builder().build()).stream()
+                .collect(Collectors.toMap(Environment::getId, env -> env, (v1, v2) -> v2));
         Set<Long> databaseIds = entities.stream().map(DatabaseEntity::getId).collect(Collectors.toSet());
         if (includesPermittedAction) {
             databaseId2PermittedActions = permissionHelper.getDBPermissions(databaseIds);
@@ -911,9 +915,7 @@ public class DatabaseService {
             List<ConnectionConfig> connections =
                     connectionId2Connections.getOrDefault(entity.getConnectionId(), new ArrayList<>());
             database.setProject(CollectionUtils.isEmpty(projects) ? null : projects.get(0));
-            database.setEnvironment(CollectionUtils.isEmpty(connections) ? null
-                    : new Environment(connections.get(0).getEnvironmentId(), connections.get(0).getEnvironmentName(),
-                            connections.get(0).getEnvironmentStyle()));
+            database.setEnvironment(id2Environments.getOrDefault(entity.getEnvironmentId(), null));
             database.setDataSource(CollectionUtils.isEmpty(connections) ? null : connections.get(0));
             if (includesPermittedAction) {
                 database.setAuthorizedPermissionTypes(finalId2PermittedActions.get(entity.getId()));
