@@ -87,6 +87,15 @@ public class AbstractDlmPreprocessor implements Preprocessor {
             sqlBuilder.append(
                     "SELECT TABLE_NAME from INFORMATION_SCHEMA.STATISTICS where NON_UNIQUE = 0 AND NULLABLE != 'YES' ");
             sqlBuilder.append(String.format("AND TABLE_SCHEMA='%s' GROUP BY TABLE_NAME", databaseName));
+        } else if (connectionSession.getDialectType().isPostgreSql()) {
+            sqlBuilder = new MySQLSqlBuilder();
+            sqlBuilder.append(String.format("SELECT DISTINCT c.relname AS table_name "
+                    + "FROM pg_class c "
+                    + "JOIN pg_namespace n ON n.oid = c.relnamespace "
+                    + "JOIN pg_index i ON c.oid = i.indrelid "
+                    + "WHERE i.indisunique = TRUE "
+                    + "  AND (c.relkind = 'r' or c.relkind = 'p') "
+                    + "  AND n.nspname = '%s'; ", databaseName));
         } else {
             sqlBuilder = new OracleSqlBuilder();
             sqlBuilder.append(
@@ -110,7 +119,11 @@ public class AbstractDlmPreprocessor implements Preprocessor {
         // Ensure the conditions are valid when executing.
         sqlMap.forEach((key, value) -> {
             try {
-                syncJdbcExecutor.execute("explain " + value);
+                if (connectionSession.getDialectType() == DialectType.ORACLE) {
+                    syncJdbcExecutor.execute("EXPLAIN PLAN FOR " + value);
+                } else {
+                    syncJdbcExecutor.execute("explain " + value);
+                }
             } catch (Exception e) {
                 log.warn("Test condition failed,sql={}", value, e);
                 throw new IllegalArgumentException(String.format("Condition is not supported!TableName=%s,Condition=%s",
@@ -130,7 +143,7 @@ public class AbstractDlmPreprocessor implements Preprocessor {
     private String generateTestSql(Database database, DataArchiveTableConfig table, List<OffsetConfig> variables) {
         try {
             DialectType dbType = database.getDataSource().getDialectType();
-            if (!dbType.isOracle() && !dbType.isMysql()) {
+            if (!dbType.isOracle() && !dbType.isMysql() && !dbType.isPostgreSql()) {
                 throw new UnsupportedException();
             }
             SqlBuilder sqlBuilder = dbType.isMysql() ? new MySQLSqlBuilder() : new OracleSqlBuilder();

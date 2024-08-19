@@ -474,6 +474,9 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     private int updateTaskResult(TaskResult taskResult, JobEntity currentJob) {
         JobEntity jse = new JobEntity();
+        if ("DLM".equals(currentJob.getJobType())) {
+            dlmResultProcessor.process(taskResult);
+        }
         jse.setResultJson(taskResult.getResultJson());
         jse.setStatus(taskResult.getStatus());
         jse.setProgressPercentage(taskResult.getProgress());

@@ -71,4 +71,9 @@ public class DBTableConstraintEditorFactory extends AbstractDBBrowserFactory<DBT
         return buildForOBMySQL();
     }
 
+    @Override
+    public DBTableConstraintEditor buildForPostgres() {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
 }

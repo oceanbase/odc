@@ -41,4 +41,12 @@ public class ScheduleTaskOverview {
 
     private Date updateTime;
 
+    /**
+     * Only used in version 4.3.2, it will be deleted after version 4.3.3.
+     */
+    private String jobGroup;
+
+    public String getJobGroup() {
+        return type == null ? null : type.name();
+    }
 }
