@@ -25,4 +25,6 @@ public class SqlPlanAttributes implements ScheduleOverviewAttributes {
 
     private Database databaseInfo;
 
+    private SqlPlanTaskResult taskResult;
+
 }

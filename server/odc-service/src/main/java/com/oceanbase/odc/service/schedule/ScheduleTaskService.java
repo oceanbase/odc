@@ -79,7 +79,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskType;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
-import com.oceanbase.odc.service.sqlplan.model.SqlPlanTaskAttribute;
+import com.oceanbase.odc.service.sqlplan.model.SqlPlanAttributes;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanTaskResult;
 import com.oceanbase.odc.service.task.TaskLoggerService;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
@@ -290,7 +290,7 @@ public class ScheduleTaskService {
             overview.setScheduleName(schedule.getName());
             overview.setCreator(new InnerUser(users.get(schedule.getCreatorId()).get(0), null));
             if (schedule.getType() == ScheduleType.SQL_PLAN) {
-                SqlPlanTaskAttribute attribute = new SqlPlanTaskAttribute();
+                SqlPlanAttributes attribute = new SqlPlanAttributes();
                 attribute.setDatabaseInfo(databaseMap.get(schedule.getDatabaseId()));
                 attribute.setTaskResult(JsonUtils.fromJson(task.getResultJson(), SqlPlanTaskResult.class));
                 Map<Long, String> id2Attributes = new HashMap<>();
