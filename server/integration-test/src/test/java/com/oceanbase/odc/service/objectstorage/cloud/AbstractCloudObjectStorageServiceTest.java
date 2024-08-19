@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import org.junit.Test;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 
 import lombok.extern.slf4j.Slf4j;
 
