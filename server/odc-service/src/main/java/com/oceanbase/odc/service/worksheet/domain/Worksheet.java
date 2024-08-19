@@ -33,11 +33,11 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import com.alibaba.druid.util.StringUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.service.worksheet.exceptions.ChangeTooMuchException;
-import com.oceanbase.odc.service.worksheet.exceptions.EditVersionConflictException;
-import com.oceanbase.odc.service.worksheet.exceptions.ExceedSameLevelNumLimitException;
-import com.oceanbase.odc.service.worksheet.exceptions.NameDuplicatedException;
-import com.oceanbase.odc.service.worksheet.exceptions.NameTooLongException;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.LimitMetric;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
+import com.oceanbase.odc.core.shared.exception.OverLimitException;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
 
 import lombok.Data;
@@ -206,8 +206,9 @@ public class Worksheet {
                     "invalid path for rename,from:" + this.path + ",destinationPath:" + destinationPath);
         }
         if (this.isRenameDuplicated(destinationPath)) {
-            throw new NameDuplicatedException(new Object[] {destinationPath.getName()},
-                    "duplicated path name for rename,from:" + this.path + ",destinationPath:" + destinationPath, null);
+            throw new BadRequestException(ErrorCodes.DuplicatedExists,
+                    new Object[] {ResourceType.ODC_WORKSHEET.getLocalizedMessage(), "name", destinationPath.getName()},
+                    "duplicated path name for rename,from:" + this.path + ",destinationPath:" + destinationPath);
         }
         Set<Worksheet> changedWorksheets = new HashSet<>();
         if (CollectionUtils.isNotEmpty(subWorksheets)) {
@@ -217,7 +218,8 @@ public class Worksheet {
                     subFile.isChanged = true;
                 }
                 if (changedWorksheets.size() > CHANGE_FILE_NUM_LIMIT - 1) {
-                    throw new ChangeTooMuchException("change num is over limit " + CHANGE_FILE_NUM_LIMIT);
+                    throw new OverLimitException(LimitMetric.WORKSHEET_CHANGE_NUM, (double) CHANGE_FILE_NUM_LIMIT,
+                            "change num is over limit " + CHANGE_FILE_NUM_LIMIT);
                 }
             }
         }
@@ -248,8 +250,9 @@ public class Worksheet {
             this.readVersion = readVersion;
             this.isChanged = true;
             if (isVersionConflict()) {
-                throw new EditVersionConflictException("version conflict,current version:" + this.version
-                        + ",read version:" + this.readVersion + ",path:" + this.path);
+                throw new BadRequestException(ErrorCodes.EditVersionConflict,
+                        new Object[] {}, "version conflict,current version:" + this.version
+                                + ",read version:" + this.readVersion + ",path:" + this.path);
             }
             this.version++;
         }
@@ -336,7 +339,8 @@ public class Worksheet {
 
         if (nextLevelWorksheets.size() +
                 createPathToObjectIdMap.size() > SAME_LEVEL_NUM_LIMIT) {
-            throw new ExceedSameLevelNumLimitException(
+            throw new OverLimitException(LimitMetric.WORKSHEET_SAME_LEVEL,
+                    (double) SAME_LEVEL_NUM_LIMIT,
                     "create path num exceed limit, create path num: " + createPathToObjectIdMap.size()
                             + ", same level exist file num: " + nextLevelWorksheets.size());
         }
@@ -354,8 +358,10 @@ public class Worksheet {
                 createPathToObjectIdMap.keySet().stream().collect(
                         Collectors.toMap(Path::getName, Function.identity(),
                                 (p1, p2) -> {
-                                    throw new NameDuplicatedException(new Object[] {p1.getName()},
-                                            "create path name duplicated ,path1:" + p1 + ",path2:" + p2, null);
+                                    throw new BadRequestException(ErrorCodes.DuplicatedExists,
+                                            new Object[] {ResourceType.ODC_WORKSHEET.getLocalizedMessage(), "name",
+                                                    p1.getName()},
+                                            "duplicated path name ,path:" + p1);
                                 }));
         for (Worksheet worksheet : nextLevelWorksheets) {
             Path willToCreatePath = willToCreatePathNameToPathMap.get(worksheet.getPath().getName());
@@ -366,10 +372,10 @@ public class Worksheet {
                 continue;
             }
             if (willToCreatePathNameToPathMap.containsKey(worksheet.getPath().getName())) {
-                throw new NameDuplicatedException(new Object[] {worksheet.getPath().getName()},
-                        "create path name duplicated with with an existing same level file,"
-                                + "exist path: " + worksheet.getPath(),
-                        null);
+                throw new BadRequestException(ErrorCodes.DuplicatedExists,
+                        new Object[] {ResourceType.ODC_WORKSHEET.getLocalizedMessage(), "name",
+                                worksheet.getPath().getName()},
+                        "duplicated path name ,path:" + worksheet.getPath().getName());
             }
         }
     }
@@ -377,8 +383,8 @@ public class Worksheet {
     private void nameTooLongCheck(Set<Path> createPaths) {
         createPaths.forEach(createPath -> {
             if (createPath.isExceedNameLengthLimit()) {
-                throw new NameTooLongException("name length is over limit " +
-                        NAME_LENGTH_LIMIT + ", path:" + createPath);
+                throw new BadRequestException(ErrorCodes.NameTooLong, new Object[] {NAME_LENGTH_LIMIT},
+                        "name length is over limit " + NAME_LENGTH_LIMIT + ", path:" + createPath);
             }
         });
     }

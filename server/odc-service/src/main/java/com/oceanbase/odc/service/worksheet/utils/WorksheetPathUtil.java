@@ -200,7 +200,7 @@ public class WorksheetPathUtil {
      */
     public static boolean isRenameValid(Path from, Path destinationPath) {
         // Same path cannot be renamed
-        // The parents of the from and destinationPath are same nam
+        // The parents of the from and destinationPath are same name
         // Cannot rename paths with different types
         return from != null && destinationPath != null
                 && from.canRename()

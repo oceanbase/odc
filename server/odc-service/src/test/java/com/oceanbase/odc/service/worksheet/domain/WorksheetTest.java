@@ -27,12 +27,9 @@ import java.util.Set;
 
 import org.junit.Test;
 
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
+import com.oceanbase.odc.core.shared.exception.OverLimitException;
 import com.oceanbase.odc.service.worksheet.constants.WorksheetConstant;
-import com.oceanbase.odc.service.worksheet.exceptions.ChangeTooMuchException;
-import com.oceanbase.odc.service.worksheet.exceptions.EditVersionConflictException;
-import com.oceanbase.odc.service.worksheet.exceptions.ExceedSameLevelNumLimitException;
-import com.oceanbase.odc.service.worksheet.exceptions.NameDuplicatedException;
-import com.oceanbase.odc.service.worksheet.exceptions.NameTooLongException;
 
 public class WorksheetTest {
     final static Long projectId = 1L;
@@ -84,26 +81,26 @@ public class WorksheetTest {
         Worksheet sameWorksheet1 = newWorksheet("/Worksheets/folder2/");
         worksheet.setSameParentAtPrevLevelWorksheets(new HashSet<>(Arrays.asList(sameWorksheet1)));
         Path destinationPath = new Path("/Worksheets/folder2/");
-        assertThrows(NameDuplicatedException.class, () -> worksheet.rename(destinationPath));
+        assertThrows(BadRequestException.class, () -> worksheet.rename(destinationPath));
 
 
         Worksheet worksheet2 = newWorksheet("/Worksheets/folder1/file1");
         Worksheet sameWorksheet2 = newWorksheet("/Worksheets/folder1/file2");
         worksheet2.setSameParentAtPrevLevelWorksheets(new HashSet<>(Arrays.asList(sameWorksheet2)));
         Path destinationPath2 = new Path("/Worksheets/folder1/file2");
-        assertThrows(NameDuplicatedException.class, () -> worksheet2.rename(destinationPath2));
+        assertThrows(BadRequestException.class, () -> worksheet2.rename(destinationPath2));
 
         Worksheet worksheet3 = newWorksheet("/Worksheets/folder1/");
         Worksheet sameWorksheet3 = newWorksheet("/Worksheets/folder2/file2");
         worksheet3.setSameParentAtPrevLevelWorksheets(new HashSet<>(Arrays.asList(sameWorksheet3)));
         Path destinationPath3 = new Path("/Worksheets/folder2/");
-        assertThrows(NameDuplicatedException.class, () -> worksheet3.rename(destinationPath3));
+        assertThrows(BadRequestException.class, () -> worksheet3.rename(destinationPath3));
 
         Worksheet worksheet4 = newWorksheet("/Worksheets/folder1/");
         Worksheet sameWorksheet4 = newWorksheet("/Worksheets/folder2");
         worksheet4.setSameParentAtPrevLevelWorksheets(new HashSet<>(Arrays.asList(sameWorksheet4)));
         Path destinationPath4 = new Path("/Worksheets/folder2/");
-        assertThrows(NameDuplicatedException.class, () -> worksheet3.rename(destinationPath4));
+        assertThrows(BadRequestException.class, () -> worksheet3.rename(destinationPath4));
     }
 
     @Test
@@ -124,7 +121,7 @@ public class WorksheetTest {
     public void testRename_TooManyChanges() {
         assertEquals(renameWithSubCount(WorksheetConstant.CHANGE_FILE_NUM_LIMIT - 1).size(),
                 WorksheetConstant.CHANGE_FILE_NUM_LIMIT);
-        assertThrows(ChangeTooMuchException.class, () -> renameWithSubCount(WorksheetConstant.CHANGE_FILE_NUM_LIMIT));
+        assertThrows(OverLimitException.class, () -> renameWithSubCount(WorksheetConstant.CHANGE_FILE_NUM_LIMIT));
     }
 
     private Set<Worksheet> renameWithSubCount(int count) {
@@ -219,7 +216,7 @@ public class WorksheetTest {
         createPathToObjectIdMap.put(
                 Path.ofFile("Worksheets", "folder1", "file" + WorksheetConstant.SAME_LEVEL_NUM_LIMIT + ".sql"),
                 "objectId" + WorksheetConstant.SAME_LEVEL_NUM_LIMIT);
-        assertThrows(ExceedSameLevelNumLimitException.class,
+        assertThrows(OverLimitException.class,
                 () -> worksheet.batchCreate(createPathToObjectIdMap, 1001L));
     }
 
@@ -239,17 +236,17 @@ public class WorksheetTest {
 
         Map<Path, String> createPathToObjectIdMap = new HashMap<>();
         createPathToObjectIdMap.put(Path.ofDirectory("Worksheets", "folder1", "folder2"), id++ + "");
-        assertThrows(NameDuplicatedException.class,
+        assertThrows(BadRequestException.class,
                 () -> worksheet.batchCreate(createPathToObjectIdMap, 1001L));
 
         Map<Path, String> createPathToObjectIdMap2 = new HashMap<>();
         createPathToObjectIdMap2.put(Path.ofFile("Worksheets", "folder1", "file4.sql"), id++ + "");
-        assertThrows(NameDuplicatedException.class,
+        assertThrows(BadRequestException.class,
                 () -> worksheet.batchCreate(createPathToObjectIdMap2, 1001L));
 
         Map<Path, String> createPathToObjectIdMap3 = new HashMap<>();
         createPathToObjectIdMap3.put(Path.ofFile("Worksheets", "folder1", "folder3"), id++ + "");
-        assertThrows(NameDuplicatedException.class,
+        assertThrows(BadRequestException.class,
                 () -> worksheet.batchCreate(createPathToObjectIdMap3, 1001L));
     }
 
@@ -271,7 +268,7 @@ public class WorksheetTest {
         exceedNameBuilder.append("a");
         createPathToObjectIdMap.put(Path.ofFile("Worksheets", "folder1", exceedNameBuilder.toString()),
                 "objectId2");
-        assertThrows(NameTooLongException.class,
+        assertThrows(BadRequestException.class,
                 () -> worksheet.batchCreate(createPathToObjectIdMap, 1001L));
     }
 
@@ -320,6 +317,6 @@ public class WorksheetTest {
         Path destinationPath = new Path("/Worksheets/file.sql");
         String objectId = "newObjectId";
         Long readVersion = 1L;
-        assertThrows(EditVersionConflictException.class, () -> worksheet.edit(destinationPath, objectId, readVersion));
+        assertThrows(BadRequestException.class, () -> worksheet.edit(destinationPath, objectId, readVersion));
     }
 }

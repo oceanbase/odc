@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import com.oceanbase.odc.service.worksheet.exceptions.NameTooLongException;
 import com.oceanbase.odc.service.worksheet.model.WorksheetLocation;
 import com.oceanbase.odc.service.worksheet.model.WorksheetType;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
@@ -169,7 +168,7 @@ public class Path {
     }
 
     /**
-     * Retrieve the parent path, if current is /Worksheets/,/Repos/,/Repos/git/, etc., when current is /
+     * Retrieve the parent path, such as /Worksheets/,/Repos/,/Repos/git/, etc., when current is /
      * return empty
      *
      * @return
@@ -324,10 +323,6 @@ public class Path {
      * @return is renamed
      */
     public boolean rename(Path from, Path destinationPath) {
-        if (destinationPath.isExceedNameLengthLimit()) {
-            throw new NameTooLongException("name length is over limit " +
-                    NAME_LENGTH_LIMIT + ", path:" + destinationPath);
-        }
         if (!this.isRenameMatch(from)) {
             return false;
         }

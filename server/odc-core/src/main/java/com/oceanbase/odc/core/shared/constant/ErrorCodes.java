@@ -299,30 +299,15 @@ public enum ErrorCodes implements ErrorCode {
      */
     GrantPermissionFailed,
 
-    /**
-     * Worksheet
-     */
 
     /**
      * version conflict
      */
-    WorksheetEditVersionConflict,
+    EditVersionConflict,
     /**
      * name too long
      */
-    WorksheetNameTooLong,
-    /**
-     * name duplication
-     */
-    WorksheetNameDuplicated,
-    /**
-     * change to much
-     */
-    WorksheetChangeNumTooMuch,
-    /**
-     * exceed same level num limit
-     */
-    WorksheetExceedSameLevelNumLimit,
+    NameTooLong,
     ;
 
     @Override

@@ -21,7 +21,9 @@ import java.util.Optional;
 
 import org.apache.commons.lang.StringUtils;
 
-import com.oceanbase.odc.service.worksheet.exceptions.NameDuplicatedException;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq;
 import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq.UploadWorksheetTuple;
 
@@ -66,8 +68,9 @@ public class BatchCreateWorksheets {
                                 + "tuple2: " + tuple);
             }
             if (createPathToObjectIdMap.containsKey(path)) {
-                throw new NameDuplicatedException(new Object[] {path.getName()},
-                        "duplicated path in request,create path: " + tuple.getPath(), null);
+                throw new BadRequestException(ErrorCodes.DuplicatedExists,
+                        new Object[] {ResourceType.ODC_WORKSHEET.getLocalizedMessage(), "name", path.getName()},
+                        "duplicated path in request,create path: " + tuple.getPath());
             }
             createPathToObjectIdMap.put(path, objectId);
         }

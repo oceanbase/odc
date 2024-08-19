@@ -34,7 +34,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.google.common.collect.Iterables;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.LimitMetric;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.core.shared.exception.OverLimitException;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
 import com.oceanbase.odc.service.worksheet.domain.BatchOperateWorksheetsResult;
@@ -42,7 +44,6 @@ import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.Worksheet;
 import com.oceanbase.odc.service.worksheet.domain.WorksheetObjectStorageGateway;
 import com.oceanbase.odc.service.worksheet.domain.WorksheetRepository;
-import com.oceanbase.odc.service.worksheet.exceptions.ChangeTooMuchException;
 import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetUtil;
@@ -170,9 +171,11 @@ public class DefaultWorksheetService implements WorksheetService {
             List<Worksheet> files =
                     normalWorksheetRepository.listWithSubsByProjectIdAndPath(projectId, path);
             deleteFiles.addAll(files);
-        }
-        if (deleteFiles.size() > CHANGE_FILE_NUM_LIMIT) {
-            throw new ChangeTooMuchException("delete num is over limit " + CHANGE_FILE_NUM_LIMIT);
+            if (deleteFiles.size() > CHANGE_FILE_NUM_LIMIT) {
+                throw new OverLimitException(LimitMetric.WORKSHEET_CHANGE_NUM,
+                        (double) CHANGE_FILE_NUM_LIMIT, "delete num is over limit " + CHANGE_FILE_NUM_LIMIT);
+
+            }
         }
         if (CollectionUtils.isEmpty(deleteFiles)) {
             return new BatchOperateWorksheetsResult();
