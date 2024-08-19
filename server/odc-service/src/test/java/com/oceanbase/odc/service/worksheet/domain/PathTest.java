@@ -98,8 +98,9 @@ public class PathTest {
                 {"testGetPathComparator", "/Worksheets/folder1/file1", "/Worksheets/folder2/folder2/", -1, null, null,
                         null, null, null, null, null},
                 // one is parent
-                {"testGetPathComparator", "/Worksheets/folder1/folder4/", "/Worksheets/folder1/folder4/file5.sql/", -1, null, null,
-                 null, null, null, null, null},
+                {"testGetPathComparator", "/Worksheets/folder1/folder4/", "/Worksheets/folder1/folder4/file5.sql/", -1,
+                        null, null,
+                        null, null, null, null, null},
 
 
                 {"testConstructor", null, null, null, "Worksheets / path2 / file.txt ", WorksheetLocation.WORKSHEETS,

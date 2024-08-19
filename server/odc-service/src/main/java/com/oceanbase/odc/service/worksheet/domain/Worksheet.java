@@ -41,8 +41,6 @@ import com.oceanbase.odc.service.worksheet.exceptions.NameTooLongException;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
 
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 
 /**
  * worksheet handle.

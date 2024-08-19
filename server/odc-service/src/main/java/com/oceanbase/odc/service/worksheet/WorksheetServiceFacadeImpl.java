@@ -20,7 +20,6 @@ import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.PR
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 

@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.worksheet.service;
 
 import java.io.File;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
