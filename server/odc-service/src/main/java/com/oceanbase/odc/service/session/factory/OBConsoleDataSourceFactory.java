@@ -140,8 +140,8 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         jdbcUrlParams.put("noDatetimeStringSync", "true");
         jdbcUrlParams.put("jdbcCompliantTruncation", "false");
 
-        // TODO: set sendConnectionAttributes while upgrade oceanbase-client to v2.2.10
-        jdbcUrlParams.put("sendConnectionAttributes", "false");
+        jdbcUrlParams.put("sendConnectionAttributes", "true");
+        jdbcUrlParams.put("defaultConnectionAttributesBanList", "__client_ip");
 
         OBTenantEndpoint endpoint = connectionConfig.getEndpoint();
         if (Objects.nonNull(endpoint)) {
