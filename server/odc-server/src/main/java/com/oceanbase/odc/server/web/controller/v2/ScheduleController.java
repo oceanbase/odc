@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
@@ -40,6 +41,7 @@ import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
+import com.oceanbase.odc.service.schedule.model.QueryScheduleTaskParams;
 import com.oceanbase.odc.service.schedule.model.Schedule;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeLog;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
@@ -132,7 +134,51 @@ public class ScheduleController {
         return Responses.paginated(scheduleService.listScheduleTaskOverview(pageable, scheduleId));
     }
 
+
+    // list all schedule task by schedule type, type can not be null, currently only for sql plan
+    @RequestMapping(value = "/schedules/tasks", method = RequestMethod.GET)
+    public PaginatedResponse<ScheduleTaskOverview> listAllTask(
+            @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
+            @RequestParam(required = false, name = "dataSourceId") Set<Long> datasourceIds,
+            @RequestParam(required = false, name = "databaseName") String databaseName,
+            @RequestParam(required = false, name = "tenantId") String tenantId,
+            @RequestParam(required = false, name = "clusterId") String clusterId,
+            @RequestParam(required = false, name = "id") Long id,
+            @RequestParam(required = false, name = "scheduleId") Long scheduleId,
+            @RequestParam(required = false, name = "scheduleName") String scheduleName,
+            @RequestParam(required = false, name = "status") List<TaskStatus> status,
+            @RequestParam(required = true, name = "scheduleType") ScheduleType scheduleType,
+            @RequestParam(required = false, name = "startTime") Date startTime,
+            @RequestParam(required = false, name = "endTime") Date endTime,
+            @RequestParam(required = false, name = "creator") String creator,
+            @RequestParam(required = false, name = "projectId") Long projectId) {
+
+        QueryScheduleTaskParams req = QueryScheduleTaskParams.builder()
+                .id(id)
+                .scheduleId(scheduleId)
+                .scheduleName(scheduleName)
+                .dataSourceIds(datasourceIds)
+                .databaseName(databaseName)
+                .tenantId(tenantId)
+                .clusterId(clusterId)
+                .statuses(status)
+                .scheduleType(scheduleType)
+                .startTime(startTime)
+                .endTime(endTime)
+                .creator(creator)
+                .projectId(projectId)
+                .build();
+
+        return Responses.paginated(scheduleService.listScheduleTaskOverviewByScheduleType(pageable, req));
+    }
+
     // schedule
+
+    @RequestMapping(value = "/schedules/{id:[\\d]+}", method = RequestMethod.DELETE)
+    public SuccessResponse<Boolean> deleteSchedule(@PathVariable Long id) {
+        scheduleService.changeSchedule(ScheduleChangeParams.with(id, OperationType.DELETE));
+        return Responses.success(Boolean.TRUE);
+    }
 
     @RequestMapping(value = "/schedules/{id:[\\d]+}/terminate", method = RequestMethod.POST)
     public SuccessResponse<Boolean> terminateSchedule(@PathVariable("id") Long id) {
@@ -172,6 +218,7 @@ public class ScheduleController {
             @RequestParam(required = false, name = "tenantId") String tenantId,
             @RequestParam(required = false, name = "clusterId") String clusterId,
             @RequestParam(required = false, name = "id") Long id,
+            @RequestParam(required = false, name = "name") String name,
             @RequestParam(required = false, name = "status") List<ScheduleStatus> status,
             @RequestParam(required = false, name = "type") ScheduleType type,
             @RequestParam(required = false, name = "startTime") Date startTime,
@@ -181,6 +228,7 @@ public class ScheduleController {
 
         QueryScheduleParams req = QueryScheduleParams.builder()
                 .id(id)
+                .name(name)
                 .dataSourceIds(datasourceIds)
                 .databaseName(databaseName)
                 .tenantId(tenantId)

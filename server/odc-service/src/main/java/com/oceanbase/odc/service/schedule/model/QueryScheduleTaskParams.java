@@ -16,49 +16,31 @@
 package com.oceanbase.odc.service.schedule.model;
 
 import java.util.Date;
-import java.util.Map;
+import java.util.List;
+import java.util.Set;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.service.common.model.InnerUser;
 
+import lombok.Builder;
 import lombok.Data;
 
-/**
- * @Author：tinker
- * @Date: 2024/6/19 14:31
- * @Descripition:
- */
-
-
 @Data
-public class ScheduleTaskOverview {
-
+@Builder
+public class QueryScheduleTaskParams {
     private Long id;
-
-    private String scheduleId;
-
+    private Long scheduleId;
+    private List<Schedule> schedules;
     private String scheduleName;
-
-    private InnerUser creator;
-
-    private ScheduleTaskType type;
-
-    private TaskStatus status;
-
-    private Date createTime;
-
-    private Date updateTime;
-
-    private Date lastFireTime;
-
-    private Map<String, Object> attributes;
-
-    /**
-     * Only used in version 4.3.2, it will be deleted after version 4.3.3.
-     */
-    private String jobGroup;
-
-    public String getJobGroup() {
-        return type == null ? null : type.name();
-    }
+    private Set<Long> dataSourceIds;
+    private List<TaskStatus> statuses;
+    private ScheduleType scheduleType;
+    private Date startTime;
+    private Date endTime;
+    private String creator;
+    private Long projectId;
+    private Set<Long> projectIds;
+    private Long organizationId;
+    private String databaseName;
+    private String tenantId;
+    private String clusterId;
 }

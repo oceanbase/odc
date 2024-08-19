@@ -292,6 +292,10 @@ public class ScheduleResponseMapperFactory {
         }).collect(Collectors.toMap(ScheduleOverviewHist::getId, o -> o));
     }
 
+    public List<Database> getDatabaseInfoByIds(Set<Long> databaseIds) {
+        return getDatabaseByIds(databaseIds);
+    }
+
     private Map<Long, ScheduleOverviewAttributes> generateAttributes(Collection<ScheduleEntity> schedules) {
         Map<ScheduleType, List<ScheduleEntity>> type2Entity = schedules.stream().collect(
                 Collectors.groupingBy(ScheduleEntity::getType));

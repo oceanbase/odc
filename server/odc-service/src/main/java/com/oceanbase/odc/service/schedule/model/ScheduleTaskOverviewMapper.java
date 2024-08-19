@@ -25,10 +25,12 @@ public class ScheduleTaskOverviewMapper {
     public static ScheduleTaskOverview map(ScheduleTask scheduleTask) {
         ScheduleTaskOverview t = new ScheduleTaskOverview();
         t.setId(scheduleTask.getId());
+        t.setScheduleId(scheduleTask.getJobName());
         t.setStatus(scheduleTask.getStatus());
         t.setType(ScheduleTaskType.valueOf(scheduleTask.getJobGroup()));
         t.setCreateTime(scheduleTask.getCreateTime());
         t.setUpdateTime(scheduleTask.getUpdateTime());
+        t.setLastFireTime(scheduleTask.getFireTime());
         return t;
     }
 
