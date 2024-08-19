@@ -119,8 +119,6 @@ public class DefaultWorksheetServiceTest {
     @Test(expected = IllegalArgumentException.class)
     public void testCreateWorksheet_InvalidPath() {
         Path createPath = new Path("/Worksheets/");
-        when(authenticationFacade.currentUserId()).thenReturn(1L);
-
         defaultWorksheetService.createWorksheet(projectId, createPath, "objectId");
     }
 
