@@ -34,9 +34,9 @@ public class SchemaChangeRecord {
 
     private ConnectionConfig dataSource;
 
-    private List<SqlExecuteResult> sqlTuples;
+    private List<SqlExecuteResult> sqlExecuteResult;
 
-    private Integer sqlCount;
+    private Integer totalSqlCount;
 
     private Integer completedSqlCount;
 
