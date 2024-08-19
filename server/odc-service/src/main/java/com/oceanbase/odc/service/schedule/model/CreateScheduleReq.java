@@ -43,7 +43,7 @@ public class CreateScheduleReq {
     @JsonTypeInfo(use = Id.NAME, include = As.EXTERNAL_PROPERTY, property = "type")
     @JsonSubTypes(value = {
             @JsonSubTypes.Type(value = DataArchiveParameters.class, name = "DATA_ARCHIVE"),
-            @JsonSubTypes.Type(value = DataDeleteParameters.class, name = "DATA_DELETE"),
+            @JsonSubTypes.Type(value = DataDeleteParameters.class, name = "DATA_DELETE")
     })
     @NotNull
     private ScheduleTaskParameters parameters;
