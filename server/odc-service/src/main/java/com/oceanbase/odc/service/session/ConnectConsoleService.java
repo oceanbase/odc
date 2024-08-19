@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
+import org.apache.catalina.manager.util.SessionUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -90,7 +91,6 @@ import com.oceanbase.odc.service.feature.AllFeatures;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.queryprofile.OBQueryProfileManager;
-import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
 import com.oceanbase.odc.service.session.interceptor.SqlCheckInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlConsoleInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlExecuteInterceptorService;
@@ -239,7 +239,7 @@ public class ConnectConsoleService {
     public SqlAsyncExecuteResp streamExecute(@NotNull String sessionId,
             @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlRuleCheck) throws Exception {
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
-        if (new DefaultConnectSessionIdGenerator().getKeyFromId(sessionId).getLogicalSession()) {
+        if (ConnectionSessionUtil.getLogicalSession(connectionSession)) {
             return new SqlAsyncExecuteResp(true);
         }
         long maxSqlLength = sessionProperties.getMaxSqlLength();
