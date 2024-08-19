@@ -25,7 +25,7 @@ import org.apache.commons.lang.StringUtils;
 import lombok.Getter;
 
 /**
- * 文件搜索相关
+ * for file name search
  *
  * @author keyang
  * @date 2024/08/05
@@ -48,7 +48,7 @@ public class WorkSheetsSearch {
     }
 
     /**
-     * 对files中的名称进行模糊匹配，并排序
+     * fuzzy matching of names in files and sorting
      * 
      * @return
      */
