@@ -28,6 +28,7 @@ public enum DialectType {
     MYSQL,
     ODP_SHARDING_OB_MYSQL,
     DORIS,
+    POSTGRESQL,
     UNKNOWN,
     ;
 
@@ -60,6 +61,10 @@ public enum DialectType {
 
     public boolean isOceanbase() {
         return OB_MYSQL == this || OB_ORACLE == this || ODP_SHARDING_OB_MYSQL == this;
+    }
+
+    public boolean isPostgreSql() {
+        return POSTGRESQL == this;
     }
 
 }

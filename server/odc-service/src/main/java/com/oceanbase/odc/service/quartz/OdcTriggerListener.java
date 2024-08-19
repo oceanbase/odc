@@ -16,8 +16,10 @@
 package com.oceanbase.odc.service.quartz;
 
 import static com.oceanbase.odc.core.alarm.AlarmEventNames.SCHEDULING_FAILED;
+import static com.oceanbase.odc.core.alarm.AlarmEventNames.SCHEDULING_IGNORE;
 
 import java.util.Date;
+import java.util.Optional;
 
 import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
@@ -28,6 +30,8 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
@@ -48,6 +52,9 @@ public class OdcTriggerListener extends TriggerListenerSupport {
 
     @Autowired
     private ScheduleRepository scheduleRepository;
+
+    @Autowired
+    private ScheduleTaskRepository scheduleTaskRepository;
 
     @Autowired
     private NotificationProperties notificationProperties;
@@ -76,7 +83,22 @@ public class OdcTriggerListener extends TriggerListenerSupport {
     @Override
     public void triggerMisfired(Trigger trigger) {
         log.warn("Job is misfired, job key:" + trigger.getJobKey());
-        AlarmUtils.alarm(SCHEDULING_FAILED, "Job is misfired, job key:" + trigger.getJobKey());
+        try {
+            Optional<ScheduleTaskEntity> latestTaskEntity =
+                    scheduleTaskRepository.getLatestScheduleTaskByJobNameAndJobGroup(trigger.getJobKey().getName(),
+                            trigger.getJobKey().getGroup());
+            if (!latestTaskEntity.isPresent() || latestTaskEntity.get().getStatus().isTerminated()) {
+                log.warn("Previous task is terminated,this misfire is unexpected,jobKey={}", trigger.getJobKey());
+                AlarmUtils.alarm(SCHEDULING_FAILED, "Job is misfired, job key:" + trigger.getJobKey());
+            } else {
+                AlarmUtils.alarm(SCHEDULING_IGNORE,
+                        "The Job has reached its trigger time, but the previous task has not yet finished. This scheduling will be ignored, job key:"
+                                + trigger.getJobKey());
+            }
+        } catch (Exception e) {
+            log.warn("Get previous task status failed,jobKey={}", trigger.getJobKey());
+            AlarmUtils.alarm(SCHEDULING_FAILED, "Job is misfired, job key:" + trigger.getJobKey());
+        }
         if (!notificationProperties.isEnabled()) {
             return;
         }

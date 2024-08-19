@@ -168,6 +168,11 @@ import com.oceanbase.odc.service.regulation.approval.model.ApprovalNodeConfig;
 import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
+import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
+import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
+import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
@@ -254,6 +259,8 @@ public class FlowInstanceService {
     private EnvironmentRepository environmentRepository;
     @Autowired
     private EnvironmentService environmentService;
+    @Autowired
+    private ScheduleService scheduleService;
 
     private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
     private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
@@ -304,6 +311,36 @@ public class FlowInstanceService {
     @EnablePreprocess
     @Transactional(rollbackFor = Throwable.class, propagation = Propagation.REQUIRED)
     public List<FlowInstanceDetailResp> create(@NotNull @Valid CreateFlowInstanceReq createReq) {
+        if (createReq.getTaskType() == TaskType.ALTER_SCHEDULE) {
+            AlterScheduleParameters parameters = (AlterScheduleParameters) createReq.getParameters();
+            ScheduleChangeParams scheduleChangeParams;
+            switch (parameters.getOperationType()) {
+                case CREATE: {
+                    CreateScheduleReq createScheduleReq = new CreateScheduleReq();
+                    createScheduleReq.setParameters(parameters.getScheduleTaskParameters());
+                    createScheduleReq.setTriggerConfig(parameters.getTriggerConfig());
+                    createScheduleReq.setType(parameters.getType());
+                    createScheduleReq.setDescription(parameters.getDescription());
+                    scheduleChangeParams = ScheduleChangeParams.with(createScheduleReq);
+                    break;
+                }
+                case UPDATE: {
+                    UpdateScheduleReq updateScheduleReq = new UpdateScheduleReq();
+                    updateScheduleReq.setParameters(parameters.getScheduleTaskParameters());
+                    updateScheduleReq.setTriggerConfig(parameters.getTriggerConfig());
+                    updateScheduleReq.setType(parameters.getType());
+                    updateScheduleReq.setDescription(parameters.getDescription());
+                    scheduleChangeParams = ScheduleChangeParams.with(parameters.getTaskId(), updateScheduleReq);
+                    break;
+                }
+                default: {
+                    scheduleChangeParams =
+                            ScheduleChangeParams.with(parameters.getTaskId(), parameters.getOperationType());
+                }
+            }
+            scheduleService.changeSchedule(scheduleChangeParams);
+            return Collections.singletonList(FlowInstanceDetailResp.withIdAndType(-1L, TaskType.ALTER_SCHEDULE));
+        }
         if (createReq.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
             ApplyDatabaseParameter parameter = (ApplyDatabaseParameter) createReq.getParameters();
             List<ApplyDatabase> databases = new ArrayList<>(parameter.getDatabases());
@@ -754,7 +791,12 @@ public class FlowInstanceService {
         if (req.getTaskType() == TaskType.EXPORT) {
             DataTransferConfig parameters = (DataTransferConfig) req.getParameters();
             Map<DBResource, Set<DatabasePermissionType>> resource2Types = new HashMap<>();
-            if (CollectionUtils.isNotEmpty(parameters.getExportDbObjects())) {
+            if (parameters.isExportAllObjects()) {
+                ConnectionConfig config = connectionService.getBasicWithoutPermissionCheck(req.getConnectionId());
+                resource2Types.put(
+                        DBResource.from(config, req.getDatabaseName(), null, ResourceType.ODC_DATABASE),
+                        DatabasePermissionType.from(TaskType.EXPORT));
+            } else if (CollectionUtils.isNotEmpty(parameters.getExportDbObjects())) {
                 ConnectionConfig config = connectionService.getBasicWithoutPermissionCheck(req.getConnectionId());
                 parameters.getExportDbObjects().forEach(item -> {
                     if (item.getDbObjectType() == ObjectType.TABLE) {
@@ -764,11 +806,6 @@ public class FlowInstanceService {
                                 DatabasePermissionType.from(TaskType.EXPORT));
                     }
                 });
-            } else if (parameters.isExportAllObjects()) {
-                ConnectionConfig config = connectionService.getBasicWithoutPermissionCheck(req.getConnectionId());
-                resource2Types.put(
-                        DBResource.from(config, req.getDatabaseName(), null, ResourceType.ODC_DATABASE),
-                        DatabasePermissionType.from(TaskType.EXPORT));
             }
             List<UnauthorizedDBResource> unauthorizedDBResources = this.permissionHelper
                     .filterUnauthorizedDBResources(resource2Types, false);

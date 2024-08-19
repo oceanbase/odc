@@ -28,6 +28,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
@@ -121,6 +122,12 @@ public class ConnectionConfig
      * Oracle 连接方式特有的参数，该参数用户角色
      */
     private UserRole userRole;
+
+    /**
+     * 该参数表示一个数据库实例, currently used only for Postgres
+     */
+    @JsonAlias({"catalogName", "databaseName"})
+    private String catalogName;
 
     /**
      * 连接类型
@@ -368,6 +375,8 @@ public class ConnectionConfig
             case OB_MYSQL:
             case ODP_SHARDING_OB_MYSQL:
                 return OdcConstants.MYSQL_DEFAULT_SCHEMA;
+            case POSTGRESQL:
+                return OdcConstants.POSTGRESQL_DEFAULT_SCHEMA;
             default:
                 return null;
         }
@@ -487,6 +496,7 @@ public class ConnectionConfig
         if (Objects.nonNull(userRole)) {
             target.setUserRole(userRole.name());
         }
+        target.setCatalogName(catalogName);
         target.setJdbcUrlParameters(getJdbcUrlParameters());
         return target;
     }

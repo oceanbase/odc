@@ -81,7 +81,7 @@ public class CommonSecurityProperties {
 
 
     private static final String[] TASK_WHITE_LIST = new String[] {
-            "/api/v2/task/heart",
+            "/api/v2/task/heartbeat",
             "/api/v2/task/result",
             "/api/v2/task/querySensitiveColumn"
     };
