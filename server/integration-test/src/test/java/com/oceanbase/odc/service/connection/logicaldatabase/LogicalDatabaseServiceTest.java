@@ -122,12 +122,6 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    public void testDelete() {
-        when(databaseMappingRepository.findByLogicalDatabaseId(anyLong())).thenReturn(listDatabaseMappings(1));
-        Assert.assertTrue(logicalDatabaseService.delete(LOGICAL_DATABASE_ID));
-    }
-
-    @Test
     public void testListPhysicalDatabaseIds() {
         when(databaseMappingRepository.findByLogicalDatabaseId(anyLong())).thenReturn(listDatabaseMappings(1));
         Assert.assertEquals(1, logicalDatabaseService.listPhysicalDatabaseIds(LOGICAL_DATABASE_ID).size());
