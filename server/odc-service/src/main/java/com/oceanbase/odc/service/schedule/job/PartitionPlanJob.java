@@ -141,7 +141,11 @@ public class PartitionPlanJob implements OdcJob {
                     paramemters.getTimeoutMillis(), paramemters.getErrorStrategy());
         } catch (Exception e) {
             log.warn("Failed to execute a partition plan task", e);
-            AlarmUtils.alarm(AlarmEventNames.PARTITION_PLAN_SCHEDULED_FAILED, e);
+            try {
+                AlarmUtils.alarm(AlarmEventNames.PARTITION_PLAN_SCHEDULED_FAILED, e);
+            } catch (Exception ex) {
+                log.warn("Failed to alarm", ex);
+            }
             if (this.notificationProperties.isEnabled()) {
                 try {
                     Event event = this.eventBuilder.ofFailedTask(this.flowInstanceService
