@@ -105,9 +105,6 @@ public class Database implements SecurityResource, OrganizationIsolated, Seriali
     private Date objectLastSyncTime;
 
     @JsonProperty(access = Access.READ_ONLY)
-    private DialectType dialectType;
-
-    @JsonProperty(access = Access.READ_ONLY)
     private ConnectType connectType;
 
     private List<InnerUser> owners;
