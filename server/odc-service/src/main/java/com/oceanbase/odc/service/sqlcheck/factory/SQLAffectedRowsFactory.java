@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.sqlcheck.factory;
 
 import java.util.Map;
-import java.util.function.Supplier;
 
 import org.springframework.jdbc.core.JdbcOperations;
 
@@ -25,9 +24,6 @@ import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLAffectedRows;
-import com.oceanbase.odc.service.sqlcheck.rule.MySQLNoTableCommentExists;
-import com.oceanbase.odc.service.sqlcheck.rule.OracleNoTableCommentExists;
-import com.oceanbase.odc.service.sqlcheck.rule.TooLongCharLength;
 
 import lombok.NonNull;
 
