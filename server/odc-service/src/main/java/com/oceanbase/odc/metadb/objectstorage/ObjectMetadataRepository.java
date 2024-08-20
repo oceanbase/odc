@@ -16,6 +16,7 @@
 package com.oceanbase.odc.metadb.objectstorage;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -97,4 +98,18 @@ public interface ObjectMetadataRepository extends OdcJpaRepository<ObjectMetadat
     Set<Long> findAllObjectIdByBucketAndNameLikeAndStatus(@Param("bucketName") String bucketName,
             @Param("objectName") String objectNameLike,
             @Param("status") ObjectUploadStatus status);
+
+
+    @Query("SELECT * FROM ObjectMetadataEntity e WHERE e.bucketName=:bucketName and e.objectName LIKE CONCAT(:objectNameLeftLike,'%') and e.status=:status")
+    List<ObjectMetadataEntity> findAllByBucketNameAndObjectNameLeftLikeAndStatus(@Param("bucketName") String bucketName,
+            @Param("objectName") String objectNameLeftLike, @Param("status") ObjectUploadStatus status);
+
+    @Query("SELECT * FROM ObjectMetadataEntity e WHERE e.bucketName=:bucketName and e.objectName LIKE CONCAT(:objectNameLeftLike,'%')  "
+            + "and e.objectName LIKE CONCAT(:objectNameLeftLike,'%') and e.status=:status")
+    List<ObjectMetadataEntity> findAllByBucketNameAndObjectNameLeftLikeAndNameLikeAndStatus(
+            @Param("bucketName") String bucketName,
+            @Param("objectNameLeftLike") String objectNameLeftLike,
+            @Param("objectNameLike") String objectNameLike,
+            @Param("status") ObjectUploadStatus status);
+
 }

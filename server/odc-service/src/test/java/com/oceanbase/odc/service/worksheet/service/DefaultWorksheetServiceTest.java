@@ -37,6 +37,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.metadb.worksheet.WorksheetRepository;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
@@ -45,7 +46,6 @@ import com.oceanbase.odc.service.worksheet.domain.BatchOperateWorksheetsResult;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.Worksheet;
 import com.oceanbase.odc.service.worksheet.domain.WorksheetObjectStorageGateway;
-import com.oceanbase.odc.service.worksheet.domain.WorksheetRepository;
 import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq;
 import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq.UploadWorksheetTuple;
 import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;

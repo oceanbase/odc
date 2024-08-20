@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.worksheet.infrastructure;
+package com.oceanbase.odc.metadb.worksheet;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,11 +39,10 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.metadb.objectstorage.ObjectMetadataEntity;
 import com.oceanbase.odc.metadb.objectstorage.ObjectMetadataRepository;
+import com.oceanbase.odc.metadb.worksheet.converter.WorksheetConverter;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.Worksheet;
 import com.oceanbase.odc.service.worksheet.domain.WorksheetId;
-import com.oceanbase.odc.service.worksheet.domain.WorksheetRepository;
-import com.oceanbase.odc.service.worksheet.infrastructure.converter.WorksheetConverter;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetUtil;
 
 import lombok.extern.slf4j.Slf4j;
@@ -55,11 +54,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class DefaultWorksheetRepository implements WorksheetRepository {
+public class WorksheetRepository {
     @Autowired
     private ObjectMetadataRepository metadataRepository;
 
-    @Override
     public Optional<Worksheet> findByProjectIdAndPath(Long projectId, Path path, String nameLike,
             boolean isAddWriteLock,
             boolean createDefaultIfNotExist, boolean loadSubFiles, boolean loadSameLevelFiles) {
@@ -98,7 +96,6 @@ public class DefaultWorksheetRepository implements WorksheetRepository {
         return Optional.ofNullable(worksheet);
     }
 
-    @Override
     public List<Worksheet> listWithSubsByProjectIdAndPath(Long projectId, Path path) {
         PreConditions.notNull(path, "path");
         CriteriaBuilder criteriaBuilder = metadataRepository.getEntityManager().getCriteriaBuilder();
@@ -117,7 +114,6 @@ public class DefaultWorksheetRepository implements WorksheetRepository {
         return resultList.stream().map(WorksheetConverter::toDomain).collect(Collectors.toList());
     }
 
-    @Override
     public void batchAdd(Set<Worksheet> worksheets) {
         if (CollectionUtils.isEmpty(worksheets)) {
             return;
@@ -137,7 +133,6 @@ public class DefaultWorksheetRepository implements WorksheetRepository {
         }
     }
 
-    @Override
     public void batchDelete(Set<Long> ids) {
         if (CollectionUtils.isEmpty(ids)) {
             return;
@@ -145,7 +140,6 @@ public class DefaultWorksheetRepository implements WorksheetRepository {
         metadataRepository.deleteAllById(ids);
     }
 
-    @Override
     public void batchUpdateById(Set<Worksheet> files) {
         if (CollectionUtils.isEmpty(files)) {
             return;
