@@ -98,4 +98,9 @@ public class WorksheetUtil {
                 directory,
                 fileName);
     }
+
+    public static String getZipFileName(String fileName) {
+        return String.format("%s.zip",
+                fileName);
+    }
 }

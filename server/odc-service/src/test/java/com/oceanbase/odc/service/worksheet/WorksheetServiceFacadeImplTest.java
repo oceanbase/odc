@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.worksheet;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
@@ -25,6 +24,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -36,11 +36,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
+import com.oceanbase.odc.service.objectstorage.client.ObjectStorageClient;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
 import com.oceanbase.odc.service.worksheet.domain.Path;
-import com.oceanbase.odc.service.worksheet.domain.WorksheetObjectStorageGateway;
-import com.oceanbase.odc.service.worksheet.domain.WorksheetProjectRepository;
 import com.oceanbase.odc.service.worksheet.factory.WorksheetServiceFactory;
 import com.oceanbase.odc.service.worksheet.model.WorksheetLocation;
 import com.oceanbase.odc.service.worksheet.service.DefaultWorksheetService;
@@ -50,9 +50,9 @@ import com.oceanbase.odc.service.worksheet.service.RepoWorksheetService;
 public class WorksheetServiceFacadeImplTest {
     Long projectId = 1L;
     @Mock
-    private WorksheetProjectRepository worksheetProjectRepository;
+    private ProjectRepository projectRepository;
     @Mock
-    private WorksheetObjectStorageGateway projectFileOssGateway;
+    private ObjectStorageClient objectStorageClient;
     @Mock
     private WorksheetServiceFactory worksheetServiceFactory;
     @Mock
@@ -72,7 +72,7 @@ public class WorksheetServiceFacadeImplTest {
      * single file download
      */
     @Test
-    public void testBatchDownloadWorksheets_singleFile() {
+    public void batchDownloadWorksheets_singleFile() {
         Path path = new Path("/Worksheets/dir3/subdir1/file1");
         Set<String> paths = new HashSet<>();
         paths.add(path.getStandardPath());
@@ -91,7 +91,7 @@ public class WorksheetServiceFacadeImplTest {
      * multi file download
      */
     @Test
-    public void testBatchDownloadWorksheets_multipleFiles() {
+    public void batchDownloadWorksheets_multipleFiles() {
         Long projectId = 1L;
         Path path1 = new Path("/Worksheets/dir3/subdir1/file1");
         Path path2 = new Path("/Worksheets/dir3/subdir1/path2");
@@ -99,21 +99,17 @@ public class WorksheetServiceFacadeImplTest {
         paths.add(path1.getStandardPath());
         paths.add(path2.getStandardPath());
 
-        lenient().when(worksheetProjectRepository.getProjectName(anyLong()))
+        lenient().when(projectRepository.getReferenceById(anyLong()))
                 .thenAnswer(invocation -> "projectName" + invocation.getArgument(0, Long.class));
         when(worksheetServiceFactory.getProjectFileService(WorksheetLocation.WORKSHEETS))
                 .thenReturn(defaultWorksheetService);
-        // when(worksheetServiceFactory.getProjectFileService(WorksheetLocation.REPOS))
-        // .thenReturn(repoWorksheetService);
-        when(projectFileOssGateway.uploadFile(any(), anyInt()))
-                .thenAnswer(invocation -> invocation.getArgument(0, File.class).getPath());
-        when(projectFileOssGateway.generateDownloadUrl(any()))
-                .thenAnswer(invocation -> invocation.getArgument(0, String.class));
+        when(objectStorageClient.generateDownloadUrl(any(), anyLong()))
+                .thenAnswer(invocation -> new URL("http://" + invocation.getArgument(0, String.class)));
 
         String result = worksheetServiceFacade.batchDownloadWorksheets(projectId, paths);
 
         assert StringUtils.isNotBlank(result) && result.endsWith(".zip");
         // Verify
-        verify(worksheetProjectRepository, times(0)).getProjectName(anyLong());
+        verify(projectRepository, times(0)).getReferenceById(anyLong());
     }
 }

@@ -20,15 +20,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import javax.annotation.Resource;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.service.objectstorage.client.ObjectStorageClient;
 import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
 import com.oceanbase.odc.service.worksheet.domain.BatchOperateWorksheetsResult;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.Worksheet;
-import com.oceanbase.odc.service.worksheet.domain.WorksheetObjectStorageGateway;
 import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetUtil;
 
@@ -41,14 +40,13 @@ import com.oceanbase.odc.service.worksheet.utils.WorksheetUtil;
  */
 @Service
 public class RepoWorksheetService implements WorksheetService {
-    @Resource
-    private WorksheetObjectStorageGateway objectStorageGateway;
+    @Autowired
+    private ObjectStorageClient objectStorageClient;
 
     @Override
     public GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, Path path) {
-        String bucket = WorksheetUtil.getBucketNameOfRepos(projectId);
         String objectId = WorksheetUtil.getObjectIdOfRepos(path);
-        String uploadUrl = objectStorageGateway.generateUploadUrl(bucket, objectId);
+        String uploadUrl = objectStorageClient.generateUploadUrl(objectId).toString();
         return GenerateWorksheetUploadUrlResp.builder().uploadUrl(uploadUrl).objectId(objectId).build();
     }
 

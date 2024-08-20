@@ -23,14 +23,21 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.annotation.Resource;
-
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
+import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
+import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
+import com.oceanbase.odc.service.objectstorage.client.ObjectStorageClient;
+import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectTagging;
+import com.oceanbase.odc.service.objectstorage.cloud.util.CloudObjectStorageUtil;
 import com.oceanbase.odc.service.worksheet.constants.WorksheetConstant;
 import com.oceanbase.odc.service.worksheet.converter.WorksheetConverter;
 import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
@@ -39,8 +46,6 @@ import com.oceanbase.odc.service.worksheet.domain.DivideBatchOperateWorksheets;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.WorkSheetsSearch;
 import com.oceanbase.odc.service.worksheet.domain.Worksheet;
-import com.oceanbase.odc.service.worksheet.domain.WorksheetObjectStorageGateway;
-import com.oceanbase.odc.service.worksheet.domain.WorksheetProjectRepository;
 import com.oceanbase.odc.service.worksheet.factory.WorksheetServiceFactory;
 import com.oceanbase.odc.service.worksheet.model.BatchOperateWorksheetsResp;
 import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq;
@@ -63,12 +68,12 @@ import com.oceanbase.odc.service.worksheet.utils.WorksheetUtil;
  */
 @Service
 public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
-    @Resource
-    private WorksheetProjectRepository worksheetProjectRepository;
-    @Resource
-    private WorksheetObjectStorageGateway projectFileOssGateway;
-
-    @Resource
+    private static final Logger log = LoggerFactory.getLogger(WorksheetServiceFacadeImpl.class);
+    @Autowired
+    ProjectRepository projectRepository;
+    @Autowired
+    private ObjectStorageClient objectStorageClient;
+    @Autowired
     private WorksheetServiceFactory worksheetServiceFactory;
 
     @Override
@@ -214,9 +219,18 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
                 throw new InternalServerError("create file error,"
                         + "downloadDirectoryStr: " + downloadDirectoryStr + ",zipFileStr: " + zipFileStr, e);
             }
-            String zipOssObjectId = projectFileOssGateway.uploadFile(new File(zipFileStr),
-                    WorksheetConstant.DOWNLOAD_ZIP_DURATION_SECONDS);
-            return projectFileOssGateway.generateDownloadUrl(zipOssObjectId);
+            String zipOssObjectId = CloudObjectStorageUtil.generateOneDayObjectName(
+                    WorksheetUtil.getZipFileName(rootDirectoryName));
+            objectStorageClient.putObject(zipOssObjectId, new File(zipFileStr),
+                    ObjectTagging.temp());
+            return objectStorageClient.generateDownloadUrl(zipOssObjectId,
+                    WorksheetConstant.DOWNLOAD_DURATION_SECONDS).toString();
+        } catch (IOException e) {
+            log.error("batch download worksheets error, projectId: {}, paths: {}", projectId, paths, e);
+            throw new InternalServerError(
+                    "batch download worksheets error, projectId: " +
+                            projectId + ", paths: " + JsonUtils.toJson(paths),
+                    e);
         } finally {
             OdcFileUtil.deleteFiles(new File(parentOfDownloadDirectory));
         }
@@ -227,8 +241,13 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
             return commonParentPath.getName();
         }
         if (commonParentPath.isSystemDefine()) {
-            return worksheetProjectRepository.getProjectName(projectId);
+            return getProjectName(projectId);
         }
         return commonParentPath.getName();
+    }
+
+    private String getProjectName(Long projectId) {
+        ProjectEntity byId = projectRepository.getReferenceById(projectId);
+        return byId.getName();
     }
 }

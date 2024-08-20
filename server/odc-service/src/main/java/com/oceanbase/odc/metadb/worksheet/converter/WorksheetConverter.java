@@ -44,7 +44,7 @@ public class WorksheetConverter {
     }
 
     public static Worksheet toDomainFromEntities(List<ObjectMetadataEntity> entities, Long projectId,
-            Path path, boolean createTempIfSelfNotExistBuSubNotEmpty,
+            Path path, boolean createTempIfSelfNotExistButSubNotEmpty,
             boolean loadSubFiles, boolean loadSameLevelFiles) {
         Map<Path, Worksheet> sameParentAtPrevLevelMap = new HashMap<>();
         Map<Path, Worksheet> subLevelMap = new HashMap<>();
@@ -82,7 +82,7 @@ public class WorksheetConverter {
                         JsonUtils.toJson(entity), e);
             }
         }
-        if (self == null && !subLevelMap.isEmpty() && createTempIfSelfNotExistBuSubNotEmpty) {
+        if (self == null && !subLevelMap.isEmpty() && createTempIfSelfNotExistButSubNotEmpty) {
             self = Worksheet.of(projectId, path == null ? Path.root() : path, null, null);
         }
         if (self == null) {

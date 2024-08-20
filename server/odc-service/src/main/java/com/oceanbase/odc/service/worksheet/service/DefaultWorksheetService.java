@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.worksheet.service;
 import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.CHANGE_FILE_NUM_LIMIT;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -36,15 +37,17 @@ import com.google.common.collect.Iterables;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
+import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
 import com.oceanbase.odc.metadb.worksheet.WorksheetRepository;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.objectstorage.client.ObjectStorageClient;
+import com.oceanbase.odc.service.worksheet.constants.WorksheetConstant;
 import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
 import com.oceanbase.odc.service.worksheet.domain.BatchOperateWorksheetsResult;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.Worksheet;
-import com.oceanbase.odc.service.worksheet.domain.WorksheetObjectStorageGateway;
 import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetUtil;
@@ -64,17 +67,17 @@ public class DefaultWorksheetService implements WorksheetService {
 
     public DefaultWorksheetService(
             TransactionTemplate transactionTemplate,
-            WorksheetObjectStorageGateway objectStorageGateway,
+            ObjectStorageClient objectStorageClient,
             WorksheetRepository worksheetRepository,
             AuthenticationFacade authenticationFacade) {
         this.transactionTemplate = transactionTemplate;
-        this.objectStorageGateway = objectStorageGateway;
+        this.objectStorageClient = objectStorageClient;
         this.worksheetRepository = worksheetRepository;
         this.authenticationFacade = authenticationFacade;
     }
 
     private final WorksheetRepository worksheetRepository;
-    private final WorksheetObjectStorageGateway objectStorageGateway;
+    private final ObjectStorageClient objectStorageClient;
     private final TransactionTemplate transactionTemplate;
     private final AuthenticationFacade authenticationFacade;
 
@@ -84,9 +87,8 @@ public class DefaultWorksheetService implements WorksheetService {
 
     @Override
     public GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, Path path) {
-        String bucket = WorksheetUtil.getBucketNameOfWorkSheets(projectId);
         String objectId = WorksheetUtil.getObjectIdOfWorksheets(path);
-        String uploadUrl = objectStorageGateway.generateUploadUrl(bucket, objectId);
+        String uploadUrl = objectStorageClient.generateUploadUrl(objectId).toString();
         return GenerateWorksheetUploadUrlResp.builder().uploadUrl(uploadUrl).objectId(objectId).build();
     }
 
@@ -124,7 +126,8 @@ public class DefaultWorksheetService implements WorksheetService {
         Worksheet worksheet = worksheetOptional.get();
         if (path.isFile() && StringUtils.isNotBlank(worksheet.getObjectId())) {
             worksheet.setContentDownloadUrl(
-                    objectStorageGateway.generateDownloadUrl(worksheetOptional.get().getObjectId()));
+                    objectStorageClient.generateDownloadUrl(worksheetOptional.get().getObjectId(),
+                            WorksheetConstant.DOWNLOAD_DURATION_SECONDS).toString());
         }
 
         return worksheet;
@@ -210,18 +213,19 @@ public class DefaultWorksheetService implements WorksheetService {
         int batchSize = 200;
         BatchOperateWorksheetsResult result = new BatchOperateWorksheetsResult();
         Iterables.partition(deleteWorksheets, batchSize).forEach(files -> {
-            try {
-                transactionTemplate.executeWithoutResult(status -> {
+            transactionTemplate.executeWithoutResult(status -> {
+                try {
                     worksheetRepository.batchDelete(deleteWorksheets.stream()
                             .map(Worksheet::getId).collect(Collectors.toSet()));
-                    objectStorageGateway.batchDelete(files.stream()
-                            .map(Worksheet::getObjectId).collect(Collectors.toSet()));
-                });
-                result.addSuccess(files);
-            } catch (Throwable e) {
-                result.addFailed(files);
-                log.error("partition batch delete files failed, projectId:{}, paths:{}", projectId, paths);
-            }
+                    objectStorageClient.deleteObjects(files.stream()
+                            .map(Worksheet::getObjectId).collect(Collectors.toList()));
+
+                    result.addSuccess(files);
+                } catch (Throwable e) {
+                    result.addFailed(files);
+                    log.error("partition batch delete files failed, projectId:{}, paths:{}", projectId, paths);
+                }
+            });
         });
         return result;
     }
@@ -267,7 +271,8 @@ public class DefaultWorksheetService implements WorksheetService {
                         new Object[] {"path", path.toString()},
                         String.format("path not found by %s=%s", "path", path)));
         PreConditions.notBlank(worksheet.getObjectId(), "objectId");
-        return objectStorageGateway.generateDownloadUrl(worksheet.getObjectId());
+        return objectStorageClient
+                .generateDownloadUrl(worksheet.getObjectId(), WorksheetConstant.DOWNLOAD_DURATION_SECONDS).toString();
     }
 
     @Override
@@ -306,7 +311,16 @@ public class DefaultWorksheetService implements WorksheetService {
         if (worksheet.getPath().isFile() && StringUtils.isNotBlank(worksheet.getObjectId())) {
             String absoluteFile = destinationDirectory.getAbsolutePath() + relativePathOptional.get();
             java.nio.file.Path filePath = WorksheetPathUtil.createFileWithParent(absoluteFile, false);
-            objectStorageGateway.downloadToFile(worksheet.getObjectId(), filePath.toFile());
+            try {
+                objectStorageClient.downloadToFile(worksheet.getObjectId(), filePath.toFile());
+            } catch (IOException e) {
+                log.error(
+                        "download worksheet to file failed, projectId:{}, worksheet:{},commonParentPath:{},objetId{},filePath:{}",
+                        projectId, worksheet, commParentPath, worksheet.getObjectId(), filePath);
+                throw new InternalServerError(String.format(
+                        "download worksheet to file failed, projectId:%d, worksheet:%s,commonParentPath:%s,objetId:%s,filePath:%s",
+                        projectId, worksheet, commParentPath, worksheet.getObjectId(), filePath), e);
+            }
         }
         if (worksheet.getPath().isDirectory()) {
             String absoluteFile = destinationDirectory.getAbsolutePath() + relativePathOptional.get();

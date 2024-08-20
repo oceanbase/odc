@@ -59,7 +59,7 @@ public class PathGetPathAtTest {
     }
 
     @Test
-    public void testGetPathAt() {
+    public void getPathAt() {
         try {
             Path result = path.getPathAt(index);
             assertEquals(expectedResultPath, result);

@@ -58,16 +58,12 @@ public class WorksheetConverterTest {
     }
 
     @Test
-    public void testToDomainFromEntities_EmptyList() {
+    public void toDomainFromEntities_EmptyList() {
         Path path = new Path("/Worksheets/");
         Worksheet result =
                 WorksheetConverter.toDomainFromEntities(new ArrayList<>(), projectId, path, true,
                         true, true);
-        assertNotNull(result);
-        assertEquals(projectId, result.getProjectId());
-        assertEquals(path, result.getPath());
-        assert CollectionUtils.isEmpty(result.getSubWorksheets());
-        assert CollectionUtils.isEmpty(result.getSameParentAtPrevLevelWorksheets());
+        assertNull(result);
 
         result =
                 WorksheetConverter.toDomainFromEntities(new ArrayList<>(), projectId, path, false,
@@ -77,12 +73,12 @@ public class WorksheetConverterTest {
         result =
                 WorksheetConverter.toDomainFromEntities(new ArrayList<>(), projectId, null, true,
                         true, true);
-        assertNotNull(result);
+        assertNull(result);
 
     }
 
     @Test
-    public void testToDomainFromEntities_SelfMatch() {
+    public void toDomainFromEntities_SelfMatch() {
         List<ObjectMetadataEntity> entities = Arrays.asList(
                 newEntity(projectId, "/Worksheets/file1", 1L));
         Path path = new Path("/Worksheets/file1");
@@ -99,7 +95,7 @@ public class WorksheetConverterTest {
 
 
     @Test
-    public void testToDomainFromEntities_SubAndSameLevel() {
+    public void toDomainFromEntities_SubAndSameLevel() {
         ObjectMetadataEntity selfEntity = newEntity(projectId, "/Worksheets/folder1/", 2L);
 
         ObjectMetadataEntity subEntity1 = newEntity(projectId, "/Worksheets/folder1/file1", 2L);

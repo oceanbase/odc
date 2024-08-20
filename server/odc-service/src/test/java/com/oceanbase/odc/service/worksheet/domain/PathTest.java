@@ -161,7 +161,7 @@ public class PathTest {
     }
 
     @Test
-    public void testGetPathComparator() {
+    public void getPathComparator() {
         if (!StringUtils.equals(method, "testGetPathComparator")) {
             return;
         }
@@ -173,7 +173,7 @@ public class PathTest {
     }
 
     @Test
-    public void testConstructor() {
+    public void constructor() {
         if (!StringUtils.equals(method, "testConstructor")) {
             return;
         }
@@ -192,7 +192,7 @@ public class PathTest {
     }
 
     @Test
-    public void testGetParentPath() {
+    public void getParentPath() {
         if (!StringUtils.equals(method, "testGetParentPath")) {
             return;
         }
@@ -210,7 +210,7 @@ public class PathTest {
     }
 
     @Test
-    public void testGetStandardPath() {
+    public void getStandardPath() {
         if (!StringUtils.equals(method, "testConstructor")) {
             return;
         }

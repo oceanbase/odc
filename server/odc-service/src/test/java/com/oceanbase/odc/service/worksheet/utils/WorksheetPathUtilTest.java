@@ -95,7 +95,7 @@ public class WorksheetPathUtilTest {
     }
 
     @Test
-    public void testSplitPathToItems() {
+    public void splitPathToItems() {
         List<String> items = WorksheetPathUtil.splitPathToItems(path);
         if (CollectionUtils.isEmpty(items)) {
             assert CollectionUtils.isEmpty(expectedItems);
@@ -105,7 +105,7 @@ public class WorksheetPathUtilTest {
     }
 
     @Test
-    public void testConvertItemsToPath() {
+    public void convertItemsToPath() {
         Optional<String> standardPathOptional = WorksheetPathUtil.convertItemsToPath(expectedItems);
         if (!standardPathOptional.isPresent()) {
             assert expectedStandardPath == null;
@@ -115,7 +115,7 @@ public class WorksheetPathUtilTest {
     }
 
     @Test
-    public void testGetPathName() {
+    public void getPathName() {
         Optional<String> nameOptional = WorksheetPathUtil.getPathName(expectedItems);
         if (!nameOptional.isPresent()) {
             assert expectedName == null;
@@ -125,7 +125,7 @@ public class WorksheetPathUtilTest {
     }
 
     @Test
-    public void testGetPathLocation() {
+    public void getPathLocation() {
         Optional<WorksheetLocation> locationOptional = WorksheetPathUtil.getPathLocation(expectedItems);
         if (!locationOptional.isPresent()) {
             assert expectedLocation == null;
@@ -135,7 +135,7 @@ public class WorksheetPathUtilTest {
     }
 
     @Test
-    public void testGetPathType() {
+    public void getPathType() {
         Optional<WorksheetType> typeOptional = WorksheetPathUtil.getPathType(expectedItems);
         if (!typeOptional.isPresent()) {
             assert expectedType == null;

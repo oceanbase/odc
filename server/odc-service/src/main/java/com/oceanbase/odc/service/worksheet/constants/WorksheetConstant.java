@@ -40,9 +40,9 @@ public class WorksheetConstant {
     public static final int SAME_LEVEL_NUM_LIMIT = 1000;
 
     /**
-     * the duration of download zip file in seconds
+     * the duration of download worksheet in seconds
      */
-    public static final int DOWNLOAD_ZIP_DURATION_SECONDS = 60 * 60;
+    public static final long DOWNLOAD_DURATION_SECONDS = 60 * 60L;
 
     public static final String ROOT_PATH_NAME = "";
 }

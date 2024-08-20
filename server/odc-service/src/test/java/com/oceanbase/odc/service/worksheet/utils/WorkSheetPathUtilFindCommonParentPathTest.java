@@ -112,7 +112,7 @@ public class WorkSheetPathUtilFindCommonParentPathTest {
     }
 
     @Test
-    public void testFindCommonParentPath() {
+    public void findCommonParentPath() {
         try {
             Path result = WorksheetPathUtil.findCommonPath(paths);
             assertEquals(expectedResult, result);

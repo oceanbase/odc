@@ -84,6 +84,11 @@ public class CloudObjectStorageUtil {
         return builder.toString();
     }
 
+    public static String generateOneDayObjectName(@NonNull String fileName) {
+        return CloudObjectStorageUtil.generateObjectName(null, UUID.randomUUID().toString(),
+                CloudObjectStorageConstants.TEMP_ONE_DAY_DIR, fileName);
+    }
+
     public static String getOriginalFileName(String objectName) {
         PreConditions.notBlank(objectName, "objectName");
         String[] segment = StringUtils.split(objectName, "/");

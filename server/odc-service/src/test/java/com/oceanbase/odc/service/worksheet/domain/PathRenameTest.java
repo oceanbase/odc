@@ -115,7 +115,7 @@ public class PathRenameTest {
     }
 
     @Test
-    public void testRename() {
+    public void rename() {
         boolean result = WorksheetPathUtil.isRenameValid(from, destination);
         if (result) {
             result = path.rename(from, destination);

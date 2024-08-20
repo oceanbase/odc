@@ -98,7 +98,7 @@ public class WorksheetGetSubWorksheetsInDepthTest {
     }
 
     @Test
-    public void testGetSubWorksheetsInDepth_NeedToExtractNotExistParent() {
+    public void getSubWorksheetsInDepth_NeedToExtractNotExistParent() {
         List<Worksheet> expectedWorksheets1 = Arrays.asList(
                 newWorksheet("/Worksheets/folder1/"),
                 newWorksheet("/Worksheets/folder1/folder4/"),
@@ -130,20 +130,20 @@ public class WorksheetGetSubWorksheetsInDepthTest {
     }
 
     @Test
-    public void testGetSubWorksheetsInDepth_NoSubWorksheets() {
+    public void getSubWorksheetsInDepth_NoSubWorksheets() {
         Worksheet emptyWorksheet = newWorksheet("/Worksheets/");
         assertEquals(0, emptyWorksheet.getSubWorksheetsInDepth(0, false).size());
     }
 
     @Test
-    public void testGetSubWorksheetsInDepth_NegativeDepth() {
+    public void getSubWorksheetsInDepth_NegativeDepth() {
         assertThrows(BadArgumentException.class, () -> {
             currentWorksheet.getSubWorksheetsInDepth(-1, false);
         });
     }
 
     @Test
-    public void testGetSubWorksheetsInDepth_EmptyArgumentDepth() {
+    public void getSubWorksheetsInDepth_EmptyArgumentDepth() {
         assertThrows(BadArgumentException.class, () -> {
             currentWorksheet.getSubWorksheetsInDepth(null, false);
         });

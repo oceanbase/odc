@@ -46,7 +46,7 @@ public class WorksheetTest {
     }
 
     @Test
-    public void testRename_Self() {
+    public void rename_Self() {
         Worksheet worksheet = newWorksheet("/Worksheets/file.sql");
         Path destinationPath = new Path("/Worksheets/file1.sql");
         Set<Worksheet> changedSubFiles = worksheet.rename(destinationPath);
@@ -56,7 +56,7 @@ public class WorksheetTest {
     }
 
     @Test
-    public void testRename_Sub() {
+    public void rename_Sub() {
         Worksheet worksheet = newWorksheet("/Worksheets/folder1/");
         Worksheet sub1 = newWorksheet("/Worksheets/folder1/file1");
         Worksheet sub2 = newWorksheet("/Worksheets/folder1/file2");
@@ -76,7 +76,7 @@ public class WorksheetTest {
     }
 
     @Test
-    public void testRename_DuplicatePath() {
+    public void rename_DuplicatePath() {
         Worksheet worksheet = newWorksheet("/Worksheets/folder1/");
         Worksheet sameWorksheet1 = newWorksheet("/Worksheets/folder2/");
         worksheet.setSameParentAtPrevLevelWorksheets(new HashSet<>(Arrays.asList(sameWorksheet1)));
@@ -104,7 +104,7 @@ public class WorksheetTest {
     }
 
     @Test
-    public void testRename_InvalidPath() {
+    public void rename_InvalidPath() {
         Worksheet worksheet = newWorksheet("/Worksheets/folder1/file2");
         Path destinationPath = new Path("/Worksheets/folder2/file3");
         assertThrows(IllegalArgumentException.class, () -> worksheet.rename(destinationPath));
@@ -118,7 +118,7 @@ public class WorksheetTest {
 
 
     @Test
-    public void testRename_TooManyChanges() {
+    public void rename_TooManyChanges() {
         assertEquals(renameWithSubCount(WorksheetConstant.CHANGE_FILE_NUM_LIMIT - 1).size(),
                 WorksheetConstant.CHANGE_FILE_NUM_LIMIT);
         assertThrows(OverLimitException.class, () -> renameWithSubCount(WorksheetConstant.CHANGE_FILE_NUM_LIMIT));
@@ -137,7 +137,7 @@ public class WorksheetTest {
     }
 
     @Test
-    public void testBatchCreate_Single() {
+    public void batchCreate_Single() {
         Worksheet worksheet = newWorksheet(projectId,
                 Path.ofDirectory("Worksheets", "folder1"), id++ + "", id++);
         Map<Path, String> createPathToObjectIdMap = new HashMap<>();
@@ -157,7 +157,7 @@ public class WorksheetTest {
     }
 
     @Test
-    public void testBatchCreate_Multiple() {
+    public void batchCreate_Multiple() {
         Worksheet worksheet =
                 newWorksheet(projectId,
                         Path.ofDirectory("Worksheets", "folder1"), id++ + "", id++);
@@ -189,7 +189,7 @@ public class WorksheetTest {
     }
 
     @Test
-    public void testBatchCreate_ExceedLimit() {
+    public void batchCreate_ExceedLimit() {
         Worksheet worksheet =
                 newWorksheet(projectId,
                         Path.ofDirectory("Worksheets", "folder1"), id++ + "", id++);
@@ -221,7 +221,7 @@ public class WorksheetTest {
     }
 
     @Test
-    public void testBatchCreate_DuplicateName() {
+    public void batchCreate_DuplicateName() {
         Worksheet worksheet =
                 newWorksheet(projectId,
                         Path.ofDirectory("Worksheets", "folder1"), id++ + "", id++);
@@ -251,7 +251,7 @@ public class WorksheetTest {
     }
 
     @Test
-    public void testBatchCreateNameTooLong() {
+    public void batchCreateNameTooLong() {
         Worksheet worksheet =
                 newWorksheet(projectId,
                         Path.ofDirectory("Worksheets", "folder1"), id++ + "", id++);
@@ -274,7 +274,7 @@ public class WorksheetTest {
 
 
     @Test
-    public void testEdit_Normal() {
+    public void edit_Normal() {
         Worksheet worksheet = newWorksheet("/Worksheets/folder1/file1.sql");
 
         // no change
@@ -311,7 +311,7 @@ public class WorksheetTest {
     }
 
     @Test
-    public void testEdit_VersionConflict() {
+    public void edit_VersionConflict() {
         Worksheet worksheet = newWorksheet("/Worksheets/file.sql");
         worksheet.setVersion(2L);
         Path destinationPath = new Path("/Worksheets/file.sql");

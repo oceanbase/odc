@@ -21,6 +21,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -40,12 +43,13 @@ import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.worksheet.WorksheetRepository;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.objectstorage.client.ObjectStorageClient;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
+import com.oceanbase.odc.service.worksheet.constants.WorksheetConstant;
 import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
 import com.oceanbase.odc.service.worksheet.domain.BatchOperateWorksheetsResult;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.Worksheet;
-import com.oceanbase.odc.service.worksheet.domain.WorksheetObjectStorageGateway;
 import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq;
 import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq.UploadWorksheetTuple;
 import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;
@@ -75,7 +79,7 @@ public class DefaultWorksheetServiceTest {
     private WorksheetRepository worksheetRepository;
 
     @Mock
-    private WorksheetObjectStorageGateway worksheetObjectStorageGateway;
+    private ObjectStorageClient objectStorageClient;
     @Mock
     private TransactionTemplate transactionTemplate;
     @Mock
@@ -88,7 +92,7 @@ public class DefaultWorksheetServiceTest {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         defaultWorksheetService =
-                new DefaultWorksheetService(transactionTemplate, worksheetObjectStorageGateway,
+                new DefaultWorksheetService(transactionTemplate, objectStorageClient,
                         worksheetRepository, authenticationFacade);
         destinationDirectory = WorksheetPathUtil.createFileWithParent(
                 WorksheetUtil.getWorksheetDownloadDirectory() + "project1", true).toFile();
@@ -102,12 +106,11 @@ public class DefaultWorksheetServiceTest {
 
 
     @Test
-    public void generateUploadUrl() {
+    public void generateUploadUrl() throws MalformedURLException {
         Path path = new Path("/Worksheets/test");
 
-        String uploadUrl = "uploadUrl";
-
-        when(worksheetObjectStorageGateway.generateUploadUrl(anyString(), anyString())).thenReturn(uploadUrl);
+        String uploadUrl = "http://uploadUrl";
+        when(objectStorageClient.generateUploadUrl(anyString())).thenReturn(new URL(uploadUrl));
 
         GenerateWorksheetUploadUrlResp response = defaultWorksheetService.generateUploadUrl(projectId, path);
 
@@ -146,17 +149,17 @@ public class DefaultWorksheetServiceTest {
     }
 
     @Test
-    public void getWorksheetDetails_Success() {
+    public void getWorksheetDetails_Success() throws MalformedURLException {
         Path path = new Path("/Worksheets/test");
         Worksheet worksheet = newWorksheet(path);
         String objectId = "objectId";
         worksheet.setObjectId(objectId);
-        String downloadUrl = "downloadUrl";
+        String downloadUrl = "http://downloadUrl";
 
         when(worksheetRepository.findByProjectIdAndPath(projectId, path))
                 .thenReturn(Optional.of(worksheet));
-        when(worksheetObjectStorageGateway.generateDownloadUrl(objectId))
-                .thenReturn(downloadUrl);
+        when(objectStorageClient.generateDownloadUrl(objectId, WorksheetConstant.DOWNLOAD_DURATION_SECONDS))
+                .thenReturn(new URL(downloadUrl));
         Worksheet result = defaultWorksheetService.getWorksheetDetails(projectId, path);
 
         assertNotNull(result);
@@ -264,23 +267,24 @@ public class DefaultWorksheetServiceTest {
     }
 
     @Test
-    public void testGetDownloadUrl_Success() {
+    public void getDownloadUrl_Success() {
         Path path = new Path("/Worksheets/test");
         Worksheet worksheet = newWorksheet(path);
         worksheet.setObjectId("objectId");
 
         when(worksheetRepository.findByProjectIdAndPath(projectId, path))
                 .thenReturn(Optional.of(worksheet));
-        when(worksheetObjectStorageGateway.generateDownloadUrl(any()))
-                .thenAnswer(invocation -> invocation.getArgument(0, String.class));
+        when(objectStorageClient.generateDownloadUrl(any(), anyLong()))
+                .thenAnswer(invocation -> new URL("http://" + invocation.getArgument(0, String.class)));
         String url = defaultWorksheetService.getDownloadUrl(projectId, path);
         assertNotNull(url);
-        assertEquals(url, worksheet.getObjectId());
-        verify(worksheetObjectStorageGateway).generateDownloadUrl(worksheet.getObjectId());
+        assertEquals(url, "http://" + worksheet.getObjectId());
+        verify(objectStorageClient).generateDownloadUrl(worksheet.getObjectId(),
+                WorksheetConstant.DOWNLOAD_DURATION_SECONDS);
     }
 
     @Test
-    public void downloadPathsToDirectory_NormalCase() {
+    public void downloadPathsToDirectory_NormalCase() throws IOException {
 
         List<String> pathStrList = Arrays.asList(
                 "/Worksheets/dir1/",
@@ -328,7 +332,7 @@ public class DefaultWorksheetServiceTest {
         // Verify
         verify(worksheetRepository, times(6)).findWithSubListByProjectIdAndPathAndNameLike(anyLong(), any(Path.class),
                 any());
-        verify(worksheetObjectStorageGateway, times(5)).downloadToFile(anyString(), any(File.class));
+        verify(objectStorageClient, times(5)).downloadToFile(anyString(), any(File.class));
 
         List<String> expectedFileStrList = Arrays.asList(
                 "/Worksheets/",
