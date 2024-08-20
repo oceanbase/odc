@@ -47,18 +47,18 @@ public class LogicalDatabaseController {
     @Autowired
     private LogicalTableService tableService;
 
-    @RequestMapping(value = "/logicaldatabases", method = RequestMethod.POST)
+    @RequestMapping(value = "/logicalDatabases", method = RequestMethod.POST)
     public SuccessResponse<Boolean> create(@RequestBody CreateLogicalDatabaseReq req) {
         return Responses.success(databaseService.create(req));
     }
 
-    @RequestMapping(value = "/logicaldatabases/{id:[\\d]+}", method = RequestMethod.GET)
+    @RequestMapping(value = "/logicalDatabases/{id:[\\d]+}", method = RequestMethod.GET)
     public SuccessResponse<DetailLogicalDatabaseResp> detail(@PathVariable Long id) {
         return Responses.success(databaseService.detail(id));
     }
 
     @RequestMapping(
-            value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/logicaltables/{logicalTableId:[\\d]+}",
+            value = "/logicalDatabases/{logicalDatabaseId:[\\d]+}/logicalTables/{logicalTableId:[\\d]+}",
             method = RequestMethod.GET)
     public SuccessResponse<DetailLogicalTableResp> detailLogicalTable(@PathVariable Long logicalDatabaseId,
             @PathVariable Long logicalTableId) {
@@ -66,7 +66,7 @@ public class LogicalDatabaseController {
     }
 
     @RequestMapping(
-            value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/previewLogicalTableTopologies",
+            value = "/logicalDatabases/{logicalDatabaseId:[\\d]+}/previewLogicalTableTopologies",
             method = RequestMethod.POST)
     public ListResponse<LogicalTableTopologyResp> previewLogicalTableTopologies(@PathVariable Long logicalDatabaseId,
             @RequestParam(name = "expression") String expression) {
@@ -74,32 +74,32 @@ public class LogicalDatabaseController {
     }
 
     @RequestMapping(
-            value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/logicaltables/{logicalTableId:[\\d]+}/topologies",
+            value = "/logicalDatabases/{logicalDatabaseId:[\\d]+}/logicalTables/{logicalTableId:[\\d]+}/topologies",
             method = RequestMethod.GET)
     public ListResponse<LogicalTableTopologyResp> listLogicalTablesTopologies(@PathVariable Long logicalDatabaseId,
             @PathVariable Long logicalTableId) {
         return Responses.list(tableService.listLogicalTableTopologies(logicalDatabaseId, logicalTableId));
     }
 
-    @RequestMapping(value = "/logicaldatabases/{id:[\\d]+}", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/logicalDatabases/{id:[\\d]+}", method = RequestMethod.DELETE)
     public SuccessResponse<Boolean> delete(@PathVariable Long id) {
         return Responses.success(databaseService.delete(id));
     }
 
-    @RequestMapping(value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/logicaltables/{logicalTableId:[\\d]+}",
+    @RequestMapping(value = "/logicalDatabases/{logicalDatabaseId:[\\d]+}/logicalTables/{logicalTableId:[\\d]+}",
             method = RequestMethod.DELETE)
     public SuccessResponse<Boolean> deleteLogicalTable(@PathVariable Long logicalDatabaseId,
             @PathVariable Long logicalTableId) {
         return Responses.success(tableService.delete(logicalDatabaseId, logicalTableId));
     }
 
-    @RequestMapping(value = "/logicaldatabases/{id:[\\d]+}/logicaltables/extract", method = RequestMethod.POST)
+    @RequestMapping(value = "/logicalDatabases/{id:[\\d]+}/logicalTables/extract", method = RequestMethod.POST)
     public SuccessResponse<Boolean> extractLogicalTables(@PathVariable Long id) {
         return Responses.success(databaseService.extractLogicalTables(id));
     }
 
     @RequestMapping(
-            value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/logicaltables/{logicalTableId:[\\d]+}/checkStructureConsistency",
+            value = "/logicalDatabases/{logicalDatabaseId:[\\d]+}/logicalTables/{logicalTableId:[\\d]+}/checkStructureConsistency",
             method = RequestMethod.POST)
     public SuccessResponse<Boolean> checkLogicalTable(@PathVariable Long logicalDatabaseId,
             @PathVariable Long logicalTableId) {

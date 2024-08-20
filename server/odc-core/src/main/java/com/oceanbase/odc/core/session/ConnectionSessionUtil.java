@@ -382,7 +382,7 @@ public class ConnectionSessionUtil {
         connectionSession.setAttribute(ConnectionSessionConstants.IS_LOGICAL_SESSION, logicalSession);
     }
 
-    public static Boolean getLogicalSession(@NonNull ConnectionSession connectionSession) {
+    public static Boolean isLogicalSession(@NonNull ConnectionSession connectionSession) {
         return connectionSession.getAttribute(ConnectionSessionConstants.IS_LOGICAL_SESSION) == null ? false
                 : (Boolean) connectionSession.getAttribute(ConnectionSessionConstants.IS_LOGICAL_SESSION);
     }

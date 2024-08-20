@@ -54,7 +54,7 @@ public class SessionSettingsService {
     public SessionSettings getSessionSettings(@NotNull ConnectionSession session) {
         SessionSettings settings = new SessionSettings();
         Boolean autocommit = false;
-        if (!ConnectionSessionUtil.getLogicalSession(session)) {
+        if (!ConnectionSessionUtil.isLogicalSession(session)) {
             JdbcOperations jdbcOperations = session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
             autocommit = jdbcOperations.execute(Connection::getAutoCommit);
         }
@@ -71,7 +71,7 @@ public class SessionSettingsService {
             PreConditions.lessThanOrEqualTo("queryLimit", LimitMetric.TRANSACTION_QUERY_LIMIT,
                     settings.getQueryLimit(), sessionProperties.getResultSetMaxRows());
         }
-        if (!ConnectionSessionUtil.getLogicalSession(session)) {
+        if (!ConnectionSessionUtil.isLogicalSession(session)) {
             JdbcOperations jdbcOperations = session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
             Boolean autocommit = jdbcOperations.execute(Connection::getAutoCommit);
             if (!Objects.equals(autocommit, settings.getAutocommit())) {

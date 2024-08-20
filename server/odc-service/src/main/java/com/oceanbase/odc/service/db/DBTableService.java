@@ -127,7 +127,7 @@ public class DBTableService {
 
     public GenerateTableDDLResp generateCreateDDL(@NotNull ConnectionSession session, @NotNull DBTable table) {
         String ddl;
-        if (ConnectionSessionUtil.getLogicalSession(session)) {
+        if (ConnectionSessionUtil.isLogicalSession(session)) {
             ddl = DBAccessorUtil.getTableEditor("4.0.0", session.getDialectType()).generateCreateObjectDDL(table);
         } else {
             ddl = session.getSyncJdbcExecutor(
@@ -145,7 +145,7 @@ public class DBTableService {
     public GenerateTableDDLResp generateUpdateDDL(@NotNull ConnectionSession session,
             @NotNull GenerateUpdateTableDDLReq req) {
         String ddl;
-        if (ConnectionSessionUtil.getLogicalSession(session)) {
+        if (ConnectionSessionUtil.isLogicalSession(session)) {
             ddl = DBAccessorUtil.getTableEditor("4.0.0", session.getDialectType())
                     .generateUpdateObjectDDL(req.getPrevious(), req.getCurrent());
         } else {

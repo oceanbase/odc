@@ -238,7 +238,7 @@ public class ConnectConsoleService {
     public SqlAsyncExecuteResp streamExecute(@NotNull String sessionId,
             @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlRuleCheck) throws Exception {
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
-        if (ConnectionSessionUtil.getLogicalSession(connectionSession)) {
+        if (ConnectionSessionUtil.isLogicalSession(connectionSession)) {
             return new SqlAsyncExecuteResp(true);
         }
         long maxSqlLength = sessionProperties.getMaxSqlLength();

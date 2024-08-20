@@ -54,7 +54,7 @@ public class DBSessionService {
     }
 
     public DBSession currentSession(@NonNull ConnectionSession connectionSession) {
-        if (ConnectionSessionUtil.getLogicalSession(connectionSession)) {
+        if (ConnectionSessionUtil.isLogicalSession(connectionSession)) {
             return null;
         }
         try {

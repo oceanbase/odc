@@ -216,7 +216,7 @@ public class ConnectSessionService {
     @SkipAuthorize("check permission internally")
     public CreateSessionResp createByDatabaseId(@NotNull Long databaseId) {
         ConnectionSession session = create(null, databaseId);
-        if (ConnectionSessionUtil.getLogicalSession(session)) {
+        if (ConnectionSessionUtil.isLogicalSession(session)) {
             Long dataSourceId = logicalDatabaseService.listDataSourceIds(databaseId).stream().findFirst()
                     .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "ID", databaseId));
             ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
@@ -258,7 +258,8 @@ public class ConnectSessionService {
             checkDBPermission(database);
             if (database.getType() == DatabaseType.LOGICAL) {
                 req.setLogicalSession(true);
-                return createLogicalSession(req, database.getConnectType(), database.getEnvironment().getId());
+                return createLogicalConnectionSession(req, database.getConnectType(),
+                        database.getEnvironment().getId());
             }
             schemaName = database.getName();
             dataSourceId = database.getDataSource().getId();
@@ -299,7 +300,8 @@ public class ConnectSessionService {
         return startConnectionSession(sessionFactory, connection.getDialectType(), connection.getEnvironmentId());
     }
 
-    public ConnectionSession createLogicalSession(@NotNull CreateSessionReq req, @NotNull ConnectType connectType,
+    public ConnectionSession createLogicalConnectionSession(@NotNull CreateSessionReq req,
+            @NotNull ConnectType connectType,
             Long environmentId) {
         LogicalConnectionSessionFactory sessionFactory = new LogicalConnectionSessionFactory(req, connectType);
         sessionFactory.setIdGenerator(getIdGenerator(req));

@@ -945,6 +945,7 @@ public class DatabaseService {
         if (Objects.nonNull(entity.getProjectId())) {
             model.setProject(projectService.detail(entity.getProjectId()));
         }
+        // for logical database, the connection id may be null
         if (entity.getConnectionId() != null) {
             model.setDataSource(connectionService.getForConnectionSkipPermissionCheck(entity.getConnectionId()));
         }
