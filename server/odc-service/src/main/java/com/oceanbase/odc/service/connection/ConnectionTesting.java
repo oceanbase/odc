@@ -214,15 +214,10 @@ public class ConnectionTesting {
         ConnectionConfig config = new ConnectionConfig();
         if (StringUtils.equals("sys", req.getTenantName())) {
             config.setType(ConnectType.OB_MYSQL);
-            if (req.getType() != ConnectType.OB_MYSQL) {
-                config.setDefaultSchema("ROOT");
-            } else {
-                config.setDefaultSchema(req.getDefaultSchema());
-            }
         } else {
             config.setType(req.getType());
-            config.setDefaultSchema(req.getDefaultSchema());
         }
+        config.setDefaultSchema(req.getDefaultSchema());
         config.setHost(req.getHost());
         config.setPort(req.getPort());
         config.setClusterName(req.getClusterName());
