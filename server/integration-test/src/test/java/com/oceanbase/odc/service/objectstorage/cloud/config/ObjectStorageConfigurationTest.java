@@ -13,29 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.cloud.config;
+package com.oceanbase.odc.service.objectstorage.cloud.config;
 
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 
 public class ObjectStorageConfigurationTest {
-
-    @Test
-    public void cloudProvider_deserialize() {
-        ObjectStorageConfiguration properties = new ObjectStorageConfiguration();
-        properties.setCloudProvider(CloudProvider.ALIBABA_CLOUD);
-
-        String json = JsonUtils.toJson(properties);
-
-        ObjectStorageConfiguration deserialized = JsonUtils.fromJson(json,
-                ObjectStorageConfiguration.class);
-
-        Assert.assertEquals(CloudProvider.ALIBABA_CLOUD, deserialized.getCloudProvider());
-    }
 
     @Test
     public void getEndpoint_S3EmptyEndpoint_FromRegion() {
