@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.connection.database.model;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.validation.constraints.NotBlank;
@@ -131,4 +132,8 @@ public class Database implements SecurityResource, OrganizationIsolated, Seriali
         return this.id;
     }
 
+    @JsonProperty(access = Access.READ_ONLY)
+    public DialectType getDialectType() {
+        return Objects.nonNull(this.connectType) ? this.connectType.getDialectType() : DialectType.UNKNOWN;
+    }
 }

@@ -20,8 +20,6 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
-import com.oceanbase.odc.core.shared.constant.ConnectType;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.service.connection.database.model.Database;
 
@@ -36,17 +34,8 @@ public interface DatabaseMapper {
 
     @Mapping(source = "connectionId", target = "dataSource.id")
     @Mapping(source = "projectId", target = "project.id")
-    @Mapping(source = "connectType", target = "dialectType")
-    @Mapping(source = "connectType", target = "connectType")
     Database entityToModel(DatabaseEntity entity);
 
     @InheritInverseConfiguration
     DatabaseEntity modelToEntity(Database model);
-
-    default DialectType mapConnectTypeToDialectType(ConnectType connectType) {
-        if (connectType == null) {
-            return null;
-        }
-        return connectType.getDialectType();
-    }
 }

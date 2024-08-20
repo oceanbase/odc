@@ -287,11 +287,16 @@ public class ConnectSessionService {
         Set<String> actions = authorizationFacade.getAllPermittedActions(authenticationFacade.currentUser(),
                 ResourceType.ODC_CONNECTION, "" + dataSourceId);
         connection.setPermittedActions(actions);
-        SqlExecuteTaskManagerFactory factory =
-                new SqlExecuteTaskManagerFactory(this.monitorTaskManager, "console", 1);
         if (StringUtils.isNotEmpty(schemaName)) {
             connection.setDefaultSchema(schemaName);
         }
+        return createPhysicalConnectionSession(connection, req);
+    }
+
+    public ConnectionSession createPhysicalConnectionSession(@NotNull ConnectionConfig connection,
+            @NotNull CreateSessionReq req) {
+        SqlExecuteTaskManagerFactory factory =
+                new SqlExecuteTaskManagerFactory(this.monitorTaskManager, "console", 1);
         // TODO: query from use config service
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(
                 connection, getAutoCommit(connection), factory);
