@@ -124,7 +124,7 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
         if (Objects.isNull(jdbcUrlParams)) {
             jdbcUrlParams = new HashMap<>();
         }
-        jdbcUrlParams.put("enableFullLinkTrace", "false");
+        jdbcUrlParams.put("enableFullLinkTrace", "true");
         return jdbcUrlParams;
     }
 
