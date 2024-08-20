@@ -306,6 +306,15 @@
                                         </source>
                                     </sources>
                                 </mapping>
+                                <mapping>
+                                    <directory>${rpm.rootdir}/modules</directory>
+                                    <filemode>755</filemode>
+                                    <sources>
+                                        <source>
+                                            <location>${project.basedir}/../../distribution/modules</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
                             </mappings>
                             <preinstallScriptlet>
                                 <script>echo "installing ${project.name} ${project.version} now"</script>
@@ -430,6 +439,15 @@
                                     <sources>
                                         <source>
                                             <location>${project.basedir}/../../distribution/starters</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                                <mapping>
+                                    <directory>${rpm.rootdir}/modules</directory>
+                                    <filemode>755</filemode>
+                                    <sources>
+                                        <source>
+                                            <location>${project.basedir}/../../distribution/modules</location>
                                         </source>
                                     </sources>
                                 </mapping>

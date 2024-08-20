@@ -342,7 +342,7 @@ script/build_sqlconsole.sh
 script/build_jar.sh
 ```
 
-构建完成后，您可以在`distribution/plugins`以及`distribution/starters` 目录中看到这些构建完成的插件。
+构建完成后，您可以在`distribution/plugins`，`distribution/starters`以及 `distribution/modules` 目录中看到这些构建完成的插件。
 
 ![image.png](../en-US/images/odc-plugins-starters.png)
 

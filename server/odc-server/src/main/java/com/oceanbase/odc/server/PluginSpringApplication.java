@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.server.starter;
+package com.oceanbase.odc.server;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -21,9 +21,12 @@ import java.util.HashSet;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
-public class StarterSpringApplication extends SpringApplication {
+import com.oceanbase.odc.server.module.Modules;
+import com.oceanbase.odc.server.starter.Starters;
 
-    public StarterSpringApplication(Class<?>... primarySources) {
+public class PluginSpringApplication extends SpringApplication {
+
+    public PluginSpringApplication(Class<?>... primarySources) {
         super(primarySources);
     }
 
@@ -32,12 +35,13 @@ public class StarterSpringApplication extends SpringApplication {
     }
 
     public static ConfigurableApplicationContext run(Class<?>[] primarySources, String[] args) {
-        return new StarterSpringApplication(primarySources).run(args);
+        return new PluginSpringApplication(primarySources).run(args);
     }
 
     @Override
     protected void logStartupProfileInfo(ConfigurableApplicationContext context) {
         super.logStartupProfileInfo(context);
+        Modules.load();
         String[] activeProfiles = context.getEnvironment().getActiveProfiles();
         if (activeProfiles.length != 0) {
             Starters.load(new HashSet<>(Arrays.asList(activeProfiles)));
