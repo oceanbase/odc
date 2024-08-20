@@ -116,7 +116,7 @@ public class DataArchiveTask extends BaseTask<Boolean> {
                         e);
                 // set task status to failed if any job failed.
                 isSuccess = false;
-                if (job.getJobMeta().isToStop()) {
+                if (job != null && job.getJobMeta() != null && job.getJobMeta().isToStop()) {
                     jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.CANCELED);
                 } else {
                     jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.FAILED);
