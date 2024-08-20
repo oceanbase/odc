@@ -14,7 +14,7 @@ fi
 
 echo "maven build jar success, copy executable jar to ${ODC_DIR}/lib for use script/start-odc.sh locally."
 
-mkdir -p "${ODC_DIR}/"{lib,conf,plugins,starters}
+mkdir -p "${ODC_DIR}/"{lib,conf,plugins,starters,modules}
 find "${ODC_DIR}/lib" -type f -name '*.jar' -exec rm -fv {} +
 cp -fv "${ODC_DIR}"/server/odc-server/target/odc-*-executable.jar "${ODC_DIR}"/lib/
 cp -fv "${ODC_DIR}"/server/odc-server/target/classes/log4j2.xml "${ODC_DIR}"/conf/
@@ -27,5 +27,9 @@ cp -fv "${ODC_DIR}"/distribution/plugins/*.jar "${ODC_DIR}"/plugins/
 echo "copy starter jars to ${ODC_DIR}/starters ."
 find "${ODC_DIR}/starters" -type f -name '*.jar' -exec rm -fv {} +
 cp -fv "${ODC_DIR}"/distribution/starters/*.jar "${ODC_DIR}"/starters/
+
+echo "copy modules jars to ${ODC_DIR}/modules ."
+find "${ODC_DIR}/modules" -type f -name '*.jar' -exec rm -fv {} +
+cp -fv "${ODC_DIR}"/distribution/modules/*.jar "${ODC_DIR}"/modules/
 
 exit $?

@@ -114,6 +114,8 @@
 /server/starters/desktop-starter/                     @yhilmare @yizhouxw
 /server/starters/web-starter/                         @yhilmare @MarkPotato777
 
+# modules
+/server/modules/                                      @yhilmare @yizhouxw
 
 # CI/CD
 /.github/                    @MarkPotato777 @yhilmare @yizhouxw

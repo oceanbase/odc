@@ -209,6 +209,7 @@ jobs:
           path: |
             distribution/plugins/*.jar
             distribution/starters/*.jar
+            distribution/modules/*.jar
             distribution/jar/*.jar
       - name: Build rpm (x86_64)
         if: ${{ github.event.inputs.build_rpm == 'true' || github.event.inputs.build_docker == 'true' }}
@@ -269,6 +270,8 @@ jobs:
           cp -R jar-dist/plugins/. client/libraries/java/plugins
           mkdir -p client/libraries/java/starters
           cp -R jar-dist/starters/. client/libraries/java/starters
+          mkdir -p client/libraries/java/modules
+          cp -R jar-dist/modules/. client/libraries/java/modules
       - name: Setup node 16
         uses: actions/setup-node@v4
         with:

@@ -74,6 +74,7 @@
 │   ├──  starters           不同发行版本的启动配置
 │   │   ├── desktop-starter 桌面版启动配置
 │   │   └── web-starter     WEB 版启动配置
+│   ├── modules             可插拔模块
 │   └── test-script         常用测试脚本，用于执行、分析测试用例
 ```
 
