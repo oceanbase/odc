@@ -111,9 +111,8 @@ public class DataArchiveTask extends BaseTask<Boolean> {
                 log.info("{} job finished,DLMJobId={}", job.getJobMeta().getJobType(), job.getJobMeta().getJobId());
                 jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.DONE);
             } catch (Throwable e) {
-                log.error("{} job failed,DLMJobId={},errorMsg={}", job.getJobMeta().getJobType(),
-                        job.getJobMeta().getJobId(),
-                        e);
+                log.error("{} job failed,DLMJobId={},errorMsg={}", dlmTableUnit.getType(),
+                       dlmTableUnit.getDlmTableUnitId(), e);
                 // set task status to failed if any job failed.
                 isSuccess = false;
                 if (job != null && job.getJobMeta() != null && job.getJobMeta().isToStop()) {
