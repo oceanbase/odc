@@ -93,9 +93,7 @@ public class MySQLAffectedRows implements SqlCheckRule {
         String explainQuery = "EXPLAIN " + sql;
         try (ResultSet resultSet = jdbc.query(explainQuery, rs -> rs)) {
             /*
-             * EXPLAIN 执行结果会以表的形式返回
-             * 在解析所得的结果集里 可能存在多张表
-             * 其中，第一个不为空的 rows 值即为预估影响行数
+             * EXPLAIN 执行结果会以表的形式返回 在解析所得的结果集里 可能存在多张表 其中，第一个不为空的 rows 值即为预估影响行数
              */
             if (resultSet != null) {
                 while (resultSet.next()) {
