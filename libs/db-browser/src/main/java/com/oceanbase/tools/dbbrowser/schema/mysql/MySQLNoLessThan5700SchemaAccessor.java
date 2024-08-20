@@ -188,7 +188,7 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
             sb.identifier(schemaName);
         }
         List<String> tableNames = new ArrayList<>();
-        sb.append(" WHERE table_type='BASE TABLE' or 1=1");
+        sb.append(" WHERE table_type='BASE TABLE'");
         try {
             tableNames = jdbcOperations.query(sb.toString(), (rs, rowNum) -> rs.getString(1));
         } catch (BadSqlGrammarException e) {
