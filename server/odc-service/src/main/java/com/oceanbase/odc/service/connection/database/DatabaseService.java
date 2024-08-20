@@ -282,6 +282,7 @@ public class DatabaseService {
                 .environmentIdEquals(params.getEnvironmentId())
                 .and(DatabaseSpecs.nameLike(params.getSchemaName()))
                 .and(DatabaseSpecs.typeIn(params.getTypes()))
+                .and(DatabaseSpecs.connectTypeIn(params.getConnectTypes()))
                 .and(DatabaseSpecs.existedEquals(params.getExisted()))
                 .and(DatabaseSpecs.organizationIdEquals(authenticationFacade.currentOrganizationId()));
         Set<Long> joinedProjectIds =
@@ -524,6 +525,7 @@ public class DatabaseService {
                 return dbSchemaService.listDatabases(connection.getDialectType(), conn).stream().map(database -> {
                     DatabaseEntity entity = new DatabaseEntity();
                     entity.setDatabaseId(com.oceanbase.odc.common.util.StringUtils.uuid());
+                    entity.setConnectType(connection.getType());
                     entity.setExisted(Boolean.TRUE);
                     entity.setName(database.getName());
                     entity.setCharsetName(database.getCharset());
@@ -569,13 +571,14 @@ public class DatabaseService {
                             database.getCollationName(),
                             database.getTableCount(),
                             database.getExisted(),
-                            database.getObjectSyncStatus().name()
+                            database.getObjectSyncStatus().name(),
+                            database.getConnectType().name()
                     }).collect(Collectors.toList());
 
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
             if (CollectionUtils.isNotEmpty(toAdd)) {
                 jdbcTemplate.batchUpdate(
-                        "insert into connect_database(database_id, organization_id, name, project_id, connection_id, environment_id, sync_status, charset_name, collation_name, table_count, is_existed, object_sync_status) values(?,?,?,?,?,?,?,?,?,?,?,?)",
+                        "insert into connect_database(database_id, organization_id, name, project_id, connection_id, environment_id, sync_status, charset_name, collation_name, table_count, is_existed, object_sync_status, connect_type) values(?,?,?,?,?,?,?,?,?,?,?,?,?)",
                         toAdd);
             }
             List<Object[]> toDelete = existedDatabasesInDb.stream()
@@ -666,14 +669,15 @@ public class DatabaseService {
                             connection.getId(),
                             connection.getEnvironmentId(),
                             DatabaseSyncStatus.SUCCEEDED.name(),
-                            DBObjectSyncStatus.INITIALIZED.name()
+                            DBObjectSyncStatus.INITIALIZED.name(),
+                            connection.getType().name()
                     })
                     .collect(Collectors.toList());
 
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
             if (CollectionUtils.isNotEmpty(toAdd)) {
                 jdbcTemplate.batchUpdate(
-                        "insert into connect_database(database_id, organization_id, name, connection_id, environment_id, sync_status, object_sync_status) values(?,?,?,?,?,?,?)",
+                        "insert into connect_database(database_id, organization_id, name, connection_id, environment_id, sync_status, object_sync_status, connect_type) values(?,?,?,?,?,?,?,?)",
                         toAdd);
             }
 

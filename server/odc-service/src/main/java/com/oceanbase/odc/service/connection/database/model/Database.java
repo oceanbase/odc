@@ -60,6 +60,8 @@ public class Database implements SecurityResource, OrganizationIsolated, Seriali
     @NotBlank
     private String name;
 
+    private String alias;
+
     @NotNull
     private DatabaseType type;
 
