@@ -100,6 +100,13 @@ public class WorkSheetPathUtilFindCommonParentPathTest {
                                 new Path("/Worksheets/Sheet1/SubSheet1"),
                                 new Path("/Repos/Repo/SubSheet2"))),
                         Path.root()
+                },
+                // with root
+                new Object[] {
+                        new HashSet<>(Arrays.asList(
+                                Path.root(),
+                                new Path("/Worksheets/Sheet1/SubSheet1"))),
+                        Path.root()
                 });
 
     }
@@ -107,7 +114,7 @@ public class WorkSheetPathUtilFindCommonParentPathTest {
     @Test
     public void testFindCommonParentPath() {
         try {
-            Path result = WorksheetPathUtil.findCommonParentPath(paths);
+            Path result = WorksheetPathUtil.findCommonPath(paths);
             assertEquals(expectedResult, result);
         } catch (Exception e) {
             assert expectedResult == null;

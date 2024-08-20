@@ -21,6 +21,7 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -94,7 +95,91 @@ public class WorksheetRepositoryTest {
 
     @Test
     @Transactional
-    public void testFindByProjectIdAndPath_List() {
+    public void findWithSubListByProjectIdAndPathAndNameLike() {
+        Worksheet w1 = newWorksheet("/Worksheets/folder1/");
+        Worksheet w2 = newWorksheet("/Worksheets/folder1/file2.sql");
+        Worksheet w3 = newWorksheet("/Worksheets/folder1/folder4/");
+        Worksheet w4 = newWorksheet("/Worksheets/folder1/folder4/file5.sql");
+        Worksheet w5 = newWorksheet("/Worksheets/folder3/file3.sql");
+        Worksheet w6 = newWorksheet("/Worksheets/file1.sql");
+        Set<Worksheet> subWorksheets = new HashSet<>(Arrays.asList(w1, w2, w3, w4, w5, w6));
+        worksheetRepository.batchAdd(subWorksheets);
+        Optional<Worksheet> worksheet = worksheetRepository.findWithSubListByProjectIdAndPathAndNameLike(projectId,
+                new Path("/Worksheets/folder1/folder3"),
+                null);
+        assert !worksheet.isPresent();
+
+
+        worksheet = worksheetRepository.findWithSubListByProjectIdAndPathAndNameLike(projectId,
+                new Path("/Worksheets/folder3/"),
+                "");
+        assert worksheet.isPresent();
+        assert worksheet.get().getPath().equals(new Path("/Worksheets/folder3/"));
+        assert worksheet.get().getId() == null;
+        assert CollectionUtils.isEqualCollection(worksheet.get().getSubWorksheets(),
+                new HashSet<>(Arrays.asList(w5)));
+
+        worksheet = worksheetRepository.findWithSubListByProjectIdAndPathAndNameLike(projectId,
+                new Path("/Worksheets/folder1/"),
+                null);
+        assertWorksheetWith(worksheet, w1);
+        assert CollectionUtils.isEqualCollection(worksheet.get().getSubWorksheets(),
+                new HashSet<>(Arrays.asList(w2, w3, w4)));
+
+        // add nameLike
+        worksheet = worksheetRepository.findWithSubListByProjectIdAndPathAndNameLike(projectId,
+                Path.root(),
+                "der3");
+        assert worksheet.isPresent();
+        assert worksheet.get().getPath().equals(Path.root());
+        assert worksheet.get().getId() == null;
+        assert CollectionUtils.isEqualCollection(worksheet.get().getSubWorksheets(),
+                new HashSet<>(Collections.singletonList(w5)));
+
+        // add nameLike
+        worksheet = worksheetRepository.findWithSubListByProjectIdAndPathAndNameLike(projectId,
+                new Path("/Worksheets/folder1/"),
+                "de");
+        assertWorksheetWith(worksheet, w1);
+        assert CollectionUtils.isEqualCollection(worksheet.get().getSubWorksheets(),
+                new HashSet<>(Arrays.asList(w2, w3, w4)));
+
+    }
+
+    @Test
+    @Transactional
+    public void findWithSubListByProjectIdAndPathWithLock() {
+        Worksheet w1 = newWorksheet("/Worksheets/folder1/");
+        Worksheet w2 = newWorksheet("/Worksheets/folder1/file2.sql");
+        Worksheet w3 = newWorksheet("/Worksheets/folder1/folder4/");
+        Worksheet w4 = newWorksheet("/Worksheets/folder1/folder4/file5.sql");
+        Worksheet w5 = newWorksheet("/Worksheets/folder3/file3.sql");
+        Worksheet w6 = newWorksheet("/Worksheets/file1.sql");
+        Set<Worksheet> subWorksheets = new HashSet<>(Arrays.asList(w1, w2, w3, w4, w5, w6));
+        worksheetRepository.batchAdd(subWorksheets);
+        Optional<Worksheet> worksheet = worksheetRepository.findWithSubListByProjectIdAndPathWithLock(projectId,
+                new Path("/Worksheets/folder1/folder3"));
+        assert !worksheet.isPresent();
+
+
+        worksheet = worksheetRepository.findWithSubListByProjectIdAndPathWithLock(projectId,
+                new Path("/Worksheets/folder3/"));
+        assert worksheet.isPresent();
+        assert worksheet.get().getPath().equals(new Path("/Worksheets/folder3/"));
+        assert worksheet.get().getId() == null;
+        assert CollectionUtils.isEqualCollection(worksheet.get().getSubWorksheets(),
+                new HashSet<>(Arrays.asList(w5)));
+
+        worksheet = worksheetRepository.findWithSubListByProjectIdAndPathWithLock(projectId,
+                new Path("/Worksheets/folder1/"));
+        assertWorksheetWith(worksheet, w1);
+        assert CollectionUtils.isEqualCollection(worksheet.get().getSubWorksheets(),
+                new HashSet<>(Arrays.asList(w2, w3, w4)));
+    }
+
+    @Test
+    @Transactional
+    public void findByProjectIdAndPath() {
         Worksheet w1 = newWorksheet("/Worksheets/folder1/");
         Worksheet w2 = newWorksheet("/Worksheets/folder1/file2.sql");
         Worksheet w3 = newWorksheet("/Worksheets/folder1/folder4/");
@@ -104,68 +189,17 @@ public class WorksheetRepositoryTest {
         Set<Worksheet> subWorksheets = new HashSet<>(Arrays.asList(w1, w2, w3, w4, w5, w6));
         worksheetRepository.batchAdd(subWorksheets);
         Optional<Worksheet> worksheet = worksheetRepository.findByProjectIdAndPath(projectId,
-                new Path("/Worksheets/folder1/folder3"),
-                null, false, false, false, false);
+                new Path("/Worksheets/folder1/folder3"));
         assert !worksheet.isPresent();
 
         worksheet = worksheetRepository.findByProjectIdAndPath(projectId,
-                new Path("/Worksheets/folder1/folder3/folder5"),
-                null, false, true, true, true);
-        assert worksheet.isPresent();
-        assert worksheet.get().getPath().equals(new Path("/Worksheets/folder1/folder3/folder5"));
-        assert worksheet.get().getId() == null;
+                new Path("/Worksheets/folder3/"));
+        assert !worksheet.isPresent();
+
+        worksheet = worksheetRepository.findByProjectIdAndPath(projectId,
+                new Path("/Worksheets/folder1/"));
+        assertWorksheetWith(worksheet, w1);
         assert CollectionUtils.isEmpty(worksheet.get().getSubWorksheets());
-        assert CollectionUtils.isEmpty(worksheet.get().getSameParentAtPrevLevelWorksheets());
-
-        worksheet = worksheetRepository.findByProjectIdAndPath(projectId,
-                new Path("/Worksheets/folder3/"),
-                "", false, true, true, true);
-        assert worksheet.isPresent();
-        assert worksheet.get().getPath().equals(new Path("/Worksheets/folder3/"));
-        assert worksheet.get().getId() == null;
-        assert CollectionUtils.isEqualCollection(worksheet.get().getSubWorksheets(),
-                new HashSet<>(Arrays.asList(w5)));
-        assert CollectionUtils.isEqualCollection(worksheet.get().getSameParentAtPrevLevelWorksheets(),
-                new HashSet<>(Arrays.asList(w1, w2, w3, w4, w6)));
-
-        worksheet = worksheetRepository.findByProjectIdAndPath(projectId,
-                new Path("/Worksheets/folder1/"),
-                null, false, false, true, false);
-        assertWorksheetWith(worksheet, w1);
-        assert CollectionUtils.isEqualCollection(worksheet.get().getSubWorksheets(),
-                new HashSet<>(Arrays.asList(w2, w3, w4)));
-        assert CollectionUtils.isEmpty(worksheet.get().getSameParentAtPrevLevelWorksheets());
-
-        worksheet = worksheetRepository.findByProjectIdAndPath(projectId,
-                new Path("/Worksheets/folder1/"),
-                null, true, false, true, true);
-        assertWorksheetWith(worksheet, w1);
-        assert CollectionUtils.isEqualCollection(worksheet.get().getSubWorksheets(),
-                new HashSet<>(Arrays.asList(w2, w3, w4)));
-        assert CollectionUtils.isEqualCollection(worksheet.get().getSameParentAtPrevLevelWorksheets(),
-                new HashSet<>(Arrays.asList(w5, w6)));
-
-        // add nameLike
-        worksheet = worksheetRepository.findByProjectIdAndPath(projectId,
-                null,
-                "der3", false, true, true, true);
-        assert worksheet.isPresent();
-        assert worksheet.get().getPath().equals(Path.root());
-        assert worksheet.get().getId() == null;
-        assert CollectionUtils.isEqualCollection(worksheet.get().getSubWorksheets(),
-                new HashSet<>(Arrays.asList(w5)));
-        assert CollectionUtils.isEmpty(worksheet.get().getSameParentAtPrevLevelWorksheets());
-
-        // add nameLike
-        worksheet = worksheetRepository.findByProjectIdAndPath(projectId,
-                new Path("/Worksheets/"),
-                "de", false, true, true, true);
-        assert worksheet.isPresent();
-        assert worksheet.get().getPath().equals(Path.worksheets());
-        assert worksheet.get().getId() == null;
-        assert CollectionUtils.isEqualCollection(worksheet.get().getSubWorksheets(),
-                new HashSet<>(Arrays.asList(w1, w2, w3, w4, w5)));
-        assert CollectionUtils.isEmpty(worksheet.get().getSameParentAtPrevLevelWorksheets());
     }
 
     private static void assertWorksheetWith(Optional<Worksheet> worksheet, Worksheet w1) {
@@ -180,7 +214,24 @@ public class WorksheetRepositoryTest {
 
     @Test
     @Transactional
-    public void testListWithSubsByProjectIdAndPath() {
+    public void listByProjectIdAndInPaths() {
+        Worksheet w1 = newWorksheet("/Worksheets/folder1/");
+        Worksheet w2 = newWorksheet("/Worksheets/folder1/file2.sql");
+        Worksheet w3 = newWorksheet("/Worksheets/folder1/folder4/");
+        Worksheet w4 = newWorksheet("/Worksheets/folder1/folder4/file5.sql");
+        Worksheet w5 = newWorksheet("/Worksheets/folder3/file3.sql");
+        Worksheet w6 = newWorksheet("/Worksheets/file1.sql");
+        Set<Worksheet> subWorksheets = new HashSet<>(Arrays.asList(w1, w2, w3, w4, w5, w6));
+        worksheetRepository.batchAdd(subWorksheets);
+        List<Worksheet> worksheets = worksheetRepository.listByProjectIdAndInPaths(projectId,
+                Arrays.asList(w1.getPath(), w2.getPath(), w6.getPath(), new Path("/Worksheets/folder3/")));
+        assert worksheets.size() == 3;
+        assertEquals(new HashSet<>(Arrays.asList(w1, w2, w6)), new HashSet<>(worksheets));
+    }
+
+    @Test
+    @Transactional
+    public void listWithSubListByProjectIdAndPath() {
         Worksheet w1 = newWorksheet("/Worksheets/folder1/");
         Worksheet w2 = newWorksheet("/Worksheets/folder1/file2.sql");
         Worksheet w3 = newWorksheet("/Worksheets/folder1/folder4/");
@@ -191,30 +242,30 @@ public class WorksheetRepositoryTest {
         worksheetRepository.batchAdd(subWorksheets);
 
         assertThrows(BadArgumentException.class,
-                () -> worksheetRepository.listWithSubsByProjectIdAndPath(projectId, null));
+                () -> worksheetRepository.listWithSubListByProjectIdAndPath(projectId, null));
         List<Worksheet> result =
-                worksheetRepository.listWithSubsByProjectIdAndPath(projectId, Path.root());
+                worksheetRepository.listWithSubListByProjectIdAndPath(projectId, Path.root());
         assertEquals(result.size(), 6);
         assertEquals(new HashSet<>(result), new HashSet<>(Arrays.asList(w1, w2, w3, w4, w5, w6)));
 
         result =
-                worksheetRepository.listWithSubsByProjectIdAndPath(projectId, Path.worksheets());
+                worksheetRepository.listWithSubListByProjectIdAndPath(projectId, Path.worksheets());
         assertEquals(result.size(), 6);
         assertEquals(new HashSet<>(result), new HashSet<>(Arrays.asList(w1, w2, w3, w4, w5, w6)));
 
         result =
-                worksheetRepository.listWithSubsByProjectIdAndPath(projectId, new Path("/Worksheets/folder1/"));
+                worksheetRepository.listWithSubListByProjectIdAndPath(projectId, new Path("/Worksheets/folder1/"));
         assertEquals(result.size(), 4);
         assertEquals(new HashSet<>(result), new HashSet<>(Arrays.asList(w1, w2, w3, w4)));
 
         result =
-                worksheetRepository.listWithSubsByProjectIdAndPath(projectId, Path.repos());
+                worksheetRepository.listWithSubListByProjectIdAndPath(projectId, Path.repos());
         assertEquals(result.size(), 0);
     }
 
     @Test
     @Transactional
-    public void testBatchAdd() {
+    public void batchAdd() {
         Worksheet w1 = newWorksheet("/Worksheets/folder1/");
         Worksheet w2 = newWorksheet("/Worksheets/folder1/file2.sql");
         Worksheet w3 = newWorksheet("/Worksheets/folder1/folder4/");
@@ -230,7 +281,7 @@ public class WorksheetRepositoryTest {
 
     @Test
     @Transactional
-    public void testBatchDelete() {
+    public void batchDelete() {
         Worksheet w1 = newWorksheet("/Worksheets/folder1/");
         Worksheet w2 = newWorksheet("/Worksheets/folder1/file2.sql");
         Worksheet w3 = newWorksheet("/Worksheets/folder1/folder4/");
@@ -250,7 +301,7 @@ public class WorksheetRepositoryTest {
 
     @Test
     @Transactional
-    public void testBatchUpdateById() {
+    public void batchUpdateById() {
         Worksheet w1 = newWorksheet("/Worksheets/folder1/");
         Worksheet w2 = newWorksheet("/Worksheets/folder1/file2.sql");
         Worksheet w3 = newWorksheet("/Worksheets/folder1/folder4/");

@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.worksheet.domain;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -35,8 +36,8 @@ import lombok.Getter;
  */
 @Getter
 public class DivideBatchOperateWorksheets {
-    Set<Path> normalPaths = new HashSet<>();
-    Set<Path> reposPaths = new HashSet<>();
+    List<Path> normalPaths = new ArrayList<>();
+    ArrayList<Path> reposPaths = new ArrayList<>();
 
     public DivideBatchOperateWorksheets(Collection<String> pathStrList) {
         List<Path> sortedPaths =

@@ -15,21 +15,12 @@
  */
 package com.oceanbase.odc.metadb.worksheet;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import javax.persistence.Query;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -40,6 +31,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.metadb.objectstorage.ObjectMetadataEntity;
 import com.oceanbase.odc.metadb.objectstorage.ObjectMetadataRepository;
 import com.oceanbase.odc.metadb.worksheet.converter.WorksheetConverter;
+import com.oceanbase.odc.service.objectstorage.model.ObjectUploadStatus;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.Worksheet;
 import com.oceanbase.odc.service.worksheet.domain.WorksheetId;
@@ -58,60 +50,127 @@ public class WorksheetRepository {
     @Autowired
     private ObjectMetadataRepository metadataRepository;
 
-    public Optional<Worksheet> findByProjectIdAndPath(Long projectId, Path path, String nameLike,
-            boolean isAddWriteLock,
-            boolean createDefaultIfNotExist, boolean loadSubFiles, boolean loadSameLevelFiles) {
-        StringBuilder sql = new StringBuilder("SELECT * FROM objectstorage_object_metadata WHERE ");
-
-        Map<String, Object> params = new HashMap<>();
-        sql.append(" bucket_name = :bucketName");
-        params.put("bucketName", WorksheetUtil.getBucketNameOfWorkSheets(projectId));
-
-        Path queryPath = path;
-        if (queryPath != null && loadSameLevelFiles) {
-            queryPath = queryPath.getParentPath().orElseGet(() -> null);
-        }
-        if (queryPath != null) {
-            sql.append(" AND object_name like :objectName");
-            params.put("objectName", queryPath.getStandardPath() + "%");
-        }
+    /**
+     * find worksheet info of {@param path} in {@param projectId},and also find sub-worksheets of
+     * {@param path}.
+     * </p>
+     * if worksheet of {@param path} not exist ,but its sub-worksheets are not empty，return a temp
+     * worksheet with worksheet#id is null.
+     * 
+     * @param projectId project id
+     * @param path the path of worksheet to query
+     * @param nameLike if nameLike is not blank,the worksheets that path cannot fuzzy match nameLike
+     *        will be excluded from the sub-worksheets
+     * @return returns empty when unable to find the worksheet and sub-worksheets of the {@param path},
+     *         otherwise returns a nonempty worksheet
+     */
+    public Optional<Worksheet> findWithSubListByProjectIdAndPathAndNameLike(Long projectId, Path path,
+            String nameLike) {
+        PreConditions.notNull(projectId, "projectId");
+        PreConditions.notNull(path, "path");
+        List<ObjectMetadataEntity> entities = null;
         if (StringUtils.isNotBlank(nameLike)) {
-            sql.append(" AND object_name like :objectName");
-            params.put("objectName", "%" + nameLike + "%");
+            entities = metadataRepository.findAllByBucketNameAndObjectNameLeftLikeAndNameLikeAndStatus(
+                    WorksheetUtil.getBucketNameOfWorkSheets(projectId), path.getStandardPath(), nameLike,
+                    ObjectUploadStatus.FINISHED);
+        } else {
+            entities = metadataRepository.findAllByBucketNameAndObjectNameLeftLikeAndStatus(
+                    WorksheetUtil.getBucketNameOfWorkSheets(projectId), path.getStandardPath(),
+                    ObjectUploadStatus.FINISHED);
         }
-        if (isAddWriteLock) {
-            sql.append(" FOR UPDATE");
-        }
-        Query query =
-                metadataRepository.getEntityManager().createNativeQuery(sql.toString(), ObjectMetadataEntity.class);
-        for (Map.Entry<String, Object> entry : params.entrySet()) {
-            query.setParameter(entry.getKey(), entry.getValue());
-        }
-        List<ObjectMetadataEntity> entities = query.getResultList();
         if (CollectionUtils.isEmpty(entities)) {
-            entities = Collections.emptyList();
+            return Optional.empty();
         }
-        Worksheet worksheet = WorksheetConverter.toDomainFromEntities(entities, projectId, path,
-                createDefaultIfNotExist, loadSubFiles, loadSameLevelFiles);
-        return Optional.ofNullable(worksheet);
+        return Optional.ofNullable(WorksheetConverter.toDomainFromEntities(entities, projectId, path,
+                true, true, true));
     }
 
-    public List<Worksheet> listWithSubsByProjectIdAndPath(Long projectId, Path path) {
+    /**
+     * find worksheet info of {@param path} in {@param projectId},and also find sub-worksheets of
+     * {@param path}.
+     * </p>
+     * if worksheet of {@param path} not exist ,but its sub-worksheets are not empty，return a temp
+     * worksheet with worksheet#id is null.
+     * </p>
+     * It should be noted that， this method will add an exclusive lock on the queried {@param path}
+     * worksheet (and all its sub-worksheets). Using this method to query and update in transactions can
+     * ensure that there will be no concurrency issues when updating the {@param path} worksheet or its
+     * sub-worksheets.
+     * </p>
+     * for example,In the scenario of updating worksheet name, this method can be used to add exclusive
+     * locks to the parent worksheet(and it's sub-worksheets); In the same transaction, after the
+     * current method, check whether the name for renaming has been used and perform the renaming
+     * operation. Even if there is a concurrent renaming request coming, it will be blocked when calling
+     * the current query method until the update of the previous request is completed (exclusive lock is
+     * released).
+     *
+     * @param projectId project id
+     * @param path the path of worksheet to query
+     * @return returns empty when unable to find the worksheet and sub-worksheets of the {@param path},
+     *         otherwise returns a nonempty worksheet
+     */
+    public Optional<Worksheet> findWithSubListByProjectIdAndPathWithLock(Long projectId, Path path) {
+        PreConditions.notNull(projectId, "projectId");
         PreConditions.notNull(path, "path");
-        CriteriaBuilder criteriaBuilder = metadataRepository.getEntityManager().getCriteriaBuilder();
-        CriteriaQuery<ObjectMetadataEntity> criteriaQuery = criteriaBuilder.createQuery(ObjectMetadataEntity.class);
-        Root<ObjectMetadataEntity> root = criteriaQuery.from(ObjectMetadataEntity.class);
-        List<Predicate> predicates = new ArrayList<>();
-        predicates
-                .add(criteriaBuilder.equal(root.get("bucketName"), WorksheetUtil.getBucketNameOfWorkSheets(projectId)));
-        predicates.add(criteriaBuilder.like(root.get("objectName"), path.getStandardPath() + "%"));
-        criteriaQuery.select(root).where(predicates.toArray(new Predicate[0]));
-        TypedQuery<ObjectMetadataEntity> typedQuery = metadataRepository.getEntityManager().createQuery(criteriaQuery);
-        List<ObjectMetadataEntity> resultList = typedQuery.getResultList();
+        List<ObjectMetadataEntity> entities =
+                metadataRepository.findAllByBucketNameAndObjectNameLeftLikeAndStatusWithLock(
+                        WorksheetUtil.getBucketNameOfWorkSheets(projectId), path.getStandardPath(),
+                        ObjectUploadStatus.FINISHED);
+
+        if (CollectionUtils.isEmpty(entities)) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(WorksheetConverter.toDomainFromEntities(entities, projectId, path,
+                true, true, true));
+    }
+
+    /**
+     * find worksheet of {@param path},not get sub-worksheets.
+     * 
+     * @param projectId project id
+     * @param path the path of worksheet to query
+     * @return returns empty when unable to find the worksheet of the {@param path}, otherwise returns a
+     *         nonempty worksheet
+     */
+    public Optional<Worksheet> findByProjectIdAndPath(Long projectId, Path path) {
+        PreConditions.notNull(projectId, "projectId");
+        PreConditions.notNull(path, "path");
+        List<ObjectMetadataEntity> entities =
+                metadataRepository.findAllByBucketNameAndObjectNameAndStatus(
+                        WorksheetUtil.getBucketNameOfWorkSheets(projectId), path.getStandardPath(),
+                        ObjectUploadStatus.FINISHED);
+
+        if (CollectionUtils.isEmpty(entities)) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(WorksheetConverter.toDomainFromEntities(entities, projectId, path,
+                false, false, false));
+    }
+
+    public List<Worksheet> listByProjectIdAndInPaths(Long projectId, List<Path> paths) {
+        PreConditions.notNull(projectId, "projectId");
+        if (CollectionUtils.isEmpty(paths)) {
+            return Collections.emptyList();
+        }
+        List<ObjectMetadataEntity> resultList = metadataRepository.findByProjectIdAndNames(
+                WorksheetUtil.getBucketNameOfWorkSheets(projectId), paths.stream().map(Path::getStandardPath).collect(
+                        Collectors.toList()));
         if (CollectionUtils.isEmpty(resultList)) {
             return Collections.emptyList();
         }
         return resultList.stream().map(WorksheetConverter::toDomain).collect(Collectors.toList());
+    }
+
+    public List<Worksheet> listWithSubListByProjectIdAndPath(Long projectId, Path path) {
+        PreConditions.notNull(path, "projectId");
+        PreConditions.notNull(path, "path");
+        List<ObjectMetadataEntity> entities = metadataRepository.findAllByBucketNameAndObjectNameLeftLikeAndStatus(
+                WorksheetUtil.getBucketNameOfWorkSheets(projectId), path.getStandardPath(),
+                ObjectUploadStatus.FINISHED);;
+        if (CollectionUtils.isEmpty(entities)) {
+            return Collections.emptyList();
+        }
+        return entities.stream().map(WorksheetConverter::toDomain).collect(Collectors.toList());
     }
 
     public void batchAdd(Set<Worksheet> worksheets) {

@@ -20,6 +20,7 @@ import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.CH
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -64,15 +65,15 @@ public class DefaultWorksheetService implements WorksheetService {
     public DefaultWorksheetService(
             TransactionTemplate transactionTemplate,
             WorksheetObjectStorageGateway objectStorageGateway,
-            WorksheetRepository normalWorksheetRepository,
+            WorksheetRepository worksheetRepository,
             AuthenticationFacade authenticationFacade) {
         this.transactionTemplate = transactionTemplate;
         this.objectStorageGateway = objectStorageGateway;
-        this.normalWorksheetRepository = normalWorksheetRepository;
+        this.worksheetRepository = worksheetRepository;
         this.authenticationFacade = authenticationFacade;
     }
 
-    private final WorksheetRepository normalWorksheetRepository;
+    private final WorksheetRepository worksheetRepository;
     private final WorksheetObjectStorageGateway objectStorageGateway;
     private final TransactionTemplate transactionTemplate;
     private final AuthenticationFacade authenticationFacade;
@@ -100,23 +101,21 @@ public class DefaultWorksheetService implements WorksheetService {
         }
 
         Optional<Worksheet> parentFileOptional =
-                normalWorksheetRepository.findByProjectIdAndPath(projectId, parentPath.get(), null,
-                        true, true, true, false);
+                worksheetRepository.findWithSubListByProjectIdAndPathWithLock(projectId, parentPath.get());
 
         // There will be no situation where parentFileOptional is empty here
         Worksheet prarentprojectWorksheet =
                 parentFileOptional.orElseThrow(() -> new IllegalStateException("unexpected exception,projectId:"
                         + projectId + "parent path:" + parentPath));
         Worksheet createdWorksheet = prarentprojectWorksheet.create(createPath, objectId, currentUserId());
-        normalWorksheetRepository.batchAdd(Collections.singleton(createdWorksheet));
+        worksheetRepository.batchAdd(Collections.singleton(createdWorksheet));
         return createdWorksheet;
     }
 
     @Override
     public Worksheet getWorksheetDetails(Long projectId, Path path) {
         Optional<Worksheet> worksheetOptional =
-                normalWorksheetRepository.findByProjectIdAndPath(projectId, path,
-                        null, false, false, false, false);
+                worksheetRepository.findByProjectIdAndPath(projectId, path);
         if (!worksheetOptional.isPresent()) {
             throw new NotFoundException(ErrorCodes.NotFound, new Object[] {"path"},
                     "can't find path, projectId:" + projectId + "path:" + path);
@@ -133,9 +132,12 @@ public class DefaultWorksheetService implements WorksheetService {
 
     @Override
     public List<Worksheet> listWorksheets(Long projectId, Path path, Integer depth, String nameLike) {
+        if (path == null) {
+            path = Path.root();
+        }
         Optional<Worksheet> worksheetOptional =
-                normalWorksheetRepository.findByProjectIdAndPath(projectId, path,
-                        nameLike, false, true, true, false);
+                worksheetRepository.findWithSubListByProjectIdAndPathAndNameLike(projectId, path,
+                        nameLike);
         if (!worksheetOptional.isPresent()) {
             throw new NotFoundException(ErrorCodes.NotFound, new Object[] {"path"},
                     "can't find path, projectId:" + projectId + "path:" + path);
@@ -149,9 +151,8 @@ public class DefaultWorksheetService implements WorksheetService {
     public BatchOperateWorksheetsResult batchUploadWorksheets(Long projectId,
             BatchCreateWorksheets batchCreateWorksheets) {
         Optional<Worksheet> parentFileOptional =
-                normalWorksheetRepository.findByProjectIdAndPath(projectId,
-                        batchCreateWorksheets.getParentPath(),
-                        null, true, true, true, false);
+                worksheetRepository.findWithSubListByProjectIdAndPathWithLock(projectId,
+                        batchCreateWorksheets.getParentPath());
 
         // There will be no situation where parentFileOptional is empty here
         Worksheet parentWorksheet =
@@ -159,33 +160,59 @@ public class DefaultWorksheetService implements WorksheetService {
                         + projectId + "parent path:" + batchCreateWorksheets.getParentPath()));
         Set<Worksheet> innerWorksheets =
                 parentWorksheet.batchCreate(batchCreateWorksheets.getCreatePathToObjectIdMap(), currentUserId());
-        normalWorksheetRepository.batchAdd(innerWorksheets);
+        worksheetRepository.batchAdd(innerWorksheets);
 
         return BatchOperateWorksheetsResult.ofSuccess(new ArrayList<>(innerWorksheets));
     }
 
     @Override
-    public BatchOperateWorksheetsResult batchDeleteWorksheets(Long projectId, Set<Path> paths) {
-        List<Worksheet> deleteFiles = new ArrayList<>();
+    public BatchOperateWorksheetsResult batchDeleteWorksheets(Long projectId, List<Path> paths) {
+        List<Worksheet> deleteWorksheets = new ArrayList<>();
+        Set<Path> deleteDirectoryPaths = new HashSet<>();
+        List<Path> deleteFilePaths = new ArrayList<>();
         for (Path path : paths) {
-            List<Worksheet> files =
-                    normalWorksheetRepository.listWithSubsByProjectIdAndPath(projectId, path);
-            deleteFiles.addAll(files);
-            if (deleteFiles.size() > CHANGE_FILE_NUM_LIMIT) {
-                throw new OverLimitException(LimitMetric.WORKSHEET_CHANGE_NUM,
-                        (double) CHANGE_FILE_NUM_LIMIT, "delete num is over limit " + CHANGE_FILE_NUM_LIMIT);
-
+            if (path.isDirectory()) {
+                deleteDirectoryPaths.add(path);
+            }
+            if (path.isFile()) {
+                deleteFilePaths.add(path);
             }
         }
-        if (CollectionUtils.isEmpty(deleteFiles)) {
+        if (!deleteFilePaths.isEmpty()) {
+            List<Worksheet> worksheets = worksheetRepository.listByProjectIdAndInPaths(projectId,
+                    deleteFilePaths);
+            if (CollectionUtils.isNotEmpty(worksheets)) {
+                deleteWorksheets.addAll(worksheets);
+            }
+
+        }
+        if (!deleteDirectoryPaths.isEmpty()) {
+            Path commonParentPath = WorksheetPathUtil.findCommonPath(deleteDirectoryPaths);
+            List<Worksheet> worksheets = worksheetRepository.listWithSubListByProjectIdAndPath(projectId,
+                    commonParentPath);
+            if (CollectionUtils.isNotEmpty(worksheets)) {
+                Path[] deleteDirectoryArr = deleteDirectoryPaths.toArray(new Path[0]);
+                for (Worksheet worksheet : worksheets) {
+                    if (deleteDirectoryPaths.contains(worksheet.getPath()) ||
+                            worksheet.getPath().isChildOfAny(deleteDirectoryArr)) {
+                        deleteWorksheets.add(worksheet);
+                    }
+                }
+            }
+        }
+        if (deleteWorksheets.size() > CHANGE_FILE_NUM_LIMIT) {
+            throw new OverLimitException(LimitMetric.WORKSHEET_CHANGE_NUM,
+                    (double) CHANGE_FILE_NUM_LIMIT, "delete num is over limit " + CHANGE_FILE_NUM_LIMIT);
+        }
+        if (CollectionUtils.isEmpty(deleteWorksheets)) {
             return new BatchOperateWorksheetsResult();
         }
         int batchSize = 200;
         BatchOperateWorksheetsResult result = new BatchOperateWorksheetsResult();
-        Iterables.partition(deleteFiles, batchSize).forEach(files -> {
+        Iterables.partition(deleteWorksheets, batchSize).forEach(files -> {
             try {
                 transactionTemplate.executeWithoutResult(status -> {
-                    normalWorksheetRepository.batchDelete(deleteFiles.stream()
+                    worksheetRepository.batchDelete(deleteWorksheets.stream()
                             .map(Worksheet::getId).collect(Collectors.toSet()));
                     objectStorageGateway.batchDelete(files.stream()
                             .map(Worksheet::getObjectId).collect(Collectors.toSet()));
@@ -203,14 +230,13 @@ public class DefaultWorksheetService implements WorksheetService {
     @Transactional(rollbackFor = Exception.class)
     public List<Worksheet> renameWorksheet(Long projectId, Path path, Path destinationPath) {
         Optional<Worksheet> worksheetOptional =
-                normalWorksheetRepository.findByProjectIdAndPath(projectId, path,
-                        null, true, true, true, true);
+                worksheetRepository.findWithSubListByProjectIdAndPathWithLock(projectId, path);
         Worksheet worksheet =
                 worksheetOptional.orElseThrow(() -> new IllegalStateException("unexpected exception,projectId:"
                         + projectId + " path:" + path));
 
         Set<Worksheet> renamedWorksheets = worksheet.rename(destinationPath);
-        normalWorksheetRepository.batchUpdateById(renamedWorksheets);
+        worksheetRepository.batchUpdateById(renamedWorksheets);
 
         return new ArrayList<>(renamedWorksheets);
     }
@@ -220,14 +246,13 @@ public class DefaultWorksheetService implements WorksheetService {
     public List<Worksheet> editWorksheet(Long projectId, Path path, Path destinationPath,
             String objectId, Long readVersion) {
         Optional<Worksheet> worksheetOptional =
-                normalWorksheetRepository.findByProjectIdAndPath(projectId, path,
-                        null, true, true, true, true);
+                worksheetRepository.findWithSubListByProjectIdAndPathWithLock(projectId, path);
         Worksheet worksheet =
                 worksheetOptional.orElseThrow(() -> new IllegalStateException("unexpected exception,projectId:"
                         + projectId + " path:" + path));
 
         Set<Worksheet> editedWorksheets = worksheet.edit(destinationPath, objectId, readVersion);
-        normalWorksheetRepository.batchUpdateById(editedWorksheets);
+        worksheetRepository.batchUpdateById(editedWorksheets);
 
         return new ArrayList<>(editedWorksheets);
     }
@@ -236,8 +261,7 @@ public class DefaultWorksheetService implements WorksheetService {
     public String getDownloadUrl(Long projectId, Path path) {
         path.canGetDownloadUrlCheck();
         Optional<Worksheet> worksheetOptional =
-                normalWorksheetRepository.findByProjectIdAndPath(projectId, path,
-                        null, false, false, false, true);
+                worksheetRepository.findByProjectIdAndPath(projectId, path);
         Worksheet worksheet = worksheetOptional.orElseThrow(
                 () -> new NotFoundException(ErrorCodes.NotFound,
                         new Object[] {"path", path.toString()},
@@ -247,17 +271,17 @@ public class DefaultWorksheetService implements WorksheetService {
     }
 
     @Override
-    public void downloadPathsToDirectory(Long projectId, Set<Path> paths, Path commParentPath,
+    public void downloadPathsToDirectory(Long projectId, List<Path> paths, Path commParentPath,
             File destinationDirectory) {
         PreConditions.notEmpty(paths, "paths");
         PreConditions.notNull(destinationDirectory, "destinationDirectory");
         PreConditions.notNull(commParentPath, "commParentPath");
-        PreConditions.assertTrue(destinationDirectory.isDirectory(), "destinationDirectory");
+        PreConditions.validArgumentState(destinationDirectory.isDirectory(), ErrorCodes.IllegalArgument, null,
+                "destinationDirectory is not directory");
         for (Path path : paths) {
             boolean needTooLoadSubFiles = path.isDirectory();
             Optional<Worksheet> worksheetOptional =
-                    normalWorksheetRepository.findByProjectIdAndPath(projectId, path,
-                            null, false, true, needTooLoadSubFiles, false);
+                    worksheetRepository.findWithSubListByProjectIdAndPathAndNameLike(projectId, path, null);
             // There will be no situation where parentFileOptional is empty here
             Worksheet worksheet =
                     worksheetOptional.orElseThrow(() -> new IllegalStateException("unexpected exception,projectId:"

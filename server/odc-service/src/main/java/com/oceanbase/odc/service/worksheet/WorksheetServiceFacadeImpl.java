@@ -187,7 +187,7 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
                     .getDownloadUrl(projectId, downloadPath);
         }
         Path commonParentPath =
-                WorksheetPathUtil.findCommonParentPath(divideBatchOperateWorksheets.all());
+                WorksheetPathUtil.findCommonPath(divideBatchOperateWorksheets.all());
         String rootDirectoryName = getRootDirectoryName(projectId, commonParentPath);
         String parentOfDownloadDirectory = WorksheetUtil.getWorksheetDownloadDirectory();
         String downloadDirectoryStr = parentOfDownloadDirectory + rootDirectoryName;

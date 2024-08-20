@@ -210,7 +210,7 @@ public class WorksheetPathUtil {
                 && from.getType() == destinationPath.getType();
     }
 
-    public static Path findCommonParentPath(Set<Path> paths) {
+    public static Path findCommonPath(Set<Path> paths) {
         if (CollectionUtils.isEmpty(paths)) {
             throw new IllegalArgumentException("paths is empty");
         }
@@ -220,7 +220,7 @@ public class WorksheetPathUtil {
 
         WorksheetLocation commonLocation = null;
         int index = 0;
-        Integer commonParentIndex = null;
+        Integer commonIndex = null;
         while (true) {
             Path pathAtIndex = null;
             boolean isContinue = true;
@@ -245,13 +245,13 @@ public class WorksheetPathUtil {
             if (!isContinue || pathAtIndex == null) {
                 break;
             }
-            commonParentIndex = index;
+            commonIndex = index;
             index++;
         }
-        if (commonParentIndex == null) {
+        if (commonIndex == null) {
             return Path.root();
         }
-        return paths.iterator().next().getPathAt(commonParentIndex);
+        return paths.iterator().next().getPathAt(commonIndex);
     }
 
     public static java.nio.file.Path createFileWithParent(String pathStr, boolean isDirectory) {

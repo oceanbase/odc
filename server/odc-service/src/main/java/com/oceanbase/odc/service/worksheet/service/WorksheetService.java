@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.worksheet.service;
 
 import java.io.File;
 import java.util.List;
-import java.util.Set;
 
 import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
 import com.oceanbase.odc.service.worksheet.domain.BatchOperateWorksheetsResult;
@@ -41,7 +40,7 @@ public interface WorksheetService {
 
     BatchOperateWorksheetsResult batchUploadWorksheets(Long projectId, BatchCreateWorksheets batchCreateWorksheets);
 
-    BatchOperateWorksheetsResult batchDeleteWorksheets(Long projectId, Set<Path> paths);
+    BatchOperateWorksheetsResult batchDeleteWorksheets(Long projectId, List<Path> paths);
 
     List<Worksheet> renameWorksheet(Long projectId, Path path, Path destinationPath);
 
@@ -49,6 +48,6 @@ public interface WorksheetService {
 
     String getDownloadUrl(Long projectId, Path path);
 
-    void downloadPathsToDirectory(Long projectId, Set<Path> paths, Path commParentPath,
+    void downloadPathsToDirectory(Long projectId, List<Path> paths, Path commParentPath,
             File destinationDirectory);
 }

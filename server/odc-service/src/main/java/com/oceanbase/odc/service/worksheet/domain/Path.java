@@ -201,10 +201,16 @@ public class Path {
         if (parents == null || parents.length == 0) {
             return false;
         }
+        if (this.isRoot()) {
+            return false;
+        }
         int len = parents.length;
         boolean[] continueFlag = new boolean[len];
 
         for (int i = 0; i < len; i++) {
+            if (parents[i].isRoot()) {
+                return true;
+            }
             continueFlag[i] = !parents[i].isFile() &&
                     parents[i].getLevelNum() < this.levelNum;
         }
@@ -242,6 +248,9 @@ public class Path {
     }
 
     public boolean isSameParentAtPrevLevel(Path path) {
+        if (path.isRoot()) {
+            return false;
+        }
         if (this.levelNum < path.getLevelNum()) {
             return false;
         }
@@ -387,7 +396,7 @@ public class Path {
             if (o1.equals(o2)) {
                 return 0;
             }
-            Path commonParentPath = WorksheetPathUtil.findCommonParentPath(
+            Path commonParentPath = WorksheetPathUtil.findCommonPath(
                     new HashSet<>(Arrays.asList(o1, o2)));
             int sameLevel = commonParentPath.levelNum;
             if (sameLevel == o1.levelNum) {

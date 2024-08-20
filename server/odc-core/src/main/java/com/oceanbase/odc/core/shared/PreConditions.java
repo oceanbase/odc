@@ -46,26 +46,6 @@ import com.oceanbase.odc.core.shared.exception.OverLimitException;
  * @version : PreConditions.java, v 0.1 2021-03-19 20:17
  */
 public class PreConditions {
-    public static void assertFalse(Boolean obj, String parameterName) {
-        assertFalse(obj, parameterName, String.format("parameter %s must be false", parameterName));
-    }
-
-    public static void assertFalse(Boolean obj, String parameterName, String message) {
-        if (obj == null || !obj) {
-            throw new BadArgumentException(ErrorCodes.BadArgument, new Object[] {parameterName}, message);
-        }
-    }
-
-    public static void assertTrue(Boolean obj, String parameterName) {
-        assertTrue(obj, parameterName, String.format("parameter %s must be true", parameterName));
-    }
-
-    public static void assertTrue(Boolean obj, String parameterName, String message) {
-        if (obj == null || !obj) {
-            throw new BadArgumentException(ErrorCodes.BadArgument, new Object[] {parameterName}, message);
-        }
-    }
-
     public static <T> T notNull(final T obj, String parameterName) {
         return notNull(obj, parameterName, String.format("parameter %s may not be null", parameterName));
     }

@@ -130,7 +130,8 @@ public class Worksheet {
 
     public List<Worksheet> getSubWorksheetsInDepth(Integer depth, Boolean needToExtractNotExistParent) {
         PreConditions.notNull(depth, "depth");
-        PreConditions.assertTrue(depth >= 0, "depth");
+        PreConditions.validArgumentState(depth >= 0, ErrorCodes.IllegalArgument, null,
+                "depth must be greater than or equal to 0");
         if (CollectionUtils.isEmpty(subWorksheets)) {
             return new ArrayList<>();
         }

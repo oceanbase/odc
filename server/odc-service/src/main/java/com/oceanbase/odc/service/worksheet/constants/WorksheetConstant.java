@@ -24,7 +24,7 @@ public class WorksheetConstant {
     /**
      * the limit number of project worksheets search
      */
-    public static final int PROJECT_FILES_NAME_LIKE_SEARCH_LIMIT = 100;
+    public static final int PROJECT_FILES_NAME_LIKE_SEARCH_LIMIT = 10000;
 
     /**
      * the limit of worksheet name length
@@ -37,7 +37,7 @@ public class WorksheetConstant {
     /**
      * the limit number of worksheets in the same level
      */
-    public static final int SAME_LEVEL_NUM_LIMIT = 100;
+    public static final int SAME_LEVEL_NUM_LIMIT = 1000;
 
     /**
      * the duration of download zip file in seconds
