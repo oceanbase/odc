@@ -82,6 +82,20 @@ public interface DBSchemaAccessor {
     List<DBObjectIdentity> listTables(String schemaName, String tableNameLike);
 
     /**
+     * Show all external table names list in the specified schema
+     */
+    default List<String> showExternalTables(String schemaName) {
+        return showExternalTablesLike(schemaName, null);
+    }
+
+    List<String> showExternalTablesLike(String schemaName, String tableNameLike);
+
+    /**
+     * List all external table as BObjectIdentity in the specified schema
+     */
+    List<DBObjectIdentity> ListExternalTables(String schemaName, String tableNameLike);
+
+    /**
      * Show all view names list in the specified schema
      */
     List<DBObjectIdentity> listViews(String schemaName);

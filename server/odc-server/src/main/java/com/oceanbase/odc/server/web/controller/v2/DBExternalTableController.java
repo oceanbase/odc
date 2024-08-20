@@ -25,31 +25,31 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
-import com.oceanbase.odc.service.connection.table.TableService;
 import com.oceanbase.odc.service.connection.table.model.QueryTableParams;
 import com.oceanbase.odc.service.connection.table.model.Table;
 import com.oceanbase.odc.service.db.DBExternalTableService;
+import com.oceanbase.odc.service.session.ConnectSessionService;
 
 import io.swagger.annotations.ApiOperation;
 
 /**
- *
- * @Author: fenghao
- * @Create 2024/3/19 11:13
- * @Version 1.0
+ * @description:
+ * @author: zijia.cj
+ * @date: 2024/8/19 20:38
+ * @since: 4.3.3
  */
 @RestController
-@RequestMapping("/api/v2/databaseSchema")
-public class DBSchemaController {
-
-    @Autowired
-    private TableService tableService;
+@RequestMapping("/api/v2/externalTable")
+public class DBExternalTableController {
 
     @Autowired
     private DBExternalTableService dbExternalTableService;
 
-    @ApiOperation(value = "listTables", notes = "List tables with permitted actions")
-    @RequestMapping(value = "/tables", method = RequestMethod.GET)
+    @Autowired
+    private ConnectSessionService sessionService;
+
+    @ApiOperation(value = "listExternalTables", notes = "List external tables with permitted actions")
+    @RequestMapping(value = "/list", method = RequestMethod.GET)
     public ListResponse<Table> list(@RequestParam(name = "databaseId") Long databaseId,
             @RequestParam(name = "includePermittedAction", required = false,
                     defaultValue = "false") boolean includePermittedAction)
@@ -58,19 +58,6 @@ public class DBSchemaController {
                 .databaseId(databaseId)
                 .includePermittedAction(includePermittedAction)
                 .build();
-        return Responses.list(tableService.list(params));
-    }
-
-    @ApiOperation(value = "listExternalTables", notes = "List external tables with permitted actions")
-    @RequestMapping(value = "/externalTables", method = RequestMethod.GET)
-    public ListResponse<Table> listExternalTables(@RequestParam(name = "databaseId") Long databaseId,
-        @RequestParam(name = "includePermittedAction", required = false,
-            defaultValue = "false") boolean includePermittedAction)
-        throws SQLException, InterruptedException {
-        QueryTableParams params = QueryTableParams.builder()
-            .databaseId(databaseId)
-            .includePermittedAction(includePermittedAction)
-            .build();
         return Responses.list(dbExternalTableService.list(params));
     }
 

@@ -25,6 +25,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.jdbc.BadSqlGrammarException;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
@@ -359,5 +361,62 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             returnVal.put(tableName, table);
         }
         return returnVal;
+    }
+
+    @Override
+    public List<String> showExternalTables(String schemaName) {
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append("select table_name from information_schema.tables where TABLE_SCHEMA='");
+
+        if (StringUtils.isNotBlank(schemaName)) {
+
+            sb.append(schemaName);
+        }
+        List<String> tableNames = new ArrayList<>();
+        sb.append("' and TABLE_TYPE = 'EXTERNAL TABLE'");
+        try {
+            tableNames = jdbcOperations.query(sb.toString(), (rs, rowNum) -> rs.getString(1));
+        } catch (BadSqlGrammarException e) {
+            if (StringUtils.containsIgnoreCase(e.getMessage(), "Unknown database")) {
+                return Collections.emptyList();
+            }
+            throw e;
+        }
+        return tableNames;
+    }
+
+
+    @Override
+    public List<String> showExternalTablesLike(String schemaName, String tableNameLike) {
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append("SELECT table_name FROM information_schema.tables WHERE table_type='BASE TABLE'");
+        if (StringUtils.isNotBlank(schemaName)) {
+            sb.append(" AND table_schema=");
+            sb.value(schemaName);
+        }
+        if (StringUtils.isNotBlank(tableNameLike)) {
+            sb.append(" AND table_name LIKE ");
+            sb.value(tableNameLike);
+        }
+        sb.append(" ORDER BY table_name");
+        return jdbcOperations.queryForList(sb.toString(), String.class);
+    }
+
+    @Override
+    public List<DBObjectIdentity> ListExternalTables(String schemaName, String tableNameLike) {
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append("select table_schema as schema_name, 'TABLE' as type, table_name as name ");
+        sb.append("from information_schema.tables where table_type = 'EXTERNAL TABLE'");
+        if (StringUtils.isNotBlank(schemaName)) {
+            sb.append(" AND table_schema=");
+            sb.value(schemaName);
+        }
+        if (StringUtils.isNotBlank(tableNameLike)) {
+            sb.append(" AND table_name LIKE ");
+            sb.value(tableNameLike);
+        }
+        sb.append(" ORDER BY schema_name, table_name");
+
+        return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 }

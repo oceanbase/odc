@@ -138,6 +138,16 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public List<String> showExternalTablesLike(String schemaName, String tableNameLike) {
+        return null;
+    }
+
+    @Override
+    public List<DBObjectIdentity> ListExternalTables(String schemaName, String tableNameLike) {
+        return null;
+    }
+
+    @Override
     public List<DBObjectIdentity> listViews(String schemaName) {
         throw new UnsupportedOperationException("Not supported yet");
     }

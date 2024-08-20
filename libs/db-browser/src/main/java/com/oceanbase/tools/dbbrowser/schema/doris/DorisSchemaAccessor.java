@@ -225,6 +225,16 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
         return results;
     }
 
+    @Override
+    public List<String> showExternalTablesLike(String schemaName, String tableNameLike) {
+        return null;
+    }
+
+    @Override
+    public List<DBObjectIdentity> ListExternalTables(String schemaName, String tableNameLike) {
+        return null;
+    }
+
     protected List<DBObjectIdentity> listBaseTables(String schemaName, String tableNameLike)
             throws DataAccessException {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();

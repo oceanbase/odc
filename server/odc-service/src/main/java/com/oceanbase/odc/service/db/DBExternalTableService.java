@@ -1,0 +1,328 @@
+/*
+ * Copyright (c) 2023 OceanBase.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.oceanbase.odc.service.db;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.stream.Collectors;
+
+import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
+import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
+import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.core.shared.constant.OrganizationType;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.exception.ConflictException;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.core.shared.model.TableIdentity;
+import com.oceanbase.odc.core.sql.parser.DropStatement;
+import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
+import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
+import com.oceanbase.odc.plugin.schema.api.ExternalTableExtensionPoint;
+import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
+import com.oceanbase.odc.service.common.util.SqlUtils;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.table.model.QueryTableParams;
+import com.oceanbase.odc.service.connection.table.model.Table;
+import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
+import com.oceanbase.odc.service.db.model.GenerateTableDDLResp;
+import com.oceanbase.odc.service.db.model.GenerateUpdateTableDDLReq;
+import com.oceanbase.odc.service.db.model.UpdateTableDdlCheck;
+import com.oceanbase.odc.service.db.schema.DBSchemaSyncService;
+import com.oceanbase.odc.service.db.schema.syncer.object.DBExternalTableSyncer;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
+import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
+import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
+import com.oceanbase.odc.service.session.ConnectConsoleService;
+import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
+import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
+import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
+import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
+import com.oceanbase.tools.sqlparser.statement.createindex.CreateIndex;
+
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * @description:
+ * @author: zijia.cj
+ * @date: 2024/8/19 21:06
+ * @since: 4.3.3
+ */
+@Slf4j
+@Service
+@SkipAuthorize("inside connect session")
+public class DBExternalTableService {
+    @Autowired
+    private ConnectConsoleService consoleService;
+
+    @Autowired
+    private DatabaseService databaseService;
+
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
+
+    @Autowired
+    private DBObjectRepository dbObjectRepository;
+
+    @Autowired
+    private DBExternalTableSyncer dbExternalTableSyncer;
+
+    @Autowired
+    private JdbcLockRegistry lockRegistry;
+
+    @Autowired
+    private DBSchemaSyncService dbSchemaSyncService;
+
+    @Autowired
+    private DBResourcePermissionHelper dbResourcePermissionHelper;
+
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("permission check inside")
+    public List<Table> list(@NonNull @Valid QueryTableParams params) throws SQLException, InterruptedException {
+        Database database = databaseService.detail(params.getDatabaseId());
+        ConnectionConfig dataSource = database.getDataSource();
+        OBConsoleDataSourceFactory factory = new OBConsoleDataSourceFactory(dataSource, true);
+        try (SingleConnectionDataSource ds = (SingleConnectionDataSource) factory.getDataSource();
+                Connection conn = ds.getConnection()) {
+            ExternalTableExtensionPoint point = SchemaPluginUtil.getExternalTableExtension(
+                    dataSource.getDialectType());
+            Set<String> latestTableNames = point.list(conn, database.getName())
+                    .stream().map(DBObjectIdentity::getName).collect(Collectors.toSet());
+            if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
+                return latestTableNames.stream().map(tableName -> {
+                    Table table = new Table();
+                    table.setName(tableName);
+                    table.setAuthorizedPermissionTypes(new HashSet<>(DatabasePermissionType.all()));
+                    return table;
+                }).collect(Collectors.toList());
+            }
+            List<DBObjectEntity> tables =
+                    dbObjectRepository.findByDatabaseIdAndType(params.getDatabaseId(), DBObjectType.EXTERNAL_TABLE);
+            Set<String> existTableNames = tables.stream().map(DBObjectEntity::getName).collect(Collectors.toSet());
+            if (latestTableNames.size() != existTableNames.size() || !existTableNames.containsAll(latestTableNames)) {
+                syncDBTables(conn, database, dataSource.getDialectType());
+                tables = dbObjectRepository.findByDatabaseIdAndType(params.getDatabaseId(), DBObjectType.EXTERNAL_TABLE);
+            }
+            return entitiesToModels(tables, database, params.getIncludePermittedAction());
+        }
+    }
+
+    private void syncDBTables(Connection connection, Database database, DialectType dialectType)
+            throws InterruptedException {
+        Lock lock = lockRegistry
+                .obtain(dbSchemaSyncService.getSyncDBObjectLockKey(database.getDataSource().getId(), database.getId()));
+        if (!lock.tryLock(3, TimeUnit.SECONDS)) {
+            throw new ConflictException(ErrorCodes.ResourceSynchronizing,
+                    new Object[] {ResourceType.ODC_TABLE.getLocalizedMessage()}, "Can not acquire jdbc lock");
+        }
+        try {
+            if (dbExternalTableSyncer.supports(dialectType)) {
+                dbExternalTableSyncer.sync(connection, database, dialectType);
+            } else {
+                throw new UnsupportedException("Unsupported dialect type: " + dialectType);
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private List<Table> entitiesToModels(Collection<DBObjectEntity> entities, Database database,
+            boolean includePermittedAction) {
+        List<Table> tables = new ArrayList<>();
+        if (CollectionUtils.isEmpty(entities)) {
+            return tables;
+        }
+        Map<Long, Set<DatabasePermissionType>> id2Types = dbResourcePermissionHelper
+                .getTablePermissions(entities.stream().map(DBObjectEntity::getId).collect(Collectors.toSet()));
+        for (DBObjectEntity entity : entities) {
+            Table table = new Table();
+            table.setId(entity.getId());
+            table.setName(entity.getName());
+            table.setDatabase(database);
+            table.setCreateTime(entity.getCreateTime());
+            table.setUpdateTime(entity.getUpdateTime());
+            table.setOrganizationId(entity.getOrganizationId());
+            if (includePermittedAction) {
+                table.setAuthorizedPermissionTypes(id2Types.get(entity.getId()));
+            }
+            tables.add(table);
+        }
+        return tables;
+    }
+
+
+    /**
+     * show tables from schemaName like tableName
+     *
+     * @param session session
+     * @param schemaName use session current database if null
+     * @param fuzzyTableName show all tables if null or blank
+     */
+    public List<String> showTablesLike(@NotNull ConnectionSession session, String schemaName, String fuzzyTableName) {
+        String tableNameLike = SqlUtils.anyLike(fuzzyTableName);
+        List<String> tableNames = session.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<List<String>>) con -> getTableExtensionPoint(session)
+                        .showNamesLike(con, schemaName, tableNameLike).stream()
+                        .filter(name -> !StringUtils.endsWith(name.toUpperCase(),
+                                OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
+                        .collect(Collectors.toList()));
+        log.debug("showTablesLike, schemaName={}, tableNameLike={}, tableNamesCount={}",
+                schemaName, tableNameLike, tableNames.size());
+        return tableNames;
+    }
+
+    public DBTable getTable(@NotNull ConnectionSession connectionSession, String schemaName,
+            @NotBlank String tableName) {
+        DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
+        PreConditions.validExists(ResourceType.OB_TABLE, "tableName", tableName,
+                () -> schemaAccessor.showTables(schemaName).stream().filter(name -> name.equals(tableName))
+                        .collect(Collectors.toList()).size() > 0);
+        try {
+            return connectionSession.getSyncJdbcExecutor(
+                    ConnectionSessionConstants.BACKEND_DS_KEY)
+                    .execute((ConnectionCallback<DBTable>) con -> getTableExtensionPoint(connectionSession)
+                            .getDetail(con, schemaName, tableName));
+        } catch (Exception e) {
+            log.warn("Query table information failed, table name=%s.", e);
+            throw new UnexpectedException(String
+                    .format("Query table information failed, table name=%s, error massage=%s", tableName,
+                            e.getMessage()));
+        }
+    }
+
+    /**
+     * get all table details in a schema
+     */
+    public Map<String, DBTable> getTables(@NotNull ConnectionSession connectionSession, String schemaName) {
+        return DBSchemaAccessors.create(connectionSession).getTables(schemaName, null);
+    }
+
+    public List<DBTable> listTables(@NotNull ConnectionSession connectionSession, String schemaName) {
+        return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<List<DBObjectIdentity>>) con -> getTableExtensionPoint(connectionSession)
+                        .list(con, schemaName))
+                .stream().map(item -> {
+                    DBTable table = new DBTable();
+                    table.setName(item.getName());
+                    table.setSchemaName(schemaName);
+                    return table;
+                }).collect(Collectors.toList());
+    }
+
+    public GenerateTableDDLResp generateCreateDDL(@NotNull ConnectionSession session, @NotNull DBTable table) {
+        String ddl = session.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<String>) con -> getTableExtensionPoint(session).generateCreateDDL(con,
+                        table));
+        return GenerateTableDDLResp.builder()
+                .sql(ddl)
+                .currentIdentity(TableIdentity.of(table.getSchemaName(), table.getName()))
+                .previousIdentity(TableIdentity.of(table.getSchemaName(), table.getName()))
+                .build();
+    }
+
+    public GenerateTableDDLResp generateUpdateDDL(@NotNull ConnectionSession session,
+            @NotNull GenerateUpdateTableDDLReq req) {
+        String ddl = session.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<String>) con -> getTableExtensionPoint(session).generateUpdateDDL(con,
+                        req.getPrevious(), req.getCurrent()));
+        return GenerateTableDDLResp.builder()
+                .sql(ddl)
+                .currentIdentity(TableIdentity.of(req.getCurrent().getSchemaName(), req.getCurrent().getName()))
+                .previousIdentity(TableIdentity.of(req.getPrevious().getSchemaName(), req.getPrevious().getName()))
+                .tip(checkUpdateDDL(session.getDialectType(), ddl))
+                .build();
+    }
+
+    private String checkUpdateDDL(DialectType dialectType, String ddl) {
+        boolean createIndex = false;
+        boolean dropIndex = false;
+        for (String s : SqlUtils.split(dialectType, ddl, ";")) {
+            Statement stmt = SqlCheckUtil.parseSingleSql(dialectType, s);
+            if (stmt == null) {
+                continue;
+            }
+            if (stmt instanceof CreateIndex) {
+                createIndex = true;
+            } else if (stmt instanceof DropStatement && ((DropStatement) stmt).getObjectType().equals("INDEX")) {
+                dropIndex = true;
+            } else if (stmt instanceof AlterTable) {
+                for (AlterTableAction tableAction : ((AlterTable) stmt).getAlterTableActions()) {
+                    if (Objects.nonNull(tableAction.getAddIndex())) {
+                        createIndex = true;
+                    } else if (Objects.nonNull(tableAction.getDropIndexName())) {
+                        dropIndex = true;
+                    }
+                }
+            }
+        }
+        if (dropIndex && createIndex) {
+            return UpdateTableDdlCheck.DROP_AND_CREATE_INDEX.getLocalizedMessage();
+        } else if (dropIndex) {
+            return UpdateTableDdlCheck.DROP_INDEX.getLocalizedMessage();
+        } else if (createIndex) {
+            return UpdateTableDdlCheck.CREATE_INDEX.getLocalizedMessage();
+        }
+        return null;
+    }
+
+    public Boolean isLowerCaseTableName(@NotNull ConnectionSession connectionSession) {
+        DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
+        return schemaAccessor.isLowerCaseTableName();
+    }
+
+    private TableExtensionPoint getTableExtensionPoint(@NotNull ConnectionSession connectionSession) {
+        return SchemaPluginUtil.getTableExtension(connectionSession.getDialectType());
+    }
+
+}

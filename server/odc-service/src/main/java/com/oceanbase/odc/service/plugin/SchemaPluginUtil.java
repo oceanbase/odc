@@ -21,6 +21,7 @@ import org.pf4j.ExtensionPoint;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.api.DatabaseExtensionPoint;
+import com.oceanbase.odc.plugin.schema.api.ExternalTableExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.FunctionExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.PackageExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.ProcedureExtensionPoint;
@@ -48,6 +49,10 @@ public class SchemaPluginUtil {
 
     public static TableExtensionPoint getTableExtension(DialectType dialectType) {
         return getSingletonExtension(dialectType, TableExtensionPoint.class);
+    }
+
+    public static ExternalTableExtensionPoint getExternalTableExtension(DialectType dialectType) {
+        return getSingletonExtension(dialectType, ExternalTableExtensionPoint.class);
     }
 
     public static ViewExtensionPoint getViewExtension(DialectType dialectType) {
