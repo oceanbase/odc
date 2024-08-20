@@ -152,7 +152,7 @@ public class AlibabaCloudClient implements CloudClient {
     @Override
     public PutObjectResult putObject(String bucketName, String key, File file, ObjectMetadata metadata)
             throws CloudException {
-        return callOssMethod("Put object", () -> {
+        PutObjectResult putObject = callOssMethod("Put object", () -> {
             com.aliyun.oss.model.ObjectMetadata objectMetadata = toOss(metadata);
             com.aliyun.oss.model.PutObjectResult ossResult = oss.putObject(bucketName, key, file, objectMetadata);
             PutObjectResult result = new PutObjectResult();
@@ -163,6 +163,7 @@ public class AlibabaCloudClient implements CloudClient {
             result.setServerCRC(ossResult.getServerCRC());
             return result;
         });
+        return putObject;
     }
 
     @Override

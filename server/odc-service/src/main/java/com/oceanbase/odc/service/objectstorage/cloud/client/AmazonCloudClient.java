@@ -165,7 +165,7 @@ public class AmazonCloudClient implements CloudClient {
     @Override
     public PutObjectResult putObject(String bucketName, String key, File file, ObjectMetadata metadata)
             throws CloudException {
-        return callAmazonMethod("Put object", () -> {
+        PutObjectResult putObject = callAmazonMethod("Put object", () -> {
             com.amazonaws.services.s3.model.ObjectMetadata objectMetadata = toS3(metadata);
             PutObjectRequest putRequest = new PutObjectRequest(bucketName, key, file)
                     .withMetadata(objectMetadata);
@@ -192,6 +192,7 @@ public class AmazonCloudClient implements CloudClient {
             result.setLastModified(copyObjectResult.getLastModifiedDate());
             return result;
         });
+        return putObject;
     }
 
     @Override

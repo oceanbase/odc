@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.cloud;
+package com.oceanbase.odc.service.objectstorage.cloud;
 
 import org.junit.Assert;
 import org.junit.Test;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.cloud.resource.aws;
+package com.oceanbase.odc.service.objectstorage.cloud.resource.aliyun;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -26,22 +26,22 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.oceanbase.odc.service.objectstorage.cloud.client.AmazonCloudClient;
+import com.aliyun.oss.OSS;
+import com.aliyun.oss.OSSClient;
+import com.oceanbase.odc.service.objectstorage.cloud.client.AlibabaCloudClient;
 
 /**
  * @Author：tinker
- * @Date: 2023/2/15 15:21
+ * @Date: 2023/2/15 14:22
  * @Descripition:
  */
-public class AmazonCloudClientTest {
+public class AlibabaCloudClientTest {
 
     @Test
     public void generatePresignedUrl() throws MalformedURLException {
-        AmazonS3 s3 = mock(AmazonS3Client.class);
-        Mockito.when(s3.generatePresignedUrl(any())).thenReturn(new URL("http://test.sql"));
-        AmazonCloudClient alibabaCloudClient = new AmazonCloudClient(s3, null, "test", "test");
+        OSS oss = mock(OSSClient.class);
+        Mockito.when(oss.generatePresignedUrl(any())).thenReturn(new URL("http://test.sql"));
+        AlibabaCloudClient alibabaCloudClient = new AlibabaCloudClient(oss, null, "test", "test");
         URL url = alibabaCloudClient.generatePresignedUrl("test", "test", new Date());
         Assert.assertNotNull(url);
     }

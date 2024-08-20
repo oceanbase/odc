@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.cloud;
+package com.oceanbase.odc.service.objectstorage.cloud;
 
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import com.oceanbase.odc.service.objectstorage.client.CloudObjectStorageClient;
 import com.oceanbase.odc.service.objectstorage.cloud.client.NullCloudClient;
 
-public class CloudObjectStorageServiceTest {
-    private CloudObjectStorageService service =
-            new CloudObjectStorageService(new NullCloudClient(), new NullCloudClient(), () -> null);
+public class CloudObjectStorageClientTest {
+    private CloudObjectStorageClient service =
+            new CloudObjectStorageClient(new NullCloudClient(), new NullCloudClient(), null);
 
     @Test
     public void calculatePartSize_LessThanPartCount_MINSIZE() {
