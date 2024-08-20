@@ -141,8 +141,8 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
 
             // 根据连接类型获取数据传输扩展并生成任务
             job = TaskPluginUtil
-                .getDataTransferExtension(config.getConnectionInfo().getConnectType().getDialectType())
-                .generate(config, workingDir, logDir, inputs);
+                    .getDataTransferExtension(config.getConnectionInfo().getConnectType().getDialectType())
+                    .generate(config, workingDir, logDir, inputs);
 
             // 执行任务
             DataTransferTaskResult result = job.call();
@@ -159,7 +159,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
                     // 将csv配置保存到清单文件中
                     Path manifest = Paths.get(workingDir.getPath(), "data", ExportOutput.MANIFEST);
                     SerializeUtils.serializeObjectByKryo(new Manifest(getDumpParameterForManifest()),
-                        manifest.toString());
+                            manifest.toString());
                 }
                 // 处理输出
                 handleOutput(result);
@@ -257,20 +257,20 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
             if (config.isExportAllObjects()) {
                 // 获取符合条件的表名列表
                 tableNames = accessor.showTablesLike(schemaName, null).stream()
-                    .filter(name -> !StringUtils.endsWithIgnoreCase(name, OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
-                    .collect(Collectors.toList());
+                        .filter(name -> !StringUtils.endsWithIgnoreCase(name, OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
+                        .collect(Collectors.toList());
             } else {
                 // 获取需要导出的对象的表名的集合
                 tableNames = config.getExportDbObjects().stream()
-                    .filter(o -> Objects.equals(ObjectType.TABLE, o.getDbObjectType()))
-                    .map(DataTransferObject::getObjectName)
-                    .collect(Collectors.toList());
+                        .filter(o -> Objects.equals(ObjectType.TABLE, o.getDbObjectType()))
+                        .map(DataTransferObject::getObjectName)
+                        .collect(Collectors.toList());
             }
             // 遍历表名集合
             for (String tableName : tableNames) {
                 // 获取表的列名集合
                 List<String> tableColumns = accessor.listTableColumns(schemaName, tableName).stream()
-                    .map(DBTableColumn::getName).collect(Collectors.toList());
+                        .map(DBTableColumn::getName).collect(Collectors.toList());
                 // 将表名和列名的对应关系添加到Map中
                 tableName2ColumnNames.put(tableName, tableColumns);
                 // 忽略异常
@@ -286,15 +286,15 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         }
         // 获取敏感列和对应的脱敏算法
         Map<SensitiveColumn, MaskingAlgorithm> sensitiveColumn2Algorithm = maskingService
-            .listColumnsAndMaskingAlgorithm(config.getDatabaseId(), tableName2ColumnNames.keySet());
+                .listColumnsAndMaskingAlgorithm(config.getDatabaseId(), tableName2ColumnNames.keySet());
         // 如果没有敏感列，则直接返回
         if (sensitiveColumn2Algorithm.isEmpty()) {
             return;
         }
         // 将敏感列转换为表列和对应的脱敏算法的映射关系
         Map<TableColumn, MaskingAlgorithm> column2Algorithm = sensitiveColumn2Algorithm.keySet().stream()
-            .collect(Collectors.toMap(c -> new TableColumn(c.getTableName(), c.getColumnName()),
-                sensitiveColumn2Algorithm::get, (c1, c2) -> c1));
+                .collect(Collectors.toMap(c -> new TableColumn(c.getTableName(), c.getColumnName()),
+                        sensitiveColumn2Algorithm::get, (c1, c2) -> c1));
         // 创建数据脱敏工厂
         DataMaskerFactory maskerFactory = new DataMaskerFactory();
         // 创建脱敏配置map
@@ -315,7 +315,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
                 MaskConfig maskConfig = MaskingAlgorithmUtil.toSingleFieldMaskConfig(algorithm, columnName);
                 // 创建脱敏器
                 AbstractDataMasker masker =
-                    maskerFactory.createDataMasker(MaskValueType.SINGLE_VALUE.name(), maskConfig);
+                        maskerFactory.createDataMasker(MaskValueType.SINGLE_VALUE.name(), maskConfig);
                 // 将脱敏器添加到列和脱敏器的映射关系中
                 column2Masker.put(columnName, masker);
             }

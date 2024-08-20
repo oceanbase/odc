@@ -151,19 +151,19 @@ public class DataTransferService {
     /**
      * create a data transfer task
      *
-     * @param bucket         This parameter can be any value that can mark the task, eg. taskId
+     * @param bucket This parameter can be any value that can mark the task, eg. taskId
      * @param transferConfig config of the data transfer task
      * @return control handle of the task
      */
     public DataTransferTaskContext create(@NonNull String bucket,
-        @NonNull DataTransferConfig transferConfig) throws Exception {
+            @NonNull DataTransferConfig transferConfig) throws Exception {
         try {
             // set log path
             Path logPath = Paths.get(taskLogDir, "data-transfer", bucket);
             TraceContextHolder.put(DataTransferConstants.LOG_PATH_NAME, logPath.toString());
             // clear working directory and create bucket for client mode
             File workingDir = dataTransferAdapter.preHandleWorkDir(transferConfig, bucket,
-                fileManager.getWorkingDir(TaskType.EXPORT, bucket));
+                    fileManager.getWorkingDir(TaskType.EXPORT, bucket));
             if (!workingDir.exists() || !workingDir.isDirectory()) {
                 throw new IllegalStateException("Failed to create working dir, " + workingDir.getAbsolutePath());
             }
@@ -182,7 +182,7 @@ public class DataTransferService {
             Long connectionId = transferConfig.getConnectionId();
             // 判断连接ID是否为空，如果为空则抛出异常
             PreConditions.validArgumentState(connectionId != null, ErrorCodes.BadArgument,
-                new Object[] {"ConnectionId can not be null"}, "ConnectionId can not be null");
+                    new Object[] {"ConnectionId can not be null"}, "ConnectionId can not be null");
             // 根据连接ID获取连接配置
             ConnectionConfig connectionConfig = connectionService.getForConnectionSkipPermissionCheck(connectionId);
             // 将连接配置转换为连接信息
@@ -192,8 +192,8 @@ public class DataTransferService {
             // 如果会话初始化脚本不为空，则移除SQL注释并设置到连接信息中
             if (StringUtils.isNotEmpty(initScript)) {
                 connectionInfo.setSessionInitScripts(SqlCommentProcessor
-                    .removeSqlComments(initScript, ";", connectionInfo.getConnectType().getDialectType(), false)
-                    .stream().map(OffsetString::getStr).collect(Collectors.toList()));
+                        .removeSqlComments(initScript, ";", connectionInfo.getConnectType().getDialectType(), false)
+                        .stream().map(OffsetString::getStr).collect(Collectors.toList()));
             }
 
             connectionInfo.setSchema(transferConfig.getSchemaName());
@@ -211,14 +211,14 @@ public class DataTransferService {
             // task placeholder
             // 任务占位符
             DataTransferTask task = DataTransferTask.builder()
-                .adapter(dataTransferAdapter)
-                .creator(authenticationFacade.currentUser())
-                .config(transferConfig)
-                .workingDir(workingDir)
-                .logDir(logPath.toFile())
-                .connectionConfig(connectionConfig)
-                .maskingService(maskingService)
-                .build();
+                    .adapter(dataTransferAdapter)
+                    .creator(authenticationFacade.currentUser())
+                    .config(transferConfig)
+                    .workingDir(workingDir)
+                    .logDir(logPath.toFile())
+                    .connectionConfig(connectionConfig)
+                    .maskingService(maskingService)
+                    .build();
             Future<DataTransferTaskResult> future = executor.submit(task);
 
             return new DataTransferTaskContext(future, task);

@@ -118,7 +118,7 @@ public class DBSchemaIndexService {
                 List<Database> databases = databaseService.listDatabasesByIds(params.getDatabaseIds());
                 databases.forEach(e -> {
                     if (Objects.isNull(e.getProject())
-                        || !Objects.equals(e.getProject().getId(), params.getProjectId())) {
+                            || !Objects.equals(e.getProject().getId(), params.getProjectId())) {
                         throw new NotFoundException(ResourceType.ODC_DATABASE, "id", e.getId());
                     }
                 });
@@ -129,8 +129,8 @@ public class DBSchemaIndexService {
             }
         } else if (params.getDatasourceId() != null) {
             Map<Long, Database> id2Database =
-                databaseService.listExistDatabasesByConnectionId(params.getDatasourceId()).stream()
-                    .collect(Collectors.toMap(Database::getId, e -> e, (e1, e2) -> e1));
+                    databaseService.listExistDatabasesByConnectionId(params.getDatasourceId()).stream()
+                            .collect(Collectors.toMap(Database::getId, e -> e, (e1, e2) -> e1));
             if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
                 ConnectionConfig config = connectionService.getBasicWithoutPermissionCheck(params.getDatasourceId());
                 if (!Objects.equals(authenticationFacade.currentUserId(), config.getCreatorId())) {
@@ -138,7 +138,7 @@ public class DBSchemaIndexService {
                 }
                 if (CollectionUtils.isNotEmpty(params.getDatabaseIds())) {
                     queryDatabaseIds.addAll(params.getDatabaseIds().stream().filter(id2Database::containsKey)
-                        .collect(Collectors.toSet()));
+                            .collect(Collectors.toSet()));
                 } else {
                     queryDatabaseIds.addAll(id2Database.keySet());
                 }
@@ -146,13 +146,13 @@ public class DBSchemaIndexService {
                 Set<Long> projectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
                 if (CollectionUtils.isNotEmpty(params.getDatabaseIds())) {
                     queryDatabaseIds.addAll(params.getDatabaseIds().stream()
-                        .filter(e -> id2Database.containsKey(e) && id2Database.get(e).getProject() != null
-                                     && projectIds.contains(id2Database.get(e).getProject().getId()))
-                        .collect(Collectors.toSet()));
+                            .filter(e -> id2Database.containsKey(e) && id2Database.get(e).getProject() != null
+                                    && projectIds.contains(id2Database.get(e).getProject().getId()))
+                            .collect(Collectors.toSet()));
                 } else {
                     queryDatabaseIds.addAll(id2Database.values().stream()
-                        .filter(e -> e.getProject() != null && projectIds.contains(e.getProject().getId()))
-                        .map(Database::getId).collect(Collectors.toSet()));
+                            .filter(e -> e.getProject() != null && projectIds.contains(e.getProject().getId()))
+                            .map(Database::getId).collect(Collectors.toSet()));
                 }
             }
         } else {
@@ -164,12 +164,12 @@ public class DBSchemaIndexService {
         // 根据数据库ID列表获取数据库详情列表
         List<Database> databases = databaseService.listDatabasesDetailsByIds(queryDatabaseIds);
         Map<Long, Database> id2Database =
-            databases.stream().collect(Collectors.toMap(Database::getId, e -> e, (e1, e2) -> e1));
+                databases.stream().collect(Collectors.toMap(Database::getId, e -> e, (e1, e2) -> e1));
         if (CollectionUtils.isEmpty(params.getTypes()) || params.getTypes().contains(DBObjectType.SCHEMA)) {
             String key = searchKey.toLowerCase();
             // 根据搜索关键字过滤数据库列表
             List<Database> matches = databases.stream().filter(e -> e.getName().toLowerCase().contains(key))
-                .collect(Collectors.toList());
+                    .collect(Collectors.toList());
             Ordering<Database> ordering = Ordering.natural().onResultOf(e -> e.getName().length());
             ordering = ordering.compound(Ordering.natural().onResultOf(Database::getName));
             resp.setDatabases(ordering.leastOf(matches, MAX_RETURN_SIZE_PER_TYPE));
@@ -177,7 +177,7 @@ public class DBSchemaIndexService {
         Pageable pageable = PageRequest.of(0, MAX_SEARCH_SIZE);
         if (CollectionUtils.isEmpty(params.getTypes()) || params.getTypes().contains(DBObjectType.COLUMN)) {
             Specification<DBColumnEntity> columnSpec =
-                SpecificationUtil.columnIn(DBColumnEntity_.DATABASE_ID, queryDatabaseIds);
+                    SpecificationUtil.columnIn(DBColumnEntity_.DATABASE_ID, queryDatabaseIds);
             columnSpec = columnSpec.and(SpecificationUtil.columnLike(DBColumnEntity_.NAME, searchKey));
             List<DBColumnEntity> matches = dbColumnRepository.findAll(columnSpec, pageable).getContent();
             Ordering<DBColumnEntity> ordering = Ordering.natural().onResultOf(e -> e.getName().length());
@@ -185,19 +185,19 @@ public class DBSchemaIndexService {
             matches = ordering.leastOf(matches, MAX_RETURN_SIZE_PER_TYPE);
             Set<Long> objectIds = matches.stream().map(DBColumnEntity::getObjectId).collect(Collectors.toSet());
             Map<Long, OdcDBObject> id2Object =
-                objectEntitiesToModels(dbObjectRepository.findByIdIn(objectIds), id2Database).stream()
-                    .collect(Collectors.toMap(OdcDBObject::getId, e -> e, (e1, e2) -> e1));
+                    objectEntitiesToModels(dbObjectRepository.findByIdIn(objectIds), id2Database).stream()
+                            .collect(Collectors.toMap(OdcDBObject::getId, e -> e, (e1, e2) -> e1));
             resp.setDbColumns(columnEntitiesToModels(matches, id2Object));
         }
         Specification<DBObjectEntity> objectSpec =
-            SpecificationUtil.columnIn(DBObjectEntity_.DATABASE_ID, queryDatabaseIds);
+                SpecificationUtil.columnIn(DBObjectEntity_.DATABASE_ID, queryDatabaseIds);
         objectSpec = objectSpec.and(SpecificationUtil.columnLike(DBObjectEntity_.NAME, searchKey));
         if (CollectionUtils.isNotEmpty(params.getTypes())) {
             objectSpec = objectSpec.and(SpecificationUtil.columnIn(DBObjectEntity_.TYPE, params.getTypes()));
         }
         List<DBObjectEntity> matches = dbObjectRepository.findAll(objectSpec, pageable).getContent();
         Map<DBObjectType, List<DBObjectEntity>> type2Objects =
-            matches.stream().collect(Collectors.groupingBy(DBObjectEntity::getType));
+                matches.stream().collect(Collectors.groupingBy(DBObjectEntity::getType));
         Ordering<DBObjectEntity> ordering = Ordering.natural().onResultOf(e -> e.getName().length());
         ordering = ordering.compound(Ordering.natural().onResultOf(DBObjectEntity::getName));
         List<DBObjectEntity> filtered = new ArrayList<>();
