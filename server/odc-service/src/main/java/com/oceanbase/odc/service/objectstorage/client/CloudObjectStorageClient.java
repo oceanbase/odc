@@ -82,14 +82,14 @@ public class CloudObjectStorageClient implements ObjectStorageClient {
         this.objectStorageConfiguration = objectStorageConfiguration;
         if (this.publicEndpointCloudObjectStorage.supported()) {
             validateBucket();
-            log.info("Cloud pure object storage initialized");
+            log.info("Cloud object storage initialized");
         } else {
-            log.info("Cloud pure object storage not supported");
+            log.info("Cloud object storage not supported");
         }
     }
 
     @Override
-    public URL getDownloadUrl(String objectName, Long expirationSeconds) {
+    public URL generateDownloadUrl(String objectName, Long expirationSeconds) {
         verifySupported();
         ObjectMetadata objectMetadata = publicEndpointCloudObjectStorage.getObjectMetadata(getBucketName(), objectName);
         Date expirationTime = calcExpirationTime(expirationSeconds, objectMetadata.getContentLength());
@@ -101,7 +101,7 @@ public class CloudObjectStorageClient implements ObjectStorageClient {
     }
 
     @Override
-    public URL getUploadUrl(String objectName) {
+    public URL generateUploadUrl(String objectName) {
         verifySupported();
         Date expirationTime = new Date(System.currentTimeMillis() + PRESIGNED_UPLOAD_URL_EXPIRATION_SECONDS * 1000);
         URL presignedUrl =

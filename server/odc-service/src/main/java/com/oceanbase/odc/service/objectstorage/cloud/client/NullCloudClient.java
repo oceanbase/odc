@@ -76,11 +76,6 @@ public class NullCloudClient implements CloudClient {
     }
 
     @Override
-    public void setExpiredAfterLastModified(String bucketName, String prefixForMatchObjectName, int expiredDaya) {
-        throw new UnsupportedException();
-    }
-
-    @Override
     public DeleteObjectsResult deleteObjects(DeleteObjectsRequest request) throws CloudException {
         throw new UnsupportedException();
     }

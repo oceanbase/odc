@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -30,12 +29,8 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
-import org.apache.commons.lang.Validate;
-
 import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
-import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
 import com.amazonaws.services.s3.model.DeleteObjectsResult.DeletedObject;
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
@@ -44,8 +39,6 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.model.Tag;
-import com.amazonaws.services.s3.model.lifecycle.LifecycleFilter;
-import com.amazonaws.services.s3.model.lifecycle.LifecyclePrefixPredicate;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
 import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
@@ -185,25 +178,6 @@ public class AmazonCloudClient implements CloudClient {
             return result;
         });
         return putObject;
-    }
-
-    @Override
-    public void setExpiredAfterLastModified(String bucketName, String prefixForMatchObjectName, int expiredDaya) {
-        Validate.isTrue(expiredDaya > 0, "expiredDaya must be greater than 0");
-
-        String ruleId = "odc-expired-after-last-modified-rule";
-        Rule rule = new Rule();
-        rule.setId(ruleId);
-        rule.setStatus(BucketLifecycleConfiguration.ENABLED);
-        rule.setExpirationInDays(expiredDaya);
-        rule.setFilter(new LifecycleFilter().withPredicate(new LifecyclePrefixPredicate(prefixForMatchObjectName)));
-
-        BucketLifecycleConfiguration bucketLifecycleConfiguration = new BucketLifecycleConfiguration();
-        bucketLifecycleConfiguration.setRules(Collections.singletonList(rule));
-        callAmazonMethod("Set bucket lifecycle", () -> {
-            s3.setBucketLifecycleConfiguration(bucketName, bucketLifecycleConfiguration);
-            return null;
-        });
     }
 
     @Override

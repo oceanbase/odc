@@ -138,11 +138,11 @@ public class CloudObjectStorageService {
     }
 
     public URL generateDownloadUrl(@NotBlank String objectName, Long expirationSeconds) throws IOException {
-        return cloudObjectStorageClient.getDownloadUrl(objectName, expirationSeconds);
+        return cloudObjectStorageClient.generateDownloadUrl(objectName, expirationSeconds);
     }
 
     public URL generateUploadUrl(@NotBlank String objectName) {
-        return cloudObjectStorageClient.getUploadUrl(objectName);
+        return cloudObjectStorageClient.generateUploadUrl(objectName);
     }
 
     /**

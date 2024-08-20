@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.text.ParseException;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -31,17 +30,12 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
-import org.apache.commons.lang.Validate;
-
 import com.aliyun.oss.HttpMethod;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.model.GeneratePresignedUrlRequest;
-import com.aliyun.oss.model.LifecycleRule;
-import com.aliyun.oss.model.LifecycleRule.RuleStatus;
 import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ResponseHeaderOverrides;
-import com.aliyun.oss.model.SetBucketLifecycleRequest;
 import com.aliyuncs.IAcsClient;
 import com.aliyuncs.exceptions.ClientException;
 import com.aliyuncs.http.MethodType;
@@ -169,18 +163,6 @@ public class AlibabaCloudClient implements CloudClient {
             return result;
         });
         return putObject;
-    }
-
-    @Override
-    public void setExpiredAfterLastModified(String bucketName, String prefixForMatchObjectName, int expiredDaya) {
-        Validate.isTrue(expiredDaya > 0, "expiredDaya must be greater than 0");
-
-        String ruleId = "odc-expired-after-last-modified-rule";
-        LifecycleRule rule = new LifecycleRule(ruleId, prefixForMatchObjectName, RuleStatus.Enabled, expiredDaya);
-
-        SetBucketLifecycleRequest request = new SetBucketLifecycleRequest(bucketName);
-        request.setLifecycleRules(Collections.singletonList(rule));
-        callOssMethod("Set bucket lifecycle", () -> oss.setBucketLifecycle(request));
     }
 
     @Override

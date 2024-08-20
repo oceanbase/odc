@@ -59,8 +59,6 @@ public interface CloudObjectStorage {
 
     PutObjectResult putObject(String bucketName, String key, File file, ObjectMetadata metadata) throws CloudException;
 
-    void setExpiredAfterLastModified(String bucketName, String prefixForMatchObjectName, int expiredDaya);
-
     default PutObjectResult putObject(String bucketName, String key, File file) {
         return putObject(bucketName, key, file, null);
     }
