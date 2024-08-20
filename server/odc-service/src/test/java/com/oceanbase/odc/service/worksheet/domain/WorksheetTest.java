@@ -27,6 +27,7 @@ import java.util.Set;
 
 import org.junit.Test;
 
+import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
 import com.oceanbase.odc.service.worksheet.constants.WorksheetConstant;
@@ -79,26 +80,26 @@ public class WorksheetTest {
     public void rename_DuplicatePath() {
         Worksheet worksheet = newWorksheet("/Worksheets/folder1/");
         Worksheet sameWorksheet1 = newWorksheet("/Worksheets/folder2/");
-        worksheet.setSameParentAtPrevLevelWorksheets(new HashSet<>(Arrays.asList(sameWorksheet1)));
+        worksheet.setSameDirectParentWorksheets(new HashSet<>(Arrays.asList(sameWorksheet1)));
         Path destinationPath = new Path("/Worksheets/folder2/");
         assertThrows(BadRequestException.class, () -> worksheet.rename(destinationPath));
 
 
         Worksheet worksheet2 = newWorksheet("/Worksheets/folder1/file1");
         Worksheet sameWorksheet2 = newWorksheet("/Worksheets/folder1/file2");
-        worksheet2.setSameParentAtPrevLevelWorksheets(new HashSet<>(Arrays.asList(sameWorksheet2)));
+        worksheet2.setSameDirectParentWorksheets(new HashSet<>(Arrays.asList(sameWorksheet2)));
         Path destinationPath2 = new Path("/Worksheets/folder1/file2");
         assertThrows(BadRequestException.class, () -> worksheet2.rename(destinationPath2));
 
         Worksheet worksheet3 = newWorksheet("/Worksheets/folder1/");
         Worksheet sameWorksheet3 = newWorksheet("/Worksheets/folder2/file2");
-        worksheet3.setSameParentAtPrevLevelWorksheets(new HashSet<>(Arrays.asList(sameWorksheet3)));
+        worksheet3.setSameDirectParentWorksheets(new HashSet<>(Arrays.asList(sameWorksheet3)));
         Path destinationPath3 = new Path("/Worksheets/folder2/");
         assertThrows(BadRequestException.class, () -> worksheet3.rename(destinationPath3));
 
         Worksheet worksheet4 = newWorksheet("/Worksheets/folder1/");
         Worksheet sameWorksheet4 = newWorksheet("/Worksheets/folder2");
-        worksheet4.setSameParentAtPrevLevelWorksheets(new HashSet<>(Arrays.asList(sameWorksheet4)));
+        worksheet4.setSameDirectParentWorksheets(new HashSet<>(Arrays.asList(sameWorksheet4)));
         Path destinationPath4 = new Path("/Worksheets/folder2/");
         assertThrows(BadRequestException.class, () -> worksheet3.rename(destinationPath4));
     }
@@ -107,13 +108,13 @@ public class WorksheetTest {
     public void rename_InvalidPath() {
         Worksheet worksheet = newWorksheet("/Worksheets/folder1/file2");
         Path destinationPath = new Path("/Worksheets/folder2/file3");
-        assertThrows(IllegalArgumentException.class, () -> worksheet.rename(destinationPath));
+        assertThrows(BadArgumentException.class, () -> worksheet.rename(destinationPath));
         Worksheet worksheet2 = newWorksheet("/Worksheets/folder1/file2");
         Path destinationPath2 = new Path("/Worksheets/folder1/folder3/");
-        assertThrows(IllegalArgumentException.class, () -> worksheet2.rename(destinationPath2));
+        assertThrows(BadArgumentException.class, () -> worksheet2.rename(destinationPath2));
         Worksheet worksheet3 = newWorksheet("/Worksheets/folder1/file2");
         Path destinationPath3 = new Path("/Worksheets/folder1/");
-        assertThrows(IllegalArgumentException.class, () -> worksheet3.rename(destinationPath3));
+        assertThrows(BadArgumentException.class, () -> worksheet3.rename(destinationPath3));
     }
 
 

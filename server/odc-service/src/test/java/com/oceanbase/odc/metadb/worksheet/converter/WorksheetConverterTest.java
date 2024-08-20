@@ -63,7 +63,7 @@ public class WorksheetConverterTest {
         Worksheet result =
                 WorksheetConverter.toDomainFromEntities(new ArrayList<>(), projectId, path, true,
                         true, true);
-        assertNull(result);
+        assertNotNull(result);
 
         result =
                 WorksheetConverter.toDomainFromEntities(new ArrayList<>(), projectId, path, false,
@@ -73,7 +73,7 @@ public class WorksheetConverterTest {
         result =
                 WorksheetConverter.toDomainFromEntities(new ArrayList<>(), projectId, null, true,
                         true, true);
-        assertNull(result);
+        assertNotNull(result);
 
     }
 
@@ -89,7 +89,7 @@ public class WorksheetConverterTest {
         assertEquals(projectId, result.getProjectId());
         assertEquals(path, result.getPath());
         assert CollectionUtils.isEmpty(result.getSubWorksheets());
-        assert CollectionUtils.isEmpty(result.getSameParentAtPrevLevelWorksheets());
+        assert CollectionUtils.isEmpty(result.getSameDirectParentWorksheets());
     }
 
 
@@ -133,7 +133,7 @@ public class WorksheetConverterTest {
         assert CollectionUtils.isEqualCollection(
                 Arrays.asList(sameLevelEntity1, sameLevelEntity2).stream()
                         .map(WorksheetConverter::toDomain).collect(Collectors.toSet()),
-                result.getSameParentAtPrevLevelWorksheets());
+                result.getSameDirectParentWorksheets());
 
         result = WorksheetConverter.toDomainFromEntities(entities, projectId, path, false,
                 false, true);
@@ -141,11 +141,11 @@ public class WorksheetConverterTest {
         assert CollectionUtils.isEqualCollection(
                 Arrays.asList(sameLevelEntity1, sameLevelEntity2).stream()
                         .map(WorksheetConverter::toDomain).collect(Collectors.toSet()),
-                result.getSameParentAtPrevLevelWorksheets());
+                result.getSameDirectParentWorksheets());
 
         result = WorksheetConverter.toDomainFromEntities(entities, projectId, path, false,
                 false, false);
         assert CollectionUtils.isEmpty(result.getSubWorksheets());
-        assert CollectionUtils.isEmpty(result.getSameParentAtPrevLevelWorksheets());
+        assert CollectionUtils.isEmpty(result.getSameDirectParentWorksheets());
     }
 }

@@ -128,8 +128,9 @@ public class DefaultWorksheetServiceTest {
     public void createWorksheet_Success() {
         Path createPath = new Path("/Worksheets/test");
         Path parentPath = new Path("/Worksheets/");
-        when(worksheetRepository.findWithSubListByProjectIdAndPathWithLock(projectId, parentPath))
-                .thenReturn(Optional.of(newWorksheet(parentPath)));
+        when(worksheetRepository.findWithSubListAndSameDirectParentListByProjectIdAndPathWithLock(projectId,
+                parentPath))
+                .thenReturn(newWorksheet(parentPath));
 
         Worksheet createdWorksheet = defaultWorksheetService.createWorksheet(projectId, createPath, id++ + "");
 
@@ -176,7 +177,7 @@ public class DefaultWorksheetServiceTest {
         Worksheet worksheet = newWorksheet(Path.worksheets());
         worksheet.setSubWorksheets(new HashSet<>(Arrays.asList(worksheet1, worksheet2, worksheet3, worksheet4)));
         when(worksheetRepository.findWithSubListByProjectIdAndPathAndNameLike(projectId, Path.worksheets(), null))
-                .thenReturn(Optional.of(worksheet));
+                .thenReturn(worksheet);
 
         List<Worksheet> result = defaultWorksheetService.listWorksheets(projectId, Path.worksheets(), 1, null);
         assertNotNull(result);
@@ -191,8 +192,9 @@ public class DefaultWorksheetServiceTest {
                 new UploadWorksheetTuple("/Worksheets/test2", "object2"))));
         BatchCreateWorksheets batchCreateWorksheets = new BatchCreateWorksheets(batchUploadWorksheetsReq);
 
-        when(worksheetRepository.findWithSubListByProjectIdAndPathWithLock(anyLong(), any(Path.class)))
-                .thenReturn(Optional.of(newWorksheet(new Path("/Worksheets/"))));
+        when(worksheetRepository.findWithSubListAndSameDirectParentListByProjectIdAndPathWithLock(anyLong(),
+                any(Path.class)))
+                .thenReturn(newWorksheet(new Path("/Worksheets/")));
 
         BatchOperateWorksheetsResult result =
                 defaultWorksheetService.batchUploadWorksheets(projectId, batchCreateWorksheets);
@@ -208,16 +210,13 @@ public class DefaultWorksheetServiceTest {
         paths.add(new Path("/Worksheets/folder2/"));
         paths.add(new Path("/Worksheets/folder1/"));
         paths.add(new Path("/Worksheets/test2"));
-        when(worksheetRepository.listWithSubListByProjectIdAndPath(projectId, new Path("/Worksheets/")))
+        when(worksheetRepository.listWithSubListByProjectIdAndPaths(projectId, paths))
                 .thenReturn(Arrays.asList(
                         newWorksheet(new Path("/Worksheets/folder3/")),
                         newWorksheet(new Path("/Worksheets/folder2/file1")),
                         newWorksheet(new Path("/Worksheets/folder1/")),
                         newWorksheet(new Path("/Worksheets/folder1/file1")),
                         newWorksheet(new Path("/Worksheets/folder1/subfolder1/"))));
-        when(worksheetRepository.listByProjectIdAndInPaths(projectId,
-                Collections.singletonList(new Path("/Worksheets/test2"))))
-                        .thenReturn(Arrays.asList(newWorksheet(new Path("/Worksheets/test2"))));
         Mockito.doAnswer(invocation -> {
             Consumer<TransactionStatus> consumer = invocation.getArgument(0);
             TransactionStatus status = Mockito.mock(TransactionStatus.class);
@@ -235,8 +234,9 @@ public class DefaultWorksheetServiceTest {
         Path oldPath = new Path("/Worksheets/old");
         Path newPath = new Path("/Worksheets/new");
 
-        when(worksheetRepository.findWithSubListByProjectIdAndPathWithLock(anyLong(), any(Path.class)))
-                .thenReturn(Optional.of(newWorksheet(oldPath)));
+        when(worksheetRepository.findWithSubListAndSameDirectParentListByProjectIdAndPathWithLock(anyLong(),
+                any(Path.class)))
+                .thenReturn(newWorksheet(oldPath));
 
         List<Worksheet> result = defaultWorksheetService.renameWorksheet(projectId, oldPath, newPath);
 
@@ -253,8 +253,9 @@ public class DefaultWorksheetServiceTest {
         String objectId = "newObjectId";
         Long readVersion = 1L;
 
-        when(worksheetRepository.findWithSubListByProjectIdAndPathWithLock(anyLong(), any(Path.class)))
-                .thenReturn(Optional.of(newWorksheet(oldPath)));
+        when(worksheetRepository.findWithSubListAndSameDirectParentListByProjectIdAndPathWithLock(anyLong(),
+                any(Path.class)))
+                .thenReturn(newWorksheet(oldPath));
 
         List<Worksheet> result =
                 defaultWorksheetService.editWorksheet(projectId, oldPath, newPath, objectId, readVersion);
@@ -297,40 +298,23 @@ public class DefaultWorksheetServiceTest {
         Path commParentPath = Path.root();
 
         // Mock
-        when(worksheetRepository.findWithSubListByProjectIdAndPathAndNameLike(projectId, new Path("/Worksheets/dir1/"),
-                null))
-                        .thenReturn(Optional.of(newDirWorksheet(projectId, "/Worksheets/dir1/", null,
-                                Arrays.asList("/Worksheets/dir1/subdir1/", "/Worksheets/dir1/subdir2/file1",
-                                        "/Worksheets/dir1/subdir2/file2"))));
-        when(worksheetRepository.findWithSubListByProjectIdAndPathAndNameLike(projectId, new Path("/Worksheets/dir2/"),
-                null))
-                        .thenReturn(Optional.of(newDirWorksheet(projectId, "/Worksheets/dir2/", null, null)));
-        when(worksheetRepository.findWithSubListByProjectIdAndPathAndNameLike(projectId,
-                new Path("/Worksheets/dir4/subdir1/"),
-                null))
-                        .thenReturn(Optional.of(newDirWorksheet(projectId, "/Worksheets/dir4/subdir1/", null, null)));
-        when(worksheetRepository.findWithSubListByProjectIdAndPathAndNameLike(projectId,
-                new Path("/Worksheets/dir3/subdir1/file1"),
-                null))
-                        .thenReturn(
-                                Optional.of(newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file1", null, null)));
-        when(worksheetRepository.findWithSubListByProjectIdAndPathAndNameLike(projectId,
-                new Path("/Worksheets/dir3/subdir1/file2"),
-                null))
-                        .thenReturn(
-                                Optional.of(newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file2", null, null)));
-        when(worksheetRepository.findWithSubListByProjectIdAndPathAndNameLike(projectId,
-                new Path("/Worksheets/dir3/subdir1/file5"),
-                null))
-                        .thenReturn(
-                                Optional.of(newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file5", null, null)));
-
+        when(worksheetRepository.listWithSubListByProjectIdAndPaths(projectId, paths))
+                .thenReturn(Arrays.asList(
+                        newDirWorksheet(projectId, "/Worksheets/dir1/"),
+                        newDirWorksheet(projectId, "/Worksheets/dir1/subdir1/"),
+                        newDirWorksheet(projectId, "/Worksheets/dir1/subdir2/file1"),
+                        newDirWorksheet(projectId, "/Worksheets/dir1/subdir2/file2"),
+                        newDirWorksheet(projectId, "/Worksheets/dir2/"),
+                        newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file1"),
+                        newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file2"),
+                        newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file5"),
+                        newDirWorksheet(projectId, "/Worksheets/dir4/subdir1/")));
 
         // Test
         defaultWorksheetService.downloadPathsToDirectory(projectId, paths, commParentPath, destinationDirectory);
 
         // Verify
-        verify(worksheetRepository, times(6)).findWithSubListByProjectIdAndPathAndNameLike(anyLong(), any(Path.class),
+        verify(worksheetRepository, times(1)).listWithSubListByProjectIdAndPaths(anyLong(),
                 any());
         verify(objectStorageClient, times(5)).downloadToFile(anyString(), any(File.class));
 

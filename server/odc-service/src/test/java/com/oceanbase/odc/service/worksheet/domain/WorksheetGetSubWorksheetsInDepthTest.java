@@ -68,37 +68,7 @@ public class WorksheetGetSubWorksheetsInDepthTest {
     }
 
     @Test
-    public void testGetSubWorksheetsInDepth_HappyPath() {
-
-        List<Worksheet> expectedWorksheets1 = Arrays.asList(
-                newWorksheet("/Worksheets/folder1/"),
-                newWorksheet("/Worksheets/folder1/folder4/"),
-                newWorksheet("/Worksheets/folder1/folder4/file5.sql"),
-                newWorksheet("/Worksheets/folder1/file2.sql"),
-                newWorksheet("/Worksheets/folder3/file3.sql"),
-                newWorksheet("/Worksheets/file1.sql"));
-        assertEquals(expectedWorksheets1, currentWorksheet.getSubWorksheetsInDepth(0, false));
-
-        List<Worksheet> expectedWorksheets2 = Arrays.asList(
-                newWorksheet("/Worksheets/folder1/"),
-                newWorksheet("/Worksheets/file1.sql"));
-        assertEquals(expectedWorksheets2, currentWorksheet.getSubWorksheetsInDepth(1, false));
-
-        List<Worksheet> expectedWorksheets3 = Arrays.asList(
-                newWorksheet("/Worksheets/folder1/"),
-                newWorksheet("/Worksheets/folder1/folder4/"),
-                newWorksheet("/Worksheets/folder1/file2.sql"),
-                newWorksheet("/Worksheets/folder3/file3.sql"),
-                newWorksheet("/Worksheets/file1.sql"));
-        assertEquals(expectedWorksheets3, currentWorksheet.getSubWorksheetsInDepth(2, false));
-
-        assertEquals(expectedWorksheets1, currentWorksheet.getSubWorksheetsInDepth(3, false));
-        assertEquals(expectedWorksheets1, currentWorksheet.getSubWorksheetsInDepth(4, false));
-        assertEquals(expectedWorksheets1, currentWorksheet.getSubWorksheetsInDepth(Integer.MAX_VALUE, false));
-    }
-
-    @Test
-    public void getSubWorksheetsInDepth_NeedToExtractNotExistParent() {
+    public void getSubWorksheetsInDepth_Normal() {
         List<Worksheet> expectedWorksheets1 = Arrays.asList(
                 newWorksheet("/Worksheets/folder1/"),
                 newWorksheet("/Worksheets/folder1/folder4/"),
@@ -107,13 +77,13 @@ public class WorksheetGetSubWorksheetsInDepthTest {
                 newWorksheet("/Worksheets/folder3/"),
                 newWorksheet("/Worksheets/folder3/file3.sql"),
                 newWorksheet("/Worksheets/file1.sql"));
-        assertEquals(expectedWorksheets1, currentWorksheet.getSubWorksheetsInDepth(0, true));
+        assertEquals(expectedWorksheets1, currentWorksheet.getSubWorksheetsInDepth(0));
 
         List<Worksheet> expectedWorksheets2 = Arrays.asList(
                 newWorksheet("/Worksheets/folder1/"),
                 newWorksheet("/Worksheets/folder3/"),
                 newWorksheet("/Worksheets/file1.sql"));
-        assertEquals(expectedWorksheets2, currentWorksheet.getSubWorksheetsInDepth(1, true));
+        assertEquals(expectedWorksheets2, currentWorksheet.getSubWorksheetsInDepth(1));
 
         List<Worksheet> expectedWorksheets3 = Arrays.asList(
                 newWorksheet("/Worksheets/folder1/"),
@@ -122,30 +92,30 @@ public class WorksheetGetSubWorksheetsInDepthTest {
                 newWorksheet("/Worksheets/folder3/"),
                 newWorksheet("/Worksheets/folder3/file3.sql"),
                 newWorksheet("/Worksheets/file1.sql"));
-        assertEquals(expectedWorksheets3, currentWorksheet.getSubWorksheetsInDepth(2, true));
+        assertEquals(expectedWorksheets3, currentWorksheet.getSubWorksheetsInDepth(2));
 
-        assertEquals(expectedWorksheets1, currentWorksheet.getSubWorksheetsInDepth(3, true));
-        assertEquals(expectedWorksheets1, currentWorksheet.getSubWorksheetsInDepth(4, true));
-        assertEquals(expectedWorksheets1, currentWorksheet.getSubWorksheetsInDepth(Integer.MAX_VALUE, true));
+        assertEquals(expectedWorksheets1, currentWorksheet.getSubWorksheetsInDepth(3));
+        assertEquals(expectedWorksheets1, currentWorksheet.getSubWorksheetsInDepth(4));
+        assertEquals(expectedWorksheets1, currentWorksheet.getSubWorksheetsInDepth(Integer.MAX_VALUE));
     }
 
     @Test
     public void getSubWorksheetsInDepth_NoSubWorksheets() {
         Worksheet emptyWorksheet = newWorksheet("/Worksheets/");
-        assertEquals(0, emptyWorksheet.getSubWorksheetsInDepth(0, false).size());
+        assertEquals(0, emptyWorksheet.getSubWorksheetsInDepth(0).size());
     }
 
     @Test
     public void getSubWorksheetsInDepth_NegativeDepth() {
         assertThrows(BadArgumentException.class, () -> {
-            currentWorksheet.getSubWorksheetsInDepth(-1, false);
+            currentWorksheet.getSubWorksheetsInDepth(-1);
         });
     }
 
     @Test
     public void getSubWorksheetsInDepth_EmptyArgumentDepth() {
         assertThrows(BadArgumentException.class, () -> {
-            currentWorksheet.getSubWorksheetsInDepth(null, false);
+            currentWorksheet.getSubWorksheetsInDepth(null);
         });
     }
 

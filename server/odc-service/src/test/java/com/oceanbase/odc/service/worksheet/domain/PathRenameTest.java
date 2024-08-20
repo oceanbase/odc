@@ -25,6 +25,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
 
 @RunWith(Parameterized.class)
@@ -116,11 +117,13 @@ public class PathRenameTest {
 
     @Test
     public void rename() {
-        boolean result = WorksheetPathUtil.isRenameValid(from, destination);
-        if (result) {
-            result = path.rename(from, destination);
+        try {
+            WorksheetPathUtil.renameValidCheck(from, destination);
+            boolean result = path.rename(from, destination);
+            assertEquals(path, expectedPathAfterRename);
+            assertEquals(expectedResult, result);
+        } catch (BadArgumentException e) {
+            assert !expectedResult;
         }
-        assertEquals(path, expectedPathAfterRename);
-        assertEquals(expectedResult, result);
     }
 }

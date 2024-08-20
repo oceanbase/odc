@@ -15,7 +15,9 @@
  */
 package com.oceanbase.odc.metadb.worksheet;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,6 +37,7 @@ import com.oceanbase.odc.service.objectstorage.model.ObjectUploadStatus;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.Worksheet;
 import com.oceanbase.odc.service.worksheet.domain.WorksheetId;
+import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetUtil;
 
 import lombok.extern.slf4j.Slf4j;
@@ -61,10 +64,10 @@ public class WorksheetRepository {
      * @param path the path of worksheet to query
      * @param nameLike if nameLike is not blank,the worksheets that path cannot fuzzy match nameLike
      *        will be excluded from the sub-worksheets
-     * @return returns empty when unable to find the worksheet and sub-worksheets of the {@param path},
-     *         otherwise returns a nonempty worksheet
+     * @return the return value must not be empty，returns temp when unable to find the worksheet of the
+     *         {@param path}, otherwise returns a normal worksheet
      */
-    public Optional<Worksheet> findWithSubListByProjectIdAndPathAndNameLike(Long projectId, Path path,
+    public Worksheet findWithSubListByProjectIdAndPathAndNameLike(Long projectId, Path path,
             String nameLike) {
         PreConditions.notNull(projectId, "projectId");
         PreConditions.notNull(path, "path");
@@ -79,15 +82,15 @@ public class WorksheetRepository {
                     ObjectUploadStatus.FINISHED);
         }
         if (CollectionUtils.isEmpty(entities)) {
-            return Optional.empty();
+            return Worksheet.ofTemp(projectId, path);
         }
-        return Optional.ofNullable(WorksheetConverter.toDomainFromEntities(entities, projectId, path,
-                true, true, true));
+        return WorksheetConverter.toDomainFromEntities(entities, projectId, path,
+                true, true, false);
     }
 
     /**
      * find worksheet info of {@param path} in {@param projectId},and also find sub-worksheets of
-     * {@param path}.
+     * {@param path},and also find the worksheets that are children of the direct parent {@param path}.
      * </p>
      * if worksheet of {@param path} not exist ,but its sub-worksheets are not empty，return a temp
      * worksheet with worksheet#id is null.
@@ -106,10 +109,10 @@ public class WorksheetRepository {
      *
      * @param projectId project id
      * @param path the path of worksheet to query
-     * @return returns empty when unable to find the worksheet and sub-worksheets of the {@param path},
-     *         otherwise returns a nonempty worksheet
+     * @return the return value must not be empty，returns temp when unable to find the worksheet of the
+     *         {@param path}, otherwise returns a normal worksheet
      */
-    public Optional<Worksheet> findWithSubListByProjectIdAndPathWithLock(Long projectId, Path path) {
+    public Worksheet findWithSubListAndSameDirectParentListByProjectIdAndPathWithLock(Long projectId, Path path) {
         PreConditions.notNull(projectId, "projectId");
         PreConditions.notNull(path, "path");
         List<ObjectMetadataEntity> entities =
@@ -118,10 +121,10 @@ public class WorksheetRepository {
                         ObjectUploadStatus.FINISHED);
 
         if (CollectionUtils.isEmpty(entities)) {
-            return Optional.empty();
+            return Worksheet.ofTemp(projectId, path);
         }
-        return Optional.ofNullable(WorksheetConverter.toDomainFromEntities(entities, projectId, path,
-                true, true, true));
+        return WorksheetConverter.toDomainFromEntities(entities, projectId, path,
+                true, true, true);
     }
 
     /**
@@ -171,6 +174,43 @@ public class WorksheetRepository {
             return Collections.emptyList();
         }
         return entities.stream().map(WorksheetConverter::toDomain).collect(Collectors.toList());
+    }
+
+    public List<Worksheet> listWithSubListByProjectIdAndPaths(Long projectId, List<Path> paths) {
+        List<Worksheet> resultWorksheets = new ArrayList<>();
+        Set<Path> deleteDirectoryPaths = new HashSet<>();
+        List<Path> deleteFilePaths = new ArrayList<>();
+        for (Path path : paths) {
+            if (path.isDirectory()) {
+                deleteDirectoryPaths.add(path);
+            }
+            if (path.isFile()) {
+                deleteFilePaths.add(path);
+            }
+        }
+        if (!deleteFilePaths.isEmpty()) {
+            List<Worksheet> worksheets = this.listByProjectIdAndInPaths(projectId,
+                    deleteFilePaths);
+            if (CollectionUtils.isNotEmpty(worksheets)) {
+                resultWorksheets.addAll(worksheets);
+            }
+
+        }
+        if (!deleteDirectoryPaths.isEmpty()) {
+            Path commonParentPath = WorksheetPathUtil.findCommonPath(deleteDirectoryPaths);
+            List<Worksheet> worksheets = this.listWithSubListByProjectIdAndPath(projectId,
+                    commonParentPath);
+            if (CollectionUtils.isNotEmpty(worksheets)) {
+                Path[] deleteDirectoryArr = deleteDirectoryPaths.toArray(new Path[0]);
+                for (Worksheet worksheet : worksheets) {
+                    if (deleteDirectoryPaths.contains(worksheet.getPath()) ||
+                            worksheet.getPath().isChildOfAny(deleteDirectoryArr)) {
+                        resultWorksheets.add(worksheet);
+                    }
+                }
+            }
+        }
+        return resultWorksheets;
     }
 
     public void batchAdd(Set<Worksheet> worksheets) {

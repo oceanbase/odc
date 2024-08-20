@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.worksheet.utils;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,6 +33,15 @@ import com.oceanbase.odc.service.worksheet.domain.Worksheet;
 public class WorksheetTestUtil {
 
     static Long initId = System.currentTimeMillis();
+
+    public static Worksheet newDirWorksheet(Long projectId, String path) {
+        String objectId = null;
+        if (new Path(path).isFile()) {
+            objectId = "objectId_" + nextId();
+        }
+        return new Worksheet(nextId(), new Date(), new Date(), projectId,
+                new Path(path), 1L, 0L, objectId, null, null);
+    }
 
     public static Worksheet newDirWorksheet(Long projectId, String path, List<String> sameLevelPaths,
             List<String> subPaths) {

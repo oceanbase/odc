@@ -30,6 +30,8 @@ import java.util.stream.Stream;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.model.WorksheetLocation;
@@ -198,16 +200,25 @@ public class WorksheetPathUtil {
      * @param destinationPath
      * @return
      */
-    public static boolean isRenameValid(Path from, Path destinationPath) {
+    public static void renameValidCheck(Path from, Path destinationPath) {
+        PreConditions.notNull(from, "from");
+        PreConditions.notNull(destinationPath, "destinationPath");
+        PreConditions.validArgumentState(from.getType() == destinationPath.getType(),
+                ErrorCodes.BadArgument, null,
+                "the type of from:" + from + " and destinationPath:" + destinationPath + " is not same");
+        PreConditions.validArgumentState(from.canRename(),
+                ErrorCodes.BadArgument, null, from + " can't rename");
+        PreConditions.validArgumentState(destinationPath.canRename(),
+                ErrorCodes.BadArgument, null, "same path:" + destinationPath + " cannot be rename");
         // Same path cannot be renamed
-        // The parents of the from and destinationPath are same name
-        // Cannot rename paths with different types
-        return from != null && destinationPath != null
-                && from.canRename()
-                && destinationPath.canRename()
-                && !from.equals(destinationPath)
-                && CollectionUtils.isEqualCollection(from.getParentPathItems(), destinationPath.getParentPathItems())
-                && from.getType() == destinationPath.getType();
+        PreConditions.validArgumentState(destinationPath.canRename(),
+                ErrorCodes.BadArgument, null,
+                "same path:" + destinationPath + " cannot be rename");
+        // The parent of from and destinationPath is same
+        PreConditions.validArgumentState(
+                CollectionUtils.isEqualCollection(from.getParentPathItems(), destinationPath.getParentPathItems()),
+                ErrorCodes.BadArgument, null,
+                "the parent of from:" + from + " and destinationPath:" + destinationPath + " is not same");
     }
 
     public static Path findCommonPath(Set<Path> paths) {

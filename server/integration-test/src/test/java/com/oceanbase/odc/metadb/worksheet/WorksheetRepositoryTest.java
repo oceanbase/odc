@@ -104,36 +104,35 @@ public class WorksheetRepositoryTest {
         Worksheet w6 = newWorksheet("/Worksheets/file1.sql");
         Set<Worksheet> subWorksheets = new HashSet<>(Arrays.asList(w1, w2, w3, w4, w5, w6));
         worksheetRepository.batchAdd(subWorksheets);
-        Optional<Worksheet> worksheet = worksheetRepository.findWithSubListByProjectIdAndPathAndNameLike(projectId,
+        Worksheet worksheet = worksheetRepository.findWithSubListByProjectIdAndPathAndNameLike(projectId,
                 new Path("/Worksheets/folder1/folder3"),
                 null);
-        assert !worksheet.isPresent();
-
+        assert worksheet.isTemp();
 
         worksheet = worksheetRepository.findWithSubListByProjectIdAndPathAndNameLike(projectId,
                 new Path("/Worksheets/folder3/"),
                 "");
-        assert worksheet.isPresent();
-        assert worksheet.get().getPath().equals(new Path("/Worksheets/folder3/"));
-        assert worksheet.get().getId() == null;
-        assert CollectionUtils.isEqualCollection(worksheet.get().getSubWorksheets(),
+        assert worksheet.isTemp();
+        assert worksheet.getPath().equals(new Path("/Worksheets/folder3/"));
+        assert worksheet.getId() == null;
+        assert CollectionUtils.isEqualCollection(worksheet.getSubWorksheets(),
                 new HashSet<>(Arrays.asList(w5)));
 
         worksheet = worksheetRepository.findWithSubListByProjectIdAndPathAndNameLike(projectId,
                 new Path("/Worksheets/folder1/"),
                 null);
         assertWorksheetWith(worksheet, w1);
-        assert CollectionUtils.isEqualCollection(worksheet.get().getSubWorksheets(),
+        assert CollectionUtils.isEqualCollection(worksheet.getSubWorksheets(),
                 new HashSet<>(Arrays.asList(w2, w3, w4)));
 
         // add nameLike
         worksheet = worksheetRepository.findWithSubListByProjectIdAndPathAndNameLike(projectId,
                 Path.root(),
                 "der3");
-        assert worksheet.isPresent();
-        assert worksheet.get().getPath().equals(Path.root());
-        assert worksheet.get().getId() == null;
-        assert CollectionUtils.isEqualCollection(worksheet.get().getSubWorksheets(),
+        assert worksheet.isTemp();
+        assert worksheet.getPath().equals(Path.root());
+        assert worksheet.getId() == null;
+        assert CollectionUtils.isEqualCollection(worksheet.getSubWorksheets(),
                 new HashSet<>(Collections.singletonList(w5)));
 
         // add nameLike
@@ -141,14 +140,14 @@ public class WorksheetRepositoryTest {
                 new Path("/Worksheets/folder1/"),
                 "de");
         assertWorksheetWith(worksheet, w1);
-        assert CollectionUtils.isEqualCollection(worksheet.get().getSubWorksheets(),
+        assert CollectionUtils.isEqualCollection(worksheet.getSubWorksheets(),
                 new HashSet<>(Arrays.asList(w2, w3, w4)));
 
     }
 
     @Test
     @Transactional
-    public void findWithSubListByProjectIdAndPathWithLock() {
+    public void findWithSubListAndSameDirectParentListByProjectIdAndPathWithLock() {
         Worksheet w1 = newWorksheet("/Worksheets/folder1/");
         Worksheet w2 = newWorksheet("/Worksheets/folder1/file2.sql");
         Worksheet w3 = newWorksheet("/Worksheets/folder1/folder4/");
@@ -157,23 +156,23 @@ public class WorksheetRepositoryTest {
         Worksheet w6 = newWorksheet("/Worksheets/file1.sql");
         Set<Worksheet> subWorksheets = new HashSet<>(Arrays.asList(w1, w2, w3, w4, w5, w6));
         worksheetRepository.batchAdd(subWorksheets);
-        Optional<Worksheet> worksheet = worksheetRepository.findWithSubListByProjectIdAndPathWithLock(projectId,
+        Worksheet worksheet = worksheetRepository.findWithSubListAndSameDirectParentListByProjectIdAndPathWithLock(projectId,
                 new Path("/Worksheets/folder1/folder3"));
-        assert !worksheet.isPresent();
+        assert worksheet.isTemp();
 
 
-        worksheet = worksheetRepository.findWithSubListByProjectIdAndPathWithLock(projectId,
+        worksheet = worksheetRepository.findWithSubListAndSameDirectParentListByProjectIdAndPathWithLock(projectId,
                 new Path("/Worksheets/folder3/"));
-        assert worksheet.isPresent();
-        assert worksheet.get().getPath().equals(new Path("/Worksheets/folder3/"));
-        assert worksheet.get().getId() == null;
-        assert CollectionUtils.isEqualCollection(worksheet.get().getSubWorksheets(),
+        assert worksheet.isTemp();
+        assert worksheet.getPath().equals(new Path("/Worksheets/folder3/"));
+        assert worksheet.getId() == null;
+        assert CollectionUtils.isEqualCollection(worksheet.getSubWorksheets(),
                 new HashSet<>(Arrays.asList(w5)));
 
-        worksheet = worksheetRepository.findWithSubListByProjectIdAndPathWithLock(projectId,
+        worksheet = worksheetRepository.findWithSubListAndSameDirectParentListByProjectIdAndPathWithLock(projectId,
                 new Path("/Worksheets/folder1/"));
         assertWorksheetWith(worksheet, w1);
-        assert CollectionUtils.isEqualCollection(worksheet.get().getSubWorksheets(),
+        assert CollectionUtils.isEqualCollection(worksheet.getSubWorksheets(),
                 new HashSet<>(Arrays.asList(w2, w3, w4)));
     }
 
@@ -198,18 +197,18 @@ public class WorksheetRepositoryTest {
 
         worksheet = worksheetRepository.findByProjectIdAndPath(projectId,
                 new Path("/Worksheets/folder1/"));
-        assertWorksheetWith(worksheet, w1);
+        assertWorksheetWith(worksheet.get(), w1);
         assert CollectionUtils.isEmpty(worksheet.get().getSubWorksheets());
     }
 
-    private static void assertWorksheetWith(Optional<Worksheet> worksheet, Worksheet w1) {
-        assert worksheet.isPresent();
-        assert worksheet.get().getPath().equals(w1.getPath());
-        assert worksheet.get().getId() > 0;
-        assert worksheet.get().getProjectId().equals(w1.getProjectId());
-        assert worksheet.get().getCreatorId().equals(w1.getCreatorId());
-        assert worksheet.get().getVersion().equals(w1.getVersion());
-        assert worksheet.get().getObjectId().equals(w1.getObjectId());
+    private static void assertWorksheetWith(Worksheet worksheet, Worksheet w1) {
+        assert !worksheet.isTemp();
+        assert worksheet.getPath().equals(w1.getPath());
+        assert worksheet.getId() > 0;
+        assert worksheet.getProjectId().equals(w1.getProjectId());
+        assert worksheet.getCreatorId().equals(w1.getCreatorId());
+        assert worksheet.getVersion().equals(w1.getVersion());
+        assert worksheet.getObjectId().equals(w1.getObjectId());
     }
 
     @Test

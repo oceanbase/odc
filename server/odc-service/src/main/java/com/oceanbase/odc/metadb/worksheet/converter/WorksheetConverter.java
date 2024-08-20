@@ -44,8 +44,8 @@ public class WorksheetConverter {
     }
 
     public static Worksheet toDomainFromEntities(List<ObjectMetadataEntity> entities, Long projectId,
-            Path path, boolean createTempIfSelfNotExistButSubNotEmpty,
-            boolean loadSubFiles, boolean loadSameLevelFiles) {
+            Path path, boolean createTempIfSelfNotExist,
+            boolean loadSub, boolean loadSameDirectParent) {
         Map<Path, Worksheet> sameParentAtPrevLevelMap = new HashMap<>();
         Map<Path, Worksheet> subLevelMap = new HashMap<>();
         Worksheet self = null;
@@ -55,7 +55,7 @@ public class WorksheetConverter {
                 boolean isSubLevel = path == null || entityPath.isChildOfAny(path);
                 boolean isSamePrevParent = path != null && entityPath.isSameParentAtPrevLevel(path);
                 boolean isSelf = entityPath.equals(path);
-                if (isSubLevel && loadSubFiles) {
+                if (isSubLevel && loadSub) {
                     Worksheet worksheet = toDomain(entity);
                     Worksheet existWorksheet = subLevelMap.get(entityPath);
                     if (existWorksheet == null ||
@@ -63,7 +63,7 @@ public class WorksheetConverter {
                         subLevelMap.put(entityPath, worksheet);
                     }
                 }
-                if (!isSelf && !isSubLevel && isSamePrevParent && loadSameLevelFiles) {
+                if (!isSelf && !isSubLevel && isSamePrevParent && loadSameDirectParent) {
                     Worksheet worksheet = toDomain(entity);
                     Worksheet existWorksheet = sameParentAtPrevLevelMap.get(entityPath);
                     if (existWorksheet == null ||
@@ -82,17 +82,17 @@ public class WorksheetConverter {
                         JsonUtils.toJson(entity), e);
             }
         }
-        if (self == null && !subLevelMap.isEmpty() && createTempIfSelfNotExistButSubNotEmpty) {
+        if (self == null && createTempIfSelfNotExist) {
             self = Worksheet.of(projectId, path == null ? Path.root() : path, null, null);
         }
         if (self == null) {
             return null;
         }
-        if (loadSubFiles) {
+        if (loadSub) {
             self.setSubWorksheets(new HashSet<>(subLevelMap.values()));
         }
-        if (loadSameLevelFiles) {
-            self.setSameParentAtPrevLevelWorksheets(new HashSet<>(sameParentAtPrevLevelMap.values()));
+        if (loadSameDirectParent) {
+            self.setSameDirectParentWorksheets(new HashSet<>(sameParentAtPrevLevelMap.values()));
         }
         return self;
     }

@@ -197,6 +197,16 @@ public class Path {
 
     }
 
+    public boolean isChildInDepth(Path parent, int depth) {
+        if (!isChildOfAny(parent)) {
+            return false;
+        }
+        if (depth <= 0) {
+            return true;
+        }
+        return this.levelNum <= parent.levelNum + depth;
+    }
+
     public boolean isChildOfAny(Path... parents) {
         if (parents == null || parents.length == 0) {
             return false;
@@ -321,27 +331,27 @@ public class Path {
     }
 
     /**
-     * Rename. Only when the current path matches {@param from} will it be renamed as
+     * Rename. Only when the current path matches {@param renamePath} will it be renamed as
      * {@param destinationPath} and return true. If it does not match, no renaming will be performed and
-     * return false The {@param from} and {@param destinationPath} here need to satisfy
-     * {@link WorksheetPathUtil#isRenameValid}, and the reason why this validation is not added here is
-     * that it will not duplicate verify when renaming multiple times.
+     * return false The {@param renamePath} and {@param destinationPath} here need to satisfy
+     * {@link WorksheetPathUtil#renameValidCheck}, and the reason why this validation is not added here
+     * is that it will not duplicate verify when renaming multiple times.
      * 
-     * @param from the path need to rename
+     * @param renamePath the path need to rename
      * @param destinationPath path after renamed
      * @return is renamed
      */
-    public boolean rename(Path from, Path destinationPath) {
-        if (!this.isRenameMatch(from)) {
+    public boolean rename(Path renamePath, Path destinationPath) {
+        if (!this.isRenameMatch(renamePath)) {
             return false;
         }
-        // This is renaming the {@param from} itself
-        if (from.levelNum.equals(this.levelNum)) {
+        // This is renaming the {@param renamePath} itself
+        if (renamePath.levelNum.equals(this.levelNum)) {
             this.name = destinationPath.name;
             return true;
         }
-        // This is renaming the sub items of {@param from}
-        this.parentPathItems.set(from.levelNum - 1, destinationPath.name);
+        // This is renaming the sub items of {@param renamePath}
+        this.parentPathItems.set(renamePath.levelNum - 1, destinationPath.name);
         return true;
     }
 
@@ -357,12 +367,8 @@ public class Path {
         if (this.equals(from)) {
             return true;
         }
-        // current {@link Path} is subset of {@param from}.
-        // At this point, {@param from} needs to be directory type (with subsets)
-        return from.isDirectory() && this.levelNum > from.levelNum
-                && CollectionUtils.isEqualCollection(this.parentPathItems.subList(0, from.levelNum - 1),
-                        from.parentPathItems.subList(0, from.levelNum - 1))
-                && this.parentPathItems.get(from.levelNum - 1).equals(from.name);
+        // current {@link Path} is child of {@param from}.
+        return isChildOfAny(from);
     }
 
     /**
@@ -376,14 +382,12 @@ public class Path {
     }
 
     /**
-     * Determine if the current path can be renamed
+     * if the path is system define, can not rename
      * 
      * @return
      */
     public boolean canRename() {
-        // Only subsets of /Worksheets/ and /Repos/RepoName/ can be renamed
-        return this.location == WorksheetLocation.WORKSHEETS && this.levelNum > 1
-                || this.location == WorksheetLocation.REPOS && this.levelNum > 2;
+        return !this.isSystemDefine();
     }
 
     /**

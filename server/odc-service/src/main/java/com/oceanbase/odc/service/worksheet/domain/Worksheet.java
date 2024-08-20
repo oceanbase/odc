@@ -27,7 +27,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -37,6 +36,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
 
@@ -85,14 +85,13 @@ public class Worksheet {
     private boolean isChanged = false;
 
     /**
-     * The parent path is same at current path previous level between sameParentAtPrevLevelWorksheets
-     * and current worksheet, excluding the current and sub worksheets.
+     * The worksheets that are children of current direct parent, excluding the current and its sub worksheets.
      * <p>
      * for example in this class, the paths of sameParentAtPrevLevelWorksheets are
      * <code>[/Worksheets/folder3/,/Worksheets/folder3/file3.sql,/Worksheets/file1.sql]</code>.
      * </p>
      */
-    private Set<Worksheet> sameParentAtPrevLevelWorksheets;
+    private Set<Worksheet> sameDirectParentWorksheets;
     /**
      * All sub worksheets of current worksheet.
      * <p>
@@ -102,13 +101,21 @@ public class Worksheet {
      */
     private Set<Worksheet> subWorksheets;
 
+    public static Worksheet ofTemp(Long projectId, Path path) {
+        return Worksheet.of(projectId, path == null ? Path.root() : path, null, null);
+    }
+
+    public boolean isTemp() {
+        return this.id == null;
+    }
+
     public static Worksheet of(Long projectId, Path path, String objectId, Long creatorId) {
         return new Worksheet(null, null, null, projectId, path, creatorId,
                 null, objectId, null, null);
     }
 
     public Worksheet(Long id, Date createTime, Date updateTime, Long projectId, Path path, Long creatorId, Long version,
-            String objectId, Set<Worksheet> sameParentAtPrevLevelWorksheets, Set<Worksheet> subWorksheets) {
+            String objectId, Set<Worksheet> sameDirectParentWorksheets, Set<Worksheet> subWorksheets) {
         this.id = id;
         this.createTime = createTime;
         this.updateTime = updateTime;
@@ -122,13 +129,13 @@ public class Worksheet {
             PreConditions.notBlank(objectId, "objectId");
         }
         this.objectId = objectId;
-        this.sameParentAtPrevLevelWorksheets =
-                sameParentAtPrevLevelWorksheets == null ? new HashSet<>() : sameParentAtPrevLevelWorksheets;
+        this.sameDirectParentWorksheets =
+            sameDirectParentWorksheets == null ? new HashSet<>() : sameDirectParentWorksheets;
         this.subWorksheets = subWorksheets == null ? new HashSet<>() : subWorksheets;
 
     }
 
-    public List<Worksheet> getSubWorksheetsInDepth(Integer depth, Boolean needToExtractNotExistParent) {
+    public List<Worksheet> getSubWorksheetsInDepth(Integer depth) {
         PreConditions.notNull(depth, "depth");
         PreConditions.validArgumentState(depth >= 0, ErrorCodes.IllegalArgument, null,
                 "depth must be greater than or equal to 0");
@@ -136,9 +143,7 @@ public class Worksheet {
             return new ArrayList<>();
         }
         return subWorksheets.stream()
-                .flatMap(worksheet -> needToExtractNotExistParent
-                        ? splitWorksheetWithLevelNumBiggerThanCurrent(worksheet).stream()
-                        : Stream.of(worksheet))
+                .flatMap(worksheet -> splitWorksheetWithLevelNumBiggerThanCurrent(worksheet).stream())
                 .filter(worksheet -> depth == 0
                         || (long) worksheet.getPath().getLevelNum() <= (long) this.path.levelNum + (long) depth)
                 .collect(Collectors.toMap(Worksheet::getPath, w -> w, (w1, w2) -> {
@@ -202,10 +207,7 @@ public class Worksheet {
      */
     public Set<Worksheet> rename(Path destinationPath) {
         nameTooLongCheck(Collections.singleton(destinationPath));
-        if (!WorksheetPathUtil.isRenameValid(this.path, destinationPath)) {
-            throw new IllegalArgumentException(
-                    "invalid path for rename,from:" + this.path + ",destinationPath:" + destinationPath);
-        }
+        WorksheetPathUtil.renameValidCheck(this.path, destinationPath);
         if (this.isRenameDuplicated(destinationPath)) {
             throw new BadRequestException(ErrorCodes.DuplicatedExists,
                     new Object[] {ResourceType.ODC_WORKSHEET.getLocalizedMessage(), "name", destinationPath.getName()},
@@ -245,6 +247,9 @@ public class Worksheet {
      * @return all changed worksheets ,contain current
      */
     public Set<Worksheet> edit(Path destinationPath, String objectId, Long readVersion) {
+        if (this.isTemp()) {
+            throw new NotFoundException(ResourceType.ODC_WORKSHEET, "path", this.path);
+        }
         // if the objectId is changed, will to determine whether the readVersion meets the criteria
         if (this.path.isFile() && !StringUtils.equals(this.objectId, objectId)) {
             this.objectId = objectId;
@@ -285,10 +290,10 @@ public class Worksheet {
      * @return true duplicated ;false not duplicated
      */
     public boolean isRenameDuplicated(Path destinationPath) {
-        if (CollectionUtils.isEmpty(sameParentAtPrevLevelWorksheets)) {
+        if (CollectionUtils.isEmpty(sameDirectParentWorksheets)) {
             return false;
         }
-        for (Worksheet worksheet : sameParentAtPrevLevelWorksheets) {
+        for (Worksheet worksheet : sameDirectParentWorksheets) {
             // same name with destination(whatever the worksheet.path is a file or a folder)
             if (StringUtils.equals(worksheet.path.name, destinationPath.name)
                     // the worksheet.path is a child of the destination
@@ -319,7 +324,7 @@ public class Worksheet {
     }
 
     public Set<Worksheet> batchCreate(Map<Path, String> createPathToObjectIdMap, Long creatorId) {
-        List<Worksheet> nextLevelWorksheets = this.getSubWorksheetsInDepth(1, true);
+        List<Worksheet> nextLevelWorksheets = this.getSubWorksheetsInDepth(1);
         nameTooLongCheck(createPathToObjectIdMap.keySet());
         sameLevelFileNumLimitCheck(createPathToObjectIdMap, nextLevelWorksheets);
         duplicatedNameCheck(createPathToObjectIdMap, nextLevelWorksheets);
