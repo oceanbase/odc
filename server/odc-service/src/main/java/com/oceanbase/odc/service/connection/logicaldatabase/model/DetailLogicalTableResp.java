@@ -41,5 +41,7 @@ public class DetailLogicalTableResp {
 
     private List<DataNode> inconsistentPhysicalTables;
 
+    private List<LogicalTableTopologyResp> topologies;
+
     private DBTable basePhysicalTable;
 }
