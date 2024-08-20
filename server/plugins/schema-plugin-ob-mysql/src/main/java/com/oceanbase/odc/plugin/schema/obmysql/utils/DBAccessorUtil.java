@@ -19,8 +19,6 @@ import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLInformationExtension;
@@ -68,12 +66,6 @@ public class DBAccessorUtil {
         return DBBrowser.objectEditor().tableEditor()
                 .setDbVersion(getDbVersion(connection))
                 .setType(DialectType.OB_MYSQL.getDBBrowserDialectTypeName()).create();
-    }
-
-    public static DBTableEditor getTableEditor(@NotNull String version, DialectType dialectType) {
-        return DBBrowser.objectEditor().tableEditor()
-                .setDbVersion(version)
-                .setType(dialectType.getDBBrowserDialectTypeName()).create();
     }
 
 }

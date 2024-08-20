@@ -40,7 +40,6 @@ import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.core.sql.parser.DropStatement;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
-import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.model.GenerateTableDDLResp;
@@ -49,6 +48,7 @@ import com.oceanbase.odc.service.db.model.UpdateTableDdlCheck;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -128,7 +128,11 @@ public class DBTableService {
     public GenerateTableDDLResp generateCreateDDL(@NotNull ConnectionSession session, @NotNull DBTable table) {
         String ddl;
         if (ConnectionSessionUtil.isLogicalSession(session)) {
-            ddl = DBAccessorUtil.getTableEditor("4.0.0", session.getDialectType()).generateCreateObjectDDL(table);
+
+            ddl = DBBrowser.objectEditor().tableEditor()
+                    .setDbVersion("4.0.0")
+                    .setType(session.getDialectType().getDBBrowserDialectTypeName()).create()
+                    .generateCreateObjectDDL(table);
         } else {
             ddl = session.getSyncJdbcExecutor(
                     ConnectionSessionConstants.BACKEND_DS_KEY)
@@ -146,7 +150,9 @@ public class DBTableService {
             @NotNull GenerateUpdateTableDDLReq req) {
         String ddl;
         if (ConnectionSessionUtil.isLogicalSession(session)) {
-            ddl = DBAccessorUtil.getTableEditor("4.0.0", session.getDialectType())
+            ddl = DBBrowser.objectEditor().tableEditor()
+                    .setDbVersion("4.0.0")
+                    .setType(session.getDialectType().getDBBrowserDialectTypeName()).create()
                     .generateUpdateObjectDDL(req.getPrevious(), req.getCurrent());
         } else {
             ddl = session.getSyncJdbcExecutor(
