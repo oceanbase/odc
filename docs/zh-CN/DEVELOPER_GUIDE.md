@@ -342,9 +342,17 @@ script/build_sqlconsole.sh
 script/build_jar.sh
 ```
 
-构建完成后，您可以在`distribution/plugins`，`distribution/starters`以及 `distribution/modules` 目录中看到这些构建完成的插件。
+构建完成后，您可以在`distribution/plugins`，`distribution/starters` 以及 `distribution/modules` 目录中看到这些构建完成的插件。
 
 ![image.png](../en-US/images/odc-plugins-starters.png)
+
+这三个目录分别用于存放 ODC 的插件，装配器以及模块，以下是这三种对象的对比：
+
+| Metric          | 插件（Plugin）          | 装配器（Starter）        | 模块（Module）                         |
+|:----------------|:--------------------|:--------------------|:-----------------------------------|
+| 加载限制            | 无                   | 按 profile 加载        | 无                                  |
+| 定位              | 为业务功能提供不同数据源类型的异构实现 | 异构运行环境（独立输出，桌面版等）装配 | 提供独立完整，独立，可插拔的业务功能，将业务功能和具体的运行环境解耦 |
+| 是否 spring 上下文有关 | 无                   | 有                   | 有                                  |
 
 ### 3.3.3 启动 OdcServer
 

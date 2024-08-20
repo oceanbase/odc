@@ -374,6 +374,15 @@ After the build is complete, you can see the built plugins in the distribution/p
 
 ![image.png](./images/odc-plugins-starters.png)
 
+These three directories are used to store ODC plug-ins, assemblers and modules respectively. The following is a comparison of these clear objects:
+
+| Metric                       | Plugin                                                                                      | Starter                                                                                  | Module                                                                                                                                          |
+|:-----------------------------|:--------------------------------------------------------------------------------------------|:-----------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------|
+| Loading Limit                | No                                                                                          | Load by profile                                                                          | No                                                                                                                                              |
+| Design Positioning           | Provide heterogeneous implementations of different data source types for business functions | Heterogeneous operating environment (independent output, desktop version, etc.) assembly | Provide independent, complete, independent and pluggable business functions, decoupling business functions from specific operating environments |
+| Is It Spring Context Related | No                                                                                          | Yes                                                                                      | No                                                                                                                                              |
+
+
 ### 3.3.3 Start OdcServer
 
 **Running OdcServer**
