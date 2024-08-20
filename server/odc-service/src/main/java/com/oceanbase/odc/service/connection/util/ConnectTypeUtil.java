@@ -82,7 +82,7 @@ public class ConnectTypeUtil {
             return null;
         }
         // 公有云模式下
-        if(isCloud(ConnectionPluginUtil.getConnectionExtension(dialectType).getConnectionInfo(jdbcUrl, null))){
+        if (isCloud(ConnectionPluginUtil.getConnectionExtension(dialectType).getConnectionInfo(jdbcUrl, null))) {
             switch (dialectType) {
                 case OB_ORACLE:
                     return ConnectType.CLOUD_OB_ORACLE;
