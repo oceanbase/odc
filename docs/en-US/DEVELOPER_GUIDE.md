@@ -382,7 +382,6 @@ These three directories are used to store ODC plug-ins, assemblers and modules r
 | Design Positioning           | Provide heterogeneous implementations of different data source types for business functions | Heterogeneous operating environment (independent output, desktop version, etc.) assembly | Provide independent, complete, independent and pluggable business functions, decoupling business functions from specific operating environments |
 | Is It Spring Context Related | No                                                                                          | Yes                                                                                      | No                                                                                                                                              |
 
-
 ### 3.3.3 Start OdcServer
 
 **Running OdcServer**
