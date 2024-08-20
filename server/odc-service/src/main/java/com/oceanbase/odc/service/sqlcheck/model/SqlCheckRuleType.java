@@ -243,7 +243,11 @@ public enum SqlCheckRuleType implements Translatable {
     /**
      * Truncate table 语句存在
      */
-    TRUNCATE_TBLE_EXISTS("truncate-table-exists");
+    TRUNCATE_TBLE_EXISTS("truncate-table-exists"),
+    /**
+     * 限制 SQL 执行影响行数，默认影响超过 1000 行时，拦截
+     */
+    RESTRICT_SQL_AFFECTED_ROWS("restrict-sql-affected-rows");
 
     private final String name;
     private static final String NAME_CODE = "name";
