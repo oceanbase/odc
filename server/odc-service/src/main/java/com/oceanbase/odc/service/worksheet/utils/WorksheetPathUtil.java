@@ -51,7 +51,7 @@ public class WorksheetPathUtil {
 
     /**
      * Split the path into individual items, supporting splitting by "/" and "\".
-     * </p>
+     * <p>
      * To distinguish between folders and files, the last delimiter will be retained
      * 
      * @param path

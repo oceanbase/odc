@@ -90,7 +90,6 @@ public class Worksheet {
      * <p>
      * for example in this class, the paths of sameParentAtPrevLevelWorksheets are
      * <code>[/Worksheets/folder3/,/Worksheets/folder3/file3.sql,/Worksheets/file1.sql]</code>.
-     * </p>
      */
     private Set<Worksheet> sameDirectParentWorksheets;
     /**
@@ -98,7 +97,7 @@ public class Worksheet {
      * <p>
      * for example in this class,the paths of subWorksheets are
      * <code>[/Worksheets/folder1/folder4/,/Worksheets/folder1/file2.sql]</code>.
-     * </p>
+     * <p>
      */
     private Set<Worksheet> subWorksheets;
 
@@ -180,7 +179,7 @@ public class Worksheet {
      * for example: current worksheet path is <code>/Worksheets/dir1/</code>, the split worksheet is
      * <code>/Worksheets/dir1/dir2/file1</code>, and the result worksheets are
      * <code>[/Worksheets/dir1/dir2/,/Worksheets/dir1/dir2/file1]</code>
-     * </p>
+     * <p>
      * 
      * @param worksheet the worksheet need to split
      * @return
@@ -285,7 +284,7 @@ public class Worksheet {
      * sameParentAtPrevLevelWorksheets), is also rename duplicated.The reason for handling this is，the
      * name of the sub worksheets for renaming the directory may duplicate with the name of the sub
      * worksheet for destination </b>
-     * </p>
+     * <p>
      *
      * @param destinationPath the destination path to rename
      * @return true duplicated ;false not duplicated
