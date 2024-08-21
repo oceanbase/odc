@@ -16,12 +16,9 @@
 package com.oceanbase.odc.service.schedule;
 
 import java.io.File;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.apache.commons.io.input.ReversedLinesFileReader;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,12 +29,10 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskSpecs;
@@ -128,7 +123,6 @@ public class ScheduleTaskService {
         return scheduleTaskRepository.findByJobNameAndStatusIn(jobName, statuses);
     }
 
-
     public Optional<ScheduleTaskEntity> findByJobId(Long jobId) {
         List<ScheduleTaskEntity> scheduleTasks = scheduleTaskRepository.findByJobId(jobId);
         if (scheduleTasks != null) {
@@ -148,37 +142,18 @@ public class ScheduleTaskService {
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE_TASK, "id", id));
     }
 
-    public String getScheduleTaskLog(Long id, OdcTaskLogLevel logLevel) {
+    public File getScheduleTaskLogFile(Long id, OdcTaskLogLevel logLevel) throws NotFoundException {
+        log.info("Get schedule task log file from local, id={}", id);
         ScheduleTaskEntity taskEntity = nullSafeGetById(id);
         String filePath = String.format(LOG_PATH_PATTERN, logDirectory,
                 taskEntity.getJobName(), taskEntity.getJobGroup(), taskEntity.getId(),
                 logLevel.name().toLowerCase());
-        File logFile = new File(filePath);
-        if (!logFile.exists()) {
-            return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", id});
+        log.info("get log file path from scheduleTask, filePath = {}", filePath);
+        File file = new File(filePath);
+        if (!file.exists()) {
+            log.error("ScheduleTaskLogFile not found,taskId={}, may the log file in oss", id);
+            throw new NotFoundException(ResourceType.ODC_FILE, "Path", filePath);
         }
-        try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile, StandardCharsets.UTF_8)) {
-            List<String> lines = new ArrayList<>();
-            int bytes = 0;
-            String line;
-            while ((line = reader.readLine()) != null) {
-                lines.add(line);
-                bytes += line.getBytes().length;
-                if (lines.size() >= 10000 || bytes >= 1024 * 1024) {
-                    lines.add("[ODC INFO]: \n"
-                            + "Logs exceed max limitation (10000 rows or 1 MB), only the latest part is displayed.\n"
-                            + "Please download the log file for the full content.");
-                    break;
-                }
-            }
-            StringBuilder logBuilder = new StringBuilder();
-            for (int i = lines.size() - 1; i >= 0; i--) {
-                logBuilder.append(lines.get(i)).append("\n");
-            }
-            return logBuilder.toString();
-        } catch (Exception ex) {
-            log.warn("Read task log file failed, details={}", ex.getMessage());
-            throw new UnexpectedException("Read task log file failed, details: " + ex.getMessage(), ex);
-        }
+        return file;
     }
 }

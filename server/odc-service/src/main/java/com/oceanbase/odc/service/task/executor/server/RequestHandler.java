@@ -45,6 +45,8 @@ public class RequestHandler {
     private final Pattern stopTaskPattern = Pattern.compile(String.format(JobUrlConstants.STOP_TASK, "([0-9]+)"));
     private final Pattern modifyParametersPattern =
             Pattern.compile(String.format(JobUrlConstants.MODIFY_JOB_PARAMETERS, "([0-9]+)"));
+    private final Pattern downloadLogUrlPattern =
+            Pattern.compile(String.format(JobUrlConstants.LOG_DOWNLOAD, "([0-9]+)"));
     private final LogBiz executorBiz;
 
     public RequestHandler() {
@@ -53,14 +55,19 @@ public class RequestHandler {
 
     public SuccessResponse<Object> process(HttpMethod httpMethod, String uri, String requestData) {
 
-        if (uri == null || uri.trim().length() == 0) {
+        if (uri == null || uri.trim().isEmpty()) {
             return Responses.single("request error: uri is empty.");
         }
 
         try {
             // services mapping
             String path = UrlUtils.getPath(uri);
-            Matcher matcher = logUrlPattern.matcher(path);
+            Matcher matcher = downloadLogUrlPattern.matcher(path);
+            if (matcher.find()) {
+                return Responses.single(executorBiz.downloadLog(Long.parseLong(matcher.group(1)),
+                        UrlUtils.getQueryParameterFirst(uri, "logType")));
+            }
+            matcher = logUrlPattern.matcher(path);
             if (matcher.find()) {
                 String maxLine = UrlUtils.getQueryParameterFirst(uri, "fetchMaxLine");
                 String maxSize = UrlUtils.getQueryParameterFirst(uri, "fetchMaxByteSize");
