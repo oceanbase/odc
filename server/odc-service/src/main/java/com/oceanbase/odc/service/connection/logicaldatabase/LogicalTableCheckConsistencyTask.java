@@ -29,11 +29,17 @@ import java.util.stream.Collectors;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingEntity;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingRepository;
+import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.LogicalTableFinder;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
+
+import lombok.NonNull;
 
 /**
  * @Author: Lebie
@@ -44,23 +50,35 @@ public class LogicalTableCheckConsistencyTask implements Runnable {
     private final Long tableId;
     private final TableMappingRepository relationRepository;
     private final DatabaseService databaseService;
+    private final User creator;
+    private final ConnectionService connectionService;
 
-    public LogicalTableCheckConsistencyTask(Long tableId,
-            TableMappingRepository relationRepository, DatabaseService databaseService) {
+    public LogicalTableCheckConsistencyTask(@NonNull Long tableId,
+            @NonNull TableMappingRepository relationRepository, @NonNull DatabaseService databaseService,
+            @NonNull ConnectionService connectionService,
+            @NonNull User creator) {
         this.tableId = tableId;
         this.relationRepository = relationRepository;
         this.databaseService = databaseService;
+        this.connectionService = connectionService;
+        this.creator = creator;
     }
 
     @Override
     public void run() {
+        SecurityContextUtils.setCurrentUser(creator);
         List<TableMappingEntity> mappings = relationRepository.findByLogicalTableId(this.tableId);
 
         Set<Long> databaseIds = mappings.stream().map(TableMappingEntity::getPhysicalDatabaseId)
                 .collect(Collectors.toSet());
         Map<Long, Database> id2Databases = databaseService.listDatabasesDetailsByIds(databaseIds).stream()
                 .collect(Collectors.toMap(Database::getId, database -> database));
-
+        Map<Long, ConnectionConfig> id2DataSources = connectionService.listForConnectionSkipPermissionCheck(
+                id2Databases.values().stream().map(database -> database.getDataSource().getId()).collect(
+                        Collectors.toList()))
+                .stream().collect(Collectors.toMap(ConnectionConfig::getId, connection -> connection));
+        id2Databases.values().stream()
+                .forEach(database -> database.setDataSource(id2DataSources.get(database.getDataSource().getId())));
         Map<String, List<TableMappingEntity>> signature2Tables = new HashMap<>();
         mappings.stream().collect(Collectors.groupingBy(TableMappingEntity::getPhysicalDatabaseId))
                 .forEach((databaseId, physicalTables) -> {

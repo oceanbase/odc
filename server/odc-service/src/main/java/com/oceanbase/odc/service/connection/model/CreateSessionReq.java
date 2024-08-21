@@ -42,6 +42,7 @@ public class CreateSessionReq implements Serializable {
     private Long dsId;
     private String realId;
     private String from;
+    private Boolean logicalSession = Boolean.FALSE;
 
     public static CreateSessionReq from(@NonNull ConnectionConfig connectionConfig) {
         return new CreateSessionReq(connectionConfig.getId(), null, null);
@@ -51,6 +52,13 @@ public class CreateSessionReq implements Serializable {
         this.dbId = dbId;
         this.dsId = dsId;
         this.realId = realId;
+    }
+
+    public CreateSessionReq(Long dsId, Long dbId, String realId, Boolean logicalSession) {
+        this.dbId = dbId;
+        this.dsId = dsId;
+        this.realId = realId;
+        this.logicalSession = logicalSession;
     }
 
 }

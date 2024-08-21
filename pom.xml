@@ -19,6 +19,7 @@
         <module>server/odc-service</module>
         <module>server/odc-server</module>
         <module>server/starters</module>
+        <module>server/modules</module>
         <module>server/integration-test</module>
         <module>server/odc-migrate</module>
     </modules>
@@ -1381,6 +1382,18 @@
                         <configuration>
                             <target>
                                 <delete dir="${project.basedir}/distribution/starters"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>delete-module-jar</id>
+                        <phase>pre-clean</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <delete dir="${project.basedir}/distribution/modules"/>
                             </target>
                         </configuration>
                     </execution>
