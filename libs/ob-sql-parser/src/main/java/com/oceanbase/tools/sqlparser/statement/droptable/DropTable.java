@@ -50,4 +50,9 @@ public class DropTable extends BaseStatement {
         super(context);
         this.relations = Collections.singletonList(relation);
     }
+
+    @Override
+    public String toString() {
+        return this.getText();
+    }
 }

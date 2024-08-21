@@ -42,4 +42,9 @@ public class TableList extends BaseStatement {
         super(context);
         this.relations = relations;
     }
+
+    @Override
+    public String toString() {
+        return this.getText();
+    }
 }

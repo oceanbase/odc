@@ -56,4 +56,9 @@ public class DropIndex extends BaseStatement {
         this.relation = relation;
         this.schemaName = relation.getSchema();
     }
+
+    @Override
+    public String toString() {
+        return this.getText();
+    }
 }
