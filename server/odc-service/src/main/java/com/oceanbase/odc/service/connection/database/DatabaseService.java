@@ -498,16 +498,28 @@ public class DatabaseService {
         return res;
     }
 
+    /**
+     * 内部同步数据源模式
+     *
+     * @param dataSourceId 数据源ID
+     * @return 同步结果
+     * @throws InterruptedException 线程中断异常
+     */
     @SkipAuthorize("internal usage")
     public Boolean internalSyncDataSourceSchemas(@NonNull Long dataSourceId) throws InterruptedException {
+        // 获取jdbc锁
         Lock lock = jdbcLockRegistry.obtain(connectionService.getUpdateDsSchemaLockKey(dataSourceId));
         if (!lock.tryLock(3, TimeUnit.SECONDS)) {
+            // 如果无法获取锁，则抛出冲突异常
             throw new ConflictException(ErrorCodes.ResourceSynchronizing,
                     new Object[] {ResourceType.ODC_DATABASE.getLocalizedMessage()}, "Can not acquire jdbc lock");
         }
         try {
+            // 获取数据库连接配置
             ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
+            // 检查当前组织是否有权限
             horizontalDataPermissionValidator.checkCurrentOrganization(connection);
+            // 根据组织类型同步数据源
             organizationService.get(connection.getOrganizationId()).ifPresent(organization -> {
                 if (organization.getType() == OrganizationType.INDIVIDUAL) {
                     syncIndividualDataSources(connection);
@@ -517,9 +529,11 @@ public class DatabaseService {
             });
             return true;
         } catch (Exception ex) {
+            // 同步失败，记录日志并返回false
             log.warn("Sync database failed, dataSourceId={}, errorMessage={}", dataSourceId, ex.getLocalizedMessage());
             return false;
         } finally {
+            // 释放锁
             lock.unlock();
         }
     }
@@ -652,22 +666,36 @@ public class DatabaseService {
         return projectId;
     }
 
+    /**
+     * 同步个人数据源
+     *
+     * @param connection 数据库连接配置
+     */
     private void syncIndividualDataSources(ConnectionConfig connection) {
+        // 创建个人数据源
         DataSource individualDataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
+        // 创建线程池
         ExecutorService executorService = Executors.newFixedThreadPool(1);
+        // 提交任务并获取Future对象
         Future<Set<String>> future = executorService.submit(() -> {
             try (Connection conn = individualDataSource.getConnection()) {
+                // 显示数据库
                 return dbSchemaService.showDatabases(connection.getDialectType(), conn);
             }
         });
         try {
+            // 获取最新的数据库名称集合
             Set<String> latestDatabaseNames = future.get(10, TimeUnit.SECONDS);
+            // 获取数据库实体列表
             List<DatabaseEntity> existedDatabasesInDb = databaseRepository.findByConnectionId(connection.getId())
                     .stream().filter(DatabaseEntity::getExisted).collect(Collectors.toList());
+            // 将数据库名称按照实体分组
             Map<String, List<DatabaseEntity>> existedDatabaseName2Database =
                     existedDatabasesInDb.stream().collect(Collectors.groupingBy(DatabaseEntity::getName));
+            // 获取已存在的数据库名称集合
             Set<String> existedDatabaseNames = existedDatabaseName2Database.keySet();
 
+            // 构建要添加的数据库实体列表
             List<Object[]> toAdd = latestDatabaseNames.stream()
                     .filter(latestDatabaseName -> !existedDatabaseNames.contains(latestDatabaseName))
                     .map(latestDatabaseName -> new Object[] {
@@ -681,18 +709,22 @@ public class DatabaseService {
                     })
                     .collect(Collectors.toList());
 
+            // 批量插入数据库实体
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
             if (CollectionUtils.isNotEmpty(toAdd)) {
                 jdbcTemplate.batchUpdate(
-                        "insert into connect_database(database_id, organization_id, name, connection_id, environment_id, sync_status, object_sync_status) values(?,?,?,?,?,?,?)",
+                        "insert into connect_database(database_id, organization_id, name, connection_id, environment_id, "
+                                + "sync_status, object_sync_status) values(?,?,?,?,?,?,?)",
                         toAdd);
             }
 
+            // 构建要删除的数据库实体列表
             List<Object[]> toDelete =
                     existedDatabasesInDb.stream()
                             .filter(database -> !latestDatabaseNames.contains(database.getName()))
                             .map(database -> new Object[] {database.getId()})
                             .collect(Collectors.toList());
+            // 批量删除数据库实体
             if (!CollectionUtils.isEmpty(toDelete)) {
                 jdbcTemplate.batchUpdate("delete from connect_database where id = ?", toDelete);
             }
@@ -706,12 +738,14 @@ public class DatabaseService {
             }
         } finally {
             try {
+                // 关闭线程池
                 executorService.shutdownNow();
             } catch (Exception e) {
                 // eat the exception
             }
             if (individualDataSource instanceof AutoCloseable) {
                 try {
+                    // 关闭个人数据源
                     ((AutoCloseable) individualDataSource).close();
                 } catch (Exception e) {
                     log.warn("Failed to close datasource, errorMessgae={}", e.getMessage());

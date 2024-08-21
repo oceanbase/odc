@@ -77,9 +77,12 @@ public class DatabaseSyncManager {
     @SkipAuthorize("internal usage")
     public Future<Boolean> submitSyncDataSourceAndDBSchemaTask(@NonNull ConnectionConfig connection) {
         return doExecute(() -> executor.submit(() -> {
+            // 持久化数据源中的所有数据库到元数据库中
             Boolean res = syncDBForDataSource(connection);
             try {
+                // 刷新过期的待处理数据库对象状态
                 databaseService.refreshExpiredPendingDBObjectStatus();
+                // 同步数据库对象到源数据库中（当前数据源中的所有数据库的数据库对象table ，view等）
                 dbSchemaSyncTaskManager.submitTaskByDataSource(connection);
             } catch (Exception e) {
                 log.warn("Failed to submit sync database schema task for datasource id={}", connection.getId(), e);

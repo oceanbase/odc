@@ -56,25 +56,38 @@ public abstract class AbstractDBColumnSyncer<T extends ExtensionPoint> implement
 
     private static final int BATCH_SIZE = 1000;
 
+    /**
+     * 同步数据库表结构
+     *
+     * @param connection 数据库连接
+     * @param database 数据库对象
+     * @param dialectType 方言类型
+     */
     @Override
     public void sync(@NonNull Connection connection, @NonNull Database database, @NonNull DialectType dialectType) {
+        // 获取方言对应的扩展点
         T extensionPoint = getExtensionPoint(dialectType);
         if (extensionPoint == null) {
             return;
         }
+        // 获取最新的表结构信息
         Map<String, Set<String>> latestObject2Columns = getLatestObjectToColumns(extensionPoint, connection, database);
+        // 获取已存在的表结构信息
         Map<String, DBObjectEntity> existingObject2Entity =
                 dbObjectRepository.findByDatabaseIdAndTypeIn(database.getId(), getColumnRelatedObjectTypes()).stream()
                         .collect(Collectors.toMap(DBObjectEntity::getName, e -> e, (e1, e2) -> e1));
         if (CollectionUtils.isEmpty(existingObject2Entity.entrySet())) {
             return;
         }
+        // 获取已存在的表的ID列表
         Set<Long> existingObjectIds =
                 existingObject2Entity.values().stream().map(DBObjectEntity::getId).collect(Collectors.toSet());
+        // 获取已存在的表的列信息
         Map<Long, List<DBColumnEntity>> existingObjectId2ColumnEntities =
                 dbColumnRepository.findByDatabaseIdAndObjectIdIn(database.getId(), existingObjectIds).stream()
                         .collect(Collectors.groupingBy(DBColumnEntity::getObjectId));
         // Insert columns that are not in the existing column list
+        // 插入不在已存在列表中的列
         List<DBColumnEntity> toBeInserted = new ArrayList<>();
         List<DBColumnEntity> toBeDeleted = new ArrayList<>();
         for (Entry<String, DBObjectEntity> entry : existingObject2Entity.entrySet()) {
@@ -95,6 +108,7 @@ public abstract class AbstractDBColumnSyncer<T extends ExtensionPoint> implement
                     toBeInserted.add(columnEntity);
                 }
             }
+            // 删除不在最新列表中的列
             for (DBColumnEntity existingColumn : existingColumns) {
                 if (!latestColumns.contains(existingColumn.getName())) {
                     toBeDeleted.add(existingColumn);

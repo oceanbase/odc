@@ -206,40 +206,55 @@ public class DBResourcePermissionHelper {
             return ret;
         }
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
+            // 如果当前用户是个人用户，则将所有表的权限设置为所有权限类型
             for (Long tableId : tableIds) {
                 ret.put(tableId, new HashSet<>(DatabasePermissionType.all()));
             }
             return ret;
         }
+        // 如果是团队用户，获取所有表中所属的所有数据库的ID集合
         List<DBObjectEntity> tbEntities = dbObjectRepository.findByIdIn(tableIds);
         Set<Long> dbIds = tbEntities.stream().map(DBObjectEntity::getDatabaseId).collect(Collectors.toSet());
+        // 获取数据库ID到数据库实体的映射
         Map<Long, DatabaseEntity> dbId2Entity = databaseRepository.findByIdIn(dbIds).stream()
                 .collect(Collectors.toMap(DatabaseEntity::getId, e -> e));
+        // 获取当前用户被授权的项目ID集合
         Set<Long> projectIds = getPermittedProjectIds();
+        // 获取数据库ID到用户数据库权限实体列表的映射
         Map<Long, List<UserDatabasePermissionEntity>> dbId2Permissions = userDatabasePermissionRepository
                 .findNotExpiredByUserIdAndDatabaseIdIn(authenticationFacade.currentUserId(), dbIds)
                 .stream().collect(Collectors.groupingBy(UserDatabasePermissionEntity::getDatabaseId));
+        // 获取表ID到用户表权限实体列表的映射
         Map<Long, List<UserTablePermissionEntity>> tbId2Permissions = userTablePermissionRepository
                 .findNotExpiredByUserIdAndTableIdIn(authenticationFacade.currentUserId(), tableIds)
                 .stream().collect(Collectors.groupingBy(UserTablePermissionEntity::getTableId));
+        //遍历表对象
         for (DBObjectEntity e : tbEntities) {
+            // 如果表所属数据库不存在或未被分配到项目，则将表的权限设置为空集合
             if (!dbId2Entity.containsKey(e.getDatabaseId())
                     || dbId2Entity.get(e.getDatabaseId()).getProjectId() == null) {
                 ret.put(e.getId(), new HashSet<>());
+                // 如果表所属数据库属于当前用户被授权的项目，则将表的权限设置为所有权限类型
             } else if (projectIds.contains(dbId2Entity.get(e.getDatabaseId()).getProjectId())) {
                 ret.put(e.getId(), new HashSet<>(DatabasePermissionType.all()));
             } else {
+                // 否则，计算表的权限
+                // 创建一个Set用于存放用户授权的数据库权限
                 Set<DatabasePermissionType> authorized = new HashSet<>();
+                // 获取数据库ID对应的权限列表
                 List<UserDatabasePermissionEntity> dbPermissions = dbId2Permissions.get(e.getDatabaseId());
+                // 如果权限列表不为空，则将权限转换为DatabasePermissionType并添加到authorized集合中
                 if (CollectionUtils.isNotEmpty(dbPermissions)) {
                     authorized.addAll(dbPermissions.stream().map(p -> DatabasePermissionType.from(p.getAction()))
-                            .collect(Collectors.toSet()));
+                        .collect(Collectors.toSet()));
                 }
+                // 获取表ID对应的权限列表
                 List<UserTablePermissionEntity> permissions = tbId2Permissions.get(e.getId());
                 if (CollectionUtils.isNotEmpty(permissions)) {
                     authorized.addAll(permissions.stream().map(p -> DatabasePermissionType.from(p.getAction()))
-                            .collect(Collectors.toSet()));
+                        .collect(Collectors.toSet()));
                 }
+                // 将authorized集合作为值，将表ID作为键，存入retmap中
                 ret.put(e.getId(), authorized);
             }
         }
@@ -445,9 +460,16 @@ public class DBResourcePermissionHelper {
         return resource2PermissionTypes;
     }
 
+    /**
+     * 获取允许访问的项目ID集合
+     *
+     * @return 允许访问的项目ID集合
+     */
     private Set<Long> getPermittedProjectIds() {
         // OWNER, DBA or DEVELOPER can access all databases inner the project
+        // 获取项目ID到资源角色名称的映射
         Map<Long, Set<ResourceRoleName>> projectIds2Roles = projectService.getProjectId2ResourceRoleNames();
+        // 过滤出具有OWNER、DBA或DEVELOPER角色的项目ID，并返回项目ID集合
         return projectIds2Roles.entrySet().stream()
                 .filter(e -> e.getValue().contains(ResourceRoleName.OWNER)
                         || e.getValue().contains(ResourceRoleName.DBA)

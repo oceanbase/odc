@@ -234,12 +234,23 @@ public class ConnectionService {
         return create(connection, currentUserId(), false);
     }
 
+    /**
+     * 创建连接配置
+     *
+     * @param connection 连接配置对象
+     * @param creatorId 创建者ID
+     * @param skipPermissionCheck 是否跳过权限检查
+     * @return 保存后的连接配置对象
+     */
     @SkipAuthorize("odc internal usage")
     public ConnectionConfig create(@NotNull @Valid ConnectionConfig connection, @NotNull Long creatorId,
             boolean skipPermissionCheck) {
+        // 开启事务
         ConnectionConfig saved = txTemplate.execute(status -> {
             try {
+                // 持久化ConnectionEntity和ConnectionAttributeEntity
                 ConnectionConfig created = innerCreate(connection, creatorId, skipPermissionCheck);
+                // 持久化关于connection的PermissionEntity（权限表）和UserPermissionEntity（用户-权限关联表）
                 userPermissionService.bindUserAndDataSourcePermission(creatorId, currentOrganizationId(),
                         created.getId(), Arrays.asList("read", "update", "delete"));
                 return created;
@@ -248,6 +259,7 @@ public class ConnectionService {
                 throw e;
             }
         });
+        // 提交同步数据源和数据库对象的任务
         databaseSyncManager.submitSyncDataSourceAndDBSchemaTask(saved);
         return saved;
     }

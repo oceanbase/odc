@@ -119,7 +119,7 @@ public class TableService {
             // 获取最新的表名列表
             Set<String> latestTableNames = point.list(conn, database.getName())
                     .stream().map(DBObjectIdentity::getName).collect(Collectors.toSet());
-            // 如果当前用户是个人版组织，则返回所有表的权限类型为所有权限类型
+            // 如果组织类型为私人时，只有一个人，则返回具有所有权限的表
             if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
                 return latestTableNames.stream().map(tableName -> {
                     Table table = new Table();
@@ -128,7 +128,7 @@ public class TableService {
                     return table;
                 }).collect(Collectors.toList());
             }
-            // 获取数据库中已存在的表列表
+            // 组织类型位团队时，则返回有权限的获取数据库中已存在的表列表
             List<DBObjectEntity> tables =
                     dbObjectRepository.findByDatabaseIdAndType(params.getDatabaseId(), DBObjectType.TABLE);
             Set<String> existTableNames = tables.stream().map(DBObjectEntity::getName).collect(Collectors.toSet());
@@ -161,23 +161,41 @@ public class TableService {
         }
     }
 
+    /**
+     * 将DBObjectEntity集合转换为Table集合
+     *
+     * @param entities DBObjectEntity集合
+     * @param database 数据库对象
+     * @param includePermittedAction 是否包含授权操作
+     * @return Table集合
+     */
     private List<Table> entitiesToModels(Collection<DBObjectEntity> entities, Database database,
             boolean includePermittedAction) {
         List<Table> tables = new ArrayList<>();
         if (CollectionUtils.isEmpty(entities)) {
             return tables;
         }
+        // 获取DBObjectEntity集合中每个实体的权限类型，这里id对应的是table在表database_schema_object中的id
         Map<Long, Set<DatabasePermissionType>> id2Types = dbResourcePermissionHelper
                 .getTablePermissions(entities.stream().map(DBObjectEntity::getId).collect(Collectors.toSet()));
+        // 遍历entities集合中的每个DBObjectEntity对象
         for (DBObjectEntity entity : entities) {
             Table table = new Table();
+            // 设置Table对象的id属性为DBObjectEntity对象的id属性
             table.setId(entity.getId());
+            // 设置Table对象的name属性为DBObjectEntity对象的name属性
             table.setName(entity.getName());
+            // 设置Table对象的database属性为传入的database参数
             table.setDatabase(database);
+            // 设置Table对象的createTime属性为DBObjectEntity对象的createTime属性
             table.setCreateTime(entity.getCreateTime());
+            // 设置Table对象的updateTime属性为DBObjectEntity对象的updateTime属性
             table.setUpdateTime(entity.getUpdateTime());
+            // 设置Table对象的organizationId属性为DBObjectEntity对象的organizationId属性
             table.setOrganizationId(entity.getOrganizationId());
+            // 如果includePermittedAction为true
             if (includePermittedAction) {
+                // 如果包含授权操作，则设置表的授权权限类型
                 table.setAuthorizedPermissionTypes(id2Types.get(entity.getId()));
             }
             tables.add(table);

@@ -76,26 +76,46 @@ public class DBSchemaSyncService {
         this.syncers = implementations;
     }
 
+    /**
+     * 同步数据库schemas
+     *
+     * @param database 数据库对象
+     * @return 同步是否成功
+     * @throws InterruptedException
+     * @throws SQLException
+     */
     public boolean sync(@NonNull Database database) throws InterruptedException, SQLException {
+        // 检查数据源是否为空
         PreConditions.notNull(database.getDataSource(), "database.dataSource");
+        // 获取数据源ID
         Long dataSourceId = database.getDataSource().getId();
+        // 获取锁
         Lock lock = jdbcLockRegistry.obtain(getSyncDBObjectLockKey(dataSourceId, database.getId()));
+        // 尝试获取锁，最多等待3秒
         if (!lock.tryLock(3, TimeUnit.SECONDS)) {
+            // 如果获取锁失败，抛出异常
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
         }
         try {
+            // 获取数据库连接配置
             ConnectionConfig config = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
+            // 创建OBConsoleDataSourceFactory对象
             OBConsoleDataSourceFactory factory = new OBConsoleDataSourceFactory(config, true);
             try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource();
                     Connection conn = dataSource.getConnection()) {
                 boolean success = true;
+                // 遍历所有的DBSchemaSyncer对象
                 for (DBSchemaSyncer syncer : syncers) {
+                    // 判断是否支持当前数据库方言类型
                     if (syncer.supports(config.getDialectType())) {
                         try {
+                            // 同步schemas
                             syncer.sync(conn, database, config.getDialectType());
                         } catch (UnsupportedOperationException | UnsupportedException | NotImplementedException e) {
                             // ignore unsupported exception
+                            // 忽略不支持的异常
                         } catch (Exception e) {
+                            // 同步失败，记录日志
                             success = false;
                             log.warn("Failed to synchronize {} for database id={}", syncer.getObjectType(),
                                     database.getId(), e);
@@ -105,6 +125,7 @@ public class DBSchemaSyncService {
                 return success;
             }
         } finally {
+            // 释放锁
             lock.unlock();
         }
     }

@@ -49,16 +49,27 @@ public abstract class AbstractDBObjectSyncer<T extends ExtensionPoint> implement
 
     private static final int BATCH_SIZE = 1000;
 
+    /**
+     * 同步数据库对象
+     *
+     * @param connection 数据库连接
+     * @param database 数据库
+     * @param dialectType 方言类型
+     */
     @Override
     public void sync(@NonNull Connection connection, @NonNull Database database, @NonNull DialectType dialectType) {
+        // 获取方言扩展点
         T extensionPoint = getExtensionPoint(dialectType);
         if (extensionPoint == null) {
             return;
         }
+        // 获取最新的对象名称列表
         Set<String> latestObjectNames = getLatestObjectNames(extensionPoint, connection, database);
+        // 获取已存在的对象列表
         List<DBObjectEntity> existingObjects =
                 dbObjectRepository.findByDatabaseIdAndType(database.getId(), getObjectType());
         // Insert objects that are not in the existing object list
+        // 插入不在已存在对象列表中的对象
         Set<String> existingObjectNames =
                 existingObjects.stream().map(DBObjectEntity::getName).collect(Collectors.toSet());
         List<DBObjectEntity> toBeInserted = latestObjectNames.stream().filter(e -> !existingObjectNames.contains(e))
@@ -74,6 +85,7 @@ public abstract class AbstractDBObjectSyncer<T extends ExtensionPoint> implement
             dbObjectRepository.batchCreate(toBeInserted, BATCH_SIZE);
         }
         // Delete objects that are not in the latest object list
+        // 删除不在最新对象列表中的对象
         List<DBObjectEntity> toBeDeleted = existingObjects.stream()
                 .filter(e -> !latestObjectNames.contains(e.getName())).collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(toBeDeleted)) {
