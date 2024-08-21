@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -56,8 +57,7 @@ public class MySQLAlterTableFactoryTest {
         ColumnDefinition d = new ColumnDefinition(new ColumnReference(null, null, "id"), type);
         a2.setAddColumns(Collections.singletonList(d));
 
-        AlterTable expect = new AlterTable("b", Arrays.asList(a1, a2));
-        expect.setSchema("a");
+        AlterTable expect = new AlterTable(getRelationFactor("a", "b"), Arrays.asList(a1, a2));
         Assert.assertEquals(expect, actual);
     }
 
@@ -67,8 +67,7 @@ public class MySQLAlterTableFactoryTest {
                 getAlterContext("alter table a.b"));
         AlterTable actual = factory.generate();
 
-        AlterTable expect = new AlterTable("b", null);
-        expect.setSchema("a");
+        AlterTable expect = new AlterTable(getRelationFactor("a", "b"), null);
         Assert.assertEquals(expect, actual);
     }
 
@@ -80,9 +79,8 @@ public class MySQLAlterTableFactoryTest {
 
         AlterTableAction a = new AlterTableAction();
         a.setRefresh(true);
-        AlterTable expect = new AlterTable("b", Collections.singletonList(a));
+        AlterTable expect = new AlterTable(getRelationFactor("a", "b"), Collections.singletonList(a));
         expect.setExternal(true);
-        expect.setSchema("a");
         Assert.assertEquals(expect, actual);
     }
 
@@ -94,8 +92,7 @@ public class MySQLAlterTableFactoryTest {
 
         AlterTableAction action = new AlterTableAction();
         action.setAddColumnGroupElements(Collections.singletonList(new ColumnGroupElement(true, false)));
-        AlterTable expect = new AlterTable("b", Collections.singletonList(action));
-        expect.setSchema("a");
+        AlterTable expect = new AlterTable(getRelationFactor("a", "b"), Collections.singletonList(action));
         Assert.assertEquals(expect, actual);
     }
 
@@ -107,8 +104,7 @@ public class MySQLAlterTableFactoryTest {
 
         AlterTableAction action = new AlterTableAction();
         action.setDropColumnGroupElements(Collections.singletonList(new ColumnGroupElement(true, false)));
-        AlterTable expect = new AlterTable("b", Collections.singletonList(action));
-        expect.setSchema("a");
+        AlterTable expect = new AlterTable(getRelationFactor("a", "b"), Collections.singletonList(action));
         Assert.assertEquals(expect, actual);
     }
 
@@ -120,4 +116,9 @@ public class MySQLAlterTableFactoryTest {
         return parser.alter_table_stmt();
     }
 
+    private RelationFactor getRelationFactor(String schema, String relation) {
+        RelationFactor relationFactor = new RelationFactor(relation);
+        relationFactor.setSchema(schema);
+        return relationFactor;
+    }
 }

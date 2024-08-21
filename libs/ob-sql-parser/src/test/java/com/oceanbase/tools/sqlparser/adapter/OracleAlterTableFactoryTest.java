@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -67,8 +68,7 @@ public class OracleAlterTableFactoryTest {
         AlterTableAction a3 = new AlterTableAction();
         a3.setRefresh(true);
 
-        AlterTable expect = new AlterTable("b", Arrays.asList(a3, a1, a2));
-        expect.setSchema("a");
+        AlterTable expect = new AlterTable(getRelationFactor("a", "b"), Arrays.asList(a3, a1, a2));
         expect.setUserVariable("@c");
         expect.setExternal(true);
         Assert.assertEquals(expect, actual);
@@ -82,8 +82,7 @@ public class OracleAlterTableFactoryTest {
 
         AlterTableAction action = new AlterTableAction();
         action.setAddColumnGroupElements(Collections.singletonList(new ColumnGroupElement(true, false)));
-        AlterTable expect = new AlterTable("b", Collections.singletonList(action));
-        expect.setSchema("a");
+        AlterTable expect = new AlterTable(getRelationFactor("a", "b"), Collections.singletonList(action));
         Assert.assertEquals(expect, actual);
     }
 
@@ -95,8 +94,7 @@ public class OracleAlterTableFactoryTest {
 
         AlterTableAction action = new AlterTableAction();
         action.setDropColumnGroupElements(Collections.singletonList(new ColumnGroupElement(true, false)));
-        AlterTable expect = new AlterTable("b", Collections.singletonList(action));
-        expect.setSchema("a");
+        AlterTable expect = new AlterTable(getRelationFactor("a", "b"), Collections.singletonList(action));
         Assert.assertEquals(expect, actual);
     }
 
@@ -106,5 +104,11 @@ public class OracleAlterTableFactoryTest {
         OBParser parser = new OBParser(tokens);
         parser.setErrorHandler(new BailErrorStrategy());
         return parser.alter_table_stmt();
+    }
+
+    private RelationFactor getRelationFactor(String schema, String relation) {
+        RelationFactor relationFactor = new RelationFactor(relation);
+        relationFactor.setSchema(schema);
+        return relationFactor;
     }
 }
