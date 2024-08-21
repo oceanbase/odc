@@ -65,6 +65,10 @@ public class CreateTable extends BaseStatement {
         this.relation = relation;
     }
 
+    public CreateTable(@NonNull RelationFactor relation) {
+        this.relation = relation;
+    }
+
     public String getSchema() {
         if (this.relation == null) {
             return null;

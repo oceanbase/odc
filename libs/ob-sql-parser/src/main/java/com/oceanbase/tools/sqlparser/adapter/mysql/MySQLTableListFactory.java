@@ -18,32 +18,29 @@ package com.oceanbase.tools.sqlparser.adapter.mysql;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Drop_index_stmtContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Table_listContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
-import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
-import com.oceanbase.tools.sqlparser.statement.dropindex.DropIndex;
+import com.oceanbase.tools.sqlparser.statement.droptable.TableList;
 
 /**
  * @Author: Lebie
- * @Date: 2024/8/21 18:28
+ * @Date: 2024/8/21 20:47
  * @Description: []
  */
-public class MySQLDropIndexFactory extends OBParserBaseVisitor<DropIndex> implements StatementFactory<DropIndex> {
+public class MySQLTableListFactory extends OBParserBaseVisitor<TableList> implements StatementFactory<TableList> {
     private final ParserRuleContext parserRuleContext;
 
-    public MySQLDropIndexFactory(Drop_index_stmtContext parserRuleContext) {
+    public MySQLTableListFactory(Table_listContext parserRuleContext) {
         this.parserRuleContext = parserRuleContext;
     }
 
     @Override
-    public DropIndex generate() {
+    public TableList generate() {
         return visit(this.parserRuleContext);
     }
 
     @Override
-    public DropIndex visitDrop_index_stmt(Drop_index_stmtContext ctx) {
-        RelationFactor relation = MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor());
-        String indexName = ctx.relation_name().getText();
-        return new DropIndex(ctx, indexName, relation);
+    public TableList visitTable_list(Table_listContext ctx) {
+        return new TableList(ctx, MySQLFromReferenceFactory.getRelationFactors(ctx.relation_factor()));
     }
 }

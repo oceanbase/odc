@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite;
 
-import java.util.List;
 import java.util.Set;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -33,7 +31,7 @@ import lombok.Getter;
 @Getter
 public class RewriteContext {
     private final Statement sql;
-    private final DialectType   dialectType;
+    private final DialectType dialectType;
     private final Set<DataNode> dataNodes;
 
     public RewriteContext(Statement sql, DialectType dialectType, Set<DataNode> dataNodes) {

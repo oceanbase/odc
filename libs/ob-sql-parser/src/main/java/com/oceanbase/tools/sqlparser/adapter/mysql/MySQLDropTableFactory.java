@@ -32,7 +32,7 @@ import com.oceanbase.tools.sqlparser.statement.droptable.TableList;
 public class MySQLDropTableFactory extends OBParserBaseVisitor<DropTable> implements StatementFactory<DropTable> {
     private final ParserRuleContext parserRuleContext;
 
-    public MySQLDropTableFactory(ParserRuleContext parserRuleContext) {
+    public MySQLDropTableFactory(Drop_table_stmtContext parserRuleContext) {
         this.parserRuleContext = parserRuleContext;
     }
 

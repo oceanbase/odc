@@ -30,7 +30,7 @@ import com.oceanbase.tools.sqlparser.statement.droptable.DropTable;
 public class OracleDropTableFactory extends OBParserBaseVisitor<DropTable> implements StatementFactory<DropTable> {
     private final ParserRuleContext parserRuleContext;
 
-    public OracleDropTableFactory(ParserRuleContext parserRuleContext) {
+    public OracleDropTableFactory(Drop_table_stmtContext parserRuleContext) {
         this.parserRuleContext = parserRuleContext;
     }
 
