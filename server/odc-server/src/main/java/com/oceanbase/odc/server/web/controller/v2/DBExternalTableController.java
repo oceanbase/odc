@@ -15,22 +15,22 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
-import java.sql.SQLException;
+import java.util.Base64;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.oceanbase.odc.service.common.response.ListResponse;
+import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.service.common.response.Responses;
-import com.oceanbase.odc.service.connection.table.model.QueryTableParams;
-import com.oceanbase.odc.service.connection.table.model.Table;
+import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.db.DBExternalTableService;
 import com.oceanbase.odc.service.session.ConnectSessionService;
-
-import io.swagger.annotations.ApiOperation;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 
 /**
  * @description:
@@ -39,7 +39,7 @@ import io.swagger.annotations.ApiOperation;
  * @since: 4.3.3
  */
 @RestController
-@RequestMapping("/api/v2/externalTable")
+@RequestMapping("api/v2/connect/sessions")
 public class DBExternalTableController {
 
     @Autowired
@@ -48,17 +48,15 @@ public class DBExternalTableController {
     @Autowired
     private ConnectSessionService sessionService;
 
-    @ApiOperation(value = "listExternalTables", notes = "List external tables with permitted actions")
-    @RequestMapping(value = "/list", method = RequestMethod.GET)
-    public ListResponse<Table> list(@RequestParam(name = "databaseId") Long databaseId,
-            @RequestParam(name = "includePermittedAction", required = false,
-                    defaultValue = "false") boolean includePermittedAction)
-            throws SQLException, InterruptedException {
-        QueryTableParams params = QueryTableParams.builder()
-                .databaseId(databaseId)
-                .includePermittedAction(includePermittedAction)
-                .build();
-        return Responses.list(dbExternalTableService.list(params));
+    @GetMapping(value = "/{sessionId}/databases/{databaseName}/externalTables/{tableName}")
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
+    public SuccessResponse<DBTable> getTable(@PathVariable String sessionId,
+        @PathVariable(required = false) String databaseName,
+        @PathVariable String tableName) {
+        Base64.Decoder decoder = Base64.getDecoder();
+        tableName = new String(decoder.decode(tableName));
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        return Responses.success(dbExternalTableService.getTable(session, databaseName, tableName));
     }
 
 

@@ -43,9 +43,9 @@ public class DBExternalTableSyncer extends AbstractDBObjectSyncer<ExternalTableE
 
     @Override
     Set<String> getLatestObjectNames(@NonNull ExternalTableExtensionPoint extensionPoint,
-        @NonNull Connection connection, @NonNull Database database) {
+            @NonNull Connection connection, @NonNull Database database) {
         return extensionPoint.list(connection, database.getName()).stream().map(DBObjectIdentity::getName)
-            .collect(Collectors.toSet());
+                .collect(Collectors.toSet());
     }
 
     @Override

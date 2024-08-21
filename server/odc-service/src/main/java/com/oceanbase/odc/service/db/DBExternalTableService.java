@@ -149,7 +149,8 @@ public class DBExternalTableService {
             Set<String> existTableNames = tables.stream().map(DBObjectEntity::getName).collect(Collectors.toSet());
             if (latestTableNames.size() != existTableNames.size() || !existTableNames.containsAll(latestTableNames)) {
                 syncDBTables(conn, database, dataSource.getDialectType());
-                tables = dbObjectRepository.findByDatabaseIdAndType(params.getDatabaseId(), DBObjectType.EXTERNAL_TABLE);
+                tables = dbObjectRepository.findByDatabaseIdAndType(params.getDatabaseId(),
+                        DBObjectType.EXTERNAL_TABLE);
             }
             return entitiesToModels(tables, database, params.getIncludePermittedAction());
         }

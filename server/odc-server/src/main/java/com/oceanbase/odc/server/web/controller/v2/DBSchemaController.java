@@ -50,7 +50,7 @@ public class DBSchemaController {
 
     @ApiOperation(value = "listTables", notes = "List tables with permitted actions")
     @RequestMapping(value = "/tables", method = RequestMethod.GET)
-    public ListResponse<Table> list(@RequestParam(name = "databaseId") Long databaseId,
+    public ListResponse<Table> listBasicTables(@RequestParam(name = "databaseId") Long databaseId,
             @RequestParam(name = "includePermittedAction", required = false,
                     defaultValue = "false") boolean includePermittedAction)
             throws SQLException, InterruptedException {
@@ -64,6 +64,19 @@ public class DBSchemaController {
     @ApiOperation(value = "listExternalTables", notes = "List external tables with permitted actions")
     @RequestMapping(value = "/externalTables", method = RequestMethod.GET)
     public ListResponse<Table> listExternalTables(@RequestParam(name = "databaseId") Long databaseId,
+            @RequestParam(name = "includePermittedAction", required = false,
+                    defaultValue = "false") boolean includePermittedAction)
+            throws SQLException, InterruptedException {
+        QueryTableParams params = QueryTableParams.builder()
+                .databaseId(databaseId)
+                .includePermittedAction(includePermittedAction)
+                .build();
+        return Responses.list(dbExternalTableService.list(params));
+    }
+
+    @ApiOperation(value = "listExternalTables", notes = "List external tables with permitted actions")
+    @RequestMapping(value = "/basicTablesAndExternalTables", method = RequestMethod.GET)
+    public ListResponse<Table> listBasicAndExternalTables(@RequestParam(name = "databaseId") Long databaseId,
         @RequestParam(name = "includePermittedAction", required = false,
             defaultValue = "false") boolean includePermittedAction)
         throws SQLException, InterruptedException {
@@ -73,6 +86,5 @@ public class DBSchemaController {
             .build();
         return Responses.list(dbExternalTableService.list(params));
     }
-
 
 }
