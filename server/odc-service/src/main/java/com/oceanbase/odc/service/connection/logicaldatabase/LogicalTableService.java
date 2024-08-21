@@ -57,6 +57,7 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.LogicalTableRecognitionUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalTable;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.BadLogicalTableExpressionException;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.DefaultLogicalTableExpressionParser;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.LogicalTableExpressions;
@@ -174,8 +175,16 @@ public class LogicalTableService {
             LogicalTableTopologyResp resp = new LogicalTableTopologyResp();
             resp.setPhysicalDatabase(name2Databases.get(entry.getKey()).get(0));
             resp.setTableCount(entry.getValue().size());
-            resp.setExpression(LogicalTableRecognitionUtils.recognizeLogicalTablesWithExpression(entry.getValue())
-                    .get(0).getFullNameExpression());
+            // if only one table, just return the full-qualified name directly
+            if (entry.getValue().size() == 1) {
+                resp.setExpression(entry.getValue().get(0).getFullName());
+            } else {
+                List<LogicalTable> logicalTables =
+                        LogicalTableRecognitionUtils.recognizeLogicalTablesWithExpression(entry.getValue());
+                if (CollectionUtils.isNotEmpty(logicalTables)) {
+                    resp.setExpression(logicalTables.get(0).getFullNameExpression());
+                }
+            }
             return resp;
         }).collect(Collectors.toList());
     }
@@ -192,13 +201,22 @@ public class LogicalTableService {
             LogicalTableTopologyResp resp = new LogicalTableTopologyResp();
             resp.setPhysicalDatabase(id2Databases.get(entry.getKey()).get(0));
             resp.setTableCount(tables.size());
-            resp.setExpression(
-                    LogicalTableRecognitionUtils.recognizeLogicalTablesWithExpression(tables.stream().map(table -> {
-                        DataNode dataNode = new DataNode();
-                        dataNode.setSchemaName(table.getPhysicalDatabaseName());
-                        dataNode.setTableName(table.getPhysicalTableName());
-                        return dataNode;
-                    }).collect(Collectors.toList())).get(0).getFullNameExpression());
+            // if only one table, just return the full-qualified name directly
+            if (tables.size() == 1) {
+                resp.setExpression(
+                        tables.get(0).getPhysicalDatabaseName() + "." + tables.get(0).getPhysicalTableName());
+            } else {
+                List<LogicalTable> logicalTables =
+                        LogicalTableRecognitionUtils.recognizeLogicalTablesWithExpression(tables.stream().map(table -> {
+                            DataNode dataNode = new DataNode();
+                            dataNode.setSchemaName(table.getPhysicalDatabaseName());
+                            dataNode.setTableName(table.getPhysicalTableName());
+                            return dataNode;
+                        }).collect(Collectors.toList()));
+                if (CollectionUtils.isNotEmpty(logicalTables)) {
+                    resp.setExpression(logicalTables.get(0).getFullNameExpression());
+                }
+            }
             return resp;
         }).collect(Collectors.toList());
     }
