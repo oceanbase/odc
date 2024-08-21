@@ -85,7 +85,8 @@ public class Worksheet {
     private boolean isChanged = false;
 
     /**
-     * The worksheets that are children of current direct parent, excluding the current and its sub worksheets.
+     * The worksheets that are children of current direct parent, excluding the current and its sub
+     * worksheets.
      * <p>
      * for example in this class, the paths of sameParentAtPrevLevelWorksheets are
      * <code>[/Worksheets/folder3/,/Worksheets/folder3/file3.sql,/Worksheets/file1.sql]</code>.
@@ -130,7 +131,7 @@ public class Worksheet {
         }
         this.objectId = objectId;
         this.sameDirectParentWorksheets =
-            sameDirectParentWorksheets == null ? new HashSet<>() : sameDirectParentWorksheets;
+                sameDirectParentWorksheets == null ? new HashSet<>() : sameDirectParentWorksheets;
         this.subWorksheets = subWorksheets == null ? new HashSet<>() : subWorksheets;
 
     }

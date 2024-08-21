@@ -102,7 +102,8 @@ public class DefaultWorksheetService implements WorksheetService {
         }
 
         Worksheet prarentprojectWorksheet =
-                worksheetRepository.findWithSubListAndSameDirectParentListByProjectIdAndPathWithLock(projectId, parentPath.get());
+                worksheetRepository.findWithSubListAndSameDirectParentListByProjectIdAndPathWithLock(projectId,
+                        parentPath.get());
 
         Worksheet createdWorksheet = prarentprojectWorksheet.create(createPath, objectId, currentUserId());
         worksheetRepository.batchAdd(Collections.singleton(createdWorksheet));

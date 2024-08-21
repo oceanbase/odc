@@ -130,7 +130,7 @@ public class DefaultWorksheetServiceTest {
         Path parentPath = new Path("/Worksheets/");
         when(worksheetRepository.findWithSubListAndSameDirectParentListByProjectIdAndPathWithLock(projectId,
                 parentPath))
-                .thenReturn(newWorksheet(parentPath));
+                        .thenReturn(newWorksheet(parentPath));
 
         Worksheet createdWorksheet = defaultWorksheetService.createWorksheet(projectId, createPath, id++ + "");
 
@@ -194,7 +194,7 @@ public class DefaultWorksheetServiceTest {
 
         when(worksheetRepository.findWithSubListAndSameDirectParentListByProjectIdAndPathWithLock(anyLong(),
                 any(Path.class)))
-                .thenReturn(newWorksheet(new Path("/Worksheets/")));
+                        .thenReturn(newWorksheet(new Path("/Worksheets/")));
 
         BatchOperateWorksheetsResult result =
                 defaultWorksheetService.batchUploadWorksheets(projectId, batchCreateWorksheets);
@@ -236,7 +236,7 @@ public class DefaultWorksheetServiceTest {
 
         when(worksheetRepository.findWithSubListAndSameDirectParentListByProjectIdAndPathWithLock(anyLong(),
                 any(Path.class)))
-                .thenReturn(newWorksheet(oldPath));
+                        .thenReturn(newWorksheet(oldPath));
 
         List<Worksheet> result = defaultWorksheetService.renameWorksheet(projectId, oldPath, newPath);
 
@@ -255,7 +255,7 @@ public class DefaultWorksheetServiceTest {
 
         when(worksheetRepository.findWithSubListAndSameDirectParentListByProjectIdAndPathWithLock(anyLong(),
                 any(Path.class)))
-                .thenReturn(newWorksheet(oldPath));
+                        .thenReturn(newWorksheet(oldPath));
 
         List<Worksheet> result =
                 defaultWorksheetService.editWorksheet(projectId, oldPath, newPath, objectId, readVersion);

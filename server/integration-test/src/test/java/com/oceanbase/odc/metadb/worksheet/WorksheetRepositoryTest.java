@@ -156,8 +156,9 @@ public class WorksheetRepositoryTest {
         Worksheet w6 = newWorksheet("/Worksheets/file1.sql");
         Set<Worksheet> subWorksheets = new HashSet<>(Arrays.asList(w1, w2, w3, w4, w5, w6));
         worksheetRepository.batchAdd(subWorksheets);
-        Worksheet worksheet = worksheetRepository.findWithSubListAndSameDirectParentListByProjectIdAndPathWithLock(projectId,
-                new Path("/Worksheets/folder1/folder3"));
+        Worksheet worksheet =
+                worksheetRepository.findWithSubListAndSameDirectParentListByProjectIdAndPathWithLock(projectId,
+                        new Path("/Worksheets/folder1/folder3"));
         assert worksheet.isTemp();
 
 
