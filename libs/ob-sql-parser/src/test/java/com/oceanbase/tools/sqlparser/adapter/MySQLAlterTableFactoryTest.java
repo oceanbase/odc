@@ -19,7 +19,6 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 
-import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -34,6 +33,7 @@ import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
 import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;

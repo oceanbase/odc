@@ -18,11 +18,11 @@ package com.oceanbase.tools.sqlparser.statement.alter.table;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -47,7 +47,7 @@ public class AlterTable extends BaseStatement {
     private final List<AlterTableAction> alterTableActions;
 
     public AlterTable(@NonNull ParserRuleContext context,
-        RelationFactor relation, List<AlterTableAction> alterTableActions) {
+            RelationFactor relation, List<AlterTableAction> alterTableActions) {
         super(context);
         this.relation = relation;
         this.alterTableActions = alterTableActions;
