@@ -42,7 +42,7 @@ public class SQLAffectedRowsFactory implements SqlCheckRuleFactory {
 
     @Override
     public SqlCheckRule generate(@NonNull DialectType dialectType, Map<String, Object> parameters) {
-        String key = getParameterNameKey("restrict-sql-affected-rows");
+        String key = getParameterNameKey("allowed-max-sql-affected-count");
         if (parameters == null || parameters.isEmpty() || parameters.get(key) == null) {
             return new MySQLAffectedRows(1000, jdbc);
         }

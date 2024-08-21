@@ -30,19 +30,24 @@
 */
 package com.oceanbase.odc.service.sqlcheck.rule;
 
-import java.sql.ResultSet;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
+import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.delete.Delete;
+import com.oceanbase.tools.sqlparser.statement.insert.Insert;
+import com.oceanbase.tools.sqlparser.statement.update.Update;
 
 import lombok.NonNull;
 
@@ -57,15 +62,15 @@ public class MySQLAffectedRows implements SqlCheckRule {
 
     private final Integer maxSQLAffectedRows;
 
-    private final JdbcOperations jdbc;
+    private final JdbcOperations jdbcOperations;
 
     public MySQLAffectedRows(@NonNull Integer maxSQLAffectedRows, JdbcOperations jdbcOperations) {
         this.maxSQLAffectedRows = maxSQLAffectedRows <= 0 ? 0 : maxSQLAffectedRows;
-        this.jdbc = jdbcOperations;
+        this.jdbcOperations = jdbcOperations;
     }
 
     /**
-     * 获取规则类型
+     * Get the rule type
      */
     @Override
     public SqlCheckRuleType getType() {
@@ -73,38 +78,88 @@ public class MySQLAffectedRows implements SqlCheckRule {
     }
 
     /**
-     * 执行规则检查
+     * Execution rule check
      */
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
 
+        if (statement instanceof Insert || statement instanceof Update || statement instanceof Delete) {
+            if (maxSQLAffectedRows == 0) {
+                return Collections.emptyList();
+            }
+            String originSql = statement.getText();
+            long affectedRows = executeExplain(originSql, jdbcOperations);
+            if (affectedRows > maxSQLAffectedRows) {
+                return Collections.singletonList(SqlCheckUtil
+                        .buildViolation(statement.getText(), statement, getType(), new Object[] {}));
+            } else {
+                return Collections.emptyList();
+            }
+        }
         return Collections.emptyList();
     }
 
     /**
-     * 获取支持的数据库类型
+     * Get supported database types
      */
     @Override
     public List<DialectType> getSupportsDialectTypes() {
         return Arrays.asList(DialectType.MYSQL, DialectType.OB_MYSQL);
     }
 
-    private long executeExplain(String sql, JdbcOperations jdbc) {
-        String explainQuery = "EXPLAIN " + sql;
-        try (ResultSet resultSet = jdbc.query(explainQuery, rs -> rs)) {
-            /*
-             * EXPLAIN 执行结果会以表的形式返回 在解析所得的结果集里 可能存在多张表 其中，第一个不为空的 rows 值即为预估影响行数
-             */
-            if (resultSet != null) {
-                while (resultSet.next()) {
-                    long rows = resultSet.getLong("rows");
-                    if (rows != 0) {
-                        return rows;
+    /**
+     * execute 'explain' statement
+     *
+     * @param originSql target sql
+     * @param jdbc jdbc Object
+     * @return affected rows
+     */
+    private long executeExplain(String originSql, JdbcOperations jdbc) {
+
+        if (originSql == null || jdbc == null) {
+            return 0;
+        }
+        String explainSql = "EXPLAIN " + originSql;
+
+        try {
+            // parse rows tag: if true, stop parse
+            AtomicBoolean ifFindValue = new AtomicBoolean(false);
+            List<Long> resultSet = jdbc.query(explainSql, (rs, rowNum) -> {
+                String singleRow = rs.getString(1);
+
+                if (!ifFindValue.get() && rowNum > 2) {
+                    long affectedRows = getAffectedRows(singleRow);
+                    // first non-null value is the column 'EST.ROWS'
+                    if (affectedRows != 0) {
+                        ifFindValue.set(true);
+                        return affectedRows;
                     }
                 }
-            }
+                return null;
+            });
+            Long firstNonNullResult = resultSet.stream()
+                    .filter(Objects::nonNull)
+                    .findFirst()
+                    .orElse(null);
+
+            return firstNonNullResult != null ? firstNonNullResult : 0;
+
         } catch (Exception e) {
-            throw new RuntimeException("Failed to execute sql: " + explainQuery, e);
+            throw new RuntimeException("Failed to execute sql: " + explainSql + ", error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * parse explain result set
+     *
+     * @param singleRow row
+     * @return affected rows
+     */
+    private long getAffectedRows(String singleRow) {
+        String[] parts = singleRow.split("\\|");
+        if (parts.length > 4) {
+            String value = parts[4].trim();
+            return Long.parseLong(value);
         }
         return 0;
     }
