@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-git remote set-url origin git@github.com:ystring/odc.git
+git remote set-url origin git@github.com:oceanbase/odc.git
 git add .;
 git commit -m "更换文件内容";
 git push -u --force origin dev/mayang.test;
