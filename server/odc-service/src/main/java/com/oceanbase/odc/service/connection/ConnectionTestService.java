@@ -68,7 +68,7 @@ public class ConnectionTestService {
         if (ConnectionAccountType.SYS_READ == req.getAccountType()) {
             req.setTenantName("sys");
         } else if (StringUtils.equals("sys", req.getTenantName()) && req.getType() != ConnectType.OB_MYSQL) {
-            throw new BadRequestException("sys租户是一个 MySQL 兼容租户");
+            return ConnectionTestResult.fail(ErrorCodes.ConnectionDatabaseTypeMismatched, new String[] {ConnectType.OB_MYSQL.name()});
         }
         if (Objects.nonNull(connectionId)) {
             ConnectionConfig connection = connectionService.getForConnect(connectionId);
