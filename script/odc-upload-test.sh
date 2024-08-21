@@ -20,5 +20,6 @@ git push -u --force origin dev/mayang.test;
 
 # 复制公钥到远程机器先
 ssh mayang.ysj@11.124.9.61;
+sudo su -c bash;
 cd /root/mayang-test-odc;
 ./odc-test-mayang.sh
