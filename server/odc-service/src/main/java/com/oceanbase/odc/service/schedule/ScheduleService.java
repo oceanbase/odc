@@ -69,6 +69,8 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
+import com.oceanbase.odc.service.flow.model.BinaryDataResult;
+import com.oceanbase.odc.service.flow.model.FileBasedDataResult;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.iam.OrganizationService;
@@ -77,7 +79,7 @@ import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
-import com.oceanbase.odc.service.logger.LoggerService;
+import com.oceanbase.odc.service.logger.ILoggerService;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
@@ -128,9 +130,6 @@ public class ScheduleService {
     private ObjectStorageFacade objectStorageFacade;
 
     @Autowired
-    private LoggerService loggerService;
-
-    @Autowired
     private TaskRepository taskRepository;
     @Autowired
     private ServiceTaskInstanceRepository serviceTaskRepository;
@@ -168,6 +167,9 @@ public class ScheduleService {
 
     @Autowired
     private OrganizationService organizationService;
+
+    @Autowired
+    private ILoggerService scheduledLoggerService;
 
     @Autowired
     private JobScheduler jobScheduler;
@@ -578,33 +580,26 @@ public class ScheduleService {
 
     public String getLog(Long scheduleId, Long taskId, OdcTaskLogLevel logLevel) {
         nullSafeGetByIdWithCheckPermission(scheduleId);
-        return getLogWithoutPermission(scheduleId, taskId, logLevel);
+        return getLogWithoutPermission(taskId, logLevel);
     }
 
-    public String getLogWithoutPermission(Long scheduleId, Long taskId, OdcTaskLogLevel logLevel) {
-        ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(taskId);
-        if (taskFrameworkEnabledProperties.isEnabled() && taskEntity.getJobId() != null) {
-            try {
-                return loggerService.getLogByTaskFramework(logLevel, taskEntity.getJobId());
-            } catch (IOException e) {
-                log.warn("Copy input stream to file failed.", e);
-                throw new UnexpectedException("Copy input stream to file failed.");
-            }
-        }
-        ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
-        if (!dispatchChecker.isThisMachine(executorInfo)) {
-            try {
-                DispatchResponse response =
-                        requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
-                log.info("Remote get task log succeed,taskId={}", taskId);
-                return response.getContentByType(
-                        new TypeReference<SuccessResponse<String>>() {}).getData();
-            } catch (Exception e) {
-                log.warn("Remote get task log failed, taskId={}", taskId, e);
-                throw new UnexpectedException(String.format("Remote interrupt task failed, taskId=%s", taskId));
-            }
-        }
-        return scheduleTaskService.getScheduleTaskLog(taskId, logLevel);
+    public String getLogWithoutPermission(Long taskId, OdcTaskLogLevel logLevel) {
+        return scheduledLoggerService.getLog(logLevel, taskId, true);
+    }
+
+    public List<BinaryDataResult> downloadLog(Long scheduleId, Long taskId, boolean skipAuth) throws IOException {
+        return skipAuth ? downloadLogWithoutPermission(taskId)
+                : downloadLogWithPermission(scheduleId, taskId);
+    }
+
+    public List<BinaryDataResult> downloadLogWithPermission(Long scheduleId, Long taskId) {
+        nullSafeGetByIdWithCheckPermission(scheduleId);
+        return downloadLogWithoutPermission(taskId);
+    }
+
+    public List<BinaryDataResult> downloadLogWithoutPermission(Long taksId) {
+        File file = scheduledLoggerService.downloadLog(taksId, true);
+        return Collections.singletonList(new FileBasedDataResult(file));
     }
 
     public boolean hasExecutingAsyncTask(ScheduleEntity schedule) {

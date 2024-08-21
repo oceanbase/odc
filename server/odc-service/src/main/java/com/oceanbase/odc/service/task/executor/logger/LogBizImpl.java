@@ -52,6 +52,11 @@ public class LogBizImpl implements LogBiz {
         return LogUtils.getLatestLogContent(logFileStr, fetchMaxLine, fetchMaxByteSize);
     }
 
+    @Override
+    public File downloadLog(Long jobId) {
+        log.info("Accept full log request, job id = {}, logType = {}.", jobId, OdcTaskLogLevel.ALL);
+        return new File(LogUtils.getTaskLogFileWithPath(jobId, OdcTaskLogLevel.ALL));
+    }
 
     @Override
     public Map<String, String> uploadLogFileToCloudStorage(JobIdentity ji,

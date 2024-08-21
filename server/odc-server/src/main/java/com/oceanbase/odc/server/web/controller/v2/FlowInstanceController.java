@@ -57,6 +57,7 @@ import com.oceanbase.odc.service.flow.model.FlowMetaInfo;
 import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.util.TaskLogFilenameGenerator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.logger.ILoggerService;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
@@ -84,6 +85,8 @@ public class FlowInstanceController {
     private AuthenticationFacade authenticationFacade;
     @Autowired
     private PartitionPlanScheduleService partitionPlanScheduleService;
+    @Autowired
+    private ILoggerService flowLoggerService;
 
     @ApiOperation(value = "createFlowInstance", notes = "创建流程实例，返回流程实例")
     @RequestMapping(value = "/", method = RequestMethod.POST)
@@ -179,7 +182,7 @@ public class FlowInstanceController {
     @ApiOperation(value = "downloadLog", notes = "下载任务完整日志")
     @RequestMapping(value = "/{id:[\\d]+}/tasks/log/download", method = RequestMethod.GET)
     public ResponseEntity<InputStreamResource> downloadLog(@PathVariable Long id) throws IOException {
-        List<BinaryDataResult> results = flowTaskInstanceService.downloadLog(id);
+        List<BinaryDataResult> results = flowTaskInstanceService.downloadLog(id, false);
         PreConditions.validExists(ResourceType.ODC_FILE, "id", id, () -> CollectionUtils.isNotEmpty(results));
         return WebResponseUtils.getFileAttachmentResponseEntity(
                 new InputStreamResource(results.get(0).getInputStream()), TaskLogFilenameGenerator.generate(id));

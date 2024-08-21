@@ -13,27 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.executor.logger;
+package com.oceanbase.odc.service.logger;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.Map;
 
-import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
 /**
- * @author yaobin
- * @date 2023-12-13
- * @since 4.2.4
+ * @author mayang
  */
-public interface LogBiz {
+public interface ILoggerService {
 
-    String getLog(Long jobId, String logType, Long fetchMaxLine, Long fetchMaxByteSize);
+    String getLog(OdcTaskLogLevel level, Long jobId, boolean skipAuth);
 
-    File downloadLog(Long jobId);
-
-    Map<String, String> uploadLogFileToCloudStorage(JobIdentity ji, CloudObjectStorageService cloudObjectStorageService)
-            throws IOException;
-
+    File downloadLog(Long jobId, boolean skipAuth);
 }

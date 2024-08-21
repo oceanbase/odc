@@ -45,6 +45,8 @@ public class RequestHandler {
     private final Pattern stopTaskPattern = Pattern.compile(String.format(JobUrlConstants.STOP_TASK, "([0-9]+)"));
     private final Pattern modifyParametersPattern =
             Pattern.compile(String.format(JobUrlConstants.MODIFY_JOB_PARAMETERS, "([0-9]+)"));
+    private final Pattern downloadLogUrlPattern =
+            Pattern.compile(String.format(JobUrlConstants.LOG_DOWNLOAD, "([0-9]+)"));
     private final LogBiz executorBiz;
 
     public RequestHandler() {
@@ -60,7 +62,11 @@ public class RequestHandler {
         try {
             // services mapping
             String path = UrlUtils.getPath(uri);
-            Matcher matcher = logUrlPattern.matcher(path);
+            Matcher matcher = downloadLogUrlPattern.matcher(path);
+            if (matcher.find()) {
+                return Responses.single(executorBiz.downloadLog(Long.parseLong(matcher.group(1))));
+            }
+            matcher = logUrlPattern.matcher(path);
             if (matcher.find()) {
                 String maxLine = UrlUtils.getQueryParameterFirst(uri, "fetchMaxLine");
                 String maxSize = UrlUtils.getQueryParameterFirst(uri, "fetchMaxByteSize");

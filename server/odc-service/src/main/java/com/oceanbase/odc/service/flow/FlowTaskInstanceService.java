@@ -100,7 +100,7 @@ import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider;
 import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider.TaskDownloadUrls;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.logger.LoggerService;
+import com.oceanbase.odc.service.logger.ILoggerService;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseResult;
@@ -159,11 +159,11 @@ public class FlowTaskInstanceService {
     @Autowired
     private TaskFrameworkEnabledProperties taskFrameworkProperties;
     @Autowired
-    private LoggerService loggerService;
-    @Autowired
     private EnvironmentRepository environmentRepository;
     @Autowired
     private EnvironmentService environmentService;
+    @Autowired
+    private ILoggerService flowLoggerService;
 
     @Value("${odc.task.async.result-preview-max-size-bytes:5242880}")
     private long resultPreviewMaxSizeBytes;
@@ -193,42 +193,12 @@ public class FlowTaskInstanceService {
     }
 
     public String getLog(@NotNull Long flowInstanceId, OdcTaskLogLevel level, boolean skipAuth) throws IOException {
-        Optional<TaskEntity> taskEntityOptional = getLogDownloadableTaskEntity(flowInstanceId, skipAuth);
-        if (!taskEntityOptional.isPresent()) {
-            return null;
-        }
-        TaskEntity taskEntity = taskEntityOptional.get();
-        if (taskFrameworkProperties.isEnabled() && taskEntity.getJobId() != null) {
-            // TODO: get the latest part of log when task framework is enabled @krihy
-            return loggerService.getLogByTaskFramework(level, taskEntity.getJobId());
-        }
-        if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
-            // The task is not executing on current machine, need to forward the request
-            ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
-            DispatchResponse response = requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
-            return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
-        }
-        return taskService.getLog(taskEntity.getCreatorId(), taskEntity.getId() + "", taskEntity.getTaskType(), level);
+        return flowLoggerService.getLog(level, flowInstanceId, skipAuth);
     }
 
-    public List<BinaryDataResult> downloadLog(@NotNull Long flowInstanceId) throws IOException {
-        Optional<TaskEntity> taskEntityOptional = getLogDownloadableTaskEntity(flowInstanceId, false);
-        if (!taskEntityOptional.isPresent() || taskEntityOptional.get().getResultJson() == null) {
-            return Collections.emptyList();
-        }
-        TaskEntity taskEntity = taskEntityOptional.get();
-        // TODO: download log file when task framework is enabled @krihy
-        if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
-            // The task is not executing on current machine, need to forward the request
-            return dispatchRequest(taskEntity);
-        }
-        try {
-            File logFile = taskService.getLogFile(taskEntity.getCreatorId(), taskEntity.getId() + "",
-                    taskEntity.getTaskType(), OdcTaskLogLevel.ALL);
-            return Collections.singletonList(new FileBasedDataResult(logFile));
-        } catch (NotFoundException ex) {
-            return Collections.emptyList();
-        }
+    public List<BinaryDataResult> downloadLog(@NotNull Long flowInstanceId, boolean skipAuth) throws IOException {
+        File logFile = flowLoggerService.downloadLog(flowInstanceId, skipAuth);
+        return Collections.singletonList(new FileBasedDataResult(logFile));
     }
 
     public List<? extends FlowTaskResult> getResult(@NotNull Long id, boolean skipAuth) throws IOException {
@@ -754,7 +724,7 @@ public class FlowTaskInstanceService {
         }, false);
     }
 
-    private Optional<TaskEntity> getLogDownloadableTaskEntity(@NotNull Long flowInstanceId, boolean skipAuth) {
+    public Optional<TaskEntity> getLogDownloadableTaskEntity(@NotNull Long flowInstanceId, boolean skipAuth) {
         return getTaskEntity(flowInstanceId,
                 instance -> (instance.getStatus().isFinalStatus() || instance.getStatus() == FlowNodeStatus.EXECUTING)
                         && instance.getTaskType() != TaskType.SQL_CHECK && instance.getTaskType() != TaskType.PRE_CHECK
