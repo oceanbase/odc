@@ -72,6 +72,8 @@ import com.oceanbase.odc.service.schedule.model.QueryScheduleTaskParams;
 import com.oceanbase.odc.service.schedule.model.Schedule;
 import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskListOverview;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskListOverviewMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverviewMapper;
@@ -255,7 +257,7 @@ public class ScheduleTaskService {
 
     }
 
-    public Page<ScheduleTaskOverview> getConditionalScheduleTaskListResp(Pageable pageable,
+    public Page<ScheduleTaskListOverview> getConditionalScheduleTaskListResp(Pageable pageable,
             QueryScheduleTaskParams params) {
         Map<String, Schedule> scheduleMap = params.getSchedules().stream()
                 .collect(Collectors.toMap(schedule -> schedule.getId().toString(), Function.identity()));
@@ -286,7 +288,7 @@ public class ScheduleTaskService {
 
         return scheduleTaskPage.map(task -> {
             Schedule schedule = scheduleMap.get(task.getJobName());
-            ScheduleTaskOverview overview = ScheduleTaskOverviewMapper.map(task);
+            ScheduleTaskListOverview overview = ScheduleTaskListOverviewMapper.map(task);
             overview.setScheduleName(schedule.getName());
             overview.setCreator(new InnerUser(users.get(schedule.getCreatorId()).get(0), null));
             if (schedule.getType() == ScheduleType.SQL_PLAN) {

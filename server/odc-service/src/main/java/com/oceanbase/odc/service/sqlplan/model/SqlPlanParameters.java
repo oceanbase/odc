@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.sqlplan.model;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
@@ -28,27 +30,33 @@ public class SqlPlanParameters implements ScheduleTaskParameters {
 
     private Long databaseId;
 
-    private Database databaseInfo;// 包含数据源、数据库信息
+    @JsonProperty(access = Access.READ_ONLY)
+    private Database databaseInfo;
 
     private String sqlContent;
 
-    private List<String> sqlObjectNames;
-
     private List<String> sqlObjectIds;
-
-    private Long timeoutMillis = 172800000L;
 
     private String delimiter = ";";
 
+    /**
+     * SQL execution timeout
+     */
+    private Long timeoutMillis = 172800000L;
+
+    /**
+     * limit the number of query results
+     */
     private Integer queryLimit = 1000;
 
-    private boolean modifyTimeoutIfTimeConsumingSqlExists = true;
-
+    /**
+     * number of retry attempts when SQL execution fails
+     */
     private Integer retryTimes = 0;
 
-    private Long retryIntervalMillis = 180000L;
-
+    /**
+     * SQL execution error handling strategy
+     */
     private TaskErrorStrategy errorStrategy;
 
-    private Integer riskLevelIndex;
 }

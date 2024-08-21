@@ -98,6 +98,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailRespHist;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskListOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
@@ -632,7 +633,7 @@ public class ScheduleService {
         return scheduleTaskService.getScheduleTaskListResp(pageable, scheduleId);
     }
 
-    public Page<ScheduleTaskOverview> listScheduleTaskOverviewByScheduleType(@NotNull Pageable pageable,
+    public Page<ScheduleTaskListOverview> listScheduleTaskOverviewByScheduleType(@NotNull Pageable pageable,
             @NotNull QueryScheduleTaskParams params) {
         log.info("List schedule task overview req:{}", params);
         if (params.getDataSourceIds() == null) {

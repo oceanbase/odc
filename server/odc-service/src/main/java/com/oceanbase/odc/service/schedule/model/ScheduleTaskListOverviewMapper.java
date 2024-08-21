@@ -15,38 +15,18 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
-import java.util.Date;
+public class ScheduleTaskListOverviewMapper {
 
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
-
-import lombok.Data;
-
-/**
- * @Author：tinker
- * @Date: 2024/6/19 14:31
- * @Descripition:
- */
-
-
-@Data
-public class ScheduleTaskOverview {
-
-    private Long id;
-
-    private ScheduleTaskType type;
-
-    private TaskStatus status;
-
-    private Date createTime;
-
-    private Date updateTime;
-
-    /**
-     * Only used in version 4.3.2, it will be deleted after version 4.3.3.
-     */
-    private String jobGroup;
-
-    public String getJobGroup() {
-        return type == null ? null : type.name();
+    public static ScheduleTaskListOverview map(ScheduleTask scheduleTask) {
+        ScheduleTaskListOverview t = new ScheduleTaskListOverview();
+        t.setId(scheduleTask.getId());
+        t.setScheduleId(scheduleTask.getJobName());
+        t.setStatus(scheduleTask.getStatus());
+        t.setType(ScheduleTaskType.valueOf(scheduleTask.getJobGroup()));
+        t.setLastExecutionTime(scheduleTask.getFireTime());
+        t.setCreateTime(scheduleTask.getCreateTime());
+        t.setUpdateTime(scheduleTask.getUpdateTime());
+        return t;
     }
+
 }

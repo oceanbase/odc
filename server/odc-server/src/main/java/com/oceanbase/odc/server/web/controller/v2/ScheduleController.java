@@ -49,6 +49,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskListOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
@@ -137,7 +138,7 @@ public class ScheduleController {
 
     // list all schedule task by schedule type, type can not be null, currently only for sql plan
     @RequestMapping(value = "/schedules/tasks", method = RequestMethod.GET)
-    public PaginatedResponse<ScheduleTaskOverview> listAllTask(
+    public PaginatedResponse<ScheduleTaskListOverview> listAllTask(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
             @RequestParam(required = false, name = "dataSourceId") Set<Long> datasourceIds,
             @RequestParam(required = false, name = "databaseName") String databaseName,

@@ -16,22 +16,23 @@
 package com.oceanbase.odc.service.schedule.model;
 
 import java.util.Date;
+import java.util.Map;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.service.common.model.InnerUser;
 
 import lombok.Data;
 
-/**
- * @Author：tinker
- * @Date: 2024/6/19 14:31
- * @Descripition:
- */
-
-
 @Data
-public class ScheduleTaskOverview {
+public class ScheduleTaskListOverview {
 
     private Long id;
+
+    private String scheduleId;
+
+    private String scheduleName;
+
+    private InnerUser creator;
 
     private ScheduleTaskType type;
 
@@ -41,12 +42,9 @@ public class ScheduleTaskOverview {
 
     private Date updateTime;
 
-    /**
-     * Only used in version 4.3.2, it will be deleted after version 4.3.3.
-     */
-    private String jobGroup;
+    private Date lastExecutionTime;
 
-    public String getJobGroup() {
-        return type == null ? null : type.name();
-    }
+    private Map<String, Object> attributes;
+
+
 }
