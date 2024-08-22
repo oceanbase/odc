@@ -33,7 +33,7 @@ import com.oceanbase.tools.sqlparser.statement.dropindex.DropIndex;
 public class OracleDropIndexFactory extends OBParserBaseVisitor<DropIndex> implements StatementFactory<DropIndex> {
     private final ParserRuleContext parserRuleContext;
 
-    public OracleDropIndexFactory(Relation_nameContext parserRuleContext) {
+    public OracleDropIndexFactory(Drop_index_stmtContext parserRuleContext) {
         this.parserRuleContext = parserRuleContext;
     }
 
