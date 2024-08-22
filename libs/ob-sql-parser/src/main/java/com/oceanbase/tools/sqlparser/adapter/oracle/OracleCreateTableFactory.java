@@ -51,8 +51,8 @@ public class OracleCreateTableFactory extends OBParserBaseVisitor<CreateTable>
 
     @Override
     public CreateTable visitCreate_table_stmt(Create_table_stmtContext ctx) {
-        CreateTable createTable = new CreateTable(ctx, OracleFromReferenceFactory.getRelation(ctx.relation_factor()));
-        createTable.setSchema(OracleFromReferenceFactory.getSchemaName(ctx.relation_factor()));
+        CreateTable createTable =
+                new CreateTable(ctx, OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor()));
         createTable.setUserVariable(OracleFromReferenceFactory.getUserVariable(ctx.relation_factor()));
         if (ctx.special_table_type().GLOBAL() != null && ctx.special_table_type().TEMPORARY() != null) {
             createTable.setGlobal(true);

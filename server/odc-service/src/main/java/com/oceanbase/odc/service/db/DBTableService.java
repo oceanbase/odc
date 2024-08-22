@@ -38,7 +38,6 @@ import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
-import com.oceanbase.odc.core.sql.parser.DropStatement;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
@@ -56,6 +55,7 @@ import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
 import com.oceanbase.tools.sqlparser.statement.createindex.CreateIndex;
+import com.oceanbase.tools.sqlparser.statement.dropindex.DropIndex;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -178,7 +178,7 @@ public class DBTableService {
             }
             if (stmt instanceof CreateIndex) {
                 createIndex = true;
-            } else if (stmt instanceof DropStatement && ((DropStatement) stmt).getObjectType().equals("INDEX")) {
+            } else if (stmt instanceof DropIndex) {
                 dropIndex = true;
             } else if (stmt instanceof AlterTable) {
                 for (AlterTableAction tableAction : ((AlterTable) stmt).getAlterTableActions()) {

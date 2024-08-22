@@ -45,8 +45,8 @@ import lombok.Setter;
 @EqualsAndHashCode(callSuper = false)
 public class CreateTable extends BaseStatement {
 
+    private RelationFactor relation;
     private String userVariable;
-    private String schema;
     private boolean global;
     private boolean temporary;
     private boolean external;
@@ -58,16 +58,29 @@ public class CreateTable extends BaseStatement {
     // delete or preserve
     private String commitOption;
     private Partition partition;
-    private final String tableName;
     private List<ColumnGroupElement> columnGroupElements;
 
-    public CreateTable(@NonNull ParserRuleContext context, @NonNull String tableName) {
+    public CreateTable(@NonNull ParserRuleContext context, @NonNull RelationFactor relation) {
         super(context);
-        this.tableName = tableName;
+        this.relation = relation;
     }
 
-    public CreateTable(@NonNull String tableName) {
-        this.tableName = tableName;
+    public CreateTable(@NonNull RelationFactor relation) {
+        this.relation = relation;
+    }
+
+    public String getSchema() {
+        if (this.relation == null) {
+            return null;
+        }
+        return this.relation.getSchema();
+    }
+
+    public String getTableName() {
+        if (this.relation == null) {
+            return null;
+        }
+        return this.relation.getRelation();
     }
 
     public List<ColumnDefinition> getColumnDefinitions() {
@@ -110,10 +123,10 @@ public class CreateTable extends BaseStatement {
         if (this.ifNotExists) {
             builder.append(" IF NOT EXISTS");
         }
-        if (this.schema != null) {
-            builder.append(" ").append(this.schema).append(".").append(this.tableName);
+        if (getSchema() != null) {
+            builder.append(" ").append(getSchema()).append(".").append(getTableName());
         } else {
-            builder.append(" ").append(this.tableName);
+            builder.append(" ").append(getTableName());
         }
         if (this.userVariable != null) {
             builder.append(this.userVariable);
