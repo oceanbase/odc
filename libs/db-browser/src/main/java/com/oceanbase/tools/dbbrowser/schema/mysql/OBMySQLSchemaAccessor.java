@@ -366,14 +366,14 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     @Override
     public List<String> showExternalTables(String schemaName) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
-        sb.append("select table_name from information_schema.tables where TABLE_SCHEMA='");
+        sb.append("SELECT table_name FROM information_schema.tables WHERE TABLE_TYPE='EXTERNAL TABLE'");
 
         if (StringUtils.isNotBlank(schemaName)) {
-
-            sb.append(schemaName);
+            sb.append(" AND TABLE_SCHEMA=");
+            sb.value(schemaName);
         }
+        sb.append(" ORDER BY table_name");
         List<String> tableNames = new ArrayList<>();
-        sb.append("' and TABLE_TYPE = 'EXTERNAL TABLE'");
         try {
             tableNames = jdbcOperations.query(sb.toString(), (rs, rowNum) -> rs.getString(1));
         } catch (BadSqlGrammarException e) {
@@ -389,7 +389,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     @Override
     public List<String> showExternalTablesLike(String schemaName, String tableNameLike) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
-        sb.append("SELECT table_name FROM information_schema.tables WHERE table_type='BASE TABLE'");
+        sb.append("SELECT table_name FROM information_schema.tables WHERE table_type='EXTERNAL TABLE'");
         if (StringUtils.isNotBlank(schemaName)) {
             sb.append(" AND table_schema=");
             sb.value(schemaName);

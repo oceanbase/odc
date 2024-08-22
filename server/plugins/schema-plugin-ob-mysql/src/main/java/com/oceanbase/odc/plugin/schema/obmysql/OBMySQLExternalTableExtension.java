@@ -21,12 +21,22 @@ import java.util.stream.Collectors;
 
 import org.pf4j.Extension;
 
+import com.oceanbase.odc.common.unit.BinarySizeUnit;
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.api.ExternalTableExtensionPoint;
+import com.oceanbase.odc.plugin.schema.obmysql.parser.OBMySQLGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
+import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
+import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
+import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLObjectOperator;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTableStats;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
+
+import lombok.NonNull;
 
 /**
  * @description:
@@ -38,7 +48,7 @@ import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 public class OBMySQLExternalTableExtension implements ExternalTableExtensionPoint {
 
     @Override
-    public List<DBObjectIdentity> list(Connection connection, String schemaName) {
+    public List<DBObjectIdentity> list(@NonNull Connection connection, @NonNull String schemaName) {
         return getSchemaAccessor(connection).showExternalTables(schemaName).stream().map(item -> {
             DBObjectIdentity identity = new DBObjectIdentity();
             identity.setType(DBObjectType.EXTERNAL_TABLE);
@@ -49,31 +59,79 @@ public class OBMySQLExternalTableExtension implements ExternalTableExtensionPoin
     }
 
     @Override
-    public List<String> showNamesLike(Connection connection, String schemaName, String tableNameLike) {
-        return null;
+    public List<String> showNamesLike(@NonNull Connection connection, @NonNull String schemaName,
+            @NonNull String tableNameLike) {
+        return getSchemaAccessor(connection).showExternalTablesLike(schemaName, tableNameLike);
     }
 
     @Override
-    public DBTable getDetail(Connection connection, String schemaName, String tableName) {
-        return null;
+    public DBTable getDetail(@NonNull Connection connection, @NonNull String schemaName, @NonNull String tableName) {
+        DBSchemaAccessor schemaAccessor = getSchemaAccessor(connection);
+        String ddl = schemaAccessor.getTableDDL(schemaName, tableName);
+        OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(ddl);
+
+        DBTable table = new DBTable();
+        table.setSchemaName(schemaName);
+        table.setOwner(schemaName);
+        table.setName(tableName);
+        table.setColumns(schemaAccessor.listTableColumns(schemaName, tableName));
+        table.setConstraints(schemaAccessor.listTableConstraints(schemaName, tableName));
+        table.setPartition(parser.getPartition());
+        table.setIndexes(schemaAccessor.listTableIndexes(schemaName, tableName));
+        table.setDDL(ddl);
+        table.setTableOptions(schemaAccessor.getTableOptions(schemaName, tableName));
+        table.setStats(getTableStats(connection, schemaName, tableName));
+        try {
+            table.setColumnGroups(schemaAccessor.listTableColumnGroups(schemaName, tableName));
+        } catch (Exception e) {
+            // eat the exception
+        }
+        return table;
+    }
+
+    protected DBTableStats getTableStats(@NonNull Connection connection, @NonNull String schemaName,
+            @NonNull String tableName) {
+        DBStatsAccessor statsAccessor = getStatsAccessor(connection);
+        DBTableStats tableStats = statsAccessor.getTableStats(schemaName, tableName);
+        Long dataSizeInBytes = tableStats.getDataSizeInBytes();
+        if (dataSizeInBytes == null || dataSizeInBytes < 0) {
+            tableStats.setTableSize(null);
+        } else {
+            tableStats.setTableSize(BinarySizeUnit.B.of(dataSizeInBytes).toString());
+        }
+        return tableStats;
     }
 
     @Override
-    public void drop(Connection connection, String schemaName, String tableName) {
-
+    public void drop(@NonNull Connection connection, @NonNull String schemaName, @NonNull String tableName) {
+        getTableOperator(connection).drop(DBObjectType.TABLE, schemaName, tableName);
     }
 
     @Override
-    public String generateCreateDDL(Connection connection, DBTable table) {
-        return null;
+    public String generateCreateDDL(@NonNull Connection connection, @NonNull DBTable tableName) {
+        return getTableEditor(connection).generateCreateObjectDDL(tableName);
     }
 
     @Override
-    public String generateUpdateDDL(Connection connection, DBTable oldTable, DBTable newTable) {
-        return null;
+    public String generateUpdateDDL(@NonNull Connection connection, @NonNull DBTable oldTable,
+            @NonNull DBTable newTable) {
+        return getTableEditor(connection).generateUpdateObjectDDL(oldTable, newTable);
+    }
+
+    protected DBTableEditor getTableEditor(Connection connection) {
+        return DBAccessorUtil.getTableEditor(connection);
     }
 
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
         return DBAccessorUtil.getSchemaAccessor(connection);
     }
+
+    protected DBStatsAccessor getStatsAccessor(Connection connection) {
+        return DBAccessorUtil.getStatsAccessor(connection);
+    }
+
+    private DBObjectOperator getTableOperator(Connection connection) {
+        return new MySQLObjectOperator(JdbcOperationsUtil.getJdbcOperations(connection));
+    }
+
 }

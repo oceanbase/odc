@@ -51,8 +51,8 @@ public class DBExternalTableController {
     @GetMapping(value = "/{sessionId}/databases/{databaseName}/externalTables/{tableName}")
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<DBTable> getTable(@PathVariable String sessionId,
-        @PathVariable(required = false) String databaseName,
-        @PathVariable String tableName) {
+            @PathVariable(required = false) String databaseName,
+            @PathVariable String tableName) {
         Base64.Decoder decoder = Base64.getDecoder();
         tableName = new String(decoder.decode(tableName));
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);

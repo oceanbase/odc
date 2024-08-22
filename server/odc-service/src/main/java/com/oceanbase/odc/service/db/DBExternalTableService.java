@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.db;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -58,7 +59,6 @@ import com.oceanbase.odc.core.sql.parser.DropStatement;
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.plugin.schema.api.ExternalTableExtensionPoint;
-import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -123,6 +123,12 @@ public class DBExternalTableService {
 
     @Autowired
     private DBResourcePermissionHelper dbResourcePermissionHelper;
+
+    // 测试需要，提交时记得去除
+    public static void main(String[] args) {
+        byte[] encode = Base64.getEncoder().encode("ext_t1".getBytes());
+        System.out.println(new String(encode));
+    }
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("permission check inside")
@@ -225,7 +231,7 @@ public class DBExternalTableService {
             @NotBlank String tableName) {
         DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
         PreConditions.validExists(ResourceType.OB_TABLE, "tableName", tableName,
-                () -> schemaAccessor.showTables(schemaName).stream().filter(name -> name.equals(tableName))
+                () -> schemaAccessor.showExternalTables(schemaName).stream().filter(name -> name.equals(tableName))
                         .collect(Collectors.toList()).size() > 0);
         try {
             return connectionSession.getSyncJdbcExecutor(
@@ -322,8 +328,8 @@ public class DBExternalTableService {
         return schemaAccessor.isLowerCaseTableName();
     }
 
-    private TableExtensionPoint getTableExtensionPoint(@NotNull ConnectionSession connectionSession) {
-        return SchemaPluginUtil.getTableExtension(connectionSession.getDialectType());
+    private ExternalTableExtensionPoint getTableExtensionPoint(@NotNull ConnectionSession connectionSession) {
+        return SchemaPluginUtil.getExternalTableExtension(connectionSession.getDialectType());
     }
 
 }

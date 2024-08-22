@@ -77,13 +77,13 @@ public class DBSchemaController {
     @ApiOperation(value = "listExternalTables", notes = "List external tables with permitted actions")
     @RequestMapping(value = "/basicTablesAndExternalTables", method = RequestMethod.GET)
     public ListResponse<Table> listBasicAndExternalTables(@RequestParam(name = "databaseId") Long databaseId,
-        @RequestParam(name = "includePermittedAction", required = false,
-            defaultValue = "false") boolean includePermittedAction)
-        throws SQLException, InterruptedException {
+            @RequestParam(name = "includePermittedAction", required = false,
+                    defaultValue = "false") boolean includePermittedAction)
+            throws SQLException, InterruptedException {
         QueryTableParams params = QueryTableParams.builder()
-            .databaseId(databaseId)
-            .includePermittedAction(includePermittedAction)
-            .build();
+                .databaseId(databaseId)
+                .includePermittedAction(includePermittedAction)
+                .build();
         return Responses.list(dbExternalTableService.list(params));
     }
 
