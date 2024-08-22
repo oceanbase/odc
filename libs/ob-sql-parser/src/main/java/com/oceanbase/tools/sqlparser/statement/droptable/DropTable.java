@@ -71,30 +71,30 @@ public class DropTable extends BaseStatement {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("drop ");
+        StringBuilder sb = new StringBuilder("DROP ");
         if (temporary) {
-            sb.append("temporary ");
+            sb.append("TEMPORARY ");
         }
         if (materialized) {
-            sb.append("materialized ");
+            sb.append("MATERIALIZED ");
         }
-        sb.append("table ");
+        sb.append("TABLE ");
         if (ifExists) {
-            sb.append("if exists ");
+            sb.append("IF EXISTS ");
         }
         if (relations != null) {
             sb.append(StringUtils.join(relations, ','));
         }
         if (cascade) {
-            sb.append(" cascade ");
+            sb.append(" CASCADE ");
         } else if (restrict) {
-            sb.append(" restrict ");
+            sb.append(" RESTRICT ");
         }
         if (cascadeConstraints) {
-            sb.append(" cascade constraints ");
+            sb.append(" CASCADE CONSTRAINTS ");
         }
         if (purge) {
-            sb.append(" purge");
+            sb.append(" PURGE");
         }
         return sb.toString();
     }

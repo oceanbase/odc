@@ -59,7 +59,7 @@ public class DropIndex extends BaseStatement {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("drop index ");
+        StringBuilder sb = new StringBuilder("DROP INDEX ");
         if (schemaName != null) {
             sb.append(schemaName).append(".");
         }
@@ -67,7 +67,7 @@ public class DropIndex extends BaseStatement {
             sb.append(indexName);
         }
         if (relation != null) {
-            sb.append(" on ").append(relation);
+            sb.append(" ON ").append(relation);
         }
         return sb.toString();
     }
