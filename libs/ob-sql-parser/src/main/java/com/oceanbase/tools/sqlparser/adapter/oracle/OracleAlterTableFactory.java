@@ -26,6 +26,7 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_table_stmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 
 import lombok.NonNull;
 
@@ -52,16 +53,15 @@ public class OracleAlterTableFactory extends OBParserBaseVisitor<AlterTable> imp
     @Override
     public AlterTable visitAlter_table_stmt(Alter_table_stmtContext ctx) {
         AlterTable alterTable;
+        RelationFactor relationFactor = OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor());
         if (ctx.alter_table_actions() != null) {
             List<AlterTableAction> actions = ctx.alter_table_actions().alter_table_action().stream()
-                    .map(c -> new OracleAlterTableActionFactory(c).generate()).collect(Collectors.toList());
+                .map(c -> new OracleAlterTableActionFactory(c).generate()).collect(Collectors.toList());
             alterTable =
-                    new AlterTable(ctx, OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor()), actions);
+                new AlterTable(ctx, relationFactor, actions);
         } else {
-            alterTable = new AlterTable(ctx, OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor()),
-                    Collections
-                            .singletonList(
-                                    new OracleAlterTableActionFactory(ctx.alter_column_group_option()).generate()));
+            alterTable = new AlterTable(ctx, relationFactor, Collections.singletonList(
+                new OracleAlterTableActionFactory(ctx.alter_column_group_option()).generate()));
         }
         if (ctx.EXTERNAL() != null) {
             alterTable.setExternal(true);

@@ -52,6 +52,6 @@ public class OracleDropIndexFactory extends OBParserBaseVisitor<DropIndex> imple
             // DROP INDEX ANY_SCHEMA.ANY_INDEX
             return new DropIndex(ctx, relations.get(0).getText(), relations.get(1).getText());
         }
-        return null;
+        throw new IllegalStateException("Unexpected drop index statement: " + ctx.getText());
     }
 }

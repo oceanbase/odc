@@ -41,7 +41,7 @@ public class OracleDropTableFactoryTest {
         OracleDropTableFactory factory = new OracleDropTableFactory(ctx);
         DropTable actual = factory.generate();
 
-        DropTable expected = new DropTable(ctx, getRelationFactor("ANY_SCHEMA", "ANY_TABLE"));
+        DropTable expected = new DropTable(ctx, getRelationFactor("ANY_SCHEMA", "ANY_TABLE"), false, false);
         Assert.assertEquals(expected, actual);
     }
 
@@ -52,7 +52,7 @@ public class OracleDropTableFactoryTest {
         OracleDropTableFactory factory = new OracleDropTableFactory(ctx);
         DropTable actual = factory.generate();
 
-        DropTable expected = new DropTable(ctx, getRelationFactor(null, "ANY_TABLE"));
+        DropTable expected = new DropTable(ctx, getRelationFactor(null, "ANY_TABLE"), true, false);
         Assert.assertEquals(expected, actual);
     }
 

@@ -48,7 +48,7 @@ public class MySQLDropTableFactoryTest {
 
         List<RelationFactor> relationFactors = Collections.singletonList(getRelationFactor("any_schema", "any_table"));
         TableList tableList = new TableList(ctx.table_list(), relationFactors);
-        DropTable expected = new DropTable(ctx, tableList);
+        DropTable expected = new DropTable(ctx, tableList, false, false, false, false, false);
         Assert.assertEquals(expected, actual);
     }
 
@@ -61,7 +61,7 @@ public class MySQLDropTableFactoryTest {
 
         List<RelationFactor> relationFactors = Collections.singletonList(getRelationFactor(null, "any_table"));
         TableList tableList = new TableList(ctx.table_list(), relationFactors);
-        DropTable expected = new DropTable(ctx, tableList);
+        DropTable expected = new DropTable(ctx, tableList, true, false, true, false, false);
         Assert.assertEquals(expected, actual);
     }
 
@@ -76,7 +76,7 @@ public class MySQLDropTableFactoryTest {
                 Arrays.asList(getRelationFactor("any_schema_1", "any_table_1"), getRelationFactor(
                         "any_schema_2", "any_table_2"));
         TableList tableList = new TableList(ctx.table_list(), relationFactors);
-        DropTable expected = new DropTable(ctx, tableList);
+        DropTable expected = new DropTable(ctx, tableList, false, true, true, false, false);
         Assert.assertEquals(expected, actual);
     }
 
@@ -90,7 +90,7 @@ public class MySQLDropTableFactoryTest {
         List<RelationFactor> relationFactors =
                 Arrays.asList(getRelationFactor(null, "any_table_1"), getRelationFactor(null, "any_table_2"));
         TableList tableList = new TableList(ctx.table_list(), relationFactors);
-        DropTable expected = new DropTable(ctx, tableList);
+        DropTable expected = new DropTable(ctx, tableList, false, false, false, false, false);
         Assert.assertEquals(expected, actual);
     }
 

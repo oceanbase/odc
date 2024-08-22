@@ -46,6 +46,7 @@ public class MySQLDropTableFactory extends OBParserBaseVisitor<DropTable> implem
         Table_listContext tableListContext = ctx.table_list();
         TableList tablelist = new TableList(tableListContext,
                 MySQLFromReferenceFactory.getRelationFactors(tableListContext.relation_factor()));
-        return new DropTable(ctx, tablelist);
+        return new DropTable(ctx, tablelist, ctx.TEMPORARY() != null, ctx.MATERIALIZED() != null,
+                ctx.EXISTS() != null, ctx.CASCADE() != null, ctx.RESTRICT() != null);
     }
 }
