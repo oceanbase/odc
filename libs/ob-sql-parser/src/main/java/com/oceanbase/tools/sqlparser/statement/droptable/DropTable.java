@@ -37,17 +37,18 @@ import lombok.Setter;
 @Setter
 @EqualsAndHashCode(callSuper = false)
 public class DropTable extends BaseStatement {
-    private       boolean              temporary;
-    private       boolean              materialized;
-    private       boolean              ifExists;
-    private       boolean              cascade;
-    private       boolean              restrict;
-    private       boolean              purge;
-    private       TableList            tableList;
+    private boolean temporary;
+    private boolean materialized;
+    private boolean ifExists;
+    private boolean cascade;
+    private boolean restrict;
+    private boolean purge;
+    private TableList tableList;
     private final List<RelationFactor> relations;
 
-    public DropTable(@NonNull ParserRuleContext context, @NonNull TableList tableList, boolean temporary, boolean materialized,
-        boolean ifExists, boolean cascade, boolean restrict) {
+    public DropTable(@NonNull ParserRuleContext context, @NonNull TableList tableList, boolean temporary,
+            boolean materialized,
+            boolean ifExists, boolean cascade, boolean restrict) {
         super(context);
         this.tableList = tableList;
         this.relations = tableList.getRelations();
@@ -58,7 +59,8 @@ public class DropTable extends BaseStatement {
         this.restrict = restrict;
     }
 
-    public DropTable(@NonNull ParserRuleContext context, @NonNull RelationFactor relation, boolean cascade, boolean purge) {
+    public DropTable(@NonNull ParserRuleContext context, @NonNull RelationFactor relation, boolean cascade,
+            boolean purge) {
         super(context);
         this.relations = Collections.singletonList(relation);
         this.cascade = cascade;

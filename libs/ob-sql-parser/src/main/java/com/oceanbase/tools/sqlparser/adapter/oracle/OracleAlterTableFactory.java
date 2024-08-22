@@ -56,12 +56,12 @@ public class OracleAlterTableFactory extends OBParserBaseVisitor<AlterTable> imp
         RelationFactor relationFactor = OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor());
         if (ctx.alter_table_actions() != null) {
             List<AlterTableAction> actions = ctx.alter_table_actions().alter_table_action().stream()
-                .map(c -> new OracleAlterTableActionFactory(c).generate()).collect(Collectors.toList());
+                    .map(c -> new OracleAlterTableActionFactory(c).generate()).collect(Collectors.toList());
             alterTable =
-                new AlterTable(ctx, relationFactor, actions);
+                    new AlterTable(ctx, relationFactor, actions);
         } else {
             alterTable = new AlterTable(ctx, relationFactor, Collections.singletonList(
-                new OracleAlterTableActionFactory(ctx.alter_column_group_option()).generate()));
+                    new OracleAlterTableActionFactory(ctx.alter_column_group_option()).generate()));
         }
         if (ctx.EXTERNAL() != null) {
             alterTable.setExternal(true);
