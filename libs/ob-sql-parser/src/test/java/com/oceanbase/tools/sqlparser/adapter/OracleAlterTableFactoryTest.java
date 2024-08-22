@@ -68,7 +68,9 @@ public class OracleAlterTableFactoryTest {
         AlterTableAction a3 = new AlterTableAction();
         a3.setRefresh(true);
 
-        AlterTable expect = new AlterTable(getRelationFactor("a", "b"), Arrays.asList(a3, a1, a2));
+        RelationFactor relationFactor = getRelationFactor("a", "b");
+        relationFactor.setUserVariable("@c");
+        AlterTable expect = new AlterTable(relationFactor, Arrays.asList(a3, a1, a2));
         expect.setUserVariable("@c");
         expect.setExternal(true);
         Assert.assertEquals(expect, actual);

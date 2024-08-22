@@ -127,7 +127,7 @@ public class OBOracleSQLParserTest {
     public void parse_createtableStatement_parseSucceed() {
         SQLParser sqlParser = new OBOracleSQLParser();
         String sql = "create table any_schema.abcd (id varchar(64))";
-        Statement actual = sqlParser.parse(new StringReader("create table abcd (id varchar(64))"));
+        Statement actual = sqlParser.parse(new StringReader(sql));
         CreateTable expect = new CreateTable(getCreateTableContext(sql), getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
