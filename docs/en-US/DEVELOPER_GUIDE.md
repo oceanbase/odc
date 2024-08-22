@@ -370,9 +370,17 @@ Before starting the odc-server, you need to complete the first-time build, inclu
 script/build_jar.sh
 ```
 
-After the build is complete, you can see the built plugins in the distribution/plugins and distribution/starters directories.
+After the build is complete, you can see the built plugins in the distribution/plugins, distribution/starters and distribution/modules directories.
 
 ![image.png](./images/odc-plugins-starters.png)
+
+These directories store ODC plugins, starters, and modules. Here is a comparison of these objects:
+
+| Metric          | Plugin                                                                                                  | Starter                                                                                            | Module                                                                                                             |
+|:----------------|:--------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------|:-------------------------------------------------------------------------------------------------------------------|
+| Load Limitation | None                                                                                                    | Loaded by profile                                                                                  | None                                                                                                               |
+| Purpose         | Provides underlying heterogeneous implementations related to data source dialects for business features | Provides configuration assembly for heterogeneous runtime environments (e.g., standalone, desktop) | Provides complete, standalone, pluggable business features, decoupling business logic from the runtime environment |
+| Spring Context  | No                                                                                                      | Yes                                                                                                | Yes                                                                                                                |
 
 ### 3.3.3 Start OdcServer
 

@@ -19,6 +19,7 @@
         <module>server/odc-service</module>
         <module>server/odc-server</module>
         <module>server/starters</module>
+        <module>server/modules</module>
         <module>server/integration-test</module>
         <module>server/odc-migrate</module>
     </modules>
@@ -1384,6 +1385,18 @@
                             </target>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>delete-module-jar</id>
+                        <phase>pre-clean</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <delete dir="${project.basedir}/distribution/modules"/>
+                            </target>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -1509,7 +1522,7 @@ limitations under the License.
                 </property>
             </activation>
             <properties>
-                <oceanbase-client.version>2.4.7.1</oceanbase-client.version>
+                <oceanbase-client.version>2.4.12</oceanbase-client.version>
             </properties>
         </profile>
         <profile>

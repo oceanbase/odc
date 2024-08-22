@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.cloud;
+package com.oceanbase.odc.service.objectstorage.cloud;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -33,7 +33,6 @@ import org.junit.Test;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -76,6 +75,14 @@ abstract class AbstractCloudObjectStorageServiceTest {
     @Test
     public void upload_ByFileNameAndFile() throws IOException {
         objectName = cloudObjectStorageService.upload("test", new File(TEST_FILE_PATH));
+
+        tempFile = cloudObjectStorageService.downloadToTempFile(objectName);
+        Assert.assertEquals("test0001", readFirstLine(tempFile));
+    }
+
+    @Test
+    public void uploadTemp_ByFileNameAndFile() throws IOException {
+        objectName = cloudObjectStorageService.uploadTemp("test", new File(TEST_FILE_PATH));
 
         tempFile = cloudObjectStorageService.downloadToTempFile(objectName);
         Assert.assertEquals("test0001", readFirstLine(tempFile));

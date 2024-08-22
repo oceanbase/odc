@@ -41,7 +41,6 @@ import com.oceanbase.odc.common.security.SensitiveDataUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.authority.interceptor.MethodAuthorizedPostProcessor;
 import com.oceanbase.odc.migrate.AbstractMetaDBMigrate;
-import com.oceanbase.odc.server.starter.StarterSpringApplication;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.executor.TaskApplication;
@@ -84,7 +83,7 @@ public class OdcServer {
         }
         initEnv();
         System.setProperty("spring.cloud.bootstrap.enabled", "true");
-        StarterSpringApplication.run(OdcServer.class, args);
+        PluginSpringApplication.run(OdcServer.class, args);
     }
 
     private static void initEnv() {
@@ -120,4 +119,5 @@ public class OdcServer {
     public MethodAuthorizedPostProcessor authorizedMethodProcessor(ApplicationContext applicationContext) {
         return new MethodAuthorizedPostProcessor(applicationContext);
     }
+
 }

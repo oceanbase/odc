@@ -17,6 +17,7 @@ _build/
 conf/
 /plugins
 /starters
+/modules
 server/odc-server/src/main/resources/static/
 server/odc-common/src/test/resources/generate-input.properties
 server/integration-test/oss_temp_dir/
@@ -39,6 +40,7 @@ odc-parent.iws
 builds/odc.jar
 distribution/plugins/
 distribution/starters/
+distribution/modules/
 distribution/docker/resources/*.rpm
 distribution/docker/odc/Dockerfile.arm
 distribution/docker/resources/x86/
@@ -52,3 +54,4 @@ lib/odc-*.jar
 maven/
 venv/
 **/local-unit-test.properties
+**/integration-test.properties

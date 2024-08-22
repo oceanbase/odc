@@ -17,23 +17,16 @@ package com.oceanbase.odc.core.session;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
-import java.text.DateFormat;
-import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.sql.DataSource;
 
-import org.apache.commons.io.FileUtils;
-
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
 import com.oceanbase.odc.core.datasource.DataSourceFactory;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.execute.AsyncJdbcExecutor;
 import com.oceanbase.odc.core.sql.execute.GeneralAsyncJdbcExecutor;
 import com.oceanbase.odc.core.sql.execute.GeneralSyncJdbcExecutor;
@@ -61,41 +54,26 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @ToString(exclude = {"attributes", "dataSourceWrapperMap", "taskManagerWrapper"})
 @EqualsAndHashCode(exclude = {"attributes", "dataSourceWrapperMap", "taskManagerWrapper", "dataManager"})
-public class DefaultConnectionSession implements ConnectionSession {
+public class DefaultConnectionSession extends AbstractConnectionSession {
 
-    private final String id;
-    private final ConnectType connectType;
     private final boolean defaultAutoCommit;
-    private final Date startTime;
     private final Map<String, DataSourceWrapper> dataSourceWrapperMap;
-    private final long sessionTimeoutMillis;
-    private final Map<Object, Object> attributes;
     private final TaskManagerWrapper taskManagerWrapper;
     private final SessionOperations sessionOperations;
-
-    private Date lastAccessTime;
-    private boolean expired = false;
-    private Date expiredTime;
     private BinaryDataManager dataManager;
 
     public DefaultConnectionSession(@NonNull String id,
             TaskManagerFactory<SqlExecuteTaskManager> taskManagerFactory, long sessionTimeoutMillis,
             @NonNull ConnectType connectType, boolean defaultAutoCommit,
             @NonNull SessionOperations sessionOperations) throws IOException {
-        this.id = id;
-        this.connectType = connectType;
+        super(id, connectType, sessionTimeoutMillis);
         this.defaultAutoCommit = defaultAutoCommit;
-        long timestamp = System.currentTimeMillis();
-        this.startTime = new Date(timestamp);
-        this.lastAccessTime = new Date(timestamp);
-        this.sessionTimeoutMillis = sessionTimeoutMillis;
         if (taskManagerFactory == null) {
             this.taskManagerWrapper = new TaskManagerWrapper(
                     () -> new DefaultSqlExecuteTaskManager(1, "console", 10, TimeUnit.SECONDS));
         } else {
             this.taskManagerWrapper = new TaskManagerWrapper(taskManagerFactory);
         }
-        this.attributes = new HashMap<>();
         this.dataSourceWrapperMap = new HashMap<>();
         initBinaryDataManager();
         this.sessionOperations = sessionOperations;
@@ -115,97 +93,8 @@ public class DefaultConnectionSession implements ConnectionSession {
     }
 
     @Override
-    public ConnectType getConnectType() {
-        return this.connectType;
-    }
-
-    @Override
-    public DialectType getDialectType() {
-        return this.connectType.getDialectType();
-    }
-
-    @Override
     public boolean getDefaultAutoCommit() {
         return this.defaultAutoCommit;
-    }
-
-    @Override
-    public Date getStartTime() {
-        return this.startTime;
-    }
-
-    @Override
-    public Date getLastAccessTime() {
-        return this.lastAccessTime;
-    }
-
-    @Override
-    public boolean isExpired() {
-        return this.expired;
-    }
-
-    @Override
-    public synchronized void expire() {
-        if (log.isDebugEnabled()) {
-            log.debug("Connection session started to be expired, session={}", this);
-        }
-        if (this.expiredTime == null) {
-            this.expiredTime = new Date();
-        }
-        this.expired = true;
-        closeTaskManager();
-        closeDataSource();
-        closeBinaryFileManager();
-        File sessionLevelDir = null;
-        try {
-            sessionLevelDir = ConnectionSessionUtil.getSessionWorkingDir(this);
-            if (sessionLevelDir.exists()) {
-                FileUtils.forceDelete(sessionLevelDir);
-            }
-            if (log.isDebugEnabled()) {
-                log.debug("Session-level storage directory was deleted successfully, sessionId={}, dir={}",
-                        this.id, sessionLevelDir);
-            }
-        } catch (IOException exception) {
-            log.warn("Failed to delete session level directory, dir={}, sessionId={}",
-                    sessionLevelDir, this.id, exception);
-        }
-        log.info("Connection session was closed successfully, sessionId={}", this.id);
-    }
-
-    @Override
-    public void touch() throws ExpiredSessionException {
-        validate();
-        this.lastAccessTime = new Date();
-    }
-
-    @Override
-    public long getTimeoutMillis() {
-        return sessionTimeoutMillis;
-    }
-
-    @Override
-    public Collection<Object> getAttributeKeys() throws ExpiredSessionException {
-        return getAttributes().keySet();
-    }
-
-    @Override
-    public Object getAttribute(Object key) throws ExpiredSessionException {
-        return getAttributes().get(key);
-    }
-
-    @Override
-    public void setAttribute(Object key, Object value) throws ExpiredSessionException {
-        if (value == null) {
-            this.removeAttribute(key);
-        } else {
-            getAttributes().put(key, value);
-        }
-    }
-
-    @Override
-    public Object removeAttribute(Object key) throws ExpiredSessionException {
-        return getAttributes().remove(key);
     }
 
     @Override
@@ -236,49 +125,8 @@ public class DefaultConnectionSession implements ConnectionSession {
         return wrapper;
     }
 
-    private Map<Object, Object> getAttributes() throws ExpiredSessionException {
-        validate();
-        return this.attributes;
-    }
-
-    protected boolean isTimedOut() {
-        if (this.expired) {
-            return true;
-        } else {
-            long timeout = this.getTimeoutMillis();
-            if (timeout >= 0L) {
-                Date lastAccessTime = this.getLastAccessTime();
-                long expireTimeMillis = System.currentTimeMillis() - timeout;
-                Date expireTime = new Date(expireTimeMillis);
-                return lastAccessTime.before(expireTime);
-            } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("No timeout for session with id [" + this.getId()
-                            + "].  Session is not considered expired.");
-                }
-                return false;
-            }
-        }
-    }
-
-    protected void validate() throws ExpiredSessionException {
-        if (this.isTimedOut()) {
-            Date lastAccessTime = this.getLastAccessTime();
-            long timeout = this.getTimeoutMillis();
-            Serializable sessionId = this.getId();
-            if (log.isDebugEnabled()) {
-                DateFormat format = DateFormat.getInstance();
-                log.debug(
-                        "Connection Session has expired, id={}, lastAccessTime={}, currentTime={}, timeout={} s ({} mins)",
-                        sessionId, format.format(lastAccessTime), format.format(new Date()),
-                        TimeUnit.SECONDS.convert(timeout, TimeUnit.MILLISECONDS),
-                        TimeUnit.MINUTES.convert(timeout, TimeUnit.MILLISECONDS));
-            }
-            throw new ExpiredSessionException(this);
-        }
-    }
-
-    private void closeDataSource() {
+    @Override
+    protected void closeDataSource() {
         for (String key : this.dataSourceWrapperMap.keySet()) {
             DataSource dataSource = this.dataSourceWrapperMap.get(key).dataSource;
             if (!(dataSource instanceof AutoCloseable)) {
@@ -294,7 +142,8 @@ public class DefaultConnectionSession implements ConnectionSession {
         }
     }
 
-    private void closeTaskManager() {
+    @Override
+    protected void closeTaskManager() {
         SqlExecuteTaskManager taskManager = this.taskManagerWrapper.taskManager;
         if (taskManager == null) {
             return;
@@ -310,7 +159,8 @@ public class DefaultConnectionSession implements ConnectionSession {
         }
     }
 
-    private void closeBinaryFileManager() {
+    @Override
+    protected void closeBinaryFileManager() {
         if (this.dataManager == null) {
             return;
         }

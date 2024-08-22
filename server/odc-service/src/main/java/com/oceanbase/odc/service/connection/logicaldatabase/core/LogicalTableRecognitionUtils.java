@@ -47,7 +47,7 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalTa
  * @Date: 2024/3/26 14:17
  * @Description: []
  */
-class LogicalTableRecognitionUtils {
+public class LogicalTableRecognitionUtils {
     private static final String PATTERN_PLACEHOLDER = "[#]";
     private static final String PATTERN_PLACEHOLDER_REGEX = "\\[#\\]";
     private static final String DIGIT_REGEX_CAPTURING_GROUP_REPLACEMENT = "(\\\\d+)";
@@ -59,7 +59,7 @@ class LogicalTableRecognitionUtils {
     private static final String DOUBLE_RIGHT_SQUARE_BRACKET = "]]";
     private static final Pattern DIGIT_PATTERN = Pattern.compile("\\d+");
 
-    static List<LogicalTable> recognizeLogicalTablesWithExpression(List<DataNode> dataNodes) {
+    public static List<LogicalTable> recognizeLogicalTablesWithExpression(List<DataNode> dataNodes) {
         PreConditions.notEmpty(dataNodes,
                 "LogicalTableRecognitionUtils#recognizeLogicalTablesWithExpression.dataNodes");
         // find all logical tables with the same pattern

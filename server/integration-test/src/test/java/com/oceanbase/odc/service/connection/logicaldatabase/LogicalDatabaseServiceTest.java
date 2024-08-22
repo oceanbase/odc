@@ -96,6 +96,8 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
         when(databaseRepository.findById(PHYSICAL_DATABASE_ID)).thenReturn(Optional.of(getPhysicalDatabase()));
         when(databaseRepository.saveAndFlush(any(DatabaseEntity.class))).thenReturn(getLogicalDatabase());
         when(databaseRepository.findById(LOGICAL_DATABASE_ID)).thenReturn(Optional.of(getLogicalDatabase()));
+        when(databaseRepository.findAllById(Arrays.asList(PHYSICAL_DATABASE_ID)))
+                .thenReturn(Arrays.asList(getLogicalDatabase(), getPhysicalDatabase()));
         when(databaseRepository.findByIdIn(anyCollection())).thenReturn(Arrays.asList(getPhysicalDatabase()));
         doNothing().when(projectPermissionValidator).checkProjectRole(anyLong(), anyList());
         doNothing().when(permissionHelper).checkDBPermissions(anyCollection(), anyCollection());
@@ -119,6 +121,12 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
         Assert.assertNotNull(logicalDatabaseService.detail(LOGICAL_DATABASE_ID));
     }
 
+    @Test
+    public void testListPhysicalDatabaseIds() {
+        when(databaseMappingRepository.findByLogicalDatabaseId(anyLong())).thenReturn(listDatabaseMappings(1));
+        Assert.assertEquals(1, logicalDatabaseService.listPhysicalDatabaseIds(LOGICAL_DATABASE_ID).size());
+    }
+
     private ConnectionEntity getConnectionEntity() {
         ConnectionEntity config = new ConnectionEntity();
         config.setId(CONNECTION_ID);
@@ -134,6 +142,7 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
         entity.setOrganizationId(ORGANIZATION_ID);
         entity.setProjectId(PROJECT_ID);
         entity.setEnvironmentId(ENVIRONMENT_ID);
+        entity.setConnectionId(CONNECTION_ID);
         return entity;
     }
 

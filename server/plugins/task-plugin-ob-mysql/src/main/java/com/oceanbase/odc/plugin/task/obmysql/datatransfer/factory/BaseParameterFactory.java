@@ -144,7 +144,9 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
 
         sessionConfig.setJdbcOption("useServerPrepStmts", transferConfig.isUsePrepStmts() + "");
         sessionConfig.setJdbcOption("useCursorFetch", transferConfig.isUsePrepStmts() + "");
-        sessionConfig.setJdbcOption("sendConnectionAttributes", "false");
+
+        sessionConfig.setJdbcOption("sendConnectionAttributes", "true");
+        sessionConfig.setJdbcOption("defaultConnectionAttributesBanList", "__client_ip");
         Optional.ofNullable(transferConfig.getExecutionTimeoutSeconds())
                 .ifPresent(timeout -> {
                     sessionConfig.setJdbcOption("socketTimeout", timeout * 1000 + "");

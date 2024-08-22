@@ -128,7 +128,7 @@ public class LogicalDatabaseService {
         logicalDatabase.setEnvironmentId(basePhysicalDatabase.getEnvironmentId());
         logicalDatabase.setDatabaseId(StringUtils.uuid());
         logicalDatabase.setType(DatabaseType.LOGICAL);
-        logicalDatabase.setDialectType(baseConnection.getDialectType());
+        logicalDatabase.setConnectType(baseConnection.getType());
         logicalDatabase.setSyncStatus(DatabaseSyncStatus.INITIALIZED);
         logicalDatabase.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
         logicalDatabase.setExisted(true);
@@ -156,21 +156,32 @@ public class LogicalDatabaseService {
 
         Environment environment = environmentService.detailSkipPermissionCheck(logicalDatabase.getEnvironmentId());
 
-        Set<Long> physicalDBIds =
-                databaseMappingRepository.findByLogicalDatabaseId(logicalDatabase.getId()).stream()
-                        .map(DatabaseMappingEntity::getPhysicalDatabaseId).collect(Collectors.toSet());
-        List<Database> physicalDatabases = databaseService.listDatabasesByIds(physicalDBIds);
-
+        List<Database> physicalDatabases = listPhysicalDatabaseIds(logicalDatabase.getId());
         DetailLogicalDatabaseResp resp = new DetailLogicalDatabaseResp();
         resp.setId(logicalDatabase.getId());
         resp.setName(logicalDatabase.getName());
         resp.setAlias(logicalDatabase.getAlias());
-        resp.setDialectType(logicalDatabase.getDialectType());
+        resp.setDialectType(logicalDatabase.getConnectType().getDialectType());
         resp.setEnvironment(environment);
         resp.setPhysicalDatabases(physicalDatabases);
         resp.setLogicalTables(tableService.list(logicalDatabase.getId()));
 
         return resp;
+    }
+
+    public List<Database> listPhysicalDatabaseIds(@NotNull Long logicalDatabaseId) {
+        Set<Long> physicalDBIds =
+                databaseMappingRepository.findByLogicalDatabaseId(logicalDatabaseId).stream()
+                        .map(DatabaseMappingEntity::getPhysicalDatabaseId).collect(Collectors.toSet());
+        return databaseService.listDatabasesByIds(physicalDBIds);
+    }
+
+    public Set<Long> listDataSourceIds(@NotNull Long logicalDatabaseId) {
+        Set<Long> physicalDBIds =
+                databaseMappingRepository.findByLogicalDatabaseId(logicalDatabaseId).stream()
+                        .map(DatabaseMappingEntity::getPhysicalDatabaseId).collect(Collectors.toSet());
+        return databaseRepository.findAllById(physicalDBIds).stream().map(DatabaseEntity::getConnectionId)
+                .collect(Collectors.toSet());
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -183,7 +194,7 @@ public class LogicalDatabaseService {
 
         databaseRepository.deleteById(id);
         Set<Long> physicalDBIds = databaseMappingRepository.findByLogicalDatabaseId(id).stream()
-                .map(DatabaseMappingEntity::getId).collect(
+                .map(DatabaseMappingEntity::getPhysicalDatabaseId).collect(
                         Collectors.toSet());
         databaseMappingRepository.deleteByLogicalDatabaseId(id);
         dbObjectRepository.deleteByDatabaseIdIn(Collections.singleton(id));

@@ -84,6 +84,7 @@ import com.oceanbase.odc.metadb.iam.UserTablePermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserTablePermissionRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.collaboration.environment.model.QueryEnvironmentParam;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.collaboration.project.model.QueryProjectParams;
@@ -281,6 +282,7 @@ public class DatabaseService {
                 .environmentIdEquals(params.getEnvironmentId())
                 .and(DatabaseSpecs.nameLike(params.getSchemaName()))
                 .and(DatabaseSpecs.typeIn(params.getTypes()))
+                .and(DatabaseSpecs.connectTypeIn(params.getConnectTypes()))
                 .and(DatabaseSpecs.existedEquals(params.getExisted()))
                 .and(DatabaseSpecs.organizationIdEquals(authenticationFacade.currentOrganizationId()));
         Set<Long> joinedProjectIds =
@@ -361,7 +363,7 @@ public class DatabaseService {
             database.setOrganizationId(authenticationFacade.currentOrganizationId());
             database.setLastSyncTime(new Date(System.currentTimeMillis()));
             database.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
-            database.setDialectType(connection.getDialectType());
+            database.setConnectType(connection.getType());
             database.setType(DatabaseType.PHYSICAL);
             DatabaseEntity saved = databaseRepository.saveAndFlush(database);
             List<UserResourceRole> userResourceRoles = buildUserResourceRoles(Collections.singleton(saved.getId()),
@@ -523,6 +525,7 @@ public class DatabaseService {
                 return dbSchemaService.listDatabases(connection.getDialectType(), conn).stream().map(database -> {
                     DatabaseEntity entity = new DatabaseEntity();
                     entity.setDatabaseId(com.oceanbase.odc.common.util.StringUtils.uuid());
+                    entity.setConnectType(connection.getType());
                     entity.setExisted(Boolean.TRUE);
                     entity.setName(database.getName());
                     entity.setCharsetName(database.getCharset());
@@ -568,13 +571,14 @@ public class DatabaseService {
                             database.getCollationName(),
                             database.getTableCount(),
                             database.getExisted(),
-                            database.getObjectSyncStatus().name()
+                            database.getObjectSyncStatus().name(),
+                            database.getConnectType().name()
                     }).collect(Collectors.toList());
 
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
             if (CollectionUtils.isNotEmpty(toAdd)) {
                 jdbcTemplate.batchUpdate(
-                        "insert into connect_database(database_id, organization_id, name, project_id, connection_id, environment_id, sync_status, charset_name, collation_name, table_count, is_existed, object_sync_status) values(?,?,?,?,?,?,?,?,?,?,?,?)",
+                        "insert into connect_database(database_id, organization_id, name, project_id, connection_id, environment_id, sync_status, charset_name, collation_name, table_count, is_existed, object_sync_status, connect_type) values(?,?,?,?,?,?,?,?,?,?,?,?,?)",
                         toAdd);
             }
             List<Object[]> toDelete = existedDatabasesInDb.stream()
@@ -665,14 +669,15 @@ public class DatabaseService {
                             connection.getId(),
                             connection.getEnvironmentId(),
                             DatabaseSyncStatus.SUCCEEDED.name(),
-                            DBObjectSyncStatus.INITIALIZED.name()
+                            DBObjectSyncStatus.INITIALIZED.name(),
+                            connection.getType().name()
                     })
                     .collect(Collectors.toList());
 
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
             if (CollectionUtils.isNotEmpty(toAdd)) {
                 jdbcTemplate.batchUpdate(
-                        "insert into connect_database(database_id, organization_id, name, connection_id, environment_id, sync_status, object_sync_status) values(?,?,?,?,?,?,?)",
+                        "insert into connect_database(database_id, organization_id, name, connection_id, environment_id, sync_status, object_sync_status, connect_type) values(?,?,?,?,?,?,?,?)",
                         toAdd);
             }
 
@@ -886,6 +891,9 @@ public class DatabaseService {
         Map<Long, List<ConnectionConfig>> connectionId2Connections = connectionService.mapByIdIn(entities.stream()
                 .map(DatabaseEntity::getConnectionId).collect(Collectors.toSet()));
         Map<Long, Set<DatabasePermissionType>> databaseId2PermittedActions = new HashMap<>();
+        Map<Long, Environment> id2Environments = environmentService.list(
+                QueryEnvironmentParam.builder().build()).stream()
+                .collect(Collectors.toMap(Environment::getId, env -> env, (v1, v2) -> v2));
         Set<Long> databaseIds = entities.stream().map(DatabaseEntity::getId).collect(Collectors.toSet());
         if (includesPermittedAction) {
             databaseId2PermittedActions = permissionHelper.getDBPermissions(databaseIds);
@@ -911,9 +919,7 @@ public class DatabaseService {
             List<ConnectionConfig> connections =
                     connectionId2Connections.getOrDefault(entity.getConnectionId(), new ArrayList<>());
             database.setProject(CollectionUtils.isEmpty(projects) ? null : projects.get(0));
-            database.setEnvironment(CollectionUtils.isEmpty(connections) ? null
-                    : new Environment(connections.get(0).getEnvironmentId(), connections.get(0).getEnvironmentName(),
-                            connections.get(0).getEnvironmentStyle()));
+            database.setEnvironment(id2Environments.getOrDefault(entity.getEnvironmentId(), null));
             database.setDataSource(CollectionUtils.isEmpty(connections) ? null : connections.get(0));
             if (includesPermittedAction) {
                 database.setAuthorizedPermissionTypes(finalId2PermittedActions.get(entity.getId()));
@@ -943,8 +949,11 @@ public class DatabaseService {
         if (Objects.nonNull(entity.getProjectId())) {
             model.setProject(projectService.detail(entity.getProjectId()));
         }
-        model.setDataSource(connectionService.getForConnectionSkipPermissionCheck(entity.getConnectionId()));
-        model.setEnvironment(environmentService.detailSkipPermissionCheck(model.getDataSource().getEnvironmentId()));
+        // for logical database, the connection id may be null
+        if (entity.getConnectionId() != null) {
+            model.setDataSource(connectionService.getForConnectionSkipPermissionCheck(entity.getConnectionId()));
+        }
+        model.setEnvironment(environmentService.detailSkipPermissionCheck(entity.getEnvironmentId()));
         if (includesPermittedAction) {
             model.setAuthorizedPermissionTypes(
                     permissionHelper.getDBPermissions(Collections.singleton(entity.getId())).get(entity.getId()));
