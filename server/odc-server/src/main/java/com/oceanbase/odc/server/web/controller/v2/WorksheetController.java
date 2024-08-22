@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -83,6 +84,12 @@ public class WorksheetController {
             @PathVariable("projectId") Long projectId,
             @RequestParam ListWorksheetsReq req) {
         return Responses.list(worksheetServiceFacade.listWorksheets(projectId, req));
+    }
+
+    @PostMapping("/worksheets/recent")
+    public ListResponse<WorksheetMetaResp> recentWorksheets(
+            @PathVariable("projectId") Long projectId) {
+        return Responses.list(new ArrayList<>());
     }
 
     @PostMapping("/worksheets/batchUpload")

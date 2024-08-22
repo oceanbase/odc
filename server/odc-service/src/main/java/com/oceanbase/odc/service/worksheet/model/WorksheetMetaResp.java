@@ -38,6 +38,7 @@ import lombok.experimental.SuperBuilder;
 public class WorksheetMetaResp {
     private Date createTime;
     private Date updateTime;
+    private Date browseTime;
     private Long projectId;
     private String path;
     private WorksheetType type;
