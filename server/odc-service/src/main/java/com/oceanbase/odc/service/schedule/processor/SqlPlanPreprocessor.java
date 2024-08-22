@@ -15,8 +15,14 @@
  */
 package com.oceanbase.odc.service.schedule.processor;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
+import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,8 +30,18 @@ import lombok.extern.slf4j.Slf4j;
 @ScheduleTaskPreprocessor(type = ScheduleType.SQL_PLAN)
 public class SqlPlanPreprocessor implements Preprocessor {
 
+    @Autowired
+    private DatabaseService databaseService;
+
     @Override
     public void process(ScheduleChangeParams req) {
         log.info("database change pre process");
+        if (req.getOperationType() == OperationType.CREATE || req.getOperationType() == OperationType.UPDATE) {
+            SqlPlanParameters parameters = req.getOperationType() == OperationType.CREATE
+                    ? (SqlPlanParameters) req.getCreateScheduleReq().getParameters()
+                    : (SqlPlanParameters) req.getUpdateScheduleReq().getParameters();
+            Database database = databaseService.detail(parameters.getDatabaseId());
+            parameters.setDatabaseInfo(database);
+        }
     }
 }
