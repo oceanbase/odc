@@ -18,6 +18,7 @@ package com.oceanbase.tools.sqlparser.statement.droptable;
 import java.util.List;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
@@ -45,6 +46,10 @@ public class TableList extends BaseStatement {
 
     @Override
     public String toString() {
-        return this.getText();
+        StringBuilder sb = new StringBuilder();
+        if (relations != null) {
+            sb.append(StringUtils.join(relations, ','));
+        }
+        return sb.toString();
     }
 }

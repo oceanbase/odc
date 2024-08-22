@@ -43,7 +43,7 @@ public class OracleDropTableFactory extends OBParserBaseVisitor<DropTable> imple
     @Override
     public DropTable visitDrop_table_stmt(Drop_table_stmtContext ctx) {
         return new DropTable(ctx, OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor()),
-                ctx.CASCADE() != null,
+                ctx.CASCADE() != null && ctx.CONSTRAINTS() != null,
                 ctx.PURGE() != null);
     }
 }

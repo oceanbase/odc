@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
@@ -41,6 +42,7 @@ public class DropTable extends BaseStatement {
     private boolean materialized;
     private boolean ifExists;
     private boolean cascade;
+    private boolean cascadeConstraints;
     private boolean restrict;
     private boolean purge;
     private TableList tableList;
@@ -59,16 +61,41 @@ public class DropTable extends BaseStatement {
         this.restrict = restrict;
     }
 
-    public DropTable(@NonNull ParserRuleContext context, @NonNull RelationFactor relation, boolean cascade,
+    public DropTable(@NonNull ParserRuleContext context, @NonNull RelationFactor relation, boolean cascadeConstraints,
             boolean purge) {
         super(context);
         this.relations = Collections.singletonList(relation);
-        this.cascade = cascade;
+        this.cascadeConstraints = cascadeConstraints;
         this.purge = purge;
     }
 
     @Override
     public String toString() {
-        return this.getText();
+        StringBuilder sb = new StringBuilder("drop ");
+        if (temporary) {
+            sb.append("temporary ");
+        }
+        if (materialized) {
+            sb.append("materialized ");
+        }
+        sb.append("table ");
+        if (ifExists) {
+            sb.append("if exists ");
+        }
+        if (relations != null) {
+            sb.append(StringUtils.join(relations, ','));
+        }
+        if (cascade) {
+            sb.append(" cascade ");
+        } else if (restrict) {
+            sb.append(" restrict ");
+        }
+        if (cascadeConstraints) {
+            sb.append(" cascade constraints ");
+        }
+        if (purge) {
+            sb.append(" purge");
+        }
+        return sb.toString();
     }
 }

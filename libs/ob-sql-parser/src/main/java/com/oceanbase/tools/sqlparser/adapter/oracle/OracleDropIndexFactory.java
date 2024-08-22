@@ -27,7 +27,7 @@ import com.oceanbase.tools.sqlparser.statement.dropindex.DropIndex;
 
 /**
  * @Author: Lebie
- * @Date: 2024/8/21 18:39
+ * @Date: 2024/8/21 1C8:39
  * @Description: []
  */
 public class OracleDropIndexFactory extends OBParserBaseVisitor<DropIndex> implements StatementFactory<DropIndex> {
