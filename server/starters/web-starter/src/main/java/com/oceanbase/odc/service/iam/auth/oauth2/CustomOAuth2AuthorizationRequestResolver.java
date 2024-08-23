@@ -15,35 +15,97 @@
  */
 package com.oceanbase.odc.service.iam.auth.oauth2;
 
+import static com.oceanbase.odc.common.util.StringUtils.urlDecode;
+import static com.oceanbase.odc.service.integration.oauth2.TestLoginManager.REGISTRATION_ID_URI_VARIABLE_NAME;
+
+import java.net.URL;
+
 import javax.servlet.http.HttpServletRequest;
 
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.info.OdcInfoService;
+import com.oceanbase.odc.service.integration.model.Oauth2Parameter;
+import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
+import com.oceanbase.odc.service.integration.oauth2.AddableClientRegistrationManager;
+import com.oceanbase.odc.service.integration.oauth2.Oauth2StateManager;
+import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
+
+import lombok.SneakyThrows;
 
 public class CustomOAuth2AuthorizationRequestResolver implements OAuth2AuthorizationRequestResolver {
 
     private final OAuth2AuthorizationRequestResolver defaultAuthorizationRequestResolver;
 
-    public CustomOAuth2AuthorizationRequestResolver(ClientRegistrationRepository clientRegistrationRepository) {
-        this.defaultAuthorizationRequestResolver = new DefaultOAuth2AuthorizationRequestResolver(
-                clientRegistrationRepository, "/oauth2/authorization");
+    private final AddableClientRegistrationManager addableClientRegistrationManager;
+    private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
+    private Oauth2StateManager oauth2StateManager;
+    private AntPathRequestMatcher authorizationRequestMatcher;
+
+    public CustomOAuth2AuthorizationRequestResolver(AddableClientRegistrationManager addableClientRegistrationManager,
+            StatefulUuidStateIdGenerator statefulUuidStateIdGenerator, Oauth2StateManager oauth2StateManager) {
+        this.addableClientRegistrationManager = addableClientRegistrationManager;
+        this.statefulUuidStateIdGenerator = statefulUuidStateIdGenerator;
+        this.oauth2StateManager = oauth2StateManager;
+        DefaultOAuth2AuthorizationRequestResolver defaultOAuth2AuthorizationRequestResolver =
+                new DefaultOAuth2AuthorizationRequestResolver(
+                        addableClientRegistrationManager, "/oauth2/authorization");
+        defaultOAuth2AuthorizationRequestResolver.setAuthorizationRequestCustomizer(customizer -> {
+            customizer.state(statefulUuidStateIdGenerator.generateStateId("SSO_STATE"));
+        });
+        this.defaultAuthorizationRequestResolver = defaultOAuth2AuthorizationRequestResolver;
+
+        this.authorizationRequestMatcher = new AntPathRequestMatcher(
+                "/oauth2/authorization" + "/{" + REGISTRATION_ID_URI_VARIABLE_NAME + "}");
+
     }
 
     @Override
     public OAuth2AuthorizationRequest resolve(HttpServletRequest request) {
-        OAuth2AuthorizationRequest authorizationRequest = this.defaultAuthorizationRequestResolver.resolve(request);
-        return authorizationRequest != null ? customAuthorizationRequest(authorizationRequest, request) : null;
+        String registrationId = resolveRegistrationId(request);
+        return doResolve(request, registrationId);
     }
 
     @Override
-    public OAuth2AuthorizationRequest resolve(HttpServletRequest request, String clientRegistrationId) {
-        OAuth2AuthorizationRequest authorizationRequest =
-                this.defaultAuthorizationRequestResolver.resolve(request, clientRegistrationId);
-        return authorizationRequest != null ? customAuthorizationRequest(authorizationRequest, request) : null;
+    public OAuth2AuthorizationRequest resolve(HttpServletRequest request, String registrationId) {
+        return doResolve(request, registrationId);
+    }
+
+    @SneakyThrows
+    private OAuth2AuthorizationRequest doResolve(HttpServletRequest request, String registrationId) {
+        if (registrationId == null) {
+            return null;
+        }
+        SSOIntegrationConfig config = this.addableClientRegistrationManager.findConfigByRegistrationId(
+                registrationId);
+        Verify.verify(config.isOauth2OrOidc(), "Not matched sso Type, type=" + config.getType());
+        OAuth2AuthorizationRequest authorizationRequest = this.defaultAuthorizationRequestResolver.resolve(request);
+        if (authorizationRequest == null) {
+            return null;
+        }
+
+        Oauth2Parameter ssoParameter = (Oauth2Parameter) config.getSsoParameter();
+        Boolean useStateParams = ssoParameter.getUseStateParams();
+        if (Boolean.TRUE.equals(useStateParams)) {
+            String state = authorizationRequest.getState();
+            String originRedirectUrl = authorizationRequest.getRedirectUri();
+            UriComponentsBuilder.fromUriString(originRedirectUrl).build().getQueryParams()
+                    .forEach((key, value) -> oauth2StateManager.addState(state, key, urlDecode(value.get(0))));
+            URL url = new URL(originRedirectUrl);
+            String urlWithoutQuery = new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getPath()).toString();
+            oauth2StateManager.addOdcParam(state, request);
+
+            return OAuth2AuthorizationRequest.from(authorizationRequest)
+                    .redirectUri(urlWithoutQuery)
+                    .state(state)
+                    .build();
+        }
+        return customAuthorizationRequest(authorizationRequest, request);
     }
 
     private OAuth2AuthorizationRequest customAuthorizationRequest(OAuth2AuthorizationRequest authorizationRequest,
@@ -53,6 +115,14 @@ public class CustomOAuth2AuthorizationRequestResolver implements OAuth2Authoriza
         return OAuth2AuthorizationRequest.from(authorizationRequest)
                 .redirectUri(redirectUrl)
                 .build();
+    }
+
+    private String resolveRegistrationId(HttpServletRequest request) {
+        if (authorizationRequestMatcher.matches(request)) {
+            return authorizationRequestMatcher.matcher(request).getVariables()
+                    .get(REGISTRATION_ID_URI_VARIABLE_NAME);
+        }
+        return null;
     }
 
 
