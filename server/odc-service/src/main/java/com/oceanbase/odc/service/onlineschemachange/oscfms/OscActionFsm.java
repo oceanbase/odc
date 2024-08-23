@@ -43,7 +43,9 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.flow.BeanInjectedClassDelegate;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
+import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeFlowableTask;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.fsm.ActionFsm;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
@@ -191,6 +193,24 @@ public class OscActionFsm extends ActionFsm<OscActionContext, OscActionResult> {
         }
         // do schedule
         schedule(oscActionContext);
+        syncFlowInstanceState(oscActionContext);
+    }
+
+    /**
+     * sync task status with flow instance
+     */
+    public void syncFlowInstanceState(OscActionContext context) {
+        try {
+            OnlineSchemaChangeFlowableTask schemaChangeFlowableTask =
+                    BeanInjectedClassDelegate
+                            .instantiateDelegateWithoutPostConstructInvoke(OnlineSchemaChangeFlowableTask.class);
+            OnlineSchemaChangeParameters parameters = context.getParameter();
+            schemaChangeFlowableTask.tryCompleteTask(
+                    parameters.getFlowInstanceId(), parameters.getFlowTaskID(),
+                    context.getSchedule().getId(), parameters.isContinueOnError());
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public boolean isFlowInstanceFailed(String state, OscActionContext oscActionContext) {
@@ -200,14 +220,21 @@ public class OscActionFsm extends ActionFsm<OscActionContext, OscActionResult> {
         }
         Long flowInstanceID = oscActionContext.getParameter().getFlowInstanceId();
         Map<Long, FlowStatus> statusMap = flowInstanceService.getStatus(Collections.singleton(flowInstanceID));
-        FlowStatus taskStatus = statusMap.get(flowInstanceID);
-        // not found or failed
-        boolean ret = (null == taskStatus || taskStatus == FlowStatus.EXECUTION_FAILED);
+        FlowStatus flowTaskStatus = statusMap.get(flowInstanceID);
+        boolean ret = isFlowStatusInvalid(flowTaskStatus);
         if (ret) {
-            log.info("OSC: flow task has failed, transfer state to clean resources, flow task id {}, status {}",
-                    flowInstanceID, taskStatus);
+            log.info("OSC: flow task has failed, transfer state to clean resources, flow task id = {}, status = {}",
+                    flowInstanceID, flowTaskStatus);
         }
         return ret;
+    }
+
+    // not found or failed
+    private boolean isFlowStatusInvalid(FlowStatus flowStatus) {
+        if (null == flowStatus) {
+            return true;
+        }
+        return flowStatus == FlowStatus.EXECUTION_FAILED || flowStatus == FlowStatus.CANCELLED;
     }
 
     /**

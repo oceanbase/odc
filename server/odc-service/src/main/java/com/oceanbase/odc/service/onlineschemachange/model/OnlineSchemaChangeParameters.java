@@ -42,6 +42,7 @@ import com.oceanbase.odc.service.onlineschemachange.ddl.ReplaceResult;
 import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameDescriptor;
 import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameReplacer;
 import com.oceanbase.odc.service.onlineschemachange.subtask.SubTaskParameterFactory;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 import com.oceanbase.tools.sqlparser.statement.createindex.CreateIndex;
@@ -56,7 +57,7 @@ import lombok.Data;
  * @since 4.2.0
  */
 @Data
-public class OnlineSchemaChangeParameters implements Serializable, TaskParameters {
+public class OnlineSchemaChangeParameters implements Serializable, TaskParameters, ScheduleTaskParameters {
     private static final long serialVersionUID = 2870979595720162565L;
 
     private OnlineSchemaChangeSqlType sqlType;
@@ -74,7 +75,10 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
 
     private List<String> lockUsers;
     private SwapTableType swapTableType;
+    // flow instance id
     private Long flowInstanceId;
+    // flow task id
+    private Long flowTaskID;
     private RateLimiterConfig rateLimitConfig = new RateLimiterConfig();
 
     public boolean isContinueOnError() {

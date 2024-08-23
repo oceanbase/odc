@@ -90,6 +90,7 @@ public abstract class BaseOmsClient implements OmsClient {
 
     private <T> OmsApiReturnResult<T> resolveResponseEntity(ClientRequestParams requestParams,
             ResponseEntity<String> responseEntity, TypeReference<OmsApiReturnResult<T>> typeReference) {
+        log.info("process oms request [{}] with response [{}]", requestParams, responseEntity.getBody());
         if (responseEntity.getStatusCode() != HttpStatus.OK) {
             if (responseEntity.getStatusCode() == HttpStatus.REQUEST_TIMEOUT) {
                 throw new OmsException(ErrorCodes.Timeout, responseEntity.toString(), null,
@@ -100,7 +101,6 @@ public abstract class BaseOmsClient implements OmsClient {
                     : ErrorCodes.BadRequest;
             throw new OmsException(errorCode, responseEntity.toString(), null, responseEntity.getStatusCode());
         }
-        log.info("process oms request [{}] with response [{}]", requestParams, responseEntity.getBody());
         OmsApiReturnResult<T> result = JsonUtils.fromJsonIgnoreMissingProperty(responseEntity.getBody(), typeReference);
         if (result == null) {
             throw new UnexpectedException("Parse oms result occur error, result=" + responseEntity.getBody());
