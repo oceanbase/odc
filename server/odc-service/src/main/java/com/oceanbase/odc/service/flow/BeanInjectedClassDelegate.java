@@ -72,8 +72,8 @@ public class BeanInjectedClassDelegate extends ClassDelegate {
 
     /**
      * this function will create Delegate class and call post Construct method eg: for
-     * {@link com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate} create flow instance
-     * listener will be add to LocalEvent publisher
+     * {@link com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate}'s post construct will add
+     * new flow instance listener to LocalEvent publisher
      */
     public static <T> T instantiateDelegate(Class<T> beanClass) throws Exception {
         T beanInstance = beanClass.getDeclaredConstructor().newInstance();
@@ -84,8 +84,8 @@ public class BeanInjectedClassDelegate extends ClassDelegate {
 
     /**
      * use this function to avoid event publisher register and unregister if use instantiateDelegate and
-     * unregister listener not called, flow create instance listener will be add to LocalEventPublisher
-     * memory leak will be caused and unexpected result will be done
+     * unregister listener not called, flow create instance listener will be add to LocalEventPublisher.
+     * That will cause memory leak and unexpected result
      */
     public static <T> T instantiateDelegateWithoutPostConstructInvoke(Class<T> beanClass) throws Exception {
         T beanInstance = beanClass.getDeclaredConstructor().newInstance();

@@ -156,7 +156,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     }
 
     /**
-     * try compete task or refresh it's state
+     * refresh task's state and try compete task
      * 
      * @param flowInstanceID instance id of flow_instance
      * @param taskID task id of task_task
@@ -225,7 +225,9 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         }
     }
 
-    // get swap table enable counts
+    /**
+     * get counts of tasks with swap table flag enabled
+     */
     protected int getManualSwapTableEnableFlagCounts(Iterable<ScheduleTaskEntity> tasks) {
         if (null == tasks) {
             return 0;
