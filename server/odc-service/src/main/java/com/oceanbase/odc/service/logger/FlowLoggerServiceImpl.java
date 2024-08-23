@@ -23,7 +23,6 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -53,11 +52,11 @@ public class FlowLoggerServiceImpl extends AbstractLoggerService implements ILog
     private final TaskDispatchChecker dispatchChecker;
     private final TaskService taskService;
 
-    @Value("${odc.log.flow.maxLogLimitedCount: 10000}")
+    @Value("${odc.log.maxLogLimitedCount: 10000}")
     private Long maxLogLimitedCount;
 
     // unit：B
-    @Value("${odc.log.schedule.maxLogSizeCount: #{1024 * 1024}}")
+    @Value("${odc.log.maxLogSizeCount: #{1024 * 1024}}")
     private Long maxLogSizeCount;
 
     public FlowLoggerServiceImpl(FlowTaskInstanceService flowTaskInstanceService,

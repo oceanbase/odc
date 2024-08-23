@@ -26,7 +26,6 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
@@ -71,11 +70,11 @@ public class ScheduledLoggerServiceImpl extends AbstractLoggerService implements
     private final CloudObjectStorageService cloudObjectStorageService;
     private final JobDispatchChecker jobDispatchChecker;
 
-    @Value("${odc.log.schedule.maxLogLimitedCount: 10000}")
+    @Value("${odc.log.maxLogLimitedCount: 10000}")
     private Long maxLogLimitedCount;
 
     // unit：B
-    @Value("${odc.log.schedule.maxLogSizeCount: #{1024 * 1024}}")
+    @Value("${odc.log.maxLogSizeCount: #{1024 * 1024}}")
     private Long maxLogSizeCount;
 
     public ScheduledLoggerServiceImpl(ScheduleService scheduleService,
@@ -98,7 +97,8 @@ public class ScheduledLoggerServiceImpl extends AbstractLoggerService implements
 
     @Override
     public String getLog(OdcTaskLogLevel level, Long jobId, boolean skipAuth) {
-        if (skipAuth) {
+        log.info("scheduleLoggerService$getLog(level={}, jobId={}, skipAuth={})", level, jobId, skipAuth);
+        if (!skipAuth) {
             scheduleService.nullSafeGetByIdWithCheckPermission(jobId);
         }
         return getLogWithoutPermission(level, jobId);
@@ -106,7 +106,7 @@ public class ScheduledLoggerServiceImpl extends AbstractLoggerService implements
 
     @Override
     public File downloadLog(Long jobId, boolean skipAuth) {
-        if (skipAuth) {
+        if (!skipAuth) {
             scheduleService.nullSafeGetByIdWithCheckPermission(jobId);
         }
         return downloadLogWithoutPermission(jobId);
@@ -116,23 +116,27 @@ public class ScheduledLoggerServiceImpl extends AbstractLoggerService implements
     private File getLogFileFromTaskFramework(Long jobId, OdcTaskLogLevel level) {
         JobEntity jobEntity = taskFrameworkService.find(jobId);
         PreConditions.notNull(jobEntity, "job not found by id " + jobId);
-
+        log.info("job表id = {}, jobId = {}", jobEntity.getId(), jobId);
         if (JobUtils.isK8sRunMode(jobEntity.getRunMode()) && cloudObjectStorageService.supported()) {
-            Optional<String> objId =
-                    taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(), level.getName());
-            Optional<String> bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
+            String attributeKey = OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
+                    : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
+            Optional<String> objId = taskFrameworkService.findByJobIdAndAttributeKey(jobId, attributeKey);
+            Optional<String> bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobId,
                     JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
-
+            log.info("is k8s and support cloud storage, objId = {}, bucketName = {}", objId, bucketName);
             if (objId.isPresent() && bucketName.isPresent()) {
+                log.info("job: id {} is finished, try to get log from local or oss.", jobEntity.getId());
                 if (log.isDebugEnabled()) {
                     log.debug("job: {} is finished, try to get log from local or oss.", jobEntity.getId());
                 }
 
                 File localFile = new File(LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level));
                 if (localFile.exists()) {
+                    log.info("log file exists, use local file: {}", localFile.getAbsolutePath());
                     return localFile;
                 }
 
+                log.info("log file not exists, download log from oss, key = {}.", objId.get());
                 File tempFile = cloudObjectStorageService.downloadToTempFile(objId.get());
                 try (FileInputStream inputStream = new FileInputStream(tempFile)) {
                     FileUtils.copyInputStreamToFile(inputStream, localFile);
@@ -146,10 +150,11 @@ public class ScheduledLoggerServiceImpl extends AbstractLoggerService implements
                 if (log.isDebugEnabled()) {
                     log.debug("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
                 }
-
+                log.info("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
                 String jobUrlPattern = JobUrlConstants.LOG_DOWNLOAD;
                 String hostWithUrl = jobEntity.getExecutorEndpoint() + String.format(jobUrlPattern, jobEntity.getId())
                         + "?logType=" + level.getName();
+                log.info("hostWithUrl: {}", hostWithUrl);
                 try {
                     SuccessResponse<File> response =
                             HttpUtil.request(hostWithUrl, new TypeReference<SuccessResponse<File>>() {});
@@ -164,6 +169,7 @@ public class ScheduledLoggerServiceImpl extends AbstractLoggerService implements
         }
 
         if (!jobDispatchChecker.isExecutorOnThisMachine(jobEntity)) {
+            log.info("job: {} is not current machine, try to forward.", jobEntity.getId());
             ExecutorIdentifier ei = ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier());
             try {
                 DispatchResponse response = requestDispatcher.forward(ei.getHost(), ei.getPort());
@@ -184,6 +190,7 @@ public class ScheduledLoggerServiceImpl extends AbstractLoggerService implements
     private File getLogFile(OdcTaskLogLevel level, Long jobId) {
         ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(jobId);
         if (taskFrameworkEnabledProperties.isEnabled() && taskEntity.getJobId() != null) {
+            log.info("get schedule task log and task framework enable = True");
             try {
                 return getLogFileFromTaskFramework(taskEntity.getJobId(), level);
             } catch (Exception e) {

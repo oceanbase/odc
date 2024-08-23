@@ -63,7 +63,9 @@ public class RequestHandler {
             // services mapping
             String path = UrlUtils.getPath(uri);
             Matcher matcher = downloadLogUrlPattern.matcher(path);
+            log.info("requestHandler path = {}", path);
             if (matcher.find()) {
+                log.info("download RequestHandler find success!");
                 return Responses.single(executorBiz.downloadLog(Long.parseLong(matcher.group(1))));
             }
             matcher = logUrlPattern.matcher(path);

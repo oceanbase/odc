@@ -579,11 +579,13 @@ public class ScheduleService {
     }
 
     public String getLog(Long scheduleId, Long taskId, OdcTaskLogLevel logLevel) {
+        log.info("get schedule log, scheduleId={}, taskId={} \n", scheduleId, taskId);
         nullSafeGetByIdWithCheckPermission(scheduleId);
         return getLogWithoutPermission(taskId, logLevel);
     }
 
     public String getLogWithoutPermission(Long taskId, OdcTaskLogLevel logLevel) {
+        log.info("get schedule log without permission, taskId={}, logLevel={}\n", taskId, logLevel);
         return scheduledLoggerService.getLog(logLevel, taskId, true);
     }
 
@@ -624,6 +626,7 @@ public class ScheduleService {
     }
 
     public ScheduleEntity nullSafeGetByIdWithCheckPermission(Long id) {
+        log.info("get schedule with check permission by id {}", id);
         return nullSafeGetByIdWithCheckPermission(id, false);
     }
 
@@ -650,6 +653,7 @@ public class ScheduleService {
     }
 
     public ScheduleEntity nullSafeGetById(Long id) {
+        log.info("null safeGetById id = {}\n", id);
         Optional<ScheduleEntity> scheduleEntityOptional = scheduleRepository.findById(id);
         return scheduleEntityOptional.orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE, "id", id));
     }
