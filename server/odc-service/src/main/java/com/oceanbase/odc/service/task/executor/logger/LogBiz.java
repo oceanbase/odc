@@ -15,9 +15,10 @@
  */
 package com.oceanbase.odc.service.task.executor.logger;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Map;
+
+import org.springframework.core.io.InputStreamResource;
 
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -31,7 +32,7 @@ public interface LogBiz {
 
     String getLog(Long jobId, String logType, Long fetchMaxLine, Long fetchMaxByteSize);
 
-    File downloadLog(Long jobId);
+    InputStreamResource downloadLog(Long jobId);
 
     Map<String, String> uploadLogFileToCloudStorage(JobIdentity ji, CloudObjectStorageService cloudObjectStorageService)
             throws IOException;

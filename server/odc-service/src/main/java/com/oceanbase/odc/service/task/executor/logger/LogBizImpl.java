@@ -21,12 +21,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.core.io.InputStreamResource;
+
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
+import cn.hutool.core.io.FileUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -53,9 +56,11 @@ public class LogBizImpl implements LogBiz {
     }
 
     @Override
-    public File downloadLog(Long jobId) {
+    public InputStreamResource downloadLog(Long jobId) {
         log.info("Accept full log request, job id = {}, logType = {}.", jobId, OdcTaskLogLevel.ALL);
-        return new File(LogUtils.getTaskLogFileWithPath(jobId, OdcTaskLogLevel.ALL));
+        return new InputStreamResource(
+                FileUtil.getInputStream(LogUtils.getTaskLogFileWithPath(jobId, OdcTaskLogLevel.ALL))
+        );
     }
 
     @Override

@@ -22,8 +22,10 @@ import java.util.Optional;
 
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
 
+import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
@@ -51,6 +53,7 @@ import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.util.HttpUtil;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
+import cn.hutool.core.io.IoUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -156,9 +159,12 @@ public class ScheduledLoggerServiceImpl extends AbstractLoggerService implements
                         + "?logType=" + level.getName();
                 log.info("hostWithUrl: {}", hostWithUrl);
                 try {
-                    SuccessResponse<File> response =
-                            HttpUtil.request(hostWithUrl, new TypeReference<SuccessResponse<File>>() {});
-                    return response.getData();
+                    SuccessResponse<InputStreamResource> response =
+                            HttpUtil.request(hostWithUrl, new TypeReference<SuccessResponse<InputStreamResource>>() {});
+                    log.info("pod response: " + JSON.toJSONString(response, true));
+                    log.info("pod response: " + JSON.toJSONString(response.getData(), true));
+                    log.info("result: {}", IoUtil.readUtf8(response.getData().getInputStream()));
+                    return response.getData().getFile();
                 } catch (IOException e) {
                     log.warn("Query log from executor occur error, executorEndpoint={}, jobId={}",
                             jobEntity.getExecutorEndpoint(), jobEntity.getId(), e);
