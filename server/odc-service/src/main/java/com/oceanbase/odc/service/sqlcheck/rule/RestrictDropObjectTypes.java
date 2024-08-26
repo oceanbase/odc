@@ -34,6 +34,8 @@ import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
+import com.oceanbase.tools.sqlparser.statement.dropindex.DropIndex;
+import com.oceanbase.tools.sqlparser.statement.droptable.DropTable;
 
 import lombok.NonNull;
 
@@ -65,6 +67,16 @@ public class RestrictDropObjectTypes implements SqlCheckRule {
             if (notAllow(objectType)) {
                 return Collections.singletonList(SqlCheckUtil.buildViolation(
                         statement.getText(), statement, getType(), new Object[] {objectType, allTypes}));
+            }
+        } else if (statement instanceof DropTable) {
+            if (notAllow("TABLE")) {
+                return Collections.singletonList(SqlCheckUtil.buildViolation(
+                        statement.getText(), statement, getType(), new Object[] {"TABLE", allTypes}));
+            }
+        } else if (statement instanceof DropIndex) {
+            if (notAllow("INDEX")) {
+                return Collections.singletonList(SqlCheckUtil.buildViolation(
+                        statement.getText(), statement, getType(), new Object[] {"INDEX", allTypes}));
             }
         } else if (statement instanceof AlterTable) {
             return ((AlterTable) statement).getAlterTableActions().stream()

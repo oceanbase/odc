@@ -1305,7 +1305,9 @@ public class MySQLCheckerTest {
                 "drop procedure abcd",
                 "drop function abcd",
                 "alter table abcd drop index `abdhfg`, drop subpartition `pppoi`",
-                "alter table iiiop drop partition a,c,b,f"
+                "alter table iiiop drop partition a,c,b,f",
+                "drop table any_table",
+                "drop index any_index on any_table"
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL,
                 null, Collections.singletonList(new RestrictDropObjectTypes(
@@ -1317,8 +1319,12 @@ public class MySQLCheckerTest {
                 "PROCEDURE", "partition,subpartition,function"});
         CheckViolation c2 = new CheckViolation(sqls[3], 1, 17, 17, 35, type, new Object[] {
                 "INDEX", "partition,subpartition,function"});
-
-        Assert.assertEquals(Arrays.asList(c1, c2), actual);
+        CheckViolation c3 = new CheckViolation(sqls[5], 1, 0, 0, 19, type, new Object[] {
+                "TABLE", "partition,subpartition,function"});
+        CheckViolation c4 = new CheckViolation(sqls[6], 1, 0, 0, 32, type, new Object[] {
+                "INDEX", "partition,subpartition,function"});
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4);
+        Assert.assertEquals(expect, actual);
     }
 
     @Test

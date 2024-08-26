@@ -22,9 +22,15 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.antlr.v4.runtime.BailErrorStrategy;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Operator;
 import com.oceanbase.tools.sqlparser.statement.Statement;
@@ -120,13 +126,26 @@ public class OBOracleSQLParserTest {
     @Test
     public void parse_createtableStatement_parseSucceed() {
         SQLParser sqlParser = new OBOracleSQLParser();
-        Statement actual = sqlParser.parse(new StringReader("create table abcd (id varchar(64))"));
-
-        CreateTable expect = new CreateTable("abcd");
+        String sql = "create table any_schema.abcd (id varchar(64))";
+        Statement actual = sqlParser.parse(new StringReader(sql));
+        CreateTable expect = new CreateTable(getCreateTableContext(sql), getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
         Assert.assertEquals(expect, actual);
     }
 
+    private Create_table_stmtContext getCreateTableContext(String expr) {
+        OBLexer lexer = new OBLexer(CharStreams.fromString(expr));
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        OBParser parser = new OBParser(tokens);
+        parser.setErrorHandler(new BailErrorStrategy());
+        return parser.create_table_stmt();
+    }
+
+    private RelationFactor getRelationFactor(String schema, String relation) {
+        RelationFactor relationFactor = new RelationFactor(relation);
+        relationFactor.setSchema(schema);
+        return relationFactor;
+    }
 }

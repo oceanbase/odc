@@ -59,7 +59,7 @@ public class MySQLCreateTableFactory extends OBParserBaseVisitor<CreateTable> im
     @Override
     public CreateTable visitCreate_table_like_stmt(Create_table_like_stmtContext ctx) {
         RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor(0));
-        CreateTable createTable = new CreateTable(ctx, factor.getRelation());
+        CreateTable createTable = new CreateTable(ctx, factor);
         if (ctx.special_table_type().TEMPORARY() != null) {
             createTable.setTemporary(true);
         } else if (ctx.special_table_type().EXTERNAL() != null) {
@@ -68,7 +68,6 @@ public class MySQLCreateTableFactory extends OBParserBaseVisitor<CreateTable> im
         if (ctx.IF() != null && ctx.not() != null && ctx.EXISTS() != null) {
             createTable.setIfNotExists(true);
         }
-        createTable.setSchema(factor.getSchema());
         createTable.setUserVariable(factor.getUserVariable());
         RelationFactor likeFactor = MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor(1));
         createTable.setLikeTable(likeFactor);
@@ -78,7 +77,7 @@ public class MySQLCreateTableFactory extends OBParserBaseVisitor<CreateTable> im
     @Override
     public CreateTable visitCreate_table_stmt(Create_table_stmtContext ctx) {
         RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor());
-        CreateTable createTable = new CreateTable(ctx, factor.getRelation());
+        CreateTable createTable = new CreateTable(ctx, factor);
         if (ctx.special_table_type() != null) {
             Special_table_typeContext specialTableTypeContext = ctx.special_table_type();
             if (specialTableTypeContext.EXTERNAL() != null) {
@@ -91,7 +90,6 @@ public class MySQLCreateTableFactory extends OBParserBaseVisitor<CreateTable> im
         if (ctx.IF() != null && ctx.not() != null && ctx.EXISTS() != null) {
             createTable.setIfNotExists(true);
         }
-        createTable.setSchema(factor.getSchema());
         createTable.setUserVariable(factor.getUserVariable());
         if (ctx.table_element_list() != null) {
             createTable.setTableElements(ctx.table_element_list().table_element().stream()
