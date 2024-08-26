@@ -19,10 +19,11 @@ import java.io.File;
 import java.util.List;
 
 import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
-import com.oceanbase.odc.service.worksheet.domain.BatchOperateWorksheetsResult;
 import com.oceanbase.odc.service.worksheet.domain.Path;
-import com.oceanbase.odc.service.worksheet.domain.Worksheet;
+import com.oceanbase.odc.service.worksheet.model.BatchOperateWorksheetsResp;
 import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;
+import com.oceanbase.odc.service.worksheet.model.WorksheetMetaResp;
+import com.oceanbase.odc.service.worksheet.model.WorksheetResp;
 
 /**
  * @author keyang
@@ -32,19 +33,20 @@ import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;
 public interface WorksheetService {
     GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, Path path);
 
-    Worksheet createWorksheet(Long projectId, Path createPath, String objectId);
+    WorksheetMetaResp createWorksheet(Long projectId, Path createPath, String objectId);
 
-    Worksheet getWorksheetDetails(Long projectId, Path path);
+    WorksheetResp getWorksheetDetails(Long projectId, Path path);
 
-    List<Worksheet> listWorksheets(Long projectId, Path path, Integer depth, String nameLike);
+    List<WorksheetMetaResp> listWorksheets(Long projectId, Path path, Integer depth, String nameLike);
 
-    BatchOperateWorksheetsResult batchUploadWorksheets(Long projectId, BatchCreateWorksheets batchCreateWorksheets);
+    BatchOperateWorksheetsResp batchUploadWorksheets(Long projectId, BatchCreateWorksheets batchCreateWorksheets);
 
-    BatchOperateWorksheetsResult batchDeleteWorksheets(Long projectId, List<Path> paths);
+    BatchOperateWorksheetsResp batchDeleteWorksheets(Long projectId, List<Path> paths);
 
-    List<Worksheet> renameWorksheet(Long projectId, Path path, Path destinationPath);
+    List<WorksheetMetaResp> renameWorksheet(Long projectId, Path path, Path destinationPath);
 
-    List<Worksheet> editWorksheet(Long projectId, Path path, Path destinationPath, String objectId, Long readVersion);
+    List<WorksheetMetaResp> editWorksheet(Long projectId, Path path, String objectId, Long totalLength,
+            Long readVersion);
 
     String getDownloadUrl(Long projectId, Path path);
 

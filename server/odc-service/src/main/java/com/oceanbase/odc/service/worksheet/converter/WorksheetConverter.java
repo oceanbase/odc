@@ -15,11 +15,8 @@
  */
 package com.oceanbase.odc.service.worksheet.converter;
 
-import java.util.stream.Collectors;
-
-import com.oceanbase.odc.service.worksheet.domain.BatchOperateWorksheetsResult;
-import com.oceanbase.odc.service.worksheet.domain.Worksheet;
-import com.oceanbase.odc.service.worksheet.model.BatchOperateWorksheetsResp;
+import com.oceanbase.odc.metadb.worksheet.CollaborationWorksheetEntity;
+import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.model.WorksheetMetaResp;
 import com.oceanbase.odc.service.worksheet.model.WorksheetResp;
 
@@ -29,34 +26,27 @@ import com.oceanbase.odc.service.worksheet.model.WorksheetResp;
  * @since 4.3.2
  */
 public class WorksheetConverter {
-    public static WorksheetMetaResp convertToMetaResp(Worksheet worksheet) {
-        return WorksheetMetaResp.builder().projectId(worksheet.getProjectId())
-                .path(worksheet.getPath().getStandardPath())
-                .type(worksheet.getPath().getType())
-                .createTime(worksheet.getCreateTime())
-                .updateTime(worksheet.getUpdateTime())
+    public static WorksheetMetaResp convertEntityToMetaResp(CollaborationWorksheetEntity entity) {
+        Path path = new Path(entity.getPath());
+        return WorksheetMetaResp.builder().projectId(entity.getProjectId())
+                .path(entity.getPath())
+                .type(path.getType())
+                .objectId(entity.getObjectId())
+                .createTime(entity.getCreateTime())
+                .updateTime(entity.getUpdateTime())
                 .build();
     }
 
-    public static WorksheetResp convertToResp(Worksheet worksheet) {
-        return WorksheetResp.builder()
-                .version(worksheet.getVersion())
-                .contentDownloadUrl(worksheet.getContentDownloadUrl())
-                .projectId(worksheet.getProjectId())
-                .path(worksheet.getPath().getStandardPath())
-                .type(worksheet.getPath().getType())
-                .createTime(worksheet.getCreateTime())
-                .updateTime(worksheet.getUpdateTime())
-                .build();
-    }
-
-    public static BatchOperateWorksheetsResp convertToBatchOperateResp(BatchOperateWorksheetsResult result) {
-        return BatchOperateWorksheetsResp.builder()
-                .allSuccessful(result.getFailed().isEmpty())
-                .successfulFiles(result.getSuccessful().stream()
-                        .map(WorksheetConverter::convertToMetaResp).collect(Collectors.toList()))
-                .failedFiles(result.getFailed().stream()
-                        .map(WorksheetConverter::convertToMetaResp).collect(Collectors.toList()))
+    public static WorksheetResp convertEntityToResp(CollaborationWorksheetEntity entity, String contentDownloadUrl) {
+        Path path = new Path(entity.getPath());
+        return WorksheetResp.builder().projectId(entity.getProjectId())
+                .path(entity.getPath())
+                .type(path.getType())
+                .objectId(entity.getObjectId())
+                .createTime(entity.getCreateTime())
+                .updateTime(entity.getUpdateTime())
+                .version(entity.getVersion())
+                .contentDownloadUrl(contentDownloadUrl)
                 .build();
     }
 }

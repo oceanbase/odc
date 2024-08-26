@@ -31,6 +31,10 @@ public class WorksheetConstant {
      */
     public static final int NAME_LENGTH_LIMIT = 64;
     /**
+     * the limit of worksheet path length
+     */
+    public static final int PATH_LENGTH_LIMIT = 1024;
+    /**
      * the limit number of change worksheet in an operation
      */
     public static final int CHANGE_FILE_NUM_LIMIT = 2000;

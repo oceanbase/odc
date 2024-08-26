@@ -304,10 +304,6 @@ public enum ErrorCodes implements ErrorCode {
      * version conflict
      */
     EditVersionConflict,
-    /**
-     * name too long
-     */
-    NameTooLong,
     ;
 
     @Override

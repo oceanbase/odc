@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.worksheet.service;
 
-import static com.oceanbase.odc.service.worksheet.utils.WorksheetTestUtil.newDirWorksheet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
@@ -25,34 +24,34 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.metadb.worksheet.WorksheetRepository;
+import com.oceanbase.odc.metadb.worksheet.CollaborationWorksheetEntity;
+import com.oceanbase.odc.metadb.worksheet.CollaborationWorksheetRepository;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.client.ObjectStorageClient;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
 import com.oceanbase.odc.service.worksheet.constants.WorksheetConstant;
 import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
-import com.oceanbase.odc.service.worksheet.domain.BatchOperateWorksheetsResult;
 import com.oceanbase.odc.service.worksheet.domain.Path;
-import com.oceanbase.odc.service.worksheet.domain.Worksheet;
+import com.oceanbase.odc.service.worksheet.model.BatchOperateWorksheetsResp;
 import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq;
 import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq.UploadWorksheetTuple;
 import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;
+import com.oceanbase.odc.service.worksheet.model.WorksheetMetaResp;
+import com.oceanbase.odc.service.worksheet.model.WorksheetResp;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetUtil;
 
@@ -62,21 +61,33 @@ public class DefaultWorksheetServiceTest {
     Long id = 1L;
     Long defaultVersion = 1L;
 
-    private Worksheet newWorksheet(String path) {
+    private CollaborationWorksheetEntity newWorksheet(String path) {
         return newWorksheet(new Path(path));
     }
 
-    private Worksheet newWorksheet(Path path) {
+    private CollaborationWorksheetEntity newWorksheet(Path path) {
         return newWorksheet(id++, projectId, path, id++ + "", 1L);
     }
 
-    public Worksheet newWorksheet(Long id, Long projectId, Path path, String objectId, Long creatorId) {
-        return new Worksheet(id, new Date(), new Date(), projectId, path, creatorId,
-                defaultVersion, objectId, null, null);
+    public CollaborationWorksheetEntity newWorksheet(Long id, Long projectId, Path path, String objectId,
+            Long creatorId) {
+        return CollaborationWorksheetEntity.builder()
+                .id(id)
+                .projectId(projectId)
+                .path(path.toString())
+                .levelNum(path.getLevelNum())
+                .totalLength(0L)
+                .extension(path.getExtension())
+                .objectId(objectId)
+                .creatorId(creatorId)
+                .version(defaultVersion)
+                .createTime(new Date())
+                .updateTime(new Date())
+                .build();
     }
 
     @Mock
-    private WorksheetRepository worksheetRepository;
+    private CollaborationWorksheetRepository worksheetRepository;
 
     @Mock
     private ObjectStorageClient objectStorageClient;
@@ -128,22 +139,31 @@ public class DefaultWorksheetServiceTest {
     public void createWorksheet_Success() {
         Path createPath = new Path("/Worksheets/test");
         Path parentPath = new Path("/Worksheets/");
-        when(worksheetRepository.findWithSubListAndSameDirectParentListByProjectIdAndPathWithLock(projectId,
-                parentPath))
-                        .thenReturn(newWorksheet(parentPath));
+        when(worksheetRepository.findByProjectIdAndInPaths(projectId,
+                Arrays.asList(createPath.getStandardPath(), parentPath.getStandardPath())))
+                        .thenReturn(new ArrayList<>());
+        when(worksheetRepository.countByPathLikeWithFilter(projectId,
+                parentPath.getStandardPath(), 2, 2, null))
+                        .thenReturn(0L);
+        when(worksheetRepository.saveAndFlush(any()))
+                .thenAnswer(invocation -> {
+                    CollaborationWorksheetEntity entity = invocation.getArgument(0);
+                    entity.setId(id++);
+                    return entity;
+                });
 
-        Worksheet createdWorksheet = defaultWorksheetService.createWorksheet(projectId, createPath, id++ + "");
+        WorksheetMetaResp createdWorksheet = defaultWorksheetService.createWorksheet(projectId, createPath, id++ + "");
 
         assertNotNull(createdWorksheet);
-        assertEquals(createdWorksheet.getPath(), createPath);
-        verify(worksheetRepository).batchAdd(anySet());
+        assertEquals(createdWorksheet.getPath(), createPath.getStandardPath());
+        verify(worksheetRepository).saveAndFlush(any());
     }
 
     @Test(expected = NotFoundException.class)
     public void getWorksheetDetails_NotFound() {
         Path path = new Path("/Worksheets/notfound");
 
-        when(worksheetRepository.findByProjectIdAndPath(projectId, path))
+        when(worksheetRepository.findByProjectIdAndPath(projectId, path.getStandardPath()))
                 .thenReturn(Optional.empty());
 
         defaultWorksheetService.getWorksheetDetails(projectId, path);
@@ -152,36 +172,35 @@ public class DefaultWorksheetServiceTest {
     @Test
     public void getWorksheetDetails_Success() throws MalformedURLException {
         Path path = new Path("/Worksheets/test");
-        Worksheet worksheet = newWorksheet(path);
+        CollaborationWorksheetEntity worksheet = newWorksheet(path);
         String objectId = "objectId";
         worksheet.setObjectId(objectId);
         String downloadUrl = "http://downloadUrl";
 
-        when(worksheetRepository.findByProjectIdAndPath(projectId, path))
+        when(worksheetRepository.findByProjectIdAndPath(projectId, path.getStandardPath()))
                 .thenReturn(Optional.of(worksheet));
         when(objectStorageClient.generateDownloadUrl(objectId, WorksheetConstant.DOWNLOAD_DURATION_SECONDS))
                 .thenReturn(new URL(downloadUrl));
-        Worksheet result = defaultWorksheetService.getWorksheetDetails(projectId, path);
+        WorksheetResp result = defaultWorksheetService.getWorksheetDetails(projectId, path);
 
         assertNotNull(result);
-        assertEquals(objectId, result.getObjectId());
         assertEquals(downloadUrl, result.getContentDownloadUrl());
     }
 
     @Test
     public void listWorksheets_Success() {
-        Worksheet worksheet1 = newWorksheet("/Worksheets/folder1/");
-        Worksheet worksheet2 = newWorksheet("/Worksheets/folder2/");
-        Worksheet worksheet3 = newWorksheet("/Worksheets/test1");
-        Worksheet worksheet4 = newWorksheet("/Worksheets/test2");
-        Worksheet worksheet = newWorksheet(Path.worksheets());
-        worksheet.setSubWorksheets(new HashSet<>(Arrays.asList(worksheet1, worksheet2, worksheet3, worksheet4)));
-        when(worksheetRepository.findWithSubListByProjectIdAndPathAndNameLike(projectId, Path.worksheets(), null))
-                .thenReturn(worksheet);
+        CollaborationWorksheetEntity worksheet1 = newWorksheet("/Worksheets/folder1/");
+        CollaborationWorksheetEntity worksheet2 = newWorksheet("/Worksheets/folder2/");
+        CollaborationWorksheetEntity worksheet3 = newWorksheet("/Worksheets/test1");
+        CollaborationWorksheetEntity worksheet4 = newWorksheet("/Worksheets/test2");
+        when(worksheetRepository.findByPathLikeWithFilter(projectId, Path.worksheets().getStandardPath(), 2, 2, null))
+                .thenReturn(Arrays.asList(worksheet1, worksheet2, worksheet3, worksheet4));
 
-        List<Worksheet> result = defaultWorksheetService.listWorksheets(projectId, Path.worksheets(), 1, null);
+        List<WorksheetMetaResp> result = defaultWorksheetService.listWorksheets(projectId, Path.worksheets(), 1, null);
         assertNotNull(result);
-        assertEquals(result, Arrays.asList(worksheet1, worksheet2, worksheet3, worksheet4));
+        assertEquals(result.stream().map(WorksheetMetaResp::getPath).collect(Collectors.toSet()),
+                Stream.of(worksheet1, worksheet2, worksheet3, worksheet4)
+                        .map(CollaborationWorksheetEntity::getPath).collect(Collectors.toSet()));
     }
 
     @Test
@@ -190,18 +209,24 @@ public class DefaultWorksheetServiceTest {
         batchUploadWorksheetsReq.setWorksheets(new HashSet<>(Arrays.asList(
                 new UploadWorksheetTuple("/Worksheets/test1", "object1"),
                 new UploadWorksheetTuple("/Worksheets/test2", "object2"))));
+        Path parentPath = Path.worksheets();
         BatchCreateWorksheets batchCreateWorksheets = new BatchCreateWorksheets(batchUploadWorksheetsReq);
+        when(worksheetRepository.countByPathLikeWithFilter(projectId,
+                parentPath.getStandardPath(), 2, 2, null))
+                        .thenReturn(new Long(WorksheetConstant.SAME_LEVEL_NUM_LIMIT - 2));
+        when(worksheetRepository.saveAllAndFlush(anyList()))
+                .thenAnswer(invocation -> {
+                    List<CollaborationWorksheetEntity> entities = invocation.getArgument(0);
+                    entities.forEach(entity -> entity.setId(id++));
+                    return entities;
+                });
 
-        when(worksheetRepository.findWithSubListAndSameDirectParentListByProjectIdAndPathWithLock(anyLong(),
-                any(Path.class)))
-                        .thenReturn(newWorksheet(new Path("/Worksheets/")));
-
-        BatchOperateWorksheetsResult result =
+        BatchOperateWorksheetsResp result =
                 defaultWorksheetService.batchUploadWorksheets(projectId, batchCreateWorksheets);
 
         assertNotNull(result);
-        assertEquals(result.getSuccessful().size(), 2);
-        verify(worksheetRepository).batchAdd(anySet());
+        assertEquals(result.getSuccessfulFiles().size(), 2);
+        verify(worksheetRepository).saveAllAndFlush(anyList());
     }
 
     @Test
@@ -210,23 +235,26 @@ public class DefaultWorksheetServiceTest {
         paths.add(new Path("/Worksheets/folder2/"));
         paths.add(new Path("/Worksheets/folder1/"));
         paths.add(new Path("/Worksheets/test2"));
-        when(worksheetRepository.listWithSubListByProjectIdAndPaths(projectId, paths))
-                .thenReturn(Arrays.asList(
-                        newWorksheet(new Path("/Worksheets/folder3/")),
-                        newWorksheet(new Path("/Worksheets/folder2/file1")),
-                        newWorksheet(new Path("/Worksheets/folder1/")),
-                        newWorksheet(new Path("/Worksheets/folder1/file1")),
-                        newWorksheet(new Path("/Worksheets/folder1/subfolder1/"))));
-        Mockito.doAnswer(invocation -> {
-            Consumer<TransactionStatus> consumer = invocation.getArgument(0);
-            TransactionStatus status = Mockito.mock(TransactionStatus.class);
-            consumer.accept(status);
-            return null;
-        }).when(transactionTemplate).executeWithoutResult(Mockito.any());
-        BatchOperateWorksheetsResult result = defaultWorksheetService.batchDeleteWorksheets(projectId, paths);
+        when(worksheetRepository.findByProjectIdAndInPaths(projectId, Collections.singletonList("/Worksheets/test2")))
+                .thenReturn(Arrays.asList(newWorksheet(new Path("/Worksheets/test2"))));
+        when(worksheetRepository.findByPathLikeWithFilter(projectId, Path.worksheets().getStandardPath(), null, null,
+                null))
+                        .thenReturn(Arrays.asList(
+                                newWorksheet(new Path("/Worksheets/folder3/")),
+                                newWorksheet(new Path("/Worksheets/folder2/file1")),
+                                newWorksheet(new Path("/Worksheets/folder1/")),
+                                newWorksheet(new Path("/Worksheets/folder1/file1")),
+                                newWorksheet(new Path("/Worksheets/folder1/subfolder1/"))));
+        // Mockito.doAnswer(invocation -> {
+        // Consumer<TransactionStatus> consumer = invocation.getArgument(0);
+        // TransactionStatus status = Mockito.mock(TransactionStatus.class);
+        // consumer.accept(status);
+        // return null;
+        // }).when(transactionTemplate).executeWithoutResult(Mockito.any());
+        BatchOperateWorksheetsResp result = defaultWorksheetService.batchDeleteWorksheets(projectId, paths);
         assertNotNull(result);
-        assertEquals(result.getSuccessful().size(), 5);
-        verify(worksheetRepository).batchDelete(anySet());
+        assertEquals(result.getSuccessfulFiles().size(), 5);
+        verify(worksheetRepository).deleteAllByIdInBatch(anySet());
     }
 
     @Test
@@ -234,46 +262,74 @@ public class DefaultWorksheetServiceTest {
         Path oldPath = new Path("/Worksheets/old");
         Path newPath = new Path("/Worksheets/new");
 
-        when(worksheetRepository.findWithSubListAndSameDirectParentListByProjectIdAndPathWithLock(anyLong(),
-                any(Path.class)))
-                        .thenReturn(newWorksheet(oldPath));
+        when(worksheetRepository.findByPathLikeWithFilter(projectId,
+                oldPath.getStandardPath(), null, null, null))
+                        .thenReturn(Collections.singletonList(newWorksheet(oldPath)));
 
-        List<Worksheet> result = defaultWorksheetService.renameWorksheet(projectId, oldPath, newPath);
+        List<WorksheetMetaResp> result =
+                defaultWorksheetService.renameWorksheet(projectId, oldPath, newPath);
 
         assertNotNull(result);
         assertEquals(result.size(), 1);
-        assertEquals(result.get(0).getPath(), newPath);
-        verify(worksheetRepository).batchUpdateById(anySet());
+        assertEquals(result.get(0).getPath(), newPath.getStandardPath());
+        verify(worksheetRepository).batchUpdatePath(anyMap());
+    }
+
+    @Test
+    public void renameWorksheet_Sub() {
+        Path oldPath = new Path("/Worksheets/old/");
+        Path oldSubPath1 = new Path("/Worksheets/old/sub1");
+        Path oldSubPath2 = new Path("/Worksheets/old/sub2/");
+        Path newPath = new Path("/Worksheets/new/");
+
+        when(worksheetRepository.findByPathLikeWithFilter(projectId,
+                "/Worksheets/old/", null, null, null))
+                        .thenReturn(Arrays.asList(newWorksheet(oldPath), newWorksheet(oldSubPath1),
+                                newWorksheet(oldSubPath2)));
+
+        List<WorksheetMetaResp> result =
+                defaultWorksheetService.renameWorksheet(projectId, oldPath, newPath);
+
+        assertNotNull(result);
+        assertEquals(result.size(), 3);
+        assertEquals(result.stream().map(WorksheetMetaResp::getPath).collect(Collectors.toSet()),
+                new HashSet<>(Arrays.asList(
+                        "/Worksheets/new/",
+                        "/Worksheets/new/sub1",
+                        "/Worksheets/new/sub2/")));
+        verify(worksheetRepository).batchUpdatePath(anyMap());
     }
 
     @Test
     public void editWorksheet() {
-        Path oldPath = new Path("/Worksheets/old");
-        Path newPath = new Path("/Worksheets/new");
+        Path editPath = new Path("/Worksheets/old");
         String objectId = "newObjectId";
-        Long readVersion = 1L;
+        CollaborationWorksheetEntity worksheetEntity = newWorksheet(editPath.getStandardPath());
 
-        when(worksheetRepository.findWithSubListAndSameDirectParentListByProjectIdAndPathWithLock(anyLong(),
-                any(Path.class)))
-                        .thenReturn(newWorksheet(oldPath));
+        when(worksheetRepository.findByProjectIdAndPath(projectId,
+                editPath.getStandardPath()))
+                        .thenReturn(Optional.of(worksheetEntity));
+        when(worksheetRepository.updateContentByIdAndVersion(any()))
+                .thenReturn(1);
 
-        List<Worksheet> result =
-                defaultWorksheetService.editWorksheet(projectId, oldPath, newPath, objectId, readVersion);
+        List<WorksheetMetaResp> result =
+                defaultWorksheetService.editWorksheet(projectId, editPath, objectId, 0L,
+                        worksheetEntity.getVersion());
 
         assertNotNull(result);
         assertEquals(result.size(), 1);
-        assertEquals(result.get(0).getPath(), newPath);
+        assertEquals(result.get(0).getPath(), editPath.getStandardPath());
         assertEquals(result.get(0).getObjectId(), objectId);
-        verify(worksheetRepository).batchUpdateById(anySet());
+        verify(worksheetRepository).updateContentByIdAndVersion(any());
     }
 
     @Test
     public void getDownloadUrl_Success() {
         Path path = new Path("/Worksheets/test");
-        Worksheet worksheet = newWorksheet(path);
+        CollaborationWorksheetEntity worksheet = newWorksheet(path);
         worksheet.setObjectId("objectId");
 
-        when(worksheetRepository.findByProjectIdAndPath(projectId, path))
+        when(worksheetRepository.findByProjectIdAndPath(projectId, path.getStandardPath()))
                 .thenReturn(Optional.of(worksheet));
         when(objectStorageClient.generateDownloadUrl(any(), anyLong()))
                 .thenAnswer(invocation -> new URL("http://" + invocation.getArgument(0, String.class)));
@@ -297,24 +353,27 @@ public class DefaultWorksheetServiceTest {
         List<Path> paths = pathStrList.stream().map(Path::new).collect(Collectors.toList());
         Path commParentPath = Path.root();
 
-        // Mock
-        when(worksheetRepository.listWithSubListByProjectIdAndPaths(projectId, paths))
-                .thenReturn(Arrays.asList(
-                        newDirWorksheet(projectId, "/Worksheets/dir1/"),
-                        newDirWorksheet(projectId, "/Worksheets/dir1/subdir1/"),
-                        newDirWorksheet(projectId, "/Worksheets/dir1/subdir2/file1"),
-                        newDirWorksheet(projectId, "/Worksheets/dir1/subdir2/file2"),
-                        newDirWorksheet(projectId, "/Worksheets/dir2/"),
-                        newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file1"),
-                        newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file2"),
-                        newDirWorksheet(projectId, "/Worksheets/dir3/subdir1/file5"),
-                        newDirWorksheet(projectId, "/Worksheets/dir4/subdir1/")));
+        when(worksheetRepository.findByProjectIdAndInPaths(projectId, Arrays.asList("/Worksheets/dir3/subdir1/file1",
+                "/Worksheets/dir3/subdir1/file2",
+                "/Worksheets/dir3/subdir1/file5")))
+                        .thenReturn(Arrays.asList(newWorksheet("/Worksheets/dir3/subdir1/file1"),
+                                newWorksheet("/Worksheets/dir3/subdir1/file2"),
+                                newWorksheet("/Worksheets/dir3/subdir1/file5")));
+        when(worksheetRepository.findByPathLikeWithFilter(projectId, Path.worksheets().getStandardPath(), null, null,
+                null))
+                        .thenReturn(Arrays.asList(
+                                newWorksheet("/Worksheets/dir1/"),
+                                newWorksheet("/Worksheets/dir1/subdir1/"),
+                                newWorksheet("/Worksheets/dir1/subdir2/file1"),
+                                newWorksheet("/Worksheets/dir1/subdir2/file2"),
+                                newWorksheet("/Worksheets/dir2/"),
+                                newWorksheet("/Worksheets/dir4/subdir1/")));
 
         // Test
         defaultWorksheetService.downloadPathsToDirectory(projectId, paths, commParentPath, destinationDirectory);
 
         // Verify
-        verify(worksheetRepository, times(1)).listWithSubListByProjectIdAndPaths(anyLong(),
+        verify(worksheetRepository, times(1)).findByProjectIdAndInPaths(anyLong(),
                 any());
         verify(objectStorageClient, times(5)).downloadToFile(anyString(), any(File.class));
 

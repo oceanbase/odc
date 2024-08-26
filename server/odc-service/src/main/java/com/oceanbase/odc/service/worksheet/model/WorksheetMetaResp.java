@@ -40,5 +40,6 @@ public class WorksheetMetaResp {
     private Date updateTime;
     private Long projectId;
     private String path;
+    private String objectId;
     private WorksheetType type;
 }

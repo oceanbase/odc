@@ -25,10 +25,11 @@ import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.service.objectstorage.client.ObjectStorageClient;
 import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
-import com.oceanbase.odc.service.worksheet.domain.BatchOperateWorksheetsResult;
 import com.oceanbase.odc.service.worksheet.domain.Path;
-import com.oceanbase.odc.service.worksheet.domain.Worksheet;
+import com.oceanbase.odc.service.worksheet.model.BatchOperateWorksheetsResp;
 import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;
+import com.oceanbase.odc.service.worksheet.model.WorksheetMetaResp;
+import com.oceanbase.odc.service.worksheet.model.WorksheetResp;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetUtil;
 
 /**
@@ -51,40 +52,40 @@ public class RepoWorksheetService implements WorksheetService {
     }
 
     @Override
-    public Worksheet createWorksheet(Long projectId, Path createPath, String objectId) {
+    public WorksheetMetaResp createWorksheet(Long projectId, Path createPath, String objectId) {
         return null;
     }
 
     @Override
-    public Worksheet getWorksheetDetails(Long projectId, Path path) {
+    public WorksheetResp getWorksheetDetails(Long projectId, Path path) {
 
         return null;
     }
 
     @Override
-    public List<Worksheet> listWorksheets(Long projectId, Path path, Integer depth, String nameLike) {
+    public List<WorksheetMetaResp> listWorksheets(Long projectId, Path path, Integer depth, String nameLike) {
 
         return new ArrayList<>();
     }
 
     @Override
-    public BatchOperateWorksheetsResult batchUploadWorksheets(Long projectId,
+    public BatchOperateWorksheetsResp batchUploadWorksheets(Long projectId,
             BatchCreateWorksheets batchCreateWorksheets) {
         return null;
     }
 
     @Override
-    public BatchOperateWorksheetsResult batchDeleteWorksheets(Long projectId, List<Path> paths) {
-        return new BatchOperateWorksheetsResult();
+    public BatchOperateWorksheetsResp batchDeleteWorksheets(Long projectId, List<Path> paths) {
+        return new BatchOperateWorksheetsResp();
     }
 
     @Override
-    public List<Worksheet> renameWorksheet(Long projectId, Path path, Path destinationPath) {
+    public List<WorksheetMetaResp> renameWorksheet(Long projectId, Path path, Path destinationPath) {
         return Collections.emptyList();
     }
 
     @Override
-    public List<Worksheet> editWorksheet(Long projectId, Path path, Path destinationPath, String objectId,
+    public List<WorksheetMetaResp> editWorksheet(Long projectId, Path path, String objectId, Long totalLength,
             Long readVersion) {
         return Collections.emptyList();
     }

@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.worksheet.domain;
 
 import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.NAME_LENGTH_LIMIT;
+import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.PATH_LENGTH_LIMIT;
 import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.ROOT_PATH_NAME;
 
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.odc.service.worksheet.model.WorksheetLocation;
@@ -150,6 +152,13 @@ public class Path {
         this.location = locationOptional.get();
         this.levelNum = this.isFile() ? items.size() : items.size() - 1;
         this.parentPathItems = levelNum > 0 ? items.subList(0, levelNum - 1) : new ArrayList<>();;
+    }
+
+    public String getExtension() {
+        if (isFile()) {
+            return FilenameUtils.getExtension(name);
+        }
+        return null;
     }
 
     public String getStandardPath() {
@@ -443,6 +452,10 @@ public class Path {
 
     public boolean isExceedNameLengthLimit() {
         return this.getName().length() > NAME_LENGTH_LIMIT;
+    }
+
+    public boolean isExceedPathLengthLimit() {
+        return this.getStandardPath().length() > PATH_LENGTH_LIMIT;
     }
 
     public void canGetDownloadUrlCheck() {

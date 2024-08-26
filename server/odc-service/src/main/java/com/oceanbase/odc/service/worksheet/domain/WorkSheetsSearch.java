@@ -22,6 +22,8 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
+import com.oceanbase.odc.service.worksheet.model.WorksheetMetaResp;
+
 import lombok.Getter;
 
 /**
@@ -33,7 +35,7 @@ import lombok.Getter;
  */
 @Getter
 public class WorkSheetsSearch {
-    List<Worksheet> worksheets;
+    List<WorksheetMetaResp> worksheets;
     String nameLike;
 
     public WorkSheetsSearch(String nameLike) {
@@ -41,7 +43,7 @@ public class WorkSheetsSearch {
         this.nameLike = nameLike;
     }
 
-    public void addAll(List<Worksheet> worksheets) {
+    public void addAll(List<WorksheetMetaResp> worksheets) {
         if (CollectionUtils.isNotEmpty(worksheets)) {
             this.worksheets.addAll(worksheets);
         }
@@ -52,12 +54,12 @@ public class WorkSheetsSearch {
      * 
      * @return
      */
-    public List<Worksheet> searchByNameLike(int limit) {
+    public List<WorksheetMetaResp> searchByNameLike(int limit) {
         if (CollectionUtils.isEmpty(worksheets) || StringUtils.isBlank(nameLike)) {
             return new ArrayList<>();
         }
-        return worksheets.stream().filter(file -> file.getPath().isNameContains(nameLike))
-                .sorted((o1, o2) -> Path.getPathComparator().compare(o1.getPath(), o2.getPath()))
+        return worksheets.stream().filter(worksheet -> new Path(worksheet.getPath()).isNameContains(nameLike))
+                .sorted((o1, o2) -> Path.getPathComparator().compare(new Path(o1.getPath()), new Path(o2.getPath())))
                 .limit(limit)
                 .collect(Collectors.toList());
     }

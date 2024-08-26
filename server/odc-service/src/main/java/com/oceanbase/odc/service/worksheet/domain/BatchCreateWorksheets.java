@@ -38,31 +38,27 @@ import lombok.Getter;
 public class BatchCreateWorksheets {
     @Getter
     private Path parentPath;
-    /**
-     *
-     * This is mainly used to report more details when an error occurs
-     */
-    private UploadWorksheetTuple tupleGetParentPath;
     @Getter
     private final Map<Path, String> createPathToObjectIdMap;
 
+    public BatchCreateWorksheets(Path createPath, String objectId) {
+        createPathToObjectIdMap = new HashMap<>();
+        this.parentPath = getParentPath(createPath, objectId);
+        createPathToObjectIdMap.put(createPath, objectId);
+    }
+
     public BatchCreateWorksheets(BatchUploadWorksheetsReq req) {
         createPathToObjectIdMap = new HashMap<>();
+        UploadWorksheetTuple tupleGetParentPath = null;
         for (UploadWorksheetTuple tuple : req.getWorksheets()) {
             String pathStr = tuple.getPath();
             String objectId = tuple.getObjectId();
             Path path = new Path(pathStr);
-            if (path.isFile() && StringUtils.isBlank(objectId)) {
-                throw new IllegalArgumentException("invalid UploadProjectFileTuple : " + tuple);
-            }
-            Optional<Path> parentPathOptional = path.getParentPath();
-            if (!parentPathOptional.isPresent()) {
-                throw new IllegalArgumentException("invalid UploadProjectFileTuple : " + tuple);
-            }
+            Path parentPath = getParentPath(path, objectId);
             if (this.parentPath == null) {
-                this.parentPath = parentPathOptional.get();
-                this.tupleGetParentPath = tuple;
-            } else if (!this.parentPath.equals(parentPathOptional.get())) {
+                this.parentPath = parentPath;
+                tupleGetParentPath = tuple;
+            } else if (!this.parentPath.equals(parentPath)) {
                 throw new IllegalArgumentException(
                         "different parent path, tuple1: " + tupleGetParentPath + ", "
                                 + "tuple2: " + tuple);
@@ -74,5 +70,20 @@ public class BatchCreateWorksheets {
             }
             createPathToObjectIdMap.put(path, objectId);
         }
+    }
+
+    private static Path getParentPath(Path path, String objectId) {
+        if (path.isSystemDefine()) {
+            throw new IllegalArgumentException("invalid crate path : " + path);
+        }
+        Optional<Path> parentPathOptional = path.getParentPath();
+        if (!parentPathOptional.isPresent()) {
+            throw new IllegalArgumentException("invalid crate path : " + path);
+        }
+        if (path.isFile() && StringUtils.isBlank(objectId)) {
+            throw new IllegalArgumentException("objectId can't be null when create path is file,create path: "
+                    + path + ",objectId: " + objectId);
+        }
+        return parentPathOptional.get();
     }
 }

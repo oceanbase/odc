@@ -117,7 +117,7 @@ public interface ObjectMetadataRepository extends OdcJpaRepository<ObjectMetadat
             @Param("bucketName") String bucketName,
             @Param("objectNameLeftLike") String objectNameLeftLike, @Param("status") ObjectUploadStatus status);
 
-    @Query("SELECT e FROM ObjectMetadataEntity e WHERE e.bucketName=:bucketName and e.objectName LIKE CONCAT('',:objectNameLeftLike,'%')  "
+    @Query("SELECT e FROM ObjectMetadataEntity e WHERE e.bucketName=:bucketName and e.objectName LIKE CONCAT(:objectNameLeftLike,'%')  "
             + "and e.objectName LIKE CONCAT('%',:objectNameLike,'%') and e.status=:status")
     List<ObjectMetadataEntity> findAllByBucketNameAndObjectNameLeftLikeAndNameLikeAndStatus(
             @Param("bucketName") String bucketName,

@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -39,13 +38,10 @@ import com.oceanbase.odc.service.objectstorage.client.ObjectStorageClient;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectTagging;
 import com.oceanbase.odc.service.objectstorage.cloud.util.CloudObjectStorageUtil;
 import com.oceanbase.odc.service.worksheet.constants.WorksheetConstant;
-import com.oceanbase.odc.service.worksheet.converter.WorksheetConverter;
 import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
-import com.oceanbase.odc.service.worksheet.domain.BatchOperateWorksheetsResult;
 import com.oceanbase.odc.service.worksheet.domain.DivideBatchOperateWorksheets;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.WorkSheetsSearch;
-import com.oceanbase.odc.service.worksheet.domain.Worksheet;
 import com.oceanbase.odc.service.worksheet.factory.WorksheetServiceFactory;
 import com.oceanbase.odc.service.worksheet.model.BatchOperateWorksheetsResp;
 import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq;
@@ -90,8 +86,7 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
         Path createPath = new Path(pathStr);
         WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
                 createPath.getLocation());
-        Worksheet file = projectFileService.createWorksheet(projectId, createPath, objectId);
-        return WorksheetConverter.convertToMetaResp(file);
+        return projectFileService.createWorksheet(projectId, createPath, objectId);
     }
 
 
@@ -100,8 +95,7 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
         Path path = new Path(pathStr);
         WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
                 path.getLocation());
-        Worksheet file = projectFileService.getWorksheetDetails(projectId, path);
-        return WorksheetConverter.convertToResp(file);
+        return projectFileService.getWorksheetDetails(projectId, path);
     }
 
     @Override
@@ -120,10 +114,7 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
             workSheetsSearch.addAll(worksheetServiceFactory.getProjectFileService(WorksheetLocation.WORKSHEETS)
                     .listWorksheets(projectId, path, depth, req.getNameLike()));
         }
-        List<Worksheet> worksheets = workSheetsSearch.searchByNameLike(PROJECT_FILES_NAME_LIKE_SEARCH_LIMIT);
-        return worksheets.stream()
-                .map(WorksheetConverter::convertToMetaResp)
-                .collect(Collectors.toList());
+        return workSheetsSearch.searchByNameLike(PROJECT_FILES_NAME_LIKE_SEARCH_LIMIT);
     }
 
     @Override
@@ -132,16 +123,15 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
         Path parentPath = batchCreateWorksheets.getParentPath();
         WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
                 parentPath.getLocation());
-        BatchOperateWorksheetsResult batchOperateWorksheetsResult = projectFileService.batchUploadWorksheets(projectId,
+        return projectFileService.batchUploadWorksheets(projectId,
                 batchCreateWorksheets);
-        return WorksheetConverter.convertToBatchOperateResp(batchOperateWorksheetsResult);
     }
 
     @Override
     public BatchOperateWorksheetsResp batchDeleteWorksheets(Long projectId, List<String> paths) {
         DivideBatchOperateWorksheets divideBatchOperateWorksheets = new DivideBatchOperateWorksheets(paths);
 
-        BatchOperateWorksheetsResult batchOperateWorksheetsResult = new BatchOperateWorksheetsResult();
+        BatchOperateWorksheetsResp batchOperateWorksheetsResult = new BatchOperateWorksheetsResp();
         if (CollectionUtils.isNotEmpty(divideBatchOperateWorksheets.getNormalPaths())) {
 
             batchOperateWorksheetsResult.addResult(
@@ -153,7 +143,7 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
                     worksheetServiceFactory.getProjectFileService(WorksheetLocation.REPOS)
                             .batchDeleteWorksheets(projectId, divideBatchOperateWorksheets.getReposPaths()));
         }
-        return WorksheetConverter.convertToBatchOperateResp(batchOperateWorksheetsResult);
+        return batchOperateWorksheetsResult;
     }
 
     @Override
@@ -162,24 +152,17 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
         Path destPath = new Path(destinationPath);
         WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
                 path.getLocation());
-        List<Worksheet> worksheets = projectFileService.renameWorksheet(projectId, path, destPath);
-        return worksheets.stream()
-                .map(WorksheetConverter::convertToMetaResp)
-                .collect(Collectors.toList());
+        return projectFileService.renameWorksheet(projectId, path, destPath);
     }
 
 
     @Override
     public List<WorksheetMetaResp> editWorksheet(Long projectId, String pathStr, UpdateWorksheetReq req) {
         Path path = new Path(pathStr);
-        Path destPath = new Path(req.getDestinationPath());
         WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
                 path.getLocation());
-        List<Worksheet> worksheets =
-                projectFileService.editWorksheet(projectId, path, destPath, req.getObjectId(), req.getPrevVersion());
-        return worksheets.stream()
-                .map(WorksheetConverter::convertToMetaResp)
-                .collect(Collectors.toList());
+        return projectFileService.editWorksheet(projectId, path, req.getObjectId(), req.getTotalLength(),
+                req.getPrevVersion());
     }
 
 
