@@ -369,7 +369,7 @@ public class ConnectionConfig
         switch (dialectType) {
             case ORACLE:
             case OB_ORACLE:
-                return ConnectionSessionUtil.getUserOrSchemaString(this.username, dialectType);
+                return ConnectionSessionUtil.getUserOrSchemaString(getUsername(), dialectType);
             case MYSQL:
             case DORIS:
             case OB_MYSQL:
