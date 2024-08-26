@@ -70,7 +70,7 @@ public class DataArchiveParameters implements TaskParameters {
 
     private MigrationInsertAction migrationInsertAction = MigrationInsertAction.INSERT_NORMAL;
 
-    private ShardingStrategy shardingStrategy;
+    private ShardingStrategy shardingStrategy = ShardingStrategy.MATCH;
 
     private RateLimitConfiguration rateLimit;
 }
