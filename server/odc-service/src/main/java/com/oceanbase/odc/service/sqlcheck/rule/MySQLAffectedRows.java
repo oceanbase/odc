@@ -64,6 +64,8 @@ public class MySQLAffectedRows implements SqlCheckRule {
 
     private final JdbcOperations jdbcOperations;
 
+    private static final int HEAD_LINE = 2;
+
     public MySQLAffectedRows(@NonNull Integer maxSQLAffectedRows, JdbcOperations jdbcOperations) {
         this.maxSQLAffectedRows = maxSQLAffectedRows <= 0 ? 0 : maxSQLAffectedRows;
         this.jdbcOperations = jdbcOperations;
@@ -88,10 +90,11 @@ public class MySQLAffectedRows implements SqlCheckRule {
                 return Collections.emptyList();
             }
             String originSql = statement.getText();
-            long affectedRows = executeExplain(originSql, jdbcOperations);
+            long affectedRows = getAffectedRows(originSql, jdbcOperations);
             if (affectedRows > maxSQLAffectedRows) {
                 return Collections.singletonList(SqlCheckUtil
-                        .buildViolation(statement.getText(), statement, getType(), new Object[] {}));
+                        .buildViolation(statement.getText(), statement, getType(),
+                                new Object[] {maxSQLAffectedRows, affectedRows}));
             } else {
                 return Collections.emptyList();
             }
@@ -114,24 +117,37 @@ public class MySQLAffectedRows implements SqlCheckRule {
      * @param jdbc jdbc Object
      * @return affected rows
      */
-    private long executeExplain(String originSql, JdbcOperations jdbc) {
+    private long getAffectedRows(String originSql, JdbcOperations jdbc) {
 
         if (originSql == null || jdbc == null) {
             return 0;
         }
         String explainSql = "EXPLAIN " + originSql;
 
+        /**
+         * <pre>
+         *
+         *     explain result (json):
+         *
+         *     ==================================================    --rowNum 1
+         *     |ID|OPERATOR          |NAME|EST.ROWS|EST.TIME(us)|    --rowNum 2
+         *     0 |DISTRIBUTED UPDATE|    |1       |37          |     --rowNum 3
+         *     1 |└─TABLE GET       |user|1       |5           |     --rowNum 4
+         *     ==================================================    --rowNum 5
+         *     ...
+         *
+         * </pre>
+         */
         try {
-            // parse rows tag: if true, stop parse
-            AtomicBoolean ifFindValue = new AtomicBoolean(false);
+            AtomicBoolean ifFindAffectedRow = new AtomicBoolean(false);
             List<Long> resultSet = jdbc.query(explainSql, (rs, rowNum) -> {
-                String singleRow = rs.getString(1);
 
-                if (!ifFindValue.get() && rowNum > 2) {
-                    long affectedRows = getAffectedRows(singleRow);
+                String resultRow = rs.getString("Query Plan");
+                if (!ifFindAffectedRow.get() && rowNum > HEAD_LINE) {
+                    long affectedRows = getEstRowsValue(resultRow);
                     // first non-null value is the column 'EST.ROWS'
                     if (affectedRows != 0) {
-                        ifFindValue.set(true);
+                        ifFindAffectedRow.set(true);
                         return affectedRows;
                     }
                 }
@@ -155,7 +171,7 @@ public class MySQLAffectedRows implements SqlCheckRule {
      * @param singleRow row
      * @return affected rows
      */
-    private long getAffectedRows(String singleRow) {
+    private long getEstRowsValue(String singleRow) {
         String[] parts = singleRow.split("\\|");
         if (parts.length > 4) {
             String value = parts[4].trim();
