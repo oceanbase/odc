@@ -101,8 +101,8 @@ public class DefaultWorksheetService implements WorksheetService {
     }
 
     @Override
-    public WorksheetMetaResp createWorksheet(Long projectId, Path createPath, String objectId) {
-        BatchCreateWorksheets batchCreateWorksheets = new BatchCreateWorksheets(createPath, objectId);
+    public WorksheetMetaResp createWorksheet(Long projectId, Path createPath, String objectId, Long totalLength) {
+        BatchCreateWorksheets batchCreateWorksheets = new BatchCreateWorksheets(createPath, objectId, totalLength);
         createCheck(projectId, batchCreateWorksheets);
 
         CollaborationWorksheetEntity entity = CollaborationWorksheetEntity.builder()
@@ -112,8 +112,7 @@ public class DefaultWorksheetService implements WorksheetService {
                 .levelNum(createPath.getLevelNum())
                 .objectId(objectId)
                 .extension(createPath.getExtension())
-                // TODO add totalLength to interface
-                .totalLength(0L)
+                .totalLength(totalLength)
                 .build();
         CollaborationWorksheetEntity result = worksheetRepository.saveAndFlush(entity);
         return WorksheetConverter.convertEntityToMetaResp(result);
@@ -215,10 +214,9 @@ public class DefaultWorksheetService implements WorksheetService {
                         .creatorId(userId)
                         .path(item.getKey().getStandardPath())
                         .levelNum(item.getKey().getLevelNum())
-                        .objectId(item.getValue())
+                        .objectId(item.getValue().getObjectId())
                         .extension(item.getKey().getExtension())
-                        // TODO add totalLength to interface
-                        .totalLength(0L)
+                        .totalLength(item.getValue().getTotalLength())
                         .build())
                 .collect(Collectors.toList());
 

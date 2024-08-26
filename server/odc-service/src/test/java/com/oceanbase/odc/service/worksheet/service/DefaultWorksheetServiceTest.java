@@ -132,7 +132,7 @@ public class DefaultWorksheetServiceTest {
     @Test(expected = IllegalArgumentException.class)
     public void createWorksheet_InvalidPath() {
         Path createPath = new Path("/Worksheets/");
-        defaultWorksheetService.createWorksheet(projectId, createPath, "objectId");
+        defaultWorksheetService.createWorksheet(projectId, createPath, "objectId", 0L);
     }
 
     @Test
@@ -152,7 +152,8 @@ public class DefaultWorksheetServiceTest {
                     return entity;
                 });
 
-        WorksheetMetaResp createdWorksheet = defaultWorksheetService.createWorksheet(projectId, createPath, id++ + "");
+        WorksheetMetaResp createdWorksheet =
+                defaultWorksheetService.createWorksheet(projectId, createPath, id++ + "", 0L);
 
         assertNotNull(createdWorksheet);
         assertEquals(createdWorksheet.getPath(), createPath.getStandardPath());
@@ -207,8 +208,8 @@ public class DefaultWorksheetServiceTest {
     public void batchUploadWorksheets() {
         BatchUploadWorksheetsReq batchUploadWorksheetsReq = new BatchUploadWorksheetsReq();
         batchUploadWorksheetsReq.setWorksheets(new HashSet<>(Arrays.asList(
-                new UploadWorksheetTuple("/Worksheets/test1", "object1"),
-                new UploadWorksheetTuple("/Worksheets/test2", "object2"))));
+                new UploadWorksheetTuple("/Worksheets/test1", "object1", 1L),
+                new UploadWorksheetTuple("/Worksheets/test2", "object2", 1L))));
         Path parentPath = Path.worksheets();
         BatchCreateWorksheets batchCreateWorksheets = new BatchCreateWorksheets(batchUploadWorksheetsReq);
         when(worksheetRepository.countByPathLikeWithFilter(projectId,

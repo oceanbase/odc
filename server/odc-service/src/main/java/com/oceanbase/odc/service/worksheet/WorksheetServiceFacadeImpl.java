@@ -82,11 +82,11 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
 
 
     @Override
-    public WorksheetMetaResp createWorksheet(Long projectId, String pathStr, String objectId) {
+    public WorksheetMetaResp createWorksheet(Long projectId, String pathStr, String objectId, Long totalLength) {
         Path createPath = new Path(pathStr);
         WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
                 createPath.getLocation());
-        return projectFileService.createWorksheet(projectId, createPath, objectId);
+        return projectFileService.createWorksheet(projectId, createPath, objectId, totalLength);
     }
 
 

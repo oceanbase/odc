@@ -33,7 +33,7 @@ import com.oceanbase.odc.service.worksheet.model.WorksheetResp;
 public interface WorksheetService {
     GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, Path path);
 
-    WorksheetMetaResp createWorksheet(Long projectId, Path createPath, String objectId);
+    WorksheetMetaResp createWorksheet(Long projectId, Path createPath, String objectId, Long totalLength);
 
     WorksheetResp getWorksheetDetails(Long projectId, Path path);
 

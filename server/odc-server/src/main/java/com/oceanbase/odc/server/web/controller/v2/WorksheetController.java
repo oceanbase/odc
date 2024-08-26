@@ -67,8 +67,9 @@ public class WorksheetController {
     public SuccessResponse<WorksheetMetaResp> createWorksheet(
             @PathVariable("projectId") Long projectId,
             @RequestParam("path") String path,
-            @RequestParam("objectKey") String objectKey) {
-        return Responses.success(worksheetServiceFacade.createWorksheet(projectId, path, objectKey));
+            @RequestParam("objectKey") String objectId,
+            @RequestParam("objectId") Long totalLength) {
+        return Responses.success(worksheetServiceFacade.createWorksheet(projectId, path, objectId, totalLength));
     }
 
     @GetMapping("/worksheets/{path}")

@@ -41,5 +41,6 @@ public class BatchUploadWorksheetsReq {
     public static class UploadWorksheetTuple {
         private String path;
         private String objectId;
+        private Long totalLength;
     }
 }

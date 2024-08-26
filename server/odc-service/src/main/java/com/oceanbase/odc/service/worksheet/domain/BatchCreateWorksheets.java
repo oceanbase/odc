@@ -39,12 +39,13 @@ public class BatchCreateWorksheets {
     @Getter
     private Path parentPath;
     @Getter
-    private final Map<Path, String> createPathToObjectIdMap;
+    private final Map<Path, UploadWorksheetTuple> createPathToObjectIdMap;
 
-    public BatchCreateWorksheets(Path createPath, String objectId) {
+    public BatchCreateWorksheets(Path createPath, String objectId, Long totalLength) {
         createPathToObjectIdMap = new HashMap<>();
         this.parentPath = getParentPath(createPath, objectId);
-        createPathToObjectIdMap.put(createPath, objectId);
+        createPathToObjectIdMap.put(createPath,
+                new UploadWorksheetTuple(createPath.getStandardPath(), objectId, totalLength));
     }
 
     public BatchCreateWorksheets(BatchUploadWorksheetsReq req) {
@@ -68,7 +69,7 @@ public class BatchCreateWorksheets {
                         new Object[] {ResourceType.ODC_WORKSHEET.getLocalizedMessage(), "name", path.getName()},
                         "duplicated path in request,create path: " + tuple.getPath());
             }
-            createPathToObjectIdMap.put(path, objectId);
+            createPathToObjectIdMap.put(path, tuple);
         }
     }
 
