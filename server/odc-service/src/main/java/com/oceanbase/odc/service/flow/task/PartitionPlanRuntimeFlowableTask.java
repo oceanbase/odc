@@ -85,7 +85,6 @@ public class PartitionPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Vo
         taskService.fail(taskId, 100, generateResult(false));
         super.onFailure(taskId, taskService);
         PartitionPlanTaskTraceContextHolder.clear();
-
     }
 
     @Override
