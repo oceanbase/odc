@@ -99,7 +99,7 @@ public interface CollaborationWorksheetRepository extends JpaRepository<Collabor
 
     @Modifying
     @Transactional
-    @Query("UPDATE CollaborationWorksheetEntity c SET c.isDeleted = true WHERE"
+    @Query("DELETE CollaborationWorksheetEntity c WHERE"
             + " c.projectId = :projectId AND c.path LIKE CONCAT(:path,'%')")
     int batchDeleteByPathLike(@Param("projectId") Long projectId, @Param("path") String path);
 
