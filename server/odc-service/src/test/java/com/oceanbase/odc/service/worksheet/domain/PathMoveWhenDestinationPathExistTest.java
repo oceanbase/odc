@@ -27,6 +27,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import com.oceanbase.odc.core.shared.exception.BadArgumentException;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
 
 @RunWith(Parameterized.class)
@@ -123,7 +124,7 @@ public class PathMoveWhenDestinationPathExistTest {
                 assertEquals(moved.get(), expectedPathAfterMove);
                 assertEquals(moved.get().getLevelNum(), expectedPathAfterMove.getLevelNum());
             }
-        } catch (BadArgumentException e) {
+        } catch (BadArgumentException | BadRequestException e) {
             assert !expectedResult;
         }
     }
