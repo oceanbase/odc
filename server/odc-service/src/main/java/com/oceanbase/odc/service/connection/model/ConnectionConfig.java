@@ -477,6 +477,61 @@ public class ConnectionConfig
         this.attributes.put(JDBC_URL_PARAMETERS_KEY, jdbcUrlParameters);
     }
 
+    public String getUsername() {
+        if (!StringUtils.contains(this.username, "@")) {
+            return this.username;
+        }
+        return this.username.substring(0, this.username.indexOf("@"));
+    }
+
+    public String getTenantName() {
+        if (!StringUtils.contains(this.username, "@")) {
+            return this.tenantName;
+        }
+        String tenant = this.username.substring(this.username.indexOf("@") + 1);
+        if (tenant.contains("#")) {
+            tenant = tenant.substring(0, tenant.indexOf("#"));
+        }
+        if (this.tenantName == null) {
+            return tenant;
+        } else if (!Objects.equals(this.tenantName, tenant)) {
+            throw new IllegalArgumentException("Username contains tenant name "
+                    + this.username + " which is not equals to the tenantName field " + this.tenantName);
+        }
+        return this.tenantName;
+    }
+
+    public String getOBTenantName() {
+        if (!StringUtils.contains(this.username, "@")) {
+            return this.OBTenantName;
+        }
+        String tenant = this.username.substring(this.username.indexOf("@") + 1);
+        if (tenant.contains("#")) {
+            tenant = tenant.substring(0, tenant.indexOf("#"));
+        }
+        if (this.OBTenantName == null) {
+            return tenant;
+        } else if (!Objects.equals(this.OBTenantName, tenant)) {
+            throw new IllegalArgumentException("Username contains tenant name "
+                    + this.username + " which is not equals to the OB tenantName field " + this.OBTenantName);
+        }
+        return this.OBTenantName;
+    }
+
+    public String getClusterName() {
+        if (!StringUtils.contains(this.username, "#")) {
+            return this.clusterName;
+        }
+        String cluster = this.username.substring(this.username.indexOf("#") + 1);
+        if (this.clusterName == null) {
+            return cluster;
+        } else if (!Objects.equals(this.clusterName, cluster)) {
+            throw new IllegalArgumentException("Username contains cluster name "
+                    + this.username + " which is not equals to the clusterName field " + this.clusterName);
+        }
+        return this.clusterName;
+    }
+
     public ConnectionInfo toConnectionInfo() {
         ConnectionInfo target = new ConnectionInfo();
         target.setConnectType(type);
