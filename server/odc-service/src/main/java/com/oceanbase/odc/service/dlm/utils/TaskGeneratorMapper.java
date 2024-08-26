@@ -36,14 +36,12 @@ public interface TaskGeneratorMapper {
 
     @Mapping(source = "generatorId", target = "id")
     @Mapping(source = "status", target = "generatorStatus")
-    @Mapping(target = "generatorType", constant = "AUTO")
     @Mapping(source = "partitionSavePoint", target = "generatorPartitionSavepoint")
     @Mapping(target = "generatorSavePoint",
             expression = "java(com.oceanbase.tools.migrator.common.element.PrimaryKey.valuesOf(entity.getPrimaryKeySavePoint()))")
     TaskGenerator entityToModel(TaskGeneratorEntity entity);
 
     @InheritInverseConfiguration
-    @Mapping(target = "type", constant = "AUTO")
     @Mapping(target = "primaryKeySavePoint",
             expression = "java(model.getGeneratorSavePoint() != null ?model.getGeneratorSavePoint().toSqlString():null)")
     @Mapping(target = "id", ignore = true)

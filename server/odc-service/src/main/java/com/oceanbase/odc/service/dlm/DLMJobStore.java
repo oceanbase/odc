@@ -43,8 +43,7 @@ import com.oceanbase.tools.migrator.common.exception.JobException;
 import com.oceanbase.tools.migrator.common.exception.JobSqlException;
 import com.oceanbase.tools.migrator.common.meta.TableMeta;
 import com.oceanbase.tools.migrator.core.IJobStore;
-import com.oceanbase.tools.migrator.core.handler.genarator.GeneratorStatus;
-import com.oceanbase.tools.migrator.core.handler.genarator.GeneratorType;
+import com.oceanbase.tools.migrator.core.generator.GeneratorStatus;
 import com.oceanbase.tools.migrator.core.meta.ClusterMeta;
 import com.oceanbase.tools.migrator.core.meta.JobMeta;
 import com.oceanbase.tools.migrator.core.meta.TaskMeta;
@@ -161,7 +160,6 @@ public class DLMJobStore implements IJobStore {
                 if (resultSet.next()) {
                     TaskGenerator taskGenerator = new TaskGenerator();
                     taskGenerator.setId(resultSet.getString("generator_id"));
-                    taskGenerator.setGeneratorType(GeneratorType.valueOf(resultSet.getString("type")));
                     taskGenerator.setGeneratorStatus(GeneratorStatus.valueOf(resultSet.getString("status")));
                     taskGenerator.setJobId(jobId);
                     taskGenerator.setTaskCount(resultSet.getInt("task_count"));
@@ -199,7 +197,7 @@ public class DLMJobStore implements IJobStore {
                 ps.setLong(3, taskGenerator.getProcessedDataSize());
                 ps.setLong(4, taskGenerator.getProcessedRowCount());
                 ps.setString(5, taskGenerator.getGeneratorStatus().name());
-                ps.setString(6, GeneratorType.AUTO.name());
+                ps.setString(6, "AUTO");
                 ps.setLong(7, taskGenerator.getTaskCount());
                 ps.setString(8, taskGenerator.getGeneratorSavePoint() == null ? ""
                         : taskGenerator.getGeneratorSavePoint().toSqlString());
