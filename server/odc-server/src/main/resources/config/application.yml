@@ -56,8 +56,9 @@ server:
     encoding:
       charset: UTF-8
   tomcat:
-    max-threads: 500
-    min-spare-threads: 18
+    threads:
+      max: 500
+      min-spare: 18
     keep-alive-timeout: 70000
 swagger:
   enabled: false
