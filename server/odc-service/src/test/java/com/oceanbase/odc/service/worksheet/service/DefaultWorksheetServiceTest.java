@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.worksheet.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
 import java.io.File;
@@ -36,6 +38,9 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.exception.BadArgumentException;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.worksheet.CollaborationWorksheetEntity;
 import com.oceanbase.odc.metadb.worksheet.CollaborationWorksheetRepository;
@@ -274,6 +279,262 @@ public class DefaultWorksheetServiceTest {
         assertEquals(result.size(), 1);
         assertEquals(result.get(0).getPath(), newPath.getStandardPath());
         verify(worksheetRepository).batchUpdatePath(anyMap());
+    }
+
+    @Test
+    public void moveWorksheet_renameSingle() {
+        Path oldPath = new Path("/Worksheets/old");
+        Path newPath = new Path("/Worksheets/new");
+
+        when(worksheetRepository.findByPathLikeWithFilter(projectId,
+                oldPath.getStandardPath(), null, null, null))
+                        .thenReturn(Collections.singletonList(newWorksheet(oldPath)));
+
+        List<WorksheetMetaResp> result =
+                defaultWorksheetService.moveWorksheet(projectId, oldPath, newPath, true);
+
+        assertNotNull(result);
+        assertEquals(result.size(), 1);
+        assertEquals(result.get(0).getPath(), newPath.getStandardPath());
+        verify(worksheetRepository).batchUpdatePath(anyMap());
+    }
+
+    @Test
+    public void moveWorksheet_rename_WithSub() {
+        Path oldPath = new Path("/Worksheets/old/");
+        Path oldSub1Path = new Path("/Worksheets/old/file1");
+        Path oldSub2Path = new Path("/Worksheets/old/sub1/");
+        Path oldSub3Path = new Path("/Worksheets/old/sub1/file1");
+        Path newPath = new Path("/Worksheets/new/");
+
+        when(worksheetRepository.findByPathLikeWithFilter(projectId,
+                oldPath.getStandardPath(), null, null, null))
+                        .thenReturn(Arrays.asList(newWorksheet(oldPath), newWorksheet(oldSub1Path),
+                                newWorksheet(oldSub2Path),
+                                newWorksheet(oldSub3Path)));
+
+        List<WorksheetMetaResp> result =
+                defaultWorksheetService.moveWorksheet(projectId, oldPath, newPath, true);
+
+        assertNotNull(result);
+        assertEquals(result.size(), 4);
+        assertEquals(
+                new HashSet<>(Arrays.asList("/Worksheets/new/", "/Worksheets/new/file1", "/Worksheets/new/sub1/",
+                        "/Worksheets/new/sub1/file1")),
+                result.stream().map(WorksheetMetaResp::getPath).collect(Collectors.toSet()));
+        verify(worksheetRepository).batchUpdatePath(anyMap());
+    }
+
+    @Test
+    public void moveWorksheet_rename_DuplicatedNameException() {
+        Path oldPath = new Path("/Worksheets/old");
+        Path newPath = new Path("/Worksheets/new");
+
+        // when(worksheetRepository.findByPathLikeWithFilter(projectId,
+        // oldPath.getStandardPath(), null, null, null))
+        // .thenReturn(Collections.singletonList(newWorksheet(oldPath)));
+        when(worksheetRepository.findByProjectIdAndPath(projectId,
+                newPath.getStandardPath()))
+                        .thenReturn(Optional.of(newWorksheet(newPath)));
+        try {
+            defaultWorksheetService.moveWorksheet(projectId, oldPath, newPath, true);
+            fail();
+        } catch (BadRequestException e) {
+            assert e.getErrorCode() == ErrorCodes.DuplicatedExists;
+        }
+    }
+
+    @Test
+    public void moveWorksheet_ExistDestinationPath_Single() {
+        Path oldPath = new Path("/Worksheets/old");
+        Path newPath = new Path("/Worksheets/new/");
+
+        when(worksheetRepository.findByPathLikeWithFilter(projectId,
+                oldPath.getStandardPath(), null, null, null))
+                        .thenReturn(Arrays.asList(newWorksheet(oldPath)));
+        when(worksheetRepository.findByProjectIdAndPath(projectId,
+                newPath.getStandardPath()))
+                        .thenReturn(Optional.of(newWorksheet(newPath)));
+
+        List<WorksheetMetaResp> result =
+                defaultWorksheetService.moveWorksheet(projectId, oldPath, newPath, false);
+
+        assertNotNull(result);
+        assertEquals(result.size(), 1);
+        assertEquals(
+                new HashSet<>(
+                        Arrays.asList("/Worksheets/new/old")),
+                result.stream().map(WorksheetMetaResp::getPath).collect(Collectors.toSet()));
+        verify(worksheetRepository).batchUpdatePath(anyMap());
+    }
+
+    @Test
+    public void moveWorksheet_ExistDestinationPath_Sub() {
+        Path oldPath = new Path("/Worksheets/old/");
+        Path oldSub1Path = new Path("/Worksheets/old/file1");
+        Path oldSub2Path = new Path("/Worksheets/old/sub1/");
+        Path oldSub3Path = new Path("/Worksheets/old/sub1/file1");
+        Path newPath = new Path("/Worksheets/new/");
+
+        when(worksheetRepository.findByPathLikeWithFilter(projectId,
+                oldPath.getStandardPath(), null, null, null))
+                        .thenReturn(Arrays.asList(newWorksheet(oldPath), newWorksheet(oldSub1Path),
+                                newWorksheet(oldSub2Path),
+                                newWorksheet(oldSub3Path)));
+        when(worksheetRepository.findByProjectIdAndPath(projectId,
+                newPath.getStandardPath()))
+                        .thenReturn(Optional.of(newWorksheet(newPath)));
+
+        List<WorksheetMetaResp> result =
+                defaultWorksheetService.moveWorksheet(projectId, oldPath, newPath, false);
+
+        assertNotNull(result);
+        assertEquals(result.size(), 4);
+        assertEquals(
+                new HashSet<>(
+                        Arrays.asList("/Worksheets/new/old/", "/Worksheets/new/old/file1", "/Worksheets/new/old/sub1/",
+                                "/Worksheets/new/old/sub1/file1")),
+                result.stream().map(WorksheetMetaResp::getPath).collect(Collectors.toSet()));
+        verify(worksheetRepository).batchUpdatePath(anyMap());
+    }
+
+    @Test
+    public void moveWorksheet_ExistDestinationPath_DuplicatedNameException() {
+        Path oldPath = new Path("/Worksheets/old/");
+        Path newPath = new Path("/Worksheets/new/");
+        Path movedPath = new Path("/Worksheets/new/old/");
+
+        // when(worksheetRepository.findByPathLikeWithFilter(projectId,
+        // oldPath.getStandardPath(), null, null, null))
+        // .thenReturn(Collections.singletonList(newWorksheet(oldPath)));
+        when(worksheetRepository.findByProjectIdAndPath(projectId,
+                newPath.getStandardPath()))
+                        .thenReturn(Optional.of(newWorksheet(newPath)));
+        when(worksheetRepository.findByProjectIdAndPath(projectId,
+                movedPath.getStandardPath()))
+                        .thenReturn(Optional.of(newWorksheet(movedPath)));
+        try {
+            defaultWorksheetService.moveWorksheet(projectId, oldPath, newPath, false);
+            fail();
+        } catch (BadRequestException e) {
+            assert e.getErrorCode() == ErrorCodes.DuplicatedExists;
+        }
+    }
+
+    @Test
+    public void moveWorksheet_ExistDestinationPath_DuplicatedNameException2() {
+        Path oldPath = new Path("/Worksheets/old");
+        Path newPath = new Path("/Worksheets/new");
+
+        // when(worksheetRepository.findByPathLikeWithFilter(projectId,
+        // oldPath.getStandardPath(), null, null, null))
+        // .thenReturn(Collections.singletonList(newWorksheet(oldPath)));
+        when(worksheetRepository.findByProjectIdAndPath(projectId,
+                newPath.getStandardPath()))
+                        .thenReturn(Optional.of(newWorksheet(newPath)));
+
+        try {
+            defaultWorksheetService.moveWorksheet(projectId, oldPath, newPath, false);
+            fail();
+        } catch (BadRequestException e) {
+            assert e.getErrorCode() == ErrorCodes.DuplicatedExists;
+        }
+    }
+
+    @Test
+    public void moveWorksheet_NotExistDestinationPath_Single() {
+        Path oldPath = new Path("/Worksheets/old");
+        Path newPath = new Path("/Worksheets/new");
+
+        when(worksheetRepository.findByPathLikeWithFilter(projectId,
+                oldPath.getStandardPath(), null, null, null))
+                        .thenReturn(Arrays.asList(newWorksheet(oldPath)));
+        when(worksheetRepository.findByProjectIdAndPath(projectId,
+                newPath.getStandardPath()))
+                        .thenReturn(Optional.empty());
+
+        List<WorksheetMetaResp> result =
+                defaultWorksheetService.moveWorksheet(projectId, oldPath, newPath, false);
+
+        assertNotNull(result);
+        assertEquals(result.size(), 1);
+        assertEquals(
+                new HashSet<>(
+                        Arrays.asList("/Worksheets/new")),
+                result.stream().map(WorksheetMetaResp::getPath).collect(Collectors.toSet()));
+        verify(worksheetRepository).batchUpdatePath(anyMap());
+    }
+
+
+    @Test
+    public void moveWorksheet_NotExistDestinationPath_Single2() {
+        Path oldPath = new Path("/Worksheets/old/");
+        Path newPath = new Path("/Worksheets/new/");
+
+        when(worksheetRepository.findByPathLikeWithFilter(projectId,
+                oldPath.getStandardPath(), null, null, null))
+                        .thenReturn(Arrays.asList(newWorksheet(oldPath)));
+        when(worksheetRepository.findByProjectIdAndPath(projectId,
+                newPath.getStandardPath()))
+                        .thenReturn(Optional.empty());
+
+        List<WorksheetMetaResp> result =
+                defaultWorksheetService.moveWorksheet(projectId, oldPath, newPath, false);
+
+        assertNotNull(result);
+        assertEquals(result.size(), 1);
+        assertEquals(
+                new HashSet<>(
+                        Arrays.asList("/Worksheets/new/")),
+                result.stream().map(WorksheetMetaResp::getPath).collect(Collectors.toSet()));
+        verify(worksheetRepository).batchUpdatePath(anyMap());
+    }
+
+    @Test
+    public void moveWorksheet_NotExistDestinationPath_Sub() {
+        Path oldPath = new Path("/Worksheets/old/");
+        Path oldSub1Path = new Path("/Worksheets/old/file1");
+        Path oldSub2Path = new Path("/Worksheets/old/sub1/");
+        Path oldSub3Path = new Path("/Worksheets/old/sub1/file1");
+        Path newPath = new Path("/Worksheets/new/");
+
+        when(worksheetRepository.findByPathLikeWithFilter(projectId,
+                oldPath.getStandardPath(), null, null, null))
+                        .thenReturn(Arrays.asList(newWorksheet(oldPath), newWorksheet(oldSub1Path),
+                                newWorksheet(oldSub2Path),
+                                newWorksheet(oldSub3Path)));
+        when(worksheetRepository.findByProjectIdAndPath(projectId,
+                newPath.getStandardPath()))
+                        .thenReturn(Optional.empty());
+
+        List<WorksheetMetaResp> result =
+                defaultWorksheetService.moveWorksheet(projectId, oldPath, newPath, false);
+
+        assertNotNull(result);
+        assertEquals(result.size(), 4);
+        assertEquals(
+                new HashSet<>(
+                        Arrays.asList("/Worksheets/new/", "/Worksheets/new/file1", "/Worksheets/new/sub1/",
+                                "/Worksheets/new/sub1/file1")),
+                result.stream().map(WorksheetMetaResp::getPath).collect(Collectors.toSet()));
+        verify(worksheetRepository).batchUpdatePath(anyMap());
+    }
+
+
+    @Test
+    public void moveWorksheet_NotExistDestinationPath_BadArgument() {
+        Path oldPath = new Path("/Worksheets/old");
+        Path newPath = new Path("/Worksheets/new/");
+
+        // when(worksheetRepository.findByPathLikeWithFilter(projectId,
+        // oldPath.getStandardPath(), null, null, null))
+        // .thenReturn(Arrays.asList(newWorksheet(oldPath)));
+        when(worksheetRepository.findByProjectIdAndPath(projectId,
+                newPath.getStandardPath()))
+                        .thenReturn(Optional.empty());
+
+        assertThrows(BadArgumentException.class,
+                () -> defaultWorksheetService.moveWorksheet(projectId, oldPath, newPath, false));
     }
 
     @Test

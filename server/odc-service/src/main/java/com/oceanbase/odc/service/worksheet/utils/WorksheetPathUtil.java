@@ -32,6 +32,8 @@ import org.apache.commons.lang.StringUtils;
 
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.model.WorksheetLocation;
@@ -196,29 +198,85 @@ public class WorksheetPathUtil {
     /**
      * Determine whether renaming is legal
      * 
-     * @param from
+     * @param renamePath
      * @param destinationPath
      * @return
      */
-    public static void renameValidCheck(Path from, Path destinationPath) {
-        PreConditions.notNull(from, "from");
+    public static void renameValidCheck(Path renamePath, Path destinationPath) {
+        PreConditions.notNull(renamePath, "renamePath");
         PreConditions.notNull(destinationPath, "destinationPath");
-        PreConditions.validArgumentState(from.getType() == destinationPath.getType(),
+        // The type of renamePath and destinationPath should be same
+        PreConditions.validArgumentState(renamePath.getType() == destinationPath.getType(),
                 ErrorCodes.BadArgument, null,
-                "the type of from:" + from + " and destinationPath:" + destinationPath + " is not same");
-        PreConditions.validArgumentState(from.canRename(),
-                ErrorCodes.BadArgument, null, from + " can't rename");
-        PreConditions.validArgumentState(destinationPath.canRename(),
+                "the type of renamePath:" + renamePath + " and destinationPath:" + destinationPath + " is not same");
+        // System define path cannot rename
+        PreConditions.validArgumentState(!renamePath.isSystemDefine(),
+                ErrorCodes.BadArgument, null, renamePath + " can't rename");
+        PreConditions.validArgumentState(!destinationPath.isSystemDefine(),
                 ErrorCodes.BadArgument, null, "same path:" + destinationPath + " cannot be rename");
         // Same path cannot be renamed
-        PreConditions.validArgumentState(destinationPath.canRename(),
+        PreConditions.validArgumentState(!renamePath.equals(destinationPath),
                 ErrorCodes.BadArgument, null,
-                "same path:" + destinationPath + " cannot be rename");
-        // The parent of from and destinationPath is same
+                "rename path is equals to destination path:" + destinationPath + " cannot be rename");
+        // The parents of renamePath and destinationPath should be same
         PreConditions.validArgumentState(
-                CollectionUtils.isEqualCollection(from.getParentPathItems(), destinationPath.getParentPathItems()),
+                CollectionUtils.isEqualCollection(renamePath.getParentPathItems(),
+                        destinationPath.getParentPathItems()),
                 ErrorCodes.BadArgument, null,
-                "the parent of from:" + from + " and destinationPath:" + destinationPath + " is not same");
+                "the parent of renamePath:" + renamePath + " and destinationPath:" + destinationPath + " is not same");
+    }
+
+    public static void moveValidCheck(Path movePath, Path destinationPath) {
+        PreConditions.notNull(movePath, "movePath");
+        PreConditions.notNull(destinationPath, "destinationPath");
+        // move path cannot be system define path(type=Root/Worksheets/Repos/Git_Repo)
+        PreConditions.validArgumentState(!movePath.isSystemDefine(),
+                ErrorCodes.BadArgument, null, movePath + " can't move");
+        // destination path cannot be type=Root/Repos path
+        PreConditions.validArgumentState(destinationPath.getType() != WorksheetType.ROOT
+                && destinationPath.getType() != WorksheetType.REPOS,
+                ErrorCodes.BadArgument, null, movePath + " can't move");
+        // the location between movePath and destinationPath must be same;
+        PreConditions.validArgumentState(movePath.getLocation() == destinationPath.getLocation(),
+                ErrorCodes.BadArgument, null,
+                "the location of movePath:" + movePath + " and destinationPath:" + destinationPath + " is not same");
+        // movePath cannot be the parent of destinationPath;
+        PreConditions.validArgumentState(
+                !destinationPath.isChildOfAny(movePath),
+                ErrorCodes.BadArgument, null,
+                "movePath:" + movePath + " cannot be the parent of destinationPath:" + destinationPath);
+        // Same path cannot be moved
+        PreConditions.validArgumentState(!movePath.equals(destinationPath),
+                ErrorCodes.BadArgument, null,
+                "move path is equals to destination path:" + destinationPath + " ,cannot be moved");
+
+        // destinationPath can't be a file when movePath is a directory.
+        PreConditions.validArgumentState(!(movePath.isDirectory() && destinationPath.isFile()),
+                ErrorCodes.BadArgument, null,
+                "destinationPath:" + destinationPath + " can't be a file when movePath:" + movePath
+                        + " is a directory");
+    }
+
+    public static void moveValidCheckWhenDestinationPathExist(Path movePath, Path destinationPath) {
+        // when destinationPath has existed,movePath and destinationPath cannot both be files at the same
+        // time
+        if (movePath.isFile() && destinationPath.isFile()) {
+            throw new BadRequestException(ErrorCodes.DuplicatedExists,
+                    new Object[] {ResourceType.ODC_WORKSHEET.getLocalizedMessage(), "destinationPath", destinationPath},
+                    "duplicated path name for rename or move,movePath:" + movePath
+                            + ",destinationPath:" + destinationPath);
+        }
+    }
+
+    public static void moveValidCheckWhenDestinationPathNotExist(Path movePath, Path destinationPath) {
+        // when destinationPath is not exist and movePath is file, the destinationPath must not be a
+        // directory/Worksheets/GitRepo.
+        PreConditions.validArgumentState(!(movePath.isFile()
+                && (destinationPath.isDirectory() || destinationPath.isWorksheets() || destinationPath.isGitRepo())),
+                ErrorCodes.BadArgument, null,
+                "when destinationPath is not exist and movePath:" + movePath
+                        + " is file, the destinationPath:" + destinationPath + " must not be a"
+                        + " directory/Worksheets/GitRepo");
     }
 
     public static Path findCommonPath(Set<Path> paths) {

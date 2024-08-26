@@ -190,32 +190,6 @@ public class Path {
 
     }
 
-    public List<Path> getAllNotRootParents() {
-        if (isSystemDefine()) {
-            return new ArrayList<>();
-        }
-        List<Path> result = new ArrayList<>();
-        for (int i = 0; i < this.levelNum - 1; i++) {
-            Path parent = Path.ofDirectory(this.parentPathItems.subList(0, i + 1));
-            if (parent.isSystemDefine()) {
-                continue;
-            }
-            result.add(parent);
-        }
-        return result;
-
-    }
-
-    public boolean isChildInDepth(Path parent, int depth) {
-        if (!isChildOfAny(parent)) {
-            return false;
-        }
-        if (depth <= 0) {
-            return true;
-        }
-        return this.levelNum <= parent.levelNum + depth;
-    }
-
     public boolean isChildOfAny(Path... parents) {
         if (parents == null || parents.length == 0) {
             return false;
@@ -264,17 +238,6 @@ public class Path {
             index++;
         }
         return false;
-    }
-
-    public boolean isSameParentAtPrevLevel(Path path) {
-        if (path.isRoot()) {
-            return false;
-        }
-        if (this.levelNum < path.getLevelNum()) {
-            return false;
-        }
-        return CollectionUtils.isEqualCollection(this.parentPathItems.subList(0, path.getLevelNum() - 1),
-                path.getParentPathItems());
     }
 
     /**
@@ -351,7 +314,7 @@ public class Path {
      * @return is renamed
      */
     public boolean rename(Path renamePath, Path destinationPath) {
-        if (!this.isRenameMatch(renamePath)) {
+        if (!this.canMoveFrom(renamePath)) {
             return false;
         }
         // This is renaming the {@param renamePath} itself
@@ -365,13 +328,75 @@ public class Path {
     }
 
     /**
+     * Move current from {@param movePath} to {@param destinationPath},and {@param destinationPath} has
+     * existed. Will create {@param movePath} in {@param destinationPath}.
+     * 
+     * @param movePath
+     * @param destinationPath
+     * @return
+     */
+    public Optional<Path> moveWhenDestinationPathExist(Path movePath, Path destinationPath) {
+        // move {@param movePath} itself to {@param destinationPath}
+        if (this.equals(movePath)) {
+            Path resultPath = this.clone();
+            resultPath.parentPathItems = new ArrayList<>(destinationPath.getParentPathItems());
+            resultPath.parentPathItems.add(destinationPath.name);
+            resultPath.levelNum = destinationPath.levelNum + 1;
+            return Optional.of(resultPath.clone());
+        }
+        // move the sub items of {@param movePath} to {@param destinationPath}
+        if (isChildOfAny(movePath)) {
+            Path resultPath = this.clone();
+            List<String> resultParentPathItems = new ArrayList<>(destinationPath.parentPathItems);
+            resultParentPathItems.add(destinationPath.name);
+            resultParentPathItems.addAll(this.parentPathItems.subList(movePath.levelNum - 1, this.levelNum - 1));
+            resultPath.parentPathItems = resultParentPathItems;
+            resultPath.levelNum = this.levelNum - movePath.levelNum + destinationPath.levelNum + 1;
+            return Optional.of(resultPath);
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Move current from {@param movePath} to {@param destinationPath},and {@param destinationPath} not
+     * exist. Will rename {@param movePath} to {@param destinationPath}.
+     * 
+     * @param movePath
+     * @param destinationPath
+     * @return
+     */
+    public Optional<Path> moveWhenDestinationPathNotExist(Path movePath, Path destinationPath) {
+        // move {@param movePath} itself to {@param destinationPath}
+        if (this.equals(movePath)) {
+            Path resultPath = this.clone();
+            resultPath.parentPathItems = new ArrayList<>(destinationPath.getParentPathItems());
+            resultPath.name = destinationPath.name;
+            resultPath.levelNum = destinationPath.levelNum;
+            return Optional.of(resultPath);
+        }
+        // move the sub items of {@param movePath} to {@param destinationPath}
+        if (isChildOfAny(movePath)) {
+            Path resultPath = this.clone();
+            List<String> resultParentPathItems = new ArrayList<>(destinationPath.parentPathItems);
+            resultParentPathItems.add(destinationPath.name);
+            if (this.parentPathItems.size() > movePath.levelNum) {
+                resultParentPathItems.addAll(this.parentPathItems.subList(movePath.levelNum, this.levelNum - 1));
+            }
+            resultPath.parentPathItems = resultParentPathItems;
+            resultPath.levelNum = this.levelNum - movePath.levelNum + destinationPath.levelNum;
+            return Optional.of(resultPath);
+        }
+        return Optional.empty();
+    }
+
+    /**
      * Matching rule: The current {@link Path} is either the same as {@param from} or a subset of
      * {@param from}
      * 
      * @param from
      * @return
      */
-    public boolean isRenameMatch(Path from) {
+    public boolean canMoveFrom(Path from) {
         // current {@link Path} is same as {@param from}
         if (this.equals(from)) {
             return true;
@@ -388,15 +413,6 @@ public class Path {
      */
     public boolean isNameContains(String name) {
         return this.name.contains(name);
-    }
-
-    /**
-     * if the path is system define, can not rename
-     * 
-     * @return
-     */
-    public boolean canRename() {
-        return !this.isSystemDefine();
     }
 
     /**
@@ -462,6 +478,16 @@ public class Path {
         if (isDirectory()) {
             throw new IllegalArgumentException("can not get download url for directory,path" + this);
         }
+    }
+
+    public Path clone() {
+        Path path = new Path();
+        path.parentPathItems = this.parentPathItems;
+        path.name = this.name;
+        path.levelNum = this.levelNum;
+        path.type = this.type;
+        path.location = this.location;
+        return path;
     }
 
     @Override

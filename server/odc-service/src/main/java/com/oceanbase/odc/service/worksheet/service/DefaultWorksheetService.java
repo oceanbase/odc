@@ -282,69 +282,135 @@ public class DefaultWorksheetService implements WorksheetService {
 
     @Override
     public List<WorksheetMetaResp> renameWorksheet(Long projectId, Path path, Path destinationPath) {
-        pathOrNameTooLongCheck(Collections.singleton(destinationPath));
-        WorksheetPathUtil.renameValidCheck(path, destinationPath);
-        renameDuplicatedCheck(projectId, path, destinationPath);
-        List<CollaborationWorksheetEntity> entities = worksheetRepository.findByPathLikeWithFilter(projectId,
-                path.getStandardPath(), null, null, null);
-        renamePathNotFoundCheck(projectId, path, entities);
+        return moveWorksheet(projectId, path, destinationPath, true);
+    }
 
-        Set<CollaborationWorksheetEntity> renamedEntities = doRename(path, destinationPath, entities);
-        if (CollectionUtils.isEmpty(renamedEntities)) {
+    /**
+     * move {@param path} to {@param destinationPath}
+     * <p>
+     * the situations cannot be moved
+     * <ol>
+     * <li>movePath= Root/Worksheets/Repos/Git_Repo;</li>
+     * <li>destinationPath=Root/Repos;</li>
+     * <li>the location between movePath and destinationPath is different;</li>
+     * <li>movePath is parent of destinationPath;</li>
+     * <li>movePath is same to destinationPath;</li>
+     * <li>movePath is directory, destinationPath is file</li>
+     * <li>movePath is file, destinationPath is file，and destinationPath has existed</li>
+     * <li>movePath is file, destinationPath is directory/Worksheets/Git_Repo，and destinationPath is not
+     * exist</li>
+     * </ol>
+     * 
+     * the situations can be moved
+     * <ol>
+     * <li>movePath is file, destinationPath is file，and destinationPath is not exist,rename movePath to
+     * destinationPath</li>
+     * <li>movePath is file, destinationPath is directory/Worksheets/Git_Repo, destinationPath has
+     * existed,create movePath in destinationPath</li>
+     * <li>movePath is directory,destinationPath is directory/Worksheets/Git_Repo;if destinationPath
+     * exist,create movePath in destinationPath；if destinationPath not exist(Worksheets/Git_Repo is
+     * default exist,so destinationPath only be directory),rename movePath to destinationPath</li>
+     * </ol>
+     * 
+     * @param projectId
+     * @param path
+     * @param destinationPath
+     * @return
+     */
+    public List<WorksheetMetaResp> moveWorksheet(Long projectId, Path path, Path destinationPath, boolean isRename) {
+        pathOrNameTooLongCheck(Collections.singleton(destinationPath));
+        WorksheetPathUtil.moveValidCheck(path, destinationPath);
+        if (isRename) {
+            WorksheetPathUtil.renameValidCheck(path, destinationPath);
+            duplicatedNameCheck(projectId, path, destinationPath);
+        }
+        boolean isDestinationExist = destinationPath.isSystemDefine();
+        if (!isDestinationExist) {
+            isDestinationExist =
+                    worksheetRepository.findByProjectIdAndPath(projectId, destinationPath.getStandardPath())
+                            .isPresent();
+        }
+        Optional<Path> movedPathOptional = Optional.empty();
+        if (isDestinationExist) {
+            WorksheetPathUtil.moveValidCheckWhenDestinationPathExist(path, destinationPath);
+            movedPathOptional = path.moveWhenDestinationPathExist(path, destinationPath);
+
+        } else {
+            WorksheetPathUtil.moveValidCheckWhenDestinationPathNotExist(path, destinationPath);
+            movedPathOptional = path.moveWhenDestinationPathNotExist(path, destinationPath);
+        }
+        PreConditions.validArgumentState(movedPathOptional.isPresent(),
+                ErrorCodes.BadArgument, null,
+                "path:" + path + " move to destinationPath:" + destinationPath + " failed");
+        duplicatedNameCheck(projectId, path, movedPathOptional.get());
+        List<CollaborationWorksheetEntity> currentAndSubEntities =
+                worksheetRepository.findByPathLikeWithFilter(projectId,
+                        path.getStandardPath(), null, null, null);
+        pathNotFoundCheck(projectId, path, currentAndSubEntities);
+
+        Set<CollaborationWorksheetEntity> movedEntities =
+                doMove(path, destinationPath, currentAndSubEntities, isDestinationExist);
+        if (CollectionUtils.isEmpty(movedEntities)) {
             return new ArrayList<>();
         }
-        worksheetRepository.batchUpdatePath(renamedEntities.stream()
+        worksheetRepository.batchUpdatePath(movedEntities.stream()
                 .collect(Collectors.toMap(CollaborationWorksheetEntity::getId, CollaborationWorksheetEntity::getPath)));
 
-        return renamedEntities.stream().map(WorksheetConverter::convertEntityToMetaResp)
+        return movedEntities.stream().map(WorksheetConverter::convertEntityToMetaResp)
                 .collect(Collectors.toList());
     }
 
-    private Set<CollaborationWorksheetEntity> doRename(Path path, Path destinationPath,
+    private void pathNotFoundCheck(Long projectId, Path opPath,
             List<CollaborationWorksheetEntity> renameAndSubEntities) {
+        boolean hasPath = false;
+        for (CollaborationWorksheetEntity worksheet : renameAndSubEntities) {
+            Path path = new Path(worksheet.getPath());
+            if (path.equals(opPath)) {
+                hasPath = true;
+            }
+        }
+        if (!hasPath) {
+            throw new NotFoundException(ErrorCodes.NotFound,
+                    new Object[] {ResourceType.ODC_WORKSHEET.getLocalizedMessage(), "path",
+                            opPath},
+                    "can't find path, projectId:" + projectId + "path:" + opPath);
+        }
+    }
+
+    private Set<CollaborationWorksheetEntity> doMove(Path path, Path destinationPath,
+            List<CollaborationWorksheetEntity> renameAndSubEntities, boolean isDestinationExist) {
         Set<CollaborationWorksheetEntity> changedWorksheets = new HashSet<>();
         if (CollectionUtils.isEmpty(renameAndSubEntities)) {
             return changedWorksheets;
         }
         for (CollaborationWorksheetEntity subFile : renameAndSubEntities) {
             Path subPath = new Path(subFile.getPath());
-            if (subPath.rename(path, destinationPath)) {
-                subFile.setPath(subPath.getStandardPath());
+            Optional<Path> movePathOptional =
+                    isDestinationExist ? subPath.moveWhenDestinationPathExist(path, destinationPath)
+                            : subPath.moveWhenDestinationPathNotExist(path, destinationPath);
+            if (movePathOptional.isPresent()) {
+                subFile.setPath(movePathOptional.get().getStandardPath());
+                subFile.setLevelNum(movePathOptional.get().getLevelNum());
+                subFile.setExtension(movePathOptional.get().getExtension());
                 changedWorksheets.add(subFile);
-            }
-            if (changedWorksheets.size() > CHANGE_FILE_NUM_LIMIT - 1) {
-                throw new OverLimitException(LimitMetric.WORKSHEET_CHANGE_NUM, (double) CHANGE_FILE_NUM_LIMIT,
-                        "change num is over limit " + CHANGE_FILE_NUM_LIMIT);
+
+                if (changedWorksheets.size() > CHANGE_FILE_NUM_LIMIT - 1) {
+                    throw new OverLimitException(LimitMetric.WORKSHEET_CHANGE_NUM, (double) CHANGE_FILE_NUM_LIMIT,
+                            "change num is over limit " + CHANGE_FILE_NUM_LIMIT);
+                }
             }
         }
         return changedWorksheets;
     }
 
-    private void renamePathNotFoundCheck(Long projectId, Path renamePath,
-            List<CollaborationWorksheetEntity> renameAndSubEntities) {
-        boolean hasRenamePath = false;
-        for (CollaborationWorksheetEntity worksheet : renameAndSubEntities) {
-            Path path = new Path(worksheet.getPath());
-            if (path.equals(renamePath)) {
-                hasRenamePath = true;
-            }
-        }
-        if (!hasRenamePath) {
-            throw new NotFoundException(ErrorCodes.NotFound,
-                    new Object[] {ResourceType.ODC_WORKSHEET.getLocalizedMessage(), "renamePath",
-                            renamePath},
-                    "can't find renamePath, projectId:" + projectId + "renamePath:" + renamePath);
-        }
-    }
-
-    private void renameDuplicatedCheck(Long projectId, Path path, Path destinationPath) {
+    private void duplicatedNameCheck(Long projectId, Path path, Path destinationPath) {
         Optional<CollaborationWorksheetEntity> existWorksheets = worksheetRepository.findByProjectIdAndPath(
                 projectId, destinationPath.getStandardPath());
         if (existWorksheets.isPresent()) {
             throw new BadRequestException(ErrorCodes.DuplicatedExists,
-                    new Object[] {ResourceType.ODC_WORKSHEET.getLocalizedMessage(), "path", destinationPath},
-                    "duplicated path name for rename,projectId:" + projectId + ",path:" + path + ",destinationPath:"
-                            + destinationPath);
+                    new Object[] {ResourceType.ODC_WORKSHEET.getLocalizedMessage(), "destinationPath", destinationPath},
+                    "duplicated path name for rename or move,projectId:" + projectId + ",path:" + path
+                            + ",destinationPath:" + destinationPath);
         }
     }
 
