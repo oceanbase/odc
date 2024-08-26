@@ -56,11 +56,10 @@ public class LogBizImpl implements LogBiz {
     }
 
     @Override
-    public InputStreamResource downloadLog(Long jobId) {
-        log.info("Accept full log request, job id = {}, logType = {}.", jobId, OdcTaskLogLevel.ALL);
-        return new InputStreamResource(
-                FileUtil.getInputStream(LogUtils.getTaskLogFileWithPath(jobId, OdcTaskLogLevel.ALL))
-        );
+    public InputStreamResource downloadLog(Long jobId, String logType) {
+        log.info("Accept download log request, job id = {}, logType = {}.", jobId, logType);
+        String logFilePath = LogUtils.getTaskLogFileWithPath(jobId, OdcTaskLogLevel.valueOf(logType));
+        return new InputStreamResource(FileUtil.getInputStream(logFilePath));
     }
 
     @Override

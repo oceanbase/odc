@@ -29,7 +29,6 @@ import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.util.JobUtils;
-
 import io.netty.handler.codec.http.HttpMethod;
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,7 +54,7 @@ public class RequestHandler {
 
     public SuccessResponse<Object> process(HttpMethod httpMethod, String uri, String requestData) {
 
-        if (uri == null || uri.trim().length() == 0) {
+        if (uri == null || uri.trim().isEmpty()) {
             return Responses.single("request error: uri is empty.");
         }
 
@@ -63,10 +62,9 @@ public class RequestHandler {
             // services mapping
             String path = UrlUtils.getPath(uri);
             Matcher matcher = downloadLogUrlPattern.matcher(path);
-            log.info("requestHandler path = {}", path);
             if (matcher.find()) {
-                log.info("download RequestHandler find success!");
-                return Responses.single(executorBiz.downloadLog(Long.parseLong(matcher.group(1))));
+                return Responses.single(executorBiz.downloadLog(Long.parseLong(matcher.group(1)),
+                        UrlUtils.getQueryParameterFirst(uri, "logType")));
             }
             matcher = logUrlPattern.matcher(path);
             if (matcher.find()) {

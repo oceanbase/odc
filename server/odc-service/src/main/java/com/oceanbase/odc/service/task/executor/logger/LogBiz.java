@@ -32,7 +32,7 @@ public interface LogBiz {
 
     String getLog(Long jobId, String logType, Long fetchMaxLine, Long fetchMaxByteSize);
 
-    InputStreamResource downloadLog(Long jobId);
+    InputStreamResource downloadLog(Long jobId, String logType);
 
     Map<String, String> uploadLogFileToCloudStorage(JobIdentity ji, CloudObjectStorageService cloudObjectStorageService)
             throws IOException;
