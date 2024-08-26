@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.JarURLConnection;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -35,6 +34,8 @@ import java.util.jar.JarFile;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.Validate;
+
+import com.oceanbase.odc.common.lang.Pair;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -79,21 +80,30 @@ public class ResourceUtils {
      */
     public static List<ResourceInfo> listResourcesFromDirectory(String location) {
         Validate.notEmpty(location, "parameter location may not be null");
-        URL url = ResourceUtils.class.getClassLoader().getResource(location);
-        if (url == null) {
-            throw new RuntimeException(String.format("folder '%s' not exists", location));
-        }
-        URI uri;
+        List<Pair<URL, URI>> url2uris = new ArrayList<>();
         try {
-            uri = url.toURI();
-        } catch (URISyntaxException e) {
+            Enumeration<URL> urls = ResourceUtils.class.getClassLoader().getResources(location);
+            if (urls == null) {
+                throw new RuntimeException(String.format("folder '%s' not exists", location));
+            }
+            while (urls.hasMoreElements()) {
+                URL url = urls.nextElement();
+                url2uris.add(new Pair<>(url, url.toURI()));
+            }
+        } catch (Exception e) {
             throw new RuntimeException(
                     String.format("cannot convert url to uri, folder '%s' may not exists", location), e);
         }
-        if (uri.getScheme().contains("jar")) {
-            return listResourcesFromJarPackage(url);
+        List<ResourceInfo> results = new ArrayList<>();
+        for (Pair<URL, URI> url2uri : url2uris) {
+            URI uri = url2uri.right;
+            if (uri.getScheme().contains("jar")) {
+                results.addAll(listResourcesFromJarPackage(url2uri.left));
+            } else {
+                results.addAll(listResourcesFromFileSystem(uri));
+            }
         }
-        return listResourcesFromFileSystem(uri);
+        return results;
     }
 
     private static List<ResourceInfo> listResourcesFromFileSystem(URI uri) {
