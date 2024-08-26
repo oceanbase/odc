@@ -25,6 +25,7 @@ import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
+import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 
 /**
  * @Author：tinker
@@ -53,6 +54,8 @@ public interface ScheduleTaskMapper {
                 return JsonUtils.fromJson(entity.getParametersJson(), DataArchiveClearParameters.class);
             case DATA_ARCHIVE_ROLLBACK:
                 return JsonUtils.fromJson(entity.getParametersJson(), DataArchiveRollbackParameters.class);
+            case ONLINE_SCHEMA_CHANGE_COMPLETE:
+                return JsonUtils.fromJson(entity.getParametersJson(), OnlineSchemaChangeParameters.class);
             default:
                 throw new UnsupportedException();
         }
