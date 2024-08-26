@@ -111,10 +111,4 @@ public class ObjectMetadataEntity {
     @Column(name = "status", nullable = false)
     @Enumerated(value = EnumType.STRING)
     private ObjectUploadStatus status;
-
-    /**
-     * edit version,used for conflict check
-     */
-    @Column(name = "version", nullable = false)
-    private long version;
 }

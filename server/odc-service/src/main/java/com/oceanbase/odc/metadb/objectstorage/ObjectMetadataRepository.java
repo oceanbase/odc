@@ -101,32 +101,4 @@ public interface ObjectMetadataRepository extends OdcJpaRepository<ObjectMetadat
     Set<Long> findAllObjectIdByBucketAndNameLikeAndStatus(@Param("bucketName") String bucketName,
             @Param("objectName") String objectNameLike,
             @Param("status") ObjectUploadStatus status);
-
-
-    @Query("SELECT e FROM ObjectMetadataEntity e WHERE e.bucketName=:bucketName and e.objectName LIKE CONCAT('',:objectNameLeftLike,'%') and e.status=:status")
-    List<ObjectMetadataEntity> findAllByBucketNameAndObjectNameLeftLikeAndStatus(@Param("bucketName") String bucketName,
-            @Param("objectNameLeftLike") String objectNameLeftLike, @Param("status") ObjectUploadStatus status);
-
-    @Query("SELECT e FROM ObjectMetadataEntity e WHERE e.bucketName=:bucketName and e.objectName = :objectName and e.status=:status")
-    List<ObjectMetadataEntity> findAllByBucketNameAndObjectNameAndStatus(@Param("bucketName") String bucketName,
-            @Param("objectName") String objectName, @Param("status") ObjectUploadStatus status);
-
-    @Query("SELECT e FROM ObjectMetadataEntity e WHERE e.bucketName=:bucketName and e.objectName LIKE CONCAT('',:objectNameLeftLike,'%') and e.status=:status")
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    List<ObjectMetadataEntity> findAllByBucketNameAndObjectNameLeftLikeAndStatusWithLock(
-            @Param("bucketName") String bucketName,
-            @Param("objectNameLeftLike") String objectNameLeftLike, @Param("status") ObjectUploadStatus status);
-
-    @Query("SELECT e FROM ObjectMetadataEntity e WHERE e.bucketName=:bucketName and e.objectName LIKE CONCAT(:objectNameLeftLike,'%')  "
-            + "and e.objectName LIKE CONCAT('%',:objectNameLike,'%') and e.status=:status")
-    List<ObjectMetadataEntity> findAllByBucketNameAndObjectNameLeftLikeAndNameLikeAndStatus(
-            @Param("bucketName") String bucketName,
-            @Param("objectNameLeftLike") String objectNameLeftLike,
-            @Param("objectNameLike") String objectNameLike,
-            @Param("status") ObjectUploadStatus status);
-
-    @Query("SELECT e FROM ObjectMetadataEntity e WHERE e.bucketName=:bucketName and e.objectName IN (:objectNames)")
-    List<ObjectMetadataEntity> findByProjectIdAndNames(
-            @Param("bucketName") String bucketName,
-            @Param("objectNames") List<String> objectNames);
 }
