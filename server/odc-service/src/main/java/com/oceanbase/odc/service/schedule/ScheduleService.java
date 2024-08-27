@@ -325,7 +325,7 @@ public class ScheduleService {
         }
 
         if (targetSchedule.getType() == ScheduleType.SQL_PLAN) {
-            log.info("sql plan is not executed for the moment");
+            log.info("sql plan is not executed for the moment, scheduleId={}", targetSchedule.getId());
             return;
         }
 
@@ -635,7 +635,7 @@ public class ScheduleService {
 
     public Page<ScheduleTaskListOverview> listScheduleTaskOverviewByScheduleType(@NotNull Pageable pageable,
             @NotNull QueryScheduleTaskParams params) {
-        log.info("List schedule task overview req:{}", params);
+        log.info("List schedule task overview req, params={}", params);
         if (params.getDataSourceIds() == null) {
             params.setDataSourceIds(new HashSet<>());
         }

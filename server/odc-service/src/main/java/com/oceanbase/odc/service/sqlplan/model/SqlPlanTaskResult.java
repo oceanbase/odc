@@ -20,13 +20,13 @@ import lombok.Data;
 @Data
 public class SqlPlanTaskResult {
 
-    private Long totalFireCount;
+    private Long totalStatements;
 
-    private Long finishedFireCount;
+    private Long finishedStatements;
 
-    private Long successFireCount;
+    private Long successStatements;
 
-    private Long failedFireCount;
+    private Long failedStatements;
 
     private String failedRecords;
 }
