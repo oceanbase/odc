@@ -38,18 +38,18 @@ public interface ResourceRepository extends JpaRepository<ResourceEntity, Long>,
     @Transactional
     @Query(value = "update task_resource set "
             + " status=:status ,"
-            + " where group = :#{#resourceID.getGroup()} and name = :#{#resourceID.getName()}", nativeQuery = true)
+            + " where region = :#{#resourceID.getRegion()} and group_name = :#{#resourceID.getGroup()}  and namespace = :#{#resourceID.getNamespace()} and name = :#{#resourceID.getName()}", nativeQuery = true)
     @Modifying
     int updateResourceStatus(@Param("resourceID") ResourceID resourceID, @Param("status") String resourceState);
 
     @Transactional
     @Query(value = "delete from task_resource  "
-            + " where group = :#{#resourceID.getGroup()} and name = :#{#resourceID.getName()} limit 1",
+            + " where region = :#{#resourceID.getRegion()} and group_name = :#{#resourceID.getGroup()}  and namespace = :#{#resourceID.getNamespace()} and name = :#{#resourceID.getName()} limit 1",
             nativeQuery = true)
     @Modifying
     int deleteResource(@Param("resourceID") ResourceID resourceID);
 
-    @Query(value = "SELECT * FROM task_resource WHERE group = :#{#resourceID.getGroup()} and name = :#{#resourceID.getName()}",
+    @Query(value = "SELECT * FROM task_resource WHERE region = :#{#resourceID.getRegion()} and group_name = :#{#resourceID.getGroup()}  and namespace = :#{#resourceID.getNamespace()} and name = :#{#resourceID.getName()}",
             nativeQuery = true)
-    Optional<ResourceEntity> findByResourceID(@Param("param") ResourceID resourceID);
+    Optional<ResourceEntity> findByResourceID(@Param("resourceID") ResourceID resourceID);
 }

@@ -46,7 +46,7 @@ import lombok.ToString;
 @ToString
 @Table(name = "task_resource")
 public class ResourceEntity {
-    public static final String CREATE_TIME = "create_time";
+    public static final String CREATE_TIME = "createTime";
     public static final String STATUS = "status";
     /**
      * id for task
@@ -60,7 +60,7 @@ public class ResourceEntity {
      * record insertion time
      */
     @Generated(GenerationTime.ALWAYS)
-    @Column(name = CREATE_TIME, insertable = false, updatable = false,
+    @Column(name = "create_time", insertable = false, updatable = false,
             columnDefinition = "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP")
     private Date createTime;
 
