@@ -63,7 +63,7 @@ import lombok.extern.slf4j.Slf4j;
 public class OmsCreateDataTaskAction implements Action<OscActionContext, OscActionResult> {
     protected final DataSourceOpenApiService dataSourceOpenApiService;
 
-    private final OmsProjectOpenApiService projectOpenApiService;
+    protected final OmsProjectOpenApiService projectOpenApiService;
 
     protected final OnlineSchemaChangeProperties oscProperties;
 
@@ -153,10 +153,11 @@ public class OmsCreateDataTaskAction implements Action<OscActionContext, OscActi
         projectOpenApiService.startProject(request);
     }
 
-    private CreateOmsProjectRequest getCreateProjectRequest(String omsDsId, Long scheduleId,
+    protected CreateOmsProjectRequest getCreateProjectRequest(String omsDsId, Long scheduleId,
             OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters,
             OnlineSchemaChangeParameters oscParameters) {
         CreateOmsProjectRequest request = new CreateOmsProjectRequest();
+        fillCreateProjectRequest(omsDsId, scheduleId, oscScheduleTaskParameters, request);
         if (oscProperties.isEnableFullVerify()) {
             request.setEnableFullVerify(oscProperties.isEnableFullVerify());
         }
@@ -195,6 +196,12 @@ public class OmsCreateDataTaskAction implements Action<OscActionContext, OscActi
         return request;
     }
 
+    /**
+     * fill remain variables if needed
+     */
+    protected void fillCreateProjectRequest(String omsDsId, Long scheduleId,
+            OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters, CreateOmsProjectRequest request) {}
+
     private CreateOceanBaseDataSourceRequest getCreateDataSourceRequest(ConnectionConfig config,
             ConnectionSession connectionSession, OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters) {
 
@@ -207,11 +214,14 @@ public class OmsCreateDataTaskAction implements Action<OscActionContext, OscActi
         if (config.getPassword() != null) {
             request.setPassword(Base64.getEncoder().encodeToString(config.getPassword().getBytes()));
         }
-        doCreateDataSourceRequest(config, connectionSession, oscScheduleTaskParameters, request);
+        fillCreateDataSourceRequest(config, connectionSession, oscScheduleTaskParameters, request);
         return request;
     }
 
-    protected void doCreateDataSourceRequest(ConnectionConfig config, ConnectionSession connectionSession,
+    /**
+     * fill remain variables if needed
+     */
+    protected void fillCreateDataSourceRequest(ConnectionConfig config, ConnectionSession connectionSession,
             OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters,
             CreateOceanBaseDataSourceRequest request) {
         request.setIp(config.getHost());
