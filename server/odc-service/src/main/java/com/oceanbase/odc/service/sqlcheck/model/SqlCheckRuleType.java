@@ -245,7 +245,7 @@ public enum SqlCheckRuleType implements Translatable {
      */
     TRUNCATE_TBLE_EXISTS("truncate-table-exists"),
     /**
-     * 限制 SQL 执行影响行数，默认影响超过 1000 行时，拦截
+     * Restrict the number of lines affected by SQL
      */
     RESTRICT_SQL_AFFECTED_ROWS("restrict-sql-affected-rows");
 
