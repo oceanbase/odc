@@ -32,10 +32,21 @@ public class ThirdPartyOutputConverter {
                 File dest = getDestFile(input, outPutConverter.getNewFilePrefix());
 
                 outPutConverter.toObLoaderDumperCompatibleFormat(dest);
-                FileUtils.moveFile(dest, input, StandardCopyOption.REPLACE_EXISTING);
-
-                log.info("Successfully convert input file {} of {} into new file format!", input.getName(),
+                if (input.isDirectory()) {
+                    // delete dir is dangerous, so backup it to another dir
+                    File inputBackup = new File(input.getParentFile(), "__backup_" + input.getName());
+                    FileUtils.moveDirectoryToDirectory(input, inputBackup, true);
+                    FileUtils.moveDirectory(dest, input);
+                    log.info("Successfully convert input dir {} files into new file format!", input.getAbsolutePath());
+                } else {
+                    // delete dir is dangerous, so backup it to another file
+                    File inputBackup = new File(input.getParentFile(), "__backup_" + input.getName());
+                    FileUtils.copyFile(input, inputBackup);
+                    FileUtils.moveFile(dest, input, StandardCopyOption.REPLACE_EXISTING);
+                    log.info("Successfully convert input file {} of {} into new file format!", input.getName(),
                         outPutConverter.getNewFilePrefix());
+                }
+
             }
         } catch (Exception e) {
             log.warn("Failed to parse file, will use origin file.", e);
@@ -53,6 +64,11 @@ public class ThirdPartyOutputConverter {
             PlSqlSingleFileOutput plSqlSingleFileOutput = new PlSqlSingleFileOutput(input);
             if (plSqlSingleFileOutput.supports()) {
                 return plSqlSingleFileOutput;
+            }
+        } else if (input.isDirectory()) {
+            PlSqlDirOutput plSqlDirOutput = new PlSqlDirOutput(input);
+            if (plSqlDirOutput.supports()) {
+                return plSqlDirOutput;
             }
         }
         return null;

@@ -66,12 +66,14 @@ public class ExportOutput {
     private final BinaryFile<Manifest> manifest;
     private final BinaryFile<List<?>> checkpoints;
     private final List<DumpDBObject> dumpDbObjects;
+    private boolean isZip;
 
     public ExportOutput(@NonNull File file) throws IOException {
         if (!file.exists()) {
             throw new FileNotFoundException("File not found, " + file.getAbsolutePath());
         }
         if (file.isDirectory()) {
+            this.isZip = false;
             this.dumpDbObjects = getDbObjectFolders(file);
             this.manifest = getManifest(file);
             this.checkpoints = getCheckPoints(file);
@@ -81,6 +83,7 @@ public class ExportOutput {
                 throw new IllegalStateException(e);
             }
         } else if (file.getName().endsWith(".zip")) {
+            this.isZip = true;
             ZipFileTree tree = new ZipFileTree(file);
             this.dumpDbObjects = getDbObjectFolders(tree);
             this.manifest = getManifest(tree);

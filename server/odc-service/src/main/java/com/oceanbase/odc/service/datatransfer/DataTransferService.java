@@ -229,8 +229,8 @@ public class DataTransferService {
     public UploadFileResult getMetaInfo(@NonNull String fileName) throws IOException {
         File uploadFile = fileManager.findByName(TaskType.IMPORT, LocalFileManager.UPLOAD_BUCKET, fileName).orElseThrow(
                 () -> new FileNotFoundException("File not found"));
-        if (!uploadFile.exists() || !uploadFile.isFile()) {
-            throw new IllegalArgumentException("Target is not a file or does not exist, " + fileName);
+        if (!uploadFile.exists()) {
+            throw new IllegalArgumentException("Target does not exist, " + fileName);
         }
 
         // If the file is from third party like PL/SQL, this will convert it compatible with ob-loader.
@@ -251,6 +251,15 @@ public class DataTransferService {
         } else if (StringUtils.endsWithIgnoreCase(uploadFileName, ".sql")
                 || StringUtils.endsWithIgnoreCase(uploadFileName, ".txt")) {
             return UploadFileResult.ofSql(fileName);
+        } else if (uploadFile.isDirectory()) {
+            // directory
+            try {
+                ExportOutput dumperOutput = new ExportOutput(uploadFile);
+                return UploadFileResult.ofExportOutput(fileName, dumperOutput);
+            } catch (Exception e) {
+                log.warn("Not a valid data directory, file={}", fileName, e);
+                return UploadFileResult.ofFail(ErrorCodes.ImportInvalidFileType, new Object[] {uploadFileName});
+            }
         }
         return UploadFileResult.ofFail(ErrorCodes.ImportInvalidFileType, new Object[] {uploadFileName});
     }
