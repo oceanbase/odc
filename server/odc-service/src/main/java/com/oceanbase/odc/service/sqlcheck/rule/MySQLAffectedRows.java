@@ -69,7 +69,7 @@ public class MySQLAffectedRows implements SqlCheckRule {
     private static final int HEAD_LINE = 2;
 
     public MySQLAffectedRows(@NonNull Integer maxSQLAffectedRows, DialectType dialectType,
-        JdbcOperations jdbcOperations) {
+            JdbcOperations jdbcOperations) {
         this.maxSQLAffectedRows = maxSQLAffectedRows <= 0 ? 0 : maxSQLAffectedRows;
         this.jdbcOperations = jdbcOperations;
         this.dialectType = dialectType;
@@ -108,8 +108,8 @@ public class MySQLAffectedRows implements SqlCheckRule {
 
             if (affectedRows > maxSQLAffectedRows) {
                 return Collections.singletonList(SqlCheckUtil
-                    .buildViolation(statement.getText(), statement, getType(),
-                        new Object[] {maxSQLAffectedRows, affectedRows}));
+                        .buildViolation(statement.getText(), statement, getType(),
+                                new Object[] {maxSQLAffectedRows, affectedRows}));
             } else {
                 return Collections.emptyList();
             }
@@ -136,7 +136,7 @@ public class MySQLAffectedRows implements SqlCheckRule {
 
         try {
             List<Long> resultSet = jdbc.query(explainSql,
-                (rs, rowNum) -> Long.parseLong(rs.getString("rows")));
+                    (rs, rowNum) -> Long.parseLong(rs.getString("rows")));
 
             Long firstNonNullResult = resultSet.stream()
                     .filter(Objects::nonNull)
