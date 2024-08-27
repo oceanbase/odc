@@ -38,25 +38,23 @@ public final class ExecutorServiceManager {
     private static final String DEFAULT_NAME_FORMAT = "%d";
     private static final String NAME_FORMAT_PREFIX = "logical-database-change-";
 
-
-    private static final ThreadFactoryBuilder threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat(NAME_FORMAT_PREFIX);
-
-    private static final ExecutorService SHUTDOWN_EXECUTOR = Executors.newSingleThreadExecutor(threadFactory.build());
+    private static final ExecutorService SHUTDOWN_EXECUTOR = Executors.newSingleThreadExecutor(build("closer"));
 
     private final ExecutorService executorService;
 
 
+    public ExecutorServiceManager(int executorSize, String nameFormat) {
+        executorService = TtlExecutors.getTtlExecutorService(getExecutorService(executorSize, nameFormat));
+    }
+
     public ExecutorServiceManager(final int executorSize) {
-        executorService = TtlExecutors.getTtlExecutorService(getExecutorService(executorSize));
+        this(executorSize, DEFAULT_NAME_FORMAT);
     }
 
-    private ExecutorService getExecutorService(final int executorSize) {
-        return 0 == executorSize ? Executors.newCachedThreadPool(threadFactory.build()) : Executors.newFixedThreadPool(executorSize, threadFactory.build());
+    private ExecutorService getExecutorService(int executorSize, String nameFormat) {
+        return 0 == executorSize ? Executors.newCachedThreadPool(build(nameFormat)) : Executors.newFixedThreadPool(executorSize, build(nameFormat));
     }
 
-    /**
-     * Close executor service.
-     */
     public void close() {
         SHUTDOWN_EXECUTOR.execute(() -> {
             try {
@@ -68,5 +66,9 @@ public final class ExecutorServiceManager {
                 Thread.currentThread().interrupt();
             }
         });
+    }
+
+    private static ThreadFactory build(final String nameFormat) {
+        return new ThreadFactoryBuilder().setDaemon(true).setNameFormat(NAME_FORMAT_PREFIX + nameFormat).build();
     }
 }

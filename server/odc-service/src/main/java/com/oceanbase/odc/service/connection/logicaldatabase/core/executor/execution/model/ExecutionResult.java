@@ -16,16 +16,12 @@
 
 package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model;
 
-import java.util.Collection;
+public interface ExecutionResult {
+    String getId();
 
-public interface ExecutionCallback<T extends ExecutionUnit, R extends ExecutionResult> {
-    R execute(T input);
+    ExecutionStatus getStatus();
 
-    void terminate(T input);
+    void setStatus(ExecutionStatus status);
 
-    void onSuccess(Collection<T> input);
-
-    void onFailure(Collection<T> input, Throwable throwable);
-
-    void onComplete();
+    boolean isCompleted();
 }

@@ -16,10 +16,15 @@
 
 package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution;
 
+import java.util.List;
+
+import org.springframework.util.CollectionUtils;
+
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionCallback;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionContext;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionGroup;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionResult;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionUnit;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.thread.ExecutorServiceManager;
 
@@ -28,19 +33,29 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execut
  * @Date: 2024/8/26 15:14
  * @Description: []
  */
-public final class ExecutorEngine implements AutoCloseable{
-    private final ExecutorServiceManager executorServiceManager;
+public final class ExecutorEngine<T extends ExecutionUnit, R extends ExecutionResult> implements AutoCloseable {
+    private final ExecutorServiceManager groupExecutorServiceManager;
+    private final ExecutorServiceManager subGroupExecutorServiceManager;
+    private final List<ExecutionGroup<T>> groups;
+    private final ExecutionCallback<T, R> callback;
 
-    private ExecutorEngine(final int executorSize) {
-        executorServiceManager = new ExecutorServiceManager(executorSize);
+    private ExecutorEngine(List<ExecutionGroup<T>> groups, ExecutionCallback<T, R> callback) {
+        this.groups = groups;
+        this.callback = callback;
+        this.groupExecutorServiceManager =
+                new ExecutorServiceManager(groups.stream().mapToInt(ExecutionGroup::getConcurrency).max().orElse(0));
+        this.subGroupExecutorServiceManager = new ExecutorServiceManager(
+                groups.stream().mapToInt(ExecutionGroup::getSubGroupConcurrency).max().orElse(0));
     }
 
-    public <T extends ExecutionUnit, R> R execute(ExecutionContext<T> context, ExecutionCallback<T, R> callback) {
-        throw new NotImplementedException();
+    public ExecutionContext<T, R> execute() {
+        return new ExecutionContext<>(groups, callback, groupExecutorServiceManager, subGroupExecutorServiceManager);
     }
 
     @Override
     public void close() throws Exception {
-
+        this.groupExecutorServiceManager.close();
+        this.subGroupExecutorServiceManager.close();
     }
+
 }

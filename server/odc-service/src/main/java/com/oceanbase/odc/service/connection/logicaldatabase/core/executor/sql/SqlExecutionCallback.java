@@ -33,7 +33,7 @@ import com.oceanbase.odc.service.session.OdcStatementCallBack;
  * @Date: 2024/8/26 11:32
  * @Description: []
  */
-public class SqlExecutionCallback implements ExecutionCallback<SqlExecutionUnit, JdbcGeneralResult> {
+public class SqlExecutionCallback implements ExecutionCallback<SqlExecutionUnit, SqlExecutionResult> {
     private final OdcStatementCallBack statementCallback;
 
 
@@ -42,7 +42,27 @@ public class SqlExecutionCallback implements ExecutionCallback<SqlExecutionUnit,
     }
 
     @Override
-    public JdbcGeneralResult execute(SqlExecutionUnit input) {
+    public SqlExecutionResult execute(SqlExecutionUnit input) {
         throw new NotImplementedException();
+    }
+
+    @Override
+    public void terminate(SqlExecutionUnit input) {
+
+    }
+
+    @Override
+    public void onSuccess(Collection<SqlExecutionUnit> input) {
+
+    }
+
+    @Override
+    public void onFailure(Collection<SqlExecutionUnit> input, Throwable throwable) {
+
+    }
+
+    @Override
+    public void onComplete() {
+
     }
 }
