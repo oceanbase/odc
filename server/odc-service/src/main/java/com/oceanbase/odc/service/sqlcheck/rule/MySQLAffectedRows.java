@@ -64,11 +64,15 @@ public class MySQLAffectedRows implements SqlCheckRule {
 
     private final JdbcOperations jdbcOperations;
 
+    private final DialectType dialectType;
+
     private static final int HEAD_LINE = 2;
 
-    public MySQLAffectedRows(@NonNull Integer maxSQLAffectedRows, JdbcOperations jdbcOperations) {
+    public MySQLAffectedRows(@NonNull Integer maxSQLAffectedRows, DialectType dialectType,
+        JdbcOperations jdbcOperations) {
         this.maxSQLAffectedRows = maxSQLAffectedRows <= 0 ? 0 : maxSQLAffectedRows;
         this.jdbcOperations = jdbcOperations;
+        this.dialectType = dialectType;
     }
 
     /**
@@ -86,15 +90,26 @@ public class MySQLAffectedRows implements SqlCheckRule {
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
 
         if (statement instanceof Insert || statement instanceof Update || statement instanceof Delete) {
-            if (maxSQLAffectedRows == 0) {
+            if (maxSQLAffectedRows == 0 || jdbcOperations == null) {
                 return Collections.emptyList();
             }
-            String originSql = statement.getText();
-            long affectedRows = getAffectedRows(originSql, jdbcOperations);
+            long affectedRows = 0;
+            String explainSql = "EXPLAIN " + statement.getText();
+            switch (dialectType) {
+                case MYSQL:
+                    affectedRows = getMySqlAffectedRows(explainSql, jdbcOperations);
+                    break;
+                case OB_MYSQL:
+                    affectedRows = getOBMySqlAffectedRows(explainSql, jdbcOperations);
+                    break;
+                default:
+                    break;
+            }
+
             if (affectedRows > maxSQLAffectedRows) {
                 return Collections.singletonList(SqlCheckUtil
-                        .buildViolation(statement.getText(), statement, getType(),
-                                new Object[] {maxSQLAffectedRows, affectedRows}));
+                    .buildViolation(statement.getText(), statement, getType(),
+                        new Object[] {maxSQLAffectedRows, affectedRows}));
             } else {
                 return Collections.emptyList();
             }
@@ -111,18 +126,38 @@ public class MySQLAffectedRows implements SqlCheckRule {
     }
 
     /**
-     * execute 'explain' statement
+     * MySQL execute 'explain' statement
      *
-     * @param originSql target sql
+     * @param explainSql target sql
      * @param jdbc jdbc Object
      * @return affected rows
      */
-    private long getAffectedRows(String originSql, JdbcOperations jdbc) {
+    private long getMySqlAffectedRows(String explainSql, JdbcOperations jdbc) {
 
-        if (originSql == null || jdbc == null) {
-            return 0;
+        try {
+            List<Long> resultSet = jdbc.query(explainSql,
+                (rs, rowNum) -> Long.parseLong(rs.getString("rows")));
+
+            Long firstNonNullResult = resultSet.stream()
+                    .filter(Objects::nonNull)
+                    .findFirst()
+                    .orElse(null);
+
+            return firstNonNullResult != null ? firstNonNullResult : 0;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to execute sql: " + explainSql + ", error: " + e.getMessage());
         }
-        String explainSql = "EXPLAIN " + originSql;
+    }
+
+    /**
+     * OBMySQL execute 'explain' statement
+     *
+     * @param explainSql target sql
+     * @param jdbc jdbc Object
+     * @return affected rows
+     */
+    private long getOBMySqlAffectedRows(String explainSql, JdbcOperations jdbc) {
 
         /**
          * <pre>
@@ -153,6 +188,7 @@ public class MySQLAffectedRows implements SqlCheckRule {
                 }
                 return null;
             });
+
             Long firstNonNullResult = resultSet.stream()
                     .filter(Objects::nonNull)
                     .findFirst()
