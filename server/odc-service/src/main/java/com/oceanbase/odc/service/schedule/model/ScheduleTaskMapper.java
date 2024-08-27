@@ -25,7 +25,6 @@ import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
-import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 
