@@ -180,7 +180,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
         if (Objects.nonNull(locale)) {
             LocaleContextHolder.setLocale(locale);
         }
-        // 检查是否需要置控制台会话，如果需要，取消所有SQL执行并返回取消结果。
+        // 检查是否需要重置控制台会话，如果需要，取消所有SQL执行并返回取消结果。
         if (ConnectionSessionUtil.isConsoleSessionReset(connectionSession)) {
             ConnectionSessionUtil.setConsoleSessionResetFlag(connectionSession, false);
             return this.sqls.stream().map(sqlTuple -> {
