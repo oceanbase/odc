@@ -13,29 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
+package com.oceanbase.odc.service.sqlplan.model;
 
-/**
- * @Author：tinker
- * @Date: 2022/11/16 15:36
- * @Descripition:
- */
-public enum ScheduleStatus {
+import lombok.Data;
 
-    CREATING,
-    APPROVING,
+@Data
+public class SqlPlanTaskResult {
 
-    APPROVAL_EXPIRED,
+    private Long totalStatements;
 
-    REJECTED,
-    PAUSE,
-    ENABLED,
-    TERMINATION,
-    TERMINATED,
+    private Long finishedStatements;
 
-    COMPLETED,
-    EXECUTION_FAILED,
+    private Long successStatements;
 
-    DELETED
+    private Long failedStatements;
 
+    private String failedRecords;
 }

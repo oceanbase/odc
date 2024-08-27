@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -26,6 +27,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.schedule.processor.ScheduleChangePreprocessor;
+import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 
 import lombok.Data;
 
@@ -39,16 +41,19 @@ import lombok.Data;
 @Data
 public class CreateScheduleReq {
 
+    @NotBlank
+    private String name;
 
     @JsonTypeInfo(use = Id.NAME, include = As.EXTERNAL_PROPERTY, property = "type")
     @JsonSubTypes(value = {
             @JsonSubTypes.Type(value = DataArchiveParameters.class, name = "DATA_ARCHIVE"),
-            @JsonSubTypes.Type(value = DataDeleteParameters.class, name = "DATA_DELETE")
+            @JsonSubTypes.Type(value = DataDeleteParameters.class, name = "DATA_DELETE"),
+            @JsonSubTypes.Type(value = SqlPlanParameters.class, name = "SQL_PLAN")
     })
     @NotNull
     private ScheduleTaskParameters parameters;
 
-    // DATA_ARCHIVE、DATA_DELETE、PARTITION_PLAN
+    // DATA_ARCHIVE、DATA_DELETE、PARTITION_PLAN、SQL_PLAN
     @NotNull
     private ScheduleType type;
 
