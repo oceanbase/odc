@@ -35,6 +35,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.ColumnCharsetExists;
 import com.oceanbase.odc.service.sqlcheck.rule.ColumnCollationExists;
 import com.oceanbase.odc.service.sqlcheck.rule.ColumnNameInBlackList;
 import com.oceanbase.odc.service.sqlcheck.rule.ForeignConstraintExists;
+import com.oceanbase.odc.service.sqlcheck.rule.MySQLAffectedRows;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLColumnCalculation;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLLeftFuzzyMatch;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLMissingRequiredColumns;
@@ -1317,7 +1318,6 @@ public class MySQLCheckerTest {
                 "PROCEDURE", "partition,subpartition,function"});
         CheckViolation c2 = new CheckViolation(sqls[3], 1, 17, 17, 35, type, new Object[] {
                 "INDEX", "partition,subpartition,function"});
-
         Assert.assertEquals(Arrays.asList(c1, c2), actual);
     }
 
@@ -1359,6 +1359,104 @@ public class MySQLCheckerTest {
                 new Object[] {
                         "You have an error in your SQL syntax; check the manual for the right syntax to use near 'create procedure...' at line 1, col 7"});
         List<CheckViolation> expect = Collections.singletonList(c1);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void check_restrictSqlAffectedRows4MySQL_violationGenerated() {
+        String ddl = "create table users (\n"
+                + "id varchar (64) primary key,\n"
+                + "name varchar (16) not null,\n"
+                + "age int,\n"
+                + "email text\n"
+                + ") comment='test table'";
+        String[] sqls = new String[] {
+                "insert into users values('1', 'a-bot', 3, 'o')",
+                "insert into users (id, name, age, email) values"
+                        + "('2', 'b-bot', 3, 'o'),"
+                        + "('3', 'c-bot', 3, 'o'),"
+                        + "('4', 'd-bot', 3, 'o')",
+                "update users set name = 'a1-bot' where id = '1'",
+                "update users set name = 'a1-bot' where "
+                        + "id in ('1', '2', '3')",
+                "delete from users where id = '1'",
+                "delete from users where "
+                        + "id in ('1', '2', '3')"
+        };
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+        Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.any(RowMapper.class)))
+                .thenReturn(ddl);
+        DefaultSqlChecker sqlChecker4MySQL = new DefaultSqlChecker(DialectType.MYSQL, "$$",
+                Collections.singletonList(new MySQLAffectedRows(2, DialectType.MYSQL, jdbcTemplate)));
+        System.out.println(sqlChecker4MySQL.check(joinAndAppend(sqls, "$$")));
+        List<CheckViolation> actual = sqlChecker4MySQL.check(joinAndAppend(sqls, "$$"));
+        System.out.println(actual);
+
+        SqlCheckRuleType type = SqlCheckRuleType.RESTRICT_SQL_AFFECTED_ROWS;
+        CheckViolation c1 = new CheckViolation(sqls[0], 1, 24, 24, 42, type,
+                new Object[] {2, 1});
+        CheckViolation c2 = new CheckViolation(sqls[1], 1, 96, 96, 99, type,
+                new Object[] {2, 3});
+
+        CheckViolation c3 = new CheckViolation(sqls[2], 1, 34, 34, 37, type,
+                new Object[] {2, 1});
+        CheckViolation c4 = new CheckViolation(sqls[3], 1, 34, 34, 37, type,
+                new Object[] {2, 3});
+
+        CheckViolation c5 = new CheckViolation(sqls[4], 1, 34, 34, 37, type,
+                new Object[] {2, 1});
+        CheckViolation c6 = new CheckViolation(sqls[5], 1, 34, 34, 37, type,
+                new Object[] {2, 3});
+
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void check_restrictSqlAffectedRows4OBMySQL_violationGenerated() {
+        String create = "create table users (\n"
+                + "id varchar (64) primary key,\n"
+                + "name varchar (16) not null,\n"
+                + "age int,\n"
+                + "email text\n"
+                + ") comment='test table'";
+        String[] sqls = new String[] {
+                "insert into users values('1', 'a-bot', 3, 'o')",
+                "insert into users (id, name, age, email) values"
+                        + "('2', 'b-bot', 3, 'o'),"
+                        + "('3', 'c-bot', 3, 'o'),"
+                        + "('4', 'd-bot', 3, 'o')",
+                "update users set name = 'a1-bot' where id = '1'",
+                "update users set name = 'a1-bot' where "
+                        + "id in ('1', '2', '3')",
+                "delete from users where id = '1'",
+                "delete from users where "
+                        + "id in ('1', '2', '3')"
+        };
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+        Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.any(RowMapper.class)))
+                .thenReturn(create);
+        DefaultSqlChecker sqlChecker4OBMySQL = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
+                Collections.singletonList(new MySQLAffectedRows(2, DialectType.OB_MYSQL, jdbcTemplate)));
+        List<CheckViolation> actual = sqlChecker4OBMySQL.check(joinAndAppend(sqls, "$$"));
+
+        SqlCheckRuleType type = SqlCheckRuleType.RESTRICT_SQL_AFFECTED_ROWS;
+        CheckViolation c1 = new CheckViolation(sqls[0], 1, 24, 24, 42, type,
+                new Object[] {2, 1});
+        CheckViolation c2 = new CheckViolation(sqls[1], 1, 96, 96, 99, type,
+                new Object[] {2, 3});
+
+        CheckViolation c3 = new CheckViolation(sqls[2], 1, 34, 34, 37, type,
+                new Object[] {2, 1});
+        CheckViolation c4 = new CheckViolation(sqls[3], 1, 34, 34, 37, type,
+                new Object[] {2, 3});
+
+        CheckViolation c5 = new CheckViolation(sqls[4], 1, 34, 34, 37, type,
+                new Object[] {2, 1});
+        CheckViolation c6 = new CheckViolation(sqls[5], 1, 34, 34, 37, type,
+                new Object[] {2, 3});
+
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6);
         Assert.assertEquals(expect, actual);
     }
 
