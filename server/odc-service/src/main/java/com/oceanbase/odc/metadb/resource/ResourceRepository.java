@@ -38,7 +38,8 @@ public interface ResourceRepository extends JpaRepository<ResourceEntity, Long>,
     @Transactional
     @Query(value = "update task_resource set "
             + " status=:status ,"
-            + " where region = :#{#resourceID.getRegion()} and group_name = :#{#resourceID.getGroup()}  and namespace = :#{#resourceID.getNamespace()} and name = :#{#resourceID.getName()}", nativeQuery = true)
+            + " where region = :#{#resourceID.getRegion()} and group_name = :#{#resourceID.getGroup()}  and namespace = :#{#resourceID.getNamespace()} and name = :#{#resourceID.getName()}",
+            nativeQuery = true)
     @Modifying
     int updateResourceStatus(@Param("resourceID") ResourceID resourceID, @Param("status") String resourceState);
 
