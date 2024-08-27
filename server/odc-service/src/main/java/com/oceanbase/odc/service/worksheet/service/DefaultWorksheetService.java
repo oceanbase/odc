@@ -113,6 +113,7 @@ public class DefaultWorksheetService implements WorksheetService {
                 .objectId(objectId)
                 .extension(createPath.getExtension())
                 .totalLength(totalLength)
+                .version(0L)
                 .build();
         CollaborationWorksheetEntity result = worksheetRepository.saveAndFlush(entity);
         return WorksheetConverter.convertEntityToMetaResp(result);
@@ -182,8 +183,13 @@ public class DefaultWorksheetService implements WorksheetService {
 
         String contentDownloadUrl = null;
         if (path.isFile() && StringUtils.isNotBlank(worksheet.getObjectId())) {
-            contentDownloadUrl = objectStorageClient.generateDownloadUrl(worksheet.getObjectId(),
-                    WorksheetConstant.DOWNLOAD_DURATION_SECONDS).toString();
+            try {
+                contentDownloadUrl = objectStorageClient.generateDownloadUrl(worksheet.getObjectId(),
+                        WorksheetConstant.DOWNLOAD_DURATION_SECONDS).toString();
+            } catch (Throwable e) {
+                log.warn("generateDownloadUrl in getWorksheetDetails failed, projectId:{}，path:{},objectId:{}",
+                        projectId, path, worksheet.getObjectId(), e);
+            }
         }
 
         return WorksheetConverter.convertEntityToResp(worksheetOptional.get(), contentDownloadUrl);
@@ -217,6 +223,7 @@ public class DefaultWorksheetService implements WorksheetService {
                         .objectId(item.getValue().getObjectId())
                         .extension(item.getKey().getExtension())
                         .totalLength(item.getValue().getTotalLength())
+                        .version(0L)
                         .build())
                 .collect(Collectors.toList());
 

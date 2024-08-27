@@ -30,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
@@ -84,6 +85,10 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
     @Override
     public WorksheetMetaResp createWorksheet(Long projectId, String pathStr, String objectId, Long totalLength) {
         Path createPath = new Path(pathStr);
+        if (createPath.isFile()) {
+            PreConditions.notBlank(objectId, "objectId");
+            PreConditions.notNull(totalLength, "totalLength");
+        }
         WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
                 createPath.getLocation());
         return projectFileService.createWorksheet(projectId, createPath, objectId, totalLength);
@@ -101,16 +106,13 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
     @Override
     public List<WorksheetMetaResp> listWorksheets(Long projectId, ListWorksheetsReq req) {
         Integer depth = req.getDepth() == null ? 1 : req.getDepth();
-        Path path = null;
-        if (StringUtils.isNotBlank(req.getPath())) {
-            path = new Path(req.getPath());
-        }
+        Path path = StringUtils.isNotBlank(req.getPath()) ? new Path(req.getPath()) : Path.root();
         WorkSheetsSearch workSheetsSearch = new WorkSheetsSearch(req.getNameLike());
-        if (path == null || path.getLocation() == WorksheetLocation.REPOS) {
+        if (path.isRoot() || path.getLocation() == WorksheetLocation.REPOS) {
             workSheetsSearch.addAll(worksheetServiceFactory.getProjectFileService(WorksheetLocation.REPOS)
                     .listWorksheets(projectId, path, depth, req.getNameLike()));
         }
-        if (path == null || path.getLocation() == WorksheetLocation.WORKSHEETS) {
+        if (path.isRoot() || path.getLocation() == WorksheetLocation.WORKSHEETS) {
             workSheetsSearch.addAll(worksheetServiceFactory.getProjectFileService(WorksheetLocation.WORKSHEETS)
                     .listWorksheets(projectId, path, depth, req.getNameLike()));
         }

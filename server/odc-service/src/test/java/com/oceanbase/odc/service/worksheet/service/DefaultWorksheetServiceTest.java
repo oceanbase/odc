@@ -212,9 +212,9 @@ public class DefaultWorksheetServiceTest {
     @Test
     public void batchUploadWorksheets() {
         BatchUploadWorksheetsReq batchUploadWorksheetsReq = new BatchUploadWorksheetsReq();
-        batchUploadWorksheetsReq.setWorksheets(new HashSet<>(Arrays.asList(
+        batchUploadWorksheetsReq.setWorksheets(Arrays.asList(
                 new UploadWorksheetTuple("/Worksheets/test1", "object1", 1L),
-                new UploadWorksheetTuple("/Worksheets/test2", "object2", 1L))));
+                new UploadWorksheetTuple("/Worksheets/test2", "object2", 1L)));
         Path parentPath = Path.worksheets();
         BatchCreateWorksheets batchCreateWorksheets = new BatchCreateWorksheets(batchUploadWorksheetsReq);
         when(worksheetRepository.countByPathLikeWithFilter(projectId,

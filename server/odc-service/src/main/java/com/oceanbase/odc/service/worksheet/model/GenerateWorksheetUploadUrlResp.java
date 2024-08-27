@@ -37,7 +37,7 @@ public class GenerateWorksheetUploadUrlResp {
      */
     String uploadUrl;
     /**
-     * the object key in cloud storage,to locate uploaded files
+     * the object name in cloud storage,to locate uploaded files
      */
     String objectId;
 }

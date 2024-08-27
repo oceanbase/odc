@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.worksheet.model;
 
-import java.util.Set;
+import java.util.List;
 
 import javax.validation.constraints.Size;
 
@@ -33,7 +33,7 @@ import lombok.NoArgsConstructor;
 @Data
 public class BatchUploadWorksheetsReq {
     @Size(min = 1, max = 100)
-    private Set<UploadWorksheetTuple> worksheets;
+    private List<UploadWorksheetTuple> worksheets;
 
     @Data
     @NoArgsConstructor
