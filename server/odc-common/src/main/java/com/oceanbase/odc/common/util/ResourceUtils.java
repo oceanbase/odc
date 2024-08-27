@@ -94,6 +94,9 @@ public class ResourceUtils {
             throw new RuntimeException(
                     String.format("cannot convert url to uri, folder '%s' may not exists", location), e);
         }
+        if (url2uris.isEmpty()) {
+            throw new RuntimeException(String.format("folder '%s' not exists", location));
+        }
         List<ResourceInfo> results = new ArrayList<>();
         for (Pair<URL, URI> url2uri : url2uris) {
             URI uri = url2uri.right;

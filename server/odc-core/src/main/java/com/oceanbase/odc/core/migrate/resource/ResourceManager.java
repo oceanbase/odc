@@ -200,6 +200,9 @@ public class ResourceManager {
                 log.warn("Failed to get uri", e);
                 throw new IllegalStateException(e);
             }
+            if (url2uris.isEmpty()) {
+                throw new FileNotFoundException("Location is not found " + location);
+            }
             for (Pair<URL, URI> url2uri : url2uris) {
                 URL url = url2uri.left;
                 String scheme = url2uri.right.getScheme();
