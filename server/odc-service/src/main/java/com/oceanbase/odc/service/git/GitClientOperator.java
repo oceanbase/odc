@@ -22,10 +22,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections.IteratorUtils;
@@ -42,11 +43,11 @@ import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.diff.EditList;
 import org.eclipse.jgit.diff.RawText;
 import org.eclipse.jgit.diff.RawTextComparator;
+import org.eclipse.jgit.lib.BatchingProgressMonitor;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.lib.TextProgressMonitor;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
@@ -62,6 +63,7 @@ import com.oceanbase.odc.service.git.model.FileChangeType;
 import com.oceanbase.odc.service.git.model.GitDiff;
 import com.oceanbase.odc.service.git.model.GitStatus;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -73,6 +75,9 @@ public class GitClientOperator implements Closeable {
     private static final byte[] EMPTY_BYTES = new byte[0];
 
     private final Git git;
+    private final String name;
+    @Getter
+    private final Executor executor = Executors.newSingleThreadExecutor();
 
     public GitClientOperator(String gitDir) throws IOException {
         this(new File(gitDir));
@@ -84,6 +89,7 @@ public class GitClientOperator implements Closeable {
 
     public GitClientOperator(Git git) {
         this.git = git;
+        this.name = getRepoDir().getName();
     }
 
     public static GitClientOperator cloneRepo(String cloneUrl, File dest, String email, String token)
@@ -95,7 +101,7 @@ public class GitClientOperator implements Closeable {
         Git.cloneRepository()
                 .setURI(cloneUrl)
                 .setDirectory(dest)
-                .setProgressMonitor(new TextProgressMonitor(new LogProgressWriter()))
+                .setProgressMonitor(new CustomProgressMonitor())
                 .setCredentialsProvider(new UsernamePasswordCredentialsProvider(email, token))
                 .call();
         return new GitClientOperator(dest);
@@ -119,14 +125,25 @@ public class GitClientOperator implements Closeable {
     }
 
     public String createBranch(String branch) throws GitAPIException {
+        Verify.verify(!listBranches().contains(branch), "Branch already exists");
         return git.branchCreate().setName(branch).call().getName();
     }
 
+    public void deleteBranch(String branch) throws GitAPIException {
+        git.branchDelete().setBranchNames(branch).setForce(true).call();
+    }
+
     public String checkout(String branch) throws GitAPIException {
+        List<Ref> refs = git.branchList().setListMode(ListMode.ALL).call();
+        String localBranch = "refs/heads/" + branch;
+        boolean existsInLocal = refs.stream().anyMatch(r -> r.getName().equals(localBranch));
+        if (!existsInLocal) {
+            branch = "origin/" + branch;
+        }
         Ref newRef = git.checkout()
                 .setUpstreamMode(SetupUpstreamMode.SET_UPSTREAM)
                 .setName(branch)
-                .setProgressMonitor(new TextProgressMonitor(new LogProgressWriter()))
+                .setProgressMonitor(new CustomProgressMonitor())
                 .call();
         return newRef.getName();
     }
@@ -134,7 +151,7 @@ public class GitClientOperator implements Closeable {
     public PullResult pull(String branch) throws GitAPIException, IOException {
         return git.pull()
                 .setRemoteBranchName(branch)
-                .setProgressMonitor(new TextProgressMonitor(new LogProgressWriter()))
+                .setProgressMonitor(new CustomProgressMonitor())
                 .call();
     }
 
@@ -156,7 +173,7 @@ public class GitClientOperator implements Closeable {
         Iterable<PushResult> gitPushResult = git.push()
                 .setRemote("origin")
                 .setCredentialsProvider(new UsernamePasswordCredentialsProvider(email, token))
-                .setProgressMonitor(new TextProgressMonitor(new LogProgressWriter()))
+                .setProgressMonitor(new CustomProgressMonitor())
                 .call();
         List<PushResult> results = IteratorUtils.toList(gitPushResult.iterator());
         Verify.singleton(results, String.format("push result is not a singleton, detail:[%s]",
@@ -259,12 +276,16 @@ public class GitClientOperator implements Closeable {
     public GitStatus status() throws GitAPIException, IOException {
         String branch = currentBranch();
         String remoteBranch = "origin/" + branch;
-        Iterable<RevCommit> commits = git.log()
-                .addRange(git.getRepository().resolve(branch), git.getRepository().resolve(remoteBranch))
-                .call();
         int commitsBehind = 0;
-        for (RevCommit commit : commits) {
-            commitsBehind++;
+        try {
+            Iterable<RevCommit> commits = git.log()
+                    .addRange(git.getRepository().resolve(branch), git.getRepository().resolve(remoteBranch))
+                    .call();
+            for (RevCommit commit : commits) {
+                commitsBehind++;
+            }
+        } catch (Exception e) {
+            log.warn("Failed to compare with remote, branch: {}, maybe remote does not exist", branch);
         }
 
         GitStatus gitStatus = new GitStatus();
@@ -352,17 +373,31 @@ public class GitClientOperator implements Closeable {
         throw new FileNotFoundException();
     }
 
-    private static class LogProgressWriter extends Writer {
+    private static class CustomProgressMonitor extends BatchingProgressMonitor {
+
         @Override
-        public void write(char[] cbuf, int off, int len) throws IOException {
-            log.info(new String(cbuf, off, len));
+        protected void onUpdate(String taskName, int workCurr) {
+            log.info("Task updated: {}, Current: {}", taskName, workCurr);
         }
 
         @Override
-        public void flush() throws IOException {}
+        protected void onEndTask(String taskName, int workCurr) {
+            log.info("Task ended: {}, Current: {}", taskName, workCurr);
+        }
 
         @Override
-        public void close() throws IOException {}
+        protected void onUpdate(String taskName, int workCurr, int workTotal, int percentDone) {
+            if (percentDone % 10 == 0) {
+                log.info("Task updated: {}, Percent: {}%", taskName, percentDone);
+            }
+        }
+
+        @Override
+        protected void onEndTask(String taskName, int workCurr, int workTotal, int percentDone) {
+            if (percentDone % 10 == 0) {
+                log.info("Task ended: {}, Percent: {}%", taskName, percentDone);
+            }
+        }
     }
 
     private static class EmptyOutputStream extends OutputStream {

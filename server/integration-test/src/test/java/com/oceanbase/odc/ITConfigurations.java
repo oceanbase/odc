@@ -18,6 +18,7 @@ package com.oceanbase.odc;
 import java.util.Map;
 
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
+import com.oceanbase.odc.service.git.model.GitRepository;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties.OmsProperties;
@@ -94,6 +95,14 @@ public class ITConfigurations {
         omsConfiguration.setRegion(get("odc.osc.oms.region"));
         configuration.setOms(omsConfiguration);
         return configuration;
+    }
+
+    public static GitRepository getGitRepositoryConfig() {
+        GitRepository repo = new GitRepository();
+        repo.setEmail(get("odc.integration.git.email"));
+        repo.setCloneAddress(get("odc.integration.git.clone-address"));
+        repo.setPersonalAccessToken(get("odc.integration.git.personal-access-token"));
+        return repo;
     }
 
     private static String get(String key) {
