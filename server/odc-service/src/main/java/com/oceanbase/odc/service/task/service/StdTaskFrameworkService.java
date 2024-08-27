@@ -57,19 +57,26 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.metadb.resource.ResourceEntity;
+import com.oceanbase.odc.metadb.resource.ResourceRepository;
 import com.oceanbase.odc.metadb.task.JobAttributeEntity;
 import com.oceanbase.odc.metadb.task.JobAttributeRepository;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.JobRepository;
+import com.oceanbase.odc.service.resource.K8sResourceManager;
+import com.oceanbase.odc.service.resource.ResourceID;
+import com.oceanbase.odc.service.resource.ResourceState;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobAttributeEntityColumn;
 import com.oceanbase.odc.service.task.constants.JobEntityColumn;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
-import com.oceanbase.odc.service.task.executor.server.HeartbeatRequest;
-import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
-import com.oceanbase.odc.service.task.executor.task.TaskResult;
+import com.oceanbase.odc.service.task.executor.DefaultTaskResult;
+import com.oceanbase.odc.service.task.executor.HeartbeatRequest;
+import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.listener.DefaultJobProcessUpdateEvent;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.processor.DLMResultProcessor;
@@ -98,6 +105,10 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     @Autowired
     private JobRepository jobRepository;
+    @Autowired
+    private ResourceRepository resourceRepository;
+    @Autowired
+    private K8sResourceManager k8SResourceManager;
     @Autowired
     private JobAttributeRepository jobAttributeRepository;
     @Setter
@@ -162,6 +173,15 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 .and(SpecificationUtil.columnIsNull(JobEntityColumn.EXECUTOR_DESTROYED_TIME))
                 .and(getExecutorSpec());
         return page(condition, page, size);
+    }
+
+    @Override
+    public Page<ResourceEntity> findDestroyingResource(int page, int size) {
+        Specification<ResourceEntity> specification = SpecificationUtil.columnLate(ResourceEntity.CREATE_TIME,
+                JobDateUtils.getCurrentDateSubtractDays(RECENT_DAY));
+        Specification<ResourceEntity> condition = Specification.where(specification)
+                .and(SpecificationUtil.columnIn(ResourceEntity.STATUS, Lists.newArrayList(ResourceState.DESTROYING)));
+        return resourceRepository.findAll(condition, PageRequest.of(page, size));
     }
 
     @Override
@@ -413,6 +433,14 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         }
 
         int rows = updateTaskResult(result, je);
+        // release resource
+        if (result.getStatus().isTerminated() && TaskRunMode.K8S == je.getRunMode()) {
+            ExecutorIdentifier executorIdentifier = ExecutorIdentifierParser.parser(je.getExecutorIdentifier());
+            k8SResourceManager
+                    .release(new ResourceID(executorIdentifier.getRegion(), executorIdentifier.getGroup(),
+                            executorIdentifier.getNamespace(),
+                            executorIdentifier.getExecutorName()));
+        }
         if (rows == 0) {
             log.warn("Update task result failed, the job may finished or deleted already, jobId={}", id);
             return;

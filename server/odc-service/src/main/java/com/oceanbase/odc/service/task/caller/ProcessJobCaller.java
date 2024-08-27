@@ -27,6 +27,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.response.OdcResult;
+import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.enums.JobStatus;
@@ -93,14 +94,14 @@ public class ProcessJobCaller extends BaseJobCaller {
     protected void doStop(JobIdentity ji) throws JobException {}
 
     @Override
-    protected void doDestroy(JobIdentity ji, ExecutorIdentifier ei) throws JobException {
+    protected void doFinish(JobIdentity ji, ExecutorIdentifier ei, ResourceID resourceID) throws JobException {
         if (isExecutorExist(ei)) {
             long pid = Long.parseLong(ei.getNamespace());
             log.info("Found process, try kill it, pid={}.", pid);
             // first update destroy time, second destroy executor.
             // if executor failed update will be rollback, ensure distributed transaction atomicity.
             updateExecutorDestroyed(ji);
-            destroyInternal(ei);
+            doDestroyInternal(ei);
             return;
         }
 
@@ -132,8 +133,7 @@ public class ProcessJobCaller extends BaseJobCaller {
                 + " may not on this machine, jodId={0}, identifier={1}", ji.getId(), ei);
     }
 
-    @Override
-    public boolean canBeDestroy(JobIdentity ji, ExecutorIdentifier ei) {
+    public boolean canBeFinish(JobIdentity ji, ExecutorIdentifier ei, ResourceID resourceID) {
         if (isExecutorExist(ei)) {
             log.info("Executor be found, jobId={}, identifier={}", ji.getId(), ei);
             return true;
@@ -152,7 +152,6 @@ public class ProcessJobCaller extends BaseJobCaller {
         return false;
     }
 
-    @Override
     protected void doDestroyInternal(ExecutorIdentifier identifier) throws JobException {
         long pid = Long.parseLong(identifier.getNamespace());
         boolean result = SystemUtils.killProcessByPid(pid);

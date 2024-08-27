@@ -142,6 +142,16 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
         }, interval, interval, TimeUnit.SECONDS);
     }
 
+    /**
+     * wrap for init and monitor executor
+     * 
+     * @param execution
+     */
+    protected void prepareTaskRunEnv(DelegateExecution execution) {
+        init(execution);
+        initMonitorExecutor();
+    }
+
     @Override
     protected void preHandle(DelegateExecution execution) {
         ExecutionStrategyConfig strategyConfig = getStrategyConfig();
@@ -159,8 +169,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     protected void run(DelegateExecution execution) throws Exception {
         this.startTimeMilliSeconds = System.currentTimeMillis();
         try {
-            init(execution);
-            initMonitorExecutor();
+            prepareTaskRunEnv(execution);
             super.run(execution);
         } catch (Exception e) {
             log.warn("Failed to run task, activityId={}", execution.getCurrentActivityId(), e);
@@ -178,6 +187,13 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
             SecurityContextUtils.clear();
             throw new ServiceTaskError(e);
         }
+        waitTaskFinish();
+    }
+
+    /**
+     * wait task finish and do the remain job
+     */
+    protected void waitTaskFinish() {
         try {
             taskLatch.await(timeoutMillis, TimeUnit.MILLISECONDS);
             if (isCancelled()) {

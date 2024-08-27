@@ -16,13 +16,16 @@
 
 package com.oceanbase.odc.service.task.caller;
 
-import static com.oceanbase.odc.service.task.constants.JobConstants.ODC_EXECUTOR_CANNOT_BE_DESTROYED;
-
+import java.util.Map;
 import java.util.Optional;
 
-import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.task.config.JobConfiguration;
-import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.resource.K8sResourceManager;
+import com.oceanbase.odc.service.resource.Resource;
+import com.oceanbase.odc.service.resource.ResourceID;
+import com.oceanbase.odc.service.resource.ResourceState;
+import com.oceanbase.odc.service.resource.k8s.K8sResource;
+import com.oceanbase.odc.service.resource.k8s.K8sResourceContext;
+import com.oceanbase.odc.service.resource.k8s.PodConfig;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -37,89 +40,71 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class K8sJobCaller extends BaseJobCaller {
 
-    private final K8sJobClient client;
-    private final PodConfig podConfig;
+    /**
+     * base job config
+     */
+    private final PodConfig defaultPodConfig;
+    private final K8sResourceManager resourceManager;
 
-    public K8sJobCaller(K8sJobClient client, PodConfig podConfig) {
-        this.client = client;
-        this.podConfig = podConfig;
+    public K8sJobCaller(PodConfig podConfig, K8sResourceManager resourceManager) {
+        this.defaultPodConfig = podConfig;
+        this.resourceManager = resourceManager;
     }
 
     @Override
     public ExecutorIdentifier doStart(JobContext context) throws JobException {
-        String jobName = JobUtils.generateExecutorName(context.getJobIdentity());
+        Resource resource = resourceManager.createK8sResource(buildK8sResourceContext(context));
+        String arn = resource.id().getName();
 
-        String arn = client.create(podConfig.getNamespace(), jobName, podConfig.getImage(),
-                podConfig.getCommand(), podConfig);
-
-        return DefaultExecutorIdentifier.builder().namespace(podConfig.getNamespace())
+        return DefaultExecutorIdentifier.builder().namespace(defaultPodConfig.getNamespace())
                 .executorName(arn).build();
+    }
+
+    protected K8sResourceContext buildK8sResourceContext(JobContext context) {
+        String jobName = JobUtils.generateExecutorName(context.getJobIdentity());
+        // TODO(tianke): confirm is this correct?
+        String region = checkAndGetJobProperties(context, "regionName");
+        String group = checkAndGetJobProperties(context, "cloudProvider");
+        K8sResourceContext k8sResourceContext =
+                new K8sResourceContext(defaultPodConfig, jobName, region, group);
+        return k8sResourceContext;
     }
 
     @Override
     public void doStop(JobIdentity ji) throws JobException {}
 
     @Override
-    protected void doDestroy(JobIdentity ji, ExecutorIdentifier ei) throws JobException {
+    protected void doFinish(JobIdentity ji, ExecutorIdentifier ei, ResourceID resourceID) throws JobException {
+        // update job destroyed, let scheduler DestroyExecutorJob scan and destroy it
+        resourceManager.release(resourceID);
         updateExecutorDestroyed(ji);
-        Optional<K8sJobResponse> k8sJobResponse = client.get(ei.getNamespace(), ei.getExecutorName());
-        if (k8sJobResponse.isPresent()) {
-            if (PodStatus.PENDING == PodStatus.of(k8sJobResponse.get().getResourceStatus())) {
-                JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
-                JobEntity jobEntity = jobConfiguration.getTaskFrameworkService().find(ji.getId());
-                if ((System.currentTimeMillis() - jobEntity.getStartedTime().getTime()) / 1000 > podConfig
-                        .getPodPendingTimeoutSeconds()) {
-                    log.info("Pod pending timeout, will be deleted, jobId={}, pod={}, "
-                            + "podPendingTimeoutSeconds={}.", ji.getId(), ei.getExecutorName(),
-                            podConfig.getPodPendingTimeoutSeconds());
-                } else {
-                    // Pod cannot be deleted when pod pending is not timeout,
-                    // so throw exception representative delete failed
-                    throw new JobException(ODC_EXECUTOR_CANNOT_BE_DESTROYED +
-                            "Destroy pod failed, jodId={0}, identifier={1}, podStatus={2}",
-                            ji.getId(), ei.getExecutorName(), k8sJobResponse.get().getResourceStatus());
-                }
-            }
-            log.info("Found pod, delete it, jobId={}, pod={}.", ji.getId(), ei.getExecutorName());
-            destroyInternal(ei);
-        }
+        // resourceManager.destroy(resourceID);
     }
 
     @Override
-    protected boolean canBeDestroy(JobIdentity ji, ExecutorIdentifier ei) {
-        Optional<K8sJobResponse> k8sJobResponse = null;
-        try {
-            k8sJobResponse = client.get(ei.getNamespace(), ei.getExecutorName());
-        } catch (JobException e) {
-            log.warn("Get k8s pod occur error, jobId={}", ji.getId(), e);
-            return false;
-        }
-        if (k8sJobResponse.isPresent()) {
-            if (PodStatus.PENDING == PodStatus.of(k8sJobResponse.get().getResourceStatus())) {
-                JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
-                JobEntity jobEntity = jobConfiguration.getTaskFrameworkService().find(ji.getId());
-                if ((System.currentTimeMillis() - jobEntity.getStartedTime().getTime()) / 1000 <= podConfig
-                        .getPodPendingTimeoutSeconds()) {
-                    // Pod cannot be deleted when pod pending is not timeout,
-                    // so throw exception representative cannot delete
-                    log.warn("Cannot destroy pod, pending is not timeout, jodId={}, identifier={}, podStatus={}",
-                            ji.getId(), ei.getExecutorName(), k8sJobResponse.get().getResourceStatus());
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    @Override
-    protected void doDestroyInternal(ExecutorIdentifier identifier) throws JobException {
-        client.delete(podConfig.getNamespace(), identifier.getExecutorName());
+    protected boolean canBeFinish(JobIdentity ji, ExecutorIdentifier ei, ResourceID resourceID) {
+        return resourceManager.canBeDestroyed(resourceID);
     }
 
     @Override
     protected boolean isExecutorExist(ExecutorIdentifier identifier) throws JobException {
-        Optional<K8sJobResponse> executorOptional = client.get(identifier.getNamespace(), identifier.getExecutorName());
-        return executorOptional.isPresent() &&
-                PodStatus.of(executorOptional.get().getResourceStatus()) != PodStatus.TERMINATING;
+        ResourceID resourceID =
+                new ResourceID(identifier.getRegion(), identifier.getGroup(), identifier.getNamespace(),
+                        identifier.getExecutorName());
+        Optional<K8sResource> executorOptional = resourceManager.query(resourceID);
+        return executorOptional.isPresent() && !ResourceState.isDestroying(executorOptional.get().getResourceState());
     }
+
+    protected String checkAndGetJobProperties(JobContext context, String propName) {
+        Map<String, String> jobParameters = context.getJobProperties();
+        if (null == jobParameters) {
+            throw new IllegalStateException("get " + propName + " failed from job context =" + context);
+        }
+        String ret = jobParameters.get(propName);
+        if (null == ret) {
+            throw new IllegalStateException("get " + propName + " failed from job context =" + context);
+        }
+        return ret;
+    }
+
 }

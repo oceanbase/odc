@@ -27,9 +27,8 @@ import com.oceanbase.odc.common.event.LocalEventPublisher;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
-import com.oceanbase.odc.service.schedule.ScheduleTaskService;
+import com.oceanbase.odc.service.resource.K8sResourceManager;
 import com.oceanbase.odc.service.task.TaskService;
-import com.oceanbase.odc.service.task.caller.K8sJobClientSelector;
 import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.schedule.DefaultTaskFrameworkDisabledHandler;
@@ -62,9 +61,9 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         setJobImageNameProvider(new DefaultJobImageNameProvider(this::getTaskFrameworkProperties));
         setConnectionService(ctx.getBean(ConnectionService.class));
         setTaskService(ctx.getBean(TaskService.class));
-        setScheduleTaskService(ctx.getBean(ScheduleTaskService.class));
         setDaemonScheduler((Scheduler) ctx.getBean("taskFrameworkSchedulerFactoryBean"));
-        setJobDispatcher(new ImmediateJobDispatcher());
+        setJobDispatcher(new ImmediateJobDispatcher(ctx.getBean(K8sResourceManager.class)));
+        setK8sResourceManager(ctx.getBean(K8sResourceManager.class));
         LocalEventPublisher publisher = new LocalEventPublisher();
         TaskFrameworkService tfs = ctx.getBean(TaskFrameworkService.class);
         if (tfs instanceof StdTaskFrameworkService) {
@@ -92,10 +91,6 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         return ctx.getBean(TaskFrameworkProperties.class);
     }
 
-    @Override
-    public K8sJobClientSelector getK8sJobClientSelector() {
-        return ctx.getBean(K8sJobClientSelector.class);
-    }
 
     private void initJobRateLimiter() {
         StartJobRateLimiterSupport limiterSupport = new StartJobRateLimiterSupport();

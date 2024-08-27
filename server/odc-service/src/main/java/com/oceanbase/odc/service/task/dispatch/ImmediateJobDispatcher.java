@@ -22,11 +22,11 @@ import java.util.Objects;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.service.resource.K8sResourceManager;
+import com.oceanbase.odc.service.resource.k8s.PodConfig;
 import com.oceanbase.odc.service.task.caller.JobCaller;
 import com.oceanbase.odc.service.task.caller.JobCallerBuilder;
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.caller.K8sJobClient;
-import com.oceanbase.odc.service.task.caller.PodConfig;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
@@ -50,6 +50,11 @@ import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
  * @since 4.2.4
  */
 public class ImmediateJobDispatcher implements JobDispatcher {
+    private final K8sResourceManager k8SResourceManager;
+
+    public ImmediateJobDispatcher(K8sResourceManager k8SResourceManager) {
+        this.k8SResourceManager = k8SResourceManager;
+    }
 
     @Override
     public void start(JobContext context) throws JobException {
@@ -64,21 +69,22 @@ public class ImmediateJobDispatcher implements JobDispatcher {
     }
 
     @Override
-    public void modify(JobIdentity ji, String jobParametersJson) throws JobException {
+    public void modify(JobIdentity ji, String jobParametersJson)
+            throws JobException {
         JobCaller jobCaller = getJobCaller(ji, null);
         jobCaller.modify(ji, jobParametersJson);
     }
 
     @Override
-    public void destroy(JobIdentity ji) throws JobException {
+    public void finish(JobIdentity ji) throws JobException {
         JobCaller jobCaller = getJobCaller(ji, null);
-        jobCaller.destroy(ji);
+        jobCaller.finish(ji);
     }
 
     @Override
-    public boolean canBeDestroy(JobIdentity ji) {
+    public boolean canBeFinish(JobIdentity ji) {
         JobCaller jobCaller = getJobCaller(ji, null);
-        return jobCaller.canBeDestroy(ji);
+        return jobCaller.canBeFinish(ji);
     }
 
     private JobCaller getJobCaller(JobIdentity ji, JobContext context) {
@@ -92,7 +98,6 @@ public class ImmediateJobDispatcher implements JobDispatcher {
             context = new DefaultJobContextBuilder().build(je);
         }
         if (je.getRunMode() == TaskRunMode.K8S) {
-            K8sJobClient k8sJobClient = config.getK8sJobClientSelector().select(context);
             PodConfig podConfig = createDefaultPodConfig(config.getTaskFrameworkProperties());
             Map<String, String> labels = JobPropertiesUtils.getLabels(context.getJobProperties());
             podConfig.setLabels(labels);
@@ -100,9 +105,10 @@ public class ImmediateJobDispatcher implements JobDispatcher {
             if (StringUtils.isNotBlank(regionName)) {
                 podConfig.setRegion(regionName);
             }
-            return JobCallerBuilder.buildK8sJobCaller(k8sJobClient, podConfig, context);
+            return JobCallerBuilder.buildK8sJobCaller(podConfig, context, k8SResourceManager);
+        } else {
+            return JobCallerBuilder.buildProcessCaller(context);
         }
-        return JobCallerBuilder.buildProcessCaller(context);
     }
 
     private PodConfig createDefaultPodConfig(TaskFrameworkProperties taskFrameworkProperties) {
@@ -133,5 +139,4 @@ public class ImmediateJobDispatcher implements JobDispatcher {
         podConfig.setPodPendingTimeoutSeconds(k8s.getPodPendingTimeoutSeconds());
         return podConfig;
     }
-
 }

@@ -21,6 +21,9 @@ package com.oceanbase.odc.service.task.caller;
  * @since 4.2.4
  */
 public interface ExecutorIdentifier {
+    String getGroup();
+
+    String getRegion();
 
     String getProtocol();
 
