@@ -95,10 +95,10 @@ public class CustomOAuth2AuthorizationRequestResolver implements OAuth2Authoriza
             String state = authorizationRequest.getState();
             String originRedirectUrl = authorizationRequest.getRedirectUri();
             UriComponentsBuilder.fromUriString(originRedirectUrl).build().getQueryParams()
-                    .forEach((key, value) -> oauth2StateManager.addState(state, key, urlDecode(value.get(0))));
+                    .forEach((key, value) -> oauth2StateManager.setStateParameter(state, key, urlDecode(value.get(0))));
             URL url = new URL(originRedirectUrl);
             String urlWithoutQuery = new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getPath()).toString();
-            oauth2StateManager.addOdcParam(state, request);
+            oauth2StateManager.setOdcParameters(state, request);
 
             return OAuth2AuthorizationRequest.from(authorizationRequest)
                     .redirectUri(urlWithoutQuery)

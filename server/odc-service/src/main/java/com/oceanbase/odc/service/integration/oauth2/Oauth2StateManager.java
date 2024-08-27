@@ -49,29 +49,30 @@ public class Oauth2StateManager {
     private RequestDispatcher requestDispatcher;
 
     @SneakyThrows
-    public void addState(String state, String key, String value) {
+    public void setStateParameter(String state, String key, String value) {
         Map<String, String> stringStringMap = STATE_PARAM_CACHE.get(state, HashMap::new);
         stringStringMap.put(key, value);
     }
 
-    public void addOdcParam(String state, HttpServletRequest request) {
+    public void setOdcParameters(String state, HttpServletRequest request) {
         String odcBackUrl = request.getParameter(OdcConstants.ODC_BACK_URL_PARAM);
         if (WebRequestUtils.isRedirectUrlValid(request, odcBackUrl)) {
-            addState(state, OdcConstants.ODC_BACK_URL_PARAM, OdcInfoService.addOdcParameter(request, odcBackUrl));
+            setStateParameter(state, OdcConstants.ODC_BACK_URL_PARAM,
+                    OdcInfoService.addOdcParameter(request, odcBackUrl));
         }
         String testLoginId = request.getParameter(OdcConstants.TEST_LOGIN_ID_PARAM);
         if (com.oceanbase.odc.common.util.StringUtils.isNotBlank(testLoginId)) {
-            addState(state, OdcConstants.TEST_LOGIN_ID_PARAM, testLoginId);
+            setStateParameter(state, OdcConstants.TEST_LOGIN_ID_PARAM, testLoginId);
         }
         String testLoginType = request.getParameter(OdcConstants.TEST_LOGIN_TYPE);
         if (com.oceanbase.odc.common.util.StringUtils.isNotBlank(testLoginType)) {
-            addState(state, OdcConstants.TEST_LOGIN_TYPE, testLoginType);
+            setStateParameter(state, OdcConstants.TEST_LOGIN_TYPE, testLoginType);
         }
     }
 
 
     @SneakyThrows
-    public Map<String, String> getStateParameter(String state) {
+    public Map<String, String> getStateParameters(String state) {
         return STATE_PARAM_CACHE.get(state, HashMap::new);
     };
 

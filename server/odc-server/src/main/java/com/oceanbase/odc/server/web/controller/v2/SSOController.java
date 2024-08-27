@@ -65,7 +65,7 @@ public class SSOController {
     @GetMapping("/state")
     @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#state")
     public SuccessResponse<Map<String, String>> getTestClientInfo(@RequestParam String state) {
-        return Responses.ok(oauth2StateManager.getStateParameter(state));
+        return Responses.ok(oauth2StateManager.getStateParameters(state));
     }
 
 }

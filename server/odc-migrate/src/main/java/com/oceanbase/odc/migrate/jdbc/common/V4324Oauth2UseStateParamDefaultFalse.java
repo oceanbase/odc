@@ -56,7 +56,7 @@ public class V4324Oauth2UseStateParamDefaultFalse implements JdbcMigratable {
     }
 
     private void updateConfig(JdbcTemplate jdbcTemplate, String config, Long id) {
-        String sql = "update integration_integration set configuration = ? where id = ?2";
+        String sql = "update integration_integration set configuration = ?1 where id = ?2";
         jdbcTemplate.update(sql, config, id);
     }
 }
