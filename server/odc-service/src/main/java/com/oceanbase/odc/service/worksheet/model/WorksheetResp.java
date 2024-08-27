@@ -36,6 +36,7 @@ import lombok.experimental.SuperBuilder;
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = true)
 public class WorksheetResp extends WorksheetMetaResp {
+    private String content;
     private String contentDownloadUrl;
     private Long version;
 }
