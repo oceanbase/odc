@@ -17,9 +17,8 @@ package com.oceanbase.odc.service.worksheet.utils;
 
 import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.ROOT_PATH_NAME;
 
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +27,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 
 import com.oceanbase.odc.core.shared.PreConditions;
@@ -323,15 +323,15 @@ public class WorksheetPathUtil {
         return paths.iterator().next().getPathAt(commonIndex);
     }
 
-    public static java.nio.file.Path createFileWithParent(String pathStr, boolean isDirectory) {
-        java.nio.file.Path filePath = Paths.get(pathStr);
+    public static java.io.File createFileWithParent(String pathStr, boolean isDirectory) {
+        java.io.File file = new File(pathStr);
         try {
-            java.nio.file.Path parentDir = filePath.getParent();
-            if (parentDir != null) {
-                Files.createDirectories(parentDir);
+            if (isDirectory) {
+                FileUtils.forceMkdir(file);
+            } else {
+                FileUtils.touch(file);
             }
-
-            return isDirectory ? Files.createDirectory(filePath) : Files.createFile(filePath);
+            return file;
         } catch (IOException e) {
             throw new InternalServerError("create file error,pathStr: " + pathStr, e);
         }

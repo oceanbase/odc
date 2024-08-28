@@ -103,7 +103,7 @@ public class WorksheetController {
     @PostMapping("/worksheets/batchDelete")
     public SuccessResponse<BatchOperateWorksheetsResp> batchDeleteWorksheets(
             @PathVariable("projectId") Long projectId,
-            @RequestBody @Size(min = 0, max = 100) List<String> paths) {
+            @RequestBody @Size(min = 1, max = 100) List<String> paths) {
         return Responses.success(worksheetServiceFacade.batchDeleteWorksheets(projectId, paths));
     }
 

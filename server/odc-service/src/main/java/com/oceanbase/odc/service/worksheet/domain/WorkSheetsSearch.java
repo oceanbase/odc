@@ -55,10 +55,12 @@ public class WorkSheetsSearch {
      * @return
      */
     public List<WorksheetMetaResp> searchByNameLike(int limit) {
-        if (CollectionUtils.isEmpty(worksheets) || StringUtils.isBlank(nameLike)) {
+        if (CollectionUtils.isEmpty(worksheets)) {
             return worksheets;
         }
-        return worksheets.stream().filter(worksheet -> new Path(worksheet.getPath()).isNameContains(nameLike))
+        return worksheets.stream()
+                .filter(worksheet -> StringUtils.isBlank(nameLike)
+                        || new Path(worksheet.getPath()).isNameContains(nameLike))
                 .sorted((o1, o2) -> Path.getPathComparator().compare(new Path(o1.getPath()), new Path(o2.getPath())))
                 .limit(limit)
                 .collect(Collectors.toList());

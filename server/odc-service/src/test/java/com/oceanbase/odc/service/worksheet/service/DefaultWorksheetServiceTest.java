@@ -111,7 +111,7 @@ public class DefaultWorksheetServiceTest {
                 new DefaultWorksheetService(transactionTemplate, objectStorageClient,
                         worksheetRepository, authenticationFacade);
         destinationDirectory = WorksheetPathUtil.createFileWithParent(
-                WorksheetUtil.getWorksheetDownloadDirectory() + "project1", true).toFile();
+                WorksheetUtil.getWorksheetDownloadDirectory() + "project1", true);
 
     }
 

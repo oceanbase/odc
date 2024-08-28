@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +31,7 @@ import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
@@ -85,10 +86,6 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
     @Override
     public WorksheetMetaResp createWorksheet(Long projectId, String pathStr, String objectId, Long totalLength) {
         Path createPath = new Path(pathStr);
-        if (createPath.isFile()) {
-            PreConditions.notBlank(objectId, "objectId");
-            PreConditions.notNull(totalLength, "totalLength");
-        }
         WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
                 createPath.getLocation());
         return projectFileService.createWorksheet(projectId, createPath, objectId, totalLength);
@@ -106,9 +103,13 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
     @Override
     public List<WorksheetMetaResp> listWorksheets(Long projectId, ListWorksheetsReq req) {
         Integer depth = req.getDepth() == null ? 1 : req.getDepth();
-        Path path = StringUtils.isNotBlank(req.getPath()) ? new Path(req.getPath()) : Path.root();
+        PreConditions.notNull(req.getPath(), "path");
+        Path path = new Path(req.getPath());
+        PreConditions.validArgumentState(!path.isRoot(), ErrorCodes.BadArgument, null, "path can not be root");
         WorkSheetsSearch workSheetsSearch = new WorkSheetsSearch(req.getNameLike());
-        if (path.isRoot() || path.getLocation() == WorksheetLocation.REPOS) {
+        if (path.getLocation() == WorksheetLocation.REPOS) {
+            PreConditions.validArgumentState(!path.isRepos(), ErrorCodes.BadArgument, null,
+                    "path can not be repos,must have git repo id");
             workSheetsSearch.addAll(worksheetServiceFactory.getProjectFileService(WorksheetLocation.REPOS)
                     .listWorksheets(projectId, path, depth, req.getNameLike()));
         }
@@ -135,7 +136,6 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
 
         BatchOperateWorksheetsResp batchOperateWorksheetsResult = new BatchOperateWorksheetsResp();
         if (CollectionUtils.isNotEmpty(divideBatchOperateWorksheets.getNormalPaths())) {
-
             batchOperateWorksheetsResult.addResult(
                     worksheetServiceFactory.getProjectFileService(WorksheetLocation.WORKSHEETS)
                             .batchDeleteWorksheets(projectId, divideBatchOperateWorksheets.getNormalPaths()));
@@ -181,10 +181,8 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
         String rootDirectoryName = getRootDirectoryName(projectId, commonParentPath);
         String parentOfDownloadDirectory = WorksheetUtil.getWorksheetDownloadDirectory();
         String downloadDirectoryStr = parentOfDownloadDirectory + rootDirectoryName;
-        String zipFileStr = WorksheetUtil.getWorksheetDownloadZipPath(parentOfDownloadDirectory, rootDirectoryName);
-        java.nio.file.Path downloadDirectoryPath =
+        File downloadDirectory =
                 WorksheetPathUtil.createFileWithParent(downloadDirectoryStr, true);
-        File downloadDirectory = downloadDirectoryPath.toFile();
         try {
             if (CollectionUtils.isNotEmpty(divideBatchOperateWorksheets.getNormalPaths())) {
                 worksheetServiceFactory.getProjectFileService(WorksheetLocation.WORKSHEETS)
@@ -196,7 +194,8 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
                         .downloadPathsToDirectory(projectId, divideBatchOperateWorksheets.getReposPaths(),
                                 commonParentPath, downloadDirectory);
             }
-
+            String zipFileStr =
+                    WorksheetUtil.getWorksheetDownloadZipPath(parentOfDownloadDirectory, rootDirectoryName);
             try {
                 WorksheetPathUtil.createFileWithParent(zipFileStr, false);
                 OdcFileUtil.zip(downloadDirectoryStr, zipFileStr);
@@ -217,7 +216,7 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
                             projectId + ", paths: " + JsonUtils.toJson(paths),
                     e);
         } finally {
-            OdcFileUtil.deleteFiles(new File(parentOfDownloadDirectory));
+            FileUtils.deleteQuietly(new File(parentOfDownloadDirectory));
         }
     }
 

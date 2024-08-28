@@ -46,7 +46,6 @@ import org.apache.hc.core5.http.io.entity.FileEntity;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.MockitoAnnotations;
@@ -99,7 +98,7 @@ import com.oceanbase.odc.service.worksheet.service.DefaultWorksheetService;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = OdcServer.class)
 @EnableTransactionManagement
 @AutoConfigureMockMvc
-@Ignore
+// @Ignore
 public class WorksheetControllerIntegrationTests {
     @Autowired
     private MockMvc mockMvc;
@@ -188,6 +187,17 @@ public class WorksheetControllerIntegrationTests {
     @Test
     public void createWorksheet_Folder() throws Exception {
         String path = "/Worksheets/folder1/";
+        MvcResult mvcResult = mockMvc
+                .perform(MockMvcRequestBuilders.post("/api/v2/project/{projectId}/worksheets", projectId)
+                        .param("path", path)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk()).andReturn();
+        System.out.println(mvcResult.getResponse().getContentAsString());
+    }
+
+    @Test
+    public void createWorksheet_FileWithContentEmpty() throws Exception {
+        String path = "/Worksheets/file.sql";
         MvcResult mvcResult = mockMvc
                 .perform(MockMvcRequestBuilders.post("/api/v2/project/{projectId}/worksheets", projectId)
                         .param("path", path)
@@ -318,7 +328,7 @@ public class WorksheetControllerIntegrationTests {
                 listResponse.getData().getContents().stream().map(WorksheetMetaResp::getPath).collect(
                         Collectors.toList()));
 
-        req.setPath("/");
+        req.setPath("/Worksheets/");
         req.setDepth(0);
         req.setNameLike("der");
         mvcResult = mockMvc

@@ -119,7 +119,7 @@ public class DefaultWorksheetService implements WorksheetService {
         return WorksheetConverter.convertEntityToMetaResp(result);
     }
 
-    private void pathOrNameTooLongCheck(Set<Path> createPaths) {
+    private void checkPathOrNameLength(Set<Path> createPaths) {
         createPaths.forEach(createPath -> {
             if (createPath.isExceedPathLengthLimit()) {
                 throw new BadRequestException(ErrorCodes.OverLimit, new Object[] {"path", PATH_LENGTH_LIMIT},
@@ -133,11 +133,7 @@ public class DefaultWorksheetService implements WorksheetService {
     }
 
     private void createCheck(Long projectId, BatchCreateWorksheets createWorksheets) {
-        List<String> queryPaths = createWorksheets.getCreatePathToObjectIdMap().keySet().stream()
-                .map(Path::getStandardPath).collect(Collectors.toList());
-        queryPaths.add(createWorksheets.getParentPath().getStandardPath());
-
-        pathOrNameTooLongCheck(createWorksheets.getCreatePathToObjectIdMap().keySet());
+        checkPathOrNameLength(createWorksheets.getCreatePathToObjectIdMap().keySet());
 
         // the exist worksheets number + to create worksheets number can't exceed limit
         Integer levelNumOfToCreatePath = createWorksheets.getParentPath().getLevelNum() + 1;
@@ -153,6 +149,9 @@ public class DefaultWorksheetService implements WorksheetService {
         }
 
         // parent exist,create paths not exist
+        List<String> queryPaths = createWorksheets.getCreatePathToObjectIdMap().keySet().stream()
+                .map(Path::getStandardPath).collect(Collectors.toList());
+        queryPaths.add(createWorksheets.getParentPath().getStandardPath());
         List<CollaborationWorksheetEntity> worksheets = worksheetRepository.findByProjectIdAndInPaths(
                 projectId, queryPaths);
         boolean hasParent = false;
@@ -189,6 +188,8 @@ public class DefaultWorksheetService implements WorksheetService {
             } catch (Throwable e) {
                 log.warn("generateDownloadUrl in getWorksheetDetails failed, projectId:{}，path:{},objectId:{}",
                         projectId, path, worksheet.getObjectId(), e);
+                throw new InternalServerError("generateDownloadUrl in getWorksheetDetails failed, projectId:"
+                        + projectId + "，path:" + path + ",objectId:" + worksheet.getObjectId(), e);
             }
         }
 
@@ -197,9 +198,6 @@ public class DefaultWorksheetService implements WorksheetService {
 
     @Override
     public List<WorksheetMetaResp> listWorksheets(Long projectId, Path path, Integer depth, String nameLike) {
-        if (path == null) {
-            path = Path.root();
-        }
         Integer minLevelNumberFilter = depth == null || depth <= 0 ? null : path.getLevelNum() + 1;
         Integer maxLevelNumberFilter = depth == null || depth <= 0 ? null : path.getLevelNum() + depth;;
         List<CollaborationWorksheetEntity> entities = worksheetRepository.findByPathLikeWithFilter(
@@ -293,7 +291,7 @@ public class DefaultWorksheetService implements WorksheetService {
     }
 
     /**
-     * move {@param path} to {@param destinationPath}
+     * move {@param movePath} to {@param destinationPath}
      * <p>
      * the situations cannot be moved
      * <ol>
@@ -320,16 +318,17 @@ public class DefaultWorksheetService implements WorksheetService {
      * </ol>
      * 
      * @param projectId
-     * @param path
+     * @param movePath
      * @param destinationPath
      * @return
      */
-    public List<WorksheetMetaResp> moveWorksheet(Long projectId, Path path, Path destinationPath, boolean isRename) {
-        pathOrNameTooLongCheck(Collections.singleton(destinationPath));
-        WorksheetPathUtil.moveValidCheck(path, destinationPath);
+    public List<WorksheetMetaResp> moveWorksheet(Long projectId, Path movePath, Path destinationPath,
+            boolean isRename) {
+        checkPathOrNameLength(Collections.singleton(destinationPath));
+        WorksheetPathUtil.moveValidCheck(movePath, destinationPath);
         if (isRename) {
-            WorksheetPathUtil.renameValidCheck(path, destinationPath);
-            duplicatedNameCheck(projectId, path, destinationPath);
+            WorksheetPathUtil.renameValidCheck(movePath, destinationPath);
+            duplicatedNameCheck(projectId, movePath, destinationPath);
         }
         boolean isDestinationExist = destinationPath.isSystemDefine();
         if (!isDestinationExist) {
@@ -339,24 +338,23 @@ public class DefaultWorksheetService implements WorksheetService {
         }
         Optional<Path> movedPathOptional = Optional.empty();
         if (isDestinationExist) {
-            WorksheetPathUtil.moveValidCheckWhenDestinationPathExist(path, destinationPath);
-            movedPathOptional = path.moveWhenDestinationPathExist(path, destinationPath);
-
+            WorksheetPathUtil.moveValidCheckWhenDestinationPathExist(movePath, destinationPath);
+            movedPathOptional = movePath.moveWhenDestinationPathExist(movePath, destinationPath);
         } else {
-            WorksheetPathUtil.moveValidCheckWhenDestinationPathNotExist(path, destinationPath);
-            movedPathOptional = path.moveWhenDestinationPathNotExist(path, destinationPath);
+            WorksheetPathUtil.moveValidCheckWhenDestinationPathNotExist(movePath, destinationPath);
+            movedPathOptional = movePath.moveWhenDestinationPathNotExist(movePath, destinationPath);
         }
         PreConditions.validArgumentState(movedPathOptional.isPresent(),
                 ErrorCodes.BadArgument, null,
-                "path:" + path + " move to destinationPath:" + destinationPath + " failed");
-        duplicatedNameCheck(projectId, path, movedPathOptional.get());
+                "movePath:" + movePath + " move to destinationPath:" + destinationPath + " failed");
+        duplicatedNameCheck(projectId, movePath, movedPathOptional.get());
         List<CollaborationWorksheetEntity> currentAndSubEntities =
                 worksheetRepository.findByPathLikeWithFilter(projectId,
-                        path.getStandardPath(), null, null, null);
-        pathNotFoundCheck(projectId, path, currentAndSubEntities);
+                        movePath.getStandardPath(), null, null, null);
+        pathNotFoundCheck(projectId, movePath, currentAndSubEntities);
 
         Set<CollaborationWorksheetEntity> movedEntities =
-                doMove(path, destinationPath, currentAndSubEntities, isDestinationExist);
+                doMove(movePath, destinationPath, currentAndSubEntities, isDestinationExist);
         if (CollectionUtils.isEmpty(movedEntities)) {
             return new ArrayList<>();
         }
@@ -425,6 +423,7 @@ public class DefaultWorksheetService implements WorksheetService {
     public List<WorksheetMetaResp> editWorksheet(Long projectId, Path path,
             String objectId, Long totalLength, Long readVersion) {
         PreConditions.notNull(objectId, "objectId");
+        PreConditions.notNull(totalLength, "totalLength");
         PreConditions.notNull(readVersion, "readVersion");
         PreConditions.validArgumentState(path.isFile(), ErrorCodes.Unsupported, null,
                 "Unsupported edit path: " + path);
@@ -476,6 +475,11 @@ public class DefaultWorksheetService implements WorksheetService {
                 worksheetRepository.findByProjectIdAndPath(projectId, path.getStandardPath());
         CollaborationWorksheetEntity worksheet = getWithNotFoundCheck(projectId, path, worksheetOptional);
         PreConditions.notBlank(worksheet.getObjectId(), "objectId");
+        if (StringUtils.isEmpty(worksheet.getObjectId())) {
+            throw new BadRequestException(ErrorCodes.Unsupported,
+                    new Object[] {"Not support downloading empty file!"},
+                    "not support downloading empty file,projectId:" + projectId + ",path:" + path);
+        }
         return objectStorageClient
                 .generateDownloadUrl(worksheet.getObjectId(), WorksheetConstant.DOWNLOAD_DURATION_SECONDS).toString();
     }
@@ -513,21 +517,20 @@ public class DefaultWorksheetService implements WorksheetService {
         }
         if (path.isFile() && StringUtils.isNotBlank(worksheet.getObjectId())) {
             String absoluteFile = destinationDirectory.getAbsolutePath() + relativePathOptional.get();
-            java.nio.file.Path filePath = WorksheetPathUtil.createFileWithParent(absoluteFile, false);
+            File file = WorksheetPathUtil.createFileWithParent(absoluteFile, false);
             try {
-                objectStorageClient.downloadToFile(worksheet.getObjectId(), filePath.toFile());
+                objectStorageClient.downloadToFile(worksheet.getObjectId(), file);
             } catch (IOException e) {
                 log.error(
                         "download worksheet to file failed, projectId:{}, worksheet:{},commonParentPath:{},objetId{},"
                                 + "filePath:{}",
-                        projectId, worksheet, commParentPath, worksheet.getObjectId(), filePath);
+                        projectId, worksheet, commParentPath, worksheet.getObjectId(), absoluteFile);
                 throw new InternalServerError(String.format(
                         "download worksheet to file failed, projectId:%d, worksheet:%s,commonParentPath:%s,objetId:%s,"
                                 + "filePath:%s",
-                        projectId, worksheet, commParentPath, worksheet.getObjectId(), filePath), e);
+                        projectId, worksheet, commParentPath, worksheet.getObjectId(), absoluteFile), e);
             }
-        }
-        if (path.isDirectory()) {
+        } else if (path.isDirectory()) {
             String absoluteFile = destinationDirectory.getAbsolutePath() + relativePathOptional.get();
             WorksheetPathUtil.createFileWithParent(absoluteFile, true);
         }

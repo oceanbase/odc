@@ -19,8 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import org.apache.commons.lang.StringUtils;
-
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
@@ -55,6 +54,10 @@ public class BatchCreateWorksheets {
             String pathStr = tuple.getPath();
             String objectId = tuple.getObjectId();
             Path path = new Path(pathStr);
+            if (path.isFile()) {
+                PreConditions.notBlank(objectId, "objectId");
+                PreConditions.notNull(tuple.getTotalLength(), "totalLength");
+            }
             Path parentPath = getParentPath(path, objectId);
             if (this.parentPath == null) {
                 this.parentPath = parentPath;
@@ -80,10 +83,6 @@ public class BatchCreateWorksheets {
         Optional<Path> parentPathOptional = path.getParentPath();
         if (!parentPathOptional.isPresent()) {
             throw new IllegalArgumentException("invalid crate path : " + path);
-        }
-        if (path.isFile() && StringUtils.isBlank(objectId)) {
-            throw new IllegalArgumentException("objectId can't be null when create path is file,create path: "
-                    + path + ",objectId: " + objectId);
         }
         return parentPathOptional.get();
     }

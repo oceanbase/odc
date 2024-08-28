@@ -37,7 +37,7 @@ import lombok.Getter;
 @Getter
 public class DivideBatchOperateWorksheets {
     List<Path> normalPaths = new ArrayList<>();
-    ArrayList<Path> reposPaths = new ArrayList<>();
+    List<Path> reposPaths = new ArrayList<>();
 
     public DivideBatchOperateWorksheets(Collection<String> pathStrList) {
         List<Path> sortedPaths =
