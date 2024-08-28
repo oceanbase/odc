@@ -478,9 +478,12 @@ public class ScheduleService {
         Page<ScheduleTaskEntity> scheduleTaskEntities = scheduleTaskService.listTask(pageable, entity.getId());
         return scheduleTaskEntities.map(e -> {
             ScheduleTaskResp scheduleTaskResp = scheduleTaskMapper.entityToModel(e);
-            URL fullLogDownloadUrl = scheduledTaskLoggerService.getFullLogDownloadUrl(entity.getId(), e.getId(),
+            if(TaskStatus.PREPARING.equals(scheduleTaskResp.getStatus())){
+                return scheduleTaskResp;
+            }
+            String fullLogDownloadUrl = scheduledTaskLoggerService.getFullLogDownloadUrl(entity.getId(), e.getId(),
                     OdcTaskLogLevel.ALL);
-            return scheduleTaskResp.setFullLogDownloadUrl(fullLogDownloadUrl.toString());
+            return scheduleTaskResp.setFullLogDownloadUrl(fullLogDownloadUrl);
         });
     }
 

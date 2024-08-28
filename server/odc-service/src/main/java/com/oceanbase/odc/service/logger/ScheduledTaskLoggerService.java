@@ -113,7 +113,7 @@ public class ScheduledTaskLoggerService {
     }
 
     @SneakyThrows
-    public URL getFullLogDownloadUrl(Long scheduleId, Long taskId, OdcTaskLogLevel level) {
+    public String getFullLogDownloadUrl(Long scheduleId, Long taskId, OdcTaskLogLevel level) {
         JobEntity jobEntity = taskFrameworkService.find(taskId);
         PreConditions.notNull(jobEntity, "job not found by id " + taskId);
         // it is currently considered that all scheduled tasks run on the task framework
@@ -125,10 +125,10 @@ public class ScheduledTaskLoggerService {
             Optional<String> bucketName = taskFrameworkService.findByJobIdAndAttributeKey(taskId,
                     JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
             if (objId.isPresent() && bucketName.isPresent()) {
-                return cloudObjectStorageService.generateDownloadUrl(objId.get());
+                return cloudObjectStorageService.generateDownloadUrl(objId.get()).toString();
             }
         }
-        return new URL(String.format("/api/v2/schedule/schedules/%s/tasks/%s/log/download", scheduleId, taskId));
+        return String.format("/api/v2/schedule/schedules/%s/tasks/%s/log/download", scheduleId, taskId);
     }
 
     @SneakyThrows
