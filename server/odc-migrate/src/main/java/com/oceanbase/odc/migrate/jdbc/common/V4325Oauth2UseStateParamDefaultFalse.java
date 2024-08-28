@@ -29,9 +29,9 @@ import com.oceanbase.odc.metadb.integration.IntegrationEntity;
 import com.oceanbase.odc.service.integration.model.Oauth2Parameter;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
 
-@Migratable(version = "4.3.2.4",
+@Migratable(version = "4.3.2.5",
         description = "Process Historical sso integrations config")
-public class V4324Oauth2UseStateParamDefaultFalse implements JdbcMigratable {
+public class V4325Oauth2UseStateParamDefaultFalse implements JdbcMigratable {
 
     @Override
     public void migrate(DataSource dataSource) {

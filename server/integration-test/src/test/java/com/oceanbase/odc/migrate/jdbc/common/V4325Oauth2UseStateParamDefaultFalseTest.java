@@ -35,7 +35,7 @@ import com.oceanbase.odc.service.integration.model.IntegrationType;
 import com.oceanbase.odc.service.integration.model.Oauth2Parameter;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
 
-public class V4324Oauth2UseStateParamDefaultFalseTest extends ServiceTestEnv {
+public class V4325Oauth2UseStateParamDefaultFalseTest extends ServiceTestEnv {
 
     @Autowired
     private DataSource dataSource;
@@ -55,7 +55,7 @@ public class V4324Oauth2UseStateParamDefaultFalseTest extends ServiceTestEnv {
 
     @Test
     public void test_set_use_state_param_default_false() {
-        V4324Oauth2UseStateParamDefaultFalse migrate = new V4324Oauth2UseStateParamDefaultFalse();
+        V4325Oauth2UseStateParamDefaultFalse migrate = new V4325Oauth2UseStateParamDefaultFalse();
         migrate.migrate(dataSource);
         List<IntegrationEntity> all = integrationRepository.findAll();
         Assert.assertEquals(1, all.size());
