@@ -96,4 +96,8 @@ public class DataTransferConfig implements TaskParameters, Serializable {
         return StringUtils.equalsIgnoreCase("ZIP", fileType);
     }
 
+    public boolean isDirImport() {
+        return StringUtils.equalsIgnoreCase("DIR", fileType);
+    }
+
 }

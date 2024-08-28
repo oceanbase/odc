@@ -72,11 +72,11 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
             parameter.setMaxDiscards(-1);
         }
         setTransferFormat(parameter, transferConfig);
-        if (transferConfig.isCompressed()) {
+        if (transferConfig.isCompressed() || transferConfig.isDirImport()) {
             /**
              * 导入导出组件产出物导入，需要详细设置
              */
-            setWhiteListForZip(parameter, transferConfig);
+            setWhiteListForZipOrDir(parameter, transferConfig);
             if (transferConfig.isTransferDDL()) {
                 parameter.setIncludeDdl(true);
                 parameter.setReplaceObjectIfExists(transferConfig.isReplaceSchemaWhenExists());
@@ -101,8 +101,8 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
         return parameter;
     }
 
-    private void setWhiteListForZip(LoadParameter parameter, DataTransferConfig config) throws IOException {
-        if (!config.isCompressed()) {
+    private void setWhiteListForZipOrDir(LoadParameter parameter, DataTransferConfig config) throws IOException {
+        if (!config.isCompressed() && !config.isDirImport()) {
             return;
         }
         Map<ObjectType, Set<String>> whiteList = parameter.getWhiteListMap();
