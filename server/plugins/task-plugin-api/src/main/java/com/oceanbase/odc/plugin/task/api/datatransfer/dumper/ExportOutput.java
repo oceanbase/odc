@@ -67,6 +67,7 @@ public class ExportOutput {
     private final BinaryFile<List<?>> checkpoints;
     private final List<DumpDBObject> dumpDbObjects;
     private boolean isZip;
+    private Path inputDir;
 
     public ExportOutput(@NonNull File file) throws IOException {
         if (!file.exists()) {
@@ -74,6 +75,7 @@ public class ExportOutput {
         }
         if (file.isDirectory()) {
             this.isZip = false;
+            this.inputDir = file.toPath();
             this.dumpDbObjects = getDbObjectFolders(file);
             this.manifest = getManifest(file);
             this.checkpoints = getCheckPoints(file);
@@ -105,6 +107,17 @@ public class ExportOutput {
         if (!folder.exists()) {
             FileUtils.forceMkdir(folder);
         }
+
+        if (inputDir != null) {
+            // if input file is a dir, try to use symbolic link, avoid copy files if possible
+            try {
+                Files.createSymbolicLink(this.inputDir, folder.toPath());
+                return;
+            } catch (Exception e) {
+                log.warn("Failed to create symbolic link, {}, use file copy instead", e.getMessage());
+            }
+        }
+
         String parent = folder.getAbsolutePath() + File.separator;
         if (manifest != null) {
             try (InputStream inputStream = manifest.getUrl().openStream();

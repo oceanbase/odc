@@ -353,20 +353,17 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
 
     private ExportOutput parseDbObjects(List<String> fileNames, File destDir) throws IOException {
         if (fileNames == null || fileNames.size() != 1) {
-            LOGGER.warn("Single zip file is available, importFileNames={}", fileNames);
-            throw new IllegalArgumentException("Single zip file is available");
+            LOGGER.warn("Single zip file or directory is available, importFileNames={}", fileNames);
+            throw new IllegalArgumentException("Single zip file or directory is available");
         }
         String fileName = fileNames.get(0);
         LocalFileManager fileManager = SpringContextUtil.getBean(LocalFileManager.class);
         Optional<File> uploadFile = fileManager.findByName(TaskType.IMPORT, LocalFileManager.UPLOAD_BUCKET, fileName);
         File from = uploadFile.orElseThrow(() -> new FileNotFoundException("File not found, " + fileName));
         ExportOutput exportOutput = new ExportOutput(from);
-        if (exportOutput.isZip()) {
-            exportOutput.toFolder(destDir);
-            LOGGER.info("Unzip file to working dir, from={}, dest={}", from.getAbsolutePath(),
-                    destDir.getAbsolutePath());
-            return new ExportOutput(destDir);
-        }
+        exportOutput.toFolder(destDir);
+        LOGGER.info("Extract file to working dir, from={}, dest={}", from.getAbsolutePath(),
+                destDir.getAbsolutePath());
         return exportOutput;
     }
 
