@@ -44,7 +44,7 @@ public class ThirdPartyOutputConverter {
                     FileUtils.copyFile(input, inputBackup);
                     FileUtils.moveFile(dest, input, StandardCopyOption.REPLACE_EXISTING);
                     log.info("Successfully convert input file {} of {} into new file format!", input.getName(),
-                        outPutConverter.getNewFilePrefix());
+                            outPutConverter.getNewFilePrefix());
                 }
 
             }

@@ -363,7 +363,8 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         ExportOutput exportOutput = new ExportOutput(from);
         if (exportOutput.isZip()) {
             exportOutput.toFolder(destDir);
-            LOGGER.info("Unzip file to working dir, from={}, dest={}", from.getAbsolutePath(), destDir.getAbsolutePath());
+            LOGGER.info("Unzip file to working dir, from={}, dest={}", from.getAbsolutePath(),
+                    destDir.getAbsolutePath());
             return new ExportOutput(destDir);
         }
         return exportOutput;
