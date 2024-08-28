@@ -79,7 +79,7 @@ public class MySQLAffectedRows implements SqlCheckRule {
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
 
         if (statement instanceof Update || statement instanceof Delete
-            || statement instanceof Insert || statement instanceof Select) {
+                || statement instanceof Insert || statement instanceof Select) {
             if (maxSQLAffectedRows == 0 || jdbcOperations == null) {
                 return Collections.emptyList();
             }
