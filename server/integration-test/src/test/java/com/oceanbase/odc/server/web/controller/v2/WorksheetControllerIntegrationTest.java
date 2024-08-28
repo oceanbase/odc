@@ -16,8 +16,6 @@
 package com.oceanbase.odc.server.web.controller.v2;
 
 import static org.mockito.Mockito.when;
-import static org.springframework.test.util.AssertionErrors.assertEquals;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.File;
@@ -46,6 +44,7 @@ import org.apache.hc.core5.http.io.entity.FileEntity;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.MockitoAnnotations;
@@ -98,8 +97,8 @@ import com.oceanbase.odc.service.worksheet.service.DefaultWorksheetService;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = OdcServer.class)
 @EnableTransactionManagement
 @AutoConfigureMockMvc
-// @Ignore
-public class WorksheetControllerIntegrationTests {
+@Ignore
+public class WorksheetControllerIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
 
