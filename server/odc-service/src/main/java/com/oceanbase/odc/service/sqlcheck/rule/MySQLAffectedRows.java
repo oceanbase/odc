@@ -35,6 +35,7 @@ import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.delete.Delete;
 import com.oceanbase.tools.sqlparser.statement.insert.Insert;
+import com.oceanbase.tools.sqlparser.statement.select.Select;
 import com.oceanbase.tools.sqlparser.statement.update.Update;
 
 import lombok.NonNull;
@@ -77,7 +78,8 @@ public class MySQLAffectedRows implements SqlCheckRule {
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
 
-        if (statement instanceof Insert || statement instanceof Update || statement instanceof Delete) {
+        if (statement instanceof Update || statement instanceof Delete
+            || statement instanceof Insert || statement instanceof Select) {
             if (maxSQLAffectedRows == 0 || jdbcOperations == null) {
                 return Collections.emptyList();
             }
