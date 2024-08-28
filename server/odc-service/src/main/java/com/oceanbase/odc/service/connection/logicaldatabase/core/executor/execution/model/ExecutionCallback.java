@@ -16,16 +16,15 @@
 
 package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model;
 
+import java.sql.SQLException;
 import java.util.Collection;
 
-public interface ExecutionCallback<T extends ExecutionUnit, R extends ExecutionResult> {
-    R execute(T input);
+public interface ExecutionCallback<R> {
+    ExecutionResult<R> execute(ExecutionGroupContext<R> context) throws SQLException;
 
-    void terminate(T input);
+    void terminate(ExecutionGroupContext<R> context) throws SQLException;
 
-    void onSuccess(Collection<T> input);
+    void onFailed(ExecutionUnit<R> unit, ExecutionGroupContext<R> context);
 
-    void onFailure(Collection<T> input, Throwable throwable);
-
-    void onComplete();
+    void onSuccess(ExecutionUnit<R> unit, ExecutionGroupContext<R> context);
 }

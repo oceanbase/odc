@@ -16,12 +16,30 @@
 
 package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model;
 
-public interface ExecutionResult {
-    String getId();
+import lombok.Data;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
-    ExecutionStatus getStatus();
+/**
+ * @Author: Lebie
+ * @Date: 2024/8/28 17:49
+ * @Description: []
+ */
+@Data
+public class ExecutionResult<R> {
+    private R result;
+    private ExecutionStatus status;
 
-    void setStatus(ExecutionStatus status);
+    public ExecutionResult(ExecutionStatus status) {
+        this.status = status;
+    }
 
-    boolean isCompleted();
+    public ExecutionResult(R result, ExecutionStatus status) {
+        this.result = result;
+        this.status = status;
+    }
+
+    public boolean isCompleted() {
+        return status == ExecutionStatus.SUCCESS || status == ExecutionStatus.SKIPPED;
+    }
 }

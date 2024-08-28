@@ -17,13 +17,14 @@
 package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution;
 
 import java.util.List;
+import java.util.concurrent.Executors;
 
 import org.springframework.util.CollectionUtils;
 
-import com.oceanbase.odc.core.shared.exception.NotImplementedException;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionCallback;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionContext;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionGroup;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionGroupContext;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionResult;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionUnit;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.thread.ExecutorServiceManager;
@@ -35,27 +36,22 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execut
  */
 public final class ExecutorEngine<T extends ExecutionUnit, R extends ExecutionResult> implements AutoCloseable {
     private final ExecutorServiceManager groupExecutorServiceManager;
-    private final ExecutorServiceManager subGroupExecutorServiceManager;
-    private final List<ExecutionGroup<T>> groups;
-    private final ExecutionCallback<T, R> callback;
 
-    private ExecutorEngine(List<ExecutionGroup<T>> groups, ExecutionCallback<T, R> callback) {
-        this.groups = groups;
-        this.callback = callback;
-        this.groupExecutorServiceManager =
-                new ExecutorServiceManager(groups.stream().mapToInt(ExecutionGroup::getConcurrency).max().orElse(0));
-        this.subGroupExecutorServiceManager = new ExecutorServiceManager(
-                groups.stream().mapToInt(ExecutionGroup::getSubGroupConcurrency).max().orElse(0));
+    public ExecutorEngine(int executorSize) {
+        this.groupExecutorServiceManager = new ExecutorServiceManager(executorSize);
     }
 
-    public ExecutionContext<T, R> execute() {
-        return new ExecutionContext<>(groups, callback, groupExecutorServiceManager, subGroupExecutorServiceManager);
+    public ExecutionGroupContext<R> execute(List<ExecutionGroup<R>> groups) {
+        PreConditions.notEmpty(groups, "groups");
+        ExecutionGroupContext<R> executionContext =
+                new ExecutionGroupContext<>(groups, this.groupExecutorServiceManager.getExecutorService());
+        Executors.newSingleThreadExecutor().submit(() -> executionContext.init());
+        return executionContext;
     }
 
     @Override
     public void close() throws Exception {
         this.groupExecutorServiceManager.close();
-        this.subGroupExecutorServiceManager.close();
     }
 
 }

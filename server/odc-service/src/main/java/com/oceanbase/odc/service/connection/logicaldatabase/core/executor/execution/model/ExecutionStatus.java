@@ -17,10 +17,10 @@
 package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model;
 
 public enum ExecutionStatus {
-    PENDING,
-    RUNNING,
     SUCCESS,
-    FAILURE,
+    FAILED,
     SKIPPED,
-    TERMINATED
+    RUNNING,
+    PENDING,
+    TERMINATED,
 }

@@ -16,6 +16,64 @@
 
 package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model;
 
-public interface ExecutionUnit {
-    String getId();
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * @Author: Lebie
+ * @Date: 2024/8/28 17:46
+ * @Description: []
+ */
+@Slf4j
+public class ExecutionUnit<R> {
+    private final String id;
+    private final ExecutionCallback<R>  callback;
+
+    public ExecutionUnit(String id, ExecutionCallback<R> executionCallback) {
+        this.id = id;
+        this.callback = executionCallback;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void execute(ExecutionGroupContext<R> context) {
+        try {
+            ExecutionResult<R> result = callback.execute(context);
+            context.setExecutionResult(id, result);
+            if (result.getStatus() == ExecutionStatus.SUCCESS) {
+                callback.onSuccess(this, context);
+            } else {
+                callback.onFailed(this, context);
+            }
+        } catch (Exception e) {
+            log.warn("ExecutionUnit execute failed, id: {}", id, e);
+            callback.onFailed(this, context);
+        }
+    }
+
+    public void terminate(ExecutionGroupContext<R> context) {
+        try {
+            ExecutionResult<R> result = context.getExecutionResult(id);
+            synchronized (result) {
+                if (result.getStatus() == ExecutionStatus.RUNNING) {
+                    callback.terminate(context);
+                    context.getExecutionResult(id).setStatus(ExecutionStatus.TERMINATED);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("ExecutionUnit terminate failed, id: {}", id, e);
+            context.getExecutionResult(id).setStatus(ExecutionStatus.FAILED);
+        }
+    }
+
+    public void skip(ExecutionGroupContext<R> context) {
+        ExecutionResult<R> result = context.getExecutionResult(id);
+        synchronized (result) {
+            if (result.getStatus() == ExecutionStatus.FAILED) {
+                result.setStatus(ExecutionStatus.SKIPPED);
+            }
+        }
+    }
+
 }

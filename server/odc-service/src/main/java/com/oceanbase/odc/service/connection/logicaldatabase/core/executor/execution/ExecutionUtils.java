@@ -14,25 +14,23 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql;
+package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution;
 
-import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
-
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @Author: Lebie
- * @Date: 2024/8/23 17:00
+ * @Date: 2024/8/28 18:31
  * @Description: []
  */
-@Data
-@RequiredArgsConstructor
-public class SqlUnit {
-    private String id;
-    private DialectType dialectType;
-    private SqlTuple sql;
-    private DataNode dataNode;
+public class ExecutionUtils {
+
+    public static <T> List<List<T>> createBatches(List<T> tasks, int batchSize) {
+        List<List<T>> batches = new ArrayList<>();
+        for (int i = 0; i < tasks.size(); i += batchSize) {
+            batches.add(tasks.subList(i, Math.min(i + batchSize, tasks.size())));
+        }
+        return batches;
+    }
 }
