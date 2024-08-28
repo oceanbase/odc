@@ -21,6 +21,7 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
 
 import lombok.Data;
 import lombok.NonNull;
+import lombok.experimental.Accessors;
 
 /**
  * @Author：tinker
@@ -29,6 +30,7 @@ import lombok.NonNull;
  */
 
 @Data
+@Accessors(chain = true)
 public class ScheduleTaskResp {
 
     private Long id;
@@ -48,6 +50,8 @@ public class ScheduleTaskResp {
     private Date createTime;
 
     private Date updateTime;
+
+    private String fullLogDownloadUrl;
 
     public static ScheduleTaskResp withId(@NonNull Long id) {
         ScheduleTaskResp resp = new ScheduleTaskResp();

@@ -57,7 +57,6 @@ import com.oceanbase.odc.service.flow.model.FlowMetaInfo;
 import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.util.TaskLogFilenameGenerator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.logger.ILoggerService;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
@@ -86,7 +85,7 @@ public class FlowInstanceController {
     @Autowired
     private PartitionPlanScheduleService partitionPlanScheduleService;
     @Autowired
-    private ILoggerService flowLoggerService;
+    private FlowInstanceService flowLoggerService;
 
     @ApiOperation(value = "createFlowInstance", notes = "创建流程实例，返回流程实例")
     @RequestMapping(value = "/", method = RequestMethod.POST)

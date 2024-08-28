@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.logger;
 
 import java.io.File;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,21 +27,31 @@ import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.IoUtil;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * @author mayang
- */
 @Slf4j
-@SuppressWarnings("all")
-public class AbstractLoggerService {
+public class LogToolUnit {
 
-    protected String readLog(File logFile, long maxLimitedCount, long maxLogSizeCount) {
+    public static String readLog(File logFile, long maxLimitedCount, long maxLogSizeCount) {
         return readLog(logFile, maxLimitedCount, maxLogSizeCount, "Log file not exist, read failed!");
     }
 
-    protected String readLog(File logFile, long maxLimitedCount, long maxLogSizeCount,
-            String defaultContent) {
+    public static String readLog(InputStream logIs, long maxLimitedCount, long maxLogSizeCount) {
+        if (logIs == null) {
+            throw new UnexpectedException("InputStream is null");
+        }
+        File logFile = null;
+        try {
+            logFile = FileUtil.createTempFile("temp-", ".tmp", true);
+            IoUtil.copy(logIs, FileUtil.getOutputStream(logFile));
+            return readLog(logFile, maxLimitedCount, maxLogSizeCount, "Log file not exist, read failed!");
+        } finally {
+            FileUtil.del(logFile);
+        }
+    }
+
+    private static String readLog(File logFile, long maxLimitedCount, long maxLogSizeCount, String defaultContent) {
         if (!FileUtil.exist(logFile)) {
             log.warn("Log file not exist: {}", logFile.getAbsolutePath());
             return defaultContent;

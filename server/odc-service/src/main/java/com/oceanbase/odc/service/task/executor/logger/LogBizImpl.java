@@ -17,14 +17,18 @@ package com.oceanbase.odc.service.task.executor.logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
-import org.springframework.core.io.InputStreamResource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
 import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -38,7 +42,13 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.4
  */
 @Slf4j
+@Service
 public class LogBizImpl implements LogBiz {
+
+    ConcurrentHashMap<String, Boolean> uploadStatus = new ConcurrentHashMap<>();
+
+    @Autowired
+    private CloudObjectStorageService cloudObjectStorageService;
 
     @Override
     public String getLog(Long jobId, String logType, Long fetchMaxLine, Long fetchMaxByteSize) {
@@ -56,10 +66,23 @@ public class LogBizImpl implements LogBiz {
     }
 
     @Override
-    public InputStreamResource downloadLog(Long jobId, String logType) {
+    public URL downloadLog(Long jobId, String userIdStr, String logType) {
         log.info("Accept download log request, job id = {}, logType = {}.", jobId, logType);
-        String logFilePath = LogUtils.getTaskLogFileWithPath(jobId, OdcTaskLogLevel.valueOf(logType));
-        return new InputStreamResource(FileUtil.getInputStream(logFilePath));
+        if (!uploadStatus.computeIfAbsent(userIdStr, v -> false)) {
+            // todo 旧的上传未结束
+            return null;
+        }
+        try {
+            String logFileStr = LogUtils.getTaskLogFileWithPath(jobId, OdcTaskLogLevel.valueOf(logType));
+            String objectId = cloudObjectStorageService.upload(FileUtil.getName(logFileStr), FileUtil.file(logFileStr));
+            return cloudObjectStorageService.generateDownloadUrl(objectId,
+                    CloudObjectStorageConstants.DEFAULT_EXPIRATION_TIME);
+        } catch (Exception e) {
+            log.error("download log error.", e);
+            throw new RuntimeException(e);
+        } finally {
+            uploadStatus.put(userIdStr, true);
+        }
     }
 
     @Override

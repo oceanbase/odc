@@ -94,7 +94,6 @@ import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.config.SystemConfigService;
@@ -262,8 +261,6 @@ public class FlowInstanceService {
     private CloudMetadataClient cloudMetadataClient;
     @Autowired
     private EnvironmentRepository environmentRepository;
-    @Autowired
-    private EnvironmentService environmentService;
 
     private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
     private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();

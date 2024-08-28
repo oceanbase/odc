@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.task.executor.server;
 
+import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -64,8 +65,10 @@ public class RequestHandler {
             String path = UrlUtils.getPath(uri);
             Matcher matcher = downloadLogUrlPattern.matcher(path);
             if (matcher.find()) {
-                return Responses.single(executorBiz.downloadLog(Long.parseLong(matcher.group(1)),
-                        UrlUtils.getQueryParameterFirst(uri, "logType")));
+                URL url = executorBiz.downloadLog(Long.parseLong(matcher.group(1)),
+                        UrlUtils.getQueryParameterFirst(uri, "userIdStr"),
+                        UrlUtils.getQueryParameterFirst(uri, "logType"));
+                return Responses.single(url == null ? "" : url.toString());
             }
             matcher = logUrlPattern.matcher(path);
             if (matcher.find()) {
@@ -96,5 +99,4 @@ public class RequestHandler {
             return Responses.single("request error:" + ExceptionUtils.getRootCauseReason(e));
         }
     }
-
 }

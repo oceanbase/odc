@@ -100,7 +100,7 @@ import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider;
 import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider.TaskDownloadUrls;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.logger.ILoggerService;
+import com.oceanbase.odc.service.logger.FlowTaskInstanceLoggerService;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseResult;
@@ -163,7 +163,7 @@ public class FlowTaskInstanceService {
     @Autowired
     private EnvironmentService environmentService;
     @Autowired
-    private ILoggerService flowLoggerService;
+    private FlowTaskInstanceLoggerService flowTaskInstanceLoggerService;
 
     @Value("${odc.task.async.result-preview-max-size-bytes:5242880}")
     private long resultPreviewMaxSizeBytes;
@@ -193,11 +193,11 @@ public class FlowTaskInstanceService {
     }
 
     public String getLog(@NotNull Long flowInstanceId, OdcTaskLogLevel level, boolean skipAuth) throws IOException {
-        return flowLoggerService.getLog(level, flowInstanceId, skipAuth);
+        return flowTaskInstanceLoggerService.getLog(level, flowInstanceId, skipAuth);
     }
 
     public List<BinaryDataResult> downloadLog(@NotNull Long flowInstanceId, boolean skipAuth) throws IOException {
-        File logFile = flowLoggerService.downloadLog(flowInstanceId, skipAuth);
+        File logFile = flowTaskInstanceLoggerService.getLogFile(flowInstanceId, skipAuth);
         return Collections.singletonList(new FileBasedDataResult(logFile));
     }
 

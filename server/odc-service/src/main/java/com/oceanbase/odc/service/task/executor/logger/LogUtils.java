@@ -64,7 +64,6 @@ public class LogUtils {
                 logContent.addFirst(line + "\n");
                 lineCount++;
             }
-
         } catch (Exception ex) {
             log.warn("Read task log file failed, details={}", ex.getMessage());
             throw new UnexpectedException("Read task log file failed, details: " + ex.getMessage(), ex);
@@ -75,7 +74,9 @@ public class LogUtils {
     }
 
     public static String getTaskLogFileWithPath(Long jobId, OdcTaskLogLevel logType) {
-        return String.format(TASK_LOG_PATH_PATTERN, getBaseLogPath(), jobId, logType.getName().toLowerCase());
+        String path = String.format(TASK_LOG_PATH_PATTERN, getBaseLogPath(), jobId, logType.getName().toLowerCase());
+        log.info("LogUtil$getTaskLogFileWithPath: jobId={}, logType={}, path={}", jobId, logType, path);
+        return path;
     }
 
     public static String getBaseLogPath() {

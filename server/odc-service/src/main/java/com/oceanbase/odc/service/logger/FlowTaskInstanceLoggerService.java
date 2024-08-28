@@ -42,10 +42,9 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * @author mayang
  */
-@Service("flowLoggerService")
+@Service
 @Slf4j
-@SuppressWarnings("all")
-public class FlowLoggerServiceImpl extends AbstractLoggerService implements ILoggerService {
+public class FlowTaskInstanceLoggerService {
 
     private final FlowTaskInstanceService flowTaskInstanceService;
     private final RequestDispatcher requestDispatcher;
@@ -59,7 +58,7 @@ public class FlowLoggerServiceImpl extends AbstractLoggerService implements ILog
     @Value("${odc.log.maxLogSizeCount: #{1024 * 1024}}")
     private Long maxLogSizeCount;
 
-    public FlowLoggerServiceImpl(FlowTaskInstanceService flowTaskInstanceService,
+    public FlowTaskInstanceLoggerService(FlowTaskInstanceService flowTaskInstanceService,
             RequestDispatcher requestDispatcher,
             TaskDispatchChecker dispatchChecker,
             TaskService taskService) {
@@ -69,12 +68,12 @@ public class FlowLoggerServiceImpl extends AbstractLoggerService implements ILog
         this.taskService = taskService;
     }
 
-    @Override
     @SneakyThrows
-    public String getLog(OdcTaskLogLevel level, Long jobId, boolean skipAuth) {
-        Optional<TaskEntity> taskEntityOptional = flowTaskInstanceService.getLogDownloadableTaskEntity(jobId, skipAuth);
+    public String getLog(OdcTaskLogLevel level, Long flowInstanceId, boolean skipAuth) {
+        Optional<TaskEntity> taskEntityOptional =
+                flowTaskInstanceService.getLogDownloadableTaskEntity(flowInstanceId, skipAuth);
         if (!taskEntityOptional.isPresent()) {
-            log.warn("get log failed, jobId: {}, skipAuth: {}", jobId, skipAuth);
+            log.warn("get log failed, flowInstanceId: {}, skipAuth: {}", flowInstanceId, skipAuth);
             return "get log failed";
         }
         TaskEntity taskEntity = taskEntityOptional.get();
@@ -86,13 +85,13 @@ public class FlowLoggerServiceImpl extends AbstractLoggerService implements ILog
         return getLog(taskEntity.getCreatorId(), taskEntity.getId() + "", taskEntity.getTaskType(), level);
     }
 
-    @Override
     @SneakyThrows
-    public File downloadLog(Long jobId, boolean skipAuth) {
-        Optional<TaskEntity> taskEntityOptional = flowTaskInstanceService.getLogDownloadableTaskEntity(jobId, skipAuth);
+    public File getLogFile(Long flowInstanceId, boolean skipAuth) {
+        Optional<TaskEntity> taskEntityOptional =
+                flowTaskInstanceService.getLogDownloadableTaskEntity(flowInstanceId, skipAuth);
         if (!taskEntityOptional.isPresent()) {
-            throw new NotFoundException(ErrorCodes.NotFound, new Object[] {jobId},
-                    ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", jobId}));
+            throw new NotFoundException(ErrorCodes.NotFound, new Object[] {flowInstanceId},
+                    ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", flowInstanceId}));
         }
         TaskEntity taskEntity = taskEntityOptional.get();
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
@@ -104,16 +103,16 @@ public class FlowLoggerServiceImpl extends AbstractLoggerService implements ILog
                 OdcTaskLogLevel.ALL);
     }
 
-    public File getLogFile(Long userId, String jobId, TaskType type, OdcTaskLogLevel logLevel) {
+    public File getLogFile(Long userId, String flowInstanceId, TaskType type, OdcTaskLogLevel logLevel) {
         try {
-            return taskService.getLogFile(userId, jobId, type, logLevel);
+            return taskService.getLogFile(userId, flowInstanceId, type, logLevel);
         } catch (NotFoundException ex) {
-            log.warn(ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", jobId}));
+            log.warn(ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", flowInstanceId}));
             return null;
         }
     }
 
     private String getLog(Long userId, String jobId, TaskType type, OdcTaskLogLevel logLevel) {
-        return readLog(getLogFile(userId, jobId, type, logLevel), maxLogLimitedCount, maxLogSizeCount);
+        return LogToolUnit.readLog(getLogFile(userId, jobId, type, logLevel), maxLogLimitedCount, maxLogSizeCount);
     }
 }

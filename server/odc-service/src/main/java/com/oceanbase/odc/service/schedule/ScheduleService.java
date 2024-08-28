@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.schedule;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +80,7 @@ import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
-import com.oceanbase.odc.service.logger.ILoggerService;
+import com.oceanbase.odc.service.logger.ScheduledTaskLoggerService;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
@@ -169,7 +170,7 @@ public class ScheduleService {
     private OrganizationService organizationService;
 
     @Autowired
-    private ILoggerService scheduledLoggerService;
+    private ScheduledTaskLoggerService scheduledTaskLoggerService;
 
     @Autowired
     private JobScheduler jobScheduler;
@@ -475,7 +476,12 @@ public class ScheduleService {
     public Page<ScheduleTaskResp> listTask(Pageable pageable, Long scheduleId) {
         ScheduleEntity entity = nullSafeGetByIdWithCheckPermission(scheduleId);
         Page<ScheduleTaskEntity> scheduleTaskEntities = scheduleTaskService.listTask(pageable, entity.getId());
-        return scheduleTaskEntities.map(scheduleTaskMapper::entityToModel);
+        return scheduleTaskEntities.map(e -> {
+            ScheduleTaskResp scheduleTaskResp = scheduleTaskMapper.entityToModel(e);
+            URL fullLogDownloadUrl = scheduledTaskLoggerService.getFullLogDownloadUrl(entity.getId(), e.getId(),
+                    OdcTaskLogLevel.ALL);
+            return scheduleTaskResp.setFullLogDownloadUrl(fullLogDownloadUrl.toString());
+        });
     }
 
     public void updateStatusById(Long id, ScheduleStatus status) {
@@ -578,30 +584,14 @@ public class ScheduleService {
         return downloadUrls;
     }
 
-    public String getLog(Long scheduleId, Long taskId, OdcTaskLogLevel logLevel) {
-        log.info("get schedule log, scheduleId={}, taskId={} \n", scheduleId, taskId);
-        nullSafeGetByIdWithCheckPermission(scheduleId);
-        return getLogWithoutPermission(taskId, logLevel);
-    }
-
-    public String getLogWithoutPermission(Long taskId, OdcTaskLogLevel logLevel) {
-        log.info("get schedule log without permission, taskId={}, logLevel={}\n", taskId, logLevel);
-        return scheduledLoggerService.getLog(logLevel, taskId, true);
+    public String getLog(Long scheduleId, Long taskId, OdcTaskLogLevel logLevel, Boolean skipAuth) {
+        log.info("get schedule log, scheduleId={}, taskId={}, skipAuth={} \n", scheduleId, taskId, skipAuth);
+        return scheduledTaskLoggerService.getLog(logLevel, taskId, skipAuth);
     }
 
     public List<BinaryDataResult> downloadLog(Long scheduleId, Long taskId, boolean skipAuth) throws IOException {
-        return skipAuth ? downloadLogWithoutPermission(taskId)
-                : downloadLogWithPermission(scheduleId, taskId);
-    }
-
-    public List<BinaryDataResult> downloadLogWithPermission(Long scheduleId, Long taskId) {
-        nullSafeGetByIdWithCheckPermission(scheduleId);
-        return downloadLogWithoutPermission(taskId);
-    }
-
-    public List<BinaryDataResult> downloadLogWithoutPermission(Long taksId) {
-        File file = scheduledLoggerService.downloadLog(taksId, true);
-        return Collections.singletonList(new FileBasedDataResult(file));
+        File logFile = scheduledTaskLoggerService.getLogFile(taskId, skipAuth);
+        return Collections.singletonList(new FileBasedDataResult(logFile));
     }
 
     public boolean hasExecutingAsyncTask(ScheduleEntity schedule) {

@@ -17,8 +17,6 @@ package com.oceanbase.odc.service.task.executor.server;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -70,82 +68,72 @@ public class EmbedServer {
 
     public void start() {
         requestHandler = new RequestHandler();
-        thread = new Thread(TraceDecoratorUtils.decorate(new Runnable() {
-            @Override
-            public void run() {
-                // param
-                EventLoopGroup bossGroup = new NioEventLoopGroup();
-                EventLoopGroup workerGroup = new NioEventLoopGroup();
-                ThreadPoolExecutor bizThreadPool = new ThreadPoolExecutor(
-                        0,
-                        128,
-                        60L,
-                        TimeUnit.SECONDS,
-                        new LinkedBlockingQueue<Runnable>(64),
-                        new TraceDecoratorThreadFactory(new ThreadFactory() {
+        thread = new Thread(TraceDecoratorUtils.decorate(() -> {
+            // param
+            EventLoopGroup bossGroup = new NioEventLoopGroup();
+            EventLoopGroup workerGroup = new NioEventLoopGroup();
+            ThreadPoolExecutor bizThreadPool = new ThreadPoolExecutor(
+                    0,
+                    128,
+                    60L,
+                    TimeUnit.SECONDS,
+                    new LinkedBlockingQueue<>(64),
+                    new TraceDecoratorThreadFactory(
+                            r -> new Thread(r, "odc-job, EmbedServer bizThreadPool-" + r.hashCode())),
+                    (r, executor) -> {
+                        throw new RuntimeException("odc-job, EmbedServer bizThreadPool is EXHAUSTED!");
+                    });
+            try {
+                // start server
+                ServerBootstrap bootstrap = new ServerBootstrap();
+                bootstrap.group(bossGroup, workerGroup)
+                        .channel(NioServerSocketChannel.class)
+                        .childHandler(new ChannelInitializer<SocketChannel>() {
                             @Override
-                            public Thread newThread(Runnable r) {
-                                return new Thread(r, "odc-job, EmbedServer bizThreadPool-" + r.hashCode());
+                            public void initChannel(SocketChannel channel) throws Exception {
+                                channel.pipeline()
+                                        .addLast(new IdleStateHandler(0, 0, 30 * 3, TimeUnit.SECONDS)) // beat 3N,
+                                                                                                       // close if
+                                                                                                       // idle
+                                        .addLast(new HttpServerCodec())
+                                        .addLast(new HttpObjectAggregator(5 * 1024 * 1024)) // merge request &
+                                                                                            // reponse to FULL
+                                        .addLast(new EmbedHttpServerHandler(requestHandler, bizThreadPool));
                             }
-                        }),
-                        new RejectedExecutionHandler() {
-                            @Override
-                            public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                                throw new RuntimeException("odc-job, EmbedServer bizThreadPool is EXHAUSTED!");
-                            }
-                        });
+                        })
+                        .childOption(ChannelOption.SO_KEEPALIVE, true);
+
+                ChannelFuture future;
+                int port;
+                if (JobUtils.getExecutorPort().isPresent()) {
+                    // start with assigned port
+                    future = bootstrap.bind(JobUtils.getExecutorPort().get()).sync();
+                    port = JobUtils.getExecutorPort().get();
+                } else {
+                    // start with random port
+                    future = bootstrap.bind(0).sync();
+                    InetSocketAddress localAddress = (InetSocketAddress) future.channel().localAddress();
+                    // save port to system properties
+                    JobUtils.setExecutorPort(localAddress.getPort());
+                    port = localAddress.getPort();
+                }
+                log.info("odc-job remoting server start success, nettype = {}, port = {}",
+                        EmbedServer.class, port);
+
+                // wait util stop
+                future.channel().closeFuture().sync();
+
+            } catch (InterruptedException e) {
+                log.info("odc-job remoting server stop.");
+            } catch (Exception e) {
+                log.error("odc-job remoting server error.", e);
+            } finally {
+                // stop
                 try {
-                    // start server
-                    ServerBootstrap bootstrap = new ServerBootstrap();
-                    bootstrap.group(bossGroup, workerGroup)
-                            .channel(NioServerSocketChannel.class)
-                            .childHandler(new ChannelInitializer<SocketChannel>() {
-                                @Override
-                                public void initChannel(SocketChannel channel) throws Exception {
-                                    channel.pipeline()
-                                            .addLast(new IdleStateHandler(0, 0, 30 * 3, TimeUnit.SECONDS)) // beat 3N,
-                                                                                                           // close if
-                                                                                                           // idle
-                                            .addLast(new HttpServerCodec())
-                                            .addLast(new HttpObjectAggregator(5 * 1024 * 1024)) // merge request &
-                                                                                                // reponse to FULL
-                                            .addLast(new EmbedHttpServerHandler(requestHandler, bizThreadPool));
-                                }
-                            })
-                            .childOption(ChannelOption.SO_KEEPALIVE, true);
-
-                    ChannelFuture future;
-                    int port;
-                    if (JobUtils.getExecutorPort().isPresent()) {
-                        // start with assigned port
-                        future = bootstrap.bind(JobUtils.getExecutorPort().get()).sync();
-                        port = JobUtils.getExecutorPort().get();
-                    } else {
-                        // start with random port
-                        future = bootstrap.bind(0).sync();
-                        InetSocketAddress localAddress = (InetSocketAddress) future.channel().localAddress();
-                        // save port to system properties
-                        JobUtils.setExecutorPort(localAddress.getPort());
-                        port = localAddress.getPort();
-                    }
-                    log.info("odc-job remoting server start success, nettype = {}, port = {}",
-                            EmbedServer.class, port);
-
-                    // wait util stop
-                    future.channel().closeFuture().sync();
-
-                } catch (InterruptedException e) {
-                    log.info("odc-job remoting server stop.");
+                    workerGroup.shutdownGracefully();
+                    bossGroup.shutdownGracefully();
                 } catch (Exception e) {
-                    log.error("odc-job remoting server error.", e);
-                } finally {
-                    // stop
-                    try {
-                        workerGroup.shutdownGracefully();
-                        bossGroup.shutdownGracefully();
-                    } catch (Exception e) {
-                        log.error(e.getMessage(), e);
-                    }
+                    log.error(e.getMessage(), e);
                 }
             }
         }));
