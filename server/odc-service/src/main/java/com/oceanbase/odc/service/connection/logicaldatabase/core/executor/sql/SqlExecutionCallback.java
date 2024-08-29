@@ -58,12 +58,10 @@ public class SqlExecutionCallback implements ExecutionCallback<SqlExecuteResult>
                 .getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute(this.statementCallBack);
         JdbcGeneralResult result = results.get(0);
         return new ExecutionResult<>(new SqlExecuteResult(result), getExecutionStatus(result.getStatus()));
-
     }
 
     @Override
     public void terminate(ExecutionGroupContext<SqlExecuteResult> context) throws SQLException {
-
     }
 
     @Override
