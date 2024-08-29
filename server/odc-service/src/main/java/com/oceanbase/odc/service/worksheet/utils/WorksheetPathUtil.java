@@ -202,7 +202,7 @@ public class WorksheetPathUtil {
      * @param destinationPath
      * @return
      */
-    public static void renameValidCheck(Path renamePath, Path destinationPath) {
+    public static void checkRenameValid(Path renamePath, Path destinationPath) {
         PreConditions.notNull(renamePath, "renamePath");
         PreConditions.notNull(destinationPath, "destinationPath");
         // The type of renamePath and destinationPath should be same
@@ -226,7 +226,7 @@ public class WorksheetPathUtil {
                 "the parent of renamePath:" + renamePath + " and destinationPath:" + destinationPath + " is not same");
     }
 
-    public static void moveValidCheck(Path movePath, Path destinationPath) {
+    public static void checkMoveValid(Path movePath, Path destinationPath) {
         PreConditions.notNull(movePath, "movePath");
         PreConditions.notNull(destinationPath, "destinationPath");
         // move path cannot be system define path(type=Root/Worksheets/Repos/Git_Repo)
@@ -257,7 +257,7 @@ public class WorksheetPathUtil {
                         + " is a directory");
     }
 
-    public static void moveValidCheckWhenDestinationPathExist(Path movePath, Path destinationPath) {
+    public static void checkMoveValidWithDestinationPathExist(Path movePath, Path destinationPath) {
         // when destinationPath has existed,movePath and destinationPath cannot both be files at the same
         // time
         if (movePath.isFile() && destinationPath.isFile()) {
@@ -268,7 +268,7 @@ public class WorksheetPathUtil {
         }
     }
 
-    public static void moveValidCheckWhenDestinationPathNotExist(Path movePath, Path destinationPath) {
+    public static void checkMoveValidWithDestinationPathNotExist(Path movePath, Path destinationPath) {
         // when destinationPath is not exist and movePath is file, the destinationPath must not be a
         // directory/Worksheets/GitRepo.
         PreConditions.validArgumentState(!(movePath.isFile()

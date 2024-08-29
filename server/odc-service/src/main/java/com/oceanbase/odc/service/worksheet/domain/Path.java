@@ -306,7 +306,7 @@ public class Path {
      * Rename. Only when the current path matches {@param renamePath} will it be renamed as
      * {@param destinationPath} and return true. If it does not match, no renaming will be performed and
      * return false The {@param renamePath} and {@param destinationPath} here need to satisfy
-     * {@link WorksheetPathUtil#renameValidCheck}, and the reason why this validation is not added here
+     * {@link WorksheetPathUtil#checkRenameValid}, and the reason why this validation is not added here
      * is that it will not duplicate verify when renaming multiple times.
      * 
      * @param renamePath the path need to rename

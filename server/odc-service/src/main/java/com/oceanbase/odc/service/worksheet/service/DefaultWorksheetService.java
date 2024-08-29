@@ -115,7 +115,7 @@ public class DefaultWorksheetService implements WorksheetService {
     public WorksheetResp getWorksheetDetails(Long projectId, Path path) {
         Optional<CollaborationWorksheetEntity> worksheetOptional =
                 worksheetRepository.findByProjectIdAndPath(projectId, path.getStandardPath());
-        CollaborationWorksheetEntity worksheet = getWithNotFoundCheck(projectId, path, worksheetOptional);
+        CollaborationWorksheetEntity worksheet = getWithCheckNotFound(projectId, path, worksheetOptional);
 
         String contentDownloadUrl = null;
         if (path.isFile() && StringUtils.isNotBlank(worksheet.getObjectId())) {
@@ -192,7 +192,6 @@ public class DefaultWorksheetService implements WorksheetService {
                 result.addSuccess(toDeletes);
                 success = true;
                 deleteByObjectIdsInObjectStorage(files);
-
             } catch (Throwable e) {
                 if (!success) {
                     result.addFailed(toDeletes);
@@ -219,8 +218,8 @@ public class DefaultWorksheetService implements WorksheetService {
 
         Optional<CollaborationWorksheetEntity> worksheetOptional = worksheetRepository.findByProjectIdAndPath(
                 projectId, path.getStandardPath());
-        CollaborationWorksheetEntity worksheet = getWithNotFoundCheck(projectId, path, worksheetOptional);
-        versionConflictCheck(projectId, path, readVersion, worksheet.getVersion());
+        CollaborationWorksheetEntity worksheet = getWithCheckNotFound(projectId, path, worksheetOptional);
+        checkVersionConflict(projectId, path, readVersion, worksheet.getVersion());
         doEdit(worksheet, path, size, objectId);
 
         return Collections.singletonList(WorksheetConverter.convertEntityToMetaResp(worksheet));
@@ -231,7 +230,7 @@ public class DefaultWorksheetService implements WorksheetService {
         path.canGetDownloadUrlCheck();
         Optional<CollaborationWorksheetEntity> worksheetOptional =
                 worksheetRepository.findByProjectIdAndPath(projectId, path.getStandardPath());
-        CollaborationWorksheetEntity worksheet = getWithNotFoundCheck(projectId, path, worksheetOptional);
+        CollaborationWorksheetEntity worksheet = getWithCheckNotFound(projectId, path, worksheetOptional);
         PreConditions.notBlank(worksheet.getObjectId(), "objectId");
         if (StringUtils.isEmpty(worksheet.getObjectId())) {
             throw new BadRequestException(ErrorCodes.Unsupported,
@@ -378,10 +377,10 @@ public class DefaultWorksheetService implements WorksheetService {
     public List<WorksheetMetaResp> moveWorksheet(Long projectId, Path movePath, Path destinationPath,
             boolean isRename) {
         checkPathOrNameLength(Collections.singleton(destinationPath));
-        WorksheetPathUtil.moveValidCheck(movePath, destinationPath);
+        WorksheetPathUtil.checkMoveValid(movePath, destinationPath);
         if (isRename) {
-            WorksheetPathUtil.renameValidCheck(movePath, destinationPath);
-            duplicatedNameCheck(projectId, movePath, destinationPath);
+            WorksheetPathUtil.checkRenameValid(movePath, destinationPath);
+            checkDuplicatedName(projectId, movePath, destinationPath);
         }
         boolean isDestinationExist = destinationPath.isSystemDefine();
         if (!isDestinationExist) {
@@ -391,20 +390,20 @@ public class DefaultWorksheetService implements WorksheetService {
         }
         Optional<Path> movedPathOptional = Optional.empty();
         if (isDestinationExist) {
-            WorksheetPathUtil.moveValidCheckWhenDestinationPathExist(movePath, destinationPath);
+            WorksheetPathUtil.checkMoveValidWithDestinationPathExist(movePath, destinationPath);
             movedPathOptional = movePath.moveWhenDestinationPathExist(movePath, destinationPath);
         } else {
-            WorksheetPathUtil.moveValidCheckWhenDestinationPathNotExist(movePath, destinationPath);
+            WorksheetPathUtil.checkMoveValidWithDestinationPathNotExist(movePath, destinationPath);
             movedPathOptional = movePath.moveWhenDestinationPathNotExist(movePath, destinationPath);
         }
         PreConditions.validArgumentState(movedPathOptional.isPresent(),
                 ErrorCodes.BadArgument, null,
                 "movePath:" + movePath + " move to destinationPath:" + destinationPath + " failed");
-        duplicatedNameCheck(projectId, movePath, movedPathOptional.get());
+        checkDuplicatedName(projectId, movePath, movedPathOptional.get());
         List<CollaborationWorksheetEntity> currentAndSubEntities =
                 worksheetRepository.findByPathLikeWithFilter(projectId,
                         movePath.getStandardPath(), null, null, null);
-        pathNotFoundCheck(projectId, movePath, currentAndSubEntities);
+        checkPathNotFound(projectId, movePath, currentAndSubEntities);
 
         Set<CollaborationWorksheetEntity> movedEntities =
                 doMove(movePath, destinationPath, currentAndSubEntities, isDestinationExist);
@@ -418,7 +417,7 @@ public class DefaultWorksheetService implements WorksheetService {
                 .collect(Collectors.toList());
     }
 
-    private void pathNotFoundCheck(Long projectId, Path opPath,
+    private void checkPathNotFound(Long projectId, Path opPath,
             List<CollaborationWorksheetEntity> renameAndSubEntities) {
         boolean hasPath = false;
         for (CollaborationWorksheetEntity worksheet : renameAndSubEntities) {
@@ -461,7 +460,7 @@ public class DefaultWorksheetService implements WorksheetService {
         return changedWorksheets;
     }
 
-    private void duplicatedNameCheck(Long projectId, Path path, Path destinationPath) {
+    private void checkDuplicatedName(Long projectId, Path path, Path destinationPath) {
         Optional<CollaborationWorksheetEntity> existWorksheets = worksheetRepository.findByProjectIdAndPath(
                 projectId, destinationPath.getStandardPath());
         if (existWorksheets.isPresent()) {
@@ -472,7 +471,7 @@ public class DefaultWorksheetService implements WorksheetService {
         }
     }
 
-    private CollaborationWorksheetEntity getWithNotFoundCheck(Long projectId, Path path,
+    private CollaborationWorksheetEntity getWithCheckNotFound(Long projectId, Path path,
             Optional<CollaborationWorksheetEntity> worksheetOptional) {
         if (!worksheetOptional.isPresent()) {
             throw new NotFoundException(ErrorCodes.NotFound,
@@ -482,7 +481,7 @@ public class DefaultWorksheetService implements WorksheetService {
         return worksheetOptional.get();
     }
 
-    private void versionConflictCheck(Long projectId, Path path, Long readVersion, Long dbVersion) {
+    private void checkVersionConflict(Long projectId, Path path, Long readVersion, Long dbVersion) {
         if (readVersion != null && !readVersion.equals(dbVersion)) {
             throw new BadRequestException(ErrorCodes.WorksheetEditVersionConflict,
                     new Object[] {}, "version conflict,current version:" + dbVersion

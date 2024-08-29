@@ -112,8 +112,8 @@ public class PathMoveWhenDestinationPathNotExistTest {
     @Test
     public void rename() {
         try {
-            WorksheetPathUtil.moveValidCheck(move, destination);
-            WorksheetPathUtil.moveValidCheckWhenDestinationPathNotExist(move, destination);
+            WorksheetPathUtil.checkMoveValid(move, destination);
+            WorksheetPathUtil.checkMoveValidWithDestinationPathNotExist(move, destination);
             Optional<Path> moved = path.moveWhenDestinationPathNotExist(this.move, destination);
             assertEquals(expectedResult, moved.isPresent());
             if (expectedResult) {
