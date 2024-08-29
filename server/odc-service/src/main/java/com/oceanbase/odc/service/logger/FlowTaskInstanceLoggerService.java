@@ -18,7 +18,7 @@ package com.oceanbase.odc.service.logger;
 import java.io.File;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -51,12 +51,8 @@ public class FlowTaskInstanceLoggerService {
     private final TaskDispatchChecker dispatchChecker;
     private final TaskService taskService;
 
-    @Value("${odc.log.maxLogLimitedCount: 10000}")
-    private Long maxLogLimitedCount;
-
-    // unit：B
-    @Value("${odc.log.maxLogSizeCount: #{1024 * 1024}}")
-    private Long maxLogSizeCount;
+    @Autowired
+    private LoggerProperty loggerProperty;
 
     public FlowTaskInstanceLoggerService(FlowTaskInstanceService flowTaskInstanceService,
             RequestDispatcher requestDispatcher,
@@ -113,6 +109,7 @@ public class FlowTaskInstanceLoggerService {
     }
 
     private String getLog(Long userId, String jobId, TaskType type, OdcTaskLogLevel logLevel) {
-        return LogToolUnit.readLog(getLogFile(userId, jobId, type, logLevel), maxLogLimitedCount, maxLogSizeCount);
+        return LogToolUnit.readLog(getLogFile(userId, jobId, type, logLevel), loggerProperty.getMaxLimitedCount(),
+                loggerProperty.getMaxSizeCount());
     }
 }

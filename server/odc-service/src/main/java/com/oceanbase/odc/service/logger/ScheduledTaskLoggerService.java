@@ -18,13 +18,14 @@ package com.oceanbase.odc.service.logger;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.URL;
 import java.util.Optional;
 
 import org.apache.commons.io.FileUtils;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
@@ -53,7 +54,7 @@ import com.oceanbase.odc.service.task.util.HttpUtil;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.util.ObjectUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -73,12 +74,8 @@ public class ScheduledTaskLoggerService {
     private final CloudObjectStorageService cloudObjectStorageService;
     private final JobDispatchChecker jobDispatchChecker;
 
-    @Value("${odc.log.maxLogLimitedCount: 10000}")
-    private Long maxLogLimitedCount;
-
-    // unit：B
-    @Value("${odc.log.maxLogSizeCount: #{1024 * 1024}}")
-    private Long maxLogSizeCount;
+    @Autowired
+    private LoggerProperty loggerProperty;
 
     public ScheduledTaskLoggerService(ScheduleService scheduleService,
             ScheduleTaskService scheduleTaskService,
@@ -98,48 +95,56 @@ public class ScheduledTaskLoggerService {
         this.jobDispatchChecker = jobDispatchChecker;
     }
 
-    public String getLog(OdcTaskLogLevel level, Long jobId, boolean skipAuth) {
+    public String getLog(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel level, boolean skipAuth) {
         if (!skipAuth) {
-            scheduleService.nullSafeGetByIdWithCheckPermission(jobId);
+            scheduleService.nullSafeGetByIdWithCheckPermission(scheduleId);
         }
-        return getLogWithoutPermission(level, jobId);
+        return getLogWithoutPermission(level, scheduleTaskId);
     }
 
-    public File getLogFile(Long jobId, boolean skipAuth) {
+    public File getLogFile(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel level, boolean skipAuth) {
         if (!skipAuth) {
-            scheduleService.nullSafeGetByIdWithCheckPermission(jobId);
+            scheduleService.nullSafeGetByIdWithCheckPermission(scheduleId);
         }
-        return downloadLogWithoutPermission(jobId);
+        return downloadLogWithoutPermission(scheduleTaskId, level);
     }
 
     @SneakyThrows
-    public String getFullLogDownloadUrl(Long scheduleId, Long taskId, OdcTaskLogLevel level) {
-        JobEntity jobEntity = taskFrameworkService.find(taskId);
-        PreConditions.notNull(jobEntity, "job not found by id " + taskId);
-        // it is currently considered that all scheduled tasks run on the task framework
-        if (taskFrameworkEnabledProperties.isEnabled() && JobUtils.isK8sRunMode(jobEntity.getRunMode())
-                && cloudObjectStorageService.supported()) {
-            String attributeKey = OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
-                    : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
-            Optional<String> objId = taskFrameworkService.findByJobIdAndAttributeKey(taskId, attributeKey);
-            Optional<String> bucketName = taskFrameworkService.findByJobIdAndAttributeKey(taskId,
-                    JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
-            if (objId.isPresent() && bucketName.isPresent()) {
-                return cloudObjectStorageService.generateDownloadUrl(objId.get()).toString();
+    public String getFullLogDownloadUrl(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel level) {
+        if (taskFrameworkEnabledProperties.isEnabled() && cloudObjectStorageService.supported()) {
+            ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(scheduleTaskId);
+            Long jobId = taskEntity.getJobId();
+            if (jobId == null) {
+                return null;
+            }
+            JobEntity jobEntity = taskFrameworkService.find(jobId);
+            PreConditions.notNull(jobEntity, "job not found by id " + jobId);
+            // it is currently considered that all scheduled tasks run on the task framework
+            if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
+                String attributeKey =
+                        OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
+                                : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
+                Optional<String> objId = taskFrameworkService.findByJobIdAndAttributeKey(jobId, attributeKey);
+                Optional<String> bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobId,
+                        JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
+                if (objId.isPresent() && bucketName.isPresent()) {
+                    return cloudObjectStorageService.generateDownloadUrl(objId.get()).toString();
+                }
+                return null;
             }
         }
-        return String.format("/api/v2/schedule/schedules/%s/tasks/%s/log/download", scheduleId, taskId);
+        return String.format("/api/v2/schedule/schedules/%s/tasks/%s/log/download", scheduleId, scheduleTaskId);
     }
 
     @SneakyThrows
-    private File getLogFileFromTaskFramework(Long scheduleTaskId, OdcTaskLogLevel level) {
-        JobEntity jobEntity = taskFrameworkService.find(scheduleTaskId);
-        PreConditions.notNull(jobEntity, "job not found by id " + scheduleTaskId);
+    private File getLogFileFromTaskFramework(Long jobId, OdcTaskLogLevel level) {
+        JobEntity jobEntity = taskFrameworkService.find(jobId);
+        PreConditions.notNull(jobEntity, "job not found by id " + jobId);
         if (JobUtils.isK8sRunMode(jobEntity.getRunMode()) && cloudObjectStorageService.supported()) {
             String attributeKey = OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
                     : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
-            Optional<String> objId = taskFrameworkService.findByJobIdAndAttributeKey(scheduleTaskId, attributeKey);
-            Optional<String> bucketName = taskFrameworkService.findByJobIdAndAttributeKey(scheduleTaskId,
+            Optional<String> objId = taskFrameworkService.findByJobIdAndAttributeKey(jobId, attributeKey);
+            Optional<String> bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobId,
                     JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
             if (objId.isPresent() && bucketName.isPresent()) {
                 if (log.isDebugEnabled()) {
@@ -166,17 +171,18 @@ public class ScheduledTaskLoggerService {
                 }
                 String hostWithUrl = jobEntity.getExecutorEndpoint() + String.format(JobUrlConstants.LOG_QUERY,
                         jobEntity.getId()) + "?logType=" + level.getName();
-                log.info("hostWithUrl: {}", hostWithUrl);
                 try {
-                    String tempLogFile = getClass().getClassLoader()
-                            .getResource(String.format("tmp-task-%s.log", scheduleTaskId)).getPath();
+                    String baseFilePath = ObjectUtil.defaultIfEmpty(loggerProperty.getTempScheduleTaskLogDir(),
+                         getClass().getClassLoader().getResource("").getPath());
+                    String tempFilePath =
+                            FileUtil.normalize(baseFilePath + File.separator + String.format("tmp-task-%s.log", jobId));
                     SuccessResponse<String> response =
                             HttpUtil.request(hostWithUrl, new TypeReference<SuccessResponse<String>>() {});
-                    if (response != null && !StrUtil.isNotEmpty(response.getData())) {
-                        return FileUtil.writeUtf8String(response.getData(), tempLogFile);
+                    if (response != null && response.getData() != null) {
+                        return FileUtil.writeUtf8String(response.getData(), tempFilePath);
                     } else {
-                        log.error("the log from task pod is null, read error");
-                        return null;
+                        log.warn("the log read from task-pod is null");
+                        return FileUtil.writeUtf8String(LogToolUnit.DEFAULT_LOG_CONTENT, tempFilePath);
                     }
                 } catch (IOException e) {
                     log.warn("Query log from executor occur error, executorEndpoint={}, jobId={}",
@@ -201,14 +207,13 @@ public class ScheduledTaskLoggerService {
         return new File(LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level));
     }
 
-    private File getLogFileFromCurrentMachine(Long jobId, OdcTaskLogLevel level) {
-        return scheduleTaskService.getScheduleTaskLogFile(jobId, level);
+    private File getLogFileFromCurrentMachine(Long scheduleTaskId, OdcTaskLogLevel level) {
+        return scheduleTaskService.getScheduleTaskLogFile(scheduleTaskId, level);
     }
 
-    private File getLogFile(OdcTaskLogLevel level, Long jobId) {
-        ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(jobId);
+    private File getLogFile(OdcTaskLogLevel level, Long scheduleTaskId) {
+        ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(scheduleTaskId);
         if (taskFrameworkEnabledProperties.isEnabled() && taskEntity.getJobId() != null) {
-            log.info("get schedule task log and task framework enable = True");
             try {
                 return getLogFileFromTaskFramework(taskEntity.getJobId(), level);
             } catch (Exception e) {
@@ -221,22 +226,27 @@ public class ScheduledTaskLoggerService {
             try {
                 DispatchResponse response =
                         requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
-                log.info("Remote get task log succeed,jobId={}", jobId);
                 return response.getContentByType(
                         new TypeReference<SuccessResponse<File>>() {}).getData();
             } catch (Exception e) {
-                log.warn("Remote get task log failed, jobId={}", jobId, e);
-                throw new UnexpectedException(String.format("Remote interrupt task failed, jobId=%s", jobId));
+                log.warn("Remote get task log failed, jobId={}", scheduleTaskId, e);
+                throw new UnexpectedException(String.format("Remote interrupt task failed, jobId=%s", scheduleTaskId));
             }
         }
-        return getLogFileFromCurrentMachine(jobId, level);
+        return getLogFileFromCurrentMachine(scheduleTaskId, level);
     }
 
-    private String getLogWithoutPermission(OdcTaskLogLevel level, Long jobId) {
-        return LogToolUnit.readLog(getLogFile(level, jobId), maxLogLimitedCount, maxLogSizeCount);
+    private String getLogWithoutPermission(OdcTaskLogLevel level, Long scheduleTaskId) {
+        try {
+            return LogToolUnit.readLog(getLogFile(level, scheduleTaskId), loggerProperty.getMaxLimitedCount(),
+                loggerProperty.getMaxSizeCount());
+        }catch (Exception e) {
+            log.warn("{}, taskId={}", LogToolUnit.DEFAULT_LOG_CONTENT, scheduleTaskId);
+            return LogToolUnit.DEFAULT_LOG_CONTENT;
+        }
     }
 
-    private File downloadLogWithoutPermission(Long jobId) {
-        return getLogFile(OdcTaskLogLevel.ALL, jobId);
+    private File downloadLogWithoutPermission(Long scheduleTaskId, OdcTaskLogLevel level) {
+        return getLogFile(level, scheduleTaskId);
     }
 }

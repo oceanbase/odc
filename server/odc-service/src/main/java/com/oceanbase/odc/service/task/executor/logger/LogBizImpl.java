@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.service.logger.LoggerProperty;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
 import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
@@ -49,6 +50,8 @@ public class LogBizImpl implements LogBiz {
 
     @Autowired
     private CloudObjectStorageService cloudObjectStorageService;
+    @Autowired
+    private LoggerProperty loggerProperty;
 
     @Override
     public String getLog(Long jobId, String logType, Long fetchMaxLine, Long fetchMaxByteSize) {

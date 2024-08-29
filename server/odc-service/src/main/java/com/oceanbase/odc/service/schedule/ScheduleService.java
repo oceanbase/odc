@@ -16,8 +16,6 @@
 package com.oceanbase.odc.service.schedule;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -478,9 +476,6 @@ public class ScheduleService {
         Page<ScheduleTaskEntity> scheduleTaskEntities = scheduleTaskService.listTask(pageable, entity.getId());
         return scheduleTaskEntities.map(e -> {
             ScheduleTaskResp scheduleTaskResp = scheduleTaskMapper.entityToModel(e);
-            if(TaskStatus.PREPARING.equals(scheduleTaskResp.getStatus())){
-                return scheduleTaskResp;
-            }
             String fullLogDownloadUrl = scheduledTaskLoggerService.getFullLogDownloadUrl(entity.getId(), e.getId(),
                     OdcTaskLogLevel.ALL);
             return scheduleTaskResp.setFullLogDownloadUrl(fullLogDownloadUrl);
@@ -589,11 +584,11 @@ public class ScheduleService {
 
     public String getLog(Long scheduleId, Long taskId, OdcTaskLogLevel logLevel, Boolean skipAuth) {
         log.info("get schedule log, scheduleId={}, taskId={}, skipAuth={} \n", scheduleId, taskId, skipAuth);
-        return scheduledTaskLoggerService.getLog(logLevel, taskId, skipAuth);
+        return scheduledTaskLoggerService.getLog(scheduleId, taskId, logLevel, skipAuth);
     }
 
-    public List<BinaryDataResult> downloadLog(Long scheduleId, Long taskId, boolean skipAuth) throws IOException {
-        File logFile = scheduledTaskLoggerService.getLogFile(taskId, skipAuth);
+    public List<BinaryDataResult> downloadLog(Long scheduleId, Long taskId, boolean skipAuth) {
+        File logFile = scheduledTaskLoggerService.getLogFile(scheduleId, taskId, OdcTaskLogLevel.ALL, skipAuth);
         return Collections.singletonList(new FileBasedDataResult(logFile));
     }
 

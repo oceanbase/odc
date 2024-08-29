@@ -148,10 +148,8 @@ public class ScheduleTaskService {
         String filePath = String.format(LOG_PATH_PATTERN, logDirectory,
                 taskEntity.getJobName(), taskEntity.getJobGroup(), taskEntity.getId(),
                 logLevel.name().toLowerCase());
-        log.info("get log file path from scheduleTask, filePath = {}", filePath);
         File file = new File(filePath);
         if (!file.exists()) {
-            log.error("ScheduleTaskLogFile not found,taskId={}, may the log file in oss", id);
             throw new NotFoundException(ResourceType.ODC_FILE, "Path", filePath);
         }
         return file;
