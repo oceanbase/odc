@@ -24,8 +24,6 @@ import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
@@ -173,7 +171,7 @@ public class ScheduledTaskLoggerService {
                         jobEntity.getId()) + "?logType=" + level.getName();
                 try {
                     String baseFilePath = ObjectUtil.defaultIfEmpty(loggerProperty.getTempScheduleTaskLogDir(),
-                         getClass().getClassLoader().getResource("").getPath());
+                            getClass().getClassLoader().getResource("").getPath());
                     String tempFilePath =
                             FileUtil.normalize(baseFilePath + File.separator + String.format("tmp-task-%s.log", jobId));
                     SuccessResponse<String> response =
@@ -239,8 +237,8 @@ public class ScheduledTaskLoggerService {
     private String getLogWithoutPermission(OdcTaskLogLevel level, Long scheduleTaskId) {
         try {
             return LogToolUnit.readLog(getLogFile(level, scheduleTaskId), loggerProperty.getMaxLimitedCount(),
-                loggerProperty.getMaxSizeCount());
-        }catch (Exception e) {
+                    loggerProperty.getMaxSizeCount());
+        } catch (Exception e) {
             log.warn("{}, taskId={}", LogToolUnit.DEFAULT_LOG_CONTENT, scheduleTaskId);
             return LogToolUnit.DEFAULT_LOG_CONTENT;
         }

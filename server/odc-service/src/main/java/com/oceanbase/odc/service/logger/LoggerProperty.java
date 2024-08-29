@@ -25,11 +25,12 @@ import lombok.Getter;
 @Getter
 public class LoggerProperty {
 
-    // This is the directory path for storing temporary log files from scheduled tasks pods, defaulting to the classpath if not explicitly set.
+    // This is the directory path for storing temporary log files from scheduled tasks pods, defaulting
+    // to the classpath if not explicitly set.
     private String tempScheduleTaskLogDir;
 
-    private Long maxLimitedCount            = 10000L;
+    private Long maxLimitedCount = 10000L;
 
     // unit：B
-    private Long maxSizeCount               = 1024L * 1024;
+    private Long maxSizeCount = 1024L * 1024;
 }
