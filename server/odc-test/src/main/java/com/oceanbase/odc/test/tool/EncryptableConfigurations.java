@@ -76,15 +76,26 @@ public class EncryptableConfigurations {
         return properties;
     }
 
+    /**
+     * 获取解密后的属性值
+     *
+     * @param key 属性键
+     * @return 解密后的属性值，如果不存在则返回null
+     */
     public static String getDecryptedProperty(String key) {
+        // 从系统环境变量中获取属性值
         String property = PropertiesUtil.getSystemEnvProperty(key);
         if (StringUtils.isNotBlank(property)) {
+            // 如果属性值不为空，则进行解密操作
             return decryptIfRequired(property);
         }
+        // 从.env文件中获取属性值
         property = PropertiesUtil.getDotEnvProperties(key);
         if (StringUtils.isNotBlank(property)) {
+            // 如果属性值不为空，则进行解密操作
             return decryptIfRequired(property);
         }
+        // 如果属性值为空，则返回null
         return null;
     }
 

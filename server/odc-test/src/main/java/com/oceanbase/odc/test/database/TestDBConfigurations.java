@@ -85,13 +85,25 @@ public class TestDBConfigurations {
         return getTestDBConfiguration(TestDBType.ORACLE);
     }
 
+    /**
+     * 获取测试数据库配置
+     *
+     * @param type 测试数据库类型
+     * @return TestDBConfiguration 测试数据库配置对象
+     */
     private TestDBConfiguration getTestDBConfiguration(TestDBType type) {
+        // 如果连接类型到配置映射中不存在该类型的配置
         if (!connectType2ConfigurationMap.containsKey(type)) {
+            // 创建测试数据库配置对象
             TestDBConfiguration configuration = new TestDBConfiguration(getTestDBProperties(type));
+            // 删除测试数据库
             dropTestDatabases(type, configuration);
+            // 创建测试数据库并更新配置
             createTestDatabasesAndUpdateConfig(type, configuration);
+            // 将连接类型和配置映射到连接类型到配置映射中
             connectType2ConfigurationMap.put(type, configuration);
         }
+        // 返回连接类型对应的配置
         return connectType2ConfigurationMap.get(type);
     }
 

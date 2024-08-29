@@ -49,12 +49,23 @@ public class TestConnectionUtil extends PluginTestEnv {
         Runtime.getRuntime().addShutdownHook(shutdownHookThread);
     }
 
+    /**
+     * 获取测试连接会话
+     *
+     * @param type 连接类型
+     * @return 连接会话
+     */
     public static ConnectionSession getTestConnectionSession(ConnectType type) {
+        // 如果连接会话map中不包含该连接类型，则创建一个新的连接会话
         if (!connectionSessionMap.containsKey(type)) {
+            // 获取测试连接配置
             ConnectionConfig config = getTestConnectionConfig(type);
+            // 创建默认连接会话工厂并生成连接会话
             ConnectionSession session = new DefaultConnectSessionFactory(config).generateSession();
+            // 将连接会话添加到map中
             connectionSessionMap.put(type, session);
         }
+        // 返回该连接类型对应的连接会话
         return connectionSessionMap.get(type);
     }
 

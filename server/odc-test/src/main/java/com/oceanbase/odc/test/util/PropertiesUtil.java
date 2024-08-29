@@ -38,11 +38,19 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PropertiesUtil {
 
+    /**
+     * 获取系统环境属性值
+     *
+     * @param key 属性键
+     * @return 属性值，若不存在则返回null
+     */
     public static String getSystemEnvProperty(@NonNull String key) {
+        // 获取系统属性值
         String property = System.getProperty(key);
         if (StringUtils.isNotBlank(property)) {
             return property;
         }
+        // 获取系统环境变量值
         property = System.getenv(key);
         if (StringUtils.isNotBlank(property)) {
             return property;
@@ -54,19 +62,27 @@ public class PropertiesUtil {
         return getDotEnvProperties().getProperty(key);
     }
 
+    /**
+     * 获取.env文件中的属性
+     *
+     * @return Properties对象，包含.env文件中的属性
+     */
     public static Properties getDotEnvProperties() {
         Properties properties = new Properties();
         File file;
         try {
+            // 获取当前类的protection domain的code source的location
             URL location = TestProperties.class.getProtectionDomain().getCodeSource().getLocation();
+            // 获取location对应的文件路径的父级父级父级父级目录下的.env文件
             file = Paths.get(location.toURI())
-                    .getParent().getParent().getParent().getParent()
-                    .resolve(".env").toFile();
+                .getParent().getParent().getParent().getParent()
+                .resolve(".env").toFile();
         } catch (URISyntaxException e) {
             throw new IllegalStateException(e);
         }
         if (file.exists()) {
             try (FileInputStream inputStream = new FileInputStream(file)) {
+                // 加载.env文件中的属性到Properties对象中
                 properties.load(inputStream);
             } catch (IOException e) {
                 log.warn("load .env failed, reason={}", e.getMessage());

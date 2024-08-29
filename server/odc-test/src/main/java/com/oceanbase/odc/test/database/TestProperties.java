@@ -50,6 +50,12 @@ public class TestProperties {
         }
     }
 
+    /**
+     * 获取属性值
+     *
+     * @param key 属性键
+     * @return 属性值
+     */
     public static String getProperty(String key) {
         if (key == null) {
             return null;
@@ -59,6 +65,7 @@ public class TestProperties {
             return property;
         }
         // We prefer to use "." in property key, but "." is not allowed in environment variable
+        // 将"."替换为"_"，并转换为大写，因为环境变量不允许使用"."
         key = StringUtils.replace(key, ".", "_").toUpperCase();
         property = EncryptableConfigurations.getDecryptedProperty(key);
         if (StringUtils.isNotBlank(property)) {
