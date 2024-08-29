@@ -255,9 +255,12 @@ public class DatabaseService {
     }
 
     @PreAuthenticate(actions = "read", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
-    public Page<Database> listDatabasesByDataSource(@NonNull Long id, String name, @NonNull Pageable pageable) {
+    public Page<Database> listDatabasesByDataSource(@NonNull Long id, String name, Boolean existed,
+            Boolean belongsToProject, @NonNull Pageable pageable) {
         Specification<DatabaseEntity> specs = DatabaseSpecs
                 .connectionIdEquals(id)
+                .and(DatabaseSpecs.existedEquals(existed))
+                .and(DatabaseSpecs.projectIdNotNull(belongsToProject))
                 .and(DatabaseSpecs.nameLike(name));
         Page<DatabaseEntity> entities = databaseRepository.findAll(specs, pageable);
         Page<Database> databases = entitiesToModels(entities, false);
