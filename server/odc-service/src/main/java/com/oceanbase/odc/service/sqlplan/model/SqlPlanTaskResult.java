@@ -20,13 +20,38 @@ import lombok.Data;
 @Data
 public class SqlPlanTaskResult {
 
-    private Long totalStatements;
+    private long totalStatements = 0;
 
-    private Long finishedStatements;
+    private long finishedStatements = 0;
 
-    private Long successStatements;
+    private long succeedStatements = 0;
 
-    private Long failedStatements;
+    private long failedStatements = 0;
 
-    private String failedRecords;
+    /**
+     * DQL result set download url
+     */
+    private String csvResultSetZipDownloadUrl;
+
+    /**
+     * error record download url
+     */
+    private String errorRecordsFileDownloadUrl = null;
+
+    public void setTotalStatements(long count) {
+        this.totalStatements = count;
+    }
+
+    public void incrementFinishedStatements() {
+        this.finishedStatements++;
+    }
+
+    public void incrementSucceedStatements() {
+        this.succeedStatements++;
+    }
+
+    public void incrementFailedStatements() {
+        this.failedStatements++;
+    }
+
 }
