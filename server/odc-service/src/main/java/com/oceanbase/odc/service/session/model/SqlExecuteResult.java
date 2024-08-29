@@ -154,6 +154,7 @@ public class SqlExecuteResult {
             String tableName = odcFieldMetaData.getTableName();
             // not editable if table not exists, may function
             // 如果表不存在，则不可编辑，可能会函数
+            // If the table does not exist, it is not editable, which may function
             if (StringUtils.isBlank(tableName)) {
                 editable = false;
                 break;
@@ -178,6 +179,7 @@ public class SqlExecuteResult {
             if (Types.ROWID == odcFieldMetaData.getColumnType()) {
                 // not editable if there is more than one RowId
                 // 如果有多个RowId，则不可编辑
+                // If there is more than one RowId, it is not editable
                 if (Objects.nonNull(resultTable)) {
                     editable = false;
                     break;
@@ -187,6 +189,7 @@ public class SqlExecuteResult {
         }
         // if there are more than one table and with no RowId, the result can't be edited
         // 如果有多个表并且没有RowId，则结果不可编辑
+        // If there are multiple tables and no RowId, the result cannot be edited
         if (CollectionUtils.isEmpty(relatedTablesOrViews)
             || (Objects.isNull(resultTable) && relatedTablesOrViews.size() > 1)) {
             editable = false;
@@ -204,6 +207,7 @@ public class SqlExecuteResult {
         resultSetMetaData.setTable(resultTable);
         // set rows of the table with rowid editable
         // 设置带有RowId的表的行为可编辑
+        // Set the rows of the table with RowId to be editable
         for (JdbcColumnMetaData odcFieldMetaData : resultSetMetaData.getFieldMetaDataList()) {
             odcFieldMetaData.setEditable(
                 odcFieldMetaData.schemaName().equals(resultTable.getDatabaseName())

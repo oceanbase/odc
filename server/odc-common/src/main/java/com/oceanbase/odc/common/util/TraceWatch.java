@@ -293,11 +293,19 @@ public class TraceWatch implements Closeable {
             super(target, message);
         }
 
+        /**
+         * 适配方法，用于将另一个计时器的状态适配到当前计时器上
+         *
+         * @param stopWatch 要适配的计时器
+         */
         public void adapt(StopWatch stopWatch) {
+            // 如果要适配的计时器未停止，则先停止它
             if (!stopWatch.isStopped()) {
                 stopWatch.stop();
             }
+            // 将要适配的计时器的起始时间设置为当前计时器的起始时间
             setStartTime(stopWatch.getStartTime(), TimeUnit.MILLISECONDS);
+            // 将要适配的计时器的时间设置为当前计时器的时间
             setTime(stopWatch.getNanoTime(), TimeUnit.NANOSECONDS);
         }
 

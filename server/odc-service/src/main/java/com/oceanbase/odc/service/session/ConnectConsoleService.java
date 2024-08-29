@@ -660,6 +660,7 @@ public class ConnectConsoleService {
             log.warn("Failed to init sql type", e);
         }
         try (TraceStage s = watch.start(SqlExecuteStages.INIT_EDITABLE_INFO)) {
+            // 初始化可编辑表信息
             resultTable = result.initEditableInfo();
         } catch (Exception e) {
             log.warn("Failed to init editable info", e);

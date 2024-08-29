@@ -350,6 +350,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             stopWatch.stop();
             // 获取traceId并设置stage
             SqlExecTime execDetails = getTraceIdAndAndSetStage(statement, traceWatch);
+            // 开始记录SQL执行时间
             try (EditableTraceStage getResultSet = traceWatch.startEditableStage(SqlExecuteStages.GET_RESULT_SET)) {
                 getResultSet.adapt(stopWatch);
             }
