@@ -78,7 +78,7 @@ public class DBSchemaSyncTaskManager {
         Set<Long> databaseIds = databases.stream().map(Database::getId).collect(Collectors.toSet());
         // 更新数据库对象同步状态为待处理
         databaseService.updateObjectSyncStatus(databaseIds, DBObjectSyncStatus.PENDING);
-        // 遍历数据库集合，提交同步数据库模式的任务
+        // 遍历数据库集合，提交同步数据库对象的任务
         databases.forEach(database -> {
             try {
                 executor.submit(generateTask(database));
@@ -102,7 +102,7 @@ public class DBSchemaSyncTaskManager {
         databases.removeIf(e -> (syncProperties.isBlockExclusionsWhenSyncDbSchemas()
                 && syncProperties.getExcludeSchemas(dataSource.getDialectType()).contains(e.getName()))
                 || e.getObjectSyncStatus() == DBObjectSyncStatus.PENDING);
-        // 根据剩余的数据库提交任务
+        // 剩余的数据库提交同步数据库对象任务
         submitTaskByDatabases(databases);
     }
 
