@@ -41,6 +41,6 @@ public class WorksheetMetaResp {
     private Long projectId;
     private String path;
     private String objectId;
-    private Long totalLength;
+    private Long size;
     private WorksheetType type;
 }

@@ -15,9 +15,9 @@
  */
 package com.oceanbase.odc.service.worksheet.domain;
 
-import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.NAME_LENGTH_LIMIT;
-import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.PATH_LENGTH_LIMIT;
-import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.ROOT_PATH_NAME;
+import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstants.NAME_LENGTH_LIMIT;
+import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstants.PATH_LENGTH_LIMIT;
+import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstants.ROOT_PATH_NAME;
 
 import java.util.ArrayList;
 import java.util.Arrays;

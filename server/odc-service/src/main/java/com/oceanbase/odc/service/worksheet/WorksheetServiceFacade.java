@@ -56,10 +56,10 @@ public interface WorksheetServiceFacade {
      * @param projectId project id
      * @param pathStr worksheet path
      * @param objectId the object storage objectId of create worksheet
-     * @param totalLength The total size of the file, measured in bytes
+     * @param size The total size of the file, measured in bytes
      * @return mete info of created worksheet
      */
-    WorksheetMetaResp createWorksheet(Long projectId, String pathStr, String objectId, Long totalLength);
+    WorksheetMetaResp createWorksheet(Long projectId, String pathStr, String objectId, Long size);
 
     /**
      * get worksheet detail info

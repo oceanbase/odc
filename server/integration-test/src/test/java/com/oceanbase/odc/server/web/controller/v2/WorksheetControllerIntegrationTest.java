@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -42,7 +44,6 @@ import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpResponse;
 import org.apache.hc.core5.http.io.entity.FileEntity;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -58,7 +59,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -69,7 +69,6 @@ import com.google.common.io.Files;
 import com.oceanbase.odc.ITConfigurations;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.metadb.worksheet.CollaborationWorksheetRepository;
 import com.oceanbase.odc.server.OdcServer;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -82,7 +81,6 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageCon
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.worksheet.WorksheetServiceFacadeImpl;
 import com.oceanbase.odc.service.worksheet.domain.Path;
-import com.oceanbase.odc.service.worksheet.factory.WorksheetServiceFactory;
 import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq;
 import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq.UploadWorksheetTuple;
 import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlReq;
@@ -105,14 +103,9 @@ public class WorksheetControllerIntegrationTest {
     @Autowired
     WorksheetServiceFacadeImpl worksheetServiceFacade;
     @Autowired
-    WorksheetServiceFactory worksheetServiceFactory;
-    @Autowired
-    CollaborationWorksheetRepository worksheetRepository;
-    @Autowired
-    TransactionTemplate transactionTemplate;
+    DefaultWorksheetService defaultWorksheetService;
     @MockBean
     AuthenticationFacade authenticationFacade;
-
 
     ObjectMapper objectMapper = new ObjectMapper();
     public static final String TEST_FILE_PATH = "src/test/resources/data/test0001.txt";
@@ -128,11 +121,19 @@ public class WorksheetControllerIntegrationTest {
     @Before
     public void setUp() {
         projectId = System.currentTimeMillis();
-        MockitoAnnotations.openMocks(this);
-        when(authenticationFacade.currentUserId())
-                .thenReturn(1L);
-        setFieldValue();
         objectNames = new ArrayList<>();
+        MockitoAnnotations.openMocks(this);
+        when(authenticationFacade.currentUserId()).thenReturn(1L);
+
+        ObjectStorageConfiguration configuration = ITConfigurations.getOssConfiguration();
+        CloudClient cloudClient = new CloudResourceConfigurations().publicEndpointCloudClient(() -> configuration);
+        CloudClient internalCloudClient =
+                new CloudResourceConfigurations().internalEndpointCloudClient(() -> configuration);
+        cloudObjectStorageClient = new CloudObjectStorageClient(cloudClient,
+                internalCloudClient, configuration);
+        setFieldValue(worksheetServiceFacade, "objectStorageClient", cloudObjectStorageClient);
+        setFieldValue(defaultWorksheetService, "objectStorageClient", cloudObjectStorageClient);
+        setFieldValue(defaultWorksheetService, "authenticationFacade", authenticationFacade);
     }
 
     @After
@@ -143,31 +144,6 @@ public class WorksheetControllerIntegrationTest {
         }
         if (CollectionUtils.isNotEmpty(objectNames)) {
             cloudObjectStorageClient.deleteObjects(objectNames);
-        }
-    }
-
-    private void setFieldValue() {
-        ObjectStorageConfiguration configuration = ITConfigurations.getOssConfiguration();
-        CloudClient cloudClient = new CloudResourceConfigurations().publicEndpointCloudClient(() -> configuration);
-        CloudClient internalCloudClient =
-                new CloudResourceConfigurations().internalEndpointCloudClient(() -> configuration);
-        cloudObjectStorageClient = new CloudObjectStorageClient(cloudClient,
-                internalCloudClient, configuration);
-        try {
-            Class<?> clazz = worksheetServiceFacade.getClass();
-            Field field = clazz.getDeclaredField("objectStorageClient");
-            field.setAccessible(true);
-            field.set(worksheetServiceFacade, cloudObjectStorageClient);
-            DefaultWorksheetService defaultWorksheetService = new DefaultWorksheetService(transactionTemplate,
-                    cloudObjectStorageClient, worksheetRepository,
-                    authenticationFacade);
-            Class<?> clazz2 = worksheetServiceFactory.getClass();
-            Field field2 = clazz2.getDeclaredField("defaultWorksheetService");
-            field2.setAccessible(true);
-            field2.set(worksheetServiceFactory, defaultWorksheetService);
-
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -278,7 +254,7 @@ public class WorksheetControllerIntegrationTest {
                         new TypeReference<SuccessResponse<WorksheetResp>>() {});
         tempFile = createFileWithParent(TEST_DOWNLOAD_FILE);
         downloadFromUrlToFile(new URL(detail.getData().getContentDownloadUrl()), tempFile);
-        Assert.assertEquals("test0001", readFirstLine(tempFile));
+        assertEquals("test0001", readFirstLine(tempFile));
     }
 
     @Test
@@ -319,7 +295,7 @@ public class WorksheetControllerIntegrationTest {
         ListResponse<WorksheetMetaResp> listResponse =
                 JsonUtils.fromJson(mvcResult.getResponse().getContentAsString(),
                         new TypeReference<ListResponse<WorksheetMetaResp>>() {});
-        assert CollectionUtils.isEqualCollection(Arrays.asList(
+        assertEquals(Arrays.asList(
                 "/Worksheets/folder1/",
                 "/Worksheets/folder2/",
                 "/Worksheets/a_der.sql",
@@ -338,7 +314,7 @@ public class WorksheetControllerIntegrationTest {
         listResponse =
                 JsonUtils.fromJson(mvcResult.getResponse().getContentAsString(),
                         new TypeReference<ListResponse<WorksheetMetaResp>>() {});
-        assert CollectionUtils.isEqualCollection(Arrays.asList(
+        assertEquals(Arrays.asList(
                 "/Worksheets/folder1/",
                 "/Worksheets/folder1/sub1/file_der2.sql",
                 "/Worksheets/folder2/",
@@ -373,7 +349,7 @@ public class WorksheetControllerIntegrationTest {
         ListResponse<WorksheetMetaResp> listResponse =
                 JsonUtils.fromJson(listMvcResult.getResponse().getContentAsString(),
                         new TypeReference<ListResponse<WorksheetMetaResp>>() {});
-        assert CollectionUtils.isEqualCollection(Arrays.asList(
+        assertEquals(Arrays.asList(
                 "/Worksheets/c/",
                 "/Worksheets/a.sql",
                 "/Worksheets/b.sql"),
@@ -421,7 +397,7 @@ public class WorksheetControllerIntegrationTest {
         ListResponse<WorksheetMetaResp> listResponse =
                 JsonUtils.fromJson(listMvcResult.getResponse().getContentAsString(),
                         new TypeReference<ListResponse<WorksheetMetaResp>>() {});
-        assert listResponse.getData().getContents().isEmpty();
+        assertTrue(listResponse.getData().getContents().isEmpty());
     }
 
     @Test
@@ -462,7 +438,7 @@ public class WorksheetControllerIntegrationTest {
         ListResponse<WorksheetMetaResp> listResponse =
                 JsonUtils.fromJson(listMvcResult.getResponse().getContentAsString(),
                         new TypeReference<ListResponse<WorksheetMetaResp>>() {});
-        assert CollectionUtils.isEqualCollection(Arrays.asList(
+        assertEquals(Arrays.asList(
                 "/Worksheets/e/d/",
                 "/Worksheets/e/a.sql",
                 "/Worksheets/e/b.sql"),
@@ -483,7 +459,7 @@ public class WorksheetControllerIntegrationTest {
 
         UpdateWorksheetReq req = new UpdateWorksheetReq();
         req.setObjectId(UUID.randomUUID().toString());
-        req.setTotalLength(1L);
+        req.setSize(1L);
         req.setPrevVersion(0L);
         MvcResult mvcResult = mockMvc
                 .perform(MockMvcRequestBuilders
@@ -570,7 +546,7 @@ public class WorksheetControllerIntegrationTest {
         putRequest.setEntity(fileEntity);
         HttpResponse response = httpClient.execute(putRequest);
         httpClient.close();
-        assert response.getCode() == 200;
+        assertEquals(response.getCode(), 200);
     }
 
     private File createFileWithParent(String filePath) throws IOException {
@@ -592,7 +568,7 @@ public class WorksheetControllerIntegrationTest {
         }
     }
 
-    public static MultiValueMap<String, String> convertToMultiValueMap(ListWorksheetsReq requestData) {
+    private MultiValueMap<String, String> convertToMultiValueMap(ListWorksheetsReq requestData) {
         MultiValueMap<String, String> multiValueMap = new LinkedMultiValueMap<>();
 
         if (requestData.getPath() != null) {
@@ -607,4 +583,14 @@ public class WorksheetControllerIntegrationTest {
         return multiValueMap;
     }
 
+    private void setFieldValue(Object target, String fieldName, Object newValue) {
+        try {
+            Class<?> clazz = target.getClass();
+            Field field = clazz.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            field.set(target, newValue);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

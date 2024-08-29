@@ -81,15 +81,16 @@ public interface CollaborationWorksheetRepository extends JpaRepository<Collabor
             if (minLevelNumberFilter.equals(maxLevelNumberFilter)) {
                 // This line of code does not use 'between' in order to use index:idx_project_id_level_num_path
                 // and improve query performance
-                specs = specs.and(OdcJpaRepository.eq(CollaborationWorksheetEntity_.levelNum, maxLevelNumberFilter));
+                specs = specs.and(OdcJpaRepository.eq(CollaborationWorksheetEntity_.pathLevel, maxLevelNumberFilter));
             } else if (minLevelNumberFilter < maxLevelNumberFilter) {
-                specs = specs.and(OdcJpaRepository.between(CollaborationWorksheetEntity_.levelNum, minLevelNumberFilter,
-                        maxLevelNumberFilter));
+                specs = specs
+                        .and(OdcJpaRepository.between(CollaborationWorksheetEntity_.pathLevel, minLevelNumberFilter,
+                                maxLevelNumberFilter));
             }
         } else if (min) {
-            specs = specs.and(OdcJpaRepository.gte(CollaborationWorksheetEntity_.levelNum, minLevelNumberFilter));
+            specs = specs.and(OdcJpaRepository.gte(CollaborationWorksheetEntity_.pathLevel, minLevelNumberFilter));
         } else if (max) {
-            specs = specs.and(OdcJpaRepository.lte(CollaborationWorksheetEntity_.levelNum, maxLevelNumberFilter));
+            specs = specs.and(OdcJpaRepository.lte(CollaborationWorksheetEntity_.pathLevel, maxLevelNumberFilter));
         }
         if (nameLikeFilter != null && !nameLikeFilter.isEmpty()) {
             specs = specs.and(OdcJpaRepository.like(CollaborationWorksheetEntity_.path, nameLikeFilter));
@@ -115,7 +116,7 @@ public interface CollaborationWorksheetRepository extends JpaRepository<Collabor
     @Modifying
     @Transactional
     @Query("UPDATE CollaborationWorksheetEntity c SET "
-            + " c.objectId = :#{#entity.objectId},c.totalLength = :#{#entity.totalLength},c.version = c.version + 1"
+            + " c.objectId = :#{#entity.objectId},c.size = :#{#entity.size},c.version = c.version + 1"
             + " WHERE c.id = :#{#entity.id} AND c.version = :#{#entity.version}")
     int updateContentByIdAndVersion(@Param("entity") CollaborationWorksheetEntity entity);
 

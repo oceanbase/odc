@@ -36,7 +36,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.BadArgumentException;
@@ -48,8 +47,8 @@ import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.client.ObjectStorageClient;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
-import com.oceanbase.odc.service.worksheet.constants.WorksheetConstant;
-import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
+import com.oceanbase.odc.service.worksheet.constants.WorksheetConstants;
+import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheetsPreProcessor;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.model.BatchOperateWorksheetsResp;
 import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq;
@@ -80,8 +79,8 @@ public class DefaultWorksheetServiceTest {
                 .id(id)
                 .projectId(projectId)
                 .path(path.toString())
-                .levelNum(path.getLevelNum())
-                .totalLength(0L)
+                .pathLevel(path.getLevelNum())
+                .size(0L)
                 .extension(path.getExtension())
                 .objectId(objectId)
                 .creatorId(creatorId)
@@ -97,8 +96,6 @@ public class DefaultWorksheetServiceTest {
     @Mock
     private ObjectStorageClient objectStorageClient;
     @Mock
-    private TransactionTemplate transactionTemplate;
-    @Mock
     private AuthenticationFacade authenticationFacade;
 
     private DefaultWorksheetService defaultWorksheetService;
@@ -108,7 +105,7 @@ public class DefaultWorksheetServiceTest {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         defaultWorksheetService =
-                new DefaultWorksheetService(transactionTemplate, objectStorageClient,
+                new DefaultWorksheetService(objectStorageClient,
                         worksheetRepository, authenticationFacade);
         destinationDirectory = WorksheetPathUtil.createFileWithParent(
                 WorksheetUtil.getWorksheetDownloadDirectory() + "project1", true);
@@ -185,7 +182,7 @@ public class DefaultWorksheetServiceTest {
 
         when(worksheetRepository.findByProjectIdAndPath(projectId, path.getStandardPath()))
                 .thenReturn(Optional.of(worksheet));
-        when(objectStorageClient.generateDownloadUrl(objectId, WorksheetConstant.DOWNLOAD_DURATION_SECONDS))
+        when(objectStorageClient.generateDownloadUrl(objectId, WorksheetConstants.DOWNLOAD_MAX_DURATION_SECONDS))
                 .thenReturn(new URL(downloadUrl));
         WorksheetResp result = defaultWorksheetService.getWorksheetDetails(projectId, path);
 
@@ -216,10 +213,11 @@ public class DefaultWorksheetServiceTest {
                 new UploadWorksheetTuple("/Worksheets/test1", "object1", 1L),
                 new UploadWorksheetTuple("/Worksheets/test2", "object2", 1L)));
         Path parentPath = Path.worksheets();
-        BatchCreateWorksheets batchCreateWorksheets = new BatchCreateWorksheets(batchUploadWorksheetsReq);
+        BatchCreateWorksheetsPreProcessor batchCreateWorksheetsPreProcessor =
+                new BatchCreateWorksheetsPreProcessor(batchUploadWorksheetsReq);
         when(worksheetRepository.countByPathLikeWithFilter(projectId,
                 parentPath.getStandardPath(), 2, 2, null))
-                        .thenReturn(new Long(WorksheetConstant.SAME_LEVEL_NUM_LIMIT - 2));
+                        .thenReturn(new Long(WorksheetConstants.SAME_LEVEL_NUM_LIMIT - 2));
         when(worksheetRepository.saveAllAndFlush(anyList()))
                 .thenAnswer(invocation -> {
                     List<CollaborationWorksheetEntity> entities = invocation.getArgument(0);
@@ -228,7 +226,7 @@ public class DefaultWorksheetServiceTest {
                 });
 
         BatchOperateWorksheetsResp result =
-                defaultWorksheetService.batchUploadWorksheets(projectId, batchCreateWorksheets);
+                defaultWorksheetService.batchUploadWorksheets(projectId, batchCreateWorksheetsPreProcessor);
 
         assertNotNull(result);
         assertEquals(result.getSuccessfulFiles().size(), 2);
@@ -599,7 +597,7 @@ public class DefaultWorksheetServiceTest {
         assertNotNull(url);
         assertEquals(url, "http://" + worksheet.getObjectId());
         verify(objectStorageClient).generateDownloadUrl(worksheet.getObjectId(),
-                WorksheetConstant.DOWNLOAD_DURATION_SECONDS);
+                WorksheetConstants.DOWNLOAD_MAX_DURATION_SECONDS);
     }
 
     @Test

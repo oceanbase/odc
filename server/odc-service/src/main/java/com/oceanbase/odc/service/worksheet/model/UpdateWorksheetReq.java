@@ -27,6 +27,6 @@ import lombok.Data;
 @Data
 public class UpdateWorksheetReq {
     private String objectId;
-    private Long totalLength;
+    private Long size;
     private Long prevVersion;
 }

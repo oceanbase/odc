@@ -25,5 +25,5 @@ import lombok.EqualsAndHashCode;
 public class CopyObjectResult extends GenericResult {
     private String versionId;
     private String eTag;
-    private Date lastModified;
+    private Date lastModifyTime;
 }

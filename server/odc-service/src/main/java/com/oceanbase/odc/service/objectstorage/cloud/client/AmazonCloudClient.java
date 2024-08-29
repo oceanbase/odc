@@ -181,7 +181,7 @@ public class AmazonCloudClient implements CloudClient {
     }
 
     @Override
-    public CopyObjectResult copyTo(String bucketName, String from, String to)
+    public CopyObjectResult copyObject(String bucketName, String from, String to)
             throws CloudException {
         return callAmazonMethod("Copy object to", () -> {
             com.amazonaws.services.s3.model.CopyObjectResult copyObjectResult =
@@ -189,7 +189,7 @@ public class AmazonCloudClient implements CloudClient {
             CopyObjectResult result = new CopyObjectResult();
             result.setVersionId(copyObjectResult.getVersionId());
             result.setVersionId(copyObjectResult.getETag());
-            result.setLastModified(copyObjectResult.getLastModifiedDate());
+            result.setLastModifyTime(copyObjectResult.getLastModifiedDate());
             return result;
         });
     }

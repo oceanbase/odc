@@ -77,7 +77,7 @@ public class NullCloudClient implements CloudClient {
     }
 
     @Override
-    public CopyObjectResult copyTo(String bucketName, String from, String to)
+    public CopyObjectResult copyObject(String bucketName, String from, String to)
             throws CloudException {
         throw new UnsupportedException();
     }

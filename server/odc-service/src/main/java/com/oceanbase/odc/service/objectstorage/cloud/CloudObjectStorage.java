@@ -64,7 +64,7 @@ public interface CloudObjectStorage {
         return putObject(bucketName, key, file, null);
     }
 
-    CopyObjectResult copyTo(String bucketName, String from, String to)
+    CopyObjectResult copyObject(String bucketName, String from, String to)
             throws CloudException;
 
     DeleteObjectsResult deleteObjects(DeleteObjectsRequest request) throws CloudException;

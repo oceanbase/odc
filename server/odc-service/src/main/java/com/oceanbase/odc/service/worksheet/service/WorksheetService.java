@@ -18,7 +18,7 @@ package com.oceanbase.odc.service.worksheet.service;
 import java.io.File;
 import java.util.List;
 
-import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
+import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheetsPreProcessor;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.model.BatchOperateWorksheetsResp;
 import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;
@@ -33,19 +33,20 @@ import com.oceanbase.odc.service.worksheet.model.WorksheetResp;
 public interface WorksheetService {
     GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, Path path);
 
-    WorksheetMetaResp createWorksheet(Long projectId, Path createPath, String objectId, Long totalLength);
+    WorksheetMetaResp createWorksheet(Long projectId, Path createPath, String objectId, Long size);
 
     WorksheetResp getWorksheetDetails(Long projectId, Path path);
 
     List<WorksheetMetaResp> listWorksheets(Long projectId, Path path, Integer depth, String nameLike);
 
-    BatchOperateWorksheetsResp batchUploadWorksheets(Long projectId, BatchCreateWorksheets batchCreateWorksheets);
+    BatchOperateWorksheetsResp batchUploadWorksheets(Long projectId,
+            BatchCreateWorksheetsPreProcessor batchCreateWorksheetsPreProcessor);
 
     BatchOperateWorksheetsResp batchDeleteWorksheets(Long projectId, List<Path> paths);
 
     List<WorksheetMetaResp> renameWorksheet(Long projectId, Path path, Path destinationPath);
 
-    List<WorksheetMetaResp> editWorksheet(Long projectId, Path path, String objectId, Long totalLength,
+    List<WorksheetMetaResp> editWorksheet(Long projectId, Path path, String objectId, Long size,
             Long readVersion);
 
     String getDownloadUrl(Long projectId, Path path);

@@ -35,11 +35,11 @@ import lombok.Getter;
  * @since 4.3.2
  */
 @Getter
-public class DivideBatchOperateWorksheets {
+public class BatchOperateWorksheetsDivider {
     List<Path> normalPaths = new ArrayList<>();
     List<Path> reposPaths = new ArrayList<>();
 
-    public DivideBatchOperateWorksheets(Collection<String> pathStrList) {
+    public BatchOperateWorksheetsDivider(Collection<String> pathStrList) {
         List<Path> sortedPaths =
                 pathStrList.stream().map(Path::new)
                         .sorted(Path.getLevelNumComparator())

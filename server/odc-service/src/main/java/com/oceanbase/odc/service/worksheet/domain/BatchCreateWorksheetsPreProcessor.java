@@ -34,20 +34,20 @@ import lombok.Getter;
  * @since 4.3.2
  */
 
-public class BatchCreateWorksheets {
+public class BatchCreateWorksheetsPreProcessor {
     @Getter
     private Path parentPath;
     @Getter
     private final Map<Path, UploadWorksheetTuple> createPathToObjectIdMap;
 
-    public BatchCreateWorksheets(Path createPath, String objectId, Long totalLength) {
+    public BatchCreateWorksheetsPreProcessor(Path createPath, String objectId, Long size) {
         createPathToObjectIdMap = new HashMap<>();
         this.parentPath = getParentPath(createPath, objectId);
         createPathToObjectIdMap.put(createPath,
-                new UploadWorksheetTuple(createPath.getStandardPath(), objectId, totalLength));
+                new UploadWorksheetTuple(createPath.getStandardPath(), objectId, size));
     }
 
-    public BatchCreateWorksheets(BatchUploadWorksheetsReq req) {
+    public BatchCreateWorksheetsPreProcessor(BatchUploadWorksheetsReq req) {
         createPathToObjectIdMap = new HashMap<>();
         UploadWorksheetTuple tupleGetParentPath = null;
         for (UploadWorksheetTuple tuple : req.getWorksheets()) {
@@ -56,7 +56,7 @@ public class BatchCreateWorksheets {
             Path path = new Path(pathStr);
             if (path.isFile()) {
                 PreConditions.notBlank(objectId, "objectId");
-                PreConditions.notNull(tuple.getTotalLength(), "totalLength");
+                PreConditions.notNull(tuple.getSize(), "size");
             }
             Path parentPath = getParentPath(path, objectId);
             if (this.parentPath == null) {

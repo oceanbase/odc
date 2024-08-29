@@ -167,7 +167,7 @@ public class AlibabaCloudClient implements CloudClient {
     }
 
     @Override
-    public CopyObjectResult copyTo(String bucketName, String from, String to)
+    public CopyObjectResult copyObject(String bucketName, String from, String to)
             throws CloudException {
         return callOssMethod("Copy object to", () -> {
             com.aliyun.oss.model.CopyObjectResult copyObjectResult = oss.copyObject(bucketName, from, bucketName, to);

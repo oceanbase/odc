@@ -303,7 +303,7 @@ public enum ErrorCodes implements ErrorCode {
     /**
      * version conflict
      */
-    EditVersionConflict,
+    WorksheetEditVersionConflict,
     ;
 
     @Override

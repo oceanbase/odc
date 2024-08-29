@@ -32,7 +32,7 @@ public class WorksheetConverter {
                 .path(entity.getPath())
                 .type(path.getType())
                 .objectId(entity.getObjectId())
-                .totalLength(entity.getTotalLength())
+                .size(entity.getSize())
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
                 .build();
@@ -44,7 +44,7 @@ public class WorksheetConverter {
                 .path(entity.getPath())
                 .type(path.getType())
                 .objectId(entity.getObjectId())
-                .totalLength(entity.getTotalLength())
+                .size(entity.getSize())
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
                 .version(entity.getVersion())

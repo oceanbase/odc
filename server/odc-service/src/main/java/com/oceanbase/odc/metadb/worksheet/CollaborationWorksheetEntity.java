@@ -19,7 +19,14 @@ import static com.oceanbase.odc.metadb.worksheet.CollaborationWorksheetEntity.TA
 
 import java.util.Date;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -56,8 +63,8 @@ public class CollaborationWorksheetEntity {
     @Column(name = "path", nullable = false)
     private String path;
 
-    @Column(name = "level_num", nullable = false)
-    private Integer levelNum;
+    @Column(name = "path_level", nullable = false)
+    private Integer pathLevel;
 
     @Column(name = "object_id")
     private String objectId;
@@ -65,8 +72,8 @@ public class CollaborationWorksheetEntity {
     @Column(name = "extension")
     private String extension;
 
-    @Column(name = "total_length")
-    private Long totalLength;
+    @Column(name = "size")
+    private Long size;
 
     @Column(name = "version", nullable = false)
     private Long version;

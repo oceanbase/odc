@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.worksheet;
 
-import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.PROJECT_FILES_NAME_LIKE_SEARCH_LIMIT;
+import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstants.PROJECT_FILES_NAME_LIKE_SEARCH_LIMIT;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,9 +39,9 @@ import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.objectstorage.client.ObjectStorageClient;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectTagging;
 import com.oceanbase.odc.service.objectstorage.cloud.util.CloudObjectStorageUtil;
-import com.oceanbase.odc.service.worksheet.constants.WorksheetConstant;
-import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
-import com.oceanbase.odc.service.worksheet.domain.DivideBatchOperateWorksheets;
+import com.oceanbase.odc.service.worksheet.constants.WorksheetConstants;
+import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheetsPreProcessor;
+import com.oceanbase.odc.service.worksheet.domain.BatchOperateWorksheetsDivider;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.domain.WorkSheetsSearch;
 import com.oceanbase.odc.service.worksheet.factory.WorksheetServiceFactory;
@@ -68,7 +68,7 @@ import com.oceanbase.odc.service.worksheet.utils.WorksheetUtil;
 public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
     private static final Logger log = LoggerFactory.getLogger(WorksheetServiceFacadeImpl.class);
     @Autowired
-    ProjectRepository projectRepository;
+    private ProjectRepository projectRepository;
     @Autowired
     private ObjectStorageClient objectStorageClient;
     @Autowired
@@ -84,11 +84,11 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
 
 
     @Override
-    public WorksheetMetaResp createWorksheet(Long projectId, String pathStr, String objectId, Long totalLength) {
+    public WorksheetMetaResp createWorksheet(Long projectId, String pathStr, String objectId, Long size) {
         Path createPath = new Path(pathStr);
         WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
                 createPath.getLocation());
-        return projectFileService.createWorksheet(projectId, createPath, objectId, totalLength);
+        return projectFileService.createWorksheet(projectId, createPath, objectId, size);
     }
 
 
@@ -122,28 +122,29 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
 
     @Override
     public BatchOperateWorksheetsResp batchUploadWorksheets(Long projectId, BatchUploadWorksheetsReq req) {
-        BatchCreateWorksheets batchCreateWorksheets = new BatchCreateWorksheets(req);
-        Path parentPath = batchCreateWorksheets.getParentPath();
+        BatchCreateWorksheetsPreProcessor batchCreateWorksheetsPreProcessor =
+                new BatchCreateWorksheetsPreProcessor(req);
+        Path parentPath = batchCreateWorksheetsPreProcessor.getParentPath();
         WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
                 parentPath.getLocation());
         return projectFileService.batchUploadWorksheets(projectId,
-                batchCreateWorksheets);
+                batchCreateWorksheetsPreProcessor);
     }
 
     @Override
     public BatchOperateWorksheetsResp batchDeleteWorksheets(Long projectId, List<String> paths) {
-        DivideBatchOperateWorksheets divideBatchOperateWorksheets = new DivideBatchOperateWorksheets(paths);
+        BatchOperateWorksheetsDivider batchOperateWorksheetsDivider = new BatchOperateWorksheetsDivider(paths);
 
         BatchOperateWorksheetsResp batchOperateWorksheetsResult = new BatchOperateWorksheetsResp();
-        if (CollectionUtils.isNotEmpty(divideBatchOperateWorksheets.getNormalPaths())) {
+        if (CollectionUtils.isNotEmpty(batchOperateWorksheetsDivider.getNormalPaths())) {
             batchOperateWorksheetsResult.addResult(
                     worksheetServiceFactory.getProjectFileService(WorksheetLocation.WORKSHEETS)
-                            .batchDeleteWorksheets(projectId, divideBatchOperateWorksheets.getNormalPaths()));
+                            .batchDeleteWorksheets(projectId, batchOperateWorksheetsDivider.getNormalPaths()));
         }
-        if (CollectionUtils.isNotEmpty(divideBatchOperateWorksheets.getReposPaths())) {
+        if (CollectionUtils.isNotEmpty(batchOperateWorksheetsDivider.getReposPaths())) {
             batchOperateWorksheetsResult.addResult(
                     worksheetServiceFactory.getProjectFileService(WorksheetLocation.REPOS)
-                            .batchDeleteWorksheets(projectId, divideBatchOperateWorksheets.getReposPaths()));
+                            .batchDeleteWorksheets(projectId, batchOperateWorksheetsDivider.getReposPaths()));
         }
         return batchOperateWorksheetsResult;
     }
@@ -163,35 +164,35 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
         Path path = new Path(pathStr);
         WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
                 path.getLocation());
-        return projectFileService.editWorksheet(projectId, path, req.getObjectId(), req.getTotalLength(),
+        return projectFileService.editWorksheet(projectId, path, req.getObjectId(), req.getSize(),
                 req.getPrevVersion());
     }
 
 
     @Override
     public String batchDownloadWorksheets(Long projectId, Set<String> paths) {
-        DivideBatchOperateWorksheets divideBatchOperateWorksheets = new DivideBatchOperateWorksheets(paths);
-        if (divideBatchOperateWorksheets.size() == 1) {
-            Path downloadPath = divideBatchOperateWorksheets.findFirst().get();
+        BatchOperateWorksheetsDivider batchOperateWorksheetsDivider = new BatchOperateWorksheetsDivider(paths);
+        if (batchOperateWorksheetsDivider.size() == 1) {
+            Path downloadPath = batchOperateWorksheetsDivider.findFirst().get();
             return worksheetServiceFactory.getProjectFileService(downloadPath.getLocation())
                     .getDownloadUrl(projectId, downloadPath);
         }
         Path commonParentPath =
-                WorksheetPathUtil.findCommonPath(divideBatchOperateWorksheets.all());
+                WorksheetPathUtil.findCommonPath(batchOperateWorksheetsDivider.all());
         String rootDirectoryName = getRootDirectoryName(projectId, commonParentPath);
         String parentOfDownloadDirectory = WorksheetUtil.getWorksheetDownloadDirectory();
         String downloadDirectoryStr = parentOfDownloadDirectory + rootDirectoryName;
         File downloadDirectory =
                 WorksheetPathUtil.createFileWithParent(downloadDirectoryStr, true);
         try {
-            if (CollectionUtils.isNotEmpty(divideBatchOperateWorksheets.getNormalPaths())) {
+            if (CollectionUtils.isNotEmpty(batchOperateWorksheetsDivider.getNormalPaths())) {
                 worksheetServiceFactory.getProjectFileService(WorksheetLocation.WORKSHEETS)
-                        .downloadPathsToDirectory(projectId, divideBatchOperateWorksheets.getNormalPaths(),
+                        .downloadPathsToDirectory(projectId, batchOperateWorksheetsDivider.getNormalPaths(),
                                 commonParentPath, downloadDirectory);
             }
-            if (CollectionUtils.isNotEmpty(divideBatchOperateWorksheets.getReposPaths())) {
+            if (CollectionUtils.isNotEmpty(batchOperateWorksheetsDivider.getReposPaths())) {
                 worksheetServiceFactory.getProjectFileService(WorksheetLocation.REPOS)
-                        .downloadPathsToDirectory(projectId, divideBatchOperateWorksheets.getReposPaths(),
+                        .downloadPathsToDirectory(projectId, batchOperateWorksheetsDivider.getReposPaths(),
                                 commonParentPath, downloadDirectory);
             }
             String zipFileStr =
@@ -208,7 +209,7 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
             objectStorageClient.putObject(zipOssObjectId, new File(zipFileStr),
                     ObjectTagging.temp());
             return objectStorageClient.generateDownloadUrl(zipOssObjectId,
-                    WorksheetConstant.DOWNLOAD_DURATION_SECONDS).toString();
+                    WorksheetConstants.DOWNLOAD_MAX_DURATION_SECONDS).toString();
         } catch (IOException e) {
             log.error("batch download worksheets error, projectId: {}, paths: {}", projectId, paths, e);
             throw new InternalServerError(

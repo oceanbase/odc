@@ -24,7 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.service.objectstorage.client.ObjectStorageClient;
-import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheets;
+import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheetsPreProcessor;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.model.BatchOperateWorksheetsResp;
 import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlResp;
@@ -52,7 +52,7 @@ public class RepoWorksheetService implements WorksheetService {
     }
 
     @Override
-    public WorksheetMetaResp createWorksheet(Long projectId, Path createPath, String objectId, Long totalLength) {
+    public WorksheetMetaResp createWorksheet(Long projectId, Path createPath, String objectId, Long size) {
         return null;
     }
 
@@ -70,7 +70,7 @@ public class RepoWorksheetService implements WorksheetService {
 
     @Override
     public BatchOperateWorksheetsResp batchUploadWorksheets(Long projectId,
-            BatchCreateWorksheets batchCreateWorksheets) {
+            BatchCreateWorksheetsPreProcessor batchCreateWorksheetsPreProcessor) {
         return null;
     }
 
@@ -85,7 +85,7 @@ public class RepoWorksheetService implements WorksheetService {
     }
 
     @Override
-    public List<WorksheetMetaResp> editWorksheet(Long projectId, Path path, String objectId, Long totalLength,
+    public List<WorksheetMetaResp> editWorksheet(Long projectId, Path path, String objectId, Long size,
             Long readVersion) {
         return Collections.emptyList();
     }

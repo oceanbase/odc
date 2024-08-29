@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.worksheet.utils;
 
-import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstant.ROOT_PATH_NAME;
+import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstants.ROOT_PATH_NAME;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;

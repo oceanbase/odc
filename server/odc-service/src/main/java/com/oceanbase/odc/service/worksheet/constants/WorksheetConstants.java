@@ -20,7 +20,7 @@ package com.oceanbase.odc.service.worksheet.constants;
  * @date 2024/08/05
  * @since 4.3.2
  */
-public class WorksheetConstant {
+public class WorksheetConstants {
     /**
      * the limit number of project worksheets search
      */
@@ -46,7 +46,7 @@ public class WorksheetConstant {
     /**
      * the duration of download worksheet in seconds
      */
-    public static final long DOWNLOAD_DURATION_SECONDS = 60 * 60L;
+    public static final long DOWNLOAD_MAX_DURATION_SECONDS = 60 * 60L;
 
     public static final String ROOT_PATH_NAME = "";
 }

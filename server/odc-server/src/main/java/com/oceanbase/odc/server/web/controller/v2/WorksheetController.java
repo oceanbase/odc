@@ -73,8 +73,8 @@ public class WorksheetController {
             @PathVariable("projectId") Long projectId,
             @RequestParam("path") String path,
             @RequestParam(value = "objectId", required = false) String objectId,
-            @RequestParam(value = "totalLength", required = false) Long totalLength) {
-        return Responses.success(worksheetServiceFacade.createWorksheet(projectId, path, objectId, totalLength));
+            @RequestParam(value = "size", required = false) Long size) {
+        return Responses.success(worksheetServiceFacade.createWorksheet(projectId, path, objectId, size));
     }
 
     @SneakyThrows(UnsupportedEncodingException.class)
