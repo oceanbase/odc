@@ -53,7 +53,7 @@ public class PlSqlMultiFileOutput extends AbstractThirdPartyOutput {
             String filename = zipElement.getName();
             String[] split = filename.split("\\.");
             String suf = split[split.length - 1];
-            if (PlSqlFormat.isPlFileSuffix(suf)) {
+            if (PLSqlDeveloperExportFormat.isPlFileSuffix(suf)) {
                 isFromPlSql.set(true);
             }
         });
@@ -72,8 +72,8 @@ public class PlSqlMultiFileOutput extends AbstractThirdPartyOutput {
                 String[] split = filename.split("\\.");
                 String suf = split[split.length - 1];
                 try {
-                    PlSqlFormat.ObjectType objectType = PlSqlFormat.ObjectType.from(suf);
-                    if (objectType != PlSqlFormat.ObjectType.UNKNOWN) {
+                    PLSqlDeveloperExportFormat.ObjectType objectType = PLSqlDeveloperExportFormat.ObjectType.from(suf);
+                    if (objectType != PLSqlDeveloperExportFormat.ObjectType.UNKNOWN) {
                         String directory = objectType.name();
                         // point may exist in object name
                         String objectName = filename.split("\\." + suf)[0];

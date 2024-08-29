@@ -24,7 +24,7 @@ import com.oceanbase.odc.common.util.StringUtils;
  * @author youshu
  * @date 2024/8/27
  */
-public class PlSqlFormat {
+public class PLSqlDeveloperExportFormat {
     private static final Set<String> LEGAL_FILE_SUFFIXES = new HashSet<>();
     private static final Set<ObjectType> PL_OBJECTS = new HashSet<>();
 
@@ -78,7 +78,7 @@ public class PlSqlFormat {
     }
 
     public static boolean isPlFileSuffix(String suffix) {
-        return PlSqlFormat.LEGAL_FILE_SUFFIXES.contains(suffix);
+        return PLSqlDeveloperExportFormat.LEGAL_FILE_SUFFIXES.contains(suffix);
     }
 
 }
