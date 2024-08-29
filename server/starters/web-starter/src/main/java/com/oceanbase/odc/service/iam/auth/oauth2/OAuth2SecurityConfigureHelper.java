@@ -21,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.DelegatingOAuth2UserService;
 import org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter;
@@ -29,6 +28,9 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationFailureHandler;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationSuccessHandler;
+import com.oceanbase.odc.service.integration.oauth2.AddableClientRegistrationManager;
+import com.oceanbase.odc.service.integration.oauth2.Oauth2StateManager;
+import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 
 @Component
 @Profile("alipay")
@@ -48,7 +50,12 @@ public class OAuth2SecurityConfigureHelper {
     private OidcUserServiceImpl oidcUserService;
 
     @Autowired
-    private ClientRegistrationRepository clientRegistrationRepository;
+    private AddableClientRegistrationManager addableClientRegistrationManager;
+    @Autowired
+    private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
+    @Autowired
+    private Oauth2StateManager oauth2StateManager;
+
 
     public void configure(HttpSecurity http)
             throws Exception {
@@ -57,7 +64,8 @@ public class OAuth2SecurityConfigureHelper {
                 .failureHandler(customAuthenticationFailureHandler)
                 .authorizationEndpoint()
                 .authorizationRequestResolver(
-                        new CustomOAuth2AuthorizationRequestResolver(this.clientRegistrationRepository))
+                        new CustomOAuth2AuthorizationRequestResolver(this.addableClientRegistrationManager,
+                                statefulUuidStateIdGenerator, oauth2StateManager))
                 .and()
                 // token 端点配置, 根据 code 获取 token
                 .tokenEndpoint()

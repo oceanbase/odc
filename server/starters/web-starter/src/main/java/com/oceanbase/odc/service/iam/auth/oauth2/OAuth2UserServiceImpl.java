@@ -49,6 +49,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.iam.auth.MappingRuleConvert;
 import com.oceanbase.odc.service.iam.auth.SsoUserDetailService;
 import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.integration.oauth2.Oauth2StateManager;
 import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
 
 /**
@@ -78,6 +79,9 @@ public class OAuth2UserServiceImpl implements OAuth2UserService<OAuth2UserReques
     @Autowired
     private TestLoginManager testLoginManager;
 
+    @Autowired
+    private Oauth2StateManager oauth2StateManager;
+
     public OAuth2UserServiceImpl() {
         RestTemplate restTemplate = new RestTemplate();
         restTemplate.setErrorHandler(new OAuth2ErrorResponseErrorHandler());
@@ -98,10 +102,12 @@ public class OAuth2UserServiceImpl implements OAuth2UserService<OAuth2UserReques
             throw new OAuth2AuthenticationException(oauth2Error, oauth2Error.toString());
         }
 
+
         RequestEntity<?> request = this.requestEntityConverter.convert(userRequest);
         ResponseEntity<Map<String, Object>> response = getResponse(userRequest, request);
 
         PreConditions.notNull(response, "oAuth2User");
+        oauth2StateManager.addStateToCurrentRequestParam();
 
         MappingResult mappingResult = mappingRuleConvert.resolveOAuthMappingResult(userRequest, response.getBody());
         testLoginManager.abortIfOAuthTestLoginTest();

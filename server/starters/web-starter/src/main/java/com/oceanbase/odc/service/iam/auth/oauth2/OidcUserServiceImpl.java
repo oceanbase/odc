@@ -56,6 +56,7 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.service.iam.auth.MappingRuleConvert;
 import com.oceanbase.odc.service.iam.auth.SsoUserDetailService;
 import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.integration.oauth2.Oauth2StateManager;
 import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
 
 /**
@@ -85,6 +86,9 @@ public class OidcUserServiceImpl implements OAuth2UserService<OidcUserRequest, O
 
     @Autowired
     private TestLoginManager testLoginManager;
+
+    @Autowired
+    private Oauth2StateManager oauth2StateManager;
 
     public static Map<String, Converter<Object, ?>> createDefaultClaimTypeConverters() {
         Converter<Object, ?> booleanConverter = getConverter(TypeDescriptor.valueOf(Boolean.class));
@@ -131,6 +135,8 @@ public class OidcUserServiceImpl implements OAuth2UserService<OidcUserRequest, O
             }
         }
         Map<String, Object> userInfoMap = collectClaims(userRequest.getIdToken(), userInfo);
+        oauth2StateManager.addStateToCurrentRequestParam();
+
         MappingResult mappingResult = mappingRuleConvert.resolveOAuthMappingResult(userRequest, userInfoMap);
         testLoginManager.abortIfOAuthTestLoginTest();
         User user = SSOUserDetailService
