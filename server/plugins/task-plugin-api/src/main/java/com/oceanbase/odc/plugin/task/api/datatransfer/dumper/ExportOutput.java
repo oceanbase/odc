@@ -256,11 +256,25 @@ public class ExportOutput {
     }
 
     private BinaryFile<Manifest> getManifest(File parentDir) throws IOException {
-        File manifest = new File(parentDir.getAbsolutePath() + File.separator + MANIFEST);
-        if (!manifest.exists()) {
+        // target file might be inside inner dir, need to walk file tree
+        List<Path> manifestPaths = new LinkedList<>();
+        Files.walkFileTree(parentDir.toPath(), new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
+                if (MANIFEST.equals(path.getFileName().toString())) {
+                    manifestPaths.add(path);
+                }
+                return super.visitFile(path, attrs);
+            }
+        });
+
+        if (manifestPaths.isEmpty()) {
             return null;
         }
-        return BinaryFile.newFile(manifest.toURI().toURL());
+        if (manifestPaths.size() != 1) {
+            throw new IllegalStateException("Illegal manifest.bin");
+        }
+        return BinaryFile.newFile(manifestPaths.get(0).toUri().toURL());
     }
 
     private BinaryFile<Manifest> getManifest(ZipFileTree tree) {
@@ -275,11 +289,24 @@ public class ExportOutput {
     }
 
     private BinaryFile<List<?>> getCheckPoints(File parentDir) throws IOException {
-        File checkpoints = new File(parentDir.getAbsolutePath() + File.separator + CHECKPOINT);
-        if (!checkpoints.exists()) {
+        List<Path> checkpointPaths = new LinkedList<>();
+        Files.walkFileTree(parentDir.toPath(), new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
+                if (CHECKPOINT.equals(path.getFileName().toString())) {
+                    checkpointPaths.add(path);
+                }
+                return super.visitFile(path, attrs);
+            }
+        });
+
+        if (checkpointPaths.isEmpty()) {
             return null;
         }
-        return BinaryFile.newFile(checkpoints.toURI().toURL());
+        if (checkpointPaths.size() != 1) {
+            throw new IllegalStateException("Illegal checkpoint.bin");
+        }
+        return BinaryFile.newFile(checkpointPaths.get(0).toUri().toURL());
     }
 
     private BinaryFile<List<?>> getCheckPoints(ZipFileTree tree) {
@@ -288,7 +315,7 @@ public class ExportOutput {
             return null;
         }
         if (nodes.size() != 1) {
-            throw new IllegalStateException("Illegal manifest.bin");
+            throw new IllegalStateException("Illegal checkpoint.bin");
         }
         return BinaryFile.newFile(nodes.get(0).getUrl());
     }
