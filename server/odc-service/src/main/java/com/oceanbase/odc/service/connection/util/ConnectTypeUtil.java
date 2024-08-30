@@ -74,8 +74,7 @@ public class ConnectTypeUtil {
 
     private static ConnectType getConnectType(Statement statement, String jdbcUrl) throws SQLException {
         DialectType dialectType = getDialectType(statement);
-        if (dialectType == null || !isCloud(ConnectionPluginUtil
-                .getConnectionExtension(dialectType).getConnectionInfo(jdbcUrl, null))) {
+        if (dialectType == null) {
             /**
              * 通常来说，用户最容易填错 type 的场景就是搞混了公有云和非公有云模式，因此这里也就仅对这种场景做检测。之所以去掉其他 数据库类型的检测一个是因为将来 odc
              * 要支持的类型太多复杂度过高，二来是有的数据库类型难以区分，比如 sofaodp 等。
@@ -83,14 +82,27 @@ public class ConnectTypeUtil {
             return null;
         }
         // 公有云模式下
+        if (isCloud(ConnectionPluginUtil.getConnectionExtension(dialectType).getConnectionInfo(jdbcUrl, null))) {
+            switch (dialectType) {
+                case OB_ORACLE:
+                    return ConnectType.CLOUD_OB_ORACLE;
+                case OB_MYSQL:
+                    return ConnectType.CLOUD_OB_MYSQL;
+                default:
+                    throw new UnsupportedOperationException("Unsupported dialect type, " + dialectType);
+            }
+        }
         switch (dialectType) {
             case OB_ORACLE:
-                return ConnectType.CLOUD_OB_ORACLE;
+                return ConnectType.OB_ORACLE;
             case OB_MYSQL:
-                return ConnectType.CLOUD_OB_MYSQL;
-            default:
-                throw new UnsupportedOperationException("Unsupported dialect type, " + dialectType);
+                return ConnectType.OB_MYSQL;
+            case MYSQL:
+                return ConnectType.MYSQL;
+            case ORACLE:
+                return ConnectType.ORACLE;
         }
+        return null;
     }
 
     private static DialectType getDialectType(Statement statement) throws SQLException {
