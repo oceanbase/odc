@@ -168,7 +168,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
          * move import files
          */
         List<String> importFileNames = config.getImportFileName();
-        if (config.isCompressed() || config.isDirImport()) {
+        if (config.isZipOrDir()) {
             ExportOutput exportOutput = parseDbObjects(importFileNames, workingDir);
             List<DataTransferObject> objects = new ArrayList<>();
             List<DumpDBObject> dumpDbObjects = exportOutput.getDumpDbObjects();
@@ -193,7 +193,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
     }
 
     private void loadManifest() {
-        if (config.getDataTransferFormat() == DataTransferFormat.SQL || !config.isCompressed()) {
+        if (config.getDataTransferFormat() == DataTransferFormat.SQL || !config.isZipOrDir()) {
             return;
         }
         // load csv config from MANIFEST

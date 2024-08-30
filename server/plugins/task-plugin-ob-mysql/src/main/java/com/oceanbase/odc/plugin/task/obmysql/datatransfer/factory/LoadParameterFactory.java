@@ -72,7 +72,7 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
             parameter.setMaxDiscards(-1);
         }
         setTransferFormat(parameter, transferConfig);
-        if (transferConfig.isCompressed() || transferConfig.isDirImport()) {
+        if (transferConfig.isZipOrDir()) {
             /**
              * 导入导出组件产出物导入，需要详细设置
              */
@@ -102,7 +102,7 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
     }
 
     private void setWhiteListForZipOrDir(LoadParameter parameter, DataTransferConfig config) throws IOException {
-        if (!config.isCompressed() && !config.isDirImport()) {
+        if (!config.isZipOrDir()) {
             return;
         }
         Map<ObjectType, Set<String>> whiteList = parameter.getWhiteListMap();
@@ -141,23 +141,24 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
         }
         DataTransferFormat format = transferConfig.getDataTransferFormat();
         if (DataTransferFormat.SQL.equals(format)) {
-            if (transferConfig.isCompressed()) {
+            boolean isZipOrDirImport = transferConfig.isZipOrDir();
+            if (isZipOrDirImport) {
                 parameter.setDataFormat(DataFormat.SQL);
                 parameter.setFileSuffix(DataFormat.SQL.getDefaultFileSuffix());
             } else {
                 parameter.setDataFormat(DataFormat.MIX);
                 parameter.setFileSuffix(DataFormat.MIX.getDefaultFileSuffix());
             }
-            parameter.setExternal(!transferConfig.isCompressed());
+            parameter.setExternal(!isZipOrDirImport);
         } else if (DataTransferFormat.CSV.equals(format)) {
             parameter.setDataFormat(DataFormat.CSV);
             parameter.setFileSuffix(DataFormat.CSV.getDefaultFileSuffix());
-            parameter.setExternal(!transferConfig.isCompressed());
+            parameter.setExternal(!transferConfig.isZipOrDir());
         }
     }
 
     private boolean isExternalCsv(DataTransferConfig config) {
-        return DataTransferFormat.CSV == config.getDataTransferFormat() && !transferConfig.isCompressed();
+        return DataTransferFormat.CSV == config.getDataTransferFormat() && !transferConfig.isZipOrDir();
     }
 
     private void setCsvMappings(LoadParameter parameter, DataTransferConfig transferConfig) {
