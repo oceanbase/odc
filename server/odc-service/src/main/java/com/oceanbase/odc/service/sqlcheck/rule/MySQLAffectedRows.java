@@ -35,7 +35,6 @@ import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.delete.Delete;
 import com.oceanbase.tools.sqlparser.statement.insert.Insert;
-import com.oceanbase.tools.sqlparser.statement.select.Select;
 import com.oceanbase.tools.sqlparser.statement.update.Update;
 
 import lombok.NonNull;
@@ -167,13 +166,14 @@ public class MySQLAffectedRows implements SqlCheckRule {
             List<Long> resultSet = jdbc.query(explainSql, (rs, rowNum) -> {
 
                 String resultRow = rs.getString("Query Plan");
+                System.out.println(rs.getMetaData());
                 System.out.println(resultRow);
+                System.out.println(rowNum);
                 if (!ifFindAffectedRow.get() && rowNum > HEADER_LINE) {
-                    long affectedRows = getEstRowsValue(resultRow);
                     // first non-null value is the column 'EST.ROWS'
-                    if (affectedRows != 0) {
+                    if (getEstRowsValue(resultRow) != 0) {
                         ifFindAffectedRow.set(true);
-                        return affectedRows;
+                        return getEstRowsValue(resultRow);
                     }
                 }
                 return null;
