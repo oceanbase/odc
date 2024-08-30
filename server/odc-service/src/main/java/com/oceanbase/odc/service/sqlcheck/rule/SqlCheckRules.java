@@ -159,9 +159,10 @@ public class SqlCheckRules {
     }
 
     public static List<SqlCheckRule> getAllDefaultRules(JdbcOperations jdbc, @NonNull DialectType dialectType) {
-        Map<String, Object> parameters = getDefaultParameters();
         return SqlCheckRules.getAllFactories(dialectType, jdbc).stream()
-                .map(f -> f.generate(dialectType, parameters)).filter(Objects::nonNull).collect(Collectors.toList());
+                .map(f -> f.generate(dialectType,
+                        getDefaultParameters(f.getSupportsType())))
+                .filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     public static SqlCheckRule createByRule(JdbcOperations jdbc,
@@ -225,16 +226,16 @@ public class SqlCheckRules {
         }
     }
 
-    static Map<String, Object> getDefaultParameters() {
+    static Map<String, Object> getDefaultParameters(SqlCheckRuleType supportsType) {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(getParameterNameKey("allowed-max-sql-affected-count"), 1000);
-        parameters.put(getParameterNameKey("max-alter-count"), 10);
+        parameters.put(getParameterNameKey("allowed-max-sql-affected-count", supportsType), 1000);
+        parameters.put(getParameterNameKey("max-alter-count", supportsType), 10);
         return parameters;
     }
 
-    static String getParameterNameKey(String parameterName) {
+    private static String getParameterNameKey(String parameterName, SqlCheckRuleType supportsType) {
         return "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check."
-                + SqlCheckRuleType.RESTRICT_SQL_AFFECTED_ROWS + "." + parameterName + "}";
+                + supportsType.code() + "." + parameterName + "}";
     }
 
 }
