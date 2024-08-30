@@ -166,9 +166,6 @@ public class MySQLAffectedRows implements SqlCheckRule {
             List<Long> resultSet = jdbc.query(explainSql, (rs, rowNum) -> {
 
                 String resultRow = rs.getString("Query Plan");
-                System.out.println(rs.getMetaData());
-                System.out.println(resultRow);
-                System.out.println(rowNum);
                 if (!ifFindAffectedRow.get() && rowNum > HEADER_LINE) {
                     // first non-null value is the column 'EST.ROWS'
                     if (getEstRowsValue(resultRow) != 0) {
