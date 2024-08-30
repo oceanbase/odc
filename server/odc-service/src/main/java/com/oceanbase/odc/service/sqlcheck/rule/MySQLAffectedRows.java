@@ -55,7 +55,7 @@ public class MySQLAffectedRows implements SqlCheckRule {
 
     private final DialectType dialectType;
 
-    private static final int HEAD_LINE = 2;
+    private static final int HEADER_LINE = 2;
 
     public MySQLAffectedRows(@NonNull Integer maxSQLAffectedRows, DialectType dialectType,
             JdbcOperations jdbcOperations) {
@@ -78,8 +78,7 @@ public class MySQLAffectedRows implements SqlCheckRule {
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
 
-        if (statement instanceof Update || statement instanceof Delete
-                || statement instanceof Insert || statement instanceof Select) {
+        if (statement instanceof Update || statement instanceof Delete || statement instanceof Insert) {
             if (maxSQLAffectedRows == 0 || jdbcOperations == null) {
                 return Collections.emptyList();
             }
@@ -126,7 +125,7 @@ public class MySQLAffectedRows implements SqlCheckRule {
 
         try {
             List<Long> resultSet = jdbc.query(explainSql,
-                    (rs, rowNum) -> Long.parseLong(rs.getString("rows")));
+                    (rs, rowNum) -> rs.getLong("rows"));
 
             Long firstNonNullResult = resultSet.stream()
                     .filter(Objects::nonNull)
@@ -168,7 +167,8 @@ public class MySQLAffectedRows implements SqlCheckRule {
             List<Long> resultSet = jdbc.query(explainSql, (rs, rowNum) -> {
 
                 String resultRow = rs.getString("Query Plan");
-                if (!ifFindAffectedRow.get() && rowNum > HEAD_LINE) {
+                System.out.println(resultRow);
+                if (!ifFindAffectedRow.get() && rowNum > HEADER_LINE) {
                     long affectedRows = getEstRowsValue(resultRow);
                     // first non-null value is the column 'EST.ROWS'
                     if (affectedRows != 0) {
