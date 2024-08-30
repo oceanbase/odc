@@ -121,7 +121,7 @@ public class DefaultWorksheetService implements WorksheetService {
         if (path.isFile() && StringUtils.isNotBlank(worksheet.getObjectId())) {
             try {
                 contentDownloadUrl = objectStorageClient.generateDownloadUrl(worksheet.getObjectId(),
-                        WorksheetConstants.DOWNLOAD_MAX_DURATION_SECONDS).toString();
+                        WorksheetConstants.MAX_DURATION_DOWNLOAD_SECONDS).toString();
             } catch (Throwable e) {
                 log.warn("generateDownloadUrl in getWorksheetDetails failed, projectId:{}，path:{},objectId:{}",
                         projectId, path, worksheet.getObjectId(), e);
@@ -226,7 +226,7 @@ public class DefaultWorksheetService implements WorksheetService {
     }
 
     @Override
-    public String getDownloadUrl(Long projectId, Path path) {
+    public String generateDownloadUrl(Long projectId, Path path) {
         path.canGetDownloadUrlCheck();
         Optional<CollaborationWorksheetEntity> worksheetOptional =
                 worksheetRepository.findByProjectIdAndPath(projectId, path.getStandardPath());
@@ -238,7 +238,7 @@ public class DefaultWorksheetService implements WorksheetService {
                     "not support downloading empty file,projectId:" + projectId + ",path:" + path);
         }
         return objectStorageClient
-                .generateDownloadUrl(worksheet.getObjectId(), WorksheetConstants.DOWNLOAD_MAX_DURATION_SECONDS)
+                .generateDownloadUrl(worksheet.getObjectId(), WorksheetConstants.MAX_DURATION_DOWNLOAD_SECONDS)
                 .toString();
     }
 

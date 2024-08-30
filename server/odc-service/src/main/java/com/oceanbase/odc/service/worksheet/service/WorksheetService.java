@@ -49,7 +49,7 @@ public interface WorksheetService {
     List<WorksheetMetaResp> editWorksheet(Long projectId, Path path, String objectId, Long size,
             Long readVersion);
 
-    String getDownloadUrl(Long projectId, Path path);
+    String generateDownloadUrl(Long projectId, Path path);
 
     void downloadPathsToDirectory(Long projectId, List<Path> paths, Path commParentPath,
             File destinationDirectory);

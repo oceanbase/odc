@@ -182,7 +182,7 @@ public class DefaultWorksheetServiceTest {
 
         when(worksheetRepository.findByProjectIdAndPath(projectId, path.getStandardPath()))
                 .thenReturn(Optional.of(worksheet));
-        when(objectStorageClient.generateDownloadUrl(objectId, WorksheetConstants.DOWNLOAD_MAX_DURATION_SECONDS))
+        when(objectStorageClient.generateDownloadUrl(objectId, WorksheetConstants.MAX_DURATION_DOWNLOAD_SECONDS))
                 .thenReturn(new URL(downloadUrl));
         WorksheetResp result = defaultWorksheetService.getWorksheetDetails(projectId, path);
 
@@ -584,7 +584,7 @@ public class DefaultWorksheetServiceTest {
     }
 
     @Test
-    public void getDownloadUrl_Success() {
+    public void generateDownloadUrl_Success() {
         Path path = new Path("/Worksheets/test");
         CollaborationWorksheetEntity worksheet = newWorksheet(path);
         worksheet.setObjectId("objectId");
@@ -593,11 +593,11 @@ public class DefaultWorksheetServiceTest {
                 .thenReturn(Optional.of(worksheet));
         when(objectStorageClient.generateDownloadUrl(any(), anyLong()))
                 .thenAnswer(invocation -> new URL("http://" + invocation.getArgument(0, String.class)));
-        String url = defaultWorksheetService.getDownloadUrl(projectId, path);
+        String url = defaultWorksheetService.generateDownloadUrl(projectId, path);
         assertNotNull(url);
         assertEquals(url, "http://" + worksheet.getObjectId());
         verify(objectStorageClient).generateDownloadUrl(worksheet.getObjectId(),
-                WorksheetConstants.DOWNLOAD_MAX_DURATION_SECONDS);
+                WorksheetConstants.MAX_DURATION_DOWNLOAD_SECONDS);
     }
 
     @Test

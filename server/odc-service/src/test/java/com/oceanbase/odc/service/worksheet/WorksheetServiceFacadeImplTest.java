@@ -79,7 +79,7 @@ public class WorksheetServiceFacadeImplTest {
 
         when(worksheetServiceFactory.getProjectFileService(WorksheetLocation.WORKSHEETS))
                 .thenReturn(defaultWorksheetService);
-        when(defaultWorksheetService.getDownloadUrl(any(), any()))
+        when(defaultWorksheetService.generateDownloadUrl(any(), any()))
                 .thenAnswer(invocation -> invocation.getArgument(1, Path.class).getStandardPath());
 
         String result = worksheetServiceFacade.batchDownloadWorksheets(projectId, paths);

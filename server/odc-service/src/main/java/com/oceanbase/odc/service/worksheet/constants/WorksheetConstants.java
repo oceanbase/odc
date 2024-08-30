@@ -46,7 +46,7 @@ public class WorksheetConstants {
     /**
      * the duration of download worksheet in seconds
      */
-    public static final long DOWNLOAD_MAX_DURATION_SECONDS = 60 * 60L;
+    public static final long MAX_DURATION_DOWNLOAD_SECONDS = 60 * 60L;
 
     public static final String ROOT_PATH_NAME = "";
 }

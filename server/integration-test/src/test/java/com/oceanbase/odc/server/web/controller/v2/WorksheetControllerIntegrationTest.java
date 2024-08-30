@@ -460,7 +460,7 @@ public class WorksheetControllerIntegrationTest {
         UpdateWorksheetReq req = new UpdateWorksheetReq();
         req.setObjectId(UUID.randomUUID().toString());
         req.setSize(1L);
-        req.setPrevVersion(0L);
+        req.setPreviousVersion(0L);
         MvcResult mvcResult = mockMvc
                 .perform(MockMvcRequestBuilders
                         .put("/api/v2/project/{projectId}/worksheets/{path}", projectId,

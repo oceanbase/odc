@@ -91,7 +91,7 @@ public class RepoWorksheetService implements WorksheetService {
     }
 
     @Override
-    public String getDownloadUrl(Long projectId, Path path) {
+    public String generateDownloadUrl(Long projectId, Path path) {
         return "";
     }
 

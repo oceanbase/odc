@@ -165,7 +165,7 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
         WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
                 path.getLocation());
         return projectFileService.editWorksheet(projectId, path, req.getObjectId(), req.getSize(),
-                req.getPrevVersion());
+                req.getPreviousVersion());
     }
 
 
@@ -175,7 +175,7 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
         if (batchOperateWorksheetsDivider.size() == 1) {
             Path downloadPath = batchOperateWorksheetsDivider.findFirst().get();
             return worksheetServiceFactory.getProjectFileService(downloadPath.getLocation())
-                    .getDownloadUrl(projectId, downloadPath);
+                    .generateDownloadUrl(projectId, downloadPath);
         }
         Path commonParentPath =
                 WorksheetPathUtil.findCommonPath(batchOperateWorksheetsDivider.all());
@@ -209,7 +209,7 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
             objectStorageClient.putObject(zipOssObjectId, new File(zipFileStr),
                     ObjectTagging.temp());
             return objectStorageClient.generateDownloadUrl(zipOssObjectId,
-                    WorksheetConstants.DOWNLOAD_MAX_DURATION_SECONDS).toString();
+                    WorksheetConstants.MAX_DURATION_DOWNLOAD_SECONDS).toString();
         } catch (IOException e) {
             log.error("batch download worksheets error, projectId: {}, paths: {}", projectId, paths, e);
             throw new InternalServerError(

@@ -16,18 +16,23 @@
 package com.oceanbase.odc.service.worksheet.domain;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(Parameterized.class)
 public class PathGetPathAtTest {
-
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
     private final Path path;
     private final int index;
     private final Path expectedResultPath;
@@ -58,20 +63,19 @@ public class PathGetPathAtTest {
                 new Object[] {"/Repos/repo/folder1/file1", 4, null, true, false});
     }
 
+    @Before
+    public void setUp() {
+        if (hasException) {
+            thrown.expect(Exception.class);
+        }
+    }
+
     @Test
     public void getPathAt() {
-        try {
-            Path result = path.getPathAt(index);
-            assertEquals(expectedResultPath, result);
-            assert !hasException;
-            if (expectedIsSystemDefine) {
-                assertEquals(expectedIsSystemDefine, result.isSystemDefine());
-            }
-        } catch (Exception e) {
-            if (!hasException) {
-                throw e;
-            }
+        Path result = path.getPathAt(index);
+        assertEquals(expectedResultPath, result);
+        if (expectedIsSystemDefine) {
+            assertTrue(result.isSystemDefine());
         }
-
     }
 }
