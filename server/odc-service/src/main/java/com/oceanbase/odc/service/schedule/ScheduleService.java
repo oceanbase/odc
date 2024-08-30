@@ -477,7 +477,7 @@ public class ScheduleService {
         return scheduleTaskEntities.map(e -> {
             ScheduleTaskResp scheduleTaskResp = scheduleTaskMapper.entityToModel(e);
             String fullLogDownloadUrl = scheduledTaskLoggerService.getFullLogDownloadUrl(entity.getId(), e.getId(),
-                    OdcTaskLogLevel.ALL);
+                    OdcTaskLogLevel.ALL, false);
             return scheduleTaskResp.setFullLogDownloadUrl(fullLogDownloadUrl);
         });
     }
