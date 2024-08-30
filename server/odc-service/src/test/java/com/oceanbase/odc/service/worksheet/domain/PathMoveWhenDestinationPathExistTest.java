@@ -21,18 +21,21 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import com.oceanbase.odc.core.shared.exception.BadArgumentException;
-import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.service.worksheet.utils.WorksheetPathUtil;
 
 @RunWith(Parameterized.class)
 public class PathMoveWhenDestinationPathExistTest {
-
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
     private final Path path;
     private final Path move;
     private final Path destination;
@@ -113,19 +116,22 @@ public class PathMoveWhenDestinationPathExistTest {
                         new Path("/Repos/Name/"), new Path("/Repos/Name/folder2/file1"), true});
     }
 
+    @Before
+    public void setUp() {
+        if (!expectedResult) {
+            thrown.expect(BadArgumentException.class);
+        }
+    }
+
     @Test
     public void rename() {
-        try {
-            WorksheetPathUtil.checkMoveValid(move, destination);
-            WorksheetPathUtil.checkMoveValidWithDestinationPathExist(move, destination);
-            Optional<Path> moved = path.moveWhenDestinationPathExist(this.move, destination);
-            assertEquals(expectedResult, moved.isPresent());
-            if (expectedResult) {
-                assertEquals(moved.get(), expectedPathAfterMove);
-                assertEquals(moved.get().getLevelNum(), expectedPathAfterMove.getLevelNum());
-            }
-        } catch (BadArgumentException | BadRequestException e) {
-            assert !expectedResult;
+        WorksheetPathUtil.checkMoveValid(move, destination);
+        WorksheetPathUtil.checkMoveValidWithDestinationPathExist(move, destination);
+        Optional<Path> moved = path.moveWhenDestinationPathExist(this.move, destination);
+        assertEquals(expectedResult, moved.isPresent());
+        if (expectedResult) {
+            assertEquals(moved.get(), expectedPathAfterMove);
+            assertEquals(moved.get().getLevelNum(), expectedPathAfterMove.getLevelNum());
         }
     }
 }

@@ -32,8 +32,6 @@ import org.apache.commons.lang.StringUtils;
 
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
-import com.oceanbase.odc.core.shared.constant.ResourceType;
-import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.model.WorksheetLocation;
@@ -260,12 +258,12 @@ public class WorksheetPathUtil {
     public static void checkMoveValidWithDestinationPathExist(Path movePath, Path destinationPath) {
         // when destinationPath has existed,movePath and destinationPath cannot both be files at the same
         // time
-        if (movePath.isFile() && destinationPath.isFile()) {
-            throw new BadRequestException(ErrorCodes.DuplicatedExists,
-                    new Object[] {ResourceType.ODC_WORKSHEET.getLocalizedMessage(), "destinationPath", destinationPath},
-                    "duplicated path name for rename or move,movePath:" + movePath
-                            + ",destinationPath:" + destinationPath);
-        }
+        PreConditions.validArgumentState(!(movePath.isFile() && destinationPath.isFile()),
+                ErrorCodes.BadArgument, null,
+                "when destinationPath has existed,movePath and "
+                        + "destinationPath cannot both be files at the same time,movePath:" + movePath
+                        + ",destinationPath:" + destinationPath);
+
     }
 
     public static void checkMoveValidWithDestinationPathNotExist(Path movePath, Path destinationPath) {

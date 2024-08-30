@@ -420,23 +420,14 @@ public class DefaultWorksheetServiceTest {
     }
 
     @Test
-    public void moveWorksheet_ExistDestinationPath_DuplicatedNameException2() {
+    public void moveWorksheet_ExistDestinationPath_CannotMoveFileWhenDestinationExist() {
         Path oldPath = new Path("/Worksheets/old");
         Path newPath = new Path("/Worksheets/new");
-
-        // when(worksheetRepository.findByPathLikeWithFilter(projectId,
-        // oldPath.getStandardPath(), null, null, null))
-        // .thenReturn(Collections.singletonList(newWorksheet(oldPath)));
         when(worksheetRepository.findByProjectIdAndPath(projectId,
                 newPath.getStandardPath()))
                         .thenReturn(Optional.of(newWorksheet(newPath)));
-
-        try {
-            defaultWorksheetService.moveWorksheet(projectId, oldPath, newPath, false);
-            fail();
-        } catch (BadRequestException e) {
-            assert e.getErrorCode() == ErrorCodes.DuplicatedExists;
-        }
+        assertThrows(BadArgumentException.class,
+                () -> defaultWorksheetService.moveWorksheet(projectId, oldPath, newPath, false));
     }
 
     @Test

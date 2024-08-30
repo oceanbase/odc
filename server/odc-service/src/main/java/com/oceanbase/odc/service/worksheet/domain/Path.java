@@ -303,31 +303,6 @@ public class Path {
     }
 
     /**
-     * Rename. Only when the current path matches {@param renamePath} will it be renamed as
-     * {@param destinationPath} and return true. If it does not match, no renaming will be performed and
-     * return false The {@param renamePath} and {@param destinationPath} here need to satisfy
-     * {@link WorksheetPathUtil#checkRenameValid}, and the reason why this validation is not added here
-     * is that it will not duplicate verify when renaming multiple times.
-     * 
-     * @param renamePath the path need to rename
-     * @param destinationPath path after renamed
-     * @return is renamed
-     */
-    public boolean rename(Path renamePath, Path destinationPath) {
-        if (!this.canMoveFrom(renamePath)) {
-            return false;
-        }
-        // This is renaming the {@param renamePath} itself
-        if (renamePath.levelNum.equals(this.levelNum)) {
-            this.name = destinationPath.name;
-            return true;
-        }
-        // This is renaming the sub items of {@param renamePath}
-        this.parentPathItems.set(renamePath.levelNum - 1, destinationPath.name);
-        return true;
-    }
-
-    /**
      * Move current from {@param movePath} to {@param destinationPath},and {@param destinationPath} has
      * existed. Will create {@param movePath} in {@param destinationPath}.
      * 
