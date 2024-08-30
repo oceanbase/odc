@@ -34,6 +34,7 @@ import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanMap;
 import org.springframework.data.domain.Page;
@@ -77,6 +78,7 @@ import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.schedule.factory.ScheduleResponseMapperFactory;
 import com.oceanbase.odc.service.schedule.model.ChangeQuartJobParam;
+import com.oceanbase.odc.service.schedule.model.ChangeScheduleResponse;
 import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
@@ -169,7 +171,7 @@ public class ScheduleService {
 
 
     @Transactional(rollbackFor = Exception.class)
-    public Schedule changeSchedule(ScheduleChangeParams req) {
+    public ChangeScheduleResponse changeSchedule(ScheduleChangeParams req) {
 
         preprocessor.process(req);
         Schedule targetSchedule;
@@ -241,7 +243,10 @@ public class ScheduleService {
                         approvalFlowInstanceId, approvalFlowInstanceId == null ? ScheduleChangeStatus.SUCCESS
                                 : ScheduleChangeStatus.APPROVING));
         log.info("Create change log success,changLog={}", changeLog);
-        return targetSchedule;
+        ChangeScheduleResponse returnVal = new ChangeScheduleResponse();
+        BeanUtils.copyProperties(targetSchedule, returnVal);
+        returnVal.setChangeLog(changeLog);
+        return returnVal;
     }
 
     private void validateTriggerConfig(TriggerConfig triggerConfig) {
