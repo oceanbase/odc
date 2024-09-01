@@ -219,13 +219,13 @@ public class ConnectionTesting {
         } else {
             config.setType(req.getType());
         }
+        config.setDefaultSchema(req.getDefaultSchema());
         config.setHost(req.getHost());
         config.setPort(req.getPort());
         config.setClusterName(req.getClusterName());
         config.setTenantName(req.getTenantName());
         config.setUsername(req.getUsername());
         config.setPassword(req.getPassword());
-        config.setDefaultSchema(req.getDefaultSchema());
         config.setSessionInitScript(req.getSessionInitScript());
         config.setJdbcUrlParameters(req.getJdbcUrlParameters());
         config.setSid(req.getSid());
