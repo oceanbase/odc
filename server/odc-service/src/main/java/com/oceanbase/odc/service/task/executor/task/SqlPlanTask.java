@@ -84,8 +84,6 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
 
     private String zipFileRootPath;
 
-    private String zipFileId;
-
     private String errorRecordPath = null;
 
     private final List<SqlExecuteResult> queryResultSetBuffer = new ArrayList<>();
@@ -101,34 +99,6 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         this.executor = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
         initFile();
     }
-
-    private ConnectionSession generateSession() {
-        ConnectionConfig connectionConfig = JobUtils.fromJson(
-                getJobParameters().get(JobParametersKeyConstants.CONNECTION_CONFIG), ConnectionConfig.class);
-        DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(connectionConfig);
-        sessionFactory.setSessionTimeoutMillis(parameters.getTimeoutMillis());
-        ConnectionSession connectionSession = sessionFactory.generateSession();
-        if (connectionSession.getDialectType().isOracle()) {
-            ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession, this.parameters.getSessionTimeZone());
-        }
-        SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(), true, true);
-        ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
-        return connectionSession;
-    }
-
-    private void initFile() {
-        try {
-            String fileRootDir = FileManager.generateDir(FileBucket.ASYNC);
-            String fileName = StringUtils.uuid();
-            String filePath = String.format("%s/%s.json", fileRootDir, fileName);
-            this.resultJsonFile = new File(filePath);
-            this.zipFileId = StringUtils.uuid();
-            this.zipFileRootPath = String.format("%s/%s.zip", fileRootDir, zipFileId);
-        } catch (Exception e) {
-            throw new InternalServerError("create sql plan task file dir failed", e);
-        }
-    }
-
 
     @Override
     protected boolean doStart(JobContext context) throws Exception {
@@ -179,8 +149,8 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                 result.getFailedStatements());
 
         // all sql execute csv file list write to zip file
-        // contains all error record.
         writeZipFile();
+        // upload file to OSS, also contains error record where is non-null
         upload();
         return true;
     }
@@ -260,6 +230,33 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         }
         log.info("Sql task execution succeed.");
         return true;
+    }
+
+
+    private ConnectionSession generateSession() {
+        ConnectionConfig connectionConfig = JobUtils.fromJson(
+                getJobParameters().get(JobParametersKeyConstants.CONNECTION_CONFIG), ConnectionConfig.class);
+        DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(connectionConfig);
+        sessionFactory.setSessionTimeoutMillis(parameters.getTimeoutMillis());
+        ConnectionSession connectionSession = sessionFactory.generateSession();
+        if (connectionSession.getDialectType().isOracle()) {
+            ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession, this.parameters.getSessionTimeZone());
+        }
+        SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(), true, true);
+        ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
+        return connectionSession;
+    }
+
+    private void initFile() {
+        try {
+            String fileRootDir = FileManager.generateDir(FileBucket.ASYNC);
+            String fileName = StringUtils.uuid();
+            String filePath = String.format("%s/%s.json", fileRootDir, fileName);
+            this.resultJsonFile = new File(filePath);
+            this.zipFileRootPath = String.format("%s/%s.zip", fileRootDir, StringUtils.uuid());
+        } catch (Exception e) {
+            throw new InternalServerError("create sql plan task file dir failed", e);
+        }
     }
 
 
@@ -344,10 +341,10 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
     private void writeZipFile() {
         try {
             String jsonString = JsonUtils.prettyToJson(csvFileMappers);
-            FileUtils.writeStringToFile(new File(String.format("%s/csv_execute_result.json", zipFileRootPath)),
-                    jsonString, StandardCharsets.UTF_8, true);
+            File file = new File(String.format("%s/csv_execute_result.json", zipFileRootPath));
+            FileUtils.writeStringToFile(file, jsonString, StandardCharsets.UTF_8, true);
             OdcFileUtil.zip(zipFileRootPath, String.format("%s.zip", zipFileRootPath));
-            log.info("sql plan task result set was saved as local zip file, file name={}", zipFileId);
+            log.info("sql plan task result set was saved as local zip file, file name={}", file.getName());
             FileUtils.deleteDirectory(new File(zipFileRootPath));
         } catch (IOException ex) {
             throw new UnexpectedException("build zip file failed");
@@ -358,6 +355,9 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         // upload zip
         String zipFilePath = String.format("%s.zip", zipFileRootPath);
         this.result.setCsvResultSetZipDownloadUrl(uploadToOSS(zipFilePath));
+
+        // upload sql execute json file
+        this.result.setSqlExecuteJsonFileDownloadUrl(uploadToOSS(resultJsonFile.getAbsolutePath()));
 
         // upload error record
         if (errorRecordPath != null) {
@@ -414,7 +414,6 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         stringBuilder.append(localizedMsg).append(": ").append(sql).append(' ').append(errorMsg);
         return StringUtils.singleLine(stringBuilder.toString()) + "\n";
     }
-
 
 
     /**

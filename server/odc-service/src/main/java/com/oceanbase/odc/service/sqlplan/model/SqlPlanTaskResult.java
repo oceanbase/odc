@@ -29,6 +29,11 @@ public class SqlPlanTaskResult {
     private long failedStatements = 0;
 
     /**
+     * sql execution json file download url
+     */
+    private String sqlExecuteJsonFileDownloadUrl;
+
+    /**
      * DQL result set download url
      */
     private String csvResultSetZipDownloadUrl;
