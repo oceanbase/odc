@@ -14,17 +14,33 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model;
+package com.oceanbase.odc.service.schedule.job;
 
-import java.sql.SQLException;
-import java.util.Collection;
+import org.quartz.JobExecutionContext;
 
-public interface ExecutionCallback<T, R> {
-    ExecutionResult<R> execute(ExecutionGroupContext<T, R> context) throws SQLException;
+/**
+ * @Author: Lebie
+ * @Date: 2024/8/30 16:08
+ * @Description: []
+ */
+public class LogicalDatabaseChangeJob implements OdcJob{
+    @Override
+    public void execute(JobExecutionContext context) {
 
-    void terminate(ExecutionGroupContext<T, R> context) throws SQLException;
+    }
 
-    void onFailed(ExecutionUnit<T, R> unit, ExecutionGroupContext<T, R> context);
+    @Override
+    public void before(JobExecutionContext context) {
 
-    void onSuccess(ExecutionUnit<T, R> unit, ExecutionGroupContext<T, R> context);
+    }
+
+    @Override
+    public void after(JobExecutionContext context) {
+
+    }
+
+    @Override
+    public void interrupt() {
+
+    }
 }

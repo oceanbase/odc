@@ -16,33 +16,25 @@
 
 package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model;
 
-import java.io.Serializable;
+import java.util.List;
 
 import lombok.Data;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 /**
  * @Author: Lebie
- * @Date: 2024/8/28 17:49
+ * @Date: 2024/9/2 18:32
  * @Description: []
  */
+
 @Data
-public class ExecutionResult<R> implements Serializable {
-    private static final long serialVersionUID = 1L;
-    private R result;
-    private ExecutionStatus status;
+@RequiredArgsConstructor
+public class ExecutionSubGroup<T, R> {
+    private final List<ExecutionUnit<T, R>> executionUnits;
 
-    public ExecutionResult(ExecutionStatus status) {
-        this.status = status;
-    }
-
-    public ExecutionResult(R result, ExecutionStatus status) {
-        this.result = result;
-        this.status = status;
-    }
-
-    public boolean isCompleted() {
-        return status == ExecutionStatus.SUCCESS || status == ExecutionStatus.SKIPPED;
+    public void execute(ExecutionGroupContext<T, R> context) {
+        for (ExecutionUnit<T, R> executionUnit : executionUnits) {
+            executionUnit.execute(context);
+        }
     }
 }

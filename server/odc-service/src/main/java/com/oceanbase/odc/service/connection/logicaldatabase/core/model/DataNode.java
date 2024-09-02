@@ -50,7 +50,6 @@ import lombok.NoArgsConstructor;
 public class DataNode {
     private static final String DELIMITER = ".";
 
-    @JsonIgnore
     private ConnectionConfig dataSourceConfig;
 
     private Long databaseId;

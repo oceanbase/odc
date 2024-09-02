@@ -60,6 +60,7 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalTable;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.BadLogicalTableExpressionException;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.DefaultLogicalTableExpressionParser;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.LogicalTableExpressionParseUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.LogicalTableExpressions;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalTableResp;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTableTopologyResp;
@@ -83,8 +84,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Validated
 public class LogicalTableService {
-    private final DefaultLogicalTableExpressionParser parser = new DefaultLogicalTableExpressionParser();
-
     @Autowired
     private DatabaseRepository databaseRepository;
 
@@ -168,7 +167,7 @@ public class LogicalTableService {
         Map<String, List<Database>> name2Databases = databaseService.listDatabasesByIds(physicalDatabaseIds).stream()
                 .collect(Collectors.groupingBy(Database::getName));
         Map<String, List<DataNode>> schemaName2DataNodes =
-                resolve(expression).stream().collect(Collectors.groupingBy(DataNode::getSchemaName));
+            LogicalTableExpressionParseUtils.resolve(expression).stream().collect(Collectors.groupingBy(DataNode::getSchemaName));
         Verify.verify(name2Databases.keySet().containsAll(schemaName2DataNodes.keySet()),
                 "The expression contains physical databases that not belong to the logical database");
         return schemaName2DataNodes.entrySet().stream().map(entry -> {
@@ -305,23 +304,4 @@ public class LogicalTableService {
         return true;
     }
 
-
-    public List<DataNode> resolve(String expression) {
-        PreConditions.notEmpty(expression, "expression");
-        LogicalTableExpressions logicalTableExpression;
-        try {
-            logicalTableExpression = (LogicalTableExpressions) parser.parse(new StringReader(expression));
-        } catch (SyntaxErrorException e) {
-            throw new BadLogicalTableExpressionException(e);
-        } catch (Exception e) {
-            throw new UnexpectedException("failed to parse logical table expression", e);
-        }
-        return logicalTableExpression.evaluate().stream().map(name -> {
-            String[] parts = name.split("\\.");
-            if (parts.length != 2) {
-                throw new UnexpectedException("invalid logical table expression");
-            }
-            return new DataNode(parts[0], parts[1]);
-        }).collect(Collectors.toList());
-    }
 }

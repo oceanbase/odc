@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -24,20 +25,19 @@ import lombok.extern.slf4j.Slf4j;
  * @Description: []
  */
 @Slf4j
-public class ExecutionUnit<R> {
+@Getter
+public class ExecutionUnit<T, R> {
     private final String id;
-    private final ExecutionCallback<R>  callback;
+    private final ExecutionCallback<T, R>  callback;
+    private final T input;
 
-    public ExecutionUnit(String id, ExecutionCallback<R> executionCallback) {
+    public ExecutionUnit(String id, ExecutionCallback<T, R> executionCallback, T input) {
         this.id = id;
         this.callback = executionCallback;
+        this.input = input;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void execute(ExecutionGroupContext<R> context) {
+    public void execute(ExecutionGroupContext<T, R> context) {
         try {
             ExecutionResult<R> result = callback.execute(context);
             context.setExecutionResult(id, result);
@@ -52,7 +52,7 @@ public class ExecutionUnit<R> {
         }
     }
 
-    public void terminate(ExecutionGroupContext<R> context) {
+    public void terminate(ExecutionGroupContext<T, R> context) {
         try {
             ExecutionResult<R> result = context.getExecutionResult(id);
             synchronized (result) {
@@ -67,7 +67,7 @@ public class ExecutionUnit<R> {
         }
     }
 
-    public void skip(ExecutionGroupContext<R> context) {
+    public void skip(ExecutionGroupContext<T, R> context) {
         ExecutionResult<R> result = context.getExecutionResult(id);
         synchronized (result) {
             if (result.getStatus() == ExecutionStatus.FAILED) {

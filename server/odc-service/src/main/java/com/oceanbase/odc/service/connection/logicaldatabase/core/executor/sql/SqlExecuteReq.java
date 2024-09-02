@@ -14,17 +14,22 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model;
+package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql;
 
-import java.sql.SQLException;
-import java.util.Collection;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
-public interface ExecutionCallback<T, R> {
-    ExecutionResult<R> execute(ExecutionGroupContext<T, R> context) throws SQLException;
+import lombok.Data;
 
-    void terminate(ExecutionGroupContext<T, R> context) throws SQLException;
-
-    void onFailed(ExecutionUnit<T, R> unit, ExecutionGroupContext<T, R> context);
-
-    void onSuccess(ExecutionUnit<T, R> unit, ExecutionGroupContext<T, R> context);
+/**
+ * @Author: Lebie
+ * @Date: 2024/9/2 18:45
+ * @Description: []
+ */
+@Data
+public class SqlExecuteReq {
+    private String sql;
+    private DialectType dialectType;
+    private ConnectionConfig connectionConfig;
 }

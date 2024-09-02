@@ -19,6 +19,9 @@ package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import org.springframework.jdbc.core.StatementCallback;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
@@ -41,36 +44,44 @@ import lombok.NonNull;
  * @Date: 2024/8/28 21:04
  * @Description: []
  */
-public class SqlExecutionCallback implements ExecutionCallback<SqlExecuteResult> {
+public class SqlExecutionCallback implements ExecutionCallback<SqlExecuteReq, SqlExecuteResult> {
     private ConnectionSession connectionSession;
     private OdcStatementCallBack statementCallBack;
+    private long timeoutMillis;
 
-    public SqlExecutionCallback(ConnectionSession connectionSession, String sql) {
+    public SqlExecutionCallback(@NonNull ConnectionSession connectionSession, String sql, long timeoutMillis) {
         this.connectionSession = connectionSession;
         this.statementCallBack =
                 new OdcStatementCallBack(Arrays.asList(SqlTuple.newTuple(sql)), connectionSession, true, 1000);
+        this.timeoutMillis = timeoutMillis;
     }
 
     @Override
-    public ExecutionResult<SqlExecuteResult> execute(ExecutionGroupContext<SqlExecuteResult> context)
+    public ExecutionResult<SqlExecuteResult> execute(ExecutionGroupContext<SqlExecuteReq, SqlExecuteResult> context)
             throws SQLException {
         List<JdbcGeneralResult> results = connectionSession
-                .getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute(this.statementCallBack);
+                .getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY)
+                .execute((StatementCallback<List<JdbcGeneralResult>>) stmt -> {
+                    stmt.setQueryTimeout(
+                        (int) TimeUnit.MILLISECONDS.toSeconds(timeoutMillis));
+                    return statementCallBack.doInStatement(stmt);
+                });
         JdbcGeneralResult result = results.get(0);
         return new ExecutionResult<>(new SqlExecuteResult(result), getExecutionStatus(result.getStatus()));
     }
 
     @Override
-    public void terminate(ExecutionGroupContext<SqlExecuteResult> context) throws SQLException {
+    public void terminate(ExecutionGroupContext<SqlExecuteReq, SqlExecuteResult> context) throws SQLException {}
+
+    @Override
+    public void onFailed(ExecutionUnit<SqlExecuteReq, SqlExecuteResult> unit,
+            ExecutionGroupContext<SqlExecuteReq, SqlExecuteResult> context) {
+
     }
 
     @Override
-    public void onFailed(ExecutionUnit<SqlExecuteResult> unit, ExecutionGroupContext<SqlExecuteResult> context) {
-
-    }
-
-    @Override
-    public void onSuccess(ExecutionUnit<SqlExecuteResult> unit, ExecutionGroupContext<SqlExecuteResult> result) {
+    public void onSuccess(ExecutionUnit<SqlExecuteReq, SqlExecuteResult> unit,
+            ExecutionGroupContext<SqlExecuteReq, SqlExecuteResult> result) {
 
     }
 

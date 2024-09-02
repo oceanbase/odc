@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -30,17 +31,20 @@ import lombok.RequiredArgsConstructor;
  * @Date: 2024/8/28 17:29
  * @Description: []
  */
-public final class ExecutionGroupContext<R> {
+public final class ExecutionGroupContext<T, R> {
 
-    private final Collection<ExecutionGroup<R>> executionGroups;
+    private final Collection<ExecutionGroup<T, R>> executionGroups;
 
-    private final Map<String, ExecutionUnit<R>> id2ExecutionUnit;
+    private final Map<String, ExecutionUnit<T, R>> id2ExecutionUnit;
 
     private final ExecutorService executorService;
 
     private volatile Map<String, ExecutionResult<R>> executionId2Result;
 
-    public ExecutionGroupContext(Collection<ExecutionGroup<R>> executionGroups, ExecutorService executorService) {
+    @Getter
+    private int completedGroupCount = 0;
+
+    public ExecutionGroupContext(Collection<ExecutionGroup<T, R>> executionGroups, ExecutorService executorService) {
         this.executionGroups = executionGroups;
         this.executorService = executorService;
         this.executionId2Result = new ConcurrentHashMap<>();
@@ -51,8 +55,9 @@ public final class ExecutionGroupContext<R> {
     }
 
     public void init() {
-        for (ExecutionGroup<R> group : executionGroups) {
+        for (ExecutionGroup<T, R> group : executionGroups) {
             group.execute(this.executorService, this);
+            completedGroupCount++;
         }
     }
 
@@ -66,13 +71,21 @@ public final class ExecutionGroupContext<R> {
         }
     }
 
+    public boolean isCompleted() {
+        return executionId2Result.values().stream().allMatch(ExecutionResult::isCompleted);
+    }
+
+    public Map<String, ExecutionResult<R>> getResults() {
+        return executionId2Result;
+    }
+
     public void terminate(String executionUnitId) {
-        ExecutionUnit<R> executionUnit = id2ExecutionUnit.get(executionUnitId);
+        ExecutionUnit<T, R> executionUnit = id2ExecutionUnit.get(executionUnitId);
         executionUnit.terminate(this);
     }
 
     public void skip(String executionUnitId) {
-        ExecutionUnit<R> executionUnit = id2ExecutionUnit.get(executionUnitId);
+        ExecutionUnit<T, R> executionUnit = id2ExecutionUnit.get(executionUnitId);
         executionUnit.skip(this);
     }
 }
