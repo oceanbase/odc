@@ -143,10 +143,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                         result.getTotalStatements(), result.getFinishedStatements());
             }
         }
-        log.info("The sql plan task execute finished.");
-        log.info("statistic sql execute result, total={}, finished={}, succeed={}, failed={}",
-                result.getTotalStatements(), result.getFinishedStatements(), result.getSucceedStatements(),
-                result.getFailedStatements());
+        log.info("The sql plan task execute finished,result={}", result);
 
         // all sql execute csv file list write to zip file
         writeZipFile();
@@ -199,7 +196,6 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                     SqlExecuteResult executeResult = new SqlExecuteResult(result);
                     if (sqlType == GeneralSqlType.DQL) {
                         // todo: weather need data masking
-                        log.info("Data masking ...");
                     }
                     queryResultSetBuffer.add(executeResult);
 
