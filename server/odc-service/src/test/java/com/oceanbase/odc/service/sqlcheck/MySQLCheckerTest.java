@@ -1380,10 +1380,10 @@ public class MySQLCheckerTest {
         JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
 
         Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(RowMapper.class)))
-                .thenReturn(Collections.singletonList(4L));
+                .thenReturn(Collections.singletonList(3L));
         DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
                 Collections.singletonList(
-                        new MySQLAffectedRows(2, DialectType.MYSQL, jdbcTemplate)));
+                        new MySQLAffectedRows(2L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
         Assert.assertEquals(1, actualInsert.size());
 
@@ -1391,7 +1391,7 @@ public class MySQLCheckerTest {
                 .thenReturn(Collections.singletonList(1L));
         DefaultSqlChecker updateChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
                 Collections.singletonList(
-                        new MySQLAffectedRows(2, DialectType.MYSQL, jdbcTemplate)));
+                        new MySQLAffectedRows(2L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualUpdate = updateChecker.check(update);
         Assert.assertEquals(0, actualUpdate.size());
 
@@ -1399,7 +1399,7 @@ public class MySQLCheckerTest {
                 .thenReturn(Collections.singletonList(3L));
         DefaultSqlChecker deleteChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
                 Collections.singletonList(
-                        new MySQLAffectedRows(2, DialectType.MYSQL, jdbcTemplate)));
+                        new MySQLAffectedRows(2L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualDelete = deleteChecker.check(delete);
         Assert.assertEquals(1, actualDelete.size());
 
@@ -1407,7 +1407,7 @@ public class MySQLCheckerTest {
                 .thenReturn(Collections.singletonList(2L));
         DefaultSqlChecker selectChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
                 Collections.singletonList(
-                        new MySQLAffectedRows(2, DialectType.MYSQL, jdbcTemplate)));
+                        new MySQLAffectedRows(2L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualSelect = selectChecker.check(select);
         Assert.assertEquals(0, actualSelect.size());
     }
@@ -1428,39 +1428,75 @@ public class MySQLCheckerTest {
         String select =
                 "select id, name, age from users where id in ('1', '2')";
 
+        List<String> resultSet = Arrays.asList(
+                "==================================================",
+                "|ID|OPERATOR          |NAME|EST.ROWS|EST.TIME(us)|",
+                "--------------------------------------------------",
+                "|0 |DISTRIBUTED INSERT|    |4       |20          |",
+                "|1 |└─EXPRESSION      |    |4       |1           |",
+                "==================================================");
+        List<String> updateResultSet = Arrays.asList(
+                "==================================================",
+                "|ID|OPERATOR          |NAME|EST.ROWS|EST.TIME(us)|",
+                "--------------------------------------------------",
+                "|0 |DISTRIBUTED INSERT|    |1       |20          |",
+                "|1 |└─EXPRESSION      |    |1       |1           |",
+                "==================================================");
+        List<String> deleteResultSet = Arrays.asList(
+                "==================================================",
+                "|ID|OPERATOR          |NAME|EST.ROWS|EST.TIME(us)|",
+                "--------------------------------------------------",
+                "|0 |DISTRIBUTED INSERT|    |0       |20          |",
+                "|1 |└─EXPRESSION      |    |3       |1           |",
+                "==================================================");
+
         JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
 
         Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(RowMapper.class)))
-                .thenReturn(Collections.singletonList(4L));
+                .thenReturn(resultSet);
         DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
                 Collections.singletonList(
-                        new MySQLAffectedRows(2, DialectType.OB_MYSQL, jdbcTemplate)));
+                        new MySQLAffectedRows(2L, DialectType.OB_MYSQL, jdbcTemplate)));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
         Assert.assertEquals(1, actualInsert.size());
 
         Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(RowMapper.class)))
-                .thenReturn(Collections.singletonList(1L));
+                .thenReturn(updateResultSet);
         DefaultSqlChecker updateChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
                 Collections.singletonList(
-                        new MySQLAffectedRows(2, DialectType.OB_MYSQL, jdbcTemplate)));
+                        new MySQLAffectedRows(2L, DialectType.OB_MYSQL, jdbcTemplate)));
         List<CheckViolation> actualUpdate = updateChecker.check(update);
         Assert.assertEquals(0, actualUpdate.size());
 
         Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(RowMapper.class)))
-                .thenReturn(Collections.singletonList(3L));
+                .thenReturn(deleteResultSet);
         DefaultSqlChecker deleteChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
                 Collections.singletonList(
-                        new MySQLAffectedRows(2, DialectType.OB_MYSQL, jdbcTemplate)));
+                        new MySQLAffectedRows(2L, DialectType.OB_MYSQL, jdbcTemplate)));
         List<CheckViolation> actualDelete = deleteChecker.check(delete);
         Assert.assertEquals(1, actualDelete.size());
 
         Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(RowMapper.class)))
-                .thenReturn(Collections.singletonList(2L));
+                .thenReturn(resultSet);
         DefaultSqlChecker selectChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
                 Collections.singletonList(
-                        new MySQLAffectedRows(2, DialectType.OB_MYSQL, jdbcTemplate)));
+                        new MySQLAffectedRows(2L, DialectType.OB_MYSQL, jdbcTemplate)));
         List<CheckViolation> actualSelect = selectChecker.check(select);
         Assert.assertEquals(0, actualSelect.size());
+
+        Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(RowMapper.class)))
+                .thenThrow(new RuntimeException("Failed to execute sql"));
+        try {
+            DefaultSqlChecker errorChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
+                    Collections.singletonList(
+                            new MySQLAffectedRows(2L, DialectType.OB_MYSQL, jdbcTemplate)));
+            List<CheckViolation> actualError = errorChecker.check(update);
+        } catch (RuntimeException e) {
+            Assert.assertEquals("Failed to execute sql: " + "EXPLAIN " + update,
+                    e.getMessage());
+        }
+
+
     }
 
     private String joinAndAppend(String[] sqls, String delimiter) {
