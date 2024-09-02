@@ -53,8 +53,6 @@ public class MySQLAffectedRows implements SqlCheckRule {
 
     private final DialectType dialectType;
 
-    private static final int HEADER_LINE = 2;
-
     public MySQLAffectedRows(@NonNull Long maxSQLAffectedRows, DialectType dialectType,
             JdbcOperations jdbcOperations) {
         this.maxSQLAffectedRows = maxSQLAffectedRows <= 0 ? 0 : maxSQLAffectedRows;
@@ -166,7 +164,7 @@ public class MySQLAffectedRows implements SqlCheckRule {
             List<Long> resultSet = new ArrayList<>();
             for (int rowNum = 0; rowNum < queryResults.size(); rowNum++) {
                 String resultRow = queryResults.get(rowNum);
-                if (!ifFindAffectedRow.get() && rowNum > HEADER_LINE) {
+                if (!ifFindAffectedRow.get() && rowNum > 2) {
                     // Find the first non-null value in the column 'EST.ROWS'
                     long estRowsValue = getEstRowsValue(resultRow);
                     if (estRowsValue != 0) {
