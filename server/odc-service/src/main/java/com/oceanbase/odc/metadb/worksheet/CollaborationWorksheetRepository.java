@@ -15,10 +15,10 @@
  */
 package com.oceanbase.odc.metadb.worksheet;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
 
@@ -28,8 +28,8 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.util.CollectionUtils;
 
+import com.oceanbase.odc.common.jdbc.JdbcTemplateUtils;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
 public interface CollaborationWorksheetRepository extends JpaRepository<CollaborationWorksheetEntity, Long>,
@@ -127,35 +127,14 @@ public interface CollaborationWorksheetRepository extends JpaRepository<Collabor
      * @param idToPathMap id to new path map
      * @return update rows count
      */
-    @Transactional
     default int batchUpdatePath(Map<Long, String> idToPathMap) {
-        if (CollectionUtils.isEmpty(idToPathMap)) {
-            return 0;
-        }
-        StringBuilder sql = new StringBuilder("UPDATE " + CollaborationWorksheetEntity.TABLE_NAME + " SET "
-                + CollaborationWorksheetEntity_.PATH + " = CASE " + CollaborationWorksheetEntity_.ID + " ");
-        List<Object> params = new ArrayList<>();
+        String sql = "UPDATE " + CollaborationWorksheetEntity.TABLE_NAME + " SET "
+                + CollaborationWorksheetEntity_.PATH + "=? WHERE " + CollaborationWorksheetEntity_.ID + "=?";
+        List<Object[]> params = idToPathMap.entrySet().stream()
+                .map(entry -> new Object[] {entry.getValue(), entry.getKey()})
+                .collect(Collectors.toList());
 
-        idToPathMap.forEach((id, newValue) -> {
-            sql.append("WHEN ").append(id).append(" THEN ? ");
-            params.add(newValue);
-        });
-
-        sql.append(" END WHERE " + CollaborationWorksheetEntity_.ID + " IN (");
-        for (int i = 0; i < idToPathMap.size(); i++) {
-            sql.append("?");
-            if (i < idToPathMap.size() - 1) {
-                sql.append(", ");
-            }
-        }
-        sql.append(")");
-
-        params.addAll(idToPathMap.keySet());
-
-        javax.persistence.Query nativeQuery = getEntityManager().createNativeQuery(sql.toString());
-        for (int i = 0; i < params.size(); i++) {
-            nativeQuery.setParameter(i + 1, params.get(i));
-        }
-        return nativeQuery.executeUpdate();
+        int[] updateCounts = getJdbcTemplate().batchUpdate(sql, params);
+        return JdbcTemplateUtils.batchInsertAffectRows(updateCounts);
     }
 }
