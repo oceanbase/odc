@@ -68,6 +68,8 @@ import com.oceanbase.odc.service.schedule.model.ScheduleOverviewHist;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
+import com.oceanbase.odc.service.sqlplan.model.SqlPlanAttributes;
+import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 
 import lombok.NonNull;
 
@@ -108,6 +110,7 @@ public class ScheduleResponseMapperFactory {
         ScheduleDetailResp scheduleDetailResp = new ScheduleDetailResp();
 
         scheduleDetailResp.setScheduleId(schedule.getId());
+        scheduleDetailResp.setScheduleName(schedule.getName());
         scheduleDetailResp.setTriggerConfig(schedule.getTriggerConfig());
         scheduleDetailResp.setMisfireStrategy(schedule.getMisfireStrategy());
         scheduleDetailResp.setAllowConcurrent(schedule.getAllowConcurrent());
@@ -154,9 +157,17 @@ public class ScheduleResponseMapperFactory {
         }
 
         Map<Long, ScheduleOverviewAttributes> id2Attributes = generateAttributes(schedules);
+
+        Set<Long> creatorIds = schedules.stream().map(ScheduleEntity::getCreatorId).collect(Collectors.toSet());
+
+        Map<Long, List<UserEntity>> users = userRepository.findByIdIn(creatorIds).stream().collect(
+                Collectors.groupingBy(UserEntity::getId));
+
         return schedules.stream().map(o -> {
             ScheduleOverview overview = new ScheduleOverview();
             overview.setScheduleId(o.getId());
+            overview.setScheduleName(o.getName());
+            overview.setCreator(new InnerUser(users.get(o.getCreatorId()).get(0), null));
             overview.setStatus(o.getStatus());
             overview.setTriggerConfig(JsonUtils.fromJson(o.getTriggerConfigJson(), TriggerConfig.class));
             overview.setAttributes(JSON.parseObject(JSON.toJSONString(id2Attributes.get(o.getId()))));
@@ -281,6 +292,10 @@ public class ScheduleResponseMapperFactory {
         }).collect(Collectors.toMap(ScheduleOverviewHist::getId, o -> o));
     }
 
+    public List<Database> getDatabaseInfoByIds(Set<Long> databaseIds) {
+        return getDatabaseByIds(databaseIds);
+    }
+
     private Map<Long, ScheduleOverviewAttributes> generateAttributes(Collection<ScheduleEntity> schedules) {
         Map<ScheduleType, List<ScheduleEntity>> type2Entity = schedules.stream().collect(
                 Collectors.groupingBy(ScheduleEntity::getType));
@@ -325,6 +340,24 @@ public class ScheduleResponseMapperFactory {
                         DataArchiveAttributes attributes = new DataArchiveAttributes();
                         attributes.setSourceDataBaseInfo(id2Database.get(parameters.getSourceDatabaseId()));
                         attributes.setTargetDataBaseInfo(id2Database.get(parameters.getTargetDataBaseId()));
+                        id2Attributes.put(o.getId(), attributes);
+                    });
+                    break;
+                }
+                case SQL_PLAN: {
+                    Set<Long> databaseIds = new HashSet<>();
+                    v.forEach(o -> {
+                        SqlPlanParameters parameters = JsonUtils.fromJson(o.getJobParametersJson(),
+                                SqlPlanParameters.class);
+                        databaseIds.add(parameters.getDatabaseId());
+                    });
+                    Map<Long, Database> id2Database = getDatabaseByIds(databaseIds).stream().collect(
+                            Collectors.toMap(Database::getId, o -> o));
+                    v.forEach(o -> {
+                        SqlPlanParameters parameters = JsonUtils.fromJson(o.getJobParametersJson(),
+                                SqlPlanParameters.class);
+                        SqlPlanAttributes attributes = new SqlPlanAttributes();
+                        attributes.setDatabaseInfo(id2Database.get(parameters.getDatabaseId()));
                         id2Attributes.put(o.getId(), attributes);
                     });
                     break;
@@ -375,6 +408,14 @@ public class ScheduleResponseMapperFactory {
                 parameters.setDatabase(id2Database.get(parameters.getDatabaseId()));
                 parameters.setTargetDatabase(id2Database.get(parameters.getTargetDatabaseId()));
                 limiterService.findByScheduleId(schedule.getId()).ifPresent(parameters::setRateLimit);
+                return parameters;
+            }
+            case SQL_PLAN: {
+                SqlPlanParameters parameters = (SqlPlanParameters) schedule.getParameters();
+                Map<Long, Database> id2Database = getDatabaseByIds(
+                        Stream.of(parameters.getDatabaseId()).collect(
+                                Collectors.toSet())).stream().collect(Collectors.toMap(Database::getId, o -> o));
+                parameters.setDatabaseInfo(id2Database.get(parameters.getDatabaseId()));
                 return parameters;
             }
             default:

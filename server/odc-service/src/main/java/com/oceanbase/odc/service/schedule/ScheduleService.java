@@ -84,6 +84,7 @@ import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
+import com.oceanbase.odc.service.schedule.model.QueryScheduleTaskParams;
 import com.oceanbase.odc.service.schedule.model.Schedule;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeLog;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
@@ -97,6 +98,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailRespHist;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskListOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
@@ -189,6 +191,7 @@ public class ScheduleService {
             validateTriggerConfig(req.getCreateScheduleReq().getTriggerConfig());
             ScheduleEntity entity = new ScheduleEntity();
 
+            entity.setName(req.getCreateScheduleReq().getName());
             entity.setProjectId(req.getCreateScheduleReq().getProjectId());
             DescriptionGenerator.generateScheduleDescription(req.getCreateScheduleReq());
             entity.setDescription(req.getCreateScheduleReq().getDescription());
@@ -232,6 +235,11 @@ public class ScheduleService {
                     && (targetSchedule.getStatus() != ScheduleStatus.PAUSE || hasRunningTask(targetSchedule.getId()))) {
                 log.warn("Update schedule is not allowed,status={}", targetSchedule.getStatus());
                 throw new IllegalStateException("Update schedule is not allowed.");
+            }
+            if (req.getOperationType() == OperationType.DELETE
+                    && targetSchedule.getStatus() != ScheduleStatus.TERMINATED) {
+                log.warn("Delete schedule is not allowed,status={}", targetSchedule.getStatus());
+                throw new IllegalStateException("Delete schedule is not allowed, only can delete terminated schedule.");
             }
         }
 
@@ -308,8 +316,17 @@ public class ScheduleService {
                 scheduleRepository.updateStatusById(targetSchedule.getId(), ScheduleStatus.TERMINATED);
                 break;
             }
+            case DELETE: {
+                scheduleRepository.updateStatusById(targetSchedule.getId(), ScheduleStatus.DELETED);
+                break;
+            }
             default:
                 throw new UnsupportedException();
+        }
+
+        if (targetSchedule.getType() == ScheduleType.SQL_PLAN) {
+            log.info("sql plan is not executed for the moment, scheduleId={}", targetSchedule.getId());
+            return;
         }
 
         // start change quartzJob
@@ -614,6 +631,53 @@ public class ScheduleService {
     public Page<ScheduleTaskOverview> listScheduleTaskOverview(@NotNull Pageable pageable, @NotNull Long scheduleId) {
         nullSafeGetByIdWithCheckPermission(scheduleId, false);
         return scheduleTaskService.getScheduleTaskListResp(pageable, scheduleId);
+    }
+
+    public Page<ScheduleTaskListOverview> listScheduleTaskOverviewByScheduleType(@NotNull Pageable pageable,
+            @NotNull QueryScheduleTaskParams params) {
+        log.info("List schedule task overview req, params={}", params);
+        if (params.getDataSourceIds() == null) {
+            params.setDataSourceIds(new HashSet<>());
+        }
+        if (StringUtils.isNotEmpty(params.getClusterId())) {
+            params.getDataSourceIds().addAll(connectionService.innerListIdByOrganizationIdAndClusterId(
+                    authenticationFacade.currentOrganizationId(), params.getClusterId()));
+        }
+        if (StringUtils.isNotEmpty(params.getTenantId())) {
+            params.getDataSourceIds().addAll(connectionService.innerListIdByOrganizationIdAndTenantId(
+                    authenticationFacade.currentOrganizationId(), params.getTenantId()));
+        }
+
+        if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
+            Set<Long> projectIds = params.getProjectId() == null
+                    ? projectService.getMemberProjectIds(authenticationFacade.currentUserId())
+                    : Collections.singleton(params.getProjectId());
+            if (projectIds.isEmpty()) {
+                return Page.empty();
+            }
+            params.setProjectIds(projectIds);
+        }
+        params.setOrganizationId(authenticationFacade.currentOrganizationId());
+
+        QueryScheduleParams scheduleParams = QueryScheduleParams.builder()
+                .id(params.getScheduleId())
+                .name(params.getScheduleName())
+                .dataSourceIds(params.getDataSourceIds())
+                .databaseName(params.getDatabaseName())
+                .type(params.getScheduleType())
+                .creator(params.getCreator())
+                .projectId(params.getProjectId())
+                .build();
+
+        List<Schedule> scheduleList = scheduleRepository.find(scheduleParams).stream()
+                .map(scheduleMapper::entityToModel)
+                .collect(Collectors.toList());
+        if (scheduleList.isEmpty()) {
+            return Page.empty();
+        }
+        params.setSchedules(scheduleList);
+
+        return scheduleTaskService.getConditionalScheduleTaskListResp(pageable, params);
     }
 
     public List<String> getAsyncDownloadUrl(Long id, List<String> objectIds) {

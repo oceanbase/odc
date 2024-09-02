@@ -40,6 +40,7 @@ import com.oceanbase.odc.common.security.SensitiveDataUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.authority.interceptor.MethodAuthorizedPostProcessor;
 import com.oceanbase.odc.migrate.AbstractMetaDBMigrate;
+import com.oceanbase.odc.service.config.SystemConfigBootstrap;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -59,7 +60,8 @@ public class OdcServer {
     /**
      * make sure tomcat start after metadb migrate success
      */
-    public OdcServer(@Qualifier("metadbMigrate") AbstractMetaDBMigrate metadbMigrate) {
+    public OdcServer(@Qualifier("metadbMigrate") AbstractMetaDBMigrate metadbMigrate,
+            SystemConfigBootstrap systemConfigBootstrap) {
         log.info("migrate instance name was {}", metadbMigrate.getClass().getName());
         log.info("odc server initialized.");
     }

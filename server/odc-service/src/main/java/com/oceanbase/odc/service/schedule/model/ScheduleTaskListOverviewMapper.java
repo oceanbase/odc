@@ -15,27 +15,18 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
-/**
- * @Author：tinker
- * @Date: 2022/11/16 15:36
- * @Descripition:
- */
-public enum ScheduleStatus {
+public class ScheduleTaskListOverviewMapper {
 
-    CREATING,
-    APPROVING,
-
-    APPROVAL_EXPIRED,
-
-    REJECTED,
-    PAUSE,
-    ENABLED,
-    TERMINATION,
-    TERMINATED,
-
-    COMPLETED,
-    EXECUTION_FAILED,
-
-    DELETED
+    public static ScheduleTaskListOverview map(ScheduleTask scheduleTask) {
+        ScheduleTaskListOverview t = new ScheduleTaskListOverview();
+        t.setId(scheduleTask.getId());
+        t.setScheduleId(scheduleTask.getJobName());
+        t.setStatus(scheduleTask.getStatus());
+        t.setType(ScheduleTaskType.valueOf(scheduleTask.getJobGroup()));
+        t.setLastExecutionTime(scheduleTask.getFireTime());
+        t.setCreateTime(scheduleTask.getCreateTime());
+        t.setUpdateTime(scheduleTask.getUpdateTime());
+        return t;
+    }
 
 }
