@@ -29,7 +29,7 @@ import com.oceanbase.odc.service.datatransfer.loader.spliter.SqlSplitterForThird
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class PlSqlSingleFileOutput extends AbstractThirdPartyOutput {
+public class PLSqlSingleFileOutput extends AbstractThirdPartyOutput {
     private static final char[] BLANK_CHARACTERS = new char[] {'\n', '\r', ' ', '\t'};
     private static final char DEFAULT_PL_DELIMITER = '/';
     private static final char DEFAULT_SQL_DELIMITER = ';';
@@ -37,7 +37,7 @@ public class PlSqlSingleFileOutput extends AbstractThirdPartyOutput {
     private static final char BLANK_SPACE = ' ';
     private static final char LINE_BREAK = '\n';
 
-    public PlSqlSingleFileOutput(File origin) {
+    public PLSqlSingleFileOutput(File origin) {
         super(origin);
     }
 

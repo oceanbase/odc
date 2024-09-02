@@ -31,11 +31,11 @@ import com.oceanbase.odc.common.file.zip.ZipFileTree;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class PlSqlMultiFileOutput extends AbstractThirdPartyOutput {
+public class PLSqlMultiFileOutput extends AbstractThirdPartyOutput {
 
     private final ZipFileTree zip;
 
-    public PlSqlMultiFileOutput(File origin) throws IOException {
+    public PLSqlMultiFileOutput(File origin) throws IOException {
         super(origin);
         this.zip = new ZipFileTree(origin);
     }

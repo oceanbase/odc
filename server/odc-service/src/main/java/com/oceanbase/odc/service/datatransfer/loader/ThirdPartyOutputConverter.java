@@ -56,19 +56,19 @@ public class ThirdPartyOutputConverter {
     private static ThirdPartyOutput getOutPutConverter(File input) throws Exception {
         String filename = input.getName();
         if (filename.endsWith(".zip")) {
-            PlSqlMultiFileOutput plSqlMultiFileOutput = new PlSqlMultiFileOutput(input);
+            PLSqlMultiFileOutput plSqlMultiFileOutput = new PLSqlMultiFileOutput(input);
             if (plSqlMultiFileOutput.supports()) {
                 return plSqlMultiFileOutput;
             }
         } else if (filename.endsWith(".sql")) {
-            PlSqlSingleFileOutput plSqlSingleFileOutput = new PlSqlSingleFileOutput(input);
+            PLSqlSingleFileOutput plSqlSingleFileOutput = new PLSqlSingleFileOutput(input);
             if (plSqlSingleFileOutput.supports()) {
                 return plSqlSingleFileOutput;
             }
         } else if (input.isDirectory()) {
-            PlSqlDirOutput plSqlDirOutput = new PlSqlDirOutput(input);
-            if (plSqlDirOutput.supports()) {
-                return plSqlDirOutput;
+            PLSqlDirectoryOutput PLSqlDirectoryOutput = new PLSqlDirectoryOutput(input);
+            if (PLSqlDirectoryOutput.supports()) {
+                return PLSqlDirectoryOutput;
             }
         }
         return null;

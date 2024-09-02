@@ -30,16 +30,16 @@ import org.junit.Test;
 
 import com.oceanbase.odc.common.file.zip.ZipFileTree;
 
-public class PlSqlMultiFileOutputTest {
-    private static final String ZIP_FILE_PATH = "src/test/resources/datatransfer/PlSqlOutput.zip";
-    private static final String DEST_FILE_PATH = "src/test/resources/datatransfer/obCompatible.zip";
-    private PlSqlMultiFileOutput plSqlMultiFileOutput;
+public class PLSqlMultiFileOutputTest {
+    private static final String               ZIP_FILE_PATH = "src/test/resources/datatransfer/PlSqlOutput.zip";
+    private static final String               DEST_FILE_PATH = "src/test/resources/datatransfer/obCompatible.zip";
+    private              PLSqlMultiFileOutput plSqlMultiFileOutput;
 
     @Before
     public void setUp() throws Exception {
         File zipFile = new File(ZIP_FILE_PATH);
         mockZipFile(zipFile);
-        plSqlMultiFileOutput = new PlSqlMultiFileOutput(zipFile);
+        plSqlMultiFileOutput = new PLSqlMultiFileOutput(zipFile);
     }
 
     @After
