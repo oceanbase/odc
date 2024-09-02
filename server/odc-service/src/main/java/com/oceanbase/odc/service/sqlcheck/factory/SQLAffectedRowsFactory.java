@@ -46,6 +46,6 @@ public class SQLAffectedRowsFactory implements SqlCheckRuleFactory {
         if (parameters == null || parameters.isEmpty() || parameters.get(key) == null) {
             throw new RuntimeException("parameters key: " + key + " is null");
         }
-        return new MySQLAffectedRows(Integer.valueOf(parameters.get(key).toString()), dialectType, jdbc);
+        return new MySQLAffectedRows(Long.valueOf(parameters.get(key).toString()), dialectType, jdbc);
     }
 }

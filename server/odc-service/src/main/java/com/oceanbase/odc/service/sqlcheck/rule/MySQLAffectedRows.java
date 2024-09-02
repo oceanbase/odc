@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.sqlcheck.rule;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -47,7 +48,7 @@ import lombok.NonNull;
  */
 public class MySQLAffectedRows implements SqlCheckRule {
 
-    private final Integer maxSQLAffectedRows;
+    private final Long maxSQLAffectedRows;
 
     private final JdbcOperations jdbcOperations;
 
@@ -55,7 +56,7 @@ public class MySQLAffectedRows implements SqlCheckRule {
 
     private static final int HEADER_LINE = 2;
 
-    public MySQLAffectedRows(@NonNull Integer maxSQLAffectedRows, DialectType dialectType,
+    public MySQLAffectedRows(@NonNull Long maxSQLAffectedRows, DialectType dialectType,
             JdbcOperations jdbcOperations) {
         this.maxSQLAffectedRows = maxSQLAffectedRows <= 0 ? 0 : maxSQLAffectedRows;
         this.jdbcOperations = jdbcOperations;
@@ -162,18 +163,20 @@ public class MySQLAffectedRows implements SqlCheckRule {
          */
         try {
             AtomicBoolean ifFindAffectedRow = new AtomicBoolean(false);
-            List<Long> resultSet = jdbc.query(explainSql, (rs, rowNum) -> {
-
-                String resultRow = rs.getString("Query Plan");
+            List<String> queryResults = jdbc.query(explainSql, (rs, rowNum) -> rs.getString("Query Plan"));
+            List<Long> resultSet = new ArrayList<>();
+            for (int rowNum = 0; rowNum < queryResults.size(); rowNum++) {
+                String resultRow = queryResults.get(rowNum);
                 if (!ifFindAffectedRow.get() && rowNum > HEADER_LINE) {
-                    // find first non-null value is the column 'EST.ROWS'
-                    if (getEstRowsValue(resultRow) != 0) {
+                    // Find the first non-null value in the column 'EST.ROWS'
+                    long estRowsValue = getEstRowsValue(resultRow);
+                    if (estRowsValue != 0) {
                         ifFindAffectedRow.set(true);
-                        return getEstRowsValue(resultRow);
+                        resultSet.add(estRowsValue);
                     }
                 }
-                return null;
-            });
+                resultSet.add(null);
+            }
 
             Long firstNonNullResult = resultSet.stream()
                     .filter(Objects::nonNull)
@@ -183,7 +186,7 @@ public class MySQLAffectedRows implements SqlCheckRule {
             return firstNonNullResult != null ? firstNonNullResult : 0;
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to execute sql: " + explainSql + ", error: " + e.getMessage());
+            throw new RuntimeException("Failed to execute sql: " + explainSql);
         }
     }
 
