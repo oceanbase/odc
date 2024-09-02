@@ -13,14 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource;
+package com.oceanbase.odc.service.resource.k8s;
+
+import java.util.function.Function;
+
+import com.oceanbase.odc.service.resource.ResourceOperatorContext;
+import com.oceanbase.odc.service.resource.k8s.client.K8sJobClient;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 /**
- * global unique resource ID
- * 
  * @author longpeng.zlp
- * @date 2024/8/12 11:30
+ * @date 2024/9/2 17:24
  */
-public interface ResourceID {
-    String getName();
+@AllArgsConstructor
+@Data
+public class K8sResourceOperatorContext implements ResourceOperatorContext {
+    private final K8sJobClient k8sJobClient;
+    private final Function<K8sResourceID, Long> createElapsedTimeFunc;
+    private final long podPendingTimeoutSeconds;
 }

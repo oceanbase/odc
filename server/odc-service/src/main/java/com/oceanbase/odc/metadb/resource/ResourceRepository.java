@@ -25,8 +25,6 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.oceanbase.odc.service.resource.ResourceID;
-
 /**
  * jdbc query for task_resource table
  * 
@@ -36,21 +34,22 @@ import com.oceanbase.odc.service.resource.ResourceID;
 public interface ResourceRepository extends JpaRepository<ResourceEntity, Long>,
         JpaSpecificationExecutor<ResourceEntity> {
     @Transactional
-    @Query(value = "update task_resource set "
-            + " status=:status ,"
-            + " where region = :#{#resourceID.getRegion()} and group_name = :#{#resourceID.getGroup()}  and namespace = :#{#resourceID.getNamespace()} and name = :#{#resourceID.getName()}",
+    @Query(value = "update `task_resource` set "
+            + " `status`=:status "
+            + " where `region` = :#{#resourceID.getRegion()} and `group_name` = :#{#resourceID.getGroup()}  and `namespace` = :#{#resourceID.getNamespace()} and `name` = :#{#resourceID.getName()}",
             nativeQuery = true)
     @Modifying
-    int updateResourceStatus(@Param("resourceID") ResourceID resourceID, @Param("status") String resourceState);
+    int updateResourceStatus(@Param("resourceID") GlobalUniqueResourceID resourceID,
+            @Param("status") String resourceState);
 
     @Transactional
-    @Query(value = "delete from task_resource  "
-            + " where region = :#{#resourceID.getRegion()} and group_name = :#{#resourceID.getGroup()}  and namespace = :#{#resourceID.getNamespace()} and name = :#{#resourceID.getName()} limit 1",
+    @Query(value = "delete from `task_resource`  "
+            + " where `region` = :#{#resourceID.getRegion()} and `group_name` = :#{#resourceID.getGroup()}  and `namespace` = :#{#resourceID.getNamespace()} and `name` = :#{#resourceID.getName()} limit 1",
             nativeQuery = true)
     @Modifying
-    int deleteResource(@Param("resourceID") ResourceID resourceID);
+    int deleteResource(@Param("resourceID") GlobalUniqueResourceID resourceID);
 
-    @Query(value = "SELECT * FROM task_resource WHERE region = :#{#resourceID.getRegion()} and group_name = :#{#resourceID.getGroup()}  and namespace = :#{#resourceID.getNamespace()} and name = :#{#resourceID.getName()}",
+    @Query(value = "SELECT * FROM `task_resource` WHERE `region` = :#{#resourceID.getRegion()} and `group_name` = :#{#resourceID.getGroup()}  and `namespace` = :#{#resourceID.getNamespace()} and `name` = :#{#resourceID.getName()}",
             nativeQuery = true)
-    Optional<ResourceEntity> findByResourceID(@Param("resourceID") ResourceID resourceID);
+    Optional<ResourceEntity> findByResourceID(@Param("resourceID") GlobalUniqueResourceID resourceID);
 }

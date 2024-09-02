@@ -43,10 +43,6 @@ public class DefaultExecutorIdentifier implements ExecutorIdentifier {
     @Builder.Default()
     private int port = DEFAULT_PORT;
 
-    private String region;
-
-    private String group;
-
     private String namespace;
 
     private String executorName;
@@ -59,14 +55,6 @@ public class DefaultExecutorIdentifier implements ExecutorIdentifier {
                 .append(host == null ? "" : host)
                 .append(":")
                 .append(port);
-        if (StringUtils.isNotBlank(region)) {
-            sb.append("/");
-            sb.append(UrlUtils.encode(region));
-        }
-        if (StringUtils.isNotBlank(group)) {
-            sb.append("/");
-            sb.append(UrlUtils.encode(group));
-        }
         if (StringUtils.isNotBlank(namespace)) {
             sb.append("/");
             sb.append(UrlUtils.encode(namespace));

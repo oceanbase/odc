@@ -42,6 +42,7 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.resource.k8s.K8sResource;
+import com.oceanbase.odc.service.resource.k8s.K8sResourceContext;
 import com.oceanbase.odc.service.resource.k8s.PodConfig;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.exception.JobException;
@@ -104,7 +105,14 @@ public class NativeK8sJobClient implements K8sJobClient {
     }
 
     @Override
-    public K8sResource create(@NonNull String namespace, @NonNull String name, @NonNull String image,
+    public K8sResource create(K8sResourceContext k8sResourceContext) throws JobException {
+        PodConfig podConfig = k8sResourceContext.getPodConfig();
+        return create(k8sResourceContext.resourceNamespace(), k8sResourceContext.resourceName(),
+                podConfig.getImage(),
+                podConfig.getCommand(), podConfig);
+    }
+
+    protected K8sResource create(@NonNull String namespace, @NonNull String name, @NonNull String image,
             List<String> command, @NonNull PodConfig podConfig) throws JobException {
         validK8sProperties();
 

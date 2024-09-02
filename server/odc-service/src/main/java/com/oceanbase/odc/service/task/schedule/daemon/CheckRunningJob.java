@@ -24,6 +24,7 @@ import org.quartz.JobExecutionException;
 import org.springframework.data.domain.Page;
 
 import com.oceanbase.odc.common.util.SilentExecutor;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
@@ -88,7 +89,7 @@ public class CheckRunningJob implements Job {
         } finally {
             // mark resource as released to let resource collector collect resource
             if (TaskRunMode.K8S == refreshedJobEntity.getRunMode()) {
-                ResourceManagerUtil.markResourceReleased(refreshedJobEntity.getExecutorIdentifier(),
+                ResourceManagerUtil.markResourceReleased(refreshedJobEntity, refreshedJobEntity.getExecutorIdentifier(),
                         getConfiguration().getK8sResourceManager());
                 log.info("CheckRunningJob release resource for job = {}", jobEntity);
             }
@@ -140,6 +141,13 @@ public class CheckRunningJob implements Job {
         // First try to stop remote job
         try {
             log.info("Try to stop remote job, jobId={}.", jobEntity.getId());
+            if (StringUtils.isEmpty(jobEntity.getExecutorIdentifier())) {
+                log.info("found invalid job = {}, resource destroy not confirmed, set status to failed", jobEntity);
+                taskFrameworkService
+                        .updateStatusDescriptionByIdOldStatus(jobEntity.getId(), JobStatus.RUNNING,
+                                JobStatus.FAILED, "old job not determinate resource has created");
+                return;
+            }
             getConfiguration().getJobDispatcher().stop(JobIdentity.of(jobEntity.getId()));
         } catch (JobException e) {
             // Process will continue if stop failed and not rollback transaction

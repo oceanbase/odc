@@ -23,14 +23,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.metadb.resource.GlobalUniqueResourceID;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
-import com.oceanbase.odc.service.resource.K8sResourceManager;
-import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.k8s.K8sResource;
+import com.oceanbase.odc.service.resource.k8s.K8sResourceManager;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
@@ -77,11 +78,9 @@ public class ExecutorEndpointManager {
                     + ", executorListenPort=" + executorListenPort);
         }
         try {
-            ResourceID resourceID =
-                    new ResourceID(executorIdentifier.getRegion(), executorIdentifier.getGroup(),
-                            executorIdentifier.getNamespace(),
-                            executorIdentifier.getExecutorName());
-            Optional<K8sResource> resourceOptional = resourceManager.query(resourceID);
+            GlobalUniqueResourceID resourceID = ResourceIDUtil.getResourceID(executorIdentifier, je);
+            Optional<K8sResource> resourceOptional =
+                    resourceManager.query(ResourceIDUtil.wrapToK8sResourceID(resourceID));
             if (resourceOptional.isPresent()) {
                 K8sResource response = resourceOptional.get();
                 String podIpAddress = response.getPodIpAddress();

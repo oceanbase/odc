@@ -19,12 +19,8 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import com.google.common.base.Preconditions;
-import com.oceanbase.odc.service.resource.Resource;
-import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceOperator;
 import com.oceanbase.odc.service.resource.ResourceState;
-import com.oceanbase.odc.service.resource.k8s.client.K8sJobClient;
-import com.oceanbase.odc.service.resource.k8s.client.K8sJobClientSelector;
 import com.oceanbase.odc.service.task.exception.JobException;
 
 import lombok.AllArgsConstructor;
@@ -38,28 +34,22 @@ import lombok.extern.slf4j.Slf4j;
  */
 @AllArgsConstructor
 @Slf4j
-public class K8SResourceOperator implements ResourceOperator<K8sResourceContext> {
-    private final K8sJobClientSelector k8sJobClientSelector;
-    private final long podPendingTimeoutSeconds;
+public class K8SResourceOperator implements ResourceOperator<K8sResourceContext, K8sResource, K8sResourceID> {
+    private final K8sResourceOperatorContext context;
 
     @Override
-    public Resource create(K8sResourceContext k8sResourceContext) throws JobException {
+    public K8sResource create(K8sResourceContext k8sResourceContext) throws JobException {
         Preconditions.checkArgument(null != k8sResourceContext.region());
-        PodConfig podConfig = k8sResourceContext.getPodConfig();
-        K8sJobClient k8sJobClient = selectK8sClient(k8sResourceContext.resourceGroup());
-        K8sResource ret = k8sJobClient.create(k8sResourceContext.resourceNamespace(), k8sResourceContext.resourceName(),
-                podConfig.getImage(),
-                podConfig.getCommand(), podConfig);
+        K8sResource ret = context.getK8sJobClient().create(k8sResourceContext);
         ret.setRegion(k8sResourceContext.getRegion());
         ret.setGroup(k8sResourceContext.resourceGroup());
         return ret;
     }
 
     @Override
-    public Optional<K8sResource> query(ResourceID resourceID) throws JobException {
+    public Optional<K8sResource> query(K8sResourceID resourceID) throws JobException {
         Preconditions.checkArgument(null != resourceID.getRegion());
-        K8sJobClient k8sJobClient = selectK8sClient(resourceID.getGroup());
-        Optional<K8sResource> ret = k8sJobClient.get(resourceID.getNamespace(), resourceID.getName());
+        Optional<K8sResource> ret = context.getK8sJobClient().get(resourceID.getNamespace(), resourceID.getName());
         if (ret.isPresent()) {
             ret.get().setRegion(resourceID.getRegion());
         }
@@ -67,28 +57,30 @@ public class K8SResourceOperator implements ResourceOperator<K8sResourceContext>
     }
 
     @Override
-    public String destroy(ResourceID resourceID) throws JobException {
+    public String destroy(K8sResourceID resourceID) throws JobException {
         Preconditions.checkArgument(null != resourceID.getRegion());
         // first destroy
-        K8sJobClient k8sJobClient = selectK8sClient(resourceID.getGroup());
-        return k8sJobClient.delete(resourceID.getNamespace(), resourceID.getName());
+        return context.getK8sJobClient().delete(resourceID.getNamespace(), resourceID.getName());
     }
 
     @Override
-    public boolean canBeDestroyed(ResourceID resourceID, Function<ResourceID, Long> createElapsedTimeFunc) {
+    public boolean canBeDestroyed(K8sResourceID resourceID) {
+        return canBeDestroyed(resourceID, context.getCreateElapsedTimeFunc());
+    }
+
+    public boolean canBeDestroyed(K8sResourceID resourceID, Function<K8sResourceID, Long> createElapsedTimeFunc) {
         Preconditions.checkArgument(null != resourceID.getRegion());
         Optional<K8sResource> query;
-        K8sJobClient k8sJobClient = selectK8sClient(resourceID.getGroup());
 
         try {
-            query = k8sJobClient.get(resourceID.getNamespace(), resourceID.getName());
+            query = context.getK8sJobClient().get(resourceID.getNamespace(), resourceID.getName());
         } catch (JobException e) {
             log.warn("Get k8s pod occur error, resource={}", resourceID, e);
             return false;
         }
         if (query.isPresent()) {
             if (ResourceState.isPreparing(query.get().getResourceState())) {
-                if (createElapsedTimeFunc.apply(resourceID) <= podPendingTimeoutSeconds) {
+                if (createElapsedTimeFunc.apply(resourceID) <= context.getPodPendingTimeoutSeconds()) {
                     // Pod cannot be deleted when pod pending is not timeout,
                     // so throw exception representative cannot delete
                     log.warn("Cannot destroy pod, pending is not timeout, resourceID={},  podStatus={}",
@@ -108,9 +100,5 @@ public class K8SResourceOperator implements ResourceOperator<K8sResourceContext>
      */
     private boolean isPodIdle() {
         return true;
-    }
-
-    private K8sJobClient selectK8sClient(String resourceGroup) {
-        return k8sJobClientSelector.select(resourceGroup);
     }
 }

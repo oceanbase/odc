@@ -25,8 +25,8 @@ import org.springframework.data.domain.Page;
 
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
+import com.oceanbase.odc.metadb.resource.GlobalUniqueResourceID;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
-import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
@@ -56,9 +56,9 @@ public class DestroyResourceJob implements Job {
         // scan terminate job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
-        Page<ResourceEntity> jobs = taskFrameworkService.findDestroyingResource(0,
+        Page<ResourceEntity> resources = taskFrameworkService.findDestroyingResource(0,
                 taskFrameworkProperties.getSingleFetchDestroyExecutorJobRows());
-        jobs.forEach(a -> {
+        resources.forEach(a -> {
             try {
                 destroyResource(a);
             } catch (Throwable e) {
@@ -69,7 +69,7 @@ public class DestroyResourceJob implements Job {
 
     private void destroyResource(ResourceEntity resourceEntity) {
         getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
-            ResourceID resourceID = new ResourceID(resourceEntity.getRegion(),
+            GlobalUniqueResourceID resourceID = new GlobalUniqueResourceID(resourceEntity.getRegion(),
                     resourceEntity.getGroupName(), resourceEntity.getNamespace(),
                     resourceEntity.getResourceName());
             try {

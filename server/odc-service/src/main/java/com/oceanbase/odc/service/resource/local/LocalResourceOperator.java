@@ -16,12 +16,9 @@
 package com.oceanbase.odc.service.resource.local;
 
 import java.util.Optional;
-import java.util.function.Function;
 
 import org.apache.commons.collections.map.LRUMap;
 
-import com.oceanbase.odc.service.resource.Resource;
-import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceOperator;
 import com.oceanbase.odc.service.task.exception.JobException;
 
@@ -31,12 +28,12 @@ import com.oceanbase.odc.service.task.exception.JobException;
  * @author longpeng.zlp
  * @date 2024/8/13 11:28
  */
-public class LocalResourceOperator implements ResourceOperator<LocalResourceContext> {
+public class LocalResourceOperator implements ResourceOperator<LocalResourceContext, LocalResource, ProcessResourceID> {
     // hold in memory
     private final LRUMap memoryResourceMap = new LRUMap(20);
 
     @Override
-    public Resource create(LocalResourceContext memoryResourceContext)
+    public LocalResource create(LocalResourceContext memoryResourceContext)
             throws JobException {
         LocalResource ret = new LocalResource();
         memoryResourceMap.put(ret.id(), ret);
@@ -44,19 +41,19 @@ public class LocalResourceOperator implements ResourceOperator<LocalResourceCont
     }
 
     @Override
-    public Optional<? extends Resource> query(ResourceID resourceID) throws JobException {
+    public Optional<LocalResource> query(ProcessResourceID resourceID) throws JobException {
         LocalResource ret = (LocalResource) memoryResourceMap.get(resourceID);
         return null == ret ? Optional.empty() : Optional.of(ret);
     }
 
     @Override
-    public String destroy(ResourceID resourceID) throws JobException {
+    public String destroy(ProcessResourceID resourceID) throws JobException {
         memoryResourceMap.remove(resourceID);
         return resourceID.getName();
     }
 
     @Override
-    public boolean canBeDestroyed(ResourceID resourceID, Function<ResourceID, Long> func) {
+    public boolean canBeDestroyed(ProcessResourceID resourceID) {
         // always return true
         return true;
     }

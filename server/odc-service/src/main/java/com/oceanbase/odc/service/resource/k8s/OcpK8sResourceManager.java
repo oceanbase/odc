@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource;
+package com.oceanbase.odc.service.resource.k8s;
 
-import com.oceanbase.odc.service.resource.k8s.K8SResourceOperator;
+import com.oceanbase.odc.metadb.resource.ResourceRepository;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,22 +30,22 @@ public class OcpK8sResourceManager extends K8sResourceManager {
     /**
      * map to hold remote k8s resource operator key is region value is k8s cluster
      */
-    private K8SResourceOperator ocpK8sResourceOperator;
+    private K8sResourceOperatorBuilder ocpK8sResourceOperatorBuilder;
 
-    public OcpK8sResourceManager(ResourceMetaStore resourceMetaStore) {
+    public OcpK8sResourceManager(ResourceRepository resourceMetaStore) {
         super(resourceMetaStore);
     }
 
     /**
      * register or update k8s operator
      */
-    public void registerK8sOperator(String region, K8SResourceOperator operator) {
-        K8SResourceOperator prev = ocpK8sResourceOperator;
-        this.ocpK8sResourceOperator = operator;
+    public void registerK8sOperator(String type, K8sResourceOperatorBuilder operatorBuilder) {
+        K8sResourceOperatorBuilder prev = ocpK8sResourceOperatorBuilder;
+        this.ocpK8sResourceOperatorBuilder = operatorBuilder;
         if (null == prev) {
-            log.info("k8s operator registered for region={}, operator={}", region, operator);
+            log.info("k8s operator registered for type={}, operator={}", type, operatorBuilder);
         } else {
-            log.info("k8s operator updated for region={}, current={}, prev={}", region, operator, prev);
+            log.info("k8s operator updated for type={}, current={}, prev={}", type, operatorBuilder, prev);
         }
     }
 
@@ -55,8 +55,8 @@ public class OcpK8sResourceManager extends K8sResourceManager {
      * @param region
      * @return
      */
-    protected K8SResourceOperator getK8sOperator(String region) {
-        K8SResourceOperator operator = ocpK8sResourceOperator;
+    protected K8SResourceOperator getK8sOperator(String region, String group) {
+        K8SResourceOperator operator = ocpK8sResourceOperatorBuilder.build(region, group);
         if (null == operator) {
             throw new IllegalStateException("k8s operator for region= " + region + " not found");
         }

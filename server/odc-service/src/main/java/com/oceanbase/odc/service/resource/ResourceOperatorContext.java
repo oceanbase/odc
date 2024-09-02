@@ -16,22 +16,10 @@
 package com.oceanbase.odc.service.resource;
 
 /**
- * monitor resource state
+ * context to build resource operator
  * 
  * @author longpeng.zlp
- * @date 2024/8/12 13:52
+ * @date 2024/9/2 17:23
  */
-public class ResourceMonitor {
-    /**
-     * resource to monitor
-     */
-    private Resource resource;
-    /**
-     * task running on it, if this value is zero, then this resource can be recycled
-     */
-    private int taskCount;
-    /**
-     * the state of the resource
-     */
-    private ResourceState resourceState;
+public interface ResourceOperatorContext {
 }

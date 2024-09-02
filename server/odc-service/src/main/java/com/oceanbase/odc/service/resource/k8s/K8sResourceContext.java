@@ -45,6 +45,11 @@ public class K8sResourceContext implements ResourceContext {
      */
     private final String group;
 
+    /**
+     * extended for debug
+     */
+    private final Object extraData;
+
     @Override
     public double cpuCore() {
         return podConfig.getNodeCpu();
@@ -55,17 +60,14 @@ public class K8sResourceContext implements ResourceContext {
         return podConfig.getLimitMem();
     }
 
-    @Override
     public String region() {
         return region;
     }
 
-    @Override
     public String resourceGroup() {
         return group;
     }
 
-    @Override
     public String resourceNamespace() {
         return podConfig.getNamespace();
     }

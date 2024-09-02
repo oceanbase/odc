@@ -13,14 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource;
+package com.oceanbase.odc.service.resource.k8s;
+
 
 /**
- * global unique resource ID
- * 
  * @author longpeng.zlp
- * @date 2024/8/12 11:30
+ * @date 2024/9/2 17:15
  */
-public interface ResourceID {
-    String getName();
+public interface K8sResourceOperatorBuilder {
+    /**
+     * context to build operator
+     * 
+     * @param region region of the k8s cluster
+     * @param group group of the k8s cluster
+     * @return k8s operator to manipulate k8s cluster
+     */
+    K8SResourceOperator build(String region, String group);
 }

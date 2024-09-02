@@ -34,21 +34,6 @@ public interface ResourceContext {
     long memInMB();
 
     /**
-     * region of the resource
-     */
-    String region();
-
-    /**
-     * group of the resource
-     */
-    String resourceGroup();
-
-    /**
-     * namespace of the resource
-     */
-    String resourceNamespace();
-
-    /**
      * name of the resource, default is task name of this job
      */
     String resourceName();

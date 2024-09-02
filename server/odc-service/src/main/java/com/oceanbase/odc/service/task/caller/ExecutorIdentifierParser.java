@@ -39,23 +39,14 @@ public class ExecutorIdentifierParser {
         String tmpStr = path.substring(0, nameIndex);
         String[] regionAndNamespace = StringUtils.split(tmpStr, "/");
         String namespace = null;
-        String region = null;
-        String group = null;
         // new version
-        if (regionAndNamespace.length == 3) {
-            // url as "/region/group/namespace/name"
-            region = regionAndNamespace[0];
-            group = regionAndNamespace[1];
-            namespace = regionAndNamespace[2];
-        } else if (regionAndNamespace.length == 1) {
+        if (regionAndNamespace.length == 1) {
             // old version
             namespace = regionAndNamespace[0];
         }
         return DefaultExecutorIdentifier.builder().host(uriComponents.getHost())
                 .port(uriComponents.getPort())
                 .protocol(uriComponents.getScheme())
-                .region(StringUtils.isEmpty(region) ? null : UrlUtils.decode(region))
-                .group(StringUtils.isEmpty(group) ? null : UrlUtils.decode(group))
                 .namespace(StringUtils.isEmpty(namespace) ? null : UrlUtils.decode(namespace))
                 .executorName(UrlUtils.decode(path.substring(nameIndex).replace("/", "")))
                 .build();

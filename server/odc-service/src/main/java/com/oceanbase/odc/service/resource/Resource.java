@@ -23,21 +23,11 @@ import java.util.Date;
  * @author longpeng.zlp
  * @date 2024/8/12 10:53
  */
-public interface Resource {
+public interface Resource<R extends ResourceID> {
     /**
      * resource ID
      */
-    ResourceID id();
-
-    /**
-     * resource type
-     */
-    ResourceMode type();
-
-    /**
-     * end point
-     */
-    ResourceEndPoint endpoint();
+    R id();
 
     /**
      * resource state

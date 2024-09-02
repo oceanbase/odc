@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.task.config;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,24 +32,19 @@ import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.metadb.resource.ResourceRepository;
 import com.oceanbase.odc.service.common.ConditionOnServer;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
-import com.oceanbase.odc.service.resource.K8sResourceManager;
-import com.oceanbase.odc.service.resource.OcpK8sResourceManager;
-import com.oceanbase.odc.service.resource.Resource;
-import com.oceanbase.odc.service.resource.ResourceID;
-import com.oceanbase.odc.service.resource.ResourceMetaStore;
-import com.oceanbase.odc.service.resource.ResourceMode;
-import com.oceanbase.odc.service.resource.ResourceState;
-import com.oceanbase.odc.service.resource.k8s.K8SResourceOperator;
-import com.oceanbase.odc.service.resource.k8s.K8sResource;
+import com.oceanbase.odc.service.resource.k8s.DefaultK8sResourceOperatorBuilder;
+import com.oceanbase.odc.service.resource.k8s.K8sResourceManager;
+import com.oceanbase.odc.service.resource.k8s.K8sResourceOperatorBuilder;
+import com.oceanbase.odc.service.resource.k8s.OcpK8sResourceManager;
 import com.oceanbase.odc.service.resource.k8s.client.DefaultK8sJobClientSelector;
 import com.oceanbase.odc.service.resource.k8s.client.K8sJobClientSelector;
 import com.oceanbase.odc.service.resource.k8s.client.NativeK8sJobClient;
 import com.oceanbase.odc.service.resource.k8s.client.NullK8sJobClientSelector;
 import com.oceanbase.odc.service.resource.local.LocalResourceOperator;
+import com.oceanbase.odc.service.task.dummy.LocalMockK8sJobClient;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.jasypt.DefaultJasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
@@ -88,8 +82,8 @@ public class TaskFrameworkConfiguration {
     public K8sResourceManager k8SResourceManager(@Autowired TaskFrameworkProperties taskFrameworkProperties,
             @Autowired ResourceRepository resourceRepository)
             throws IOException {
-        OcpK8sResourceManager k8sResourceManager = new OcpK8sResourceManager(createMetaStore(resourceRepository));
-        registerODCCloudEndpointK8sResourceManager(taskFrameworkProperties, k8sResourceManager);
+        OcpK8sResourceManager k8sResourceManager = new OcpK8sResourceManager(resourceRepository);
+        registerODCCloudEndpointK8sResourceManager(taskFrameworkProperties, k8sResourceManager, resourceRepository);
         // register other resource operator here
         return k8sResourceManager;
     }
@@ -98,77 +92,28 @@ public class TaskFrameworkConfiguration {
      * operate k8s resource by odc
      */
     private void registerODCCloudEndpointK8sResourceManager(TaskFrameworkProperties taskFrameworkProperties,
-            OcpK8sResourceManager k8sResourceManager) throws IOException {
+            OcpK8sResourceManager k8sResourceManager, ResourceRepository resourceRepository) throws IOException {
         K8sProperties k8sProperties = taskFrameworkProperties.getK8sProperties();
         K8sJobClientSelector k8sJobClientSelector;
         if (StringUtils.isBlank(k8sProperties.getKubeUrl())) {
             log.info("local task k8s cluster is not enabled.");
             k8sJobClientSelector = new NullK8sJobClientSelector();
+        } else if (taskFrameworkProperties.isEnableK8sLocalDebugMode()) {
+            // k8s use in local debug mode
+            log.info("local debug k8s cluster enabled.");
+            k8sJobClientSelector = new LocalMockK8sJobClient();
         } else {
+            // normal mode
             log.info("build k8sJobClientSelector, kubeUrl={}, namespace={}",
                     k8sProperties.getKubeUrl(), k8sProperties.getNamespace());
             NativeK8sJobClient nativeK8sJobClient = new NativeK8sJobClient(k8sProperties);
             k8sJobClientSelector = new DefaultK8sJobClientSelector(nativeK8sJobClient);
         }
-        K8SResourceOperator k8SResourceOperator =
-                new K8SResourceOperator(k8sJobClientSelector, k8sProperties.getPodPendingTimeoutSeconds());
+        K8sResourceOperatorBuilder k8sResourceOperatorBuilder =
+                new DefaultK8sResourceOperatorBuilder(k8sJobClientSelector, k8sProperties.getPodPendingTimeoutSeconds(),
+                        resourceRepository);
         // all region use one k8s operator
-        k8sResourceManager.registerK8sOperator("default", k8SResourceOperator);
-    }
-
-    /**
-     * create default meta store
-     * 
-     * @param resourceRepository
-     * @return
-     */
-    private ResourceMetaStore createMetaStore(ResourceRepository resourceRepository) {
-        return new ResourceMetaStore() {
-            @Override
-            public Resource findResource(ResourceID resourceID) {
-                Optional<ResourceEntity> optionalResourceEntity = resourceRepository.findByResourceID(resourceID);
-                if (optionalResourceEntity.isPresent()) {
-                    ResourceEntity entity = optionalResourceEntity.get();
-                    return new K8sResource(resourceID.getRegion(), entity.getGroupName(),
-                            entity.getNamespace(), entity.getResourceName(),
-                            entity.getStatus(),
-                            entity.getEndpoint(), entity.getCreateTime());
-                } else {
-                    log.warn("find by resourceID = {} failed", resourceID);
-                    return null;
-                }
-            }
-
-            @Override
-            public void saveResource(Resource resource) throws Exception {
-                ResourceEntity resourceEntity = new ResourceEntity();
-                resourceEntity.setResourceMode(ResourceMode.REMOTE_K8S);
-                resourceEntity.setEndpoint(resource.endpoint().getResourceURL());
-                resourceEntity.setCreateTime(resource.createDate());
-                resourceEntity.setGroupName(resourceEntity.getGroupName());
-                resourceEntity.setResourceName(resourceEntity.getResourceName());
-                resourceEntity.setStatus(resourceEntity.getStatus());
-                resourceRepository.save(resourceEntity);
-            }
-
-            @Override
-            public int updateResourceState(ResourceID resourceID, ResourceState resourceState) {
-                int updateRow = resourceRepository.updateResourceStatus(resourceID, resourceState.name());
-                if (0 == updateRow) {
-                    log.info("update resource = {}, affect 0 rows", resourceID);
-                }
-                return updateRow;
-            }
-
-            @Override
-            public int deleteResource(ResourceID resourceID) {
-                int affectRow = resourceRepository.deleteResource(resourceID);
-                if (0 == affectRow) {
-                    log.info("delete resource = {}, affect 0 rows", resourceID);
-                }
-                return affectRow;
-            }
-        };
+        k8sResourceManager.registerK8sOperator("default", k8sResourceOperatorBuilder);
     }
 
     @Lazy

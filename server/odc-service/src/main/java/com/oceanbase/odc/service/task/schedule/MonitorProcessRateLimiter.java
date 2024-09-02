@@ -61,7 +61,7 @@ public class MonitorProcessRateLimiter extends BaseStartJobRateLimiter {
             }
             return false;
         }
-        return ResourceDetectUtil.isResourceAvailable(taskFrameworkProperties.get());
+        return ResourceDetectUtil.isProcessResourceAvailable(taskFrameworkProperties.get());
     }
 
     private long calculateRunningJobCountLimit() {

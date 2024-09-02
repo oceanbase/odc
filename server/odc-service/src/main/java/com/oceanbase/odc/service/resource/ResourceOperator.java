@@ -16,17 +16,19 @@
 package com.oceanbase.odc.service.resource;
 
 import java.util.Optional;
-import java.util.function.Function;
 
 import com.oceanbase.odc.service.task.exception.JobException;
 
 /**
- * manager resource create / recycle / destroy
+ * operator resource create / recycle / destroy
  * 
+ * @param <RC> config of resource creating
+ * @param <R> resource describe
+ * @param <RI> unique id of resource
  * @author longpeng.zlp
  * @date 2024/8/12 11:42
  */
-public interface ResourceOperator<T extends ResourceContext> {
+public interface ResourceOperator<RC extends ResourceContext, R extends Resource, RI extends ResourceID> {
     /**
      * current only use resource type to determinate which type should be created create may not real
      * create
@@ -34,7 +36,7 @@ public interface ResourceOperator<T extends ResourceContext> {
      * @param resourceContext resource config
      * @return resource, may not available, maybe creating
      */
-    Resource create(T resourceContext) throws JobException;
+    R create(RC resourceContext) throws JobException;
 
     /**
      * query if resource existed
@@ -42,7 +44,7 @@ public interface ResourceOperator<T extends ResourceContext> {
      * @param resourceID
      * @return
      */
-    Optional<? extends Resource> query(ResourceID resourceID) throws JobException;
+    Optional<R> query(RI resourceID) throws JobException;
 
     /**
      * destroy resource with resourceID destroy may not real destroy
@@ -50,14 +52,13 @@ public interface ResourceOperator<T extends ResourceContext> {
      * @param resourceID
      * @return
      */
-    String destroy(ResourceID resourceID) throws JobException;
+    String destroy(RI resourceID) throws JobException;
 
     /**
      * detect if resource can be destroyed
      * 
      * @param resourceID
-     * @param createElapsedTimeFunc provide created time in seconds if needed
      * @return true if resource can be destroyed
      */
-    boolean canBeDestroyed(ResourceID resourceID, Function<ResourceID, Long> createElapsedTimeFunc);
+    boolean canBeDestroyed(RI resourceID);
 }

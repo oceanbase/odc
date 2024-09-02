@@ -47,30 +47,20 @@ public class ExecutorIdentifierTest {
 
     @Test
     public void test_parser_decode() {
-        // new version
-        String str = "http://odc:8989/region/group/default/xxx:xxxx001";
-        ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(str);
-        Assert.assertEquals(identifier.getRegion(), "region");
-        Assert.assertEquals(identifier.getNamespace(), "default");
-        Assert.assertEquals(identifier.getGroup(), "group");
-        Assert.assertEquals(identifier.getExecutorName(), "xxx:xxxx001");
 
         // old version1
         String str2 = "http://odc:8989/default/xxx:xxxx001";
         ExecutorIdentifier identifierOld = ExecutorIdentifierParser.parser(str2);
-        Assert.assertNull(identifierOld.getRegion());
         Assert.assertEquals(identifierOld.getNamespace(), "default");
         Assert.assertEquals(identifierOld.getExecutorName(), "xxx:xxxx001");
         // old version2
         String str3 = "http://odc:8989/xxx:xxxx001";
         ExecutorIdentifier identifierOld2 = ExecutorIdentifierParser.parser(str3);
-        Assert.assertNull(identifierOld2.getRegion());
         Assert.assertNull(identifierOld2.getNamespace());
         Assert.assertEquals(identifierOld2.getExecutorName(), "xxx:xxxx001");
         // old version3
         String str4 = "http://odc:8989/";
         ExecutorIdentifier identifierOld3 = ExecutorIdentifierParser.parser(str4);
-        Assert.assertNull(identifierOld3.getRegion());
         Assert.assertNull(identifierOld3.getNamespace());
         Assert.assertEquals(identifierOld3.getExecutorName(), "");
     }

@@ -19,9 +19,6 @@ import java.util.Date;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.oceanbase.odc.service.resource.Resource;
-import com.oceanbase.odc.service.resource.ResourceEndPoint;
-import com.oceanbase.odc.service.resource.ResourceID;
-import com.oceanbase.odc.service.resource.ResourceMode;
 import com.oceanbase.odc.service.resource.ResourceState;
 
 /**
@@ -30,25 +27,17 @@ import com.oceanbase.odc.service.resource.ResourceState;
  * @author longpeng.zlp
  * @date 2024/8/13 10:25
  */
-public class LocalResource implements Resource {
+
+public class LocalResource implements Resource<ProcessResourceID> {
     private static final AtomicLong ALLOCATE_SEQ = new AtomicLong(0);
     private final long seq = ALLOCATE_SEQ.getAndIncrement();
     private final Date createDate = new Date(System.currentTimeMillis());
 
     @Override
-    public ResourceID id() {
-        return new ResourceID("local", "local", "local", String.valueOf(seq));
+    public ProcessResourceID id() {
+        return new ProcessResourceID(String.valueOf(seq));
     }
 
-    @Override
-    public ResourceMode type() {
-        return ResourceMode.LOCAL_PROCESS;
-    }
-
-    @Override
-    public ResourceEndPoint endpoint() {
-        return new ResourceEndPoint("memory");
-    }
 
     @Override
     public ResourceState resourceState() {

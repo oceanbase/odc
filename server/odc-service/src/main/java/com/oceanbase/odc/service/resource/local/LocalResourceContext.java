@@ -40,21 +40,6 @@ public class LocalResourceContext implements ResourceContext {
     }
 
     @Override
-    public String region() {
-        return "local";
-    }
-
-    @Override
-    public String resourceGroup() {
-        return "local";
-    }
-
-    @Override
-    public String resourceNamespace() {
-        return "local";
-    }
-
-    @Override
     public String resourceName() {
         return "local";
     }

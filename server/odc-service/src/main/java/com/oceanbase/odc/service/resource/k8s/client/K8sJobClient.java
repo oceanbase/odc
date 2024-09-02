@@ -15,11 +15,10 @@
  */
 package com.oceanbase.odc.service.resource.k8s.client;
 
-import java.util.List;
 import java.util.Optional;
 
 import com.oceanbase.odc.service.resource.k8s.K8sResource;
-import com.oceanbase.odc.service.resource.k8s.PodConfig;
+import com.oceanbase.odc.service.resource.k8s.K8sResourceContext;
 import com.oceanbase.odc.service.task.exception.JobException;
 
 /**
@@ -34,16 +33,11 @@ public interface K8sJobClient {
     /**
      * create job in k8s namespace with pod name and use a specific image
      *
-     * @param namespace namespace name
-     * @param name pod name
-     * @param image image name
-     * @param command image start command
-     * @param podConfig pod config
+     * @param k8sResourceContext resource context for create k8s
      * @return arn string
      * @throws JobException throws exception when create job failed
      */
-    K8sResource create(String namespace, String name, String image, List<String> command,
-            PodConfig podConfig) throws JobException;
+    K8sResource create(K8sResourceContext k8sResourceContext) throws JobException;
 
     /**
      * get job by serial number in k8s namespace

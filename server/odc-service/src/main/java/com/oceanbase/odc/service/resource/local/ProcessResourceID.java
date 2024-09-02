@@ -13,14 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource;
+package com.oceanbase.odc.service.resource.local;
+
+import com.oceanbase.odc.service.resource.ResourceID;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
- * global unique resource ID
- * 
  * @author longpeng.zlp
- * @date 2024/8/12 11:30
+ * @date 2024/9/2 16:11
  */
-public interface ResourceID {
-    String getName();
+@AllArgsConstructor
+@Data
+@EqualsAndHashCode
+@ToString
+public class ProcessResourceID implements ResourceID {
+    /**
+     * pid or process name
+     */
+    private final String processName;
+
+    @Override
+    public String getName() {
+        return processName;
+    }
 }

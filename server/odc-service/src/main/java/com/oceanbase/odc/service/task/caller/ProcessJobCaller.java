@@ -25,9 +25,9 @@ import java.util.Optional;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.metadb.resource.GlobalUniqueResourceID;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.response.OdcResult;
-import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.enums.JobStatus;
@@ -53,7 +53,7 @@ public class ProcessJobCaller extends BaseJobCaller {
     }
 
     @Override
-    protected ExecutorIdentifier doStart(JobContext context) throws JobException {
+    public ExecutorIdentifier doStart(JobContext context) throws JobException {
 
         String executorName = JobUtils.generateExecutorName(context.getJobIdentity());
         ProcessBuilder pb = new ExecutorProcessBuilderFactory().getProcessBuilder(
@@ -94,8 +94,9 @@ public class ProcessJobCaller extends BaseJobCaller {
     protected void doStop(JobIdentity ji) throws JobException {}
 
     @Override
-    protected void doFinish(JobIdentity ji, ExecutorIdentifier ei, ResourceID resourceID) throws JobException {
-        if (isExecutorExist(ei)) {
+    protected void doFinish(JobIdentity ji, ExecutorIdentifier ei, GlobalUniqueResourceID resourceID)
+            throws JobException {
+        if (isExecutorExist(ei, resourceID)) {
             long pid = Long.parseLong(ei.getNamespace());
             log.info("Found process, try kill it, pid={}.", pid);
             // first update destroy time, second destroy executor.
@@ -133,8 +134,8 @@ public class ProcessJobCaller extends BaseJobCaller {
                 + " may not on this machine, jodId={0}, identifier={1}", ji.getId(), ei);
     }
 
-    public boolean canBeFinish(JobIdentity ji, ExecutorIdentifier ei, ResourceID resourceID) {
-        if (isExecutorExist(ei)) {
+    public boolean canBeFinish(JobIdentity ji, ExecutorIdentifier ei, GlobalUniqueResourceID resourceID) {
+        if (isExecutorExist(ei, resourceID)) {
             log.info("Executor be found, jobId={}, identifier={}", ji.getId(), ei);
             return true;
         }
@@ -164,7 +165,7 @@ public class ProcessJobCaller extends BaseJobCaller {
     }
 
     @Override
-    protected boolean isExecutorExist(ExecutorIdentifier identifier) {
+    protected boolean isExecutorExist(ExecutorIdentifier identifier, GlobalUniqueResourceID resourceID) {
         long pid = Long.parseLong(identifier.getNamespace());
         boolean result = SystemUtils.isProcessRunning(pid,
                 JobUtils.generateExecutorSelectorOnProcess(identifier.getExecutorName()));

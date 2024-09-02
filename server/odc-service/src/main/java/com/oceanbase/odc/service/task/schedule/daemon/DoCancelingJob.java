@@ -76,7 +76,7 @@ public class DoCancelingJob implements Job {
                 }
                 // mark resource as released
                 if (TaskRunMode.K8S == lockedEntity.getRunMode()) {
-                    ResourceManagerUtil.markResourceReleased(lockedEntity.getExecutorIdentifier(),
+                    ResourceManagerUtil.markResourceReleased(lockedEntity, lockedEntity.getExecutorIdentifier(),
                             getConfiguration().getK8sResourceManager());
                     log.info("DoCancelingJob release resource for job = {}", jobEntity);
                 }

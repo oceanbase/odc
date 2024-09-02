@@ -16,15 +16,13 @@
 
 package com.oceanbase.odc.service.task.caller;
 
-import java.util.Map;
 import java.util.Optional;
 
-import com.oceanbase.odc.service.resource.K8sResourceManager;
-import com.oceanbase.odc.service.resource.Resource;
-import com.oceanbase.odc.service.resource.ResourceID;
+import com.oceanbase.odc.metadb.resource.GlobalUniqueResourceID;
 import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.resource.k8s.K8sResource;
 import com.oceanbase.odc.service.resource.k8s.K8sResourceContext;
+import com.oceanbase.odc.service.resource.k8s.K8sResourceManager;
 import com.oceanbase.odc.service.resource.k8s.PodConfig;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -53,9 +51,8 @@ public class K8sJobCaller extends BaseJobCaller {
 
     @Override
     public ExecutorIdentifier doStart(JobContext context) throws JobException {
-        Resource resource = resourceManager.createK8sResource(buildK8sResourceContext(context));
+        K8sResource resource = resourceManager.createK8sResource(buildK8sResourceContext(context));
         String arn = resource.id().getName();
-
         return DefaultExecutorIdentifier.builder().namespace(defaultPodConfig.getNamespace())
                 .executorName(arn).build();
     }
@@ -63,48 +60,32 @@ public class K8sJobCaller extends BaseJobCaller {
     protected K8sResourceContext buildK8sResourceContext(JobContext context) {
         String jobName = JobUtils.generateExecutorName(context.getJobIdentity());
         // TODO(tianke): confirm is this correct?
-        String region = checkAndGetJobProperties(context, "regionName");
-        String group = checkAndGetJobProperties(context, "cloudProvider");
-        K8sResourceContext k8sResourceContext =
-                new K8sResourceContext(defaultPodConfig, jobName, region, group);
-        return k8sResourceContext;
+        String region = ResourceIDUtil.checkAndGetJobProperties(context.getJobProperties(),
+                ResourceIDUtil.DEFAULT_REGION_PROP_NAME, ResourceIDUtil.DEFAULT_PROP_VALUE);
+        String group = ResourceIDUtil.checkAndGetJobProperties(context.getJobProperties(),
+                ResourceIDUtil.DEFAULT_GROUP_PROP_NAME, ResourceIDUtil.DEFAULT_PROP_VALUE);
+        return new K8sResourceContext(defaultPodConfig, jobName, region, group, context);
     }
 
     @Override
     public void doStop(JobIdentity ji) throws JobException {}
 
     @Override
-    protected void doFinish(JobIdentity ji, ExecutorIdentifier ei, ResourceID resourceID) throws JobException {
-        // update job destroyed, let scheduler DestroyExecutorJob scan and destroy it
-        resourceManager.release(resourceID);
+    protected void doFinish(JobIdentity ji, ExecutorIdentifier ei, GlobalUniqueResourceID resourceID)
+            throws JobException {
+        resourceManager.release(ResourceIDUtil.wrapToK8sResourceID(resourceID));
         updateExecutorDestroyed(ji);
-        // resourceManager.destroy(resourceID);
     }
 
     @Override
-    protected boolean canBeFinish(JobIdentity ji, ExecutorIdentifier ei, ResourceID resourceID) {
-        return resourceManager.canBeDestroyed(resourceID);
+    protected boolean canBeFinish(JobIdentity ji, ExecutorIdentifier ei, GlobalUniqueResourceID resourceID) {
+        return resourceManager.canBeDestroyed(ResourceIDUtil.wrapToK8sResourceID(resourceID));
     }
 
     @Override
-    protected boolean isExecutorExist(ExecutorIdentifier identifier) throws JobException {
-        ResourceID resourceID =
-                new ResourceID(identifier.getRegion(), identifier.getGroup(), identifier.getNamespace(),
-                        identifier.getExecutorName());
-        Optional<K8sResource> executorOptional = resourceManager.query(resourceID);
+    protected boolean isExecutorExist(ExecutorIdentifier identifier, GlobalUniqueResourceID resourceID)
+            throws JobException {
+        Optional<K8sResource> executorOptional = resourceManager.query(ResourceIDUtil.wrapToK8sResourceID(resourceID));
         return executorOptional.isPresent() && !ResourceState.isDestroying(executorOptional.get().getResourceState());
     }
-
-    protected String checkAndGetJobProperties(JobContext context, String propName) {
-        Map<String, String> jobParameters = context.getJobProperties();
-        if (null == jobParameters) {
-            throw new IllegalStateException("get " + propName + " failed from job context =" + context);
-        }
-        String ret = jobParameters.get(propName);
-        if (null == ret) {
-            throw new IllegalStateException("get " + propName + " failed from job context =" + context);
-        }
-        return ret;
-    }
-
 }
