@@ -33,7 +33,7 @@ public class WorksheetUtil {
     /**
      * the objectId prefix of worksheet which start with /Worksheets/
      */
-    public static final String WORKSHEETS_OBJECT_ID_PREFIX = "ODC-worksheets-";
+    public static final String WORKSHEETS_OBJECT_ID_PREFIX = "ODC-worksheets/";
     /**
      * the objectId prefix of worksheet which start with /Repos/
      */
