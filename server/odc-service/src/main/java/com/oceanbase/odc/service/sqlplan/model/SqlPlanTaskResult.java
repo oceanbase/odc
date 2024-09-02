@@ -43,9 +43,6 @@ public class SqlPlanTaskResult {
      */
     private String errorRecordsFileDownloadUrl = null;
 
-    public void setTotalStatements(long count) {
-        this.totalStatements = count;
-    }
 
     public void incrementFinishedStatements() {
         this.finishedStatements++;
