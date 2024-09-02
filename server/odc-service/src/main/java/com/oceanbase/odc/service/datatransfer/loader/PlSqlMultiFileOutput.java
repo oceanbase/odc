@@ -19,8 +19,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
@@ -29,27 +27,11 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.utils.IOUtils;
 
 import com.oceanbase.odc.common.file.zip.ZipFileTree;
-import com.oceanbase.odc.common.util.StringUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class PlSqlMultiFileOutput extends AbstractThirdPartyOutput {
-    private static final Set<String> LEGAL_FILE_SUFFIXES = new HashSet<>();
-    private static final Set<ObjectType> PL_OBJECTS = new HashSet<>();
-
-    static {
-        for (ObjectType type : ObjectType.values()) {
-            LEGAL_FILE_SUFFIXES.add(type.suffix);
-        }
-        PL_OBJECTS.add(ObjectType.FUNCTION);
-        PL_OBJECTS.add(ObjectType.PROCEDURE);
-        PL_OBJECTS.add(ObjectType.TRIGGER);
-        PL_OBJECTS.add(ObjectType.TYPE);
-        PL_OBJECTS.add(ObjectType.PACKAGE);
-        PL_OBJECTS.add(ObjectType.TYPE_BODY);
-        PL_OBJECTS.add(ObjectType.PACKAGE_BODY);
-    }
 
     private final ZipFileTree zip;
 
@@ -71,7 +53,7 @@ public class PlSqlMultiFileOutput extends AbstractThirdPartyOutput {
             String filename = zipElement.getName();
             String[] split = filename.split("\\.");
             String suf = split[split.length - 1];
-            if (LEGAL_FILE_SUFFIXES.contains(suf)) {
+            if (PLSqlDeveloperExportFormat.isPlFileSuffix(suf)) {
                 isFromPlSql.set(true);
             }
         });
@@ -90,8 +72,8 @@ public class PlSqlMultiFileOutput extends AbstractThirdPartyOutput {
                 String[] split = filename.split("\\.");
                 String suf = split[split.length - 1];
                 try {
-                    ObjectType objectType = ObjectType.from(suf);
-                    if (objectType != ObjectType.UNKNOWN) {
+                    PLSqlDeveloperExportFormat.ObjectType objectType = PLSqlDeveloperExportFormat.ObjectType.from(suf);
+                    if (objectType != PLSqlDeveloperExportFormat.ObjectType.UNKNOWN) {
                         String directory = objectType.name();
                         // point may exist in object name
                         String objectName = filename.split("\\." + suf)[0];
@@ -115,42 +97,6 @@ public class PlSqlMultiFileOutput extends AbstractThirdPartyOutput {
     @Override
     public String getNewFilePrefix() {
         return "plsql";
-    }
-
-    private enum ObjectType {
-        TABLE("tab"),
-        VIEW("vw"),
-        SEQUENCE("seq"),
-        SYNONYM("syn"),
-        // pl types
-        PROCEDURE("prc"),
-        FUNCTION("fnc"),
-        TYPE("tps"),
-        TRIGGER("trg"),
-        PACKAGE("spc"),
-        PACKAGE_BODY("bdy"),
-        TYPE_BODY("tpb"),
-        // unknown types
-        UNKNOWN("null");
-
-        private final String suffix;
-
-        ObjectType(String suffix) {
-            this.suffix = suffix;
-        }
-
-        static ObjectType from(String suffix) {
-            for (ObjectType type : ObjectType.values()) {
-                if (StringUtils.equals(suffix, type.suffix)) {
-                    return type;
-                }
-            }
-            return UNKNOWN;
-        }
-
-        boolean isPlObject() {
-            return PL_OBJECTS.contains(this);
-        }
     }
 
 }
