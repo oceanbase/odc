@@ -85,4 +85,16 @@ public class DatabaseSpecs {
     public static Specification<DatabaseEntity> connectTypeIn(List<ConnectType> connectTypes) {
         return SpecificationUtil.columnIn(DatabaseEntity_.CONNECT_TYPE, connectTypes);
     }
+
+    public static Specification<DatabaseEntity> projectIdNotNull(Boolean projectNotNull) {
+        return (root, query, builder) -> {
+            if (Objects.isNull(projectNotNull)) {
+                return builder.conjunction();
+            } else if (projectNotNull) {
+                return builder.isNotNull(root.get("projectId"));
+            } else {
+                return builder.isNull(root.get("projectId"));
+            }
+        };
+    }
 }

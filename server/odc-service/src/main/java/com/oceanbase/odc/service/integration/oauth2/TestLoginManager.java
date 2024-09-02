@@ -19,7 +19,6 @@ import static com.oceanbase.odc.core.shared.constant.OdcConstants.TEST_LOGIN_ID_
 import static com.oceanbase.odc.service.integration.model.SSOIntegrationConfig.parseRegistrationName;
 
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nullable;
@@ -37,6 +36,7 @@ import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.metadb.integration.IntegrationEntity;
 import com.oceanbase.odc.service.common.util.UrlUtils;
 import com.oceanbase.odc.service.common.util.WebRequestUtils;
@@ -49,6 +49,7 @@ import com.oceanbase.odc.service.integration.model.IntegrationType;
 import com.oceanbase.odc.service.integration.model.LdapContextHolder;
 import com.oceanbase.odc.service.integration.model.LdapContextHolder.LdapContext;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
+import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -57,16 +58,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TestLoginManager {
 
-    public final Cache<String, String> testLoginInfoCache =
-            Caffeine.newBuilder().maximumSize(100).expireAfterWrite(10, TimeUnit.MINUTES).build();
-
-
-    private static final String REGISTRATION_ID_URI_VARIABLE_NAME = "registrationId";
-    private static final AntPathRequestMatcher authorizationRequestMatcher = new AntPathRequestMatcher(
+    public static final String REGISTRATION_ID_URI_VARIABLE_NAME = "registrationId";
+    public static final AntPathRequestMatcher authorizationRequestMatcher = new AntPathRequestMatcher(
             "/login/oauth2/code" + "/{" + REGISTRATION_ID_URI_VARIABLE_NAME + "}");
     private static final AntPathRequestMatcher LDAP_REQUEST_MATCHER =
             new AntPathRequestMatcher("/api/v2/iam/ldap/login", "POST");
-
+    public final Cache<String, String> testLoginInfoCache =
+            Caffeine.newBuilder().maximumSize(100).expireAfterWrite(10, TimeUnit.MINUTES).build();
     @Autowired(required = false)
     private AddableClientRegistrationManager addableClientRegistrationManager;
 
@@ -79,6 +77,26 @@ public class TestLoginManager {
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
+    @Autowired
+    private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
+
+    @SkipAuthorize
+    public static boolean isOAuthTestLoginRequest(HttpServletRequest request) {
+        String registrationId = resolveRegistrationId(request);
+        if (registrationId == null) {
+            return false;
+        }
+        return "test".equals(parseRegistrationName(registrationId));
+    }
+
+    private static String resolveRegistrationId(HttpServletRequest request) {
+        if (authorizationRequestMatcher.matches(request)) {
+            return authorizationRequestMatcher.matcher(request).getVariables()
+                    .get(REGISTRATION_ID_URI_VARIABLE_NAME);
+        }
+        return null;
+    }
+
     @SkipAuthorize
     public void saveOauth2TestIdIfNeed(@NotBlank String loginInfo) {
         HttpServletRequest currentRequest = WebRequestUtils.getCurrentRequest();
@@ -86,7 +104,8 @@ public class TestLoginManager {
         if (!isOAuthTestLoginRequest(currentRequest)) {
             return;
         }
-        String testId = currentRequest.getParameter(TEST_LOGIN_ID_PARAM);
+        String testId = WebRequestUtils.getStringValueFromParameterOrAttribute(currentRequest,
+                OdcConstants.TEST_LOGIN_ID_PARAM);
         Verify.notNull(testId, "testId");
         testLoginInfoCache.put(testId, loginInfo);
     }
@@ -111,7 +130,7 @@ public class TestLoginManager {
             ssoConfig.fillDecryptSecret(integrationService.decodeSecret(integrationEntity.getSecret(),
                     integrationEntity.getSalt(), integrationEntity.getOrganizationId()));
         }
-        String testId = UUID.randomUUID().toString();
+        String testId = statefulUuidStateIdGenerator.generateStateId("SSO_TEST_ID");
         String redirectUrl = null;
         String testRegistrationId = null;
         if (ssoConfig.isOauth2OrOidc()) {
@@ -168,15 +187,6 @@ public class TestLoginManager {
     }
 
     @SkipAuthorize
-    public static boolean isOAuthTestLoginRequest(HttpServletRequest request) {
-        String registrationId = resolveRegistrationId(request);
-        if (registrationId == null) {
-            return false;
-        }
-        return "test".equals(parseRegistrationName(registrationId));
-    }
-
-    @SkipAuthorize
     public LdapContext loadLdapContext(HttpServletRequest request) {
         boolean isLdapLogin = LDAP_REQUEST_MATCHER.matches(request);
         if (!isLdapLogin) {
@@ -193,15 +203,6 @@ public class TestLoginManager {
         LdapContext ldapContext = new LdapContext(registrationId, testId, username, password);
         LdapContextHolder.setParameter(ldapContext);
         return ldapContext;
-    }
-
-
-    private static String resolveRegistrationId(HttpServletRequest request) {
-        if (authorizationRequestMatcher.matches(request)) {
-            return authorizationRequestMatcher.matcher(request).getVariables()
-                    .get(REGISTRATION_ID_URI_VARIABLE_NAME);
-        }
-        return null;
     }
 
 }

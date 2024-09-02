@@ -16,50 +16,35 @@
 package com.oceanbase.odc.service.schedule.model;
 
 import java.util.Date;
-import java.util.List;
+import java.util.Map;
 
-import com.oceanbase.odc.common.i18n.Internationalizable;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.common.model.InnerUser;
-import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 
 import lombok.Data;
 
-/**
- * @Author：tinker
- * @Date: 2022/11/22 14:38
- * @Descripition:
- */
-
 @Data
-public class ScheduleDetailResp {
+public class ScheduleTaskListOverview {
 
-    private Long scheduleId;
+    private Long id;
+
+    private String scheduleId;
 
     private String scheduleName;
 
-    private ScheduleType type;
-
-    private Long projectId;
-
     private InnerUser creator;
+
+    private ScheduleTaskType type;
+
+    private TaskStatus status;
 
     private Date createTime;
 
     private Date updateTime;
 
-    private ScheduleStatus status;
+    private Date lastExecutionTime;
 
-    @Internationalizable
-    private String description;
+    private Map<String, Object> attributes;
 
-    private Boolean allowConcurrent;
-
-    private MisfireStrategy misfireStrategy;
-
-    private List<Date> nextFireTimes;
-
-    private ScheduleTaskParameters parameters;
-
-    private TriggerConfig triggerConfig;
 
 }
