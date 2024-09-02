@@ -49,12 +49,12 @@ public class ResourceManagerService {
         return getResourceOperatorByConfig(config).create(config);
     }
 
-    public <T> Optional<T> query(@NonNull T config) throws Exception {
-        return getResourceOperatorByConfig(config).query(config);
+    public <T> Optional<T> query(@NonNull Object key, @NonNull Class<T> clazz) throws Exception {
+        return getResourceOperatorByConfig(clazz).query(key);
     }
 
-    public <T> void destroy(@NonNull T config) throws Exception {
-        getResourceOperatorByConfig(config).destroy(config);
+    public <T> void destroy(@NonNull Object key, @NonNull Class<T> clazz) throws Exception {
+        getResourceOperatorByConfig(clazz).destroy(key);
     }
 
     public <T> List<T> list(@NonNull Class<T> clazz) throws Exception {
@@ -63,7 +63,7 @@ public class ResourceManagerService {
 
     protected Map<String, Object> getParameterForOperatorBuilder(@NonNull ResourceOperatorBuilder<?, ?> builder) {
         Map<String, Object> parameter = new HashMap<>();
-        parameter.put("NAMESPACE", "shanlu");
+        parameter.put(ResourceConstants.DEFAULT_NAMESPACE_PARAMETER_KEY, "shanlu");
         return parameter;
     }
 

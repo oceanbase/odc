@@ -40,8 +40,8 @@ public class NativeK8sPodOperatorBuilder extends BaseNativeK8sResourceOperatorBu
     }
 
     @Override
-    protected ResourceOperator<V1Pod, K8sResourceKey> doBuild(@NonNull String namespace) {
-        return new NativeK8sPodOperator(namespace);
+    protected ResourceOperator<V1Pod, K8sResourceKey> doBuild(@NonNull String defaultNamespace) {
+        return new NativeK8sPodOperator(defaultNamespace);
     }
 
 }
