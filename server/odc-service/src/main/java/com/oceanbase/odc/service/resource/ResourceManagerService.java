@@ -43,7 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ResourceManagerService {
 
     @Autowired(required = false)
-    private List<ResourceOperatorBuilder<?>> resourceOperatorBuilders;
+    private List<ResourceOperatorBuilder<?, ?>> resourceOperatorBuilders;
 
     public <T> T create(@NonNull T config) throws Exception {
         return getResourceOperatorByConfig(config).create(config);
@@ -61,27 +61,27 @@ public class ResourceManagerService {
         return getResourceOperatorByConfig(clazz).list();
     }
 
-    protected Map<String, Object> getParameterForOperatorBuilder(@NonNull ResourceOperatorBuilder<?> builder) {
+    protected Map<String, Object> getParameterForOperatorBuilder(@NonNull ResourceOperatorBuilder<?, ?> builder) {
         Map<String, Object> parameter = new HashMap<>();
         parameter.put("NAMESPACE", "shanlu");
         return parameter;
     }
 
     @SuppressWarnings("all")
-    protected <T> ResourceOperator<T> getResourceOperatorByConfig(T config) {
-        return (ResourceOperator<T>) getResourceOperatorByConfig(config.getClass());
+    protected <T, ID> ResourceOperator<T, ID> getResourceOperatorByConfig(T config) {
+        return (ResourceOperator<T, ID>) getResourceOperatorByConfig(config.getClass());
     }
 
     @SuppressWarnings("all")
-    protected <T> ResourceOperator<T> getResourceOperatorByConfig(Class<T> clazz) {
-        List<ResourceOperatorBuilder<?>> builders = this.resourceOperatorBuilders.stream()
+    protected <T, ID> ResourceOperator<T, ID> getResourceOperatorByConfig(Class<T> clazz) {
+        List<ResourceOperatorBuilder<?, ?>> builders = this.resourceOperatorBuilders.stream()
                 .filter(builder -> builder.supports(clazz)).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(builders)) {
             throw new IllegalArgumentException("No builder found for config " + clazz);
         } else if (builders.size() != 1) {
             throw new IllegalStateException("There are more than one builder for the config " + clazz);
         }
-        ResourceOperatorBuilder<T> builder = (ResourceOperatorBuilder<T>) builders.get(0);
+        ResourceOperatorBuilder<T, ID> builder = (ResourceOperatorBuilder<T, ID>) builders.get(0);
         return builder.build(getParameterForOperatorBuilder(builder));
     }
 

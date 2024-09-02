@@ -28,7 +28,7 @@ import lombok.NonNull;
  * @date 2024-09-02 16:32
  * @since ODC_release_4.3.2
  */
-public interface ResourceOperatorBuilder<T> {
+public interface ResourceOperatorBuilder<T, ID> {
     /**
      * Indicates whether the current builder supports a certain type of resource
      *
@@ -42,6 +42,6 @@ public interface ResourceOperatorBuilder<T> {
      *
      * @param parameters parameters to build a {@link ResourceOperator}
      */
-    ResourceOperator<T> build(@NonNull Map<String, Object> parameters);
+    ResourceOperator<T, ID> build(@NonNull Map<String, Object> parameters);
 
 }

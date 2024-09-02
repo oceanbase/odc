@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.resource.builder;
 
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.service.resource.model.K8sResourceKey;
 import com.oceanbase.odc.service.resource.operator.NativeK8sPodOperator;
 import com.oceanbase.odc.service.resource.operator.ResourceOperator;
 
@@ -39,7 +40,7 @@ public class NativeK8sPodOperatorBuilder extends BaseNativeK8sResourceOperatorBu
     }
 
     @Override
-    protected ResourceOperator<V1Pod> doBuild(@NonNull String namespace) {
+    protected ResourceOperator<V1Pod, K8sResourceKey> doBuild(@NonNull String namespace) {
         return new NativeK8sPodOperator(namespace);
     }
 

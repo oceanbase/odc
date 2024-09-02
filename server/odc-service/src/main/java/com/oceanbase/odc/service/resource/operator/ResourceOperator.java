@@ -25,14 +25,16 @@ import java.util.Optional;
  * @date 2024-09-02 16:13
  * @since ODC_release_4.3.2
  */
-public interface ResourceOperator<T> {
+public interface ResourceOperator<T, ID> {
 
     T create(T config) throws Exception;
 
-    Optional<T> query(T config) throws Exception;
+    ID getKey(T config);
+
+    Optional<T> query(ID key) throws Exception;
 
     List<T> list() throws Exception;
 
-    void destroy(T config) throws Exception;
+    void destroy(ID key) throws Exception;
 
 }

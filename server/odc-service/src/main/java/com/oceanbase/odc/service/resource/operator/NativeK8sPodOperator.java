@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.resource.operator;
 
 import java.util.List;
 
+import com.oceanbase.odc.service.resource.model.K8sResourceKey;
+
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Pod;
 import lombok.NonNull;
@@ -35,23 +37,27 @@ public class NativeK8sPodOperator extends BaseNativeK8sResourceOperator<V1Pod> {
     }
 
     @Override
-    public V1Pod create(V1Pod config) throws Exception {
-        return new CoreV1Api().createNamespacedPod(this.namespace, config, null, null, null, null);
+    public V1Pod create(@NonNull V1Pod config) throws Exception {
+        return new CoreV1Api().createNamespacedPod(this.defaultNamespace, config, null, null, null, null);
+    }
+
+    @Override
+    public K8sResourceKey getKey(V1Pod config) {
+        return new K8sResourceKey(config.getMetadata(), V1Pod.class);
     }
 
     @Override
     public List<V1Pod> list() throws Exception {
-        return new CoreV1Api().listNamespacedPod(this.namespace,
+        return new CoreV1Api().listNamespacedPod(this.defaultNamespace,
                 null, null, null, null, null, null, null, null, null, null, null).getItems();
     }
 
     @Override
-    public void destroy(V1Pod config) throws Exception {
-        if (config.getMetadata() == null || config.getMetadata().getName() == null) {
+    public void destroy(@NonNull K8sResourceKey key) throws Exception {
+        if (key.getName() == null) {
             throw new IllegalArgumentException("Resource name is null");
         }
-        new CoreV1Api().deleteNamespacedPod(
-                config.getMetadata().getName(), this.namespace, null, null, null, null, null, null);
+        new CoreV1Api().deleteNamespacedPod(key.getName(), this.defaultNamespace, null, null, null, null, null, null);
     }
 
 }

@@ -16,9 +16,10 @@
 package com.oceanbase.odc.service.resource.operator;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
-import org.apache.commons.lang3.StringUtils;
+import com.oceanbase.odc.service.resource.model.K8sResourceKey;
 
 import cn.hutool.core.collection.CollectionUtil;
 import io.kubernetes.client.common.KubernetesObject;
@@ -31,37 +32,22 @@ import lombok.NonNull;
  * @date 2024-09-02 17:39
  * @since ODC_release_4.3.2
  */
-public abstract class BaseNativeK8sResourceOperator<T extends KubernetesObject> implements ResourceOperator<T> {
+public abstract class BaseNativeK8sResourceOperator<T extends KubernetesObject>
+        implements ResourceOperator<T, K8sResourceKey> {
 
-    protected final String namespace;
+    protected final String defaultNamespace;
 
-    public BaseNativeK8sResourceOperator(@NonNull String namespace) {
-        this.namespace = namespace;
+    public BaseNativeK8sResourceOperator(@NonNull String defaultNamespace) {
+        this.defaultNamespace = defaultNamespace;
     }
 
-    public Optional<T> query(T config) throws Exception {
-        String name = null;
-        if (config.getMetadata() != null) {
-            name = config.getMetadata().getName();
-            String ns = config.getMetadata().getNamespace();
-            if (ns != null && !this.namespace.equals(ns)) {
-                return Optional.empty();
-            }
-        }
-        if (name == null) {
-            return Optional.empty();
-        }
-        final String rName = name;
+    @Override
+    public Optional<T> query(K8sResourceKey key) throws Exception {
         List<T> list = list();
         if (CollectionUtil.isEmpty(list)) {
             return Optional.empty();
         }
-        return list.stream().filter(t -> {
-            if (t.getMetadata() == null) {
-                return false;
-            }
-            return StringUtils.equals(rName, t.getMetadata().getName());
-        }).findFirst();
+        return list.stream().filter(t -> Objects.equals(getKey(t), key)).findFirst();
     }
 
 }
