@@ -29,7 +29,7 @@ public interface ResourceOperator<T> {
 
     T create(T config) throws Exception;
 
-    Optional<T> find(T config) throws Exception;
+    Optional<T> query(T config) throws Exception;
 
     List<T> list() throws Exception;
 

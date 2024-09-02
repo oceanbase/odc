@@ -39,7 +39,7 @@ public abstract class BaseNativeK8sResourceOperator<T extends KubernetesObject> 
         this.namespace = namespace;
     }
 
-    public Optional<T> find(T config) throws Exception {
+    public Optional<T> query(T config) throws Exception {
         String name = null;
         if (config.getMetadata() != null) {
             name = config.getMetadata().getName();

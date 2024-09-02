@@ -49,8 +49,8 @@ public class ResourceManagerService {
         return getResourceOperatorByConfig(config).create(config);
     }
 
-    public <T> Optional<T> find(@NonNull T config) throws Exception {
-        return getResourceOperatorByConfig(config).find(config);
+    public <T> Optional<T> query(@NonNull T config) throws Exception {
+        return getResourceOperatorByConfig(config).query(config);
     }
 
     public <T> void destroy(@NonNull T config) throws Exception {
