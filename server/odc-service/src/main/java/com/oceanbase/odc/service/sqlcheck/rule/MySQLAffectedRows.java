@@ -25,8 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.core.shared.constant.ErrorCodes;
-import com.oceanbase.odc.core.shared.exception.OBException;
+import com.oceanbase.odc.core.shared.model.PlanNode;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
@@ -152,11 +151,11 @@ public class MySQLAffectedRows implements SqlCheckRule {
          *
          *     explain result (json):
          *
-         *     ==================================================    --rowNum 1
-         *     |ID|OPERATOR          |NAME|EST.ROWS|EST.TIME(us)|    --rowNum 2
-         *     0 |DISTRIBUTED UPDATE|    |1       |37          |     --rowNum 3
-         *     1 |└─TABLE GET       |user|1       |5           |     --rowNum 4
-         *     ==================================================    --rowNum 5
+         *     ==================================================    --rowNum = 1
+         *     |ID|OPERATOR          |NAME|EST.ROWS|EST.TIME(us)|    --rowNum = 2
+         *     0 |DISTRIBUTED UPDATE|    |1       |37          |     --rowNum = 3
+         *     1 |└─TABLE GET       |user|1       |5           |     --rowNum = 4
+         *     ==================================================    --rowNum = 5
          *     ...
          *
          * </pre>
@@ -167,7 +166,7 @@ public class MySQLAffectedRows implements SqlCheckRule {
 
                 String resultRow = rs.getString("Query Plan");
                 if (!ifFindAffectedRow.get() && rowNum > HEADER_LINE) {
-                    // first non-null value is the column 'EST.ROWS'
+                    // find first non-null value is the column 'EST.ROWS'
                     if (getEstRowsValue(resultRow) != 0) {
                         ifFindAffectedRow.set(true);
                         return getEstRowsValue(resultRow);
@@ -184,7 +183,7 @@ public class MySQLAffectedRows implements SqlCheckRule {
             return firstNonNullResult != null ? firstNonNullResult : 0;
 
         } catch (Exception e) {
-            throw OBException.executeFailed(ErrorCodes.ObGetPlanExplainFailed, e.getMessage());
+            throw new RuntimeException("Failed to execute sql: " + explainSql + ", error: " + e.getMessage());
         }
     }
 
