@@ -302,7 +302,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
 
     private String getFileName(String extension) {
         return (transferConfig.getConnectionInfo().getConnectType().getDialectType().isMysql()
-                ? parameter.getTableName()
+                ? parameter.getTableName().toLowerCase()
                 : parameter.getTableName().toUpperCase()) + extension;
     }
 
