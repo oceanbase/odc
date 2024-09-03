@@ -29,8 +29,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.oceanbase.odc.common.util.EncodeUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.resource.model.NativeK8sResourceID;
-import com.oceanbase.odc.service.resource.model.ResourceTag;
-import com.oceanbase.odc.service.resource.operator.ResourceOperator;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 
@@ -100,14 +98,8 @@ public abstract class BaseNativeK8sResourceOperatorBuilder<T extends KubernetesO
 
     protected abstract boolean doSupports(@NonNull Class<?> clazz);
 
-    protected abstract ResourceOperator<T, NativeK8sResourceID> doBuild(@NonNull String defaultNamespace);
-
     public boolean supports(@NonNull Class<?> clazz) {
         return this.apiClientAvailable && doSupports(clazz);
-    }
-
-    public ResourceOperator<T, NativeK8sResourceID> build(@NonNull ResourceTag resourceTag) {
-        return doBuild(resourceTag.getDefaultNamespace());
     }
 
 }

@@ -43,11 +43,18 @@ public abstract class BaseNativeK8sResourceOperator<T extends KubernetesObject>
 
     @Override
     public Optional<T> query(NativeK8sResourceID key) throws Exception {
-        List<T> list = list();
+        List<T> list = list(key.getNamespace());
         if (CollectionUtil.isEmpty(list)) {
             return Optional.empty();
         }
         return list.stream().filter(t -> Objects.equals(getKey(t), key)).findFirst();
     }
+
+    @Override
+    public List<T> list() throws Exception {
+        return list(this.defaultNamespace);
+    }
+
+    protected abstract List<T> list(String namespace) throws Exception;
 
 }
