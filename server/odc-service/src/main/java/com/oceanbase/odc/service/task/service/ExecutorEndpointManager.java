@@ -26,7 +26,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.metadb.resource.GlobalUniqueResourceID;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
-import com.oceanbase.odc.service.resource.k8s.K8sResource;
+import com.oceanbase.odc.service.resource.k8s.K8sPodResource;
 import com.oceanbase.odc.service.resource.k8s.K8sResourceManager;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
@@ -79,10 +79,10 @@ public class ExecutorEndpointManager {
         }
         try {
             GlobalUniqueResourceID resourceID = ResourceIDUtil.getResourceID(executorIdentifier, je);
-            Optional<K8sResource> resourceOptional =
+            Optional<K8sPodResource> resourceOptional =
                     resourceManager.query(ResourceIDUtil.wrapToK8sResourceID(resourceID));
             if (resourceOptional.isPresent()) {
-                K8sResource response = resourceOptional.get();
+                K8sPodResource response = resourceOptional.get();
                 String podIpAddress = response.getPodIpAddress();
                 if (StringUtils.isNotBlank(podIpAddress)) {
                     String adaptedHost = adaptHost(podIpAddress, jobProperties);

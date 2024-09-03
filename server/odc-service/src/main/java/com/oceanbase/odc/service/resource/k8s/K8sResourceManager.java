@@ -56,9 +56,9 @@ public abstract class K8sResourceManager {
      * @param k8sResourceContext context to create pod
      * @return
      */
-    public K8sResource createK8sResource(K8sResourceContext k8sResourceContext) throws JobException {
+    public K8sPodResource createK8sResource(K8sResourceContext k8sResourceContext) throws JobException {
         K8SResourceOperator operator = getK8sOperator(k8sResourceContext.getRegion(), k8sResourceContext.getGroup());
-        K8sResource k8sResource = operator.create(k8sResourceContext);
+        K8sPodResource k8sResource = operator.create(k8sResourceContext);
         // if save resource to db failed, rollback it
         try {
             resourceRepository.save(createK8sResourceToResourceEntity(k8sResource));
@@ -77,7 +77,7 @@ public abstract class K8sResourceManager {
      * @param k8sResource
      * @return
      */
-    protected ResourceEntity createK8sResourceToResourceEntity(K8sResource k8sResource) {
+    protected ResourceEntity createK8sResourceToResourceEntity(K8sPodResource k8sResource) {
         ResourceEntity resourceEntity = new ResourceEntity();
         resourceEntity.setResourceMode(ResourceMode.REMOTE_K8S);
         resourceEntity.setEndpoint(k8sResource.endpoint().getResourceURL());
@@ -97,7 +97,7 @@ public abstract class K8sResourceManager {
      * @return
      * @throws JobException
      */
-    public Optional<K8sResource> query(K8sResourceID resourceID) throws JobException {
+    public Optional<K8sPodResource> query(K8sPodResourceID resourceID) throws JobException {
         K8SResourceOperator operator = getK8sOperator(resourceID.getRegion(), resourceID.getGroup());
         return operator.query(resourceID);
     }
@@ -107,13 +107,13 @@ public abstract class K8sResourceManager {
      *
      * @param resourceID
      */
-    public void release(K8sResourceID resourceID) {
+    public void release(K8sPodResourceID resourceID) {
         // first detect if resourceID is created, cause may be it's resource create by old task version
         // update job destroyed, let scheduler DestroyExecutorJob scan and destroy it
         Optional<ResourceEntity> savedResource = resourceRepository.findByResourceID(resourceID);
         if (!savedResource.isPresent()) {
             // create task_resource with DESTROYING state
-            K8sResource k8sResource = new K8sResource(resourceID.getRegion(), resourceID.getGroup(),
+            K8sPodResource k8sResource = new K8sPodResource(resourceID.getRegion(), resourceID.getGroup(),
                     resourceID.getNamespace(), resourceID.getName(), ResourceState.DESTROYING, "unknown",
                     new Date(System.currentTimeMillis()));
             resourceRepository.save(createK8sResourceToResourceEntity(k8sResource));
@@ -138,7 +138,7 @@ public abstract class K8sResourceManager {
      * @param resourceID
      * @return
      */
-    public boolean canBeDestroyed(K8sResourceID resourceID) {
+    public boolean canBeDestroyed(K8sPodResourceID resourceID) {
         K8SResourceOperator operator = getK8sOperator(resourceID.getRegion(), resourceID.getGroup());
         return operator.canBeDestroyed(resourceID);
     }

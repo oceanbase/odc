@@ -34,22 +34,22 @@ import lombok.extern.slf4j.Slf4j;
  */
 @AllArgsConstructor
 @Slf4j
-public class K8SResourceOperator implements ResourceOperator<K8sResourceContext, K8sResource, K8sResourceID> {
+public class K8SResourceOperator implements ResourceOperator<K8sResourceContext, K8sPodResource, K8sPodResourceID> {
     private final K8sResourceOperatorContext context;
 
     @Override
-    public K8sResource create(K8sResourceContext k8sResourceContext) throws JobException {
+    public K8sPodResource create(K8sResourceContext k8sResourceContext) throws JobException {
         Preconditions.checkArgument(null != k8sResourceContext.region());
-        K8sResource ret = context.getK8sJobClient().create(k8sResourceContext);
+        K8sPodResource ret = context.getK8sJobClient().create(k8sResourceContext);
         ret.setRegion(k8sResourceContext.getRegion());
         ret.setGroup(k8sResourceContext.resourceGroup());
         return ret;
     }
 
     @Override
-    public Optional<K8sResource> query(K8sResourceID resourceID) throws JobException {
+    public Optional<K8sPodResource> query(K8sPodResourceID resourceID) throws JobException {
         Preconditions.checkArgument(null != resourceID.getRegion());
-        Optional<K8sResource> ret = context.getK8sJobClient().get(resourceID.getNamespace(), resourceID.getName());
+        Optional<K8sPodResource> ret = context.getK8sJobClient().get(resourceID.getNamespace(), resourceID.getName());
         if (ret.isPresent()) {
             ret.get().setRegion(resourceID.getRegion());
         }
@@ -57,20 +57,20 @@ public class K8SResourceOperator implements ResourceOperator<K8sResourceContext,
     }
 
     @Override
-    public String destroy(K8sResourceID resourceID) throws JobException {
+    public String destroy(K8sPodResourceID resourceID) throws JobException {
         Preconditions.checkArgument(null != resourceID.getRegion());
         // first destroy
         return context.getK8sJobClient().delete(resourceID.getNamespace(), resourceID.getName());
     }
 
     @Override
-    public boolean canBeDestroyed(K8sResourceID resourceID) {
+    public boolean canBeDestroyed(K8sPodResourceID resourceID) {
         return canBeDestroyed(resourceID, context.getCreateElapsedTimeFunc());
     }
 
-    public boolean canBeDestroyed(K8sResourceID resourceID, Function<K8sResourceID, Long> createElapsedTimeFunc) {
+    public boolean canBeDestroyed(K8sPodResourceID resourceID, Function<K8sPodResourceID, Long> createElapsedTimeFunc) {
         Preconditions.checkArgument(null != resourceID.getRegion());
-        Optional<K8sResource> query;
+        Optional<K8sPodResource> query;
 
         try {
             query = context.getK8sJobClient().get(resourceID.getNamespace(), resourceID.getName());

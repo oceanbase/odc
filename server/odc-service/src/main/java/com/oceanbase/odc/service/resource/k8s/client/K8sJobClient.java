@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.resource.k8s.client;
 
 import java.util.Optional;
 
-import com.oceanbase.odc.service.resource.k8s.K8sResource;
+import com.oceanbase.odc.service.resource.k8s.K8sPodResource;
 import com.oceanbase.odc.service.resource.k8s.K8sResourceContext;
 import com.oceanbase.odc.service.task.exception.JobException;
 
@@ -37,7 +37,7 @@ public interface K8sJobClient {
      * @return arn string
      * @throws JobException throws exception when create job failed
      */
-    K8sResource create(K8sResourceContext k8sResourceContext) throws JobException;
+    K8sPodResource create(K8sResourceContext k8sResourceContext) throws JobException;
 
     /**
      * get job by serial number in k8s namespace
@@ -47,7 +47,7 @@ public interface K8sJobClient {
      * @return job serial number
      * @throws JobException throws exception when get job failed
      */
-    Optional<K8sResource> get(String namespace, String arn) throws JobException;
+    Optional<K8sPodResource> get(String namespace, String arn) throws JobException;
 
     /**
      * delete job by serial number in k8s namespace

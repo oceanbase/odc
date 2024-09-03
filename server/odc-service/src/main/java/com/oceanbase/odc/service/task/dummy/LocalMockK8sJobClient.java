@@ -19,7 +19,7 @@ import java.util.Date;
 import java.util.Optional;
 
 import com.oceanbase.odc.service.resource.ResourceState;
-import com.oceanbase.odc.service.resource.k8s.K8sResource;
+import com.oceanbase.odc.service.resource.k8s.K8sPodResource;
 import com.oceanbase.odc.service.resource.k8s.K8sResourceContext;
 import com.oceanbase.odc.service.resource.k8s.client.K8sJobClient;
 import com.oceanbase.odc.service.resource.k8s.client.K8sJobClientSelector;
@@ -45,11 +45,11 @@ public class LocalMockK8sJobClient implements K8sJobClientSelector {
 
     private static final class LocalProcessClient implements K8sJobClient {
         @Override
-        public K8sResource create(K8sResourceContext k8sResourceContext) throws JobException {
+        public K8sPodResource create(K8sResourceContext k8sResourceContext) throws JobException {
             JobContext jobContext = getJobContext(k8sResourceContext.getExtraData());
             ProcessJobCaller jobCaller = (ProcessJobCaller) JobCallerBuilder.buildProcessCaller(jobContext);
             ExecutorIdentifier executorIdentifier = jobCaller.doStart(jobContext);
-            return new K8sResource(k8sResourceContext.getRegion(), k8sResourceContext.getGroup(),
+            return new K8sPodResource(k8sResourceContext.getRegion(), k8sResourceContext.getGroup(),
                     k8sResourceContext.resourceNamespace(),
                     k8sResourceContext.resourceName(), ResourceState.RUNNING,
                     "127.0.0.1:" + executorIdentifier.getPort(), new Date(System.currentTimeMillis()));
@@ -70,8 +70,8 @@ public class LocalMockK8sJobClient implements K8sJobClientSelector {
 
 
         @Override
-        public Optional<K8sResource> get(String namespace, String arn) throws JobException {
-            K8sResource ret = new K8sResource("region", "group", namespace, namespace, ResourceState.RUNNING,
+        public Optional<K8sPodResource> get(String namespace, String arn) throws JobException {
+            K8sPodResource ret = new K8sPodResource("region", "group", namespace, namespace, ResourceState.RUNNING,
                     "127.0.0.1", new Date(System.currentTimeMillis()));
             return Optional.of(ret);
         }

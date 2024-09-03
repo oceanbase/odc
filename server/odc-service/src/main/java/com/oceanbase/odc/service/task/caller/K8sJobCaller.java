@@ -20,7 +20,7 @@ import java.util.Optional;
 
 import com.oceanbase.odc.metadb.resource.GlobalUniqueResourceID;
 import com.oceanbase.odc.service.resource.ResourceState;
-import com.oceanbase.odc.service.resource.k8s.K8sResource;
+import com.oceanbase.odc.service.resource.k8s.K8sPodResource;
 import com.oceanbase.odc.service.resource.k8s.K8sResourceContext;
 import com.oceanbase.odc.service.resource.k8s.K8sResourceManager;
 import com.oceanbase.odc.service.resource.k8s.PodConfig;
@@ -51,7 +51,7 @@ public class K8sJobCaller extends BaseJobCaller {
 
     @Override
     public ExecutorIdentifier doStart(JobContext context) throws JobException {
-        K8sResource resource = resourceManager.createK8sResource(buildK8sResourceContext(context));
+        K8sPodResource resource = resourceManager.createK8sResource(buildK8sResourceContext(context));
         String arn = resource.id().getName();
         return DefaultExecutorIdentifier.builder().namespace(defaultPodConfig.getNamespace())
                 .executorName(arn).build();
@@ -85,7 +85,8 @@ public class K8sJobCaller extends BaseJobCaller {
     @Override
     protected boolean isExecutorExist(ExecutorIdentifier identifier, GlobalUniqueResourceID resourceID)
             throws JobException {
-        Optional<K8sResource> executorOptional = resourceManager.query(ResourceIDUtil.wrapToK8sResourceID(resourceID));
+        Optional<K8sPodResource> executorOptional =
+                resourceManager.query(ResourceIDUtil.wrapToK8sResourceID(resourceID));
         return executorOptional.isPresent() && !ResourceState.isDestroying(executorOptional.get().getResourceState());
     }
 }

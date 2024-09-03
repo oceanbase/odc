@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.resource;
 
-import java.util.Date;
-
 /**
  * Resource is a compute holder for task or function It may be local memory or remote machine.
  * 
@@ -33,9 +31,4 @@ public interface Resource<R extends ResourceID> {
      * resource state
      */
     ResourceState resourceState();
-
-    /**
-     * create date of the resource
-     */
-    Date createDate();
 }

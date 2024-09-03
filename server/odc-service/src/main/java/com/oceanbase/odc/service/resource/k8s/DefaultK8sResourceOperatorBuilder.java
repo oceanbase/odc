@@ -49,7 +49,7 @@ public class DefaultK8sResourceOperatorBuilder implements K8sResourceOperatorBui
      * @param resourceID
      * @return
      */
-    private long getResourceCreateTimeInSeconds(K8sResourceID resourceID) {
+    private long getResourceCreateTimeInSeconds(K8sPodResourceID resourceID) {
         Optional<ResourceEntity> resource = resourceRepository.findByResourceID(resourceID);
         if (resource.isPresent()) {
             return (System.currentTimeMillis() - resource.get().getCreateTime().getTime()) / 1000;

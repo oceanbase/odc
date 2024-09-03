@@ -41,7 +41,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.service.resource.ResourceState;
-import com.oceanbase.odc.service.resource.k8s.K8sResource;
+import com.oceanbase.odc.service.resource.k8s.K8sPodResource;
 import com.oceanbase.odc.service.resource.k8s.K8sResourceContext;
 import com.oceanbase.odc.service.resource.k8s.PodConfig;
 import com.oceanbase.odc.service.task.config.K8sProperties;
@@ -105,14 +105,14 @@ public class NativeK8sJobClient implements K8sJobClient {
     }
 
     @Override
-    public K8sResource create(K8sResourceContext k8sResourceContext) throws JobException {
+    public K8sPodResource create(K8sResourceContext k8sResourceContext) throws JobException {
         PodConfig podConfig = k8sResourceContext.getPodConfig();
         return create(k8sResourceContext.resourceNamespace(), k8sResourceContext.resourceName(),
                 podConfig.getImage(),
                 podConfig.getCommand(), podConfig);
     }
 
-    protected K8sResource create(@NonNull String namespace, @NonNull String name, @NonNull String image,
+    protected K8sPodResource create(@NonNull String namespace, @NonNull String name, @NonNull String image,
             List<String> command, @NonNull PodConfig podConfig) throws JobException {
         validK8sProperties();
 
@@ -122,7 +122,7 @@ public class NativeK8sJobClient implements K8sJobClient {
             V1Pod createdJob = api.createNamespacedPod(namespace, job, null, null,
                     null, null);
             // return pod status
-            return new K8sResource(null, null, namespace, createdJob.getMetadata().getName(),
+            return new K8sPodResource(null, null, namespace, createdJob.getMetadata().getName(),
                     k8sPodPhaseToResourceState(createdJob.getStatus().getPhase()),
                     createdJob.getStatus().getPodIP(), new Date(System.currentTimeMillis() / 1000));
         } catch (ApiException e) {
@@ -135,7 +135,7 @@ public class NativeK8sJobClient implements K8sJobClient {
     }
 
     @Override
-    public Optional<K8sResource> get(@NonNull String namespace, @NonNull String arn) throws JobException {
+    public Optional<K8sPodResource> get(@NonNull String namespace, @NonNull String arn) throws JobException {
         validK8sProperties();
         CoreV1Api api = new CoreV1Api();
         V1PodList job = null;
@@ -151,7 +151,7 @@ public class NativeK8sJobClient implements K8sJobClient {
             return Optional.empty();
         }
         V1Pod v1Pod = v1PodOptional.get();
-        K8sResource resource = new K8sResource(k8sProperties.getRegion(), k8sProperties.getGroup(),
+        K8sPodResource resource = new K8sPodResource(k8sProperties.getRegion(), k8sProperties.getGroup(),
                 namespace, arn, k8sPodPhaseToResourceState(v1Pod.getStatus().getPhase()), v1Pod.getStatus().getPodIP(),
                 new Date(System.currentTimeMillis() / 1000));
         return Optional.of(resource);

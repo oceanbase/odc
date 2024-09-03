@@ -28,7 +28,7 @@ import com.oceanbase.odc.service.task.exception.JobException;
  * @author longpeng.zlp
  * @date 2024/8/12 11:42
  */
-public interface ResourceOperator<RC extends ResourceContext, R extends Resource, RI extends ResourceID> {
+public interface ResourceOperator<RC extends ResourceContext, R extends Resource<RI>, RI extends ResourceID> {
     /**
      * current only use resource type to determinate which type should be created create may not real
      * create

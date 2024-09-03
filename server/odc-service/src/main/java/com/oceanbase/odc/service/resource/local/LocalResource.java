@@ -44,7 +44,6 @@ public class LocalResource implements Resource<ProcessResourceID> {
         return ResourceState.RUNNING;
     }
 
-    @Override
     public Date createDate() {
         return createDate;
     }

@@ -33,7 +33,7 @@ import lombok.Data;
  */
 @Data
 @AllArgsConstructor
-public class K8sResource implements Resource<K8sResourceID> {
+public class K8sPodResource implements Resource<K8sPodResourceID> {
     /**
      * job region
      */
@@ -66,8 +66,8 @@ public class K8sResource implements Resource<K8sResourceID> {
 
     private Date createDate;
 
-    public K8sResourceID id() {
-        return new K8sResourceID(region, group, namespace, arn);
+    public K8sPodResourceID id() {
+        return new K8sPodResourceID(region, group, namespace, arn);
     }
 
     public ResourceMode type() {
@@ -89,7 +89,6 @@ public class K8sResource implements Resource<K8sResourceID> {
         return resourceState;
     }
 
-    @Override
     public Date createDate() {
         return createDate;
     }

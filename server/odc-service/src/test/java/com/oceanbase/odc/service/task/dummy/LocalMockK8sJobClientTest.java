@@ -15,15 +15,15 @@
  */
 package com.oceanbase.odc.service.task.dummy;
 
-import java.util.Collections;
-
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.oceanbase.odc.service.common.model.HostProperties;
-import com.oceanbase.odc.service.resource.k8s.K8sResource;
+import com.oceanbase.odc.service.resource.k8s.K8sPodResource;
+import com.oceanbase.odc.service.resource.k8s.K8sResourceContext;
+import com.oceanbase.odc.service.resource.k8s.PodConfig;
 import com.oceanbase.odc.service.resource.k8s.client.K8sJobClient;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
@@ -51,7 +51,9 @@ public class LocalMockK8sJobClientTest {
         JobConfigurationHolder.setJobConfiguration(jobConfiguration);
         LocalMockK8sJobClient localMockK8sJobClient = new LocalMockK8sJobClient();
         K8sJobClient k8sJobClient = localMockK8sJobClient.select("any");
-        K8sResource k8sResource = k8sJobClient.create("local", "local", "image", Collections.emptyList(), null);
+        K8sResourceContext k8sResourceContext =
+                new K8sResourceContext(new PodConfig(), "local", "local", "image", null);
+        K8sPodResource k8sResource = k8sJobClient.create(k8sResourceContext);
         Assert.assertNotNull(k8sResource);
     }
 }

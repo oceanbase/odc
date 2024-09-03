@@ -31,6 +31,6 @@ import lombok.Data;
 @Data
 public class K8sResourceOperatorContext implements ResourceOperatorContext {
     private final K8sJobClient k8sJobClient;
-    private final Function<K8sResourceID, Long> createElapsedTimeFunc;
+    private final Function<K8sPodResourceID, Long> createElapsedTimeFunc;
     private final long podPendingTimeoutSeconds;
 }

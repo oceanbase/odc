@@ -19,7 +19,7 @@ import java.util.Map;
 
 import com.oceanbase.odc.metadb.resource.GlobalUniqueResourceID;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.resource.k8s.K8sResourceID;
+import com.oceanbase.odc.service.resource.k8s.K8sPodResourceID;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -92,8 +92,8 @@ public class ResourceIDUtil {
      * @param globalUniqueResourceID
      * @return
      */
-    public static K8sResourceID wrapToK8sResourceID(GlobalUniqueResourceID globalUniqueResourceID) {
-        return new K8sResourceID(
+    public static K8sPodResourceID wrapToK8sResourceID(GlobalUniqueResourceID globalUniqueResourceID) {
+        return new K8sPodResourceID(
                 globalUniqueResourceID.getRegion(),
                 globalUniqueResourceID.getGroup(),
                 globalUniqueResourceID.getNamespace(),

@@ -29,8 +29,8 @@ import lombok.ToString;
  */
 @EqualsAndHashCode
 @ToString
-public class K8sResourceID extends GlobalUniqueResourceID implements ResourceID {
-    public K8sResourceID(String region, String group, String namespace, String name) {
+public class K8sPodResourceID extends GlobalUniqueResourceID implements ResourceID {
+    public K8sPodResourceID(String region, String group, String namespace, String name) {
         super(region, group, namespace, name);
     }
 }
