@@ -30,9 +30,9 @@ import com.oceanbase.odc.service.worksheet.model.WorksheetResp;
 /**
  * the facade service for project worksheets management, used to choreograph the different
  * behavioral logic of Worksheets and GitRepos。
- * </p>
+ * <p>
  * worksheet is the abstract of worksheet/folder in /Worksheets/ and /Reps/RepoName/
- * </p>
+ * <p>
  * 
  * @author keyang
  * @date 2024/08/06
@@ -56,9 +56,10 @@ public interface WorksheetServiceFacade {
      * @param projectId project id
      * @param pathStr worksheet path
      * @param objectId the object storage objectId of create worksheet
+     * @param size The total size of the file, measured in bytes
      * @return mete info of created worksheet
      */
-    WorksheetMetaResp createWorksheet(Long projectId, String pathStr, String objectId);
+    WorksheetMetaResp createWorksheet(Long projectId, String pathStr, String objectId, Long size);
 
     /**
      * get worksheet detail info
@@ -102,11 +103,11 @@ public interface WorksheetServiceFacade {
      *
      * @param projectId project id
      * @param pathStr worksheet path
-     * @param destination worksheet path after rename.If the destination equals to pathStr ,it will
-     *        throw exception.
+     * @param destinationPath worksheet path after rename.If the destinationPath equals to pathStr ,it
+     *        will throw exception.
      * @return the update worksheet meta list after rename
      */
-    List<WorksheetMetaResp> renameWorksheet(Long projectId, String pathStr, String destination);
+    List<WorksheetMetaResp> renameWorksheet(Long projectId, String pathStr, String destinationPath);
 
     /**
      * edit worksheet

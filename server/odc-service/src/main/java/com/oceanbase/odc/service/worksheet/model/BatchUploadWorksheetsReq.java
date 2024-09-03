@@ -15,11 +15,13 @@
  */
 package com.oceanbase.odc.service.worksheet.model;
 
-import java.util.Set;
+import java.util.List;
 
 import javax.validation.constraints.Size;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * the request of batch upload project worksheets
@@ -31,11 +33,14 @@ import lombok.Data;
 @Data
 public class BatchUploadWorksheetsReq {
     @Size(min = 1, max = 100)
-    private Set<UploadWorksheetTuple> worksheets;
+    private List<UploadWorksheetTuple> worksheets;
 
     @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class UploadWorksheetTuple {
         private String path;
         private String objectId;
+        private Long size;
     }
 }
