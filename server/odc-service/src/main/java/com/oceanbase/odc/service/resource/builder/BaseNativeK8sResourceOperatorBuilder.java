@@ -30,7 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.oceanbase.odc.common.util.EncodeUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.resource.ResourceConstants;
-import com.oceanbase.odc.service.resource.model.K8sResourceKey;
+import com.oceanbase.odc.service.resource.model.NativeK8sResourceKey;
 import com.oceanbase.odc.service.resource.operator.ResourceOperator;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
@@ -51,7 +51,7 @@ import lombok.NonNull;
  * @since ODC_release_4.3.2
  */
 public abstract class BaseNativeK8sResourceOperatorBuilder<T extends KubernetesObject>
-        implements ResourceOperatorBuilder<T, K8sResourceKey> {
+        implements ResourceOperatorBuilder<T, NativeK8sResourceKey> {
 
     private static final long TIMEOUT_MILLS = 60000;
     private final Object lock = new Object();
@@ -101,13 +101,13 @@ public abstract class BaseNativeK8sResourceOperatorBuilder<T extends KubernetesO
 
     protected abstract boolean doSupports(@NonNull Class<?> clazz);
 
-    protected abstract ResourceOperator<T, K8sResourceKey> doBuild(@NonNull String defaultNamespace);
+    protected abstract ResourceOperator<T, NativeK8sResourceKey> doBuild(@NonNull String defaultNamespace);
 
     public boolean supports(@NonNull Class<?> clazz) {
         return this.apiClientAvailable && doSupports(clazz);
     }
 
-    public ResourceOperator<T, K8sResourceKey> build(@NonNull Map<String, Object> parameters) {
+    public ResourceOperator<T, NativeK8sResourceKey> build(@NonNull Map<String, Object> parameters) {
         return doBuild(parameters.getOrDefault(
                 ResourceConstants.DEFAULT_NAMESPACE_PARAMETER_KEY, "default").toString());
     }

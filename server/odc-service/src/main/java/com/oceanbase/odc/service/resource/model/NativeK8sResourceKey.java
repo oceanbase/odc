@@ -23,19 +23,19 @@ import lombok.NonNull;
 import lombok.Setter;
 
 /**
- * {@link K8sResourceKey}
+ * {@link NativeK8sResourceKey}
  */
 @Getter
 @Setter
 @NoArgsConstructor
 @EqualsAndHashCode
-public class K8sResourceKey {
+public class NativeK8sResourceKey {
 
     private String name;
     private Class<?> type;
     private String namespace;
 
-    public K8sResourceKey(@NonNull V1ObjectMeta objectMeta, @NonNull Class<?> type) {
+    public NativeK8sResourceKey(@NonNull V1ObjectMeta objectMeta, @NonNull Class<?> type) {
         this.type = type;
         this.name = objectMeta.getName();
         this.namespace = objectMeta.getNamespace();

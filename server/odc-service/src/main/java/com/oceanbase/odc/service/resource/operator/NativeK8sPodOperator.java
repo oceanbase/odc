@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.resource.operator;
 
 import java.util.List;
 
-import com.oceanbase.odc.service.resource.model.K8sResourceKey;
+import com.oceanbase.odc.service.resource.model.NativeK8sResourceKey;
 
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -42,8 +42,8 @@ public class NativeK8sPodOperator extends BaseNativeK8sResourceOperator<V1Pod> {
     }
 
     @Override
-    public K8sResourceKey getKey(V1Pod config) {
-        return new K8sResourceKey(config.getMetadata(), V1Pod.class);
+    public NativeK8sResourceKey getKey(V1Pod config) {
+        return new NativeK8sResourceKey(config.getMetadata(), V1Pod.class);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class NativeK8sPodOperator extends BaseNativeK8sResourceOperator<V1Pod> {
     }
 
     @Override
-    public void destroy(@NonNull K8sResourceKey key) throws Exception {
+    public void destroy(@NonNull NativeK8sResourceKey key) throws Exception {
         if (key.getName() == null) {
             throw new IllegalArgumentException("Resource name is null");
         }

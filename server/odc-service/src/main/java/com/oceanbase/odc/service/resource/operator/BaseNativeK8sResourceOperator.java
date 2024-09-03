@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import com.oceanbase.odc.service.resource.model.K8sResourceKey;
+import com.oceanbase.odc.service.resource.model.NativeK8sResourceKey;
 
 import cn.hutool.core.collection.CollectionUtil;
 import io.kubernetes.client.common.KubernetesObject;
@@ -33,7 +33,7 @@ import lombok.NonNull;
  * @since ODC_release_4.3.2
  */
 public abstract class BaseNativeK8sResourceOperator<T extends KubernetesObject>
-        implements ResourceOperator<T, K8sResourceKey> {
+        implements ResourceOperator<T, NativeK8sResourceKey> {
 
     protected final String defaultNamespace;
 
@@ -42,7 +42,7 @@ public abstract class BaseNativeK8sResourceOperator<T extends KubernetesObject>
     }
 
     @Override
-    public Optional<T> query(K8sResourceKey key) throws Exception {
+    public Optional<T> query(NativeK8sResourceKey key) throws Exception {
         List<T> list = list();
         if (CollectionUtil.isEmpty(list)) {
             return Optional.empty();
