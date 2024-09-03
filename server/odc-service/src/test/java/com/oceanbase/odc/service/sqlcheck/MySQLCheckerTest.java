@@ -91,6 +91,9 @@ import com.oceanbase.odc.service.sqlcheck.rule.TooManyTableJoin;
  */
 public class MySQLCheckerTest {
 
+    @Rule
+    public final ExpectedException exceptionRule = ExpectedException.none();
+
     @Test
     public void check_sqlWithColumnLeftCalculation_violationGenerated() {
         String sqls = "select col from tab where 1+3>4 and (4+5<90 or id+3<50 and (4+5=9)) and id='12'";
@@ -1459,9 +1462,6 @@ public class MySQLCheckerTest {
         List<CheckViolation> actualSelect = selectChecker.check(select);
         Assert.assertEquals(0, actualSelect.size());
     }
-
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
     public void check_restrictSqlAffectedRows4OBError() {
