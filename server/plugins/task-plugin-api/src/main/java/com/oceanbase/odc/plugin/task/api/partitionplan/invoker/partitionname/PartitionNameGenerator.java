@@ -34,6 +34,7 @@ import lombok.NonNull;
 public interface PartitionNameGenerator extends AutoPartitionKeyInvoker<String> {
 
     String TARGET_PARTITION_DEF_KEY = "targetPartition";
+    String PREVIOUS_PARTITION_EXPRS = "previousPartitionExprs";
     String TARGET_PARTITION_DEF_INDEX_KEY = "targetPartitionIndex";
     String PARTITION_NAME_GENERATOR_KEY = "partitionNameGeneratorConfig";
 

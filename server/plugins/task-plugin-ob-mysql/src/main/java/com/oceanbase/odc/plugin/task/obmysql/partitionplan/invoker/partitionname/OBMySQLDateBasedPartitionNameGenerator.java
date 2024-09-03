@@ -18,6 +18,7 @@ package com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionnam
 import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.DateBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.DateBasedPartitionNameGeneratorConfig;
@@ -43,11 +44,11 @@ public class OBMySQLDateBasedPartitionNameGenerator implements DateBasedPartitio
     @Override
     public String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
-            @NonNull DateBasedPartitionNameGeneratorConfig config) {
+            @NonNull DateBasedPartitionNameGeneratorConfig config, List<String> previousExprs) {
         int index = DBTablePartitionUtil.getPartitionKeyIndex(
                 dbTable, config.getRefPartitionKey(), this::unquoteIdentifier);
         Date baseDate = getPartitionUpperBound(
-                connection, config.getRefPartitionKey(), target.getMaxValues().get(index));
+                connection, config.getRefPartitionKey(), previousExprs.get(index));
         return config.getNamingPrefix() + new SimpleDateFormat(config.getNamingSuffixExpression()).format(baseDate);
     }
 
@@ -64,5 +65,4 @@ public class OBMySQLDateBasedPartitionNameGenerator implements DateBasedPartitio
         }
         return (Date) value.getValue();
     }
-
 }

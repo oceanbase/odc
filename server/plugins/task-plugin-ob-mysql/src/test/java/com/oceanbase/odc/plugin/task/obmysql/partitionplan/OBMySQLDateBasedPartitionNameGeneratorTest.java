@@ -61,7 +61,7 @@ public class OBMySQLDateBasedPartitionNameGeneratorTest {
             config.setRefPartitionKey("col");
             PartitionNameGenerator generator = new OBMySQLDateBasedPartitionNameGenerator();
             String actual = generator.invoke(connection, dbTable, getParameters(config));
-            String expect = "p20240301";
+            String expect = "p20240229";
             Assert.assertEquals(expect, actual);
         }
     }

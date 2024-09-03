@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -401,6 +402,7 @@ public class PartitionPlanService {
     private Map<PartitionPlanStrategy, DBTablePartition> doPartitionPlan(Connection connection, DBTable dbTable,
             PartitionPlanTableConfig tableConfig, AutoPartitionExtensionPoint extensionPoint,
             Map<PartitionPlanStrategy, List<PartitionPlanKeyConfig>> strategy2PartitionKeyConfigs) throws Exception {
+        // key：预创的下标，value：一个分区表达式包含的所有分区键的值
         Map<Integer, List<String>> lineNum2CreateExprs = new HashMap<>();
         List<DBTablePartitionDefinition> droppedPartitions = new ArrayList<>();
         Map<PartitionPlanStrategy, List<DBTablePartitionDefinition>> strategyListMap = new HashMap<>();
@@ -436,7 +438,13 @@ public class PartitionPlanService {
                 }
             }
         }
-        strategyListMap.put(PartitionPlanStrategy.CREATE, lineNum2CreateExprs.entrySet().stream().map(s -> {
+        List<DBTablePartitionDefinition> partitionDefinitions = dbTable.getPartition().getPartitionDefinitions();
+        DBTablePartitionDefinition lastDef = partitionDefinitions.get(partitionDefinitions.size() - 1);
+        List<String> lastMaxValues = lastDef.getMaxValues();
+
+        List<DBTablePartitionDefinition> createPartitions = new LinkedList<>();
+
+        for (Entry<Integer, List<String>> s : lineNum2CreateExprs.entrySet()) {
             DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
             definition.setMaxValues(s.getValue());
             PartitionNameGenerator invoker = extensionPoint
@@ -448,13 +456,20 @@ public class PartitionPlanService {
             Map<String, Object> parameters = tableConfig.getPartitionNameInvokerParameters();
             parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
             parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, s.getKey());
+            parameters.put(PartitionNameGenerator.PREVIOUS_PARTITION_EXPRS, lastMaxValues);
             try {
                 definition.setName(invoker.invoke(connection, dbTable, parameters));
             } catch (Exception e) {
                 throw new IllegalStateException(e);
             }
-            return definition;
-        }).filter(d -> removeExistingPartitionElement(dbTable, d, extensionPoint)).collect(Collectors.toList()));
+            if (!removeExistingPartitionElement(dbTable, definition, extensionPoint)) {
+                createPartitions.add(definition);
+                // 由于分区计划是基于当前时间最大的分区上界进行增加的，所以即便是有命名重复，他的下界也是不变的
+                lastMaxValues = definition.getMaxValues();
+            }
+        }
+
+        strategyListMap.put(PartitionPlanStrategy.CREATE, createPartitions);
         strategyListMap.put(PartitionPlanStrategy.DROP, droppedPartitions);
         DBTablePartition partition = dbTable.getPartition();
         return strategyListMap.entrySet().stream().filter(e -> CollectionUtils.isNotEmpty(e.getValue()))
