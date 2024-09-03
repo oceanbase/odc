@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.builder;
+package com.oceanbase.odc.service.resource.k8s.builder;
 
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.service.resource.ResourceOperator;
+import com.oceanbase.odc.service.resource.k8s.operator.NativeK8sPodOperator;
 import com.oceanbase.odc.service.resource.model.NativeK8sResourceID;
-import com.oceanbase.odc.service.resource.model.ResourceTag;
-import com.oceanbase.odc.service.resource.operator.NativeK8sPodOperator;
-import com.oceanbase.odc.service.resource.operator.ResourceOperator;
+import com.oceanbase.odc.service.resource.model.ResourceOperatorTag;
 
 import io.kubernetes.client.openapi.models.V1Pod;
 import lombok.NonNull;
@@ -41,8 +41,8 @@ public class NativeK8sPodOperatorBuilder extends BaseNativeK8sResourceOperatorBu
     }
 
     @Override
-    public ResourceOperator<V1Pod, NativeK8sResourceID> build(@NonNull ResourceTag resourceTag) {
-        return new NativeK8sPodOperator(resourceTag.getDefaultNamespace());
+    public ResourceOperator<V1Pod, NativeK8sResourceID> build(@NonNull ResourceOperatorTag resourceOperatorTag) {
+        return new NativeK8sPodOperator(this.defaultNamespace);
     }
 
 }

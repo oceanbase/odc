@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.builder;
+package com.oceanbase.odc.service.resource.k8s.builder;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.util.EncodeUtils;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.service.resource.ResourceOperatorBuilder;
 import com.oceanbase.odc.service.resource.model.NativeK8sResourceID;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
@@ -54,11 +55,16 @@ public abstract class BaseNativeK8sResourceOperatorBuilder<T extends KubernetesO
     private final Object lock = new Object();
     private volatile boolean apiClientAvailable = false;
     private volatile boolean apiClientSet = false;
+    protected String defaultNamespace;
     @Autowired
     private TaskFrameworkProperties taskFrameworkProperties;
 
     @PostConstruct
     public void setUp() throws IOException {
+        K8sProperties properties = this.taskFrameworkProperties.getK8sProperties();
+        if (properties != null && StringUtils.isNotBlank(properties.getNamespace())) {
+            this.defaultNamespace = properties.getNamespace();
+        }
         if (this.apiClientSet) {
             return;
         }
@@ -67,7 +73,6 @@ public abstract class BaseNativeK8sResourceOperatorBuilder<T extends KubernetesO
                 return;
             }
             this.apiClientSet = true;
-            K8sProperties properties = this.taskFrameworkProperties.getK8sProperties();
             if (properties == null) {
                 return;
             }

@@ -15,12 +15,14 @@
  */
 package com.oceanbase.odc.service.resource.model;
 
+import com.oceanbase.odc.service.cloud.model.CloudProvider;
+
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
- * {@link ResourceTag}
+ * {@link ResourceOperatorTag}
  *
  * @author yh263208
  * @date 2024-09-03 15:15
@@ -29,8 +31,10 @@ import lombok.Setter;
 @Getter
 @Setter
 @EqualsAndHashCode
-public class ResourceTag {
+public class ResourceOperatorTag {
 
     private String defaultNamespace = "default";
+    private String region;
+    private CloudProvider cloudProvider;
 
 }

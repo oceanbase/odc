@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.operator;
+package com.oceanbase.odc.service.resource.k8s.operator;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.oceanbase.odc.service.resource.ResourceOperator;
 import com.oceanbase.odc.service.resource.model.NativeK8sResourceID;
 
 import cn.hutool.core.collection.CollectionUtil;
@@ -43,18 +44,11 @@ public abstract class BaseNativeK8sResourceOperator<T extends KubernetesObject>
 
     @Override
     public Optional<T> query(NativeK8sResourceID key) throws Exception {
-        List<T> list = list(key.getNamespace());
+        List<T> list = list();
         if (CollectionUtil.isEmpty(list)) {
             return Optional.empty();
         }
         return list.stream().filter(t -> Objects.equals(getKey(t), key)).findFirst();
     }
-
-    @Override
-    public List<T> list() throws Exception {
-        return list(this.defaultNamespace);
-    }
-
-    protected abstract List<T> list(String namespace) throws Exception;
 
 }

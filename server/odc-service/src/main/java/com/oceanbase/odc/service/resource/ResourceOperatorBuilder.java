@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.builder;
+package com.oceanbase.odc.service.resource;
 
 import com.oceanbase.odc.service.resource.model.ResourceID;
-import com.oceanbase.odc.service.resource.model.ResourceTag;
-import com.oceanbase.odc.service.resource.operator.ResourceOperator;
+import com.oceanbase.odc.service.resource.model.ResourceOperatorTag;
 
 import lombok.NonNull;
 
@@ -40,8 +39,8 @@ public interface ResourceOperatorBuilder<T, ID extends ResourceID> {
      * We cannot know the parameters for constructing a {@link ResourceOperator} in advance, so we use a
      * map as a parameter.
      *
-     * @param resourceTag parameters to build a {@link ResourceOperator}
+     * @param resourceOperatorTag parameters to build a {@link ResourceOperator}
      */
-    ResourceOperator<T, ID> build(@NonNull ResourceTag resourceTag);
+    ResourceOperator<T, ID> build(@NonNull ResourceOperatorTag resourceOperatorTag);
 
 }

@@ -23,10 +23,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.oceanbase.odc.service.resource.builder.ResourceOperatorBuilder;
 import com.oceanbase.odc.service.resource.model.ResourceID;
-import com.oceanbase.odc.service.resource.model.ResourceTag;
-import com.oceanbase.odc.service.resource.operator.ResourceOperator;
+import com.oceanbase.odc.service.resource.model.ResourceOperatorTag;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -45,37 +43,42 @@ public class ResourceManagerService {
     @Autowired(required = false)
     private List<ResourceOperatorBuilder<?, ?>> resourceOperatorBuilders;
 
-    public <T> T create(@NonNull T config, @NonNull ResourceTag resourceTag) throws Exception {
-        return getResourceOperator(config, resourceTag).create(config);
+    public <T> T create(@NonNull T config,
+            @NonNull ResourceOperatorTag resourceOperatorTag) throws Exception {
+        return getResourceOperator(config, resourceOperatorTag).create(config);
     }
 
-    public <T> Object getKey(@NonNull T config, @NonNull ResourceTag resourceTag) throws Exception {
-        return getResourceOperator(config, resourceTag).getKey(config);
-    }
-
-    @SuppressWarnings("all")
-    public <T> Optional<T> query(@NonNull ResourceID key, @NonNull ResourceTag resourceTag) throws Exception {
-        return getResourceOperator((Class<T>) key.getType(), resourceTag).query(key);
+    public <T> Object getKey(@NonNull T config,
+            @NonNull ResourceOperatorTag resourceOperatorTag) throws Exception {
+        return getResourceOperator(config, resourceOperatorTag).getKey(config);
     }
 
     @SuppressWarnings("all")
-    public <T> void destroy(@NonNull ResourceID key, @NonNull ResourceTag resourceTag) throws Exception {
-        getResourceOperator((Class<T>) key.getType(), resourceTag).destroy(key);
-    }
-
-    public <T> List<T> list(@NonNull Class<T> clazz, @NonNull ResourceTag resourceTag) throws Exception {
-        return getResourceOperator(clazz, resourceTag).list();
+    public <T> Optional<T> query(@NonNull ResourceID key,
+            @NonNull ResourceOperatorTag resourceOperatorTag) throws Exception {
+        return getResourceOperator((Class<T>) key.getType(), resourceOperatorTag).query(key);
     }
 
     @SuppressWarnings("all")
-    protected <T, ID extends ResourceID> ResourceOperator<T, ID> getResourceOperator(
-            T config, ResourceTag resourceTag) {
-        return (ResourceOperator<T, ID>) getResourceOperator(config.getClass(), resourceTag);
+    public <T> void destroy(@NonNull ResourceID key,
+            @NonNull ResourceOperatorTag resourceOperatorTag) throws Exception {
+        getResourceOperator((Class<T>) key.getType(), resourceOperatorTag).destroy(key);
+    }
+
+    public <T> List<T> list(@NonNull Class<T> clazz,
+            @NonNull ResourceOperatorTag resourceOperatorTag) throws Exception {
+        return getResourceOperator(clazz, resourceOperatorTag).list();
     }
 
     @SuppressWarnings("all")
-    protected <T, ID extends ResourceID> ResourceOperator<T, ID> getResourceOperator(
-            Class<T> clazz, ResourceTag resourceTag) {
+    private <T, ID extends ResourceID> ResourceOperator<T, ID> getResourceOperator(
+            T config, ResourceOperatorTag resourceOperatorTag) {
+        return (ResourceOperator<T, ID>) getResourceOperator(config.getClass(), resourceOperatorTag);
+    }
+
+    @SuppressWarnings("all")
+    private <T, ID extends ResourceID> ResourceOperator<T, ID> getResourceOperator(
+            Class<T> clazz, ResourceOperatorTag resourceOperatorTag) {
         List<ResourceOperatorBuilder<?, ?>> builders = this.resourceOperatorBuilders.stream()
                 .filter(builder -> builder.supports(clazz)).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(builders)) {
@@ -83,7 +86,7 @@ public class ResourceManagerService {
         } else if (builders.size() != 1) {
             throw new IllegalStateException("There are more than one builder for the config " + clazz);
         }
-        return ((ResourceOperatorBuilder<T, ID>) builders.get(0)).build(resourceTag);
+        return ((ResourceOperatorBuilder<T, ID>) builders.get(0)).build(resourceOperatorTag);
     }
 
 }

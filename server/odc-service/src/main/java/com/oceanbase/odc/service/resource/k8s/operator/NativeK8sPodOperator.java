@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.operator;
+package com.oceanbase.odc.service.resource.k8s.operator;
 
 import java.util.List;
 
@@ -39,11 +39,7 @@ public class NativeK8sPodOperator extends BaseNativeK8sResourceOperator<V1Pod> {
 
     @Override
     public V1Pod create(@NonNull V1Pod config) throws Exception {
-        String namespace = this.defaultNamespace;
-        if (config.getMetadata() != null && config.getMetadata().getNamespace() != null) {
-            namespace = config.getMetadata().getNamespace();
-        }
-        return new CoreV1Api().createNamespacedPod(namespace, config, null, null, null, null);
+        return new CoreV1Api().createNamespacedPod(this.defaultNamespace, config, null, null, null, null);
     }
 
     @Override
@@ -52,8 +48,8 @@ public class NativeK8sPodOperator extends BaseNativeK8sResourceOperator<V1Pod> {
     }
 
     @Override
-    protected List<V1Pod> list(String namespace) throws ApiException {
-        return new CoreV1Api().listNamespacedPod(namespace,
+    public List<V1Pod> list() throws ApiException {
+        return new CoreV1Api().listNamespacedPod(this.defaultNamespace,
                 null, null, null, null, null, null, null, null, null, null, null).getItems();
     }
 
@@ -62,11 +58,7 @@ public class NativeK8sPodOperator extends BaseNativeK8sResourceOperator<V1Pod> {
         if (key.getName() == null) {
             throw new IllegalArgumentException("Resource name is null");
         }
-        String namespace = this.defaultNamespace;
-        if (key.getNamespace() != null) {
-            namespace = key.getNamespace();
-        }
-        new CoreV1Api().deleteNamespacedPod(key.getName(), namespace, null, null, null, null, null, null);
+        new CoreV1Api().deleteNamespacedPod(key.getName(), this.defaultNamespace, null, null, null, null, null, null);
     }
 
 }
