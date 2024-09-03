@@ -48,7 +48,7 @@ public class ResourceManagerService {
         return getResourceOperator(config, resourceOperatorTag).create(config);
     }
 
-    public <T> Object getKey(@NonNull T config,
+    public <T> ResourceID getKey(@NonNull T config,
             @NonNull ResourceOperatorTag resourceOperatorTag) throws Exception {
         return getResourceOperator(config, resourceOperatorTag).getKey(config);
     }
