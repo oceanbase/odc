@@ -86,4 +86,133 @@ public class ConnectionConfigTest {
 
         Assert.assertEquals("user1", defaultSchema);
     }
+
+    @Test
+    public void getUsername_noTenant_getSucceed() {
+        ConnectionConfig connectionConfig = new ConnectionConfig();
+        connectionConfig.setUsername("username");
+        Assert.assertEquals("username", connectionConfig.getUsername());
+    }
+
+    @Test
+    public void getUsername_nullUsername_getSucceed() {
+        ConnectionConfig connectionConfig = new ConnectionConfig();
+        connectionConfig.setUsername(null);
+        Assert.assertNull(connectionConfig.getUsername());
+    }
+
+    @Test
+    public void getUsername_containsTenant_getSucceed() {
+        ConnectionConfig connectionConfig = new ConnectionConfig();
+        connectionConfig.setUsername("username@tenantName");
+        Assert.assertEquals("username", connectionConfig.getUsername());
+    }
+
+    @Test
+    public void getTenantName_userNameDoesNotContainTenant_getSucceed() {
+        ConnectionConfig connectionConfig = new ConnectionConfig();
+        connectionConfig.setUsername("username");
+        connectionConfig.setTenantName("tenantName");
+        Assert.assertEquals("tenantName", connectionConfig.getTenantName());
+    }
+
+    @Test
+    public void getTenantName_userNameContainsTenant_getSucceed() {
+        ConnectionConfig connectionConfig = new ConnectionConfig();
+        connectionConfig.setUsername("username@tenantName");
+        Assert.assertEquals("tenantName", connectionConfig.getTenantName());
+    }
+
+    @Test
+    public void getTenantName_userNameContainsTenantCluster_getSucceed() {
+        ConnectionConfig connectionConfig = new ConnectionConfig();
+        connectionConfig.setUsername("username@tenantName#cluster");
+        Assert.assertEquals("tenantName", connectionConfig.getTenantName());
+    }
+
+    @Test
+    public void getTenantName_tenantNameExistsAndUserNameContainsTenantCluster_getSucceed() {
+        ConnectionConfig connectionConfig = new ConnectionConfig();
+        connectionConfig.setUsername("username@tenantName#cluster");
+        connectionConfig.setTenantName("tenantName");
+        Assert.assertEquals("tenantName", connectionConfig.getTenantName());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getTenantName_tenantNameExistsAndUserNameContainsTenantCluster_expThrown() {
+        ConnectionConfig connectionConfig = new ConnectionConfig();
+        connectionConfig.setUsername("username@tenantName#cluster");
+        connectionConfig.setTenantName("tenantName1");
+        Assert.assertEquals("tenantName", connectionConfig.getTenantName());
+    }
+
+    @Test
+    public void getOBTenantName_userNameDoesNotContainTenant_getSucceed() {
+        ConnectionConfig connectionConfig = new ConnectionConfig();
+        connectionConfig.setUsername("username");
+        connectionConfig.setOBTenantName("tenantName");
+        Assert.assertEquals("tenantName", connectionConfig.getOBTenantName());
+    }
+
+    @Test
+    public void getOBTenantName_userNameContainsTenant_getSucceed() {
+        ConnectionConfig connectionConfig = new ConnectionConfig();
+        connectionConfig.setUsername("username@tenantName");
+        Assert.assertEquals("tenantName", connectionConfig.getOBTenantName());
+    }
+
+    @Test
+    public void getOBTenantName_userNameContainsTenantCluster_getSucceed() {
+        ConnectionConfig connectionConfig = new ConnectionConfig();
+        connectionConfig.setUsername("username@tenantName#cluster");
+        Assert.assertEquals("tenantName", connectionConfig.getOBTenantName());
+    }
+
+    @Test
+    public void getOBTenantName_tenantNameExistsAndUserNameContainsTenantCluster_getSucceed() {
+        ConnectionConfig connectionConfig = new ConnectionConfig();
+        connectionConfig.setUsername("username@tenantName#cluster");
+        connectionConfig.setOBTenantName("tenantName");
+        Assert.assertEquals("tenantName", connectionConfig.getOBTenantName());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getOBTenantName_tenantNameExistsAndUserNameContainsTenantCluster_expThrown() {
+        ConnectionConfig connectionConfig = new ConnectionConfig();
+        connectionConfig.setUsername("username@tenantName#cluster");
+        connectionConfig.setOBTenantName("tenantName1");
+        Assert.assertEquals("tenantName", connectionConfig.getOBTenantName());
+    }
+
+    @Test
+    public void getClusterName_userNameDoesNotContainCluster_getSucceed() {
+        ConnectionConfig connectionConfig = new ConnectionConfig();
+        connectionConfig.setUsername("username");
+        connectionConfig.setClusterName("clusterName");
+        Assert.assertEquals("clusterName", connectionConfig.getClusterName());
+    }
+
+    @Test
+    public void getClusterName_userNameContainsCluster_getSucceed() {
+        ConnectionConfig connectionConfig = new ConnectionConfig();
+        connectionConfig.setUsername("username@tenantName#clusterName");
+        Assert.assertEquals("clusterName", connectionConfig.getClusterName());
+    }
+
+    @Test
+    public void getClusterName_tenantNameExistsAndUserNameContainsTenantCluster_getSucceed() {
+        ConnectionConfig connectionConfig = new ConnectionConfig();
+        connectionConfig.setUsername("username@tenantName#cluster");
+        connectionConfig.setClusterName("cluster");
+        Assert.assertEquals("cluster", connectionConfig.getClusterName());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getClusterName_tenantNameExistsAndUserNameContainsTenantCluster_expThrown() {
+        ConnectionConfig connectionConfig = new ConnectionConfig();
+        connectionConfig.setUsername("username@tenantName#cluster");
+        connectionConfig.setClusterName("cluster1");
+        Assert.assertEquals("cluster", connectionConfig.getClusterName());
+    }
+
 }

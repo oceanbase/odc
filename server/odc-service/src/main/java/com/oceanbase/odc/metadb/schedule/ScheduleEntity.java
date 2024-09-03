@@ -53,6 +53,8 @@ public class ScheduleEntity implements Serializable {
     @Column(name = "id", nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(name = "name")
+    private String name;
     @Column(name = "organization_id", nullable = false)
     private Long organizationId;
     @Column(name = "connection_id", nullable = false)

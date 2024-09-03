@@ -128,7 +128,7 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
 
     @Override
     public String unquoteIdentifier(@NonNull String identifier) {
-        return StringUtils.unquoteMySqlIdentifier(identifier.toLowerCase());
+        return StringUtils.unquoteMySqlIdentifier(identifier);
     }
 
     @Override

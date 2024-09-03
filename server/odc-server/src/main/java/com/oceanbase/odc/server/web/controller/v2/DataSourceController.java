@@ -163,8 +163,11 @@ public class DataSourceController {
     @RequestMapping(value = "/datasources/{id:[\\d]+}/databases", method = RequestMethod.GET)
     public PaginatedResponse<Database> listDatabases(@PathVariable Long id,
             @RequestParam(required = false, name = "name") String name,
+            @RequestParam(required = false, name = "existed") Boolean existed,
+            @RequestParam(required = false, name = "belongsToProject") Boolean belongsToProject,
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
-        return Responses.paginated(databaseService.listDatabasesByDataSource(id, name, pageable));
+        return Responses
+                .paginated(databaseService.listDatabasesByDataSource(id, name, existed, belongsToProject, pageable));
     }
 
 

@@ -34,6 +34,8 @@ public enum ScheduleStatus {
     TERMINATED,
 
     COMPLETED,
-    EXECUTION_FAILED
+    EXECUTION_FAILED,
+
+    DELETED
 
 }

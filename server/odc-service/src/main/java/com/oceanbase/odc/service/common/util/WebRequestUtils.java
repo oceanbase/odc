@@ -332,4 +332,17 @@ public class WebRequestUtils {
             requestAttributes.setAttribute(key, value, RequestAttributes.SCOPE_REQUEST);
         }
     }
+
+    public static String getStringValueFromParameterOrAttribute(HttpServletRequest request, String key) {
+        String value = request.getParameter(key);
+        if (value == null) {
+            Object attribute = request.getAttribute(key);
+            if (attribute == null) {
+                return null;
+            }
+            Verify.verify(attribute instanceof String, "Not String Value");
+            value = (String) attribute;
+        }
+        return value;
+    }
 }
