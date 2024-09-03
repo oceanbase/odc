@@ -75,8 +75,8 @@ public class MySQLAffectedRows implements SqlCheckRule {
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
 
         if (statement instanceof Update || statement instanceof Delete || statement instanceof Insert) {
-            if (maxSQLAffectedRows == 0 || jdbcOperations == null) {
-                return Collections.emptyList();
+            if (jdbcOperations == null) {
+                throw new RuntimeException("jdbcOperations is null, please check your connection");
             }
             long affectedRows = 0;
             String explainSql = "EXPLAIN " + statement.getText();
