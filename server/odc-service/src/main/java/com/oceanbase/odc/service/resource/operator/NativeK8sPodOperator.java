@@ -37,12 +37,12 @@ public class NativeK8sPodOperator extends BaseNativeK8sResourceOperator<V1Pod> {
 
     @Override
     protected boolean doSupports(@NonNull Class<?> clazz) {
-        return V1Pod.class.equals(clazz);
+        return V1Pod.class.isAssignableFrom(clazz);
     }
 
     @Override
     public V1Pod create(@NonNull V1Pod config) throws Exception {
-        return new CoreV1Api().createNamespacedPod(this.defaultNamespace, config, null, null, null, null);
+        return new CoreV1Api().createNamespacedPod(config.getMetadata().getNamespace(), config, null, null, null, null);
     }
 
     @Override
@@ -61,7 +61,7 @@ public class NativeK8sPodOperator extends BaseNativeK8sResourceOperator<V1Pod> {
         if (key.getName() == null) {
             throw new IllegalArgumentException("Resource name is null");
         }
-        new CoreV1Api().deleteNamespacedPod(key.getName(), this.defaultNamespace, null, null, null, null, null, null);
+        new CoreV1Api().deleteNamespacedPod(key.getName(), key.getNamespace(), null, null, null, null, null, null);
     }
 
 }

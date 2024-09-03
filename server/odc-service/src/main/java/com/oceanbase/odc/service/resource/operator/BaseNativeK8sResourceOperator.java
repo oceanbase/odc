@@ -55,7 +55,7 @@ public abstract class BaseNativeK8sResourceOperator<T extends KubernetesObject>
         implements ResourceOperator<T, NativeK8sResourceKey> {
 
     private static final long TIMEOUT_MILLS = 60000;
-    protected final String defaultNamespace = "shanlu";
+    protected String defaultNamespace;
     private final Object lock = new Object();
     private volatile boolean apiClientAvailable = false;
     private volatile boolean apiClientSet = false;
@@ -64,6 +64,12 @@ public abstract class BaseNativeK8sResourceOperator<T extends KubernetesObject>
 
     @PostConstruct
     public void setUp() throws IOException {
+        K8sProperties properties = this.taskFrameworkProperties.getK8sProperties();
+        if (properties == null || StringUtils.isBlank(properties.getNamespace())) {
+            this.defaultNamespace = "default";
+        } else {
+            this.defaultNamespace = properties.getNamespace();
+        }
         if (this.apiClientSet) {
             return;
         }
@@ -72,7 +78,6 @@ public abstract class BaseNativeK8sResourceOperator<T extends KubernetesObject>
                 return;
             }
             this.apiClientSet = true;
-            K8sProperties properties = this.taskFrameworkProperties.getK8sProperties();
             if (properties == null) {
                 return;
             }
