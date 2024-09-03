@@ -211,19 +211,20 @@ public class TaskMonitor {
     }
 
     private void uploadLogFileToCloudStorage(DefaultTaskResult finalResult) {
+        Map<String, String> logMap = new HashMap<>();
         if (cloudObjectStorageService != null && cloudObjectStorageService.supported()
                 && JobUtils.isK8sRunModeOfEnv()) {
             LogBiz biz = new LogBizImpl();
-            Map<String, String> logMap = null;
             try {
-                logMap = biz.uploadLogFileToCloudStorage(finalResult.getJobIdentity(), cloudObjectStorageService);
+                logMap.putAll(biz.uploadLogFileToCloudStorage(finalResult.getJobIdentity(), cloudObjectStorageService));
             } catch (Throwable e) {
                 log.warn("Upload job log file to cloud storage occur error, jobId={}", getJobId(), e);
-                // putAll will throw NPE if it returns null.
-                logMap = new HashMap<>();
             }
-            finalResult.setLogMetadata(logMap);
+        } else {
+            // local mode not need log upload
+            logMap.put("log", "local");
         }
+        finalResult.setLogMetadata(logMap);
     }
 
     private void reportTaskResultWithRetry(DefaultTaskResult result, int retries) {

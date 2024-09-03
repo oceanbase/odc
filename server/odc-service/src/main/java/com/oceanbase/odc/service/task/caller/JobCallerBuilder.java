@@ -35,8 +35,14 @@ import com.oceanbase.odc.service.task.util.JobUtils;
  */
 public class JobCallerBuilder {
 
-    public static JobCaller buildProcessCaller(JobContext context) {
-        Map<String, String> environments = new JobEnvironmentFactory().build(context, TaskRunMode.PROCESS);
+    /**
+     * build process caller with given env
+     * 
+     * @param context
+     * @param environments env for process builder
+     * @return
+     */
+    public static JobCaller buildProcessCaller(JobContext context, Map<String, String> environments) {
         JobUtils.encryptEnvironments(environments);
 
         ProcessConfig config = new ProcessConfig();
@@ -50,12 +56,14 @@ public class JobCallerBuilder {
         return new ProcessJobCaller(config);
     }
 
-    public static JobCaller buildK8sJobCaller(PodConfig podConfig, JobContext context,
-            K8sResourceManager resourceManager) {
+    /**
+     * build k8s start env
+     * 
+     * @param context
+     * @return
+     */
+    public static Map<String, String> buildK8sEnv(JobContext context) {
         Map<String, String> environments = new JobEnvironmentFactory().build(context, TaskRunMode.K8S);
-
-        // common environment variables
-        environments.put(JobEnvKeyConstants.ODC_LOG_DIRECTORY, podConfig.getMountPath());
 
         Map<String, String> jobProperties = context.getJobProperties();
 
@@ -80,7 +88,14 @@ public class JobCallerBuilder {
         environments.put(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_PREFIX, jasyptProperties.getPrefix());
         environments.put(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_SUFFIX, jasyptProperties.getSuffix());
         environments.put(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_SALT, jasyptProperties.getSalt());
+        return environments;
+    }
 
+    public static JobCaller buildK8sJobCaller(PodConfig podConfig, JobContext context,
+            K8sResourceManager resourceManager) {
+        Map<String, String> environments = buildK8sEnv(context);
+        // common environment variables
+        environments.put(JobEnvKeyConstants.ODC_LOG_DIRECTORY, podConfig.getMountPath());
         // do encryption for sensitive information
         JobUtils.encryptEnvironments(environments);
 

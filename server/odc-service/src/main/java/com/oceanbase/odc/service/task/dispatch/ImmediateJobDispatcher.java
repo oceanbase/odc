@@ -27,6 +27,7 @@ import com.oceanbase.odc.service.resource.k8s.PodConfig;
 import com.oceanbase.odc.service.task.caller.JobCaller;
 import com.oceanbase.odc.service.task.caller.JobCallerBuilder;
 import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.caller.JobEnvironmentFactory;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
@@ -107,7 +108,8 @@ public class ImmediateJobDispatcher implements JobDispatcher {
             }
             return JobCallerBuilder.buildK8sJobCaller(podConfig, context, k8SResourceManager);
         } else {
-            return JobCallerBuilder.buildProcessCaller(context);
+            return JobCallerBuilder.buildProcessCaller(context,
+                    new JobEnvironmentFactory().build(context, TaskRunMode.PROCESS));
         }
     }
 
