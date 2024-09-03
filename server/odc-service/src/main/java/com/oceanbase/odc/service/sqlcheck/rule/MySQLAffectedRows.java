@@ -131,7 +131,7 @@ public class MySQLAffectedRows implements SqlCheckRule {
             return firstNonNullResult != null ? firstNonNullResult : 0;
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to execute sql: " + explainSql);
+            throw new RuntimeException("error: " + e.getMessage() + ", SQL: " + explainSql);
         }
     }
 
@@ -183,7 +183,7 @@ public class MySQLAffectedRows implements SqlCheckRule {
             return firstNonNullResult != null ? firstNonNullResult : 0;
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to execute sql: " + explainSql);
+            throw new RuntimeException("error: " + e.getMessage() + ", SQL: " + explainSql);
         }
     }
 
