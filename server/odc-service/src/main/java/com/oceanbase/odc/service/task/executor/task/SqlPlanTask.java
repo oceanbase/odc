@@ -117,7 +117,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             queryResultSetBuffer.clear();
             String sql = offsetString.getStr();
             try {
-                boolean success = retryStatement(sql);
+                boolean success = executeSqlWithRetries(sql);
                 // write all result into json file
                 appendResultToJsonFile(i == 0, i == offsetStringList.size() - 1);
                 // write result rows into csv file
@@ -152,7 +152,6 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
 
     @Override
     protected void doStop() {
-        tryExpireConnectionSession();
         canceled = true;
     }
 
@@ -174,7 +173,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         return this.result;
     }
 
-    private boolean retryStatement(String sql) {
+    private boolean executeSqlWithRetries(String sql) {
         OdcStatementCallBack statementCallback = getOdcStatementCallBack(sql);
         GeneralSqlType sqlType = parseSqlType(sql);
         int executeTime = 0;
