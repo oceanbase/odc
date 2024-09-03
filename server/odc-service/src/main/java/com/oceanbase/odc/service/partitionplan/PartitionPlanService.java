@@ -461,7 +461,7 @@ public class PartitionPlanService {
             } catch (Exception e) {
                 throw new IllegalStateException(e);
             }
-            if (!removeExistingPartitionElement(dbTable, definition, extensionPoint)) {
+            if (removeExistingPartitionElement(dbTable, definition, extensionPoint)) {
                 createPartitions.add(definition);
                 lastMaxValues = definition.getMaxValues();
             }
