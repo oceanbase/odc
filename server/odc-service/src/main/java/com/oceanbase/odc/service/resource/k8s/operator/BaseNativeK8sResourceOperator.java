@@ -43,7 +43,7 @@ public abstract class BaseNativeK8sResourceOperator<T extends KubernetesObject>
     }
 
     @Override
-    public Optional<T> query(NativeK8sResourceID key) throws Exception {
+    public Optional<T> get(NativeK8sResourceID key) throws Exception {
         List<T> list = list();
         if (CollectionUtil.isEmpty(list)) {
             return Optional.empty();

@@ -15,28 +15,28 @@
  */
 package com.oceanbase.odc.service.resource;
 
-import java.util.List;
-import java.util.Optional;
-
 import com.oceanbase.odc.service.resource.model.ResourceID;
+import com.oceanbase.odc.service.resource.model.ResourceOperatorTag;
+import com.oceanbase.odc.service.resource.model.ResourceState;
+
+import lombok.Getter;
+import lombok.Setter;
 
 /**
- * {@link ResourceOperator}
+ * {@link Resource}
  *
  * @author yh263208
- * @date 2024-09-02 16:13
+ * @date 2024-09-03 21:48
  * @since ODC_release_4.3.2
  */
-public interface ResourceOperator<T, ID extends ResourceID> {
+@Getter
+@Setter
+public class Resource {
 
-    T create(T config) throws Exception;
-
-    ID getKey(T config);
-
-    Optional<T> get(ID key) throws Exception;
-
-    List<T> list() throws Exception;
-
-    void destroy(ID key) throws Exception;
+    private Long id;
+    private ResourceID resourceID;
+    private ResourceState resourceState;
+    private Object resourceConfig;
+    private ResourceOperatorTag resourceOperatorTag;
 
 }
