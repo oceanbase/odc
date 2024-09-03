@@ -301,7 +301,8 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
     }
 
     private String getFileName(String extension) {
-        return parameter.getTableName() + extension;
+        return transferConfig.getConnectionInfo().getConnectType().getDialectType().isMysql() ? parameter.getTableName()
+                : parameter.getTableName().toUpperCase() + extension;
     }
 
     private String getDumpFileDirectory() throws IOException {
