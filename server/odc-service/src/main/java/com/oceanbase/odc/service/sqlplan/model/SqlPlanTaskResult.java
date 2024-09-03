@@ -44,16 +44,18 @@ public class SqlPlanTaskResult {
     private String errorRecordsFileDownloadUrl = null;
 
 
-    public void incrementFinishedStatements() {
+    private void incrementFinishedStatements() {
         this.finishedStatements++;
     }
 
     public void incrementSucceedStatements() {
         this.succeedStatements++;
+        incrementFinishedStatements();
     }
 
     public void incrementFailedStatements() {
         this.failedStatements++;
+        incrementFinishedStatements();
     }
 
 }

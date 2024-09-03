@@ -137,10 +137,6 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                     break;
                 }
                 log.warn("Sql task execution failed, will continue to execute next statement.", e);
-            } finally {
-                result.incrementFinishedStatements();
-                log.info("finished statement, total={}, finished={}",
-                        result.getTotalStatements(), result.getFinishedStatements());
             }
         }
         log.info("The sql plan task execute finished,result={}", result);
