@@ -15,13 +15,15 @@
  */
 package com.oceanbase.odc.service.resource;
 
+import org.apache.hadoop.classification.InterfaceStability.Evolving;
+
 /**
  * resource config
  * 
  * @author longpeng.zlp
  * @date 2024/8/12 14:42
  */
-
+@Evolving
 public interface ResourceContext {
     /**
      * cpu core expected for running task

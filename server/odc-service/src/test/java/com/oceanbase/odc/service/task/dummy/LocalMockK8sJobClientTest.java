@@ -38,7 +38,7 @@ import com.oceanbase.odc.service.task.schedule.JobCredentialProvider;
 public class LocalMockK8sJobClientTest {
     @Ignore
     @Test
-    public void testProcessStart() throws JobException {
+    public void testLocalProcessStart() throws JobException {
         JobConfiguration jobConfiguration = Mockito.mock(JobConfiguration.class);
         JobCredentialProvider jobCredentialProvider = Mockito.mock(JobCredentialProvider.class);
         TaskFrameworkProperties taskFrameworkProperties = Mockito.mock(TaskFrameworkProperties.class);

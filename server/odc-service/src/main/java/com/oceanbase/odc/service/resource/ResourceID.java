@@ -15,12 +15,15 @@
  */
 package com.oceanbase.odc.service.resource;
 
+import org.apache.hadoop.classification.InterfaceStability.Evolving;
+
 /**
  * global unique resource ID
  * 
  * @author longpeng.zlp
  * @date 2024/8/12 11:30
  */
+@Evolving
 public interface ResourceID {
     String getName();
 }

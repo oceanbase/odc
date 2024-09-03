@@ -15,12 +15,15 @@
  */
 package com.oceanbase.odc.service.resource;
 
+import org.apache.hadoop.classification.InterfaceStability.Evolving;
+
 /**
  * Resource is a compute holder for task or function It may be local memory or remote machine.
  * 
  * @author longpeng.zlp
  * @date 2024/8/12 10:53
  */
+@Evolving
 public interface Resource<R extends ResourceID> {
     /**
      * resource ID

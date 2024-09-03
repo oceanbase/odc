@@ -28,6 +28,7 @@ import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.JobCallerBuilder;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.ProcessJobCaller;
+import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
@@ -72,7 +73,7 @@ public class LocalMockK8sJobClient implements K8sJobClientSelector {
 
         @Override
         public Optional<K8sPodResource> get(String namespace, String arn) throws JobException {
-            K8sPodResource ret = new K8sPodResource("region", "group", namespace, namespace, ResourceState.RUNNING,
+            K8sPodResource ret = new K8sPodResource(ResourceIDUtil.DEFAULT_REGION_PROP_NAME, ResourceIDUtil.DEFAULT_GROUP_PROP_NAME, namespace, arn, ResourceState.RUNNING,
                     "127.0.0.1", new Date(System.currentTimeMillis()));
             return Optional.of(ret);
         }

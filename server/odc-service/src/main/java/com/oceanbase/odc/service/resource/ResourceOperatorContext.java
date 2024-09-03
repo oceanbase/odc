@@ -15,11 +15,14 @@
  */
 package com.oceanbase.odc.service.resource;
 
+import org.apache.hadoop.classification.InterfaceStability.Evolving;
+
 /**
  * context to build resource operator
  * 
  * @author longpeng.zlp
  * @date 2024/9/2 17:23
  */
+@Evolving
 public interface ResourceOperatorContext {
 }
