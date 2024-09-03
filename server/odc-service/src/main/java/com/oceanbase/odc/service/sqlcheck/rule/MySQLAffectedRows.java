@@ -91,11 +91,12 @@ public class MySQLAffectedRows implements SqlCheckRule {
                         affectedRows = getOBMySqlAffectedRows(explainSql, jdbcOperations);
                         break;
                     default:
+                        log.warn("Unsupported dialect type: {}", dialectType);
                         break;
                 }
             } catch (Exception e){
-                log.error("error: " + e.getMessage() + ", SQL: " + explainSql);
-                throw new RuntimeException("SQL: " + explainSql + " execute failed");
+                log.error("Error in calling getAffectedRows method", e);
+                affectedRows = -1;
             }
 
             if (affectedRows > maxSQLAffectedRows) {
