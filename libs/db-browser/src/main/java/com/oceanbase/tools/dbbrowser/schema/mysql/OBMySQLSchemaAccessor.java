@@ -159,6 +159,13 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         return columns;
     }
 
+    /**
+     * 根据DDL设置存储列
+     *
+     * @param schemeName 数据库名称
+     * @param tableName  表名称
+     * @param columns    列信息
+     */
     protected void setStoredColumnByDDL(String schemeName, String tableName, List<DBTableColumn> columns) {
         if (CollectionUtils.isEmpty(columns)) {
             return;
@@ -168,15 +175,20 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             sb.append("show create table ");
             sb.schemaPrefixIfNotBlank(schemeName);
             sb.identifier(tableName);
+            // 查询表的DDL
             List<String> ddl =
-                    jdbcOperations.query(sb.toString(), (rs, num) -> rs.getString(2));
+                jdbcOperations.query(sb.toString(), (rs, num) -> rs.getString(2));
             if (CollectionUtils.isEmpty(ddl) || StringUtils.isBlank(ddl.get(0))) {
+                // 如果查询失败，则填充警告信息
                 fillWarning(columns, DBObjectType.COLUMN, "get table DDL failed");
             } else {
+                // 解析DDL
                 ParseSqlResult result = SqlParser.parseMysql(ddl.get(0));
                 if (CollectionUtils.isEmpty(result.getColumns())) {
+                    // 如果解析失败，则填充警告信息
                     fillWarning(columns, DBObjectType.COLUMN, "parse DDL failed, may view object");
                 } else {
+                    // 遍历列信息和DDL中的列信息，设置存储属性
                     columns.forEach(column -> result.getColumns().forEach(columnDefinition -> {
                         if (StringUtils.equals(column.getName(), columnDefinition.getName())) {
                             column.setStored(columnDefinition.getIsStored());
@@ -185,6 +197,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
                 }
             }
         } catch (Exception e) {
+            // 查询DDL失败，填充警告信息
             fillWarning(columns, DBObjectType.COLUMN, "query ddl failed");
             log.warn("Fetch table ddl for parsing column failed", e);
         }
