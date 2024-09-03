@@ -1472,13 +1472,11 @@ public class MySQLCheckerTest {
         Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(RowMapper.class)))
                 .thenThrow(new RuntimeException("Failed to execute sql"));
 
-        exceptionRule.expect(RuntimeException.class);
-        exceptionRule.expectMessage("error: Failed to execute sql, SQL: " + "EXPLAIN " + update);
-
         DefaultSqlChecker errorChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
                 Collections.singletonList(
                         new MySQLAffectedRows(2L, DialectType.OB_MYSQL, jdbcTemplate)));
         List<CheckViolation> actualError = errorChecker.check(update);
+        Assert.assertEquals(0, actualError.size());
     }
 
     @Test
@@ -1560,13 +1558,11 @@ public class MySQLCheckerTest {
         Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(RowMapper.class)))
                 .thenThrow(new RuntimeException("Failed to execute sql"));
 
-        exceptionRule.expect(RuntimeException.class);
-        exceptionRule.expectMessage("error: Failed to execute sql, SQL: " + "EXPLAIN " + update);
-
         DefaultSqlChecker errorChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
                 Collections.singletonList(
                         new MySQLAffectedRows(2L, DialectType.OB_MYSQL, jdbcTemplate)));
         List<CheckViolation> actualError = errorChecker.check(update);
+        Assert.assertEquals(0, actualError.size());
     }
 
     private String joinAndAppend(String[] sqls, String delimiter) {
