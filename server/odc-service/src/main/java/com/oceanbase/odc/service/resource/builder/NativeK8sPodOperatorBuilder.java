@@ -32,7 +32,7 @@ import lombok.NonNull;
  * @since ODC_release_4.3.2
  */
 @Component
-public class NativeK8sPodOperatorBuilder extends BaseNativeK8sResourceOperatorBuilder<V1Pod> {
+public class NativeK8sPodOperatorBuilder extends BaseNativeK8sResourceOperatorBuilder<V1Pod, K8sResourceKey> {
 
     @Override
     protected boolean doSupports(@NonNull Class<?> clazz) {
