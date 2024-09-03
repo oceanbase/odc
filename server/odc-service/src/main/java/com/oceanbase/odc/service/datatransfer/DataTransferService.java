@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -53,6 +54,7 @@ import org.springframework.core.task.TaskRejectedException;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -227,10 +229,14 @@ public class DataTransferService {
     }
 
     public UploadFileResult getMetaInfo(@NonNull String fileName) throws IOException {
+        return getMetaInfo(fileName, null);
+    }
+
+    public UploadFileResult getMetaInfo(@NonNull String fileName, @Nullable String fileType) throws IOException {
         File uploadFile = fileManager.findByName(TaskType.IMPORT, LocalFileManager.UPLOAD_BUCKET, fileName).orElseThrow(
                 () -> new FileNotFoundException("File not found"));
-        if (!uploadFile.exists() || !uploadFile.isFile()) {
-            throw new IllegalArgumentException("Target is not a file or does not exist, " + fileName);
+        if (!uploadFile.exists()) {
+            throw new IllegalArgumentException("Target does not exist, " + fileName);
         }
 
         // If the file is from third party like PL/SQL, this will convert it compatible with ob-loader.
@@ -238,6 +244,8 @@ public class DataTransferService {
 
         String uploadFileName = uploadFile.getName();
         if (StringUtils.endsWithIgnoreCase(uploadFileName, ".zip")) {
+            Assert.isTrue(StringUtils.isBlank(fileType) || fileType.equalsIgnoreCase("ZIP"),
+                    "File and fileType does not match");
             // 疑似 zip 压缩文件，需要进一步确认是否合法
             try {
                 ExportOutput dumperOutput = new ExportOutput(uploadFile);
@@ -247,10 +255,25 @@ public class DataTransferService {
                 return UploadFileResult.ofFail(ErrorCodes.ImportInvalidFileType, new Object[] {uploadFileName});
             }
         } else if (StringUtils.endsWithIgnoreCase(uploadFileName, ".csv")) {
+            Assert.isTrue(StringUtils.isBlank(fileType) || fileType.equalsIgnoreCase("CSV"),
+                    "File and fileType does not match");
             return UploadFileResult.ofCsv(fileName);
         } else if (StringUtils.endsWithIgnoreCase(uploadFileName, ".sql")
                 || StringUtils.endsWithIgnoreCase(uploadFileName, ".txt")) {
+            Assert.isTrue(StringUtils.isBlank(fileType) || fileType.equalsIgnoreCase("SQL"),
+                    "File and fileType does not match");
             return UploadFileResult.ofSql(fileName);
+        } else if (uploadFile.isDirectory()) {
+            // directory
+            Assert.isTrue(StringUtils.isBlank(fileType) || fileType.equalsIgnoreCase("DIR"),
+                    "File and fileType does not match");
+            try {
+                ExportOutput dumperOutput = new ExportOutput(uploadFile);
+                return UploadFileResult.ofExportOutput(fileName, dumperOutput);
+            } catch (Exception e) {
+                log.warn("Not a valid data directory, file={}", fileName, e);
+                return UploadFileResult.ofFail(ErrorCodes.ImportInvalidFileType, new Object[] {uploadFileName});
+            }
         }
         return UploadFileResult.ofFail(ErrorCodes.ImportInvalidFileType, new Object[] {uploadFileName});
     }
@@ -317,7 +340,7 @@ public class DataTransferService {
                     Record csvHeader = iter.next();
                     for (int i = 0; i < csvHeader.size(); i++) {
                         CsvColumnMapping csvMapping = new CsvColumnMapping();
-                        csvMapping.setSrcColumnName(csvHeader.get(i));
+                        csvMapping.setSrcColumnName(csvHeader.getString(i));
                         csvMapping.setSrcColumnPosition(i);
                         mappingList.add(csvMapping);
                     }
@@ -327,7 +350,7 @@ public class DataTransferService {
                     int size = Math.min(mappingList.size(), firstLine.size());
                     for (int i = 0; i < size; i++) {
                         CsvColumnMapping csvMapping = mappingList.get(i);
-                        csvMapping.setFirstLineValue(truncateValue(firstLine.get(i)));
+                        csvMapping.setFirstLineValue(truncateValue(firstLine.getString(i)));
                     }
                 }
             } else {
@@ -337,7 +360,7 @@ public class DataTransferService {
                         CsvColumnMapping csvMapping = new CsvColumnMapping();
                         csvMapping.setSrcColumnPosition(i);
                         csvMapping.setSrcColumnName("column" + (i + 1));
-                        csvMapping.setFirstLineValue(truncateValue(line.get(i)));
+                        csvMapping.setFirstLineValue(truncateValue(line.getString(i)));
                         mappingList.add(csvMapping);
                     }
                 }
