@@ -72,17 +72,17 @@ public abstract class AbstractDBColumnSyncer<T extends ExtensionPoint> implement
         }
         // 获取最新的表结构信息
         Map<String, Set<String>> latestObject2Columns = getLatestObjectToColumns(extensionPoint, connection, database);
-        // 获取已存在的表结构信息
+        // 从元数据库中获取map：表名2表对象
         Map<String, DBObjectEntity> existingObject2Entity =
                 dbObjectRepository.findByDatabaseIdAndTypeIn(database.getId(), getColumnRelatedObjectTypes()).stream()
                         .collect(Collectors.toMap(DBObjectEntity::getName, e -> e, (e1, e2) -> e1));
         if (CollectionUtils.isEmpty(existingObject2Entity.entrySet())) {
             return;
         }
-        // 获取已存在的表的ID列表
+        // 获取元数据库中已存在的表对象的ID列表
         Set<Long> existingObjectIds =
                 existingObject2Entity.values().stream().map(DBObjectEntity::getId).collect(Collectors.toSet());
-        // 获取已存在的表的列信息
+        // 获取元数据库中已存在的map：列对象ID2列对象
         Map<Long, List<DBColumnEntity>> existingObjectId2ColumnEntities =
                 dbColumnRepository.findByDatabaseIdAndObjectIdIn(database.getId(), existingObjectIds).stream()
                         .collect(Collectors.groupingBy(DBColumnEntity::getObjectId));
@@ -90,15 +90,21 @@ public abstract class AbstractDBColumnSyncer<T extends ExtensionPoint> implement
         // 插入不在已存在列表中的列
         List<DBColumnEntity> toBeInserted = new ArrayList<>();
         List<DBColumnEntity> toBeDeleted = new ArrayList<>();
+        // 遍历现有对象和实体
         for (Entry<String, DBObjectEntity> entry : existingObject2Entity.entrySet()) {
             String objectName = entry.getKey();
             DBObjectEntity objectEntity = entry.getValue();
+            // 获取最新对象的列
             Set<String> latestColumns = latestObject2Columns.getOrDefault(objectName, new HashSet<>());
+            // 获取现有对象的列实体
             List<DBColumnEntity> existingColumns =
-                    existingObjectId2ColumnEntities.getOrDefault(objectEntity.getId(), new ArrayList<>());
+                existingObjectId2ColumnEntities.getOrDefault(objectEntity.getId(), new ArrayList<>());
+            // 获取现有对象的列名
             Set<String> existingColumnNames =
-                    existingColumns.stream().map(DBColumnEntity::getName).collect(Collectors.toSet());
+                existingColumns.stream().map(DBColumnEntity::getName).collect(Collectors.toSet());
+            // 遍历最新对象的列
             for (String latestColumn : latestColumns) {
+                // 如果现有对象中不存在该列，则添加到待插入列表中
                 if (!existingColumnNames.contains(latestColumn)) {
                     DBColumnEntity columnEntity = new DBColumnEntity();
                     columnEntity.setName(latestColumn);
@@ -109,7 +115,9 @@ public abstract class AbstractDBColumnSyncer<T extends ExtensionPoint> implement
                 }
             }
             // 删除不在最新列表中的列
+            // 遍历现有对象的列
             for (DBColumnEntity existingColumn : existingColumns) {
+                // 如果最新对象中不存在该列，则添加到待删除列表中
                 if (!latestColumns.contains(existingColumn.getName())) {
                     toBeDeleted.add(existingColumn);
                 }
