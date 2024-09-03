@@ -38,6 +38,10 @@ import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
+import com.oceanbase.odc.service.notification.Broker;
+import com.oceanbase.odc.service.notification.NotificationProperties;
+import com.oceanbase.odc.service.notification.helper.EventBuilder;
+import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanTaskTraceContextHolder;
@@ -46,7 +50,7 @@ import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreViewResp;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTableConfig;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
 import lombok.extern.slf4j.Slf4j;
@@ -65,6 +69,9 @@ public class PartitionPlanJob implements OdcJob {
     private final DatabaseService databaseService;
     private final FlowInstanceService flowInstanceService;
     private final PartitionPlanScheduleService partitionPlanScheduleService;
+    private final EventBuilder eventBuilder;
+    private final Broker broker;
+    private final NotificationProperties notificationProperties;
 
     public PartitionPlanJob() {
         this.scheduleService = SpringContextUtil.getBean(ScheduleService.class);
@@ -72,6 +79,9 @@ public class PartitionPlanJob implements OdcJob {
         this.flowInstanceService = SpringContextUtil.getBean(FlowInstanceService.class);
         this.partitionPlanScheduleService = SpringContextUtil.getBean(PartitionPlanScheduleService.class);
         this.partitionPlanService = SpringContextUtil.getBean(PartitionPlanService.class);
+        this.eventBuilder = SpringContextUtil.getBean(EventBuilder.class);
+        this.broker = SpringContextUtil.getBean(Broker.class);
+        this.notificationProperties = SpringContextUtil.getBean(NotificationProperties.class);
     }
 
     @Override
@@ -103,8 +113,8 @@ public class PartitionPlanJob implements OdcJob {
                 log.warn("Failed to get any partition plan tables, partitionPlanId={}", partitionPlanId);
                 return;
             }
-            PartitionPlanConfig target = this.partitionPlanScheduleService.getPartitionPlanByFlowInstanceId(
-                    paramemters.getFlowInstanceId());
+            PartitionPlanConfig target = this.partitionPlanScheduleService
+                    .getPartitionPlanByFlowInstanceId(paramemters.getFlowInstanceId());
             if (target == null || !target.isEnabled()) {
                 log.warn("Partition plan is null or disabled, partitionPlanId={}", partitionPlanId);
                 return;
@@ -129,6 +139,15 @@ public class PartitionPlanJob implements OdcJob {
                     paramemters.getTimeoutMillis(), paramemters.getErrorStrategy());
         } catch (Exception e) {
             log.warn("Failed to execute a partition plan task", e);
+            if (this.notificationProperties.isEnabled()) {
+                try {
+                    Event event = this.eventBuilder.ofFailedTask(this.flowInstanceService
+                            .getTaskByFlowInstanceId(paramemters.getFlowInstanceId()));
+                    this.broker.enqueueEvent(event);
+                } catch (Exception ex) {
+                    log.warn("Failed to enqueue event.", ex);
+                }
+            }
         } finally {
             try {
                 if (connectionSession != null) {
@@ -155,7 +174,7 @@ public class PartitionPlanJob implements OdcJob {
         }
         taskParameters.setSqlContent(sqlContent.toString());
         taskParameters.setTimeoutMillis(timeoutMillis);
-        taskParameters.setParentJobType(JobType.PARTITION_PLAN);
+        taskParameters.setParentScheduleType(ScheduleType.PARTITION_PLAN);
         CreateFlowInstanceReq flowInstanceReq = new CreateFlowInstanceReq();
         flowInstanceReq.setParameters(taskParameters);
         flowInstanceReq.setTaskType(TaskType.ASYNC);

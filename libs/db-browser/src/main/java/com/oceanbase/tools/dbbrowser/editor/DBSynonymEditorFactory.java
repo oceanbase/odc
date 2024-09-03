@@ -51,4 +51,9 @@ public class DBSynonymEditorFactory extends AbstractDBBrowserFactory<DBObjectEdi
         throw new UnsupportedOperationException("Not supported yet");
     }
 
+    @Override
+    public DBObjectEditor<DBSynonym> buildForPostgres() {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
 }

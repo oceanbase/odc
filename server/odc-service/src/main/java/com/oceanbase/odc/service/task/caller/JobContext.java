@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.caller;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -27,7 +29,6 @@ import com.oceanbase.odc.service.task.schedule.JobIdentity;
  * @since 4.2.4
  */
 public interface JobContext {
-
     /**
      * get job identity
      */
@@ -39,12 +40,26 @@ public interface JobContext {
     String getJobClass();
 
     /**
-     * get odc server host properties
+     * get job properties. <br>
+     * different from job parameters, job properties is for task-framework, job parameters is for task
+     * executor.
      */
-    List<String> getHostUrls();
+    Map<String, String> getJobProperties();
+
 
     /**
-     * job data
+     * get odc server host properties <br>
+     * deprecated, use getJobProperties instead
+     */
+    @Deprecated
+    default List<String> getHostUrls() {
+        Map<String, String> properties = getJobProperties();
+        return properties == null ? Collections.emptyList()
+                : Arrays.asList(properties.get("odcHostUrls").split(","));
+    }
+
+    /**
+     * get job parameters
      */
     Map<String, String> getJobParameters();
 }

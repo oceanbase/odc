@@ -17,10 +17,10 @@ package com.oceanbase.odc.common.event;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.aop.support.AopUtils;
 import org.springframework.core.ResolvableType;
-import org.springframework.util.ConcurrentReferenceHashMap;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 @SuppressWarnings("all")
 public abstract class AbstractEventPublisher implements EventPublisher {
 
-    private static final Map<Class<?>, ResolvableType> eventTypeCache = new ConcurrentReferenceHashMap<>();
+    private static final Map<Class<?>, ResolvableType> EVENT_TYPE_CACHE = new ConcurrentHashMap<>();
 
     @Override
     public <T extends AbstractEvent> void publishEvent(@NonNull T event) {
@@ -49,6 +49,9 @@ public abstract class AbstractEventPublisher implements EventPublisher {
                 return false;
             }
             ResolvableType resolvableType = resolveDeclaredEventType(listener);
+            if (resolvableType == null) {
+                return false;
+            }
             return resolvableType.isAssignableFrom(event.getClass());
         }).map(listener -> (AbstractEventListener<T>) listener).forEach(listener -> {
             try {
@@ -71,11 +74,9 @@ public abstract class AbstractEventPublisher implements EventPublisher {
     }
 
     static ResolvableType resolveDeclaredEventType(Class<?> listenerType) {
-        ResolvableType eventType = eventTypeCache.get(listenerType);
-        if (eventType == null) {
-            eventType = ResolvableType.forClass(listenerType).as(AbstractEventListener.class).getGeneric();
-            eventTypeCache.put(listenerType, eventType);
-        }
+        ResolvableType eventType = EVENT_TYPE_CACHE.computeIfAbsent(listenerType, t -> {
+            return ResolvableType.forClass(listenerType).as(AbstractEventListener.class).getGeneric();
+        });
         return (eventType != ResolvableType.NONE ? eventType : null);
     }
 

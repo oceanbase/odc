@@ -64,6 +64,11 @@ public class DBObjectOperatorFactory extends AbstractDBBrowserFactory<DBObjectOp
         return buildForOBMySQL();
     }
 
+    @Override
+    public DBObjectOperator buildForPostgres() {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
     private JdbcOperations getJdbcOperations() {
         if (this.jdbcOperations != null) {
             return this.jdbcOperations;

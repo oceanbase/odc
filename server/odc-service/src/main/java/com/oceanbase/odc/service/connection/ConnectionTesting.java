@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.connection;
 
-import java.sql.Connection;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Properties;
@@ -81,6 +80,7 @@ public class ConnectionTesting {
     public ConnectionTestResult test(@NotNull @Valid TestConnectionReq req) {
         PreConditions.notNull(req, "req");
         environmentAdapter.adaptConfig(req);
+
         PreConditions.validArgumentState(Objects.nonNull(req.getPassword()),
                 ErrorCodes.ConnectionPasswordMissed, null, "password required for connection without password saved");
         cloudMetadataClient.checkPermission(OBTenant.of(req.getClusterName(),
@@ -148,6 +148,8 @@ public class ConnectionTesting {
                 schema = OBConsoleDataSourceFactory.getDefaultSchema(config);
             } else if (type.getDialectType().isDoris()) {
                 schema = OBConsoleDataSourceFactory.getDefaultSchema(config);
+            } else if (type.getDialectType().isPostgreSql()) {
+                schema = OBConsoleDataSourceFactory.getDefaultSchema(config);
             } else {
                 throw new UnsupportedOperationException("Unsupported type, " + type);
             }
@@ -201,7 +203,7 @@ public class ConnectionTesting {
     private JdbcUrlProperty getJdbcUrlProperties(ConnectionConfig config, String schema) {
         return new JdbcUrlProperty(config.getHost(), config.getPort(), schema,
                 OBConsoleDataSourceFactory.getJdbcParams(config), config.getSid(),
-                config.getServiceName());
+                config.getServiceName(), config.getCatalogName());
     }
 
     private Properties getTestConnectionProperties(ConnectionConfig config) {
@@ -217,22 +219,28 @@ public class ConnectionTesting {
         } else {
             config.setType(req.getType());
         }
+        config.setDefaultSchema(req.getDefaultSchema());
         config.setHost(req.getHost());
         config.setPort(req.getPort());
         config.setClusterName(req.getClusterName());
         config.setTenantName(req.getTenantName());
         config.setUsername(req.getUsername());
         config.setPassword(req.getPassword());
-        config.setDefaultSchema(req.getDefaultSchema());
         config.setSessionInitScript(req.getSessionInitScript());
         config.setJdbcUrlParameters(req.getJdbcUrlParameters());
         config.setSid(req.getSid());
         config.setServiceName(req.getServiceName());
         config.setUserRole(req.getUserRole());
+        config.setCatalogName(req.getCatalogName());
 
         OBTenantEndpoint endpoint = req.getEndpoint();
         if (Objects.nonNull(endpoint) && OceanBaseAccessMode.IC_PROXY == endpoint.getAccessMode()) {
             config.setEndpoint(endpoint);
+            if (org.apache.commons.lang.StringUtils.isNotBlank(endpoint.getVirtualHost())
+                    && Objects.nonNull(endpoint.getVirtualPort())) {
+                config.setHost(endpoint.getVirtualHost());
+                config.setPort(endpoint.getVirtualPort());
+            }
         }
         if (StringUtils.isNotBlank(req.getOBTenantName())) {
             config.setTenantName(req.getOBTenantName());

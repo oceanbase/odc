@@ -111,7 +111,7 @@ public abstract class BaseTransferJobFactory {
             for (URL url : inputs) {
                 File file = new File(url.toURI());
                 ObjectResult object;
-                if (transferConfig.isCompressed()) {
+                if (transferConfig.isZipOrDir()) {
                     Matcher matcher = DataFile.FILE_PATTERN.matcher(file.getName());
                     if (!matcher.matches()) {
                         continue;

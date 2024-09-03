@@ -40,4 +40,8 @@ public enum TaskStatus {
     public boolean isRetryAllowed() {
         return CANCELED == this || FAILED == this;
     }
+
+    public static List<String> getRetryAllowedStatus() {
+        return Arrays.asList(TaskStatus.FAILED.name(), TaskStatus.CANCELED.name(), TaskStatus.DONE.name());
+    }
 }

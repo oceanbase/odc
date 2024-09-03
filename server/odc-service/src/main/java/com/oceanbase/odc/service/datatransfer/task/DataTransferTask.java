@@ -168,8 +168,8 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
          * move import files
          */
         List<String> importFileNames = config.getImportFileName();
-        if (config.isCompressed()) {
-            ExportOutput exportOutput = copyImportZip(importFileNames, workingDir);
+        if (config.isZipOrDir()) {
+            ExportOutput exportOutput = parseDbObjects(importFileNames, workingDir);
             List<DataTransferObject> objects = new ArrayList<>();
             List<DumpDBObject> dumpDbObjects = exportOutput.getDumpDbObjects();
             List<URL> inputs = new ArrayList<>();
@@ -193,7 +193,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
     }
 
     private void loadManifest() {
-        if (config.getDataTransferFormat() == DataTransferFormat.SQL || !config.isCompressed()) {
+        if (config.getDataTransferFormat() == DataTransferFormat.SQL || !config.isZipOrDir()) {
             return;
         }
         // load csv config from MANIFEST
@@ -351,10 +351,10 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         return inputs;
     }
 
-    private ExportOutput copyImportZip(List<String> fileNames, File destDir) throws IOException {
+    private ExportOutput parseDbObjects(List<String> fileNames, File destDir) throws IOException {
         if (fileNames == null || fileNames.size() != 1) {
-            LOGGER.warn("Single zip file is available, importFileNames={}", fileNames);
-            throw new IllegalArgumentException("Single zip file is available");
+            LOGGER.warn("Single zip file or directory is available, importFileNames={}", fileNames);
+            throw new IllegalArgumentException("Single zip file or directory is available");
         }
         String fileName = fileNames.get(0);
         LocalFileManager fileManager = SpringContextUtil.getBean(LocalFileManager.class);
@@ -362,8 +362,9 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         File from = uploadFile.orElseThrow(() -> new FileNotFoundException("File not found, " + fileName));
         ExportOutput exportOutput = new ExportOutput(from);
         exportOutput.toFolder(destDir);
-        LOGGER.info("Unzip file to working dir, from={}, dest={}", from.getAbsolutePath(), destDir.getAbsolutePath());
-        return new ExportOutput(destDir);
+        LOGGER.info("Extract file to working dir, from={}, dest={}", from.getAbsolutePath(),
+                destDir.getAbsolutePath());
+        return exportOutput;
     }
 
     private void copyExportedFiles(DataTransferTaskResult result, String exportPath) {

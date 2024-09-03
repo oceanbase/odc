@@ -16,6 +16,10 @@
 package com.oceanbase.odc.service.quartz;
 
 import static com.oceanbase.odc.core.alarm.AlarmEventNames.SCHEDULING_FAILED;
+import static com.oceanbase.odc.core.alarm.AlarmEventNames.SCHEDULING_IGNORE;
+
+import java.util.Date;
+import java.util.Optional;
 
 import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
@@ -26,13 +30,15 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.notification.model.Event;
-import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.alarm.ScheduleAlarmUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -48,6 +54,9 @@ public class OdcTriggerListener extends TriggerListenerSupport {
     private ScheduleRepository scheduleRepository;
 
     @Autowired
+    private ScheduleTaskRepository scheduleTaskRepository;
+
+    @Autowired
     private NotificationProperties notificationProperties;
     @Autowired
     private Broker broker;
@@ -61,17 +70,39 @@ public class OdcTriggerListener extends TriggerListenerSupport {
 
     @Override
     public boolean vetoJobExecution(Trigger trigger, JobExecutionContext context) {
-        return SpringContextUtil.getBean(ScheduleService.class)
-                .terminateIfScheduleInvalid(ScheduleTaskUtils.getScheduleId(context));
+        boolean skipExecution = SpringContextUtil.getBean(ScheduleService.class)
+                .vetoJobExecution(Long.parseLong(context.getTrigger().getJobKey().getName()));
+        if (skipExecution) {
+            log.warn("The job will be skipped, job key:" + trigger.getJobKey());
+            ScheduleAlarmUtils.misfire(Long.parseLong(trigger.getJobKey().getName()), new Date());
+        }
+        log.info("The job will be execution,job key:" + trigger.getJobKey());
+        return skipExecution;
     }
 
     @Override
     public void triggerMisfired(Trigger trigger) {
         log.warn("Job is misfired, job key:" + trigger.getJobKey());
-        AlarmUtils.alarm(SCHEDULING_FAILED, "Job is misfired, job key:" + trigger.getJobKey());
+        try {
+            Optional<ScheduleTaskEntity> latestTaskEntity =
+                    scheduleTaskRepository.getLatestScheduleTaskByJobNameAndJobGroup(trigger.getJobKey().getName(),
+                            trigger.getJobKey().getGroup());
+            if (!latestTaskEntity.isPresent() || latestTaskEntity.get().getStatus().isTerminated()) {
+                log.warn("Previous task is terminated,this misfire is unexpected,jobKey={}", trigger.getJobKey());
+                AlarmUtils.alarm(SCHEDULING_FAILED, "Job is misfired, job key:" + trigger.getJobKey());
+            } else {
+                AlarmUtils.alarm(SCHEDULING_IGNORE,
+                        "The Job has reached its trigger time, but the previous task has not yet finished. This scheduling will be ignored, job key:"
+                                + trigger.getJobKey());
+            }
+        } catch (Exception e) {
+            log.warn("Get previous task status failed,jobKey={}", trigger.getJobKey());
+            AlarmUtils.alarm(SCHEDULING_FAILED, "Job is misfired, job key:" + trigger.getJobKey());
+        }
         if (!notificationProperties.isEnabled()) {
             return;
         }
+        ScheduleAlarmUtils.misfire(Long.parseLong(trigger.getJobKey().getName()), new Date());
         try {
             JobKey jobKey = trigger.getJobKey();
             scheduleRepository.findById(Long.parseLong(jobKey.getName()))

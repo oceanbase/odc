@@ -49,6 +49,8 @@ import com.oceanbase.odc.plugin.task.obmysql.datatransfer.util.PluginUtil;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.BaseParameter;
 import com.oceanbase.tools.loaddump.common.model.SessionConfig;
+import com.oceanbase.tools.loaddump.common.model.storage.StorageConfig;
+import com.oceanbase.tools.loaddump.compress.CompressorFactory;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -72,7 +74,6 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
         parameter.setLogPath(logDir.getPath());
         setSessionInfo(parameter);
         setInitSqls(parameter);
-        setFileConfig(parameter, workingDir);
         parameter.setThreads(3);
         if (transferConfig.getDataTransferFormat() != DataTransferFormat.SQL) {
             setCsvInfo(parameter);
@@ -144,7 +145,9 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
 
         sessionConfig.setJdbcOption("useServerPrepStmts", transferConfig.isUsePrepStmts() + "");
         sessionConfig.setJdbcOption("useCursorFetch", transferConfig.isUsePrepStmts() + "");
-        sessionConfig.setJdbcOption("sendConnectionAttributes", "false");
+
+        sessionConfig.setJdbcOption("sendConnectionAttributes", "true");
+        sessionConfig.setJdbcOption("defaultConnectionAttributesBanList", "__client_ip");
         Optional.ofNullable(transferConfig.getExecutionTimeoutSeconds())
                 .ifPresent(timeout -> {
                     sessionConfig.setJdbcOption("socketTimeout", timeout * 1000 + "");
@@ -206,8 +209,14 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
         parameter.setNullString("null");
     }
 
-    private void setFileConfig(T parameter, File workingDir) {
-        parameter.setFilePath(workingDir.getAbsolutePath());
+    void setFileConfig(T parameter, File workingDir) {
+        String filePath = workingDir.getAbsolutePath();
+        parameter.setFilePath(filePath);
+        StorageConfig storageConfig = StorageConfig.create(workingDir.toURI().getRawPath());
+        storageConfig.withCompress(
+                CompressorFactory.getCompressor(parameter.getCompressAlgo(), parameter.getCompressLevel()));
+        parameter.setStorageConfig(storageConfig);
+        parameter.setTmpPath(filePath);
         parameter.setFileEncoding(transferConfig.getEncoding().getAlias());
     }
 

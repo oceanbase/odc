@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.oceanbase</groupId>
+        <artifactId>odc-parent</artifactId>
+        <version>4.3.2-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+    <packaging>pom</packaging>
+    <artifactId>module-parent</artifactId>
+    <properties>
+        <maven-assembly-plugin.version>2.4</maven-assembly-plugin.version>
+        <log4j.version>2.18.0</log4j.version>
+        <assembly-xml.path>src/main/assembly/assembly.xml</assembly-xml.path>
+    </properties>
+    <modules>
+        <module>sample-module</module>
+    </modules>
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>${maven-assembly-plugin.version}</version>
+                    <configuration>
+                        <descriptors>
+                            <descriptor>${project.basedir}/${assembly-xml.path}</descriptor>
+                        </descriptors>
+                        <appendAssemblyId>false</appendAssemblyId>
+                        <finalName>${project.artifactId}-${project.version}</finalName>
+                        <outputDirectory>${project.parent.parent.basedir}/distribution/modules</outputDirectory>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>make-assembly</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>single</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>

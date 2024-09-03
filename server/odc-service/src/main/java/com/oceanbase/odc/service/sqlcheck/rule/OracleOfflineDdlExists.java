@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.core.sql.parser.DropStatement;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
@@ -34,6 +33,7 @@ import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
+import com.oceanbase.tools.sqlparser.statement.droptable.DropTable;
 import com.oceanbase.tools.sqlparser.statement.truncate.TruncateTable;
 
 import lombok.NonNull;
@@ -76,12 +76,9 @@ public class OracleOfflineDdlExists extends MySQLOfflineDdlExists {
         } else if (statement instanceof TruncateTable) {
             return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
                     statement, getType(), new Object[] {"TRUNCATE TABLE"}));
-        } else if (statement instanceof DropStatement) {
-            DropStatement dropStatement = (DropStatement) statement;
-            if ("TABLE".equals(dropStatement.getObjectType())) {
-                return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
-                        statement, getType(), new Object[] {"DROP TABLE"}));
-            }
+        } else if (statement instanceof DropTable) {
+            return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
+                    statement, getType(), new Object[] {"DROP TABLE"}));
         }
         return Collections.emptyList();
     }

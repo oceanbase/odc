@@ -20,7 +20,7 @@ spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     driver-class-name: com.oceanbase.jdbc.Driver
-    url: jdbc:oceanbase://${ODC_DATABASE_HOST}:${ODC_DATABASE_PORT}/${ODC_DATABASE_NAME}?allowMultiQueries=true&zeroDateTimeBehavior=convertToNull
+    url: jdbc:oceanbase://${ODC_DATABASE_HOST}:${ODC_DATABASE_PORT}/${ODC_DATABASE_NAME}?allowMultiQueries=true&zeroDateTimeBehavior=convertToNull&useCompatibleMetadata=true
     username: ${ODC_DATABASE_USERNAME}
     password: ${ODC_DATABASE_PASSWORD}
     druid:
@@ -56,8 +56,9 @@ server:
     encoding:
       charset: UTF-8
   tomcat:
-    max-threads: 500
-    min-spare-threads: 18
+    threads:
+      max: 500
+      min-spare: 18
     keep-alive-timeout: 70000
 swagger:
   enabled: false

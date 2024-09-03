@@ -66,7 +66,43 @@ public class Oauth2Parameter implements SSOParameter {
     private String userNameAttribute;
     private String loginRedirectUrl;
 
+    /**
+     * {@link Oauth2Parameter}
+     * 
+     * @see com.oceanbase.odc.service.integration.oauth2.Oauth2StateManager put redirect paramters into
+     *      Oauth2StateManager's cache, default value false to adaptive history data
+     */
+    private Boolean useStateParams = true;
+
     public Oauth2Parameter() {}
+
+    @SneakyThrows
+    private static String getRedirectHost(String redirectUrl) {
+        URL url = new URL(redirectUrl);
+        StringBuilder host = new StringBuilder();
+        host.append(url.getProtocol()).append("://").append(url.getHost());
+        int port = url.getPort();
+        if (port <= 0) {
+            return host.toString();
+        }
+        if ("http".equals(url.getProtocol()) && port != 80 ||
+                "https".equals(url.getProtocol()) && port != 443) {
+            host.append(":").append(url.getPort());
+        }
+        return host.toString();
+    }
+
+    private static Builder getBuilder(Builder builder, Provider provider) {
+        PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
+        map.from(provider::getAuthorizationUri).to(builder::authorizationUri);
+        map.from(provider::getTokenUri).to(builder::tokenUri);
+        map.from(provider::getUserInfoUri).to(builder::userInfoUri);
+        map.from(provider::getUserInfoAuthenticationMethod).as(AuthenticationMethod::new)
+                .to(builder::userInfoAuthenticationMethod);
+        map.from(provider::getJwkSetUri).to(builder::jwkSetUri);
+        map.from(provider::getUserNameAttribute).to(builder::userNameAttributeName);
+        return builder;
+    }
 
     public void fillParameter() {
         if (loginRedirectUrl == null) {
@@ -99,23 +135,6 @@ public class Oauth2Parameter implements SSOParameter {
         return provider;
     }
 
-    @SneakyThrows
-    private static String getRedirectHost(String redirectUrl) {
-        URL url = new URL(redirectUrl);
-        StringBuilder host = new StringBuilder();
-        host.append(url.getProtocol()).append("://").append(url.getHost());
-        int port = url.getPort();
-        if (port <= 0) {
-            return host.toString();
-        }
-        if ("http".equals(url.getProtocol()) && port != 80 ||
-                "https".equals(url.getProtocol()) && port != 443) {
-            host.append(":").append(url.getPort());
-        }
-        return host.toString();
-    }
-
-
     protected ClientRegistration toClientRegistration(String issueUrl) {
         Builder builder = getBuilderFromIssuerIfPossible(toProvider(issueUrl));
         if (builder == null) {
@@ -142,17 +161,5 @@ public class Oauth2Parameter implements SSOParameter {
             return getBuilder(builder, provider);
         }
         return null;
-    }
-
-    private static Builder getBuilder(Builder builder, Provider provider) {
-        PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
-        map.from(provider::getAuthorizationUri).to(builder::authorizationUri);
-        map.from(provider::getTokenUri).to(builder::tokenUri);
-        map.from(provider::getUserInfoUri).to(builder::userInfoUri);
-        map.from(provider::getUserInfoAuthenticationMethod).as(AuthenticationMethod::new)
-                .to(builder::userInfoAuthenticationMethod);
-        map.from(provider::getJwkSetUri).to(builder::jwkSetUri);
-        map.from(provider::getUserNameAttribute).to(builder::userNameAttributeName);
-        return builder;
     }
 }

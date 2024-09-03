@@ -109,7 +109,7 @@ public class AbstractSyntaxTreeTest {
         AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(DialectType.OB_MYSQL, 0);
         AbstractSyntaxTree ast = factory.buildAst("create table abcd (id varchar(64))");
         Statement actual = ast.getStatement();
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(new RelationFactor("abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));

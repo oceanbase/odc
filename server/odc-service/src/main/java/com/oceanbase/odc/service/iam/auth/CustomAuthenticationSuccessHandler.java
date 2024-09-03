@@ -157,7 +157,8 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
             return;
         }
         // if contains odc_back_url, redirect to it
-        String odcBackUrl = httpServletRequest.getParameter(OdcConstants.ODC_BACK_URL_PARAM);
+        String odcBackUrl = WebRequestUtils.getStringValueFromParameterOrAttribute(httpServletRequest,
+                OdcConstants.ODC_BACK_URL_PARAM);
         if (WebRequestUtils.isRedirectUrlValid(httpServletRequest, odcBackUrl)) {
             getRedirectStrategy().sendRedirect(httpServletRequest, httpServletResponse, odcBackUrl);
             return;

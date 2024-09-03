@@ -34,10 +34,13 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.objectstorage.cloud.client.AlibabaCloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.client.AmazonCloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.client.CloudClient;
@@ -46,7 +49,6 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfiguration
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageProperties;
 import com.oceanbase.odc.service.objectstorage.cloud.model.DefaultCloudEnvConfigurations;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
-import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration.CloudProvider;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -85,19 +87,21 @@ public class CloudResourceConfigurations {
             return generateCloudClient(objectStorageConfiguration, () -> getInternalOss(objectStorageConfiguration));
         }
 
-        public CloudClient generateCloudClient(ObjectStorageConfiguration objectStorageConfiguration,
-                Supplier<OSS> ossSupplier) {
-            CloudProvider cloudProvider = objectStorageConfiguration.getCloudProvider();
-            log.info("recreate cloud client, ak=" + objectStorageConfiguration.getAccessKeyId());
+        public CloudClient generateCloudClient(ObjectStorageConfiguration configuration, Supplier<OSS> ossSupplier) {
+            CloudProvider cloudProvider = configuration.getCloudProvider();
+            log.info("generate cloud client, cloudProvider={}, region={}, ak={}",
+                    cloudProvider, configuration.getRegion(), configuration.getAccessKeyId());
             switch (cloudProvider) {
                 case ALIBABA_CLOUD:
                     try {
-                        return createAlibabaCloudClient(objectStorageConfiguration, ossSupplier.get());
+                        return createAlibabaCloudClient(configuration, ossSupplier.get());
                     } catch (ClientException e) {
                         throw new RuntimeException("Create Alibaba Cloud Client failed", e);
                     }
                 case AWS:
-                    return createAmazonCloudClient(objectStorageConfiguration);
+                case TENCENT_CLOUD:
+                case HUAWEI_CLOUD:
+                    return createAmazonCloudClient(configuration);
                 default:
                     return new NullCloudClient();
             }
@@ -127,12 +131,25 @@ public class CloudResourceConfigurations {
         AWSStaticCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(
                 new BasicAWSCredentials(accessKeyId, accessKeySecret));
         ClientConfiguration clientConfiguration = new ClientConfiguration().withProtocol(Protocol.HTTPS);
-        AmazonS3 s3 = AmazonS3ClientBuilder.standard()
+
+        AmazonS3ClientBuilder s3Builder = AmazonS3ClientBuilder.standard()
                 .withCredentials(credentialsProvider)
-                .withRegion(region)
                 .withClientConfiguration(clientConfiguration)
-                .disableChunkedEncoding()
-                .build();
+                .disableChunkedEncoding();
+        // if not AWS, means use S3 SDK to access other cloud storage, then we must set endpoint
+        if (!configuration.getCloudProvider().isAWS()) {
+            String endpoint = configuration.getPublicEndpoint();
+            PreConditions.notBlank(endpoint, "endpoint");
+            s3Builder.withEndpointConfiguration(new EndpointConfiguration(endpoint, region));
+            log.info("use S3 sdk for non-s3, cloudProvider={}, endpoint={}, region={}",
+                    configuration.getCloudProvider(), endpoint, region);
+        } else {
+            PreConditions.notBlank(region, "region");
+            s3Builder.withRegion(configuration.getRegion());
+        }
+        AmazonS3 s3 = s3Builder.build();
+
+        // TODO: set sts endpoint for other cloud provider
         AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.standard()
                 .withCredentials(credentialsProvider)
                 .withRegion(region)

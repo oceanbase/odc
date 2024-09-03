@@ -25,6 +25,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 import com.oceanbase.odc.common.jpa.SpecificationUtil;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 
 /**
@@ -81,4 +82,19 @@ public class DatabaseSpecs {
         return SpecificationUtil.columnIn(DatabaseEntity_.TYPE, types);
     }
 
+    public static Specification<DatabaseEntity> connectTypeIn(List<ConnectType> connectTypes) {
+        return SpecificationUtil.columnIn(DatabaseEntity_.CONNECT_TYPE, connectTypes);
+    }
+
+    public static Specification<DatabaseEntity> projectIdNotNull(Boolean projectNotNull) {
+        return (root, query, builder) -> {
+            if (Objects.isNull(projectNotNull)) {
+                return builder.conjunction();
+            } else if (projectNotNull) {
+                return builder.isNotNull(root.get("projectId"));
+            } else {
+                return builder.isNull(root.get("projectId"));
+            }
+        };
+    }
 }

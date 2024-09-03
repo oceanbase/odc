@@ -41,6 +41,7 @@ function usage() {
     echo "- ODC_JAR_FILE: odc jar file identify, '${install_directory}/lib/odc-server-*.jar' as default"
     echo "- ODC_PLUGIN_DIR: odc plugin dir identify, '${install_directory}/plugins' as default"
     echo "- ODC_STARTER_DIR: odc starter dir identify, '${install_directory}/starters' as default"
+    echo "- ODC_MODULE_DIR: odc module dir identify, '${install_directory}/modules' as default"
     echo "- ODC_WORK_DIR: odc work directory, '${current_work_directory}' as default"
     echo "- ODC_JVM_HEAP_OPTIONS: JVM heap options, e.g. -Xmx4096m -Xms4096m..., '${default_heap_options}' as default"
     echo "- ODC_JVM_GC_OPTIONS: JVM gc options, e.g. -XX:+UseG1GC -XX:+PrintGCDetails..."
@@ -88,6 +89,7 @@ function init_parameters() {
     obclient_work_directory="${OBCLIENT_WORK_DIR:-${install_directory}/data}"
     plugin_directory="${ODC_PLUGIN_DIR:-${install_directory}/plugins}"
     starter_directory="${ODC_STARTER_DIR:-${install_directory}/starters}"
+    module_directory="${ODC_MODULE_DIR:-${install_directory}/modules}"
     obclient_file_path="${OBCLIENT_FILE_PATH:-${install_directory}/obclient/bin/obclient}"
     if [ ! -z "${ODC_HOST}" ]; then
         log_info "ODC_HOST given, will set LOCAL_IP by ODC_HOST, ODC_HOST=${ODC_HOST}"

@@ -75,6 +75,7 @@ The directory structure of this repository is described below.
 │   ├──  starters           Start-up configurations for different distribution versions
 │   │   ├── desktop-starter Desktop version start-up configuration
 │   │   └── web-starter     Web version start-up configuration
+│   ├── modules             Runtime pluggable modules
 │   └── test-script         Common test scripts used for executing and analyzing test cases.
 ```
 

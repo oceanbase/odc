@@ -132,6 +132,7 @@ public class NativeK8sJobClient implements K8sJobClient {
         response.setName(arn);
         response.setRegion(k8sProperties.getRegion());
         response.setResourceStatus(v1Pod.getStatus().getPhase());
+        response.setPodIpAddress(v1Pod.getStatus().getPodIP());
         return Optional.of(response);
     }
 

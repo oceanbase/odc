@@ -15,10 +15,10 @@
              如果每个类的 log 对象都基于当前类生成，%logger 可作为 %class 的替代。
         -->
         <Property name="LOG_PATTERN">
-            [%date{yyyy-MM-dd HH:mm:ss.SSS}][%thread][%X{traceId},%X{spanId},%X{requestId}][%X{taskId}][%level][%class][%line]: %message%n
+            [%date{yyyy-MM-dd HH:mm:ss.SSS z}][%thread][%X{traceId},%X{spanId},%X{requestId}][%X{taskId}][%level][%class][%line]: %message%n
         </Property>
         <Property name="TASK_LOG_PATTERN">
-            [%d{yyyy-MM-dd HH:mm:ss}] [%X{taskId}] [%p] %m%n
+            [%d{yyyy-MM-dd HH:mm:ss z}] [%X{taskId}] [%p] %m%n
         </Property>
     </Properties>
 
@@ -34,6 +34,7 @@
                      filePattern="${LOG_DIRECTORY}/${ctx:taskId}/executor-%d{yyyy-MM-dd}-%i.log">
             <PatternLayout pattern="${LOG_PATTERN}"/>
             <Policies>
+                <OnStartupTriggeringPolicy/>
                 <SizeBasedTriggeringPolicy size="100MB"/>
             </Policies>
             <DefaultRolloverStrategy max="20">
@@ -52,13 +53,14 @@
                                  fileName="${LOG_DIRECTORY}/${ctx:taskId}/task-log.all"
                                  filePattern="${LOG_DIRECTORY}/${ctx:taskId}/${date:yyyy-MM}/task-log-%d{yyyy-MM-dd}-%i.all.gz">
                         <PatternLayout>
-                            <pattern>[%d{yyyy-MM-dd HH:mm:ss}] [%X{taskId}] [%p] %m%n</pattern>
+                            <pattern>[%d{yyyy-MM-dd HH:mm:ss z}] [%X{taskId}] [%p] %m%n</pattern>
                         </PatternLayout>
                         <Filters>
                             <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
                             <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
                         </Filters>
                         <Policies>
+                            <OnStartupTriggeringPolicy/>
                             <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
                             <SizeBasedTriggeringPolicy size="10 MB"/>
                         </Policies>
@@ -74,13 +76,14 @@
                                  fileName="${LOG_DIRECTORY}/${ctx:taskId}/task-log.warn"
                                  filePattern="${LOG_DIRECTORY}/${ctx:taskId}/${date:yyyy-MM}/task-log-%d{yyyy-MM-dd}-%i.warn.gz">
                         <PatternLayout>
-                            <pattern>[%d{yyyy-MM-dd HH:mm:ss}] [%X{taskId}] [%p] %m%n</pattern>
+                            <pattern>[%d{yyyy-MM-dd HH:mm:ss z}] [%X{taskId}] [%p] %m%n</pattern>
                         </PatternLayout>
                         <Filters>
                             <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
                             <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
                         </Filters>
                         <Policies>
+                            <OnStartupTriggeringPolicy/>
                             <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
                             <SizeBasedTriggeringPolicy size="10 MB"/>
                         </Policies>

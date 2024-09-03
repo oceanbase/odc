@@ -26,7 +26,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
-import com.oceanbase.odc.service.task.executor.server.HeartRequest;
+import com.oceanbase.odc.service.task.executor.server.HeartbeatRequest;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
 import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnReq;
 import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnResp;
@@ -61,10 +61,10 @@ public class TaskController {
         return Responses.success("ok");
     }
 
-    @ApiOperation(value = "heart", notes = "update heart request")
-    @RequestMapping(value = "/heart", method = RequestMethod.POST)
-    public SuccessResponse<String> heart(@RequestBody HeartRequest heart) {
-        taskFrameworkService.handleHeart(heart);
+    @ApiOperation(value = "heartbeat", notes = "update heartbeat request")
+    @RequestMapping(value = {"/heartbeat", "/heart"}, method = RequestMethod.POST)
+    public SuccessResponse<String> heartbeat(@RequestBody HeartbeatRequest heartbeat) {
+        taskFrameworkService.handleHeart(heartbeat);
         return Responses.success("ok");
     }
 

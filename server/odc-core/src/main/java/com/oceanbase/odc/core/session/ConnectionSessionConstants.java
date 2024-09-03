@@ -92,6 +92,12 @@ public class ConnectionSessionConstants {
      * attributes, this is the key
      */
     public static final String BINARY_FILE_MANAGER_KEY = "BINARY_FILE_MANAGER";
+
+    /**
+     * Flag if it is a logical database session
+     */
+    public static final String IS_LOGICAL_SESSION = "IS_LOGICAL_SESSION";
+
     /**
      * Working dir name for {@link BinaryDataManager}
      */

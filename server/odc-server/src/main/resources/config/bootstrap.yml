@@ -11,7 +11,7 @@ spring:
     #for avoid DruidDataSource ERROR 'testWhileIdle is true, validationQuery not set'
     type: com.zaxxer.hikari.HikariDataSource
     driver-class-name: com.oceanbase.jdbc.Driver
-    url: jdbc:oceanbase://${ODC_DATABASE_HOST}:${ODC_DATABASE_PORT}/${ODC_DATABASE_NAME}?allowMultiQueries=true&zeroDateTimeBehavior=convertToNull
+    url: jdbc:oceanbase://${ODC_DATABASE_HOST}:${ODC_DATABASE_PORT}/${ODC_DATABASE_NAME}?allowMultiQueries=true&zeroDateTimeBehavior=convertToNull&useCompatibleMetadata=true
     username: ${ODC_DATABASE_USERNAME}
     password: ${ODC_DATABASE_PASSWORD}
 

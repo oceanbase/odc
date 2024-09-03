@@ -56,6 +56,7 @@ public final class AlarmEventNames {
      */
 
     public static final String SCHEDULING_FAILED = "SCHEDULING_FAILED";
+    public static final String SCHEDULING_IGNORE = "SCHEDULING_IGNORE";
 
     /**
      * TASK
@@ -65,4 +66,5 @@ public final class AlarmEventNames {
     public static final String TASK_START_FAILED = "TASK_START_FAILED";
     public static final String TASK_EXECUTION_FAILED = "TASK_EXECUTION_FAILED";
     public static final String TASK_EXECUTOR_DESTROY_FAILED = "TASK_EXECUTOR_DESTROY_FAILED";
+
 }

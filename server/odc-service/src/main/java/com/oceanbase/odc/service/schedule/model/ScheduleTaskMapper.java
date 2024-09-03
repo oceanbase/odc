@@ -16,9 +16,17 @@
 package com.oceanbase.odc.service.schedule.model;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
+import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
+import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
+import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
+import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 
 /**
  * @Author：tinker
@@ -31,7 +39,28 @@ public interface ScheduleTaskMapper {
 
     ScheduleTaskMapper INSTANCE = Mappers.getMapper(ScheduleTaskMapper.class);
 
-    ScheduleTaskResp entityToModel(ScheduleTaskEntity entity);
+    @Mapping(target = "parameters", source = "entity", qualifiedByName = "entityToParameters")
+    ScheduleTask entityToModel(ScheduleTaskEntity entity);
 
-    ScheduleTaskEntity modelToEntity(ScheduleTaskResp model);
+    ScheduleTaskEntity modelToEntity(ScheduleTask model);
+
+    @Named("entityToParameters")
+    default ScheduleTaskParameters entityToParameters(ScheduleTaskEntity entity) {
+        switch (ScheduleTaskType.valueOf(entity.getJobGroup())) {
+            case DATA_ARCHIVE:
+                return JsonUtils.fromJson(entity.getParametersJson(), DataArchiveParameters.class);
+            case DATA_DELETE:
+                return JsonUtils.fromJson(entity.getParametersJson(), DataDeleteParameters.class);
+            case DATA_ARCHIVE_DELETE:
+                return JsonUtils.fromJson(entity.getParametersJson(), DataArchiveClearParameters.class);
+            case DATA_ARCHIVE_ROLLBACK:
+                return JsonUtils.fromJson(entity.getParametersJson(), DataArchiveRollbackParameters.class);
+            case ONLINE_SCHEMA_CHANGE_COMPLETE:
+                return JsonUtils.fromJson(entity.getParametersJson(), OnlineSchemaChangeParameters.class);
+            case SQL_PLAN:
+                return JsonUtils.fromJson(entity.getParametersJson(), SqlPlanParameters.class);
+            default:
+                throw new UnsupportedException();
+        }
+    }
 }

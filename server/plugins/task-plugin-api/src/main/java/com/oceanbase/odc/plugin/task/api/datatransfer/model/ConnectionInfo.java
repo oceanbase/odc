@@ -80,6 +80,8 @@ public class ConnectionInfo {
 
     private String userRole;
 
+    private String catalogName;
+
     private Map<String, Object> jdbcUrlParameters;
 
     private List<String> sessionInitScripts;

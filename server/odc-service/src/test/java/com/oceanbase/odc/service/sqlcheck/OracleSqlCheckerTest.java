@@ -1009,7 +1009,9 @@ public class OracleSqlCheckerTest {
                 "drop procedure abcd",
                 "drop function abcd",
                 "alter table ansdnd drop primary key, drop column asbdasd.asdas",
-                "alter table asdasda drop partition asda,asdasd"
+                "alter table asdasda drop partition asda,asdasd",
+                "drop table any_table",
+                "drop index any_index",
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
                 null, Collections.singletonList(new RestrictDropObjectTypes(
@@ -1023,8 +1025,13 @@ public class OracleSqlCheckerTest {
                 new Object[] {"CONSTRAINT", "partition,procedure"});
         CheckViolation c3 = new CheckViolation(sqls[3], 1, 37, 37, 61, type,
                 new Object[] {"COLUMN", "partition,procedure"});
+        CheckViolation c4 = new CheckViolation(sqls[5], 1, 0, 0, 19, type,
+                new Object[] {"TABLE", "partition,procedure"});
+        CheckViolation c5 = new CheckViolation(sqls[6], 1, 0, 0, 19, type,
+                new Object[] {"INDEX", "partition,procedure"});
 
-        Assert.assertEquals(Arrays.asList(c1, c2, c3), actual);
+        List<CheckViolation> expected = Arrays.asList(c1, c2, c3, c4, c5);
+        Assert.assertEquals(expected, actual);
     }
 
     @Test

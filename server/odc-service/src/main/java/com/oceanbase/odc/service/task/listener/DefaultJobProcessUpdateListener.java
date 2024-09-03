@@ -24,12 +24,11 @@ import org.springframework.web.util.UriComponents;
 
 import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.util.UrlUtils;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
+import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
@@ -48,8 +47,6 @@ import lombok.extern.slf4j.Slf4j;
 public class DefaultJobProcessUpdateListener extends AbstractEventListener<DefaultJobProcessUpdateEvent> {
 
     @Autowired
-    private ScheduleTaskRepository taskRepository;
-    @Autowired
     private ScheduleTaskService scheduleTaskService;
     @Autowired
     private TaskService taskService;
@@ -62,7 +59,7 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
         JobIdentity identity = taskResult.getJobIdentity();
         JobEntity jobEntity = stdTaskFrameworkService.find(identity.getId());
 
-        Optional<ScheduleTaskEntity> scheduleTaskEntityOptional = scheduleTaskService.findByJobId(jobEntity.getId());
+        Optional<ScheduleTask> scheduleTaskEntityOptional = scheduleTaskService.findByJobId(jobEntity.getId());
         if (scheduleTaskEntityOptional.isPresent()) {
             updateScheduleTask(taskResult, scheduleTaskEntityOptional.get());
             return;
@@ -71,7 +68,7 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
         taskEntityOptional.ifPresent(taskEntity -> updateTask(taskResult, taskEntity));
     }
 
-    private void updateScheduleTask(TaskResult taskResult, ScheduleTaskEntity taskEntity) {
+    private void updateScheduleTask(TaskResult taskResult, ScheduleTask taskEntity) {
         taskEntity.setProgressPercentage(taskResult.getProgress());
         taskEntity.setStatus(taskResult.getStatus().convertTaskStatus());
         taskEntity.setResultJson(taskResult.getResultJson());
@@ -82,7 +79,7 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
             executorInfo.setPort(uc.getPort());
             taskEntity.setExecutor(JsonUtils.toJson(executorInfo));
         }
-        taskRepository.update(taskEntity);
+        scheduleTaskService.updateStatusById(taskEntity.getId(), taskEntity.getStatus());
         log.debug("Update scheduleTask successfully, scheduleTaskId={}.", taskEntity.getId());
     }
 

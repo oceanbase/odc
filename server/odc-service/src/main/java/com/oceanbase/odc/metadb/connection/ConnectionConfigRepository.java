@@ -47,9 +47,16 @@ public interface ConnectionConfigRepository
 
     List<ConnectionEntity> findByOrganizationId(Long organizationId);
 
+    List<ConnectionEntity> findByOrganizationIdOrderByNameAsc(Long organizationId);
+
     List<ConnectionEntity> findByOrganizationIdIn(Collection<Long> organizationIds);
 
     List<ConnectionEntity> findByProjectId(Long projectId);
+
+    List<ConnectionEntity> findByOrganizationIdAndClusterName(Long organizationId, String clusterName);
+
+    List<ConnectionEntity> findByOrganizationIdAndTenantName(Long organizationId, String tenantName);
+
 
     @Transactional
     @Query(value = "select distinct(c_c.*) from `connect_connection` as c_c inner join `connect_database` as c_d "

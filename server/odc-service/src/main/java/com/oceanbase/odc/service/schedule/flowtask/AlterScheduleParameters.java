@@ -26,7 +26,9 @@ import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
-import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.OperationType;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 
 import lombok.Data;
@@ -43,7 +45,7 @@ public class AlterScheduleParameters implements Serializable, TaskParameters {
 
     private Long taskId;
 
-    private JobType type;
+    private ScheduleType type;
 
     private OperationType operationType;
 
@@ -53,7 +55,7 @@ public class AlterScheduleParameters implements Serializable, TaskParameters {
             @JsonSubTypes.Type(value = DataArchiveParameters.class, name = "DATA_ARCHIVE"),
             @JsonSubTypes.Type(value = DataDeleteParameters.class, name = "DATA_DELETE")
     })
-    private TaskParameters scheduleTaskParameters;
+    private ScheduleTaskParameters scheduleTaskParameters;
 
     private TriggerConfig triggerConfig;
 
