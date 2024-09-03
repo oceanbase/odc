@@ -34,15 +34,15 @@ import com.oceanbase.odc.service.session.model.SqlExecuteResult;
  * @Date: 2024/9/2 18:27
  * @Description: []
  */
-public final class MySQLExecutionGroup extends ExecutionGroup<SqlExecuteReq, SqlExecuteResult> {
+public final class MySQLExecutionGroup extends ExecutionGroup<SqlExecuteReq, SqlExecutionResultWrapper> {
 
-    public MySQLExecutionGroup(List<ExecutionUnit<SqlExecuteReq, SqlExecuteResult>> executionUnits) {
+    public MySQLExecutionGroup(List<ExecutionUnit<SqlExecuteReq, SqlExecutionResultWrapper>> executionUnits) {
         super(executionUnits);
     }
 
     @Override
-    protected List<ExecutionSubGroup<SqlExecuteReq, SqlExecuteResult>> listSubGroups(
-            List<ExecutionUnit<SqlExecuteReq, SqlExecuteResult>> executionUnits) {
+    protected List<ExecutionSubGroup<SqlExecuteReq, SqlExecutionResultWrapper>> listSubGroups(
+            List<ExecutionUnit<SqlExecuteReq, SqlExecutionResultWrapper>> executionUnits) {
         if (CollectionUtils.isEmpty(executionUnits)) {
             return Collections.emptyList();
         }

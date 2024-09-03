@@ -14,29 +14,27 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql;
+package com.oceanbase.odc.service.connection.logicaldatabase.core.model;
 
-import com.oceanbase.odc.core.shared.constant.ConnectType;
-import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import javax.persistence.Column;
 
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
+import com.oceanbase.odc.service.session.model.SqlExecuteResult;
+
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
  * @Author: Lebie
- * @Date: 2024/9/2 18:45
+ * @Date: 2024/9/3 19:46
  * @Description: []
  */
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class SqlExecuteReq {
+public class LogicalDBChangeExecutionUnit {
+    private Long id;
+    private String executionId;
     private String sql;
-    private long timeoutMillis;
-    private DialectType dialectType;
-    private ConnectionConfig connectionConfig;
     private Long logicalDatabaseId;
     private Long physicalDatabaseId;
+    private SqlExecuteResult executionResult;
 }

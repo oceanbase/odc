@@ -51,6 +51,7 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.My
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.OBExecutionGroup;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecuteReq;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionCallback;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionResultWrapper;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.LogicalTableExpressionParseUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.RelationFactorRewriter;
@@ -84,11 +85,11 @@ import lombok.extern.slf4j.Slf4j;
  * @Description: []
  */
 @Slf4j
-public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionResult<SqlExecuteResult>>> {
+public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionResult<SqlExecutionResultWrapper>>> {
     private SqlRewriter sqlRewriter;
-    private ExecutionGroupContext<SqlExecuteReq, SqlExecuteResult> executionGroupContext;
+    private ExecutionGroupContext<SqlExecuteReq, SqlExecutionResultWrapper> executionGroupContext;
     private PublishLogicalDatabaseChangeReq taskParameters;
-    private List<ExecutionGroup<SqlExecuteReq, SqlExecuteResult>> executionGroups;
+    private List<ExecutionGroup<SqlExecuteReq, SqlExecutionResultWrapper>> executionGroups;
     private List<ConnectionSession> connectionSessions = new ArrayList<>();
     private ExecutorEngine executorEngine;
 
@@ -96,7 +97,7 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
     protected void doInit(JobContext context) throws Exception {
         Map<String, String> jobParameters = context.getJobParameters();
         taskParameters = JsonUtils.fromJson(jobParameters.get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
-            PublishLogicalDatabaseChangeReq.class);
+                PublishLogicalDatabaseChangeReq.class);
         sqlRewriter = new RelationFactorRewriter();
     }
 
@@ -124,7 +125,7 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
         }
         for (RewriteResult rewrittenResult : rewrittenResults) {
             Set<DataNode> allDataNodes = taskParameters.getAllDataNodes();
-            List<ExecutionUnit<SqlExecuteReq, SqlExecuteResult>> executionUnits = new ArrayList<>();
+            List<ExecutionUnit<SqlExecuteReq, SqlExecutionResultWrapper>> executionUnits = new ArrayList<>();
             Map<DataNode, String> dataNode2Sql = rewrittenResult.getSqls();
             for (DataNode dataNode : allDataNodes) {
                 String sql = dataNode2Sql.getOrDefault(dataNode, "");
@@ -134,8 +135,12 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
                 req.setConnectionConfig(dataNode.getDataSourceConfig());
                 ConnectionSession connectionSession = generateSession(dataNode.getDataSourceConfig());
                 connectionSessions.add(connectionSession);
-                ExecutionCallback<SqlExecuteReq, SqlExecuteResult> callback =
-                        new SqlExecutionCallback(connectionSession, sql, taskParameters.getTimeoutMillis());
+                ExecutionCallback<SqlExecuteReq, SqlExecutionResultWrapper> callback =
+                        new SqlExecutionCallback(connectionSession,
+                                new SqlExecuteReq(sql, taskParameters.getTimeoutMillis(),
+                                        taskParameters.getConnectType().getDialectType(),
+                                        dataNode.getDataSourceConfig(), taskParameters.getLogicalDatabaseId(),
+                                        taskParameters.getPhysicalDatabaseId()));
                 executionUnits.add(new ExecutionUnit<>(StringUtils.uuid(), callback, req));
             }
             executionGroups.add(taskParameters.getConnectType().getDialectType() == DialectType.MYSQL
@@ -179,7 +184,7 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
     }
 
     @Override
-    public Map<String, ExecutionResult<SqlExecuteResult>> getTaskResult() {
+    public Map<String, ExecutionResult<SqlExecutionResultWrapper>> getTaskResult() {
         return this.executionGroupContext.getResults();
     }
 

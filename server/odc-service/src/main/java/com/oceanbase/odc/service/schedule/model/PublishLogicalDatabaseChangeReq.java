@@ -38,7 +38,8 @@ public class PublishLogicalDatabaseChangeReq implements Serializable {
     private String sqlContent;
     private String delimiter;
     private Long timeoutMillis;
-    private Long databaseId;
+    private Long logicalDatabaseId;
+    private Long physicalDatabaseId;
     private ConnectType connectType;
     private List<RewriteContext> rewriteContexts;
     private Set<DataNode> allDataNodes;

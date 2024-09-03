@@ -44,44 +44,50 @@ import lombok.NonNull;
  * @Date: 2024/8/28 21:04
  * @Description: []
  */
-public class SqlExecutionCallback implements ExecutionCallback<SqlExecuteReq, SqlExecuteResult> {
+public class SqlExecutionCallback implements ExecutionCallback<SqlExecuteReq, SqlExecutionResultWrapper> {
     private ConnectionSession connectionSession;
     private OdcStatementCallBack statementCallBack;
     private long timeoutMillis;
+    private SqlExecuteReq req;
 
-    public SqlExecutionCallback(@NonNull ConnectionSession connectionSession, String sql, long timeoutMillis) {
+    public SqlExecutionCallback(@NonNull ConnectionSession connectionSession, SqlExecuteReq req) {
         this.connectionSession = connectionSession;
         this.statementCallBack =
-                new OdcStatementCallBack(Arrays.asList(SqlTuple.newTuple(sql)), connectionSession, true, 1000);
-        this.timeoutMillis = timeoutMillis;
+                new OdcStatementCallBack(Arrays.asList(SqlTuple.newTuple(req.getSql())), connectionSession, true, 1000);
+        this.timeoutMillis = req.getTimeoutMillis();
     }
 
     @Override
-    public ExecutionResult<SqlExecuteResult> execute(ExecutionGroupContext<SqlExecuteReq, SqlExecuteResult> context)
+    public ExecutionResult<SqlExecutionResultWrapper> execute(
+            ExecutionGroupContext<SqlExecuteReq, SqlExecutionResultWrapper> context)
             throws SQLException {
         List<JdbcGeneralResult> results = connectionSession
                 .getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY)
                 .execute((StatementCallback<List<JdbcGeneralResult>>) stmt -> {
                     stmt.setQueryTimeout(
-                        (int) TimeUnit.MILLISECONDS.toSeconds(timeoutMillis));
+                            (int) TimeUnit.MILLISECONDS.toSeconds(timeoutMillis));
                     return statementCallBack.doInStatement(stmt);
                 });
         JdbcGeneralResult result = results.get(0);
-        return new ExecutionResult<>(new SqlExecuteResult(result), getExecutionStatus(result.getStatus()));
+        return new ExecutionResult<>(
+                new SqlExecutionResultWrapper(result.getSqlTuple().getExecutedSql(), new SqlExecuteResult(result),
+                        req.getLogicalDatabaseId(), req.getPhysicalDatabaseId()),
+                getExecutionStatus(result.getStatus()));
     }
 
     @Override
-    public void terminate(ExecutionGroupContext<SqlExecuteReq, SqlExecuteResult> context) throws SQLException {}
+    public void terminate(ExecutionGroupContext<SqlExecuteReq, SqlExecutionResultWrapper> context)
+            throws SQLException {}
 
     @Override
-    public void onFailed(ExecutionUnit<SqlExecuteReq, SqlExecuteResult> unit,
-            ExecutionGroupContext<SqlExecuteReq, SqlExecuteResult> context) {
+    public void onFailed(ExecutionUnit<SqlExecuteReq, SqlExecutionResultWrapper> unit,
+            ExecutionGroupContext<SqlExecuteReq, SqlExecutionResultWrapper> context) {
 
     }
 
     @Override
-    public void onSuccess(ExecutionUnit<SqlExecuteReq, SqlExecuteResult> unit,
-            ExecutionGroupContext<SqlExecuteReq, SqlExecuteResult> result) {
+    public void onSuccess(ExecutionUnit<SqlExecuteReq, SqlExecutionResultWrapper> unit,
+            ExecutionGroupContext<SqlExecuteReq, SqlExecutionResultWrapper> result) {
 
     }
 
