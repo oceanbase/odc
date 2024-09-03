@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.schedule;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -51,6 +52,20 @@ public class ScheduleTaskRepositoryTest extends ServiceTestEnv {
         taskRepository.updateStatusById(scheduleTask.getId(), TaskStatus.DONE);
         Optional<ScheduleTaskEntity> optional = taskRepository.findById(scheduleTask.getId());
         Assert.equals(optional.get().getStatus(), TaskStatus.DONE);
+        int affectRows = taskRepository.updateStatusById(scheduleTask.getId(), TaskStatus.PREPARING,
+                TaskStatus.getRetryAllowedStatus());
+        optional = taskRepository.findById(scheduleTask.getId());
+        System.out.println(optional.get().getStatus());
+        Assert.equals(1, affectRows);
+    }
+
+    @Test
+    public void updateStatusById_failed() {
+        ScheduleTaskEntity scheduleTask = createScheduleTask();
+        taskRepository.updateStatusById(scheduleTask.getId(), TaskStatus.RUNNING);
+        int affectRows = taskRepository.updateStatusById(scheduleTask.getId(), TaskStatus.PREPARING,
+                TaskStatus.getRetryAllowedStatus());
+        Assert.equals(0, affectRows);
     }
 
     @Test
@@ -71,6 +86,14 @@ public class ScheduleTaskRepositoryTest extends ServiceTestEnv {
         statuses.add(TaskStatus.PREPARING);
         List<ScheduleTaskEntity> byJobNameAndStatus = taskRepository.findByJobNameAndStatusIn("1", statuses);
         Assert.equals(byJobNameAndStatus.size(), 1);
+    }
+
+    @Test
+    public void findByIdIn() {
+        ScheduleTaskEntity scheduleTask = createScheduleTask();
+        List<ScheduleTaskEntity> res = taskRepository.findByIdIn(Collections.singleton(scheduleTask.getId()));
+        Assert.equals(res.size(), 1);
+        Assert.equals(scheduleTask, res.get(0));
     }
 
     @Test

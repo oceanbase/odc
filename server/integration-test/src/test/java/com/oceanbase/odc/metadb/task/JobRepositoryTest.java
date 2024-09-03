@@ -42,7 +42,7 @@ public class JobRepositoryTest extends ServiceTestEnv {
     }
 
     @Test
-    public void test_updateReportResult() {
+    public void updateReportResult() {
         JobEntity currentJob = createJobEntity();
         JobEntity jse = new JobEntity();
         jse.setResultJson("");
@@ -54,8 +54,6 @@ public class JobRepositoryTest extends ServiceTestEnv {
         int rows = jobRepository.updateReportResult(jse, currentJob.getId(), currentJob.getStatus());
         Assert.assertTrue(rows > 0);
     }
-
-
 
     private JobEntity createJobEntity() {
         JobEntity entity = new JobEntity();

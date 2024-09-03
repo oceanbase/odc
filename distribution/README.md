@@ -20,6 +20,7 @@
 │       │   └── supervisor.conf
 ├── plugins                 # 存放插件 jar
 ├── starters                # 存放 starters jar
+├── modules                 # 存放 modules jar
 └── README.md
 ```
 

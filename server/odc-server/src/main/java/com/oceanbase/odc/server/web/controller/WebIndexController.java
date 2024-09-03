@@ -32,7 +32,8 @@ public class WebIndexController {
 
     @RequestMapping({"/", "/index.html"})
     public ModelAndView index(HttpServletRequest request) {
-        String odcBackUrl = request.getParameter(OdcConstants.ODC_BACK_URL_PARAM);
+        String odcBackUrl =
+                WebRequestUtils.getStringValueFromParameterOrAttribute(request, OdcConstants.ODC_BACK_URL_PARAM);
         boolean redirectUrlValid = WebRequestUtils.isRedirectUrlValid(request, odcBackUrl);
         return new ModelAndView(redirectUrlValid ? "redirect:" + odcBackUrl : "index");
     }

@@ -19,7 +19,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.oceanbase.odc.core.flow.model.TaskParameters;
+import javax.validation.constraints.NotNull;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
+import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.migrator.common.enums.MigrationInsertAction;
 import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
@@ -32,21 +37,21 @@ import lombok.Data;
  * @Descripition:
  */
 @Data
-public class DataArchiveParameters implements TaskParameters {
+public class DataArchiveParameters implements ScheduleTaskParameters {
 
     private String name;
 
+    @NotNull
     private Long sourceDatabaseId;
 
+    @NotNull
     private Long targetDataBaseId;
 
-    private String sourceDatabaseName;
+    @JsonProperty(access = Access.READ_ONLY)
+    private Database sourceDatabase;
 
-    private String targetDatabaseName;
-
-    private String sourceDataSourceName;
-
-    private String targetDataSourceName;
+    @JsonProperty(access = Access.READ_ONLY)
+    private Database targetDatabase;
 
     private List<OffsetConfig> variables;
 
@@ -73,4 +78,36 @@ public class DataArchiveParameters implements TaskParameters {
     private ShardingStrategy shardingStrategy;
 
     private RateLimitConfiguration rateLimit;
+
+    private boolean fullDatabase = false;
+
+    /**
+     * Only used in version 4.3.2, it will be deleted after version 4.3.3
+     */
+    @JsonProperty(access = Access.READ_ONLY)
+    private String sourceDatabaseName;
+    @JsonProperty(access = Access.READ_ONLY)
+    private String targetDatabaseName;
+    @JsonProperty(access = Access.READ_ONLY)
+    private String sourceDataSourceName;
+    @JsonProperty(access = Access.READ_ONLY)
+    private String targetDataSourceName;
+
+    public String getSourceDatabaseName() {
+        return sourceDatabase == null ? null : sourceDatabase.getName();
+    }
+
+    public String getTargetDatabaseName() {
+        return targetDatabase == null ? null : targetDatabase.getName();
+    }
+
+    public String getSourceDataSourceName() {
+        return sourceDatabase == null || sourceDatabase.getDataSource() == null ? null
+                : sourceDatabase.getDataSource().getName();
+    }
+
+    public String getTargetDataSourceName() {
+        return targetDatabase == null || targetDatabase.getDataSource() == null ? null
+                : targetDatabase.getDataSource().getName();
+    }
 }

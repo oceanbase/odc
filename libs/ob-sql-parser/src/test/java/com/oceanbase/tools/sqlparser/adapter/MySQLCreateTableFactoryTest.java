@@ -68,11 +68,11 @@ public class MySQLCreateTableFactoryTest {
 
     @Test
     public void generate_onlyColumnDefExists_generateSucceed() {
-        Create_table_stmtContext context = getCreateTableContext("create table abcd (id varchar(64))");
+        Create_table_stmtContext context = getCreateTableContext("create table any_schema.abcd (id varchar(64))");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -81,11 +81,12 @@ public class MySQLCreateTableFactoryTest {
 
     @Test
     public void generate_createTableLike_generateSucceed() {
-        Create_table_like_stmtContext context = getCreateTableLikeContext("create table if not exists abcd like a.b");
+        Create_table_like_stmtContext context =
+                getCreateTableLikeContext("create table if not exists any_schema.abcd like a.b");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         expect.setIfNotExists(true);
         RelationFactor likeTable = new RelationFactor("b");
         likeTable.setSchema("a");
@@ -95,11 +96,12 @@ public class MySQLCreateTableFactoryTest {
 
     @Test
     public void generate_temporaryTable_generateSucceed() {
-        Create_table_stmtContext context = getCreateTableContext("create temporary table abcd (id varchar(64))");
+        Create_table_stmtContext context =
+                getCreateTableContext("create temporary table any_schema.abcd (id varchar(64))");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         expect.setTemporary(true);
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
@@ -109,11 +111,12 @@ public class MySQLCreateTableFactoryTest {
 
     @Test
     public void generate_externalTable_generateSucceed() {
-        Create_table_stmtContext context = getCreateTableContext("create external table abcd (id varchar(64))");
+        Create_table_stmtContext context =
+                getCreateTableContext("create external table any_schema.abcd (id varchar(64))");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         expect.setExternal(true);
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
@@ -123,11 +126,11 @@ public class MySQLCreateTableFactoryTest {
 
     @Test
     public void generate_createTableAsSelect_generateSucceed() {
-        Create_table_stmtContext context = getCreateTableContext("create table .abcd as select * from tab");
+        Create_table_stmtContext context = getCreateTableContext("create table any_schema.abcd as select * from tab");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         NameReference from = new NameReference(null, "tab", null);
         SelectBody selectBody =
                 new SelectBody(Collections.singletonList(new Projection()), Collections.singletonList(from));
@@ -138,11 +141,12 @@ public class MySQLCreateTableFactoryTest {
 
     @Test
     public void generate_sortKey_succeed() {
-        Create_table_stmtContext context = getCreateTableContext("create table abcd (id varchar(64)) sortkey (a,b)");
+        Create_table_stmtContext context =
+                getCreateTableContext("create table any_schema.abcd (id varchar(64)) sortkey (a,b)");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -156,11 +160,11 @@ public class MySQLCreateTableFactoryTest {
     @Test
     public void generate_parallel_succeed() {
         Create_table_stmtContext context =
-                getCreateTableContext("create table abcd (id varchar(64)) parallel 12, noparallel");
+                getCreateTableContext("create table any_schema.abcd (id varchar(64)) parallel 12, noparallel");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -174,11 +178,12 @@ public class MySQLCreateTableFactoryTest {
     @Test
     public void generate_tableMode_succeed() {
         Create_table_stmtContext context =
-                getCreateTableContext("create table abcd (id varchar(64)) table_mode='abcd',parallel 12, noparallel");
+                getCreateTableContext(
+                        "create table any_schema.abcd (id varchar(64)) table_mode='abcd',parallel 12, noparallel");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -193,11 +198,12 @@ public class MySQLCreateTableFactoryTest {
     @Test
     public void generate_rowFormat_succeed() {
         Create_table_stmtContext context =
-                getCreateTableContext("create table abcd (id varchar(64)) row_format=COMPACT,duplicate_scope='abcd'");
+                getCreateTableContext(
+                        "create table any_schema.abcd (id varchar(64)) row_format=COMPACT,duplicate_scope='abcd'");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -212,11 +218,11 @@ public class MySQLCreateTableFactoryTest {
     public void generate_charsetAndCollation_succeed() {
         Create_table_stmtContext context =
                 getCreateTableContext(
-                        "create table abcd (id varchar(64)) default charset=utf8,collate=u8mb4,locality='abcd' force");
+                        "create table any_schema.abcd (id varchar(64)) default charset=utf8,collate=u8mb4,locality='abcd' force");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -231,11 +237,12 @@ public class MySQLCreateTableFactoryTest {
     @Test
     public void generate_autoIncrement_succeed() {
         Create_table_stmtContext context =
-                getCreateTableContext("create table abcd (id varchar(64)) expire_info=(1) auto_increment=15");
+                getCreateTableContext(
+                        "create table any_schema.abcd (id varchar(64)) expire_info=(1) auto_increment=15");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -249,11 +256,11 @@ public class MySQLCreateTableFactoryTest {
     @Test
     public void generate_skipIndex_succeed() {
         Create_table_stmtContext ctx = getCreateTableContext(
-                "create table skip_index_tbl (id varchar(64) SKIP_INDEX(MIN_MAX,SUM))");
+                "create table any_schema.skip_index_tbl (id varchar(64) SKIP_INDEX(MIN_MAX,SUM))");
         MySQLCreateTableFactory factory = new MySQLCreateTableFactory(ctx);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("skip_index_tbl");
+        CreateTable expect = new CreateTable(ctx, getRelationFactor("any_schema", "skip_index_tbl"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         ColumnAttributes attributes = new ColumnAttributes();
         attributes.setSkipIndexTypes(Arrays.asList("MIN_MAX", "SUM"));
@@ -266,11 +273,11 @@ public class MySQLCreateTableFactoryTest {
     @Test
     public void generate_Compression_succeed() {
         Create_table_stmtContext context =
-                getCreateTableContext("create table abcd (id varchar(64)) COMPRESSION 'aaa'");
+                getCreateTableContext("create table any_schema.abcd (id varchar(64)) COMPRESSION 'aaa'");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -283,11 +290,11 @@ public class MySQLCreateTableFactoryTest {
     @Test
     public void generate_useBloomFilter_succeed() {
         Create_table_stmtContext context =
-                getCreateTableContext("create table abcd (id varchar(64)) use_bloom_filter=false");
+                getCreateTableContext("create table any_schema.abcd (id varchar(64)) use_bloom_filter=false");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -299,11 +306,12 @@ public class MySQLCreateTableFactoryTest {
 
     @Test
     public void generate_readonly_succeed() {
-        Create_table_stmtContext context = getCreateTableContext("create table abcd (id varchar(64)) read only");
+        Create_table_stmtContext context =
+                getCreateTableContext("create table any_schema.abcd (id varchar(64)) read only");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -316,11 +324,12 @@ public class MySQLCreateTableFactoryTest {
     @Test
     public void generate_comment_succeed() {
         Create_table_stmtContext context =
-                getCreateTableContext("create table abcd (id varchar(64)) lob_inrow_threshold=456 comment 'aaaaa'");
+                getCreateTableContext(
+                        "create table any_schema.abcd (id varchar(64)) lob_inrow_threshold=456 comment 'aaaaa'");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -334,11 +343,11 @@ public class MySQLCreateTableFactoryTest {
     @Test
     public void generate_physicalAttrs_succeed() {
         Create_table_stmtContext context = getCreateTableContext(
-                "create table abcd (id varchar(64)) default_lob_inrow_threshold=123 pctfree=12 tablespace abc");
+                "create table any_schema.abcd (id varchar(64)) default_lob_inrow_threshold=123 pctfree=12 tablespace abc");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -353,12 +362,13 @@ public class MySQLCreateTableFactoryTest {
     @Test
     public void generate_formatTableOp_succeed() {
         Create_table_stmtContext context = getCreateTableContext(
-                "create table abcd (id varchar(64)) kv_attributes='12' format=(ENCODING='aaaa',LINE_DELIMITER=123,SKIP_HEADER=12,"
+                "create table any_schema.abcd (id varchar(64)) kv_attributes='12' format=(ENCODING='aaaa',LINE_DELIMITER=123,"
+                        + "SKIP_HEADER=12,"
                         + "EMPTY_FIELD_AS_NULL=true,NULL_IF_EXETERNAL=(1,2,3))");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -382,13 +392,13 @@ public class MySQLCreateTableFactoryTest {
     @Test
     public void generate_ob40NewTableOptions_succeed() {
         Create_table_stmtContext context = getCreateTableContext(
-                "create table abcd (id varchar(64)) delay_key_write=12 avg_row_length=13 checksum=15 auto_increment_mode='aaa' "
+                "create table any_schema.abcd (id varchar(64)) delay_key_write=12 avg_row_length=13 checksum=15 auto_increment_mode='aaa' "
                         + "enable_extended_rowid=true"
                         + " TTL(col1 + interval 12 year, abcd.col2 + interval 45 day, db1.abcd.col3 + interval 45 day)");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -412,14 +422,14 @@ public class MySQLCreateTableFactoryTest {
     @Test
     public void generate_partition_succeed() {
         Create_table_stmtContext context = getCreateTableContext(
-                "create table abcd ("
+                "create table any_schema.abcd ("
                         + "id varchar(64)) partition by hash(a) partitions 12 ("
                         + "partition a.b,"
                         + "partition d id 14)");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -437,11 +447,11 @@ public class MySQLCreateTableFactoryTest {
     @Test
     public void generate_withColumnGroup_allColumns_succeed() {
         Create_table_stmtContext ctx = getCreateTableContext(
-                "create table column_group_tbl (id varchar(64)) with column group(all columns)");
+                "create table any_schema.column_group_tbl (id varchar(64)) with column group(all columns)");
         MySQLCreateTableFactory factory = new MySQLCreateTableFactory(ctx);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("column_group_tbl");
+        CreateTable expect = new CreateTable(ctx, getRelationFactor("any_schema", "column_group_tbl"));
         expect.setColumnGroupElements(Collections.singletonList(new ColumnGroupElement(true, false)));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
@@ -452,11 +462,11 @@ public class MySQLCreateTableFactoryTest {
     @Test
     public void generate_withColumnGroup_allColumns_eachColumn_succeed() {
         Create_table_stmtContext ctx = getCreateTableContext(
-                "create table column_group_tbl (id varchar(64)) with column group(all columns, each column)");
+                "create table any_schema.column_group_tbl (id varchar(64)) with column group(all columns, each column)");
         MySQLCreateTableFactory factory = new MySQLCreateTableFactory(ctx);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("column_group_tbl");
+        CreateTable expect = new CreateTable(ctx, getRelationFactor("any_schema", "column_group_tbl"));
         expect.setColumnGroupElements(
                 Arrays.asList(new ColumnGroupElement(true, false), new ColumnGroupElement(false, true)));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
@@ -468,11 +478,11 @@ public class MySQLCreateTableFactoryTest {
     @Test
     public void generate_withColumnGroup_customGroup_succeed() {
         Create_table_stmtContext ctx = getCreateTableContext(
-                "create table column_group_tbl (id varchar(64)) with column group(g1(id))");
+                "create table any_schema.column_group_tbl (id varchar(64)) with column group(g1(id))");
         MySQLCreateTableFactory factory = new MySQLCreateTableFactory(ctx);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("column_group_tbl");
+        CreateTable expect = new CreateTable(ctx, getRelationFactor("any_schema", "column_group_tbl"));
         List<String> columnNames = Collections.singletonList("id");
         expect.setColumnGroupElements(Collections.singletonList(new ColumnGroupElement("g1", columnNames)));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
@@ -497,4 +507,9 @@ public class MySQLCreateTableFactoryTest {
         return parser.create_table_like_stmt();
     }
 
+    private RelationFactor getRelationFactor(String schema, String relation) {
+        RelationFactor relationFactor = new RelationFactor(relation);
+        relationFactor.setSchema(schema);
+        return relationFactor;
+    }
 }

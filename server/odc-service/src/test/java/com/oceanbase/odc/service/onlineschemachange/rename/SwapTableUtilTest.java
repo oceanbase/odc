@@ -18,6 +18,8 @@ package com.oceanbase.odc.service.onlineschemachange.rename;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.oceanbase.odc.core.shared.constant.DialectType;
+
 /**
  * @author longpeng.zlp
  * @date 2024/8/2 10:20
@@ -25,8 +27,18 @@ import org.junit.Test;
  */
 public class SwapTableUtilTest {
     @Test
-    public void testEscapeName() {
+    public void testQuoteName() {
         Assert.assertEquals(SwapTableUtil.quoteMySQLName("name   "), "`name   `");
         Assert.assertEquals(SwapTableUtil.quoteOracleName("name   "), "\"name   \"");
+    }
+
+    @Test
+    public void testUnQuoteName() {
+        Assert.assertEquals(SwapTableUtil.unquoteName("name   ", DialectType.OB_MYSQL), "name   ");
+        Assert.assertEquals(SwapTableUtil.unquoteName("`name   `", DialectType.OB_MYSQL), "name   ");
+        Assert.assertEquals(SwapTableUtil.unquoteName("`name   ", DialectType.OB_MYSQL), "`name   ");
+        Assert.assertEquals(SwapTableUtil.unquoteName("name   ", DialectType.OB_ORACLE), "name   ");
+        Assert.assertEquals(SwapTableUtil.unquoteName("\"name   \"", DialectType.OB_ORACLE), "name   ");
+        Assert.assertEquals(SwapTableUtil.unquoteName("\"name   ", DialectType.OB_ORACLE), "\"name   ");
     }
 }

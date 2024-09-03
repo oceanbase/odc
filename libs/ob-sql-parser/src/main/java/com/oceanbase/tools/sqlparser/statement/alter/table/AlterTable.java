@@ -22,6 +22,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -40,22 +41,35 @@ import lombok.Setter;
 @EqualsAndHashCode(callSuper = false)
 public class AlterTable extends BaseStatement {
 
+    private RelationFactor relation;
     private String userVariable;
-    private String schema;
     private boolean external;
-    private final String tableName;
     private final List<AlterTableAction> alterTableActions;
 
     public AlterTable(@NonNull ParserRuleContext context,
-            @NonNull String tableName, List<AlterTableAction> alterTableActions) {
+            RelationFactor relation, List<AlterTableAction> alterTableActions) {
         super(context);
-        this.tableName = tableName;
+        this.relation = relation;
         this.alterTableActions = alterTableActions;
     }
 
-    public AlterTable(@NonNull String tableName, List<AlterTableAction> alterTableActions) {
-        this.tableName = tableName;
+    public AlterTable(@NonNull RelationFactor relation, List<AlterTableAction> alterTableActions) {
+        this.relation = relation;
         this.alterTableActions = alterTableActions;
+    }
+
+    public String getSchema() {
+        if (this.relation == null) {
+            return null;
+        }
+        return this.relation.getSchema();
+    }
+
+    public String getTableName() {
+        if (this.relation == null) {
+            return null;
+        }
+        return this.relation.getRelation();
     }
 
     @Override
@@ -66,10 +80,10 @@ public class AlterTable extends BaseStatement {
         } else {
             builder.append("ALTER TABLE");
         }
-        if (this.schema != null) {
-            builder.append(" ").append(this.schema).append(".").append(this.tableName);
-        } else if (this.tableName != null) {
-            builder.append(" ").append(this.tableName);
+        if (getSchema() != null) {
+            builder.append(" ").append(getSchema()).append(".").append(getTableName());
+        } else if (getTableName() != null) {
+            builder.append(" ").append(getTableName());
         }
         if (this.userVariable != null) {
             builder.append(this.userVariable);

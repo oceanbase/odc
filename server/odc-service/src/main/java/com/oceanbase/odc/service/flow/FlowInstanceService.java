@@ -91,7 +91,6 @@ import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceSpecs;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceEntity;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
-import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
@@ -113,8 +112,6 @@ import com.oceanbase.odc.service.databasechange.model.DatabaseChangingRecord;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
-import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
-import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.flow.factory.FlowFactory;
 import com.oceanbase.odc.service.flow.factory.FlowResponseMapperFactory;
 import com.oceanbase.odc.service.flow.instance.BaseFlowNodeInstance;
@@ -173,9 +170,9 @@ import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
-import com.oceanbase.odc.service.schedule.flowtask.OperationType;
-import com.oceanbase.odc.service.schedule.model.JobType;
-import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
+import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
@@ -231,8 +228,6 @@ public class FlowInstanceService {
     @Qualifier("autoApprovalExecutor")
     private ThreadPoolTaskExecutor executorService;
     @Autowired
-    private ScheduleService scheduleService;
-    @Autowired
     private ApprovalClient approvalClient;
     @Autowired
     private IntegrationService integrationService;
@@ -264,6 +259,8 @@ public class FlowInstanceService {
     private EnvironmentRepository environmentRepository;
     @Autowired
     private EnvironmentService environmentService;
+    @Autowired
+    private ScheduleService scheduleService;
 
     private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
     private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
@@ -314,6 +311,36 @@ public class FlowInstanceService {
     @EnablePreprocess
     @Transactional(rollbackFor = Throwable.class, propagation = Propagation.REQUIRED)
     public List<FlowInstanceDetailResp> create(@NotNull @Valid CreateFlowInstanceReq createReq) {
+        if (createReq.getTaskType() == TaskType.ALTER_SCHEDULE) {
+            AlterScheduleParameters parameters = (AlterScheduleParameters) createReq.getParameters();
+            ScheduleChangeParams scheduleChangeParams;
+            switch (parameters.getOperationType()) {
+                case CREATE: {
+                    CreateScheduleReq createScheduleReq = new CreateScheduleReq();
+                    createScheduleReq.setParameters(parameters.getScheduleTaskParameters());
+                    createScheduleReq.setTriggerConfig(parameters.getTriggerConfig());
+                    createScheduleReq.setType(parameters.getType());
+                    createScheduleReq.setDescription(parameters.getDescription());
+                    scheduleChangeParams = ScheduleChangeParams.with(createScheduleReq);
+                    break;
+                }
+                case UPDATE: {
+                    UpdateScheduleReq updateScheduleReq = new UpdateScheduleReq();
+                    updateScheduleReq.setParameters(parameters.getScheduleTaskParameters());
+                    updateScheduleReq.setTriggerConfig(parameters.getTriggerConfig());
+                    updateScheduleReq.setType(parameters.getType());
+                    updateScheduleReq.setDescription(parameters.getDescription());
+                    scheduleChangeParams = ScheduleChangeParams.with(parameters.getTaskId(), updateScheduleReq);
+                    break;
+                }
+                default: {
+                    scheduleChangeParams =
+                            ScheduleChangeParams.with(parameters.getTaskId(), parameters.getOperationType());
+                }
+            }
+            scheduleService.changeSchedule(scheduleChangeParams);
+            return Collections.singletonList(FlowInstanceDetailResp.withIdAndType(-1L, TaskType.ALTER_SCHEDULE));
+        }
         if (createReq.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
             ApplyDatabaseParameter parameter = (ApplyDatabaseParameter) createReq.getParameters();
             List<ApplyDatabase> databases = new ArrayList<>(parameter.getDatabases());
@@ -349,20 +376,7 @@ public class FlowInstanceService {
     }
 
     private List<FlowInstanceDetailResp> innerCreate(@NotNull @Valid CreateFlowInstanceReq createReq) {
-        // TODO 原终止逻辑想表达的语意是终止执行中的计划，但目前线上的语意是终止审批流。暂保留逻辑，待前端修改后删除。
         checkCreateFlowInstancePermission(createReq);
-        if (createReq.getTaskType() == TaskType.ALTER_SCHEDULE) {
-            AlterScheduleParameters parameters = (AlterScheduleParameters) createReq.getParameters();
-            if (parameters.getOperationType() == OperationType.TERMINATION) {
-                ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(parameters.getTaskId());
-                if (scheduleEntity.getStatus() == ScheduleStatus.APPROVING) {
-                    Set<Long> flowInstanceIds = getApprovingAlterScheduleById(scheduleEntity.getId());
-                    return flowInstanceIds.stream().map(id -> cancel(id, false))
-                            .collect(Collectors.toList());
-                }
-                return Collections.emptyList();
-            }
-        }
         if (createReq.getTaskType() == TaskType.ASYNC) {
             DatabaseChangeParameters taskParameters = (DatabaseChangeParameters) createReq.getParameters();
             PreConditions.maxLength(taskParameters.getSqlContent(), "sql content",
@@ -576,7 +590,6 @@ public class FlowInstanceService {
     @Transactional(rollbackFor = Exception.class)
     public FlowInstanceDetailResp cancel(@NotNull Long id, Boolean skipAuth) {
         FlowInstance flowInstance = mapFlowInstance(id, flowInst -> flowInst, skipAuth);
-        scheduleService.updateStatusByFlowInstanceId(id, ScheduleStatus.TERMINATION);
         return cancel(flowInstance, skipAuth);
     }
 
@@ -724,7 +737,6 @@ public class FlowInstanceService {
             flowInstanceRepository.updateStatusById(instance.getFlowInstanceId(), FlowStatus.REJECTED);
 
         }, skipAuth);
-        scheduleService.updateStatusByFlowInstanceId(id, ScheduleStatus.REJECTED);
         Optional<FlowInstance> optional = flowFactory.getFlowInstance(id);
         FlowInstance flowInstance =
                 optional.orElseThrow(() -> new NotFoundException(ResourceType.ODC_FLOW_INSTANCE, "id", id));
@@ -811,33 +823,7 @@ public class FlowInstanceService {
             databaseIds.add(req.getDatabaseId());
         }
         TaskType taskType = req.getTaskType();
-        if (taskType == TaskType.ALTER_SCHEDULE) {
-            AlterScheduleParameters params = (AlterScheduleParameters) req.getParameters();
-            // Check the new parameters during creation or update.
-            if (params.getOperationType() == OperationType.CREATE
-                    || params.getOperationType() == OperationType.UPDATE) {
-                if (params.getType() == JobType.DATA_ARCHIVE) {
-                    DataArchiveParameters p = (DataArchiveParameters) params.getScheduleTaskParameters();
-                    databaseIds.add(p.getSourceDatabaseId());
-                    databaseIds.add(p.getTargetDataBaseId());
-                } else if (params.getType() == JobType.DATA_DELETE) {
-                    DataDeleteParameters p = (DataDeleteParameters) params.getScheduleTaskParameters();
-                    databaseIds.add(p.getDatabaseId());
-                }
-            } else {
-                ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(params.getTaskId());
-                if (params.getType() == JobType.DATA_ARCHIVE) {
-                    DataArchiveParameters p = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
-                            DataArchiveParameters.class);
-                    databaseIds.add(p.getSourceDatabaseId());
-                    databaseIds.add(p.getTargetDataBaseId());
-                } else if (params.getType() == JobType.DATA_DELETE) {
-                    DataDeleteParameters p = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
-                            DataDeleteParameters.class);
-                    databaseIds.add(p.getDatabaseId());
-                }
-            }
-        } else if (taskType == TaskType.STRUCTURE_COMPARISON) {
+        if (taskType == TaskType.STRUCTURE_COMPARISON) {
             DBStructureComparisonParameter p = (DBStructureComparisonParameter) req.getParameters();
             databaseIds.add(p.getTargetDatabaseId());
             databaseIds.add(p.getSourceDatabaseId());

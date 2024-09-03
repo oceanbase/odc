@@ -25,6 +25,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
@@ -41,7 +42,7 @@ import lombok.Data;
  */
 
 @Entity
-@Table(name = "dlm_table_unit")
+@Table(name = "dlm_table_unit", uniqueConstraints = @UniqueConstraint(columnNames = "dlm_table_unit_id"))
 @Data
 public class DlmTableUnitEntity {
 

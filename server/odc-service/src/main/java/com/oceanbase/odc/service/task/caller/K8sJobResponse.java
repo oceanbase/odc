@@ -42,4 +42,9 @@ public interface K8sJobResponse {
      * pod status
      */
     String getResourceStatus();
+
+    /**
+     * pod ip address
+     */
+    String getPodIpAddress();
 }

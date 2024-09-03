@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.onlineschemachange;
 
-import static com.oceanbase.odc.service.schedule.model.JobType.ONLINE_SCHEMA_CHANGE_COMPLETE;
+import static com.oceanbase.odc.service.schedule.model.ScheduleType.ONLINE_SCHEMA_CHANGE_COMPLETE;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -52,6 +52,8 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
+import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
+import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties.OmsProperties;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
@@ -65,9 +67,10 @@ import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsProjectContro
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectFullVerifyResultResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectProgressResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectStepVO;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.OmsSwapTableAction;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
-import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
@@ -108,6 +111,8 @@ public abstract class BaseOscTestEnv extends ServiceTestEnv {
     protected ConnectionSession connectionSession;
     protected SyncJdbcExecutor jdbcTemplate;
     protected String oscCheckTaskCronExpression = "0/3 * * * * ?";
+    protected OnlineSchemaChangeProperties onlineSchemaChangeProperties;
+    protected OmsSwapTableAction swapTableNameValve;
 
     @Before
     public void beforeEveryTestCase() {
@@ -115,6 +120,15 @@ public abstract class BaseOscTestEnv extends ServiceTestEnv {
         config = TestConnectionUtil.getTestConnectionConfig(connectType);
         connectionSession = TestConnectionUtil.getTestConnectionSession(connectType);
         jdbcTemplate = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
+        this.onlineSchemaChangeProperties = new OnlineSchemaChangeProperties();
+        onlineSchemaChangeProperties.setEnableFullVerify(false);
+        OmsProperties omsProperties = new OmsProperties();
+        omsProperties.setUrl("127.0.0.1:8089");
+        omsProperties.setRegion("default");
+        omsProperties.setAuthorization("auth");
+        onlineSchemaChangeProperties.setOms(omsProperties);
+        swapTableNameValve =
+                new OmsSwapTableAction(dbSessionManager, projectOpenApiService, onlineSchemaChangeProperties);
         mock();
     }
 
@@ -134,7 +148,7 @@ public abstract class BaseOscTestEnv extends ServiceTestEnv {
 
         OmsProjectProgressResponse projectProgressResponse = new OmsProjectProgressResponse();
         projectProgressResponse.setStatus(OmsProjectStatusEnum.DELETED);
-        projectProgressResponse.setIncrSyncCheckpoint(System.currentTimeMillis() / 1000 + 10);
+        projectProgressResponse.setIncrSyncCheckpoint(System.currentTimeMillis() / 1000 + 1000);
         doReturn(projectProgressResponse).when(projectOpenApiService)
                 .describeProjectProgress(Mockito.any(OmsProjectControlRequest.class));
 
@@ -172,7 +186,7 @@ public abstract class BaseOscTestEnv extends ServiceTestEnv {
     protected ScheduleEntity getScheduleEntity(ConnectionConfig config, OnlineSchemaChangeParameters changeParameters) {
         ScheduleEntity scheduleEntity = new ScheduleEntity();
         scheduleEntity.setStatus(ScheduleStatus.ENABLED);
-        scheduleEntity.setConnectionId(config.getId());
+        scheduleEntity.setDataSourceId(config.getId());
         scheduleEntity.setDatabaseName(config.getDefaultSchema());
         scheduleEntity.setDatabaseId(1L);
         scheduleEntity.setProjectId(1L);
@@ -182,7 +196,7 @@ public abstract class BaseOscTestEnv extends ServiceTestEnv {
         scheduleEntity.setStatus(ScheduleStatus.ENABLED);
         scheduleEntity.setAllowConcurrent(false);
         scheduleEntity.setMisfireStrategy(MisfireStrategy.MISFIRE_INSTRUCTION_DO_NOTHING);
-        scheduleEntity.setJobType(JobType.ONLINE_SCHEMA_CHANGE_COMPLETE);
+        scheduleEntity.setType(ScheduleType.ONLINE_SCHEMA_CHANGE_COMPLETE);
         scheduleEntity.setJobParametersJson(JsonUtils.toJson(changeParameters));
         TriggerConfig triggerConfig = new TriggerConfig();
         triggerConfig.setTriggerStrategy(TriggerStrategy.CRON);

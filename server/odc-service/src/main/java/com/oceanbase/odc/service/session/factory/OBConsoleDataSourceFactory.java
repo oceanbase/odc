@@ -73,6 +73,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     private String sid;
     private String serviceName;
     protected UserRole userRole;
+    private String catalogName;
     private Map<String, String> parameters;
     protected final ConnectionConfig connectionConfig;
     private final Boolean autoCommit;
@@ -98,6 +99,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         this.sid = connectionConfig.getSid();
         this.serviceName = connectionConfig.getServiceName();
         this.userRole = connectionConfig.getUserRole();
+        this.catalogName = connectionConfig.getCatalogName();
         this.parameters = getJdbcParams(connectionConfig);
         this.connectionExtensionPoint = ConnectionPluginUtil.getConnectionExtension(connectionConfig.getDialectType());
     }
@@ -108,7 +110,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
 
     private JdbcUrlProperty getJdbcUrlProperties() {
         return new JdbcUrlProperty(this.host, this.port, this.defaultSchema, this.parameters, this.sid,
-                this.serviceName);
+                this.serviceName, this.catalogName);
     }
 
     public static String getUsername(@NonNull ConnectionConfig connectionConfig) {
@@ -140,8 +142,8 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         jdbcUrlParams.put("noDatetimeStringSync", "true");
         jdbcUrlParams.put("jdbcCompliantTruncation", "false");
 
-        // TODO: set sendConnectionAttributes while upgrade oceanbase-client to v2.2.10
-        jdbcUrlParams.put("sendConnectionAttributes", "false");
+        jdbcUrlParams.put("sendConnectionAttributes", "true");
+        jdbcUrlParams.put("defaultConnectionAttributesBanList", "__client_ip");
 
         OBTenantEndpoint endpoint = connectionConfig.getEndpoint();
         if (Objects.nonNull(endpoint)) {
@@ -290,6 +292,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
             case MYSQL:
             case DORIS:
             case ODP_SHARDING_OB_MYSQL:
+            case POSTGRESQL:
                 return schema;
             default:
                 return null;
@@ -313,6 +316,11 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
                     return getSchema(defaultSchema, connectionConfig.getDialectType());
                 }
                 return getSchema(OdcConstants.MYSQL_DEFAULT_SCHEMA, connectionConfig.getDialectType());
+            case POSTGRESQL:
+                if (StringUtils.isNotEmpty(defaultSchema)) {
+                    return getSchema(defaultSchema, connectionConfig.getDialectType());
+                }
+                return getSchema(OdcConstants.POSTGRESQL_DEFAULT_SCHEMA, connectionConfig.getDialectType());
             default:
                 return null;
         }

@@ -16,23 +16,17 @@
 
 package com.oceanbase.odc.service.task.caller;
 
-import java.io.IOException;
-
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.event.AbstractEvent;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
-import com.oceanbase.odc.service.task.constants.JobUrlConstants;
 import com.oceanbase.odc.service.task.enums.JobCallerAction;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.listener.JobCallerEvent;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
-import com.oceanbase.odc.service.task.util.HttpUtil;
+import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -94,31 +88,18 @@ public abstract class BaseJobCaller implements JobCaller {
         JobConfigurationValidator.validComponent();
         JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
+        TaskExecutorClient taskExecutorClient = jobConfiguration.getTaskExecutorClient();
+
         JobEntity jobEntity = taskFrameworkService.find(ji.getId());
         String executorEndpoint = jobEntity.getExecutorEndpoint();
         try {
             if (executorEndpoint != null
                     && isExecutorExist(ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier()))) {
-                tryStop(ji, executorEndpoint);
+                taskExecutorClient.stop(executorEndpoint, ji);
             }
             afterStopSucceed(ji);
         } catch (Exception e) {
             afterStopFailed(ji, e);
-        }
-    }
-
-
-    private void tryStop(JobIdentity ji, String executorEndpoint)
-            throws IOException, JobException {
-
-        String url = executorEndpoint + String.format(JobUrlConstants.STOP_TASK, ji.getId());
-        log.info("Try stop job {} in executor {}.", ji.getId(), url);
-        SuccessResponse<Boolean> response =
-                HttpUtil.request(url, new TypeReference<SuccessResponse<Boolean>>() {});
-        if (response != null && response.getSuccessful() && response.getData()) {
-            log.info("Stop job {} in executor succeed, response is {}.", ji.getId(), JsonUtils.toJson(response));
-        } else {
-            throw new JobException("Stop job response not succeed, response={0}", JsonUtils.toJson(response));
         }
     }
 
@@ -138,33 +119,9 @@ public abstract class BaseJobCaller implements JobCaller {
         JobConfigurationValidator.validComponent();
         JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
+        TaskExecutorClient taskExecutorClient = jobConfiguration.getTaskExecutorClient();
         JobEntity jobEntity = taskFrameworkService.find(ji.getId());
-        String executorEndpoint = getExecutorPoint(jobEntity);
-        String url = executorEndpoint + String.format(JobUrlConstants.MODIFY_JOB_PARAMETERS, ji.getId());
-        log.info("Try to modify job parameters, jobId={}.", ji.getId());
-        try {
-            SuccessResponse<Boolean> response =
-                    HttpUtil.request(url, jobParametersJson, new TypeReference<SuccessResponse<Boolean>>() {});
-            if (response != null && response.getSuccessful() && response.getData()) {
-                log.info("Modify job parameters success, jobId={}, response={}.", ji.getId(),
-                        JsonUtils.toJson(response));
-            } else {
-                throw new JobException("Modify job parameters not succeed, jobId={0}, response={1}", ji.getId(),
-                        response);
-            }
-        } catch (IOException e) {
-            throw new JobException("Modify job parameters not succeed, jobId={0}, response={1}", ji.getId(),
-                    JsonUtils.toJson(e.getMessage()));
-        }
-    }
-
-    private String getExecutorPoint(JobEntity jobEntity)
-            throws JobException {
-        String executorEndpoint = jobEntity.getExecutorEndpoint();
-        if (executorEndpoint == null) {
-            throw new JobException("Executor point is null, cannot modify executor point, jobId={}", jobEntity.getId());
-        }
-        return executorEndpoint;
+        taskExecutorClient.modifyJobParameters(jobEntity.getExecutorEndpoint(), ji, jobParametersJson);
     }
 
     @Override

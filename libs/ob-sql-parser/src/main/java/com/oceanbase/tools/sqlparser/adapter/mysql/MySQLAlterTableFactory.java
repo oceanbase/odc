@@ -61,11 +61,10 @@ public class MySQLAlterTableFactory extends OBParserBaseVisitor<AlterTable> impl
         } else if (ctx.alter_column_group_option() != null) {
             actions = getAlterTableActions(ctx.alter_column_group_option());
         }
-        AlterTable alterTable = new AlterTable(ctx, factor.getRelation(), actions);
+        AlterTable alterTable = new AlterTable(ctx, factor, actions);
         if (ctx.EXTERNAL() != null) {
             alterTable.setExternal(true);
         }
-        alterTable.setSchema(factor.getSchema());
         alterTable.setUserVariable(factor.getUserVariable());
         return alterTable;
     }

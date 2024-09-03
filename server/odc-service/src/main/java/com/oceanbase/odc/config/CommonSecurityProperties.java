@@ -55,6 +55,7 @@ public class CommonSecurityProperties {
             "/api/v2/bastion/encryption/decrypt",
             "/api/v2/internal/file/downloadImportFile",
             "/api/v2/info",
+            "/api/v2/sso/state",
             "/api/v2/encryption/publicKey"};
 
     private static final String[] STATIC_RESOURCES = new String[] {
@@ -81,7 +82,7 @@ public class CommonSecurityProperties {
 
 
     private static final String[] TASK_WHITE_LIST = new String[] {
-            "/api/v2/task/heart",
+            "/api/v2/task/heartbeat",
             "/api/v2/task/result",
             "/api/v2/task/querySensitiveColumn"
     };

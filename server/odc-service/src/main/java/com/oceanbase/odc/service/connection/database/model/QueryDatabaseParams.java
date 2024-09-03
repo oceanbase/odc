@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.connection.database.model;
 
 import java.util.List;
 
+import com.oceanbase.odc.core.shared.constant.ConnectType;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -35,6 +37,8 @@ public class QueryDatabaseParams {
     private String schemaName;
 
     private List<DatabaseType> types;
+
+    private List<ConnectType> connectTypes;
 
     private Long projectId;
 

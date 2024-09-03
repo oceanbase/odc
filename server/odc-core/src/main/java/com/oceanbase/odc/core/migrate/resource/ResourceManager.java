@@ -21,8 +21,10 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -37,6 +39,7 @@ import java.util.zip.ZipEntry;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.text.StringSubstitutor;
 
+import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.common.util.ListUtils;
 import com.oceanbase.odc.common.util.MapperUtils;
 import com.oceanbase.odc.common.util.TopoOrderComparator;
@@ -183,26 +186,35 @@ public class ResourceManager {
     public static Set<URL> getResourceUrls(List<String> locations) throws IOException {
         Set<URL> targets = new HashSet<>();
         for (String location : locations) {
-            URL url = ResourceManager.class.getClassLoader().getResource(location);
-            if (url == null) {
-                throw new FileNotFoundException("Location is not found " + location);
-            }
-            URI uri;
+            List<Pair<URL, URI>> url2uris = new ArrayList<>();
             try {
-                uri = url.toURI();
+                Enumeration<URL> urls = ResourceManager.class.getClassLoader().getResources(location);
+                if (urls == null) {
+                    throw new FileNotFoundException("Location is not found " + location);
+                }
+                while (urls.hasMoreElements()) {
+                    URL url = urls.nextElement();
+                    url2uris.add(new Pair<>(url, url.toURI()));
+                }
             } catch (URISyntaxException e) {
-                log.warn("Failed to get uri, url={}", url.toString(), e);
+                log.warn("Failed to get uri", e);
                 throw new IllegalStateException(e);
             }
-            String scheme = uri.getScheme();
-            if ("file".equals(scheme)) {
-                LocalFileResourceUrlFactory factory = new LocalFileResourceUrlFactory(url, new YamlFilePredicate());
-                targets.addAll(factory.generateResourceUrls());
-            } else if ("jar".equals(scheme)) {
-                JarFileResourceUrlFactory factory = new JarFileResourceUrlFactory(url, new YamlEntryPredicate());
-                targets.addAll(factory.generateResourceUrls());
-            } else {
-                throw new IllegalArgumentException("UnSupported scheme " + scheme);
+            if (url2uris.isEmpty()) {
+                throw new FileNotFoundException("Location is not found " + location);
+            }
+            for (Pair<URL, URI> url2uri : url2uris) {
+                URL url = url2uri.left;
+                String scheme = url2uri.right.getScheme();
+                if ("file".equals(scheme)) {
+                    LocalFileResourceUrlFactory factory = new LocalFileResourceUrlFactory(url, new YamlFilePredicate());
+                    targets.addAll(factory.generateResourceUrls());
+                } else if ("jar".equals(scheme)) {
+                    JarFileResourceUrlFactory factory = new JarFileResourceUrlFactory(url, new YamlEntryPredicate());
+                    targets.addAll(factory.generateResourceUrls());
+                } else {
+                    throw new IllegalArgumentException("UnSupported scheme " + scheme);
+                }
             }
         }
         return targets;

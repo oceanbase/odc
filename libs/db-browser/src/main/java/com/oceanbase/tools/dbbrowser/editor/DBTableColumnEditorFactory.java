@@ -51,4 +51,9 @@ public class DBTableColumnEditorFactory extends AbstractDBBrowserFactory<DBTable
         return buildForMySQL();
     }
 
+    @Override
+    public DBTableColumnEditor buildForPostgres() {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
 }

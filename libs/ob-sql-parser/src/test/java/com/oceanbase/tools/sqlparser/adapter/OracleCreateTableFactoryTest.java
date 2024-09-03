@@ -37,6 +37,7 @@ import com.oceanbase.tools.sqlparser.statement.Operator;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
 import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.common.DataType;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnAttributes;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
@@ -72,11 +73,11 @@ public class OracleCreateTableFactoryTest {
 
     @Test
     public void generate_onlyColumnDefExists_generateSucceed() {
-        Create_table_stmtContext context = getCreateTableContext("create table abcd (id varchar(64))");
+        Create_table_stmtContext context = getCreateTableContext("create table any_schema.abcd (id varchar(64))");
         StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -85,11 +86,12 @@ public class OracleCreateTableFactoryTest {
 
     @Test
     public void generate_externalCreateTable_generateSucceed() {
-        Create_table_stmtContext context = getCreateTableContext("create external table abcd (id varchar(64))");
+        Create_table_stmtContext context =
+                getCreateTableContext("create external table any_schema.abcd (id varchar(64))");
         StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         expect.setExternal(true);
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
@@ -100,11 +102,11 @@ public class OracleCreateTableFactoryTest {
     @Test
     public void generate_commitOption_generateSucceed() {
         Create_table_stmtContext context =
-                getCreateTableContext("create table abcd (id varchar(64)) on commit delete rows");
+                getCreateTableContext("create table any_schema.abcd (id varchar(64)) on commit delete rows");
         StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         expect.setCommitOption("delete");
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
@@ -115,11 +117,11 @@ public class OracleCreateTableFactoryTest {
     @Test
     public void generate_createTableAsSelect_generateSucceed() {
         Create_table_stmtContext context = getCreateTableContext(
-                "create table .abcd as select * from tab order by c desc fetch first 12 rows only");
+                "create table any_schema.abcd as select * from tab order by c desc fetch first 12 rows only");
         StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         NameReference from = new NameReference(null, "tab", null);
         SelectBody selectBody =
                 new SelectBody(Collections.singletonList(new Projection()), Collections.singletonList(from));
@@ -134,11 +136,12 @@ public class OracleCreateTableFactoryTest {
 
     @Test
     public void generate_sortKey_succeed() {
-        Create_table_stmtContext context = getCreateTableContext("create table abcd (id varchar(64)) sortkey (a,b)");
+        Create_table_stmtContext context =
+                getCreateTableContext("create table any_schema.abcd (id varchar(64)) sortkey (a,b)");
         StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -152,11 +155,11 @@ public class OracleCreateTableFactoryTest {
     @Test
     public void generate_parallel_succeed() {
         Create_table_stmtContext context =
-                getCreateTableContext("create table abcd (id varchar(64)) parallel 12, noparallel");
+                getCreateTableContext("create table any_schema.abcd (id varchar(64)) parallel 12, noparallel");
         StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -170,11 +173,12 @@ public class OracleCreateTableFactoryTest {
     @Test
     public void generate_tableMode_succeed() {
         Create_table_stmtContext context =
-                getCreateTableContext("create table abcd (id varchar(64)) table_mode='abcd',parallel 12, noparallel");
+                getCreateTableContext(
+                        "create table any_schema.abcd (id varchar(64)) table_mode='abcd',parallel 12, noparallel");
         StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -189,11 +193,11 @@ public class OracleCreateTableFactoryTest {
     @Test
     public void generate_duplicateScope_succeed() {
         Create_table_stmtContext context =
-                getCreateTableContext("create table abcd (id varchar(64)) duplicate_scope='abcd'");
+                getCreateTableContext("create table any_schema.abcd (id varchar(64)) duplicate_scope='abcd'");
         StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -206,11 +210,11 @@ public class OracleCreateTableFactoryTest {
     @Test
     public void generate_locality_succeed() {
         Create_table_stmtContext context =
-                getCreateTableContext("create table abcd (id varchar(64)) locality='abcd' force");
+                getCreateTableContext("create table any_schema.abcd (id varchar(64)) locality='abcd' force");
         StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -222,11 +226,12 @@ public class OracleCreateTableFactoryTest {
 
     @Test
     public void generate_expireInfo_succeed() {
-        Create_table_stmtContext context = getCreateTableContext("create table abcd (id varchar(64)) expire_info=(1)");
+        Create_table_stmtContext context =
+                getCreateTableContext("create table any_schema.abcd (id varchar(64)) expire_info=(1)");
         StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -239,11 +244,11 @@ public class OracleCreateTableFactoryTest {
     @Test
     public void generate_forArchiveHighCompress_succeed() {
         Create_table_stmtContext context =
-                getCreateTableContext("create table abcd (id varchar(64)) compress    for archive high");
+                getCreateTableContext("create table any_schema.abcd (id varchar(64)) compress    for archive high");
         StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -256,11 +261,11 @@ public class OracleCreateTableFactoryTest {
     @Test
     public void generate_useBloomFilter_succeed() {
         Create_table_stmtContext context =
-                getCreateTableContext("create table abcd (id varchar(64)) use_bloom_filter=false");
+                getCreateTableContext("create table any_schema.abcd (id varchar(64)) use_bloom_filter=false");
         StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -272,11 +277,12 @@ public class OracleCreateTableFactoryTest {
 
     @Test
     public void generate_readWrite_succeed() {
-        Create_table_stmtContext context = getCreateTableContext("create table abcd (id varchar(64)) read write");
+        Create_table_stmtContext context =
+                getCreateTableContext("create table any_schema.abcd (id varchar(64)) read write");
         StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -290,11 +296,12 @@ public class OracleCreateTableFactoryTest {
     public void generate_rowMovement_succeed() {
         Create_table_stmtContext context =
                 getCreateTableContext(
-                        "create table abcd (id varchar(64)) enable row movement, disable row movement enable_extended_rowid=false");
+                        "create table any_schema.abcd (id varchar(64)) enable row movement, disable row movement "
+                                + "enable_extended_rowid=false");
         StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -309,11 +316,12 @@ public class OracleCreateTableFactoryTest {
     @Test
     public void generate_physicalAttrs_succeed() {
         Create_table_stmtContext context = getCreateTableContext(
-                "create table abcd (id varchar(64)) pctfree=12,pctused 13,initrans 14, maxtrans 15, storage(next 14 initial 16), tablespace abc");
+                "create table any_schema.abcd (id varchar(64)) pctfree=12,pctused 13,initrans 14, maxtrans 15, storage(next 14 initial "
+                        + "16), tablespace abc");
         StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -331,13 +339,13 @@ public class OracleCreateTableFactoryTest {
     @Test
     public void generate_tableWithPartition_succeed() {
         Create_table_stmtContext context = getCreateTableContext(
-                "create table abcd ("
+                "create table any_schema.abcd ("
                         + "id varchar(64))"
                         + "partition by range(id) (partition a values less than (-2))");
         StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -351,11 +359,12 @@ public class OracleCreateTableFactoryTest {
     @Test
     public void generate_formatTableOp_succeed() {
         Create_table_stmtContext context = getCreateTableContext(
-                "create table abcd (id varchar(64)) format=(ENCODING='aaaa',LINE_DELIMITER=123,SKIP_HEADER=12,EMPTY_FIELD_AS_NULL=true,NULL_IF_EXETERNAL=(1,2,3))");
+                "create table any_schema.abcd (id varchar(64)) format=(ENCODING='aaaa',LINE_DELIMITER=123,SKIP_HEADER=12,"
+                        + "EMPTY_FIELD_AS_NULL=true,NULL_IF_EXETERNAL=(1,2,3))");
         StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("abcd");
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -378,11 +387,11 @@ public class OracleCreateTableFactoryTest {
     @Test
     public void generate_withColumnGroup_allColumns_succeed() {
         Create_table_stmtContext ctx = getCreateTableContext(
-                "create table column_group_tbl (id varchar(64)) with column group(all columns)");
+                "create table any_schema.column_group_tbl (id varchar(64)) with column group(all columns)");
         OracleCreateTableFactory factory = new OracleCreateTableFactory(ctx);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("column_group_tbl");
+        CreateTable expect = new CreateTable(ctx, getRelationFactor("any_schema", "column_group_tbl"));
         expect.setColumnGroupElements(Collections.singletonList(new ColumnGroupElement(true, false)));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
@@ -393,11 +402,11 @@ public class OracleCreateTableFactoryTest {
     @Test
     public void generate_withColumnGroup_allColumns_eachColumn_succeed() {
         Create_table_stmtContext ctx = getCreateTableContext(
-                "create table column_group_tbl (id varchar(64)) with column group(all columns, each column)");
+                "create table any_schema.column_group_tbl (id varchar(64)) with column group(all columns, each column)");
         OracleCreateTableFactory factory = new OracleCreateTableFactory(ctx);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("column_group_tbl");
+        CreateTable expect = new CreateTable(ctx, getRelationFactor("any_schema", "column_group_tbl"));
         expect.setColumnGroupElements(
                 Arrays.asList(new ColumnGroupElement(true, false), new ColumnGroupElement(false, true)));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
@@ -409,11 +418,11 @@ public class OracleCreateTableFactoryTest {
     @Test
     public void generate_withColumnGroup_customGroup_succeed() {
         Create_table_stmtContext ctx = getCreateTableContext(
-                "create table column_group_tbl (id varchar(64)) with column group(g1(id))");
+                "create table any_schema.column_group_tbl (id varchar(64)) with column group(g1(id))");
         OracleCreateTableFactory factory = new OracleCreateTableFactory(ctx);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("column_group_tbl");
+        CreateTable expect = new CreateTable(ctx, getRelationFactor("any_schema", "column_group_tbl"));
         List<String> columnNames = Collections.singletonList("id");
         expect.setColumnGroupElements(Collections.singletonList(new ColumnGroupElement("g1", columnNames)));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
@@ -425,11 +434,11 @@ public class OracleCreateTableFactoryTest {
     @Test
     public void generate_skipIndex_succeed() {
         Create_table_stmtContext ctx = getCreateTableContext(
-                "create table skip_index_tbl (id varchar(64) SKIP_INDEX(MIN_MAX,SUM))");
+                "create table any_schema.skip_index_tbl (id varchar(64) SKIP_INDEX(MIN_MAX,SUM))");
         OracleCreateTableFactory factory = new OracleCreateTableFactory(ctx);
         CreateTable actual = factory.generate();
 
-        CreateTable expect = new CreateTable("skip_index_tbl");
+        CreateTable expect = new CreateTable(ctx, getRelationFactor("any_schema", "skip_index_tbl"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         ColumnAttributes attributes = new ColumnAttributes();
         attributes.setSkipIndexTypes(Arrays.asList("MIN_MAX", "SUM"));
@@ -447,4 +456,9 @@ public class OracleCreateTableFactoryTest {
         return parser.create_table_stmt();
     }
 
+    private RelationFactor getRelationFactor(String schema, String relation) {
+        RelationFactor relationFactor = new RelationFactor(relation);
+        relationFactor.setSchema(schema);
+        return relationFactor;
+    }
 }

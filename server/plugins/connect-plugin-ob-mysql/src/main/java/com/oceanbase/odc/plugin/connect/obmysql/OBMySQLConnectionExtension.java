@@ -39,9 +39,9 @@ import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
-import com.oceanbase.odc.core.shared.jdbc.HostAddress;
-import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
+import com.oceanbase.odc.plugin.connect.api.HostAddress;
+import com.oceanbase.odc.plugin.connect.api.JdbcUrlParser;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
 import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 import com.oceanbase.odc.plugin.connect.obmysql.initializer.EnablePlanMonitorInitializer;
@@ -124,7 +124,7 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
         if (Objects.isNull(jdbcUrlParams)) {
             jdbcUrlParams = new HashMap<>();
         }
-        jdbcUrlParams.put("enableFullLinkTrace", "false");
+        jdbcUrlParams.put("enableFullLinkTrace", "true");
         return jdbcUrlParams;
     }
 

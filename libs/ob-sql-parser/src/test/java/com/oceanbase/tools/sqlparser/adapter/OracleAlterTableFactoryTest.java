@@ -33,6 +33,7 @@ import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
 import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
@@ -67,8 +68,9 @@ public class OracleAlterTableFactoryTest {
         AlterTableAction a3 = new AlterTableAction();
         a3.setRefresh(true);
 
-        AlterTable expect = new AlterTable("b", Arrays.asList(a3, a1, a2));
-        expect.setSchema("a");
+        RelationFactor relationFactor = getRelationFactor("a", "b");
+        relationFactor.setUserVariable("@c");
+        AlterTable expect = new AlterTable(relationFactor, Arrays.asList(a3, a1, a2));
         expect.setUserVariable("@c");
         expect.setExternal(true);
         Assert.assertEquals(expect, actual);
@@ -82,8 +84,7 @@ public class OracleAlterTableFactoryTest {
 
         AlterTableAction action = new AlterTableAction();
         action.setAddColumnGroupElements(Collections.singletonList(new ColumnGroupElement(true, false)));
-        AlterTable expect = new AlterTable("b", Collections.singletonList(action));
-        expect.setSchema("a");
+        AlterTable expect = new AlterTable(getRelationFactor("a", "b"), Collections.singletonList(action));
         Assert.assertEquals(expect, actual);
     }
 
@@ -95,8 +96,7 @@ public class OracleAlterTableFactoryTest {
 
         AlterTableAction action = new AlterTableAction();
         action.setDropColumnGroupElements(Collections.singletonList(new ColumnGroupElement(true, false)));
-        AlterTable expect = new AlterTable("b", Collections.singletonList(action));
-        expect.setSchema("a");
+        AlterTable expect = new AlterTable(getRelationFactor("a", "b"), Collections.singletonList(action));
         Assert.assertEquals(expect, actual);
     }
 
@@ -106,5 +106,11 @@ public class OracleAlterTableFactoryTest {
         OBParser parser = new OBParser(tokens);
         parser.setErrorHandler(new BailErrorStrategy());
         return parser.alter_table_stmt();
+    }
+
+    private RelationFactor getRelationFactor(String schema, String relation) {
+        RelationFactor relationFactor = new RelationFactor(relation);
+        relationFactor.setSchema(schema);
+        return relationFactor;
     }
 }

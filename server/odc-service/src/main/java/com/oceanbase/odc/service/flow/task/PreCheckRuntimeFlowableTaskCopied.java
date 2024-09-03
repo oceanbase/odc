@@ -62,7 +62,7 @@ import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
 import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
-import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.task.TaskService;
@@ -258,7 +258,7 @@ public class PreCheckRuntimeFlowableTaskCopied extends BaseODCFlowTaskDelegate<V
             params = JsonUtils.fromJson(parameterJson, DatabaseChangeParameters.class);
         } else if (taskType == TaskType.ALTER_SCHEDULE) {
             AlterScheduleParameters asParams = JsonUtils.fromJson(parameterJson, AlterScheduleParameters.class);
-            if (asParams.getType() == JobType.SQL_PLAN) {
+            if (asParams.getType() == ScheduleType.SQL_PLAN) {
                 params = (DatabaseChangeParameters) asParams.getScheduleTaskParameters();
             }
         }
@@ -321,7 +321,7 @@ public class PreCheckRuntimeFlowableTaskCopied extends BaseODCFlowTaskDelegate<V
         if (taskType == TaskType.ALTER_SCHEDULE) {
             AlterScheduleParameters params =
                     JsonUtils.fromJson(taskEntity.getParametersJson(), AlterScheduleParameters.class);
-            return params.getType() == JobType.SQL_PLAN;
+            return params.getType() == ScheduleType.SQL_PLAN;
         }
         return true;
     }
