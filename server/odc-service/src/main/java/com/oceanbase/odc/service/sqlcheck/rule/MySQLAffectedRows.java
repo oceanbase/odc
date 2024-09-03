@@ -82,7 +82,7 @@ public class MySQLAffectedRows implements SqlCheckRule {
             }
             long affectedRows = 0;
             String explainSql = "EXPLAIN " + statement.getText();
-            try{
+            try {
                 switch (dialectType) {
                     case MYSQL:
                         affectedRows = getMySqlAffectedRows(explainSql, jdbcOperations);
@@ -94,7 +94,7 @@ public class MySQLAffectedRows implements SqlCheckRule {
                         log.warn("Unsupported dialect type: {}", dialectType);
                         break;
                 }
-            } catch (Exception e){
+            } catch (Exception e) {
                 log.error("Error in calling getAffectedRows method", e);
                 affectedRows = -1;
             }
