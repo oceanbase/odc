@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -38,6 +39,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.TraceStage;
 import com.oceanbase.odc.common.util.TraceWatch;
+import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -52,6 +54,7 @@ import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
 import com.oceanbase.odc.service.common.util.PLObjectErrMsgUtils;
+import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.feature.AllFeatures;
 import com.oceanbase.odc.service.session.model.OdcResultSetMetaData.OdcTable;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
@@ -63,6 +66,7 @@ import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
+import cn.hutool.core.collection.CollectionUtil;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -81,6 +85,7 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor
 @Slf4j
 public class SqlExecuteResult {
+    public static final String MIN_OB_VERSION_FOR_EXTERNAL_TABLE = "4.3.2";
     private List<String> columnLabels;
     private List<String> columns;
     private SqlExecuteStatus status = SqlExecuteStatus.CREATED;
@@ -134,8 +139,9 @@ public class SqlExecuteResult {
         }
     }
 
-    public OdcTable initEditableInfo() {
+    public OdcTable initEditableInfo(ConnectionSession connectionSession) {
         boolean editable = true;
+        editable = !checkContainsExternalTable(connectionSession);
         OdcTable resultTable = null;
         Set<OdcTable> relatedTablesOrViews = new HashSet<>();
         if (Objects.isNull(this.resultSetMetaData)) {
@@ -202,6 +208,42 @@ public class SqlExecuteResult {
         }
         return resultTable;
     }
+
+    private boolean checkContainsExternalTable(ConnectionSession connectionSession) {
+        Map<String, List<String>> schema2ExternalTables = new HashMap<>();
+        DialectType dialectType = connectionSession.getDialectType();
+        if (dialectType == DialectType.OB_MYSQL || dialectType == DialectType.OB_ORACLE) {
+            String obVersion = ConnectionSessionUtil.getVersion(connectionSession);
+            if (VersionUtils.isGreaterThanOrEqualsTo(obVersion, MIN_OB_VERSION_FOR_EXTERNAL_TABLE)) {
+                List<JdbcColumnMetaData> columnList = resultSetMetaData.getFieldMetaDataList();
+                Map<String, JdbcColumnMetaData> schemaAndTable2Column = columnList.stream()
+                        .collect(Collectors.groupingBy(jcmd -> jcmd.getCatalogName() + "." + jcmd.getTableName(),
+                                Collectors.collectingAndThen(Collectors.toList(),
+                                        lst -> lst.get(0))));
+                Set<JdbcColumnMetaData> columnSet = new HashSet<>(schemaAndTable2Column.values());
+                for (JdbcColumnMetaData columnMetaData : columnSet) {
+                    String catalogName = columnMetaData.getCatalogName();
+                    String tableName = columnMetaData.getTableName();
+                    List<String> externalTables;
+                    if (schema2ExternalTables.containsKey(catalogName)) {
+                        externalTables = schema2ExternalTables.get(catalogName);
+                        if (CollectionUtil.contains(externalTables, tableName)) {
+                            return true;
+                        }
+                    } else {
+                        DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
+                        externalTables = schemaAccessor.showExternalTables(catalogName);
+                        schema2ExternalTables.put(catalogName, externalTables);
+                        if (CollectionUtil.contains(externalTables, tableName)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
 
     public void initColumnInfo(@NonNull ConnectionSession connectionSession, OdcTable resultTable,
             @NonNull DBSchemaAccessor schemaAccessor) {

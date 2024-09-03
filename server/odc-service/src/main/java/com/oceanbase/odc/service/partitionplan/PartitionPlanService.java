@@ -69,6 +69,7 @@ import com.oceanbase.odc.service.partitionplan.model.PartitionPlanVariable;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.plugin.TaskPluginUtil;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
@@ -118,7 +119,8 @@ public class PartitionPlanService {
         DialectType dialectType = connectionSession.getDialectType();
         TableExtensionPoint tableExtensionPoint = SchemaPluginUtil.getTableExtension(dialectType);
         if (tableExtensionPoint == null) {
-            throw new UnsupportedOperationException("Unsupported dialect " + dialectType);
+            throw new UnsupportedOperationException("the dialect " + connectionSession.getConnectType().getDialectType()
+                    + " doesn't support the database object type " + DBObjectType.TABLE);
         }
         DBTable dbTable = getJdbcOpt(connectionSession).execute((ConnectionCallback<DBTable>) con -> {
             try {
@@ -274,7 +276,8 @@ public class PartitionPlanService {
             @NonNull PartitionPlanTableConfig tableConfig) throws Exception {
         TableExtensionPoint tableExtensionPoint = SchemaPluginUtil.getTableExtension(dialectType);
         if (tableExtensionPoint == null) {
-            throw new UnsupportedOperationException("Unsupported dialect " + dialectType);
+            throw new UnsupportedOperationException("the dialect " + dialectType
+                    + " doesn't support the database object type " + DBObjectType.TABLE);
         }
         DBTable dbTable = tableExtensionPoint.getDetail(connection, schema, tableConfig.getTableName());
         return generatePartitionDdl(connection, dialectType, dbTable, tableConfig);
@@ -363,7 +366,8 @@ public class PartitionPlanService {
             @NonNull String schema, @NonNull PartitionPlanTableConfig tableConfig) throws Exception {
         TableExtensionPoint tableExtensionPoint = SchemaPluginUtil.getTableExtension(dialectType);
         if (tableExtensionPoint == null) {
-            throw new UnsupportedOperationException("Unsupported dialect " + dialectType);
+            throw new UnsupportedOperationException("the dialect " + dialectType
+                    + " doesn't support the database object type " + DBObjectType.TABLE);
         }
         DBTable dbTable = tableExtensionPoint.getDetail(connection, schema, tableConfig.getTableName());
         return generatePartitionName(connection, dialectType, dbTable, tableConfig);

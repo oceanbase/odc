@@ -70,7 +70,7 @@ public class DBTableControllerV1 {
         // parse sid and database name, sid:1-1:d:database:t:tb1
         ResourceIdentifier i = ResourceIDParser.parse(sid);
         return OdcResult.ok(new OdcDBTable(tableService.getTable(
-                sessionService.nullSafeGet(i.getSid(), true), i.getDatabase(), i.getTable())));
+                sessionService.nullSafeGet(i.getSid(), true), i.getDatabase(), i.getTable(), null)));
     }
 
     @ApiOperation(value = "getUpdateSql", notes = "获取修改表名的sql")

@@ -47,7 +47,7 @@ public class DBTableServiceTest extends ServiceTestEnv {
 
         ConnectionSession session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
 
-        DBTable table = dbTableService.getTable(session, "abc", "abc");
+        DBTable table = dbTableService.getTable(session, "abc", "abc", null);
     }
 
     @Test
@@ -57,6 +57,6 @@ public class DBTableServiceTest extends ServiceTestEnv {
 
         ConnectionSession session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_ORACLE);
 
-        DBTable table = dbTableService.getTable(session, "abc", "abc");
+        DBTable table = dbTableService.getTable(session, "abc", "abc", null);
     }
 }

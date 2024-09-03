@@ -138,6 +138,16 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public List<String> showExternalTablesLike(String schemaName, String tableNameLike) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public List<DBObjectIdentity> listExternalTables(String schemaName, String tableNameLike) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
     public List<DBObjectIdentity> listViews(String schemaName) {
         throw new UnsupportedOperationException("Not supported yet");
     }
@@ -238,6 +248,16 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public List<DBTableColumn> listTableColumns(String schemeName, String tableName) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listExternalTableColumns(String schemaName) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public List<DBTableColumn> listExternalTableColumns(String schemaName, String tableName) {
         throw new UnsupportedOperationException("Not supported yet");
     }
 

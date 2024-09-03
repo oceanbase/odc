@@ -221,6 +221,22 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
         return listBaseTables(schemaName, tableNameLike);
     }
 
+    @Override
+    public List<String> showExternalTables(String schemaName) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+
+    @Override
+    public List<String> showExternalTablesLike(String schemaName, String tableNameLike) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public List<DBObjectIdentity> listExternalTables(String schemaName, String tableNameLike) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
     protected List<DBObjectIdentity> listBaseTables(String schemaName, String tableNameLike)
             throws DataAccessException {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
@@ -773,6 +789,16 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
     public List<DBTableColumn> listTableColumns(String schemaName, String tableName) {
         String sql = this.sqlMapper.getSql(Statements.LIST_TABLE_COLUMNS);
         return jdbcOperations.query(sql, new Object[] {schemaName, tableName}, listTableRowMapper());
+    }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listExternalTableColumns(String schemaName) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public List<DBTableColumn> listExternalTableColumns(String schemaName, String tableName) {
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override

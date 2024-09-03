@@ -84,8 +84,10 @@ import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.validation.constraints.NotNull;
+
 /**
- * 适用于的 DB 版本：[4.1.0, ~)
+ * 适用于的 DB 版本：[4.3.2, ~)
  * 
  * @author jingtian
  */
@@ -1034,5 +1036,90 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
             returnVal.put(tableName, table);
         }
         return returnVal;
+    }
+
+    @Override
+    public List<String> showExternalTables(String schemaName) {
+        return showExternalTablesLike(schemaName, null);
+    }
+
+
+    @Override
+    public List<String> showExternalTablesLike(String schemaName, String tableNameLike) {
+        return commonShowTablesLike(schemaName, tableNameLike,DBObjectType.EXTERNAL_TABLE);
+    }
+
+
+
+    @Override
+    public List<DBObjectIdentity> listExternalTables(String schemaName, String tableNameLike) {
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("select OWNER as schema_name, 'EXTERNAL_TABLE' as type,TABLE_NAME as name");
+        sb.append(" from ");
+        sb.append(dataDictTableNames.TABLES());
+        sb.append(" where EXTERNAL = 'YES'");
+
+        if (StringUtils.isNotBlank(schemaName)) {
+            sb.append(" AND OWNER=");
+            sb.value(schemaName);
+        }
+        if (StringUtils.isNotBlank(tableNameLike)) {
+            sb.append(" AND TABLE_NAME LIKE ");
+            sb.value(tableNameLike);
+        }
+        sb.append(" ORDER BY schema_name, type, name");
+        return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
+    }
+
+    // After ob version 4.3.2, oracle model displaying table list needs to exclude external tables
+    @Override
+    public List<String> showTablesLike(String schemaName, String tableNameLike) {
+        return commonShowTablesLike(schemaName, tableNameLike,DBObjectType.EXTERNAL_TABLE);
+    }
+
+    // After ob version 4.3.2, oracle model displaying table list needs to exclude external tables
+    @Override
+    public List<DBObjectIdentity> listTables(String schemaName, String tableNameLike) {
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("select OWNER as schema_name, 'TABLE' as type,TABLE_NAME as name");
+        sb.append(" from ");
+        sb.append(dataDictTableNames.TABLES());
+        sb.append(" where EXTERNAL = 'NO'");
+
+        if (StringUtils.isNotBlank(schemaName)) {
+            sb.append(" AND OWNER=");
+            sb.value(schemaName);
+        }
+        if (StringUtils.isNotBlank(tableNameLike)) {
+            sb.append(" AND TABLE_NAME LIKE ");
+            sb.value(tableNameLike);
+        }
+        sb.append(" ORDER BY schema_name, type, name");
+        return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
+    }
+
+    private List<String> commonShowTablesLike(String schemaName, String tableNameLike,@NonNull  DBObjectType tableType) {
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("SELECT TABLE_NAME FROM ");
+        sb.append(dataDictTableNames.TABLES());
+        switch(tableType){
+            case TABLE:
+                sb.append(" WHERE EXTERNAL = 'NO' AND ");
+                break;
+            case EXTERNAL_TABLE:
+                sb.append(" WHERE EXTERNAL = 'YES' AND ");
+                break;
+            default:
+                throw new UnsupportedOperationException("Not supported table type");
+        }
+        if(StringUtils.isNotBlank(schemaName)){
+            sb.value(schemaName);
+        }
+        if (StringUtils.isNotBlank(tableNameLike)) {
+            sb.append(" AND TABLE_NAME LIKE ");
+            sb.value(tableNameLike);
+        }
+        sb.append(" ORDER BY TABLE_NAME ASC");
+        return jdbcOperations.queryForList(sb.toString(), String.class);
     }
 }
