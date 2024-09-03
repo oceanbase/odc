@@ -37,6 +37,7 @@ import com.oceanbase.tools.sqlparser.statement.insert.Insert;
 import com.oceanbase.tools.sqlparser.statement.update.Update;
 
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * {@link MySQLAffectedRows}
@@ -45,6 +46,7 @@ import lombok.NonNull;
  * @version 1.0
  * @date 2024-08-01 18:18
  */
+@Slf4j
 public class MySQLAffectedRows implements SqlCheckRule {
 
     private final Long maxSQLAffectedRows;
@@ -80,15 +82,20 @@ public class MySQLAffectedRows implements SqlCheckRule {
             }
             long affectedRows = 0;
             String explainSql = "EXPLAIN " + statement.getText();
-            switch (dialectType) {
-                case MYSQL:
-                    affectedRows = getMySqlAffectedRows(explainSql, jdbcOperations);
-                    break;
-                case OB_MYSQL:
-                    affectedRows = getOBMySqlAffectedRows(explainSql, jdbcOperations);
-                    break;
-                default:
-                    break;
+            try{
+                switch (dialectType) {
+                    case MYSQL:
+                        affectedRows = getMySqlAffectedRows(explainSql, jdbcOperations);
+                        break;
+                    case OB_MYSQL:
+                        affectedRows = getOBMySqlAffectedRows(explainSql, jdbcOperations);
+                        break;
+                    default:
+                        break;
+                }
+            } catch (Exception e){
+                log.error("error: " + e.getMessage() + ", SQL: " + explainSql);
+                throw new RuntimeException("SQL: " + explainSql + " execute failed");
             }
 
             if (affectedRows > maxSQLAffectedRows) {
