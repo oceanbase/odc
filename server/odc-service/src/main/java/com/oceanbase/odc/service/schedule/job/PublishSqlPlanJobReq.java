@@ -22,7 +22,7 @@ import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import lombok.Data;
 
 @Data
-public class SqlPlanJobReq {
+public class PublishSqlPlanJobReq {
 
     private String sqlContent;
 

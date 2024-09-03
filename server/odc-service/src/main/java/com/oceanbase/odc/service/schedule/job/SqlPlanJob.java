@@ -104,7 +104,7 @@ public class SqlPlanJob implements OdcJob {
         log.info("sql plan job execute in task framework, jobId={}", taskEntity.getJobName());
         SqlPlanParameters sqlPlanParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                 SqlPlanParameters.class);
-        SqlPlanJobReq parameters = new SqlPlanJobReq();
+        PublishSqlPlanJobReq parameters = new PublishSqlPlanJobReq();
         parameters.setSqlContent(sqlPlanParameters.getSqlContent());
         parameters.setRetryTimes(sqlPlanParameters.getRetryTimes());
         parameters.setDelimiter(sqlPlanParameters.getDelimiter());

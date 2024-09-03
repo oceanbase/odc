@@ -53,7 +53,7 @@ import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.odc.service.schedule.job.SqlPlanJobReq;
+import com.oceanbase.odc.service.schedule.job.PublishSqlPlanJobReq;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
@@ -70,7 +70,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
 
-    private SqlPlanJobReq parameters;
+    private PublishSqlPlanJobReq parameters;
 
     private ConnectionSession connectionSession;
 
@@ -94,7 +94,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
     protected void doInit(JobContext context) {
         this.result = new SqlPlanTaskResult();
         this.parameters = JobUtils.fromJson(getJobParameters().get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
-                SqlPlanJobReq.class);
+                PublishSqlPlanJobReq.class);
         this.connectionSession = generateSession();
         this.executor = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
         initFile();
