@@ -27,6 +27,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import com.oceanbase.odc.service.resource.k8s.K8sPodResource;
+import com.oceanbase.odc.service.resource.k8s.K8sResourceContext;
 import com.oceanbase.odc.service.resource.k8s.PodConfig;
 import com.oceanbase.odc.service.resource.k8s.client.K8sJobClient;
 import com.oceanbase.odc.service.resource.k8s.client.NativeK8sJobClient;
@@ -63,7 +64,8 @@ public class NativeK8sClientTest {
         String exceptedJobName = JobUtils.generateExecutorName(jobIdentity);
         List<String> cmd = Arrays.asList("perl", "-Mbignum=bpi", "-wle", "print bpi(2000)");
         PodConfig podParam = new PodConfig();
-        K8sPodResource generateJobOfName = k8sClient.create("default", exceptedJobName, imageName, cmd, podParam);
+        K8sResourceContext context = new K8sResourceContext(podParam,  exceptedJobName, imageName, "group", podParam);
+        K8sPodResource generateJobOfName = k8sClient.create(context);
         Assert.assertEquals(exceptedJobName, generateJobOfName);
 
         Optional<K8sPodResource> queryJobName = k8sClient.get("default", exceptedJobName);

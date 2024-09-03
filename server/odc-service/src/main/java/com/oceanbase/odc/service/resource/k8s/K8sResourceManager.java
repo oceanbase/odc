@@ -48,7 +48,7 @@ public abstract class K8sResourceManager {
     /**
      * register or update k8s operator
      */
-    public abstract void registerK8sOperator(String region, K8sResourceOperatorBuilder operator);
+    public abstract void registerK8sOperator(String key, K8sResourceOperatorBuilder operator);
 
     /**
      * directly create k8s resource
