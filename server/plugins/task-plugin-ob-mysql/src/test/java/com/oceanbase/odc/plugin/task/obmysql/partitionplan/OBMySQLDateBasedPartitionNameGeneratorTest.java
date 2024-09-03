@@ -73,7 +73,8 @@ public class OBMySQLDateBasedPartitionNameGeneratorTest {
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, 0);
         parameters.put(PartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);
-        parameters.put(PartitionNameGenerator.PREVIOUS_PARTITION_EXPRS,Collections.singletonList("'2024-03-01 00:00:00'"));
+        parameters.put(PartitionNameGenerator.PREVIOUS_PARTITION_EXPRS,
+                Collections.singletonList("'2024-03-01 00:00:00'"));
         return parameters;
     }
 

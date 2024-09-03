@@ -27,8 +27,9 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 import lombok.NonNull;
 
 /**
- * {@link DateBasedPartitionNameGenerator}
- * Generate partition names using the lower bound of the partition.
+ * {@link DateBasedPartitionNameGenerator} Generate partition names using the lower bound of the
+ * partition.
+ * 
  * @author yh263208
  * @date 2024-01-22 17:08
  * @since ODC_release_4.2.4
