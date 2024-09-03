@@ -15,30 +15,22 @@
  */
 package com.oceanbase.odc.service.resource.model;
 
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
 import lombok.Setter;
 
 /**
- * {@link NativeK8sResourceKey}
+ * {@link ResourceTag}
+ *
+ * @author yh263208
+ * @date 2024-09-03 15:15
+ * @since ODC_release_4.3.2
  */
 @Getter
 @Setter
-@NoArgsConstructor
 @EqualsAndHashCode
-public class NativeK8sResourceKey {
+public class ResourceTag {
 
-    private String name;
-    private Class<?> type;
-    private String namespace;
-
-    public NativeK8sResourceKey(@NonNull V1ObjectMeta objectMeta, @NonNull Class<?> type) {
-        this.type = type;
-        this.name = objectMeta.getName();
-        this.namespace = objectMeta.getNamespace();
-    }
+    private String defaultNamespace = "default";
 
 }

@@ -23,6 +23,9 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.service.resource.builder.ResourceOperatorBuilder;
+import com.oceanbase.odc.service.resource.model.ResourceID;
+import com.oceanbase.odc.service.resource.model.ResourceTag;
 import com.oceanbase.odc.service.resource.operator.ResourceOperator;
 
 import lombok.NonNull;
@@ -40,43 +43,47 @@ import lombok.extern.slf4j.Slf4j;
 public class ResourceManagerService {
 
     @Autowired(required = false)
-    private List<ResourceOperator<?, ?>> resourceOperators;
+    private List<ResourceOperatorBuilder<?, ?>> resourceOperatorBuilders;
 
-    public <T> T create(@NonNull T config) throws Exception {
-        return getResourceOperatorByConfig(config).create(config);
+    public <T> T create(@NonNull T config, @NonNull ResourceTag resourceTag) throws Exception {
+        return getResourceOperator(config, resourceTag).create(config);
     }
 
-    public <T> Object getKey(@NonNull T config) throws Exception {
-        return getResourceOperatorByConfig(config).getKey(config);
-    }
-
-    public <T> Optional<T> query(@NonNull Object key, @NonNull Class<T> clazz) throws Exception {
-        return getResourceOperatorByConfig(clazz).query(key);
-    }
-
-    public <T> void destroy(@NonNull Object key, @NonNull Class<T> clazz) throws Exception {
-        getResourceOperatorByConfig(clazz).destroy(key);
-    }
-
-    public <T> List<T> list(@NonNull Class<T> clazz) throws Exception {
-        return getResourceOperatorByConfig(clazz).list();
+    public <T> Object getKey(@NonNull T config, @NonNull ResourceTag resourceTag) throws Exception {
+        return getResourceOperator(config, resourceTag).getKey(config);
     }
 
     @SuppressWarnings("all")
-    protected <T, ID> ResourceOperator<T, ID> getResourceOperatorByConfig(T config) {
-        return (ResourceOperator<T, ID>) getResourceOperatorByConfig(config.getClass());
+    public <T> Optional<T> query(@NonNull ResourceID key, @NonNull ResourceTag resourceTag) throws Exception {
+        return getResourceOperator((Class<T>) key.getType(), resourceTag).query(key);
     }
 
     @SuppressWarnings("all")
-    protected <T, ID> ResourceOperator<T, ID> getResourceOperatorByConfig(Class<T> clazz) {
-        List<ResourceOperator<?, ?>> builders = this.resourceOperators.stream()
+    public <T> void destroy(@NonNull ResourceID key, @NonNull ResourceTag resourceTag) throws Exception {
+        getResourceOperator((Class<T>) key.getType(), resourceTag).destroy(key);
+    }
+
+    public <T> List<T> list(@NonNull Class<T> clazz, @NonNull ResourceTag resourceTag) throws Exception {
+        return getResourceOperator(clazz, resourceTag).list();
+    }
+
+    @SuppressWarnings("all")
+    protected <T, ID extends ResourceID> ResourceOperator<T, ID> getResourceOperator(
+            T config, ResourceTag resourceTag) {
+        return (ResourceOperator<T, ID>) getResourceOperator(config.getClass(), resourceTag);
+    }
+
+    @SuppressWarnings("all")
+    protected <T, ID extends ResourceID> ResourceOperator<T, ID> getResourceOperator(
+            Class<T> clazz, ResourceTag resourceTag) {
+        List<ResourceOperatorBuilder<?, ?>> builders = this.resourceOperatorBuilders.stream()
                 .filter(builder -> builder.supports(clazz)).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(builders)) {
             throw new IllegalArgumentException("No builder found for config " + clazz);
         } else if (builders.size() != 1) {
             throw new IllegalStateException("There are more than one builder for the config " + clazz);
         }
-        return (ResourceOperator<T, ID>) builders.get(0);
+        return ((ResourceOperatorBuilder<T, ID>) builders.get(0)).build(resourceTag);
     }
 
 }

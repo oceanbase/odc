@@ -17,9 +17,7 @@ package com.oceanbase.odc.service.resource.operator;
 
 import java.util.List;
 
-import org.springframework.stereotype.Component;
-
-import com.oceanbase.odc.service.resource.model.NativeK8sResourceKey;
+import com.oceanbase.odc.service.resource.model.NativeK8sResourceID;
 
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -32,22 +30,20 @@ import lombok.NonNull;
  * @date 2024-09-02 17:09
  * @since ODC_release_4.3.2
  */
-@Component
 public class NativeK8sPodOperator extends BaseNativeK8sResourceOperator<V1Pod> {
 
-    @Override
-    protected boolean doSupports(@NonNull Class<?> clazz) {
-        return V1Pod.class.isAssignableFrom(clazz);
+    public NativeK8sPodOperator(@NonNull String namespace) {
+        super(namespace);
     }
 
     @Override
     public V1Pod create(@NonNull V1Pod config) throws Exception {
-        return new CoreV1Api().createNamespacedPod(config.getMetadata().getNamespace(), config, null, null, null, null);
+        return new CoreV1Api().createNamespacedPod(this.defaultNamespace, config, null, null, null, null);
     }
 
     @Override
-    public NativeK8sResourceKey getKey(V1Pod config) {
-        return new NativeK8sResourceKey(config.getMetadata(), V1Pod.class);
+    public NativeK8sResourceID getKey(V1Pod config) {
+        return new NativeK8sResourceID(config.getMetadata(), V1Pod.class);
     }
 
     @Override
@@ -57,11 +53,11 @@ public class NativeK8sPodOperator extends BaseNativeK8sResourceOperator<V1Pod> {
     }
 
     @Override
-    public void destroy(@NonNull NativeK8sResourceKey key) throws Exception {
+    public void destroy(@NonNull NativeK8sResourceID key) throws Exception {
         if (key.getName() == null) {
             throw new IllegalArgumentException("Resource name is null");
         }
-        new CoreV1Api().deleteNamespacedPod(key.getName(), key.getNamespace(), null, null, null, null, null, null);
+        new CoreV1Api().deleteNamespacedPod(key.getName(), this.defaultNamespace, null, null, null, null, null, null);
     }
 
 }

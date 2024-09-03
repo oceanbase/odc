@@ -13,30 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.operator;
-
-import java.util.List;
-import java.util.Optional;
-
-import com.oceanbase.odc.service.resource.model.ResourceID;
+package com.oceanbase.odc.service.resource.model;
 
 /**
- * {@link ResourceOperator}
+ * {@link ResourceID}
  *
  * @author yh263208
- * @date 2024-09-02 16:13
+ * @date 2024-09-03 15:26
  * @since ODC_release_4.3.2
  */
-public interface ResourceOperator<T, ID extends ResourceID> {
+public interface ResourceID {
 
-    T create(T config) throws Exception;
+    Class<?> getType();
 
-    ID getKey(T config);
-
-    Optional<T> query(ID key) throws Exception;
-
-    List<T> list() throws Exception;
-
-    void destroy(ID key) throws Exception;
+    String getUniqueName();
 
 }
