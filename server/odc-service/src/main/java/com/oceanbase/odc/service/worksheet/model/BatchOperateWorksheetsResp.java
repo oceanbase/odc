@@ -15,7 +15,10 @@
  */
 package com.oceanbase.odc.service.worksheet.model;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.collections4.CollectionUtils;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,9 +36,67 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class BatchOperateWorksheetsResp {
     /**
-     * Is the operation of all worksheets successful.
+     * Is the operation of all worksheets successfulFiles.
      */
     Boolean allSuccessful;
     List<WorksheetMetaResp> successfulFiles;
     List<WorksheetMetaResp> failedFiles;
+
+    public static BatchOperateWorksheetsResp ofSuccess(List<WorksheetMetaResp> worksheets) {
+        return new BatchOperateWorksheetsResp(true, worksheets, null);
+    }
+
+    public static BatchOperateWorksheetsResp ofFailed(List<WorksheetMetaResp> worksheets) {
+        return new BatchOperateWorksheetsResp(false, null, worksheets);
+    }
+
+    public void addResult(BatchOperateWorksheetsResp result) {
+        if (result == null) {
+            return;
+        }
+        addSuccess(result.getSuccessfulFiles());
+        addFailed(result.getFailedFiles());
+    }
+
+    public void addSuccess(List<WorksheetMetaResp> worksheets) {
+        if (CollectionUtils.isEmpty(worksheets)) {
+            return;
+        }
+        if (successfulFiles == null) {
+            successfulFiles = new ArrayList<>();
+        }
+        successfulFiles.addAll(worksheets);
+    }
+
+    public void addSuccess(WorksheetMetaResp worksheet) {
+        if (worksheet == null) {
+            return;
+        }
+        if (successfulFiles == null) {
+            successfulFiles = new ArrayList<>();
+        }
+        successfulFiles.add(worksheet);
+    }
+
+    public void addFailed(List<WorksheetMetaResp> worksheets) {
+        if (CollectionUtils.isEmpty(worksheets)) {
+            return;
+        }
+        allSuccessful = false;
+        if (failedFiles == null) {
+            failedFiles = new ArrayList<>();
+        }
+        failedFiles.addAll(worksheets);
+    }
+
+    public void addFailed(WorksheetMetaResp worksheet) {
+        if (worksheet == null) {
+            return;
+        }
+        allSuccessful = false;
+        if (failedFiles == null) {
+            failedFiles = new ArrayList<>();
+        }
+        failedFiles.add(worksheet);
+    }
 }
