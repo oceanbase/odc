@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.resource.operator;
 
 import java.util.List;
 
+import org.springframework.stereotype.Component;
+
 import com.oceanbase.odc.service.resource.model.NativeK8sResourceKey;
 
 import io.kubernetes.client.openapi.apis.CoreV1Api;
@@ -30,10 +32,12 @@ import lombok.NonNull;
  * @date 2024-09-02 17:09
  * @since ODC_release_4.3.2
  */
+@Component
 public class NativeK8sPodOperator extends BaseNativeK8sResourceOperator<V1Pod> {
 
-    public NativeK8sPodOperator(@NonNull String namespace) {
-        super(namespace);
+    @Override
+    protected boolean doSupports(@NonNull Class<?> clazz) {
+        return V1Pod.class.equals(clazz);
     }
 
     @Override

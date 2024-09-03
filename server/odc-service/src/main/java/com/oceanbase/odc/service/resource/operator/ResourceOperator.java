@@ -18,6 +18,8 @@ package com.oceanbase.odc.service.resource.operator;
 import java.util.List;
 import java.util.Optional;
 
+import lombok.NonNull;
+
 /**
  * {@link ResourceOperator}
  *
@@ -36,5 +38,7 @@ public interface ResourceOperator<T, ID> {
     List<T> list() throws Exception;
 
     void destroy(ID key) throws Exception;
+
+    boolean supports(@NonNull Class<?> clazz);
 
 }
