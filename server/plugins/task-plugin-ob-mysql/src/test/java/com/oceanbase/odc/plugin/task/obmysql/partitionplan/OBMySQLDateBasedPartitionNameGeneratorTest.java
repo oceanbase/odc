@@ -61,7 +61,7 @@ public class OBMySQLDateBasedPartitionNameGeneratorTest {
             config.setRefPartitionKey("col");
             PartitionNameGenerator generator = new OBMySQLDateBasedPartitionNameGenerator();
             String actual = generator.invoke(connection, dbTable, getParameters(config));
-            String expect = "p20240229";
+            String expect = "p20240301";
             Assert.assertEquals(expect, actual);
         }
     }
@@ -73,6 +73,7 @@ public class OBMySQLDateBasedPartitionNameGeneratorTest {
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, 0);
         parameters.put(PartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);
+        parameters.put(PartitionNameGenerator.PREVIOUS_PARTITION_EXPRS,Collections.singletonList("'2024-03-01 00:00:00'"));
         return parameters;
     }
 
