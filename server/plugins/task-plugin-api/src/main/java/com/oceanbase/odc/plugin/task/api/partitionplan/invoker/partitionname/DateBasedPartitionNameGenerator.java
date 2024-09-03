@@ -27,8 +27,8 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 import lombok.NonNull;
 
 /**
- * {@link DateBasedPartitionNameGenerator} 由于 Range 分区通常为左闭右开，所以对于新增分区，以上一个分区的分区上界命名即可
- * 
+ * {@link DateBasedPartitionNameGenerator}
+ * Generate partition names using the lower bound of the partition.
  * @author yh263208
  * @date 2024-01-22 17:08
  * @since ODC_release_4.2.4

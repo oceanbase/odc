@@ -402,7 +402,6 @@ public class PartitionPlanService {
     private Map<PartitionPlanStrategy, DBTablePartition> doPartitionPlan(Connection connection, DBTable dbTable,
             PartitionPlanTableConfig tableConfig, AutoPartitionExtensionPoint extensionPoint,
             Map<PartitionPlanStrategy, List<PartitionPlanKeyConfig>> strategy2PartitionKeyConfigs) throws Exception {
-        // key：预创的下标，value：一个分区表达式包含的所有分区键的值
         Map<Integer, List<String>> lineNum2CreateExprs = new HashMap<>();
         List<DBTablePartitionDefinition> droppedPartitions = new ArrayList<>();
         Map<PartitionPlanStrategy, List<DBTablePartitionDefinition>> strategyListMap = new HashMap<>();
@@ -464,7 +463,6 @@ public class PartitionPlanService {
             }
             if (!removeExistingPartitionElement(dbTable, definition, extensionPoint)) {
                 createPartitions.add(definition);
-                // 由于分区计划是基于当前时间最大的分区上界进行增加的，所以即便是有命名重复，他的下界也是不变的
                 lastMaxValues = definition.getMaxValues();
             }
         }
