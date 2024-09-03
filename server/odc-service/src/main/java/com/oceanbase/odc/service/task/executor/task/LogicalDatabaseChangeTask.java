@@ -62,6 +62,7 @@ import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
 import com.oceanbase.odc.service.flow.task.model.SizeAwareInputStream;
 import com.oceanbase.odc.service.objectstorage.util.ObjectStorageUtils;
 import com.oceanbase.odc.service.schedule.model.LogicalDatabaseChangeParameters;
+import com.oceanbase.odc.service.schedule.model.PublishLogicalDatabaseChangeReq;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.session.util.DBSchemaExtractor;
@@ -86,7 +87,7 @@ import lombok.extern.slf4j.Slf4j;
 public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionResult<SqlExecuteResult>>> {
     private SqlRewriter sqlRewriter;
     private ExecutionGroupContext<SqlExecuteReq, SqlExecuteResult> executionGroupContext;
-    private LogicalDatabaseChangeParameters taskParameters;
+    private PublishLogicalDatabaseChangeReq taskParameters;
     private List<ExecutionGroup<SqlExecuteReq, SqlExecuteResult>> executionGroups;
     private List<ConnectionSession> connectionSessions = new ArrayList<>();
     private ExecutorEngine executorEngine;
@@ -95,7 +96,7 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
     protected void doInit(JobContext context) throws Exception {
         Map<String, String> jobParameters = context.getJobParameters();
         taskParameters = JsonUtils.fromJson(jobParameters.get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
-                LogicalDatabaseChangeParameters.class);
+            PublishLogicalDatabaseChangeReq.class);
         sqlRewriter = new RelationFactorRewriter();
     }
 

@@ -54,8 +54,12 @@ public final class ExecutionGroupContext<T, R> {
                 .collect(Collectors.toMap(ExecutionUnit::getId, unit -> unit));
     }
 
-    public void init() {
+    public void execute() throws InterruptedException {
         for (ExecutionGroup<T, R> group : executionGroups) {
+            if (Thread.currentThread().isInterrupted()) {
+                Thread.currentThread().interrupt();
+                throw new InterruptedException();
+            }
             group.execute(this.executorService, this);
             completedGroupCount++;
         }

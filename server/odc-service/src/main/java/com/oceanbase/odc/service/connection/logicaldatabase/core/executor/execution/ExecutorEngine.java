@@ -45,7 +45,14 @@ public final class ExecutorEngine<T, R> implements AutoCloseable {
         PreConditions.notEmpty(groups, "groups");
         ExecutionGroupContext<T, R> executionContext =
                 new ExecutionGroupContext<>(groups, this.groupExecutorServiceManager.getExecutorService());
-        Executors.newSingleThreadExecutor().submit(() -> executionContext.init());
+        Executors.newSingleThreadExecutor().submit(() -> {
+            try {
+                executionContext.execute();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Execution interrupted, ", e);
+            }
+        });
         return executionContext;
     }
 

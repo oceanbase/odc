@@ -18,12 +18,26 @@ package com.oceanbase.odc.service.schedule.job;
 
 import org.quartz.JobExecutionContext;
 
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
+import com.oceanbase.odc.service.schedule.ScheduleService;
+
 /**
  * @Author: Lebie
  * @Date: 2024/8/30 16:08
  * @Description: []
  */
-public class LogicalDatabaseChangeJob implements OdcJob{
+public class LogicalDatabaseChangeJob implements OdcJob {
+    public final ScheduleService scheduleService;
+    private final DatabaseService databaseService;
+
+    public LogicalDatabaseChangeJob() {
+        this.scheduleService = SpringContextUtil.getBean(ScheduleService.class);
+        this.databaseService = SpringContextUtil.getBean(DatabaseService.class);
+
+    }
+
     @Override
     public void execute(JobExecutionContext context) {
 
@@ -31,12 +45,12 @@ public class LogicalDatabaseChangeJob implements OdcJob{
 
     @Override
     public void before(JobExecutionContext context) {
-
+        scheduleService.refreshScheduleStatus(ScheduleTaskUtils.getScheduleId(context));
     }
 
     @Override
     public void after(JobExecutionContext context) {
-
+        scheduleService.refreshScheduleStatus(ScheduleTaskUtils.getScheduleId(context));
     }
 
     @Override
