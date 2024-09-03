@@ -1466,18 +1466,18 @@ public class MySQLCheckerTest {
     @Test
     public void check_restrictSqlAffectedRows4OBError() {
         String update =
-            "update users set name = 'a1-bot' where id = '1'";
+                "update users set name = 'a1-bot' where id = '1'";
 
         JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
         Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(RowMapper.class)))
-            .thenThrow(new RuntimeException("Failed to execute sql"));
+                .thenThrow(new RuntimeException("Failed to execute sql"));
 
         exceptionRule.expect(RuntimeException.class);
         exceptionRule.expectMessage("error: Failed to execute sql, SQL: " + "EXPLAIN " + update);
 
         DefaultSqlChecker errorChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
-            Collections.singletonList(
-                new MySQLAffectedRows(2L, DialectType.OB_MYSQL, jdbcTemplate)));
+                Collections.singletonList(
+                        new MySQLAffectedRows(2L, DialectType.OB_MYSQL, jdbcTemplate)));
         List<CheckViolation> actualError = errorChecker.check(update);
     }
 
@@ -1564,8 +1564,8 @@ public class MySQLCheckerTest {
         exceptionRule.expectMessage("error: Failed to execute sql, SQL: " + "EXPLAIN " + update);
 
         DefaultSqlChecker errorChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
-            Collections.singletonList(
-                new MySQLAffectedRows(2L, DialectType.OB_MYSQL, jdbcTemplate)));
+                Collections.singletonList(
+                        new MySQLAffectedRows(2L, DialectType.OB_MYSQL, jdbcTemplate)));
         List<CheckViolation> actualError = errorChecker.check(update);
     }
 
