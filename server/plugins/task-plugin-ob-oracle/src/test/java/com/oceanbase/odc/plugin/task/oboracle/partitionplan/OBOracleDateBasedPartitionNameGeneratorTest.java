@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.DateBasedPartitionNameGeneratorConfig;
+import com.oceanbase.odc.plugin.task.api.partitionplan.model.NamingSuffixStrategy;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.partitionname.OBOracleDateBasedPartitionNameGenerator;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
@@ -66,6 +67,31 @@ public class OBOracleDateBasedPartitionNameGeneratorTest {
         }
     }
 
+    @Test
+    public void generate_refLowerBound_succeed() throws Exception {
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBOracleConfiguration();
+        try (Connection connection = configuration.getDataSource().getConnection()) {
+            DBTable dbTable = new DBTable();
+            DBTablePartition partition = new DBTablePartition();
+            DBTablePartitionOption option = new DBTablePartitionOption();
+            option.setColumnNames(Collections.singletonList("col"));
+            partition.setPartitionOption(option);
+            DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
+            definition.setMaxValues(Collections.singletonList("Timestamp '2024-03-01 00:00:00.1234'"));
+            partition.setPartitionDefinitions(Collections.singletonList(definition));
+            dbTable.setPartition(partition);
+            DateBasedPartitionNameGeneratorConfig config = new DateBasedPartitionNameGeneratorConfig();
+            config.setNamingPrefix("p");
+            config.setNamingSuffixExpression("yyyyMMdd");
+            config.setRefPartitionKey("\"COL\"");
+            config.setNamingSuffixStrategy(NamingSuffixStrategy.PARTITION_LOWER_BOUND);
+            PartitionNameGenerator generator = new OBOracleDateBasedPartitionNameGenerator();
+            String actual = generator.invoke(connection, dbTable, getParameters(config));
+            String expect = "p20240229";
+            Assert.assertEquals(expect, actual);
+        }
+    }
+
     private Map<String, Object> getParameters(DateBasedPartitionNameGeneratorConfig config) {
         Map<String, Object> parameters = new HashMap<>();
         DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
@@ -74,7 +100,7 @@ public class OBOracleDateBasedPartitionNameGeneratorTest {
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, 0);
         parameters.put(PartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);
         parameters.put(PartitionNameGenerator.PREVIOUS_PARTITION_EXPRS,
-                Collections.singletonList("Timestamp '2024-03-01 00:00:00.1234'"));
+                Collections.singletonList("Timestamp '2024-02-29 00:00:00.1234'"));
         return parameters;
     }
 

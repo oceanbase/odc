@@ -43,7 +43,7 @@ public class OBOracleDateBasedPartitionNameGenerator extends OBMySQLDateBasedPar
     }
 
     @Override
-    protected Date getPartitionUpperBound(@NonNull Connection connection,
+    protected Date getBaseDate(@NonNull Connection connection,
             @NonNull String partitionKey, @NonNull String upperBound) {
         SqlExprCalculator calculator = new OBOracleSqlExprCalculator(connection);
         SqlExprResult value = calculator.calculate(upperBound);

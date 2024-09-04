@@ -22,6 +22,7 @@ import java.util.List;
 
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.DateBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.DateBasedPartitionNameGeneratorConfig;
+import com.oceanbase.odc.plugin.task.api.partitionplan.model.NamingSuffixStrategy;
 import com.oceanbase.odc.plugin.task.api.partitionplan.util.DBTablePartitionUtil;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLAutoPartitionExtensionPoint;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.OBMySQLExprCalculator;
@@ -47,8 +48,11 @@ public class OBMySQLDateBasedPartitionNameGenerator implements DateBasedPartitio
             @NonNull DateBasedPartitionNameGeneratorConfig config, List<String> previousExprs) {
         int index = DBTablePartitionUtil.getPartitionKeyIndex(
                 dbTable, config.getRefPartitionKey(), this::unquoteIdentifier);
-        Date baseDate = getPartitionUpperBound(
-                connection, config.getRefPartitionKey(), previousExprs.get(index));
+        Date baseDate = getBaseDate(
+                connection, config.getRefPartitionKey(),
+                config.getNamingSuffixStrategy() == NamingSuffixStrategy.PARTITION_UPPER_BOUND
+                        ? target.getMaxValues().get(index)
+                        : previousExprs.get(index));
         return config.getNamingPrefix() + new SimpleDateFormat(config.getNamingSuffixExpression()).format(baseDate);
     }
 
@@ -56,7 +60,7 @@ public class OBMySQLDateBasedPartitionNameGenerator implements DateBasedPartitio
         return new OBMySQLAutoPartitionExtensionPoint().unquoteIdentifier(identifier);
     }
 
-    protected Date getPartitionUpperBound(@NonNull Connection connection,
+    protected Date getBaseDate(@NonNull Connection connection,
             @NonNull String partitionKey, @NonNull String upperBound) {
         SqlExprCalculator calculator = new OBMySQLExprCalculator(connection);
         SqlExprResult value = calculator.calculate("convert(" + upperBound + ", datetime)");
@@ -65,4 +69,5 @@ public class OBMySQLDateBasedPartitionNameGenerator implements DateBasedPartitio
         }
         return (Date) value.getValue();
     }
+
 }
