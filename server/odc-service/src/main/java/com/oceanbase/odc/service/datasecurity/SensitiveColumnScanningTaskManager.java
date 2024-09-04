@@ -43,6 +43,7 @@ import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningTaskI
 import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
@@ -56,11 +57,12 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class SensitiveColumnScanningTaskManager {
 
+    private final SensitiveColumnScanningResultCache cache = SensitiveColumnScanningResultCache.getInstance();
     @Autowired
     @Qualifier("scanSensitiveColumnExecutor")
     private ThreadPoolTaskExecutor executor;
-
-    private final SensitiveColumnScanningResultCache cache = SensitiveColumnScanningResultCache.getInstance();
+    @Autowired
+    private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
 
     public SensitiveColumnScanningTaskInfo start(List<Database> databases, List<SensitiveRule> rules,
             ConnectionConfig connectionConfig, Map<Long, List<SensitiveColumnMeta>> databaseId2SensitiveColumns) {
@@ -84,7 +86,8 @@ public class SensitiveColumnScanningTaskManager {
                     database2View2ColumnsList.put(database, view2Columns);
                 }
             }
-            SensitiveColumnScanningTaskInfo taskInfo = new SensitiveColumnScanningTaskInfo(projectId, objectCount);
+            SensitiveColumnScanningTaskInfo taskInfo = new SensitiveColumnScanningTaskInfo(
+                    statefulUuidStateIdGenerator.generateStateId("SensitiveColumn"), projectId, objectCount);
             if (objectCount == 0) {
                 taskInfo.setCompleteTime(new Date());
                 taskInfo.setStatus(ScanningTaskStatus.SUCCESS);
