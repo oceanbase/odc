@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.resource.k8s.operator;
 
 import java.util.List;
 
-import com.oceanbase.odc.service.resource.model.NativeK8sResourceID;
+import com.oceanbase.odc.service.resource.model.ResourceID;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
@@ -43,8 +43,20 @@ public class NativeK8sPodOperator extends BaseNativeK8sResourceOperator<V1Pod> {
     }
 
     @Override
-    public NativeK8sResourceID getKey(V1Pod config) {
-        return new NativeK8sResourceID(config.getMetadata(), V1Pod.class);
+    public V1Pod patch(V1Pod config) throws Exception {
+        throw new UnsupportedOperationException("Unsupported yet");
+    }
+
+    @Override
+    public ResourceID getKey(V1Pod config) {
+        ResourceID resourceID = new ResourceID();
+        if (config.getMetadata() == null) {
+            throw new IllegalStateException("Pod's meta data is null");
+        }
+        resourceID.setNamespace(config.getMetadata().getNamespace());
+        resourceID.setType(V1Pod.class);
+        resourceID.setUniqueIdentifier(config.getMetadata().getName());
+        return resourceID;
     }
 
     @Override
@@ -54,11 +66,12 @@ public class NativeK8sPodOperator extends BaseNativeK8sResourceOperator<V1Pod> {
     }
 
     @Override
-    public void destroy(@NonNull NativeK8sResourceID key) throws Exception {
-        if (key.getName() == null) {
+    public void destroy(@NonNull ResourceID key) throws Exception {
+        if (key.getUniqueIdentifier() == null) {
             throw new IllegalArgumentException("Resource name is null");
         }
-        new CoreV1Api().deleteNamespacedPod(key.getName(), this.defaultNamespace, null, null, null, null, null, null);
+        new CoreV1Api().deleteNamespacedPod(key.getUniqueIdentifier(),
+                this.defaultNamespace, null, null, null, null, null, null);
     }
 
 }

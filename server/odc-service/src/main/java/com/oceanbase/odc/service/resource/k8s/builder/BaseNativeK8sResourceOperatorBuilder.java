@@ -29,7 +29,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.oceanbase.odc.common.util.EncodeUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.resource.ResourceOperatorBuilder;
-import com.oceanbase.odc.service.resource.model.NativeK8sResourceID;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 
@@ -49,7 +48,7 @@ import lombok.NonNull;
  * @since ODC_release_4.3.2
  */
 public abstract class BaseNativeK8sResourceOperatorBuilder<T extends KubernetesObject>
-        implements ResourceOperatorBuilder<T, NativeK8sResourceID> {
+        implements ResourceOperatorBuilder<T> {
 
     private static final long TIMEOUT_MILLS = 60000;
     private final Object lock = new Object();

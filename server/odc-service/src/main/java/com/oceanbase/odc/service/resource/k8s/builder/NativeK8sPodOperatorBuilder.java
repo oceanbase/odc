@@ -19,7 +19,6 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.service.resource.ResourceOperator;
 import com.oceanbase.odc.service.resource.k8s.operator.NativeK8sPodOperator;
-import com.oceanbase.odc.service.resource.model.NativeK8sResourceID;
 import com.oceanbase.odc.service.resource.model.ResourceOperatorTag;
 
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -41,7 +40,7 @@ public class NativeK8sPodOperatorBuilder extends BaseNativeK8sResourceOperatorBu
     }
 
     @Override
-    public ResourceOperator<V1Pod, NativeK8sResourceID> build(@NonNull ResourceOperatorTag resourceOperatorTag) {
+    public ResourceOperator<V1Pod> build(@NonNull ResourceOperatorTag resourceOperatorTag) {
         return new NativeK8sPodOperator(this.defaultNamespace);
     }
 

@@ -15,16 +15,21 @@
  */
 package com.oceanbase.odc.service.resource;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import javax.transaction.Transactional;
+
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.metadb.resource.ResourceEntity;
+import com.oceanbase.odc.metadb.resource.ResourceRepository;
 import com.oceanbase.odc.service.resource.model.ResourceID;
 import com.oceanbase.odc.service.resource.model.ResourceOperatorTag;
 import com.oceanbase.odc.service.resource.model.ResourceState;
@@ -43,72 +48,108 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class ResourceManagerService {
 
+    @Autowired
+    private ResourceRepository resourceRepository;
     @Autowired(required = false)
-    private List<ResourceOperatorBuilder<?, ?>> resourceOperatorBuilders;
+    private List<ResourceOperatorBuilder<?>> resourceOperatorBuilders;
 
+    @Transactional
     public Resource create(@NonNull Resource config) throws Exception {
         Object resourceConfig = config.getResourceConfig();
         ResourceOperatorTag resourceOperatorTag = config.getResourceOperatorTag();
         PreConditions.notNull(resourceConfig, "ResourceConfig");
         PreConditions.notNull(resourceOperatorTag, "ResourceOperatorTag");
 
-        ResourceOperator<Object, ? extends ResourceID> operator =
-                getResourceOperator(resourceConfig, resourceOperatorTag);
-        resourceConfig = operator.create(resourceConfig);
         Resource resource = new Resource();
-        resource.setResourceConfig(resourceConfig);
         resource.setResourceOperatorTag(resourceOperatorTag);
         resource.setResourceState(ResourceState.CREATING);
-        resource.setResourceID(operator.getKey(resourceConfig));
+
+        ResourceEntity resourceEntity = modelToEntity(resource);
+        resourceEntity = this.resourceRepository.save(resourceEntity);
+
+        ResourceOperator<Object> operator = getResourceOperator(resourceConfig, resourceOperatorTag);
+        resourceConfig = operator.create(resourceConfig);
+
+        resource.setId(resourceEntity.getId());
+        resource.setResourceConfig(resourceConfig);
+        ResourceID resourceID = operator.getKey(resourceConfig);
+        resource.setResourceID(resourceID);
+        this.resourceRepository.updateResourceIDById(resourceEntity.getId(), JsonUtils.toJson(resourceID));
+        log.info("Create resource succeed, id={}, resourceId={}", resourceEntity.getId(), resourceID);
         return resource;
     }
 
-    public Resource get(@NonNull Long id) throws Exception {
-        Resource resource = findById(id).orElseThrow(() -> new IllegalStateException("No resource found by id " + id));
+    public Resource nullSafeGet(@NonNull Long id) throws Exception {
+        Optional<ResourceEntity> optional = this.resourceRepository.findById(id);
+        ResourceEntity resourceEntity =
+                optional.orElseThrow(() -> new IllegalStateException("No resource found by id " + id));
+        Resource resource = entityToModel(resourceEntity);
         ResourceID resourceID = resource.getResourceID();
-        ResourceOperator<?, ResourceID> resourceOperator =
+        if (resourceID == null) {
+            throw new IllegalStateException("ResourceId is not found by id " + id);
+        }
+        ResourceOperator<?> resourceOperator =
                 getResourceOperator(resourceID.getType(), resource.getResourceOperatorTag());
-        resource.setResourceConfig(resourceOperator.get(resourceID)
-                .orElseThrow(() -> new IllegalStateException("No resource found by resource key " + resourceID)));
+        Object resourceConfig = resourceOperator.get(resourceID)
+                .orElseThrow(() -> new IllegalStateException("No resource found by resource key " + resourceID));
+        resource.setResourceConfig(resourceConfig);
+        ResourceState newState = moveToNextState(resource.getResourceState(), resourceOperator, resourceConfig);
+        resource.setResourceState(newState);
+        this.resourceRepository.updateResourceStateById(id, newState);
         return resource;
     }
 
-    public int destroy(@NonNull Long id) throws Exception {
-        Resource resource = get(id);
+    @Transactional
+    public void destroy(@NonNull Long id) throws Exception {
+        Resource resource = nullSafeGet(id);
+        this.resourceRepository.updateResourceStateById(id, ResourceState.DESTROYING);
         ResourceID resourceID = resource.getResourceID();
         getResourceOperator(resourceID.getType(), resource.getResourceOperatorTag()).destroy(resourceID);
-        return deleteById(id);
+        log.info("Delete resource succeed, id={}, resourceId={}", id, resourceID);
     }
 
-    public List<Resource> list() throws Exception {
-        return Collections.emptyList();
+    private ResourceState moveToNextState(ResourceState current, ResourceOperator<?> resourceOperator, Object config) {
+        return current;
+    }
+
+    private ResourceEntity modelToEntity(Resource resource) {
+        ResourceEntity entity = new ResourceEntity();
+        entity.setId(resource.getId());
+        entity.setResourceIDJson(JsonUtils.toJson(resource.getResourceID()));
+        entity.setResourceState(resource.getResourceState());
+        entity.setResourceOperatorTagJson(JsonUtils.toJson(resource.getResourceOperatorTag()));
+        return entity;
+    }
+
+    private Resource entityToModel(ResourceEntity entity) {
+        Resource resource = new Resource();
+        resource.setId(entity.getId());
+        resource.setResourceState(entity.getResourceState());
+        if (StringUtils.isNotBlank(entity.getResourceIDJson())) {
+            resource.setResourceID(JsonUtils.fromJson(entity.getResourceIDJson(), ResourceID.class));
+        }
+        resource.setResourceOperatorTag(JsonUtils.fromJson(
+                entity.getResourceOperatorTagJson(), ResourceOperatorTag.class));
+        return resource;
     }
 
     @SuppressWarnings("all")
-    private <T, ID extends ResourceID> ResourceOperator<T, ID> getResourceOperator(
+    private <T> ResourceOperator<T> getResourceOperator(
             T config, ResourceOperatorTag resourceOperatorTag) {
-        return (ResourceOperator<T, ID>) getResourceOperator(config.getClass(), resourceOperatorTag);
+        return (ResourceOperator<T>) getResourceOperator(config.getClass(), resourceOperatorTag);
     }
 
     @SuppressWarnings("all")
-    private <T, ID extends ResourceID> ResourceOperator<T, ID> getResourceOperator(
+    private <T> ResourceOperator<T> getResourceOperator(
             Class<T> clazz, ResourceOperatorTag resourceOperatorTag) {
-        List<ResourceOperatorBuilder<?, ?>> builders = this.resourceOperatorBuilders.stream()
+        List<ResourceOperatorBuilder<?>> builders = this.resourceOperatorBuilders.stream()
                 .filter(builder -> builder.supports(clazz)).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(builders)) {
             throw new IllegalArgumentException("No builder found for config " + clazz);
         } else if (builders.size() != 1) {
             throw new IllegalStateException("There are more than one builder for the config " + clazz);
         }
-        return ((ResourceOperatorBuilder<T, ID>) builders.get(0)).build(resourceOperatorTag);
-    }
-
-    private Optional<Resource> findById(@NonNull Long id) {
-        return Optional.of(new Resource());
-    }
-
-    private int deleteById(@NonNull Long id) {
-        return 1;
+        return ((ResourceOperatorBuilder<T>) builders.get(0)).build(resourceOperatorTag);
     }
 
 }

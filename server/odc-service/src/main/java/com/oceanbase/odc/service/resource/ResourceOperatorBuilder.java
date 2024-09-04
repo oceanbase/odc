@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.resource;
 
-import com.oceanbase.odc.service.resource.model.ResourceID;
 import com.oceanbase.odc.service.resource.model.ResourceOperatorTag;
 
 import lombok.NonNull;
@@ -27,7 +26,7 @@ import lombok.NonNull;
  * @date 2024-09-02 16:32
  * @since ODC_release_4.3.2
  */
-public interface ResourceOperatorBuilder<T, ID extends ResourceID> {
+public interface ResourceOperatorBuilder<T> {
     /**
      * Indicates whether the current builder supports a certain type of resource
      *
@@ -41,6 +40,6 @@ public interface ResourceOperatorBuilder<T, ID extends ResourceID> {
      *
      * @param resourceOperatorTag parameters to build a {@link ResourceOperator}
      */
-    ResourceOperator<T, ID> build(@NonNull ResourceOperatorTag resourceOperatorTag);
+    ResourceOperator<T> build(@NonNull ResourceOperatorTag resourceOperatorTag);
 
 }

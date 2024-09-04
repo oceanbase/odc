@@ -13,26 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.model;
+package com.oceanbase.odc.metadb.resource;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+import com.oceanbase.odc.service.resource.model.ResourceState;
 
-/**
- * {@link ResourceID}
- *
- * @author yh263208
- * @date 2024-09-03 15:26
- * @since ODC_release_4.3.2
- */
-@Getter
-@Setter
-@EqualsAndHashCode
-public class ResourceID {
+import lombok.Data;
 
-    private String uniqueIdentifier;
-    private Class<?> type;
-    private String namespace;
-
+@Data
+public class ResourceEntity {
+    private Long id;
+    private String resourceIDJson;
+    private ResourceState resourceState;
+    private String resourceOperatorTagJson;
 }

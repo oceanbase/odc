@@ -27,16 +27,18 @@ import com.oceanbase.odc.service.resource.model.ResourceID;
  * @date 2024-09-02 16:13
  * @since ODC_release_4.3.2
  */
-public interface ResourceOperator<T, ID extends ResourceID> {
+public interface ResourceOperator<T> {
 
     T create(T config) throws Exception;
 
-    ID getKey(T config);
+    T patch(T config) throws Exception;
 
-    Optional<T> get(ID key) throws Exception;
+    ResourceID getKey(T config);
+
+    Optional<T> get(ResourceID key) throws Exception;
 
     List<T> list() throws Exception;
 
-    void destroy(ID key) throws Exception;
+    void destroy(ResourceID key) throws Exception;
 
 }
