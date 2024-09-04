@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model;
 
 import lombok.Getter;
@@ -28,7 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 public class ExecutionUnit<T, R> {
     private final String id;
-    private final ExecutionCallback<T, R>  callback;
+    private final ExecutionCallback<T, R> callback;
     private final T input;
 
     public ExecutionUnit(String id, ExecutionCallback<T, R> executionCallback, T input) {

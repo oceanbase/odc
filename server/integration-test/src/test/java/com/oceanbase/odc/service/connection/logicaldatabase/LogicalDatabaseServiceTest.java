@@ -124,7 +124,7 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
     @Test
     public void testListPhysicalDatabaseIds() {
         when(databaseMappingRepository.findByLogicalDatabaseId(anyLong())).thenReturn(listDatabaseMappings(1));
-        Assert.assertEquals(1, logicalDatabaseService.listPhysicalDatabaseIds(LOGICAL_DATABASE_ID).size());
+        Assert.assertEquals(1, logicalDatabaseService.listPhysicalDatabases(LOGICAL_DATABASE_ID).size());
     }
 
     private ConnectionEntity getConnectionEntity() {

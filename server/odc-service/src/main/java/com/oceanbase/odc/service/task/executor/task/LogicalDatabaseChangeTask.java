@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,33 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.task.executor.task;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
-import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutorEngine;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionCallback;
@@ -60,9 +49,6 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.Rewrite
 import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.SqlRewriter;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
-import com.oceanbase.odc.service.flow.task.model.SizeAwareInputStream;
-import com.oceanbase.odc.service.objectstorage.util.ObjectStorageUtils;
-import com.oceanbase.odc.service.schedule.model.LogicalDatabaseChangeParameters;
 import com.oceanbase.odc.service.schedule.model.PublishLogicalDatabaseChangeReq;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
@@ -70,7 +56,6 @@ import com.oceanbase.odc.service.session.util.DBSchemaExtractor;
 import com.oceanbase.odc.service.session.util.DBSchemaExtractor.DBSchemaIdentity;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
-import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 import com.oceanbase.tools.loaddump.utils.CollectionUtils;
@@ -140,7 +125,7 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
                                 new SqlExecuteReq(sql, taskParameters.getTimeoutMillis(),
                                         taskParameters.getConnectType().getDialectType(),
                                         dataNode.getDataSourceConfig(), taskParameters.getLogicalDatabaseId(),
-                                        taskParameters.getPhysicalDatabaseId()));
+                                        dataNode.getDatabaseId()));
                 executionUnits.add(new ExecutionUnit<>(StringUtils.uuid(), callback, req));
             }
             executionGroups.add(taskParameters.getConnectType().getDialectType() == DialectType.MYSQL

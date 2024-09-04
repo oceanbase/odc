@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase;
 
-import java.io.StringReader;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,12 +35,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingEntity;
@@ -58,10 +55,7 @@ import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.LogicalTableRecognitionUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalTable;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.BadLogicalTableExpressionException;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.DefaultLogicalTableExpressionParser;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.LogicalTableExpressionParseUtils;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.LogicalTableExpressions;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalTableResp;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTableTopologyResp;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
@@ -70,7 +64,6 @@ import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
-import com.oceanbase.tools.sqlparser.SyntaxErrorException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -167,7 +160,8 @@ public class LogicalTableService {
         Map<String, List<Database>> name2Databases = databaseService.listDatabasesByIds(physicalDatabaseIds).stream()
                 .collect(Collectors.groupingBy(Database::getName));
         Map<String, List<DataNode>> schemaName2DataNodes =
-            LogicalTableExpressionParseUtils.resolve(expression).stream().collect(Collectors.groupingBy(DataNode::getSchemaName));
+                LogicalTableExpressionParseUtils.resolve(expression).stream()
+                        .collect(Collectors.groupingBy(DataNode::getSchemaName));
         Verify.verify(name2Databases.keySet().containsAll(schemaName2DataNodes.keySet()),
                 "The expression contains physical databases that not belong to the logical database");
         return schemaName2DataNodes.entrySet().stream().map(entry -> {

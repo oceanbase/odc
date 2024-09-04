@@ -156,7 +156,7 @@ public class LogicalDatabaseService {
 
         Environment environment = environmentService.detailSkipPermissionCheck(logicalDatabase.getEnvironmentId());
 
-        List<Database> physicalDatabases = listPhysicalDatabaseIds(logicalDatabase.getId());
+        List<Database> physicalDatabases = listPhysicalDatabases(logicalDatabase.getId());
         DetailLogicalDatabaseResp resp = new DetailLogicalDatabaseResp();
         resp.setId(logicalDatabase.getId());
         resp.setName(logicalDatabase.getName());
@@ -169,7 +169,7 @@ public class LogicalDatabaseService {
         return resp;
     }
 
-    public List<Database> listPhysicalDatabaseIds(@NotNull Long logicalDatabaseId) {
+    public List<Database> listPhysicalDatabases(@NotNull Long logicalDatabaseId) {
         Set<Long> physicalDBIds =
                 databaseMappingRepository.findByLogicalDatabaseId(logicalDatabaseId).stream()
                         .map(DatabaseMappingEntity::getPhysicalDatabaseId).collect(Collectors.toSet());

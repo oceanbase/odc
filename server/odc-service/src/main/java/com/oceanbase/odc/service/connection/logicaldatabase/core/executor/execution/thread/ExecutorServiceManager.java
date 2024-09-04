@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.thread;
 
 import java.util.concurrent.ExecutorService;
@@ -23,7 +22,6 @@ import java.util.concurrent.TimeUnit;
 
 import com.alibaba.ttl.threadpool.TtlExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
 
 import lombok.Getter;
 
@@ -52,7 +50,8 @@ public final class ExecutorServiceManager {
     }
 
     private ExecutorService getExecutorService(int executorSize, String nameFormat) {
-        return 0 == executorSize ? Executors.newCachedThreadPool(build(nameFormat)) : Executors.newFixedThreadPool(executorSize, build(nameFormat));
+        return 0 == executorSize ? Executors.newCachedThreadPool(build(nameFormat))
+                : Executors.newFixedThreadPool(executorSize, build(nameFormat));
     }
 
     public void close() {

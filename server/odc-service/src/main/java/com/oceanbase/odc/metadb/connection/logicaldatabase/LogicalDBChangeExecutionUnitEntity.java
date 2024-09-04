@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.metadb.connection.logicaldatabase;
 
 import java.util.Date;
@@ -27,8 +26,6 @@ import javax.persistence.Table;
 
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
-
-import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 
 import lombok.Data;
 
@@ -49,13 +46,16 @@ public class LogicalDBChangeExecutionUnitEntity {
     @Column(name = "execution_id", nullable = false, updatable = false)
     private String executionId;
 
+    @Column(name = "schedule_task_id", nullable = false)
+    private Long scheduleTaskId;
+
     @Column(name = "logical_database_id", nullable = false, updatable = false)
     private Long logicalDatabaseId;
 
     @Column(name = "physical_database_id", nullable = false, updatable = false)
     private Long physicalDatabaseId;
 
-    @Column(name = "sql", nullable = false, updatable = false)
+    @Column(name = "sql_content", nullable = false, updatable = false)
     private String sql;
 
     @Column(name = "execution_result_json", nullable = false)
