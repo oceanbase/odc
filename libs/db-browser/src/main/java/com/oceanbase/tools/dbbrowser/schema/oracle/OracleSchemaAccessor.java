@@ -776,16 +776,6 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Map<String, List<DBTableColumn>> listExternalTableColumns(String schemaName) {
-        throw new UnsupportedOperationException("Not supported yet");
-    }
-
-    @Override
-    public List<DBTableColumn> listExternalTableColumns(String schemaName, String tableName) {
-        throw new UnsupportedOperationException("Not supported yet");
-    }
-
-    @Override
     public List<DBObjectIdentity> listPartitionTables(String partitionMethod) {
         OracleSqlBuilder sb = new OracleSqlBuilder();
 

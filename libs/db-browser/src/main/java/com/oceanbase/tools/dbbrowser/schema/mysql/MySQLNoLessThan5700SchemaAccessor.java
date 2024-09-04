@@ -792,16 +792,6 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Map<String, List<DBTableColumn>> listExternalTableColumns(String schemaName) {
-        throw new UnsupportedOperationException("Not supported yet");
-    }
-
-    @Override
-    public List<DBTableColumn> listExternalTableColumns(String schemaName, String tableName) {
-        throw new UnsupportedOperationException("Not supported yet");
-    }
-
-    @Override
     public List<DBObjectIdentity> listPartitionTables(String partitionMethod) {
         String sql =
                 String.format("select distinct t1.table_name as name,t1.table_schema as schema_name, 'TABLE' as type "

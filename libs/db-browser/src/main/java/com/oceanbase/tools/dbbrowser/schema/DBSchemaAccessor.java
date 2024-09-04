@@ -193,17 +193,6 @@ public interface DBSchemaAccessor {
     List<DBTableColumn> listTableColumns(String schemeName, String tableName);
 
     /**
-     * Get all external table columns(hold only basic info) in the specified schema
-     */
-    Map<String, List<DBTableColumn>> listExternalTableColumns(String schemaName);
-
-    /**
-     * Get all external table columns(hold only basic info) in the specified schema and external table
-     * name
-     */
-    List<DBTableColumn> listExternalTableColumns(String schemaName, String tableName);
-
-    /**
      * Get all table columns(hold only basic info) in the specified schema
      */
     Map<String, List<DBTableColumn>> listBasicTableColumns(String schemaName);

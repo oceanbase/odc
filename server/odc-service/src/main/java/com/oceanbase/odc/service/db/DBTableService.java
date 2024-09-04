@@ -89,9 +89,9 @@ public class DBTableService {
     }
 
     public DBTable getTable(@NotNull ConnectionSession connectionSession, String schemaName,
-            @NotBlank String tableName, DBObjectType type) {
+            @NotBlank String tableName, @NotNull DBObjectType type) {
         DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
-        if (type == null || type == DBObjectType.TABLE) {
+        if (type == DBObjectType.TABLE) {
             PreConditions.validExists(ResourceType.OB_TABLE, "tableName", tableName,
                     () -> schemaAccessor.showTables(schemaName).stream().filter(name -> name.equals(tableName))
                             .collect(Collectors.toList()).size() > 0);

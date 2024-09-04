@@ -29,7 +29,7 @@ sqls:
         FROM
           information_schema.tables
         WHERE
-          TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'
+          TABLE_SCHEMA = ? 
       )
     ORDER BY
       TABLE_NAME ASC,

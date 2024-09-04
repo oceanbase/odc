@@ -52,7 +52,7 @@ public class DBExternalTableSyncer extends AbstractDBObjectSyncer<TableExtension
     @Override
     protected void preDelete(@NonNull Set<Long> toBeDeletedIds) {
         List<PermissionEntity> permissions =
-            permissionRepository.findByResourceTypeAndResourceIdIn(ResourceType.ODC_TABLE, toBeDeletedIds);
+                permissionRepository.findByResourceTypeAndResourceIdIn(ResourceType.ODC_TABLE, toBeDeletedIds);
         Set<Long> permissionIds = permissions.stream().map(PermissionEntity::getId).collect(Collectors.toSet());
         permissionRepository.deleteByIds(permissionIds);
         userPermissionRepository.deleteByPermissionIds(permissionIds);
@@ -66,7 +66,8 @@ public class DBExternalTableSyncer extends AbstractDBObjectSyncer<TableExtension
     @Override
     Set<String> getLatestObjectNames(@NonNull TableExtensionPoint extensionPoint,
             @NonNull Connection connection, @NonNull Database database) {
-        return extensionPoint.list(connection, database.getName(),DBObjectType.EXTERNAL_TABLE).stream().map(DBObjectIdentity::getName)
+        return extensionPoint.list(connection, database.getName(), DBObjectType.EXTERNAL_TABLE).stream()
+                .map(DBObjectIdentity::getName)
                 .collect(Collectors.toSet());
     }
 

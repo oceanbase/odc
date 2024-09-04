@@ -84,8 +84,6 @@ import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.validation.constraints.NotNull;
-
 /**
  * 适用于的 DB 版本：[4.3.2, ~)
  * 
@@ -1046,7 +1044,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
 
     @Override
     public List<String> showExternalTablesLike(String schemaName, String tableNameLike) {
-        return commonShowTablesLike(schemaName, tableNameLike,DBObjectType.EXTERNAL_TABLE);
+        return commonShowTablesLike(schemaName, tableNameLike, DBObjectType.EXTERNAL_TABLE);
     }
 
 
@@ -1074,7 +1072,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     // After ob version 4.3.2, oracle model displaying table list needs to exclude external tables
     @Override
     public List<String> showTablesLike(String schemaName, String tableNameLike) {
-        return commonShowTablesLike(schemaName, tableNameLike,DBObjectType.EXTERNAL_TABLE);
+        return commonShowTablesLike(schemaName, tableNameLike, DBObjectType.TABLE);
     }
 
     // After ob version 4.3.2, oracle model displaying table list needs to exclude external tables
@@ -1098,21 +1096,23 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 
-    private List<String> commonShowTablesLike(String schemaName, String tableNameLike,@NonNull  DBObjectType tableType) {
+    private List<String> commonShowTablesLike(String schemaName, String tableNameLike,
+            @NonNull DBObjectType tableType) {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("SELECT TABLE_NAME FROM ");
         sb.append(dataDictTableNames.TABLES());
-        switch(tableType){
+        switch (tableType) {
             case TABLE:
-                sb.append(" WHERE EXTERNAL = 'NO' AND ");
+                sb.append(" WHERE EXTERNAL = 'NO'");
                 break;
             case EXTERNAL_TABLE:
-                sb.append(" WHERE EXTERNAL = 'YES' AND ");
+                sb.append(" WHERE EXTERNAL = 'YES'");
                 break;
             default:
                 throw new UnsupportedOperationException("Not supported table type");
         }
-        if(StringUtils.isNotBlank(schemaName)){
+        if (StringUtils.isNotBlank(schemaName)) {
+            sb.append(" AND OWNER=");
             sb.value(schemaName);
         }
         if (StringUtils.isNotBlank(tableNameLike)) {
