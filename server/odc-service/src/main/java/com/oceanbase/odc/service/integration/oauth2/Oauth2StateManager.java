@@ -89,13 +89,15 @@ public class Oauth2StateManager {
     public void addStateToCurrentRequestParam() {
         HttpServletRequest request = WebRequestUtils.getCurrentRequest();
         Verify.notNull(request, "request");
-        // state cached in mem, in the case of multiple nodes，need to rely on the StatefulRoute capability here.
+        // state cached in mem, in the case of multiple nodes，need to rely on the StatefulRoute capability
+        // here.
         SuccessResponse<Map<String, String>> stateResponse = requestDispatcher
-            .forward(requestDispatcher.getHostUrl(stateHostGenerator.getHost(), properties.getRequestPort()), HttpMethod.GET,
-                "/api/v2/sso/state?state=" + request.getParameter(OAuth2ParameterNames.STATE),
-                requestDispatcher.getRequestHeaders(request), null)
-            .getContentByType(
-                new TypeReference<SuccessResponse<Map<String, String>>>() {});
+                .forward(requestDispatcher.getHostUrl(stateHostGenerator.getHost(), properties.getRequestPort()),
+                        HttpMethod.GET,
+                        "/api/v2/sso/state?state=" + request.getParameter(OAuth2ParameterNames.STATE),
+                        requestDispatcher.getRequestHeaders(request), null)
+                .getContentByType(
+                        new TypeReference<SuccessResponse<Map<String, String>>>() {});
         stateResponse.getData().forEach(request::setAttribute);
     }
 
