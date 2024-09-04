@@ -37,7 +37,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.ColumnCharsetExists;
 import com.oceanbase.odc.service.sqlcheck.rule.ColumnCollationExists;
 import com.oceanbase.odc.service.sqlcheck.rule.ColumnNameInBlackList;
 import com.oceanbase.odc.service.sqlcheck.rule.ForeignConstraintExists;
-import com.oceanbase.odc.service.sqlcheck.rule.MySQLAffectedRows;
+import com.oceanbase.odc.service.sqlcheck.rule.MySQLAffectedRowsExceedLimit;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLColumnCalculation;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLLeftFuzzyMatch;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLMissingRequiredColumns;
@@ -1397,7 +1397,7 @@ public class MySQLCheckerTest {
                 .thenReturn(resultSet);
         DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
                 Collections.singletonList(
-                        new MySQLAffectedRows(2L, DialectType.OB_MYSQL, jdbcTemplate)));
+                        new MySQLAffectedRowsExceedLimit(2L, DialectType.OB_MYSQL, jdbcTemplate)));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
         Assert.assertEquals(1, actualInsert.size());
     }
@@ -1420,7 +1420,7 @@ public class MySQLCheckerTest {
                 .thenReturn(resultSet);
         DefaultSqlChecker updateChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
                 Collections.singletonList(
-                        new MySQLAffectedRows(2L, DialectType.OB_MYSQL, jdbcTemplate)));
+                        new MySQLAffectedRowsExceedLimit(2L, DialectType.OB_MYSQL, jdbcTemplate)));
         List<CheckViolation> actualUpdate = updateChecker.check(update);
         Assert.assertEquals(0, actualUpdate.size());
     }
@@ -1443,7 +1443,7 @@ public class MySQLCheckerTest {
                 .thenReturn(resultSet);
         DefaultSqlChecker deleteChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
                 Collections.singletonList(
-                        new MySQLAffectedRows(2L, DialectType.OB_MYSQL, jdbcTemplate)));
+                        new MySQLAffectedRowsExceedLimit(2L, DialectType.OB_MYSQL, jdbcTemplate)));
         List<CheckViolation> actualDelete = deleteChecker.check(delete);
         Assert.assertEquals(1, actualDelete.size());
     }
@@ -1465,7 +1465,7 @@ public class MySQLCheckerTest {
                 .thenReturn(resultSet);
         DefaultSqlChecker selectChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
                 Collections.singletonList(
-                        new MySQLAffectedRows(2L, DialectType.OB_MYSQL, jdbcTemplate)));
+                        new MySQLAffectedRowsExceedLimit(2L, DialectType.OB_MYSQL, jdbcTemplate)));
         List<CheckViolation> actualSelect = selectChecker.check(select);
         Assert.assertEquals(0, actualSelect.size());
     }
@@ -1481,7 +1481,7 @@ public class MySQLCheckerTest {
 
         DefaultSqlChecker errorChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
                 Collections.singletonList(
-                        new MySQLAffectedRows(2L, DialectType.OB_MYSQL, jdbcTemplate)));
+                        new MySQLAffectedRowsExceedLimit(2L, DialectType.OB_MYSQL, jdbcTemplate)));
         List<CheckViolation> actualError = errorChecker.check(update);
         Assert.assertEquals(0, actualError.size());
     }
@@ -1501,7 +1501,7 @@ public class MySQLCheckerTest {
                 .thenReturn(Collections.singletonList(4L));
         DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
                 Collections.singletonList(
-                        new MySQLAffectedRows(2L, DialectType.MYSQL, jdbcTemplate)));
+                        new MySQLAffectedRowsExceedLimit(2L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
         Assert.assertEquals(1, actualInsert.size());
     }
@@ -1519,7 +1519,7 @@ public class MySQLCheckerTest {
                 .thenReturn(Collections.singletonList(1L));
         DefaultSqlChecker updateChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
                 Collections.singletonList(
-                        new MySQLAffectedRows(2L, DialectType.MYSQL, jdbcTemplate)));
+                        new MySQLAffectedRowsExceedLimit(2L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualUpdate = updateChecker.check(update);
         Assert.assertEquals(0, actualUpdate.size());
     }
@@ -1535,7 +1535,7 @@ public class MySQLCheckerTest {
                 .thenReturn(Collections.singletonList(3L));
         DefaultSqlChecker deleteChecker1 = new DefaultSqlChecker(DialectType.MYSQL, "$$",
                 Collections.singletonList(
-                        new MySQLAffectedRows(2L, DialectType.MYSQL, jdbcTemplate)));
+                        new MySQLAffectedRowsExceedLimit(2L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualDelete1 = deleteChecker1.check(delete);
         Assert.assertEquals(1, actualDelete1.size());
     }
@@ -1551,7 +1551,7 @@ public class MySQLCheckerTest {
                 .thenReturn(Collections.singletonList(2L));
         DefaultSqlChecker selectChecker1 = new DefaultSqlChecker(DialectType.MYSQL, "$$",
                 Collections.singletonList(
-                        new MySQLAffectedRows(2L, DialectType.MYSQL, jdbcTemplate)));
+                        new MySQLAffectedRowsExceedLimit(2L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualSelect1 = selectChecker1.check(select);
         Assert.assertEquals(0, actualSelect1.size());
     }
@@ -1567,7 +1567,7 @@ public class MySQLCheckerTest {
 
         DefaultSqlChecker errorChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
                 Collections.singletonList(
-                        new MySQLAffectedRows(2L, DialectType.OB_MYSQL, jdbcTemplate)));
+                        new MySQLAffectedRowsExceedLimit(2L, DialectType.OB_MYSQL, jdbcTemplate)));
         List<CheckViolation> actualError = errorChecker.check(update);
         Assert.assertEquals(0, actualError.size());
     }

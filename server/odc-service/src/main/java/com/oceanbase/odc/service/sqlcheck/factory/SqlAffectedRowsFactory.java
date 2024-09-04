@@ -23,15 +23,15 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
-import com.oceanbase.odc.service.sqlcheck.rule.MySQLAffectedRows;
+import com.oceanbase.odc.service.sqlcheck.rule.MySQLAffectedRowsExceedLimit;
 
 import lombok.NonNull;
 
-public class SQLAffectedRowsFactory implements SqlCheckRuleFactory {
+public class SqlAffectedRowsFactory implements SqlCheckRuleFactory {
 
     private final JdbcOperations jdbc;
 
-    public SQLAffectedRowsFactory(JdbcOperations jdbc) {
+    public SqlAffectedRowsFactory(JdbcOperations jdbc) {
         this.jdbc = jdbc;
     }
 
@@ -46,6 +46,6 @@ public class SQLAffectedRowsFactory implements SqlCheckRuleFactory {
         if (parameters == null || parameters.isEmpty() || parameters.get(key) == null) {
             throw new RuntimeException("parameters key: " + key + " is null");
         }
-        return new MySQLAffectedRows(Long.valueOf(parameters.get(key).toString()), dialectType, jdbc);
+        return new MySQLAffectedRowsExceedLimit(Long.valueOf(parameters.get(key).toString()), dialectType, jdbc);
     }
 }

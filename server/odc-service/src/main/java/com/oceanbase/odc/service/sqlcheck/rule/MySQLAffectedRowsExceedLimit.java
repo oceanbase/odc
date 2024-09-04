@@ -40,24 +40,24 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link MySQLAffectedRows}
+ * {@link MySQLAffectedRowsExceedLimit}
  *
  * @author yiminpeng
  * @version 1.0
  * @date 2024-08-01 18:18
  */
 @Slf4j
-public class MySQLAffectedRows implements SqlCheckRule {
+public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
 
-    private final Long maxSQLAffectedRows;
+    private final Long maxSqlAffectedRows;
 
     private final JdbcOperations jdbcOperations;
 
     private final DialectType dialectType;
 
-    public MySQLAffectedRows(@NonNull Long maxSQLAffectedRows, DialectType dialectType,
+    public MySQLAffectedRowsExceedLimit(@NonNull Long maxSqlAffectedRows, DialectType dialectType,
             JdbcOperations jdbcOperations) {
-        this.maxSQLAffectedRows = maxSQLAffectedRows <= 0 ? 0 : maxSQLAffectedRows;
+        this.maxSqlAffectedRows = maxSqlAffectedRows <= 0 ? 0 : maxSqlAffectedRows;
         this.jdbcOperations = jdbcOperations;
         this.dialectType = dialectType;
     }
@@ -77,32 +77,34 @@ public class MySQLAffectedRows implements SqlCheckRule {
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
 
         if (statement instanceof Update || statement instanceof Delete || statement instanceof Insert) {
-            if (jdbcOperations == null) {
-                throw new RuntimeException("jdbcOperations is null, please check your connection");
-            }
             long affectedRows = 0;
             String explainSql = "EXPLAIN " + statement.getText();
             try {
-                switch (dialectType) {
-                    case MYSQL:
-                        affectedRows = getMySqlAffectedRows(explainSql, jdbcOperations);
-                        break;
-                    case OB_MYSQL:
-                        affectedRows = getOBMySqlAffectedRows(explainSql, jdbcOperations);
-                        break;
-                    default:
-                        log.warn("Unsupported dialect type: {}", dialectType);
-                        break;
+                if (jdbcOperations == null) {
+                    log.warn("jdbcOperations is null, please check your connection");
+                    return Collections.emptyList();
+                } else {
+                    switch (dialectType) {
+                        case MYSQL:
+                            affectedRows = getMySqlAffectedRows(explainSql, jdbcOperations);
+                            break;
+                        case OB_MYSQL:
+                            affectedRows = getOBMySqlAffectedRows(explainSql, jdbcOperations);
+                            break;
+                        default:
+                            log.warn("Unsupported dialect type: {}", dialectType);
+                            break;
+                    }
                 }
             } catch (Exception e) {
-                log.error("Error in calling getAffectedRows method", e);
+                log.warn("Error in calling getAffectedRows method", e);
                 affectedRows = -1;
             }
 
-            if (affectedRows > maxSQLAffectedRows) {
+            if (affectedRows > maxSqlAffectedRows) {
                 return Collections.singletonList(SqlCheckUtil
                         .buildViolation(statement.getText(), statement, getType(),
-                                new Object[] {maxSQLAffectedRows, affectedRows}));
+                                new Object[] {maxSqlAffectedRows, affectedRows}));
             } else {
                 return Collections.emptyList();
             }
