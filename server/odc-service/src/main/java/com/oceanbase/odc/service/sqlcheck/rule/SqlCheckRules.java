@@ -74,8 +74,8 @@ import com.oceanbase.odc.service.sqlcheck.factory.RestrictTableCharsetFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.RestrictTableCollationFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.RestrictTableNameCaseFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.RestrictUniqueIndexNamingFactory;
-import com.oceanbase.odc.service.sqlcheck.factory.SqlAffectedRowsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.SelectStarExistsFactory;
+import com.oceanbase.odc.service.sqlcheck.factory.SqlAffectedRowsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.SyntaxErrorExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.TableNameInBlackListFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.TooLongCharLengthFactory;
@@ -160,9 +160,9 @@ public class SqlCheckRules {
 
     public static List<SqlCheckRule> getAllDefaultRules(JdbcOperations jdbc, @NonNull DialectType dialectType) {
         return SqlCheckRules.getAllFactories(dialectType, jdbc).stream()
-            .map(f -> f.generate(dialectType, null))
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+                .map(f -> f.generate(dialectType, null))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
     public static SqlCheckRule createByRule(JdbcOperations jdbc,
