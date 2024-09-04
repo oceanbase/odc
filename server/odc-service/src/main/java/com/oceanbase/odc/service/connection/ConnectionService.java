@@ -423,9 +423,19 @@ public class ConnectionService {
         if (basic) {
             connections = repository.findByDatabaseProjectId(projectId).stream().map(e -> {
                 ConnectionConfig c = new ConnectionConfig();
+                Environment environment = environmentService.detail(e.getEnvironmentId());
                 c.setId(e.getId());
                 c.setName(e.getName());
                 c.setType(e.getType());
+
+                c.setHost(e.getHost());
+                c.setPort(e.getPort());
+                c.setUsername(e.getUsername());
+                c.setTenantName(e.getTenantName());
+                c.setClusterName(e.getClusterName());
+                c.setEnvironmentName(environment.getName());
+                c.setEnvironmentStyle(environment.getStyle());
+
                 return c;
             }).collect(Collectors.toList());
         } else {
