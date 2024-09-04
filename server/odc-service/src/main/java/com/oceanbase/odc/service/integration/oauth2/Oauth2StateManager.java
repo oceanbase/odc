@@ -31,10 +31,12 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.WebRequestUtils;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.info.OdcInfoService;
+import com.oceanbase.odc.service.session.factory.StateHostGenerator;
 
 import lombok.SneakyThrows;
 
@@ -47,6 +49,13 @@ public class Oauth2StateManager {
 
     @Autowired
     private RequestDispatcher requestDispatcher;
+
+
+    @Autowired
+    private HostProperties properties;
+
+    @Autowired
+    private StateHostGenerator stateHostGenerator;
 
     @SneakyThrows
     public void setStateParameter(String state, String key, String value) {
@@ -80,12 +89,13 @@ public class Oauth2StateManager {
     public void addStateToCurrentRequestParam() {
         HttpServletRequest request = WebRequestUtils.getCurrentRequest();
         Verify.notNull(request, "request");
+        // state cached in mem, in the case of multiple nodes，need to rely on the StatefulRoute capability here.
         SuccessResponse<Map<String, String>> stateResponse = requestDispatcher
-                .forward(requestDispatcher.getHostUrl(request.getServerName(), request.getServerPort()), HttpMethod.GET,
-                        "/api/v2/sso/state?state=" + request.getParameter(OAuth2ParameterNames.STATE),
-                        requestDispatcher.getRequestHeaders(request), null)
-                .getContentByType(
-                        new TypeReference<SuccessResponse<Map<String, String>>>() {});
+            .forward(requestDispatcher.getHostUrl(stateHostGenerator.getHost(), properties.getRequestPort()), HttpMethod.GET,
+                "/api/v2/sso/state?state=" + request.getParameter(OAuth2ParameterNames.STATE),
+                requestDispatcher.getRequestHeaders(request), null)
+            .getContentByType(
+                new TypeReference<SuccessResponse<Map<String, String>>>() {});
         stateResponse.getData().forEach(request::setAttribute);
     }
 
