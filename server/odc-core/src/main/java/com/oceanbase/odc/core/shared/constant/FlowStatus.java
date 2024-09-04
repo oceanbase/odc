@@ -46,12 +46,6 @@ public enum FlowStatus {
     WAIT_FOR_EXECUTION_EXPIRED,
 
     WAIT_FOR_CONFIRM,
-
-    /**
-     * The ticket status is between manual {@code WAIT_FOR_EXECUTION} and {@code EXECUTING}
-     */
-    PRE_EXECUTION,
-
     /**
      * {@code FlowInstance} is executing
      */
