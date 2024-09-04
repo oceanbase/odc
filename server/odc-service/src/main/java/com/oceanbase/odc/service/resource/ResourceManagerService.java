@@ -98,6 +98,18 @@ public class ResourceManagerService {
         return resource;
     }
 
+    public Resource nullSafeGet(@NonNull ResourceID resourceID,
+            @NonNull ResourceOperatorTag tag) throws Exception {
+        ResourceOperator<?> resourceOperator = getResourceOperator(resourceID.getType(), tag);
+        Object resourceConfig = resourceOperator.get(resourceID)
+                .orElseThrow(() -> new IllegalStateException("No resource found by resource key " + resourceID));
+        Resource resource = new Resource();
+        resource.setResourceOperatorTag(tag);
+        resource.setResourceID(resourceID);
+        resource.setResourceConfig(resourceConfig);
+        return resource;
+    }
+
     @Transactional
     public void destroy(@NonNull Long id) throws Exception {
         Resource resource = nullSafeGet(id);

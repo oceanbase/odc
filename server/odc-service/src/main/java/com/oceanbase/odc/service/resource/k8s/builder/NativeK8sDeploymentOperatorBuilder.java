@@ -21,7 +21,6 @@ import com.oceanbase.odc.service.resource.ResourceOperator;
 import com.oceanbase.odc.service.resource.k8s.operator.NativeK8sDeploymentOperator;
 import com.oceanbase.odc.service.resource.model.ResourceOperatorTag;
 
-import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import lombok.NonNull;
 
@@ -37,7 +36,7 @@ public class NativeK8sDeploymentOperatorBuilder extends BaseNativeK8sResourceOpe
 
     @Override
     protected boolean doSupports(@NonNull Class<?> clazz) {
-        return V1ConfigMap.class.isAssignableFrom(clazz);
+        return V1Deployment.class.isAssignableFrom(clazz);
     }
 
     @Override
