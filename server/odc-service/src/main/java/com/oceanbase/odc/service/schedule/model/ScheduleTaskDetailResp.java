@@ -48,4 +48,6 @@ public class ScheduleTaskDetailResp {
     private Date createTime;
 
     private Date updateTime;
+
+    private String fullLogDownloadUrl;
 }

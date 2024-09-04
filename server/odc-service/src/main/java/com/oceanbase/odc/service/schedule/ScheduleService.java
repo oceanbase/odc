@@ -66,6 +66,8 @@ import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
+import com.oceanbase.odc.service.flow.model.BinaryDataResult;
+import com.oceanbase.odc.service.flow.model.FileBasedDataResult;
 import com.oceanbase.odc.service.flow.util.DescriptionGenerator;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
@@ -175,6 +177,9 @@ public class ScheduleService {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private ScheduledTaskLoggerService scheduledTaskLoggerService;
 
     private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
 
@@ -691,9 +696,25 @@ public class ScheduleService {
         return downloadUrls;
     }
 
-    public String getLog(Long scheduleId, Long taskId, OdcTaskLogLevel logLevel) {
-        nullSafeGetByIdWithCheckPermission(scheduleId);
-        return scheduleTaskService.getLogWithoutPermission(taskId, logLevel);
+    @SkipAuthorize("odc internal usage")
+    public List<String> getFullLogDownloadUrl(Long scheduleId, List<Long> scheduleTaskIds) {
+        return scheduleTaskIds.stream().map(taskId -> scheduledTaskLoggerService.getFullLogDownloadUrl(
+                scheduleId, taskId, OdcTaskLogLevel.ALL)).collect(Collectors.toList());
+    }
+
+    public String getLog(Long scheduleId, OdcTaskLogLevel logLevel, boolean skipAuth) {
+        if (!skipAuth) {
+            nullSafeGetByIdWithCheckPermission(scheduleId);
+        }
+        return scheduledTaskLoggerService.getLog(scheduleId, logLevel);
+    }
+
+    public List<BinaryDataResult> downloadLog(Long scheduleId, boolean skipAuth) {
+        if (!skipAuth) {
+            nullSafeGetByIdWithCheckPermission(scheduleId);
+        }
+        File logFile = scheduledTaskLoggerService.downloadLog(scheduleId, OdcTaskLogLevel.ALL);
+        return Collections.singletonList(new FileBasedDataResult(logFile));
     }
 
     public Schedule nullSafeGetByIdWithCheckPermission(Long id) {

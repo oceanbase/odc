@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.common.unit;
 
+import javax.validation.constraints.NotNull;
+
 /**
  * {@link BinarySizeUnit}
  *
@@ -47,6 +49,15 @@ public enum BinarySizeUnit {
         } else {
             this.byteBoundary = BinarySizeUnit.SIZE_BOUNDARY >> (60 - byteOffset);
         }
+    }
+
+    public static long convertTo(long originalSize, @NotNull BinarySizeUnit originalUnit,
+            @NotNull BinarySizeUnit targetUnit) {
+        if (originalUnit.name().equals(targetUnit.name())) {
+            return originalSize;
+        }
+        long factor = (long) Math.pow(2, targetUnit.byteOffset - originalUnit.byteOffset);
+        return originalSize * factor;
     }
 
     public BinarySize of(long sizeDigit) {
