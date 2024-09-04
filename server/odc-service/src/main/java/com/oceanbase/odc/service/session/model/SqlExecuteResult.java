@@ -85,6 +85,7 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor
 @Slf4j
 public class SqlExecuteResult {
+    public static final String SHOW_EXTERNAL_TABLES_IN_SCHEMA = "SHOW_EXTERNAL_TABLES_IN_SCHEMA";
     public static final String MIN_OB_VERSION_FOR_EXTERNAL_TABLE = "4.3.2";
     private List<String> columnLabels;
     private List<String> columns;
@@ -139,9 +140,9 @@ public class SqlExecuteResult {
         }
     }
 
-    public OdcTable initEditableInfo(ConnectionSession connectionSession) {
+    public OdcTable initEditableInfo(@NonNull ConnectionSession connectionSession, @NonNull Map<String, Object> cxt) {
         boolean editable = true;
-        editable = !checkContainsExternalTable(connectionSession);
+        editable = !checkContainsExternalTable(connectionSession, cxt);
         OdcTable resultTable = null;
         Set<OdcTable> relatedTablesOrViews = new HashSet<>();
         if (Objects.isNull(this.resultSetMetaData)) {
@@ -209,8 +210,8 @@ public class SqlExecuteResult {
         return resultTable;
     }
 
-    private boolean checkContainsExternalTable(ConnectionSession connectionSession) {
-        Map<String, List<String>> schema2ExternalTables = new HashMap<>();
+    private boolean checkContainsExternalTable(@NonNull ConnectionSession connectionSession,
+            @NonNull Map<String, Object> cxt) {
         DialectType dialectType = connectionSession.getDialectType();
         if (dialectType == DialectType.OB_MYSQL || dialectType == DialectType.OB_ORACLE) {
             String obVersion = ConnectionSessionUtil.getVersion(connectionSession);
@@ -224,19 +225,15 @@ public class SqlExecuteResult {
                 for (JdbcColumnMetaData columnMetaData : columnSet) {
                     String catalogName = columnMetaData.getCatalogName();
                     String tableName = columnMetaData.getTableName();
-                    List<String> externalTables;
-                    if (schema2ExternalTables.containsKey(catalogName)) {
-                        externalTables = schema2ExternalTables.get(catalogName);
-                        if (CollectionUtil.contains(externalTables, tableName)) {
-                            return true;
-                        }
-                    } else {
+                    Map<String, List<String>> schema2ExternalTables =
+                            (Map<String, List<String>>) cxt.computeIfAbsent(SHOW_EXTERNAL_TABLES_IN_SCHEMA,
+                                    k -> new HashMap<>());
+                    List<String> externalTables = schema2ExternalTables.computeIfAbsent(catalogName, k -> {
                         DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
-                        externalTables = schemaAccessor.showExternalTables(catalogName);
-                        schema2ExternalTables.put(catalogName, externalTables);
-                        if (CollectionUtil.contains(externalTables, tableName)) {
-                            return true;
-                        }
+                        return schemaAccessor.showExternalTables(catalogName);
+                    });
+                    if (CollectionUtil.contains(externalTables, tableName)) {
+                        return true;
                     }
                 }
             }
