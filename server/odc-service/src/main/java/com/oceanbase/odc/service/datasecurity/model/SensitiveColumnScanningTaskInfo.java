@@ -42,7 +42,8 @@ public class SensitiveColumnScanningTaskInfo {
     private ErrorCode errorCode;
     private String errorMsg;
 
-    public SensitiveColumnScanningTaskInfo(String taskId, @NonNull Long projectId, @NonNull Integer allTableCount) {
+    public SensitiveColumnScanningTaskInfo(@NonNull String taskId, @NonNull Long projectId,
+            @NonNull Integer allTableCount) {
         this.taskId = taskId;
         this.projectId = projectId;
         this.status = ScanningTaskStatus.CREATED;
