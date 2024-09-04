@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.Map;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.service.common.model.InnerUser;
 
 import lombok.Data;
 
@@ -34,6 +35,10 @@ import lombok.Data;
 public class ScheduleOverview {
 
     private Long scheduleId;
+
+    private String scheduleName;
+
+    private InnerUser creator;
 
     private TriggerConfig triggerConfig;
 

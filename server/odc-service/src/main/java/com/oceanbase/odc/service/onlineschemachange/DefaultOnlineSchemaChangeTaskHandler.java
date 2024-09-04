@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionFsm;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionFsmBase;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
@@ -43,7 +43,7 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
     @Autowired
     private ScheduleService scheduleService;
     @Autowired
-    private OscActionFsm oscActionFSM;
+    private OscActionFsmBase oscActionFSM;
 
     @Override
     public void start(@NonNull Long scheduleId, @NonNull Long scheduleTaskId) {

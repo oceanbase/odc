@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -44,6 +47,8 @@ import com.oceanbase.odc.service.worksheet.model.UpdateWorksheetReq;
 import com.oceanbase.odc.service.worksheet.model.WorksheetMetaResp;
 import com.oceanbase.odc.service.worksheet.model.WorksheetResp;
 
+import lombok.SneakyThrows;
+
 /**
  * project worksheets management controller
  *
@@ -68,21 +73,24 @@ public class WorksheetController {
     public SuccessResponse<WorksheetMetaResp> createWorksheet(
             @PathVariable("projectId") Long projectId,
             @RequestParam("path") String path,
-            @RequestParam("objectKey") String objectKey) {
-        return Responses.success(worksheetServiceFacade.createWorksheet(projectId, path, objectKey));
+            @RequestParam(value = "objectId", required = false) String objectId,
+            @RequestParam(value = "size", required = false) Long size) {
+        return Responses.success(worksheetServiceFacade.createWorksheet(projectId, path, objectId, size));
     }
 
-    @GetMapping("/worksheets/{path}")
+    @SneakyThrows(UnsupportedEncodingException.class)
+    @GetMapping(value = "/worksheets/{path}")
     public SuccessResponse<WorksheetResp> getWorksheetDetail(
-            @PathVariable("path") String path,
-            @PathVariable("projectId") Long projectId) {
-        return Responses.success(worksheetServiceFacade.getWorksheetDetail(projectId, path));
+            @PathVariable("projectId") Long projectId,
+            @PathVariable("path") String path) {
+        String decodedPath = URLDecoder.decode(path, String.valueOf(StandardCharsets.UTF_8));
+        return Responses.success(worksheetServiceFacade.getWorksheetDetail(projectId, decodedPath));
     }
 
     @GetMapping("/worksheets")
     public ListResponse<WorksheetMetaResp> listWorksheets(
             @PathVariable("projectId") Long projectId,
-            @RequestParam ListWorksheetsReq req) {
+            ListWorksheetsReq req) {
         return Responses.list(worksheetServiceFacade.listWorksheets(projectId, req));
     }
 
@@ -102,7 +110,7 @@ public class WorksheetController {
     @PostMapping("/worksheets/batchDelete")
     public SuccessResponse<BatchOperateWorksheetsResp> batchDeleteWorksheets(
             @PathVariable("projectId") Long projectId,
-            @RequestBody @Size(min = 0, max = 100) List<String> paths) {
+            @RequestBody @Size(min = 1, max = 100) List<String> paths) {
         return Responses.success(worksheetServiceFacade.batchDeleteWorksheets(projectId, paths));
     }
 
@@ -114,12 +122,14 @@ public class WorksheetController {
         return Responses.list(worksheetServiceFacade.renameWorksheet(projectId, path, destinationPath));
     }
 
+    @SneakyThrows(UnsupportedEncodingException.class)
     @PutMapping("/worksheets/{path}")
     public ListResponse<WorksheetMetaResp> editWorksheet(
             @PathVariable("projectId") Long projectId,
             @PathVariable("path") String path,
             @RequestBody UpdateWorksheetReq req) {
-        return Responses.list(worksheetServiceFacade.editWorksheet(projectId, path, req));
+        String decodedPath = URLDecoder.decode(path, String.valueOf(StandardCharsets.UTF_8));
+        return Responses.list(worksheetServiceFacade.editWorksheet(projectId, decodedPath, req));
     }
 
     @PostMapping("/worksheets/batchDownload")

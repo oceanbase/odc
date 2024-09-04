@@ -26,9 +26,12 @@ import lombok.Getter;
  */
 @Getter
 public enum WorksheetType {
-    GIT_REPO(1),
-    DIRECTORY(2),
-    FILE(3),
+    ROOT(1),
+    WORKSHEETS(2),
+    REPOS(3),
+    GIT_REPO(4),
+    DIRECTORY(5),
+    FILE(6),
     ;
 
     /**

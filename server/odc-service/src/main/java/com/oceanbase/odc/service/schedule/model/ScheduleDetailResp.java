@@ -35,6 +35,8 @@ public class ScheduleDetailResp {
 
     private Long scheduleId;
 
+    private String scheduleName;
+
     private ScheduleType type;
 
     private Long projectId;

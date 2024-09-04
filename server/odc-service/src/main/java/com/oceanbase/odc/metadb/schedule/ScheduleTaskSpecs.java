@@ -15,9 +15,14 @@
  */
 package com.oceanbase.odc.metadb.schedule;
 
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+
 import org.springframework.data.jpa.domain.Specification;
 
 import com.oceanbase.odc.common.jpa.SpecificationUtil;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 
 /**
  * @Author：tinker
@@ -32,6 +37,26 @@ public class ScheduleTaskSpecs {
 
     public static Specification<ScheduleTaskEntity> jobGroupEquals(String jobGroup) {
         return SpecificationUtil.columnEqual("jobGroup", jobGroup);
+    }
+
+    public static Specification<ScheduleTaskEntity> jobNameIn(Set<String> jobName) {
+        return SpecificationUtil.columnIn("jobName", jobName);
+    }
+
+    public static Specification<ScheduleTaskEntity> jobIdEquals(Long id) {
+        return SpecificationUtil.columnEqual("id", id);
+    }
+
+    public static Specification<ScheduleTaskEntity> statusIn(List<TaskStatus> jobStatuses) {
+        return SpecificationUtil.columnIn("status", jobStatuses);
+    }
+
+    public static Specification<ScheduleTaskEntity> fireTimeBefore(Date fireTime) {
+        return SpecificationUtil.columnBefore("fireTime", fireTime);
+    }
+
+    public static Specification<ScheduleTaskEntity> fireTimeLate(Date fireTime) {
+        return SpecificationUtil.columnLate("fireTime", fireTime);
     }
 
 }

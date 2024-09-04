@@ -16,11 +16,13 @@
 package com.oceanbase.tools.sqlparser.adapter.mysql;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RuleContext;
+import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Column_listContext;
@@ -216,6 +218,13 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
             relationFactor.setUserVariable(ctx.normal_relation_factor().USER_VARIABLE().getText());
         }
         return relationFactor;
+    }
+
+    public static List<RelationFactor> getRelationFactors(List<Relation_factorContext> ctx) {
+        if (CollectionUtils.isEmpty(ctx)) {
+            return Collections.emptyList();
+        }
+        return ctx.stream().map(MySQLFromReferenceFactory::getRelationFactor).collect(Collectors.toList());
     }
 
     @Override
