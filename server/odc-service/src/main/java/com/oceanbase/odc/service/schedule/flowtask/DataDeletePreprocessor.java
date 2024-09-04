@@ -131,6 +131,9 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
                 .setWriteThreadCount(dlmConfiguration.getSingleTaskThreadPoolSize() - parameters.getReadThreadCount());
         parameters.setScanBatchSize(dlmConfiguration.getDefaultScanBatchSize());
         parameters.setQueryTimeout(dlmConfiguration.getTaskConnectionQueryTimeout());
+        if (parameters.getShardingStrategy() == null) {
+            parameters.setShardingStrategy(dlmConfiguration.getShardingStrategy());
+        }
     }
 
 }

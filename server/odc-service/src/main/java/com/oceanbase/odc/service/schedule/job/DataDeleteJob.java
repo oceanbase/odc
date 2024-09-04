@@ -103,6 +103,7 @@ public class DataDeleteJob extends AbstractDlmJob {
             parameter.setReaderBatchSize(limiterConfig.getBatchSize());
             parameter.setWriterBatchSize(limiterConfig.getBatchSize());
             parameter.setMigratePartitions(table.getPartitions());
+            parameter.setShardingStrategy(parameters.getShardingStrategy());
             dlmTableUnit.setParameters(parameter);
             dlmTableUnit.setStatus(TaskStatus.PREPARING);
             dlmTableUnit.setStatistic(new DlmTableUnitStatistic());
@@ -144,6 +145,7 @@ public class DataDeleteJob extends AbstractDlmJob {
                 : dataDeleteParameters.getTargetDatabaseId()));
         parameters.getSourceDs().setQueryTimeout(dataDeleteParameters.getQueryTimeout());
         parameters.getTargetDs().setQueryTimeout(dataDeleteParameters.getQueryTimeout());
+        parameters.setShardingStrategy(dataDeleteParameters.getShardingStrategy());
 
         Long jobId = publishJob(parameters, dataDeleteParameters.getTimeoutMillis());
         scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);

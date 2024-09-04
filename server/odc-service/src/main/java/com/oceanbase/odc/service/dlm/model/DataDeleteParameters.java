@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.dlm.model;
 import java.util.List;
 
 import com.oceanbase.odc.core.flow.model.TaskParameters;
+import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
 
 import lombok.Data;
 
@@ -62,5 +63,7 @@ public class DataDeleteParameters implements TaskParameters {
     private int scanBatchSize;
 
     private Long timeoutMillis;
+
+    private ShardingStrategy shardingStrategy;
 
 }
