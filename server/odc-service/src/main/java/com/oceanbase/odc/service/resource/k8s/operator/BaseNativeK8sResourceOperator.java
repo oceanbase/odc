@@ -51,4 +51,16 @@ public abstract class BaseNativeK8sResourceOperator<T extends KubernetesObject>
         return list.stream().filter(t -> Objects.equals(getKey(t), key)).findFirst();
     }
 
+    @Override
+    public ResourceID getKey(T config) {
+        ResourceID resourceID = new ResourceID();
+        if (config.getMetadata() == null) {
+            throw new IllegalStateException("Meta data is null");
+        }
+        resourceID.setNamespace(config.getMetadata().getNamespace());
+        resourceID.setType(config.getClass());
+        resourceID.setUniqueIdentifier(config.getMetadata().getName());
+        return resourceID;
+    }
+
 }

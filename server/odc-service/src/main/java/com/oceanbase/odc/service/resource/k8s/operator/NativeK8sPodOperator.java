@@ -48,18 +48,6 @@ public class NativeK8sPodOperator extends BaseNativeK8sResourceOperator<V1Pod> {
     }
 
     @Override
-    public ResourceID getKey(V1Pod config) {
-        ResourceID resourceID = new ResourceID();
-        if (config.getMetadata() == null) {
-            throw new IllegalStateException("Pod's meta data is null");
-        }
-        resourceID.setNamespace(config.getMetadata().getNamespace());
-        resourceID.setType(V1Pod.class);
-        resourceID.setUniqueIdentifier(config.getMetadata().getName());
-        return resourceID;
-    }
-
-    @Override
     public List<V1Pod> list() throws ApiException {
         return new CoreV1Api().listNamespacedPod(this.defaultNamespace,
                 null, null, null, null, null, null, null, null, null, null, null).getItems();
