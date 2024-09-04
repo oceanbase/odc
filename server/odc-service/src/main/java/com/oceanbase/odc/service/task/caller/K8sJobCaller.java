@@ -18,11 +18,14 @@ package com.oceanbase.odc.service.task.caller;
 
 import java.util.Optional;
 
-import com.oceanbase.odc.metadb.resource.GlobalUniqueResourceID;
+import com.oceanbase.odc.metadb.resource.ResourceID;
+import com.oceanbase.odc.metadb.resource.ResourceLocation;
+import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.resource.ResourceState;
+import com.oceanbase.odc.service.resource.ResourceTag;
+import com.oceanbase.odc.service.resource.k8s.DefaultResourceOperatorBuilder;
 import com.oceanbase.odc.service.resource.k8s.K8sPodResource;
 import com.oceanbase.odc.service.resource.k8s.K8sResourceContext;
-import com.oceanbase.odc.service.resource.k8s.K8sResourceManager;
 import com.oceanbase.odc.service.resource.k8s.PodConfig;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -37,21 +40,26 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class K8sJobCaller extends BaseJobCaller {
+    // temporary use given resource tag
+    // TODO(): config it
+    public static final ResourceTag DEFAULT_TASK_RESOURCE_TAG = new ResourceTag(
+            new ResourceLocation("default", "default"), DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE);
 
     /**
      * base job config
      */
     private final PodConfig defaultPodConfig;
-    private final K8sResourceManager resourceManager;
+    private final ResourceManager resourceManager;
 
-    public K8sJobCaller(PodConfig podConfig, K8sResourceManager resourceManager) {
+    public K8sJobCaller(PodConfig podConfig, ResourceManager resourceManager) {
         this.defaultPodConfig = podConfig;
         this.resourceManager = resourceManager;
     }
 
     @Override
     public ExecutorIdentifier doStart(JobContext context) throws JobException {
-        K8sPodResource resource = resourceManager.createK8sResource(buildK8sResourceContext(context));
+        K8sPodResource resource =
+                resourceManager.createResource(DEFAULT_TASK_RESOURCE_TAG, buildK8sResourceContext(context));
         String arn = resource.id().getName();
         return DefaultExecutorIdentifier.builder().namespace(defaultPodConfig.getNamespace())
                 .executorName(arn).build();
@@ -71,22 +79,22 @@ public class K8sJobCaller extends BaseJobCaller {
     public void doStop(JobIdentity ji) throws JobException {}
 
     @Override
-    protected void doFinish(JobIdentity ji, ExecutorIdentifier ei, GlobalUniqueResourceID resourceID)
+    protected void doFinish(JobIdentity ji, ExecutorIdentifier ei, ResourceID resourceID)
             throws JobException {
-        resourceManager.release(ResourceIDUtil.wrapToK8sResourceID(resourceID));
+        resourceManager.release(resourceID);
         updateExecutorDestroyed(ji);
     }
 
     @Override
-    protected boolean canBeFinish(JobIdentity ji, ExecutorIdentifier ei, GlobalUniqueResourceID resourceID) {
-        return resourceManager.canBeDestroyed(ResourceIDUtil.wrapToK8sResourceID(resourceID));
+    protected boolean canBeFinish(JobIdentity ji, ExecutorIdentifier ei, ResourceID resourceID) {
+        return resourceManager.canBeDestroyed(DEFAULT_TASK_RESOURCE_TAG, resourceID);
     }
 
     @Override
-    protected boolean isExecutorExist(ExecutorIdentifier identifier, GlobalUniqueResourceID resourceID)
+    protected boolean isExecutorExist(ExecutorIdentifier identifier, ResourceID resourceID)
             throws JobException {
         Optional<K8sPodResource> executorOptional =
-                resourceManager.query(ResourceIDUtil.wrapToK8sResourceID(resourceID));
+                resourceManager.query(DEFAULT_TASK_RESOURCE_TAG, resourceID);
         return executorOptional.isPresent() && !ResourceState.isDestroying(executorOptional.get().getResourceState());
     }
 }

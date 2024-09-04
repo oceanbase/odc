@@ -22,7 +22,7 @@ import java.util.Objects;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.resource.k8s.K8sResourceManager;
+import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.resource.k8s.PodConfig;
 import com.oceanbase.odc.service.task.caller.JobCaller;
 import com.oceanbase.odc.service.task.caller.JobCallerBuilder;
@@ -51,10 +51,10 @@ import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
  * @since 4.2.4
  */
 public class ImmediateJobDispatcher implements JobDispatcher {
-    private final K8sResourceManager k8SResourceManager;
+    private final ResourceManager resourceManager;
 
-    public ImmediateJobDispatcher(K8sResourceManager k8SResourceManager) {
-        this.k8SResourceManager = k8SResourceManager;
+    public ImmediateJobDispatcher(ResourceManager resourceManager) {
+        this.resourceManager = resourceManager;
     }
 
     @Override
@@ -106,7 +106,7 @@ public class ImmediateJobDispatcher implements JobDispatcher {
             if (StringUtils.isNotBlank(regionName)) {
                 podConfig.setRegion(regionName);
             }
-            return JobCallerBuilder.buildK8sJobCaller(podConfig, context, k8SResourceManager);
+            return JobCallerBuilder.buildK8sJobCaller(podConfig, context, resourceManager);
         } else {
             return JobCallerBuilder.buildProcessCaller(context,
                     new JobEnvironmentFactory().build(context, TaskRunMode.PROCESS));

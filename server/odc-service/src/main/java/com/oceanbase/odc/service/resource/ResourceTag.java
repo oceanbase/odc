@@ -15,15 +15,24 @@
  */
 package com.oceanbase.odc.service.resource;
 
-import org.apache.hadoop.classification.InterfaceStability.Evolving;
+import com.oceanbase.odc.metadb.resource.ResourceLocation;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 /**
- * global unique resource ID
- * 
  * @author longpeng.zlp
- * @date 2024/8/12 11:30
+ * @date 2024/9/3 17:16
  */
-@Evolving
-public interface ResourceID {
-    String getName();
+@AllArgsConstructor
+@Data
+public class ResourceTag {
+    /**
+     * location of the resource
+     */
+    private final ResourceLocation resourceLocation;
+    /**
+     * type of the resource, eg service, pod this field will be used to select operator
+     */
+    private final String type;
 }

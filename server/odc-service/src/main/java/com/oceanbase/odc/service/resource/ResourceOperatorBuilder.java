@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.k8s;
+package com.oceanbase.odc.service.resource;
 
 
 /**
  * @author longpeng.zlp
  * @date 2024/9/2 17:15
  */
-public interface K8sResourceOperatorBuilder {
+public interface ResourceOperatorBuilder<RC extends ResourceContext, R extends Resource>
+        extends ResourceOperatorMatcher, ResourceEntityConverter<R> {
     /**
      * context to build operator
-     * 
-     * @param region region of the k8s cluster
-     * @param group group of the k8s cluster
+     *
      * @return k8s operator to manipulate k8s cluster
      */
-    K8SResourceOperator build(String region, String group);
+    ResourceOperator<RC, R> build(ResourceTag resourceTag);
 }
+

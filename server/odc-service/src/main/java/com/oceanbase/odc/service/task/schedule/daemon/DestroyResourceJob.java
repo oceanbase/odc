@@ -25,8 +25,10 @@ import org.springframework.data.domain.Page;
 
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
-import com.oceanbase.odc.metadb.resource.GlobalUniqueResourceID;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
+import com.oceanbase.odc.metadb.resource.ResourceID;
+import com.oceanbase.odc.metadb.resource.ResourceLocation;
+import com.oceanbase.odc.service.task.caller.K8sJobCaller;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
@@ -69,11 +71,11 @@ public class DestroyResourceJob implements Job {
 
     private void destroyResource(ResourceEntity resourceEntity) {
         getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
-            GlobalUniqueResourceID resourceID = new GlobalUniqueResourceID(resourceEntity.getRegion(),
-                    resourceEntity.getGroupName(), resourceEntity.getNamespace(),
+            ResourceID resourceID = new ResourceID(new ResourceLocation(resourceEntity.getRegion(),
+                    resourceEntity.getGroupName()), resourceEntity.getNamespace(),
                     resourceEntity.getResourceName());
             try {
-                configuration.getK8sResourceManager().destroy(resourceID);
+                configuration.getResourceManager().destroy(K8sJobCaller.DEFAULT_TASK_RESOURCE_TAG, resourceID);
             } catch (Throwable e) {
                 log.warn("DestroyResourceJob destroy resource = {} failed", resourceEntity, e);
                 if (e.getMessage() != null &&

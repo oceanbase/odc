@@ -13,24 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.k8s;
+package com.oceanbase.odc.service.resource;
 
-import com.oceanbase.odc.metadb.resource.GlobalUniqueResourceID;
-import com.oceanbase.odc.service.resource.ResourceID;
-
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import com.oceanbase.odc.metadb.resource.ResourceEntity;
 
 /**
- * global unique resource ID
- * 
  * @author longpeng.zlp
- * @date 2024/8/12 11:30
+ * @date 2024/9/3 19:20
  */
-@EqualsAndHashCode
-@ToString
-public class K8sPodResourceID extends GlobalUniqueResourceID implements ResourceID {
-    public K8sPodResourceID(String region, String group, String namespace, String name) {
-        super(region, group, namespace, name);
-    }
+public interface ResourceEntityConverter<T extends Resource> {
+    ResourceEntity toResourceEntity(T resource);
 }

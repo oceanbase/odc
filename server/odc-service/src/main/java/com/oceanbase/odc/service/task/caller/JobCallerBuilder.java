@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.task.caller;
 
 import java.util.Map;
 
-import com.oceanbase.odc.service.resource.k8s.K8sResourceManager;
+import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.resource.k8s.PodConfig;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
@@ -92,7 +92,7 @@ public class JobCallerBuilder {
     }
 
     public static JobCaller buildK8sJobCaller(PodConfig podConfig, JobContext context,
-            K8sResourceManager resourceManager) {
+            ResourceManager resourceManager) {
         Map<String, String> environments = buildK8sEnv(context);
         // common environment variables
         environments.put(JobEnvKeyConstants.ODC_LOG_DIRECTORY, podConfig.getMountPath());

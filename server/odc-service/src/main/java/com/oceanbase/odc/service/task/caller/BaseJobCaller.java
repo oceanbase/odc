@@ -17,7 +17,7 @@
 package com.oceanbase.odc.service.task.caller;
 
 import com.oceanbase.odc.common.event.AbstractEvent;
-import com.oceanbase.odc.metadb.resource.GlobalUniqueResourceID;
+import com.oceanbase.odc.metadb.resource.ResourceID;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
@@ -93,7 +93,7 @@ public abstract class BaseJobCaller implements JobCaller {
         JobEntity jobEntity = taskFrameworkService.find(ji.getId());
         String executorEndpoint = jobEntity.getExecutorEndpoint();
         ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier());
-        GlobalUniqueResourceID resourceID = ResourceIDUtil.getResourceID(identifier, jobEntity);
+        ResourceID resourceID = ResourceIDUtil.getResourceID(identifier, jobEntity);
         try {
             if (executorEndpoint != null
                     && isExecutorExist(identifier, resourceID)) {
@@ -141,7 +141,7 @@ public abstract class BaseJobCaller implements JobCaller {
             return;
         }
         ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(executorIdentifier);
-        GlobalUniqueResourceID resourceID = ResourceIDUtil.getResourceID(identifier, jobEntity);
+        ResourceID resourceID = ResourceIDUtil.getResourceID(identifier, jobEntity);
         log.info("Preparing destroy,jobId={}, executorIdentifier={}.", ji.getId(), executorIdentifier);
         doFinish(ji, identifier, resourceID);
     }
@@ -157,7 +157,7 @@ public abstract class BaseJobCaller implements JobCaller {
             return true;
         }
         ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(executorIdentifier);
-        GlobalUniqueResourceID resourceID = ResourceIDUtil.getResourceID(identifier, jobEntity);
+        ResourceID resourceID = ResourceIDUtil.getResourceID(identifier, jobEntity);
         return canBeFinish(ji, identifier, resourceID);
     }
 
@@ -169,9 +169,9 @@ public abstract class BaseJobCaller implements JobCaller {
      * @param resourceID resource id task working on
      * @return
      */
-    protected abstract boolean canBeFinish(JobIdentity ji, ExecutorIdentifier ei, GlobalUniqueResourceID resourceID);
+    protected abstract boolean canBeFinish(JobIdentity ji, ExecutorIdentifier ei, ResourceID resourceID);
 
-    protected abstract void doFinish(JobIdentity ji, ExecutorIdentifier ei, GlobalUniqueResourceID resourceID)
+    protected abstract void doFinish(JobIdentity ji, ExecutorIdentifier ei, ResourceID resourceID)
             throws JobException;
 
 
@@ -196,6 +196,6 @@ public abstract class BaseJobCaller implements JobCaller {
 
     protected abstract void doStop(JobIdentity ji) throws JobException;
 
-    protected abstract boolean isExecutorExist(ExecutorIdentifier identifier, GlobalUniqueResourceID resourceID)
+    protected abstract boolean isExecutorExist(ExecutorIdentifier identifier, ResourceID resourceID)
             throws JobException;
 }

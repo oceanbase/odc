@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.resource.k8s;
 
 import java.util.Date;
@@ -29,6 +28,7 @@ import com.oceanbase.odc.service.task.exception.JobException;
 
 /**
  * test for K8SResourceOperator
+ * 
  * @author longpeng.zlp
  * @date 2024/9/3 11:30
  */
@@ -49,7 +49,7 @@ public class K8SResourceOperatorTest {
         podConfig = new PodConfig();
         podConfig.setImage("myImage");
         k8sResourceContext = new K8sResourceContext(podConfig, resourceName,
-            regionName, groupName, extraData);
+                regionName, groupName, extraData);
     }
 
     /**
@@ -106,6 +106,7 @@ public class K8SResourceOperatorTest {
     private static final class MockK8sJobClient implements K8sJobClient {
         private K8sResourceContext createContext;
         private volatile boolean deleted = false;
+
         @Override
         public K8sPodResource create(K8sResourceContext k8sResourceContext) throws JobException {
             this.createContext = k8sResourceContext;
@@ -125,8 +126,9 @@ public class K8SResourceOperatorTest {
 
         private K8sPodResource buildByK8sContext(K8sResourceContext k8sResourceContext) {
             return new K8sPodResource(k8sResourceContext.region(), k8sResourceContext.getGroup(),
-                k8sResourceContext.resourceNamespace(), k8sResourceContext.getResourceName(), ResourceState.CREATING,
-                "localhost:8080", new Date(1024));
+                    k8sResourceContext.resourceNamespace(), k8sResourceContext.getResourceName(),
+                    ResourceState.CREATING,
+                    "localhost:8080", new Date(1024));
         }
     }
 }

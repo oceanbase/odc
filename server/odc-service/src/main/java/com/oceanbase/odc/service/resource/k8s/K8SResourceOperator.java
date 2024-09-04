@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import com.google.common.base.Preconditions;
+import com.oceanbase.odc.metadb.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceOperator;
 import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.task.exception.JobException;
@@ -34,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @AllArgsConstructor
 @Slf4j
-public class K8SResourceOperator implements ResourceOperator<K8sResourceContext, K8sPodResource, K8sPodResourceID> {
+public class K8SResourceOperator implements ResourceOperator<K8sResourceContext, K8sPodResource> {
     private final K8sResourceOperatorContext context;
 
     @Override
@@ -47,29 +48,29 @@ public class K8SResourceOperator implements ResourceOperator<K8sResourceContext,
     }
 
     @Override
-    public Optional<K8sPodResource> query(K8sPodResourceID resourceID) throws JobException {
-        Preconditions.checkArgument(null != resourceID.getRegion());
+    public Optional<K8sPodResource> query(ResourceID resourceID) throws JobException {
+        checkResourceID(resourceID);
         Optional<K8sPodResource> ret = context.getK8sJobClient().get(resourceID.getNamespace(), resourceID.getName());
         if (ret.isPresent()) {
-            ret.get().setRegion(resourceID.getRegion());
+            ret.get().setRegion(resourceID.getResourceLocation().getRegion());
         }
         return ret;
     }
 
     @Override
-    public String destroy(K8sPodResourceID resourceID) throws JobException {
-        Preconditions.checkArgument(null != resourceID.getRegion());
+    public String destroy(ResourceID resourceID) throws JobException {
+        checkResourceID(resourceID);
         // first destroy
         return context.getK8sJobClient().delete(resourceID.getNamespace(), resourceID.getName());
     }
 
     @Override
-    public boolean canBeDestroyed(K8sPodResourceID resourceID) {
+    public boolean canBeDestroyed(ResourceID resourceID) {
         return canBeDestroyed(resourceID, context.getCreateElapsedTimeFunc());
     }
 
-    public boolean canBeDestroyed(K8sPodResourceID resourceID, Function<K8sPodResourceID, Long> createElapsedTimeFunc) {
-        Preconditions.checkArgument(null != resourceID.getRegion());
+    public boolean canBeDestroyed(ResourceID resourceID, Function<ResourceID, Long> createElapsedTimeFunc) {
+        checkResourceID(resourceID);
         Optional<K8sPodResource> query;
 
         try {
@@ -90,6 +91,11 @@ public class K8SResourceOperator implements ResourceOperator<K8sResourceContext,
             }
         }
         return isPodIdle();
+    }
+
+    private void checkResourceID(ResourceID resourceID) {
+        Preconditions.checkArgument(
+                null != resourceID.getResourceLocation() && null != resourceID.getResourceLocation().getRegion());
     }
 
     /**

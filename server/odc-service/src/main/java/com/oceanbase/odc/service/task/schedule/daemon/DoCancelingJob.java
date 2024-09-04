@@ -77,7 +77,7 @@ public class DoCancelingJob implements Job {
                 // mark resource as released
                 if (TaskRunMode.K8S == lockedEntity.getRunMode()) {
                     ResourceManagerUtil.markResourceReleased(lockedEntity, lockedEntity.getExecutorIdentifier(),
-                            getConfiguration().getK8sResourceManager());
+                            getConfiguration().getResourceManager());
                     log.info("DoCancelingJob release resource for job = {}", jobEntity);
                 }
                 // For transaction atomic, first update to CANCELED, then stop remote job in executor,

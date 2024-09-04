@@ -15,20 +15,13 @@
  */
 package com.oceanbase.odc.metadb.resource;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
-
 /**
+ * location of the resource
+ * 
  * @author longpeng.zlp
- * @date 2024/9/2 16:47
+ * @date 2024/9/4 10:42
  */
-@AllArgsConstructor
-@Data
-@EqualsAndHashCode
-@ToString
-public class GlobalUniqueResourceID {
+public class ResourceLocation {
     /**
      * region of the resource, that associate to a geography area eg: shanghai/beijing/singapore
      */
@@ -39,13 +32,16 @@ public class GlobalUniqueResourceID {
      */
     private final String group;
 
-    /**
-     * name space of the resource eg: a namespace of k8s cluster
-     */
-    private final String namespace;
+    public ResourceLocation(String region, String group) {
+        this.region = region;
+        this.group = group;
+    }
 
-    /**
-     * name of resource. eg: a pod name
-     */
-    private final String name;
+    public String getRegion() {
+        return region;
+    }
+
+    public String getGroup() {
+        return group;
+    }
 }

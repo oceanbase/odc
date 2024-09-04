@@ -90,7 +90,7 @@ public class CheckRunningJob implements Job {
             // mark resource as released to let resource collector collect resource
             if (TaskRunMode.K8S == refreshedJobEntity.getRunMode()) {
                 ResourceManagerUtil.markResourceReleased(refreshedJobEntity, refreshedJobEntity.getExecutorIdentifier(),
-                        getConfiguration().getK8sResourceManager());
+                        getConfiguration().getResourceManager());
                 log.info("CheckRunningJob release resource for job = {}", jobEntity);
             }
         }

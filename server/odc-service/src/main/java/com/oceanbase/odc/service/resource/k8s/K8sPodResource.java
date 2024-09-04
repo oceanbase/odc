@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.resource.k8s;
 
 import java.util.Date;
 
+import com.oceanbase.odc.metadb.resource.ResourceID;
+import com.oceanbase.odc.metadb.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.Resource;
 import com.oceanbase.odc.service.resource.ResourceEndPoint;
 import com.oceanbase.odc.service.resource.ResourceMode;
@@ -33,7 +35,7 @@ import lombok.Data;
  */
 @Data
 @AllArgsConstructor
-public class K8sPodResource implements Resource<K8sPodResourceID> {
+public class K8sPodResource implements Resource {
     /**
      * job region
      */
@@ -66,8 +68,8 @@ public class K8sPodResource implements Resource<K8sPodResourceID> {
 
     private Date createDate;
 
-    public K8sPodResourceID id() {
-        return new K8sPodResourceID(region, group, namespace, arn);
+    public ResourceID id() {
+        return new ResourceID(new ResourceLocation(region, group), namespace, arn);
     }
 
     public ResourceMode type() {

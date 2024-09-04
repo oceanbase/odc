@@ -57,15 +57,15 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.metadb.resource.GlobalUniqueResourceID;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
+import com.oceanbase.odc.metadb.resource.ResourceID;
 import com.oceanbase.odc.metadb.resource.ResourceRepository;
 import com.oceanbase.odc.metadb.task.JobAttributeEntity;
 import com.oceanbase.odc.metadb.task.JobAttributeRepository;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.JobRepository;
+import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.resource.ResourceState;
-import com.oceanbase.odc.service.resource.k8s.K8sResourceManager;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
@@ -109,7 +109,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Autowired
     private ResourceRepository resourceRepository;
     @Autowired
-    private K8sResourceManager k8SResourceManager;
+    private ResourceManager resourceManager;
     @Autowired
     private JobAttributeRepository jobAttributeRepository;
     @Setter
@@ -461,8 +461,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         // release resource
         if (isJobDone && TaskRunMode.K8S == jobEntity.getRunMode()) {
             ExecutorIdentifier executorIdentifier = ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier());
-            GlobalUniqueResourceID resourceID = ResourceIDUtil.getResourceID(executorIdentifier, jobEntity);
-            k8SResourceManager.release(ResourceIDUtil.wrapToK8sResourceID(resourceID));
+            ResourceID resourceID = ResourceIDUtil.getResourceID(executorIdentifier, jobEntity);
+            resourceManager.release(resourceID);
         }
     }
 

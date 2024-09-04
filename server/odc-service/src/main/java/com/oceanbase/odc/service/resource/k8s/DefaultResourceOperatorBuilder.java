@@ -17,8 +17,13 @@ package com.oceanbase.odc.service.resource.k8s;
 
 import java.util.Optional;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
+import com.oceanbase.odc.metadb.resource.ResourceID;
 import com.oceanbase.odc.metadb.resource.ResourceRepository;
+import com.oceanbase.odc.service.resource.ResourceMode;
+import com.oceanbase.odc.service.resource.ResourceOperatorBuilder;
+import com.oceanbase.odc.service.resource.ResourceTag;
 import com.oceanbase.odc.service.resource.k8s.client.K8sJobClient;
 import com.oceanbase.odc.service.resource.k8s.client.K8sJobClientSelector;
 
@@ -31,14 +36,15 @@ import lombok.AllArgsConstructor;
  * @date 2024/9/2 17:33
  */
 @AllArgsConstructor
-public class DefaultK8sResourceOperatorBuilder implements K8sResourceOperatorBuilder {
+public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K8sResourceContext, K8sPodResource> {
+    public static final String CLOUD_K8S_POD_TYPE = "cloudK8sPod";
     private final K8sJobClientSelector k8sJobClientSelector;
     private final long podPendingTimeoutSeconds;
     private final ResourceRepository resourceRepository;
 
     @Override
-    public K8SResourceOperator build(String region, String group) {
-        K8sJobClient k8sJobClient = k8sJobClientSelector.select(region);
+    public K8SResourceOperator build(ResourceTag resourceTag) {
+        K8sJobClient k8sJobClient = k8sJobClientSelector.select(resourceTag.getResourceLocation().getRegion());
         return new K8SResourceOperator(new K8sResourceOperatorContext(k8sJobClient,
                 this::getResourceCreateTimeInSeconds, podPendingTimeoutSeconds));
     }
@@ -49,12 +55,42 @@ public class DefaultK8sResourceOperatorBuilder implements K8sResourceOperatorBui
      * @param resourceID
      * @return
      */
-    private long getResourceCreateTimeInSeconds(K8sPodResourceID resourceID) {
+    private long getResourceCreateTimeInSeconds(ResourceID resourceID) {
         Optional<ResourceEntity> resource = resourceRepository.findByResourceID(resourceID);
         if (resource.isPresent()) {
             return (System.currentTimeMillis() - resource.get().getCreateTime().getTime()) / 1000;
         } else {
             return 0;
         }
+    }
+
+    /**
+     * convert k8s resource to resource entity
+     *
+     * @param k8sResource
+     * @return
+     */
+    public ResourceEntity toResourceEntity(K8sPodResource k8sResource) {
+        ResourceEntity resourceEntity = new ResourceEntity();
+        resourceEntity.setResourceMode(ResourceMode.REMOTE_K8S);
+        resourceEntity.setEndpoint(k8sResource.endpoint().getResourceURL());
+        resourceEntity.setCreateTime(k8sResource.createDate());
+        resourceEntity.setRegion(k8sResource.getRegion());
+        resourceEntity.setGroupName(k8sResource.getGroup());
+        resourceEntity.setNamespace(k8sResource.getNamespace());
+        resourceEntity.setResourceName(k8sResource.getArn());
+        resourceEntity.setStatus(k8sResource.getResourceState());
+        return resourceEntity;
+    }
+
+    /**
+     * cloud K8s pod match this builder
+     * 
+     * @param resourceTag
+     * @return
+     */
+    @Override
+    public boolean match(ResourceTag resourceTag) {
+        return StringUtils.equalsIgnoreCase(resourceTag.getType(), CLOUD_K8S_POD_TYPE);
     }
 }

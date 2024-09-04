@@ -19,6 +19,7 @@ import java.util.Optional;
 
 import org.apache.hadoop.classification.InterfaceStability.Evolving;
 
+import com.oceanbase.odc.metadb.resource.ResourceID;
 import com.oceanbase.odc.service.task.exception.JobException;
 
 /**
@@ -26,15 +27,13 @@ import com.oceanbase.odc.service.task.exception.JobException;
  * 
  * @param <RC> config of resource creating
  * @param <R> resource describe
- * @param <RI> unique id of resource
  * @author longpeng.zlp
  * @date 2024/8/12 11:42
  */
 @Evolving
-public interface ResourceOperator<RC extends ResourceContext, R extends Resource<RI>, RI extends ResourceID> {
+public interface ResourceOperator<RC extends ResourceContext, R extends Resource> {
     /**
-     * current only use resource type to determinate which type should be created create may not real
-     * create
+     * create a resource by resource context, create may not real create
      * 
      * @param resourceContext resource config
      * @return resource, may not available, maybe creating
@@ -42,12 +41,12 @@ public interface ResourceOperator<RC extends ResourceContext, R extends Resource
     R create(RC resourceContext) throws JobException;
 
     /**
-     * query if resource existed
+     * query if resource with resource id existed
      * 
      * @param resourceID
      * @return
      */
-    Optional<R> query(RI resourceID) throws JobException;
+    Optional<R> query(ResourceID resourceID) throws JobException;
 
     /**
      * destroy resource with resourceID destroy may not real destroy
@@ -55,7 +54,7 @@ public interface ResourceOperator<RC extends ResourceContext, R extends Resource
      * @param resourceID
      * @return
      */
-    String destroy(RI resourceID) throws JobException;
+    String destroy(ResourceID resourceID) throws JobException;
 
     /**
      * detect if resource can be destroyed
@@ -63,5 +62,5 @@ public interface ResourceOperator<RC extends ResourceContext, R extends Resource
      * @param resourceID
      * @return true if resource can be destroyed
      */
-    boolean canBeDestroyed(RI resourceID);
+    boolean canBeDestroyed(ResourceID resourceID);
 }

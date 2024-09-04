@@ -27,7 +27,7 @@ import com.oceanbase.odc.common.event.LocalEventPublisher;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
-import com.oceanbase.odc.service.resource.k8s.K8sResourceManager;
+import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
@@ -62,8 +62,8 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         setConnectionService(ctx.getBean(ConnectionService.class));
         setTaskService(ctx.getBean(TaskService.class));
         setDaemonScheduler((Scheduler) ctx.getBean("taskFrameworkSchedulerFactoryBean"));
-        setJobDispatcher(new ImmediateJobDispatcher(ctx.getBean(K8sResourceManager.class)));
-        setK8sResourceManager(ctx.getBean(K8sResourceManager.class));
+        setJobDispatcher(new ImmediateJobDispatcher(ctx.getBean(ResourceManager.class)));
+        setResourceManager(ctx.getBean(ResourceManager.class));
         LocalEventPublisher publisher = new LocalEventPublisher();
         TaskFrameworkService tfs = ctx.getBean(TaskFrameworkService.class);
         if (tfs instanceof StdTaskFrameworkService) {

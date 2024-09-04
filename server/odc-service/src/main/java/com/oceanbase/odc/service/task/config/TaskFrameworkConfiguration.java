@@ -35,15 +35,13 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.metadb.resource.ResourceRepository;
 import com.oceanbase.odc.service.common.ConditionOnServer;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
-import com.oceanbase.odc.service.resource.k8s.DefaultK8sResourceOperatorBuilder;
-import com.oceanbase.odc.service.resource.k8s.K8sResourceManager;
-import com.oceanbase.odc.service.resource.k8s.K8sResourceOperatorBuilder;
-import com.oceanbase.odc.service.resource.k8s.OcpK8sResourceManager;
+import com.oceanbase.odc.service.resource.ResourceManager;
+import com.oceanbase.odc.service.resource.ResourceOperatorBuilder;
+import com.oceanbase.odc.service.resource.k8s.DefaultResourceOperatorBuilder;
 import com.oceanbase.odc.service.resource.k8s.client.DefaultK8sJobClientSelector;
 import com.oceanbase.odc.service.resource.k8s.client.K8sJobClientSelector;
 import com.oceanbase.odc.service.resource.k8s.client.NativeK8sJobClient;
 import com.oceanbase.odc.service.resource.k8s.client.NullK8sJobClientSelector;
-import com.oceanbase.odc.service.resource.local.LocalResourceOperator;
 import com.oceanbase.odc.service.task.dummy.LocalMockK8sJobClient;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.jasypt.DefaultJasyptEncryptorConfigProperties;
@@ -78,11 +76,11 @@ public class TaskFrameworkConfiguration {
 
     @Lazy
     @Bean
-    @ConditionalOnMissingBean(K8sResourceManager.class)
-    public K8sResourceManager k8SResourceManager(@Autowired TaskFrameworkProperties taskFrameworkProperties,
+    @ConditionalOnMissingBean(ResourceManager.class)
+    public ResourceManager resourceManager(@Autowired TaskFrameworkProperties taskFrameworkProperties,
             @Autowired ResourceRepository resourceRepository)
             throws IOException {
-        OcpK8sResourceManager k8sResourceManager = new OcpK8sResourceManager(resourceRepository);
+        ResourceManager k8sResourceManager = new ResourceManager(resourceRepository);
         registerODCCloudEndpointK8sResourceManager(taskFrameworkProperties, k8sResourceManager, resourceRepository);
         // register other resource operator here
         return k8sResourceManager;
@@ -92,7 +90,7 @@ public class TaskFrameworkConfiguration {
      * operate k8s resource by odc
      */
     private void registerODCCloudEndpointK8sResourceManager(TaskFrameworkProperties taskFrameworkProperties,
-            OcpK8sResourceManager k8sResourceManager, ResourceRepository resourceRepository) throws IOException {
+            ResourceManager k8sResourceManager, ResourceRepository resourceRepository) throws IOException {
         K8sProperties k8sProperties = taskFrameworkProperties.getK8sProperties();
         K8sJobClientSelector k8sJobClientSelector;
         if (StringUtils.isBlank(k8sProperties.getKubeUrl())) {
@@ -109,20 +107,11 @@ public class TaskFrameworkConfiguration {
             NativeK8sJobClient nativeK8sJobClient = new NativeK8sJobClient(k8sProperties);
             k8sJobClientSelector = new DefaultK8sJobClientSelector(nativeK8sJobClient);
         }
-        K8sResourceOperatorBuilder k8sResourceOperatorBuilder =
-                new DefaultK8sResourceOperatorBuilder(k8sJobClientSelector, k8sProperties.getPodPendingTimeoutSeconds(),
+        ResourceOperatorBuilder<?, ?> k8sResourceOperatorBuilder =
+                new DefaultResourceOperatorBuilder(k8sJobClientSelector, k8sProperties.getPodPendingTimeoutSeconds(),
                         resourceRepository);
         // all region use one k8s operator
-        k8sResourceManager.registerK8sOperator("default", k8sResourceOperatorBuilder);
-    }
-
-    @Lazy
-    @Bean
-    @ConditionalOnMissingBean(LocalResourceOperator.class)
-    public LocalResourceOperator memoryResourceManager(@Autowired TaskFrameworkProperties taskFrameworkProperties)
-            throws IOException {
-        // TODO(lx): impl meta store
-        return new LocalResourceOperator();
+        k8sResourceManager.registerResourceOperator(k8sResourceOperatorBuilder);
     }
 
     @Bean

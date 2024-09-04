@@ -22,7 +22,7 @@ import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
-import com.oceanbase.odc.service.resource.k8s.K8sResourceManager;
+import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
@@ -47,7 +47,7 @@ public interface JobConfiguration {
 
     CloudEnvConfigurations getCloudEnvConfigurations();
 
-    K8sResourceManager getK8sResourceManager();
+    ResourceManager getResourceManager();
 
     TaskService getTaskService();
 

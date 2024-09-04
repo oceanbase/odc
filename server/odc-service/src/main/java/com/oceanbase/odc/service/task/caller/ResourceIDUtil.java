@@ -17,9 +17,9 @@ package com.oceanbase.odc.service.task.caller;
 
 import java.util.Map;
 
-import com.oceanbase.odc.metadb.resource.GlobalUniqueResourceID;
+import com.oceanbase.odc.metadb.resource.ResourceID;
+import com.oceanbase.odc.metadb.resource.ResourceLocation;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.resource.k8s.K8sPodResourceID;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -67,11 +67,11 @@ public class ResourceIDUtil {
      * @param jobProperties
      * @return
      */
-    public static GlobalUniqueResourceID getResourceID(ExecutorIdentifier executorIdentifier,
+    public static ResourceID getResourceID(ExecutorIdentifier executorIdentifier,
             Map<String, String> jobProperties) {
         String region = checkAndGetJobProperties(jobProperties, DEFAULT_REGION_PROP_NAME, DEFAULT_PROP_VALUE);
         String group = checkAndGetJobProperties(jobProperties, DEFAULT_GROUP_PROP_NAME, DEFAULT_PROP_VALUE);
-        return new GlobalUniqueResourceID(region, group, executorIdentifier.getNamespace(),
+        return new ResourceID(new ResourceLocation(region, group), executorIdentifier.getNamespace(),
                 executorIdentifier.getExecutorName());
     }
 
@@ -82,21 +82,7 @@ public class ResourceIDUtil {
      * @param jobEntity
      * @return
      */
-    public static GlobalUniqueResourceID getResourceID(ExecutorIdentifier executorIdentifier, JobEntity jobEntity) {
+    public static ResourceID getResourceID(ExecutorIdentifier executorIdentifier, JobEntity jobEntity) {
         return getResourceID(executorIdentifier, jobEntity.getJobProperties());
-    }
-
-    /**
-     * wrap global resource id to k8s resource id
-     * 
-     * @param globalUniqueResourceID
-     * @return
-     */
-    public static K8sPodResourceID wrapToK8sResourceID(GlobalUniqueResourceID globalUniqueResourceID) {
-        return new K8sPodResourceID(
-                globalUniqueResourceID.getRegion(),
-                globalUniqueResourceID.getGroup(),
-                globalUniqueResourceID.getNamespace(),
-                globalUniqueResourceID.getName());
     }
 }

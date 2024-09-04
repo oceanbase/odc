@@ -16,9 +16,9 @@
 package com.oceanbase.odc.service.task.schedule.daemon;
 
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.metadb.resource.GlobalUniqueResourceID;
+import com.oceanbase.odc.metadb.resource.ResourceID;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.resource.k8s.K8sResourceManager;
+import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
@@ -29,12 +29,12 @@ import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
  */
 public class ResourceManagerUtil {
     public static void markResourceReleased(JobEntity jobEntity, String executorIdentifierStr,
-            K8sResourceManager resourceManager) {
+            ResourceManager resourceManager) {
         // mark resource as released to let resource collector collect resource
         if (StringUtils.isNotEmpty(executorIdentifierStr)) {
             ExecutorIdentifier executorIdentifier = ExecutorIdentifierParser.parser(executorIdentifierStr);
-            GlobalUniqueResourceID resourceID = ResourceIDUtil.getResourceID(executorIdentifier, jobEntity);
-            resourceManager.release(ResourceIDUtil.wrapToK8sResourceID(resourceID));
+            ResourceID resourceID = ResourceIDUtil.getResourceID(executorIdentifier, jobEntity);
+            resourceManager.release(resourceID);
         }
     }
 }
