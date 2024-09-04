@@ -192,10 +192,10 @@ public class FlowTaskInstanceService {
             return response.getContentByType(new TypeReference<SuccessResponse<FlowInstanceDetailResp>>() {}).getData();
         }
         taskInstance.confirmExecute();
-        flowInstanceRepository.updateStatusById(id, FlowStatus.EXECUTING);
+        flowInstanceRepository.updateStatusById(id, FlowStatus.PRE_EXECUTION);
         FlowInstanceDetailResp flowInstanceDetailResp = FlowInstanceDetailResp.withIdAndType(id,
                 taskInstance.getTaskType());
-        flowInstanceDetailResp.setStatus(FlowStatus.EXECUTING);
+        flowInstanceDetailResp.setStatus(FlowStatus.PRE_EXECUTION);
         return flowInstanceDetailResp;
     }
 
