@@ -15,7 +15,10 @@
  */
 package com.oceanbase.odc.service.resource;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -24,12 +27,15 @@ import javax.transaction.Transactional;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.metadb.resource.ResourceRepository;
+import com.oceanbase.odc.service.resource.model.QueryResourceParams;
 import com.oceanbase.odc.service.resource.model.ResourceID;
 import com.oceanbase.odc.service.resource.model.ResourceOperatorTag;
 import com.oceanbase.odc.service.resource.model.ResourceState;
@@ -78,6 +84,44 @@ public class ResourceManagerService {
         return resource;
     }
 
+    @SuppressWarnings("all")
+    public Page<Resource> list(@NonNull QueryResourceParams params, @NonNull Pageable pageable) throws Exception {
+        Map<Class<?>, Map<ResourceOperatorTag, List<Object>>> typeAndTag2Resources = new HashMap<>();
+        Page<Resource> resources = this.resourceRepository.findAll(params, pageable).map(this::entityToModel);
+        for (Resource resource : resources.getContent()) {
+            ResourceID resourceID = resource.getResourceID();
+            if (resourceID == null) {
+                continue;
+            }
+            Class<?> type = resourceID.getType();
+            ResourceOperatorTag tag = resource.getResourceOperatorTag();
+            Map<ResourceOperatorTag, List<Object>> tag2Operator = typeAndTag2Resources
+                    .computeIfAbsent(type, c -> new HashMap<>());
+            List<Object> resourceList = tag2Operator.get(tag);
+            ResourceOperator<Object> resourceOperator = (ResourceOperator<Object>) getResourceOperator(type, tag);
+            if (resourceList == null) {
+                resourceList = new ArrayList<>(resourceOperator.list());
+                tag2Operator.put(tag, resourceList);
+            }
+            List<Object> list = resourceList.stream()
+                    .filter(o -> resourceID.equals(resourceOperator.getKey(o)))
+                    .collect(Collectors.toList());
+            if (list.size() != 1) {
+                throw new IllegalStateException("There are more than one resource found by id " + resourceID);
+            }
+            resource.setResourceConfig(list.get(0));
+            ResourceState newState = moveToNextState(resource.getResourceState(), resourceOperator, list.get(0));
+            resource.setResourceState(newState);
+        }
+        Map<ResourceState, List<Resource>> state2Resources = resources.get()
+                .collect(Collectors.groupingBy(Resource::getResourceState));
+        state2Resources.forEach((key, value) -> {
+            List<Long> ids = value.stream().map(Resource::getId).collect(Collectors.toList());
+            resourceRepository.updateResourceStateIdIn(ids, key);
+        });
+        return resources;
+    }
+
     public Resource nullSafeGet(@NonNull Long id) throws Exception {
         Optional<ResourceEntity> optional = this.resourceRepository.findById(id);
         ResourceEntity resourceEntity =
@@ -98,8 +142,7 @@ public class ResourceManagerService {
         return resource;
     }
 
-    public Resource nullSafeGet(@NonNull ResourceID resourceID,
-            @NonNull ResourceOperatorTag tag) throws Exception {
+    public Resource nullSafeGet(@NonNull ResourceID resourceID, @NonNull ResourceOperatorTag tag) throws Exception {
         ResourceOperator<?> resourceOperator = getResourceOperator(resourceID.getType(), tag);
         Object resourceConfig = resourceOperator.get(resourceID)
                 .orElseThrow(() -> new IllegalStateException("No resource found by resource key " + resourceID));
