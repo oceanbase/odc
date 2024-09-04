@@ -75,6 +75,8 @@ import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
@@ -90,37 +92,27 @@ import lombok.extern.slf4j.Slf4j;
 @Authenticated
 public class SensitiveColumnService {
 
+    private static final SensitiveColumnMapper mapper = SensitiveColumnMapper.INSTANCE;
     @Autowired
     private SensitiveRuleService ruleService;
-
     @Autowired
     private MaskingAlgorithmService algorithmService;
-
     @Autowired
     private ConnectionService connectionService;
-
     @Autowired
     private SensitiveColumnRepository repository;
-
     @Autowired
     private UserService userService;
-
     @Autowired
     private DatabaseService databaseService;
-
     @Autowired
     private SensitiveColumnScanningTaskManager scanningTaskManager;
-
     @Autowired
     private AuthenticationFacade authenticationFacade;
-
     @Autowired
     private HorizontalDataPermissionValidator permissionValidator;
-
     @Autowired
     private VersionDiffConfigService versionDiffConfigService;
-
-    private static final SensitiveColumnMapper mapper = SensitiveColumnMapper.INSTANCE;
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
@@ -388,6 +380,7 @@ public class SensitiveColumnService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
             indexOfIdParam = 0)
+    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#taskId")
     public SensitiveColumnScanningTaskInfo getScanningResults(@NotNull Long projectId, @NotBlank String taskId) {
         SensitiveColumnScanningTaskInfo taskInfo = scanningTaskManager.get(taskId);
         if (!Objects.equals(taskInfo.getProjectId(), projectId)) {
