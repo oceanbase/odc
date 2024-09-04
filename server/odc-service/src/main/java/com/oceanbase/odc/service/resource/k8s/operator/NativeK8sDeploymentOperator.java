@@ -19,46 +19,45 @@ import java.util.List;
 
 import com.oceanbase.odc.service.resource.model.ResourceID;
 
-import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.apis.CoreV1Api;
-import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
+import io.kubernetes.client.openapi.models.V1Deployment;
 import lombok.NonNull;
 
 /**
- * {@link NativeK8sPodOperator}
+ * {@link NativeK8sDeploymentOperator}
  *
  * @author yh263208
- * @date 2024-09-02 17:09
+ * @date 2024-09-04 15:07
  * @since ODC_release_4.3.2
  */
-public class NativeK8sPodOperator extends BaseNativeK8sResourceOperator<V1Pod> {
+public class NativeK8sDeploymentOperator extends BaseNativeK8sResourceOperator<V1Deployment> {
 
-    public NativeK8sPodOperator(@NonNull String namespace) {
-        super(namespace);
+    public NativeK8sDeploymentOperator(@NonNull String defaultNamespace) {
+        super(defaultNamespace);
     }
 
     @Override
-    protected V1Pod doCreate(V1Pod config) throws Exception {
-        return new CoreV1Api().createNamespacedPod(this.defaultNamespace, config, null, null, null, null);
+    protected V1Deployment doCreate(V1Deployment config) throws Exception {
+        return new AppsV1Api().createNamespacedDeployment(this.defaultNamespace, config, null, null, null, null);
     }
 
     @Override
-    public V1Pod patch(V1Pod config) throws Exception {
+    public V1Deployment patch(V1Deployment config) throws Exception {
         throw new UnsupportedOperationException("Unsupported yet");
     }
 
     @Override
-    public List<V1Pod> list() throws ApiException {
-        return new CoreV1Api().listNamespacedPod(this.defaultNamespace,
+    public List<V1Deployment> list() throws Exception {
+        return new AppsV1Api().listNamespacedDeployment(this.defaultNamespace,
                 null, null, null, null, null, null, null, null, null, null, null).getItems();
     }
 
     @Override
-    public void destroy(@NonNull ResourceID key) throws Exception {
+    public void destroy(ResourceID key) throws Exception {
         if (key.getUniqueIdentifier() == null) {
             throw new IllegalArgumentException("Resource name is null");
         }
-        new CoreV1Api().deleteNamespacedPod(key.getUniqueIdentifier(),
+        new AppsV1Api().deleteNamespacedDeployment(key.getUniqueIdentifier(),
                 this.defaultNamespace, null, null, null, null, null, null);
     }
 

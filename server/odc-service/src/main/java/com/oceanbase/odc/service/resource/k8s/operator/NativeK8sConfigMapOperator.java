@@ -30,7 +30,7 @@ public class NativeK8sConfigMapOperator extends BaseNativeK8sResourceOperator<V1
     }
 
     @Override
-    public V1ConfigMap create(V1ConfigMap config) throws Exception {
+    protected V1ConfigMap doCreate(V1ConfigMap config) throws Exception {
         return new CoreV1Api().createNamespacedConfigMap(this.defaultNamespace, config, null, null, null, null);
     }
 

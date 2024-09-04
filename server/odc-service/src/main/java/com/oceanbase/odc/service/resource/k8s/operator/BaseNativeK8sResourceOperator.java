@@ -24,6 +24,7 @@ import com.oceanbase.odc.service.resource.model.ResourceID;
 
 import cn.hutool.core.collection.CollectionUtil;
 import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import lombok.NonNull;
 
 /**
@@ -62,5 +63,24 @@ public abstract class BaseNativeK8sResourceOperator<T extends KubernetesObject>
         resourceID.setUniqueIdentifier(config.getMetadata().getName());
         return resourceID;
     }
+
+    @Override
+    public T create(T config) throws Exception {
+        V1ObjectMeta meta = config.getMetadata();
+        String namespace = null;
+        if (meta != null) {
+            namespace = meta.getNamespace();
+            meta.setNamespace(this.defaultNamespace);
+        }
+        try {
+            return doCreate(config);
+        } finally {
+            if (meta != null) {
+                meta.setNamespace(namespace);
+            }
+        }
+    }
+
+    protected abstract T doCreate(T config) throws Exception;
 
 }
