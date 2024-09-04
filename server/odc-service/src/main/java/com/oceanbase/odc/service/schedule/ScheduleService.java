@@ -564,6 +564,7 @@ public class ScheduleService {
         returnValue.setJobName(schedule.getId().toString());
         returnValue.setJobGroup(detailResp.getType().name());
         returnValue.setExecutionDetails(detailResp.getExecutionDetails());
+        returnValue.setFullLogDownloadUrl(detailResp.getFullLogDownloadUrl());
         return returnValue;
     }
 
