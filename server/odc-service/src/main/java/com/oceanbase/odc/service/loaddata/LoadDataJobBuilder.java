@@ -13,29 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
+package com.oceanbase.odc.service.loaddata;
+
+import org.quartz.JobExecutionContext;
+
+import com.oceanbase.odc.service.task.schedule.JobDefinition;
 
 /**
- * @Author：tinker
- * @Date: 2024/6/18 16:56
- * @Descripition:
+ * @author: liuyizhuo.lyz
+ * @date: 2024/9/2
  */
-public enum ScheduleTaskType {
+public interface LoadDataJobBuilder {
 
-    SQL_PLAN,
-
-    PARTITION_PLAN,
-
-    DATA_ARCHIVE,
-
-    DATA_ARCHIVE_DELETE,
-
-    DATA_DELETE,
-
-    DATA_ARCHIVE_ROLLBACK,
-
-    ONLINE_SCHEMA_CHANGE_COMPLETE,
-
-    LOAD_DATA
+    JobDefinition build(JobExecutionContext jobExecutionContext);
 
 }
