@@ -13,21 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.resource;
+package com.oceanbase.odc.service.resource;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.springframework.stereotype.Service;
-
+import com.oceanbase.odc.metadb.resource.ResourceEntity;
+import com.oceanbase.odc.metadb.resource.ResourceRepository;
 import com.oceanbase.odc.service.resource.model.ResourceState;
 
 import lombok.NonNull;
 
 // just for test
-@Service
 @Deprecated
 public class InMemoryResourceRepository implements ResourceRepository {
 

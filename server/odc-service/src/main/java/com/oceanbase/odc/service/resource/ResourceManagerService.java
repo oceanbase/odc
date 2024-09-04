@@ -48,8 +48,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class ResourceManagerService {
 
-    @Autowired
-    private ResourceRepository resourceRepository;
+    private ResourceRepository resourceRepository = new InMemoryResourceRepository();
     @Autowired(required = false)
     private List<ResourceOperatorBuilder<?>> resourceOperatorBuilders;
 
