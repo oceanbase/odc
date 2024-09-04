@@ -15,10 +15,6 @@
  */
 package com.oceanbase.odc.service.schedule;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,11 +24,9 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.apache.commons.io.input.ReversedLinesFileReader;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cglib.beans.BeanMap;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -40,10 +34,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import com.alibaba.fastjson.JSON;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
@@ -58,7 +50,6 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskSpecs;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.JobRepository;
 import com.oceanbase.odc.service.common.model.InnerUser;
-import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
@@ -86,11 +77,9 @@ import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanAttributes;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanTaskResult;
-import com.oceanbase.odc.service.task.TaskLoggerService;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
-import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
 import lombok.extern.slf4j.Slf4j;
@@ -128,9 +117,6 @@ public class ScheduleTaskService {
     private RequestDispatcher requestDispatcher;
 
     @Autowired
-    private TaskLoggerService taskLoggerService;
-
-    @Autowired
     private ScheduleResponseMapperFactory scheduleResponseMapperFactory;
 
     @Autowired
@@ -139,12 +125,13 @@ public class ScheduleTaskService {
     @Autowired
     private JobRepository jobRepository;
 
+    @Autowired
+    private ScheduledTaskLoggerService scheduledTaskLoggerService;
+
+    @Autowired
+    private JobRepository jobRepository;
+
     private final ScheduleTaskMapper scheduleTaskMapper = ScheduleTaskMapper.INSTANCE;
-
-    @Value("${odc.log.directory:./log}")
-    private String logDirectory;
-
-    private static final String LOG_PATH_PATTERN = "%s/scheduleTask/%s-%s/%s/log.%s";
 
     public ScheduleTaskDetailResp getScheduleTaskDetailResp(Long id, Long scheduleId) {
         ScheduleTask scheduleTask = nullSafeGetByIdAndScheduleId(id, scheduleId);
@@ -256,7 +243,6 @@ public class ScheduleTaskService {
     }
 
 
-
     public Page<ScheduleTask> list(Pageable pageable, Long scheduleId) {
         return listEntity(pageable, scheduleId).map(scheduleTaskMapper::entityToModel);
     }
@@ -272,7 +258,6 @@ public class ScheduleTaskService {
 
     public Page<ScheduleTaskOverview> getScheduleTaskListResp(Pageable pageable, Long scheduleId) {
         return list(pageable, scheduleId).map(ScheduleTaskOverviewMapper::map);
-
     }
 
     public Page<ScheduleTaskListOverview> getConditionalScheduleTaskListResp(Pageable pageable,
@@ -362,67 +347,6 @@ public class ScheduleTaskService {
                 scheduleTaskRepository.findByIdAndJobName(id, scheduleId.toString());
         return scheduleTaskMapper.entityToModel(scheduleEntityOptional
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE_TASK, "id", id)));
-    }
-
-    public String getLogWithoutPermission(Long taskId, OdcTaskLogLevel logLevel) {
-        ScheduleTaskEntity taskEntity = nullSafeGetById(taskId);
-        if (taskFrameworkEnabledProperties.isEnabled() && taskEntity.getJobId() != null) {
-            try {
-                return taskLoggerService.getLogByTaskFramework(logLevel, taskEntity.getJobId());
-            } catch (IOException e) {
-                log.warn("Copy input stream to file failed.", e);
-                throw new UnexpectedException("Copy input stream to file failed.");
-            }
-        }
-        ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
-        if (!dispatchChecker.isThisMachine(executorInfo)) {
-            try {
-                DispatchResponse response =
-                        requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
-                log.info("Remote get task log succeed,taskId={}", taskId);
-                return response.getContentByType(
-                        new TypeReference<SuccessResponse<String>>() {}).getData();
-            } catch (Exception e) {
-                log.warn("Remote get task log failed, taskId={}", taskId, e);
-                throw new UnexpectedException(String.format("Remote interrupt task failed, taskId=%s", taskId));
-            }
-        }
-        return getScheduleTaskLog(taskId, logLevel);
-    }
-
-
-    public String getScheduleTaskLog(Long id, OdcTaskLogLevel logLevel) {
-        ScheduleTask scheduleTask = nullSafeGetModelById(id);
-        String filePath = String.format(LOG_PATH_PATTERN, logDirectory,
-                scheduleTask.getJobName(), scheduleTask.getJobGroup(), id,
-                logLevel.name().toLowerCase());
-        File logFile = new File(filePath);
-        if (!logFile.exists()) {
-            return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", id});
-        }
-        try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile, StandardCharsets.UTF_8)) {
-            List<String> lines = new ArrayList<>();
-            int bytes = 0;
-            String line;
-            while ((line = reader.readLine()) != null) {
-                lines.add(line);
-                bytes += line.getBytes().length;
-                if (lines.size() >= 10000 || bytes >= 1024 * 1024) {
-                    lines.add("[ODC INFO]: \n"
-                            + "Logs exceed max limitation (10000 rows or 1 MB), only the latest part is displayed.\n"
-                            + "Please download the log file for the full content.");
-                    break;
-                }
-            }
-            StringBuilder logBuilder = new StringBuilder();
-            for (int i = lines.size() - 1; i >= 0; i--) {
-                logBuilder.append(lines.get(i)).append("\n");
-            }
-            return logBuilder.toString();
-        } catch (Exception ex) {
-            log.warn("Read task log file failed, details={}", ex.getMessage());
-            throw new UnexpectedException("Read task log file failed, details: " + ex.getMessage(), ex);
-        }
     }
 
     public void correctScheduleTaskStatus(Long scheduleId) {

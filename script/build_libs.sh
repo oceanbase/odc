@@ -6,7 +6,7 @@ if ! source $(dirname "$0")/functions.sh; then
     exit 1
 fi
 
-if ! maven_install_libs; then
+if ! maven_install_libs "${mvn_extra_args[@]}"; then
     echo "maven install libs failed"
     exit 2
 fi

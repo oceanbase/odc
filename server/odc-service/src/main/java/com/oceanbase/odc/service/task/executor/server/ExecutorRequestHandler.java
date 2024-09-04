@@ -28,7 +28,6 @@ import com.oceanbase.odc.service.common.util.UrlUtils;
 import com.oceanbase.odc.service.task.constants.JobExecutorUrls;
 import com.oceanbase.odc.service.task.executor.logger.LogBiz;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
-import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.executor.task.BaseTask;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResultBuilder;
@@ -60,7 +59,7 @@ public class ExecutorRequestHandler {
     }
 
     public SuccessResponse<Object> process(HttpMethod httpMethod, String uri, String requestData) {
-        if (uri == null || uri.trim().length() == 0) {
+        if (uri == null || uri.trim().isEmpty()) {
             return Responses.single("request error: uri is empty.");
         }
 
@@ -74,8 +73,8 @@ public class ExecutorRequestHandler {
                 Long jobId = Long.parseLong(matcher.group(1));
                 String logContent = executorBiz.getLog(jobId,
                         UrlUtils.getQueryParameterFirst(uri, "logType"),
-                        (maxLine == null ? LogUtils.MAX_LOG_LINE_COUNT : Long.parseLong(maxLine)),
-                        (maxSize == null ? LogUtils.MAX_LOG_BYTE_COUNT : Long.parseLong(maxSize)));
+                        (maxLine == null ? 10000L : Long.parseLong(maxLine)),
+                        (maxSize == null ? (long) (2 << 19) : Long.parseLong(maxSize)));
                 return Responses.single(logContent);
             }
             matcher = stopTaskPattern.matcher(path);

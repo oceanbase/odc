@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
@@ -30,6 +31,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
@@ -37,6 +40,7 @@ import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
+import com.oceanbase.odc.service.flow.model.BinaryDataResult;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 import com.oceanbase.odc.service.schedule.model.OperationType;
@@ -55,6 +59,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
+import cn.hutool.core.collection.CollUtil;
 import io.swagger.annotations.ApiOperation;
 
 /**
@@ -121,6 +126,24 @@ public class ScheduleController {
         return Responses.success(scheduleService.getLog(scheduleId, taskId, logType));
     }
 
+    @ApiOperation(value = "GetFullLogDownloadUrl", notes = "获取下载全量日志的URL")
+    @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/log/get-download-url",
+            method = RequestMethod.GET)
+    public SuccessResponse<String> getFullLogDownloadUrl(@PathVariable Long scheduleId,
+            @PathVariable Long taskId) {
+        String fullLogDownloadUrl = scheduleService.getFullLogDownloadUrl(scheduleId, taskId);
+        return Responses.single(fullLogDownloadUrl);
+    }
+
+    @ApiOperation(value = "DownloadScheduleTaskLog", notes = "下载计划任务全量日志")
+    @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/log/download",
+            method = RequestMethod.GET)
+    public SuccessResponse<InputStreamResource> downloadScheduleTaskLog(@PathVariable Long scheduleId,
+            @PathVariable Long taskId) {
+        List<BinaryDataResult> results = scheduleService.downloadLog(scheduleId, taskId);
+        PreConditions.validExists(ResourceType.ODC_FILE, "id", taskId, () -> CollUtil.isNotEmpty(results));
+        return Responses.single(new InputStreamResource(results.get(0).getInputStream()));
+    }
 
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}", method = RequestMethod.GET)
     public SuccessResponse<ScheduleTaskDetailResp> detailScheduleTask(@PathVariable Long scheduleId,
