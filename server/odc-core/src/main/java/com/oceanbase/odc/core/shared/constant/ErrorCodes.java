@@ -157,6 +157,7 @@ public enum ErrorCodes implements ErrorCode {
     // load/dump
     ImportInvalidZip,
     ImportInvalidFileType,
+    ImportInvalidDir,
 
     // Flow
     FlowTaskInstanceExpired,
