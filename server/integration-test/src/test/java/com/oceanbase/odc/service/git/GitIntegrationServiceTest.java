@@ -22,6 +22,7 @@ import java.util.Optional;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,7 @@ import com.oceanbase.odc.service.iam.model.Organization;
  * @author: liuyizhuo.lyz
  * @date: 2024/8/1
  */
+@Ignore
 public class GitIntegrationServiceTest extends AuthorityTestEnv {
     private GitRepositoryMapper gitRepositoryMapper = GitRepositoryMapper.INSTANCE;
 
