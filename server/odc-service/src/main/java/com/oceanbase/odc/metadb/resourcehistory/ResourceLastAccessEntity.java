@@ -13,11 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.userrecentbrowsing;
+package com.oceanbase.odc.metadb.resourcehistory;
 
 import java.util.Date;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,16 +30,19 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "odc_user_recent_browsing")
+@Table(name = "history_resource_last_access")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserRecentBrowsingEntity {
+public class ResourceLastAccessEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "organization_id", nullable = false)
+    private Long organizationId;
 
     @Column(name = "project_id", nullable = false)
     private Long projectId;
@@ -42,12 +50,12 @@ public class UserRecentBrowsingEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(name = "item_type", nullable = false)
-    private String itemType;
+    @Column(name = "resource_type", nullable = false)
+    private String resourceType;
 
-    @Column(name = "item_id", nullable = false)
-    private Long itemId;
+    @Column(name = "resource_id", nullable = false)
+    private Long resourceId;
 
-    @Column(name = "browse_time", nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private Date browseTime;
+    @Column(name = "last_access_time", nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    private Date lastAccessTime;
 }
