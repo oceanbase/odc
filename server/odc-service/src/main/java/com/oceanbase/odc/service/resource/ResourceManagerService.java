@@ -164,19 +164,21 @@ public class ResourceManagerService {
     }
 
     @Transactional
-    public void destroy(@NonNull Long id) throws Exception {
+    public Resource destroy(@NonNull Long id) throws Exception {
         Resource resource = nullSafeGet(id);
         this.resourceRepository.updateResourceStateById(id, ResourceState.DESTROYING);
         ResourceID resourceID = resource.getResourceID();
         getResourceOperator(resourceID.getType(), resource.getResourceOperatorTag()).destroy(resourceID);
         log.info("Delete resource succeed, id={}, resourceId={}", id, resourceID);
+        return resource;
     }
 
-    public void destroy(@NonNull ResourceID resourceID, @NonNull ResourceOperatorTag tag) throws Exception {
+    public Resource destroy(@NonNull ResourceID resourceID, @NonNull ResourceOperatorTag tag) throws Exception {
         Resource resource = nullSafeGet(resourceID, tag);
         ResourceID rId = resource.getResourceID();
         getResourceOperator(rId.getType(), resource.getResourceOperatorTag()).destroy(rId);
         log.info("Delete resource succeed, resourceId={}, tag={}", rId, tag);
+        return resource;
     }
 
     @SuppressWarnings("all")
