@@ -557,17 +557,8 @@ public class ScheduleService {
         return returnValue.map(o -> id2Overview.get(o.getId()));
     }
 
-    public Page<Schedule> listScheduleWithParameter(@NotNull Pageable pageable,
+    public Page<Schedule> listScheduleWithParameterSkipPermissionCheck(@NotNull Pageable pageable,
             @NotNull QueryScheduleParams params) {
-        if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
-            Set<Long> projectIds = params.getProjectId() == null
-                    ? projectService.getMemberProjectIds(authenticationFacade.currentUserId())
-                    : Collections.singleton(params.getProjectId());
-            if (projectIds.isEmpty()) {
-                return Page.empty();
-            }
-            params.setProjectIds(projectIds);
-        }
         params.setOrganizationId(authenticationFacade.currentOrganizationId());
         return scheduleRepository.find(pageable, params).map(scheduleMapper::entityToModel);
     }
