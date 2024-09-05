@@ -20,6 +20,7 @@ import java.util.Date;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 /**
  * @Author：tinker
@@ -29,6 +30,7 @@ import lombok.Data;
 
 
 @Data
+@Accessors(chain = true)
 public class ScheduleTaskOverview {
 
     private Long id;
@@ -45,6 +47,8 @@ public class ScheduleTaskOverview {
      * Only used in version 4.3.2, it will be deleted after version 4.3.3.
      */
     private String jobGroup;
+
+    private String fullLogDownloadUrl;
 
     public String getJobGroup() {
         return type == null ? null : type.name();

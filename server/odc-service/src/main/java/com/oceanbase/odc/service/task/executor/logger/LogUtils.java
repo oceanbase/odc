@@ -29,6 +29,8 @@ import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
+import cn.hutool.core.io.FileUtil;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -50,12 +52,15 @@ public class LogUtils {
         return getLatestLogContent(logFile, fetchMaxLine, fetchMaxByteSize);
     }
 
-    public static String getLatestLogContent(File file, Long fetchMaxLine, Long fetchMaxByteSize) {
-
+    public static String getLatestLogContent(@NonNull File file, Long fetchMaxLine, Long fetchMaxByteSize) {
+        if (!FileUtil.exist(file)) {
+            log.warn("日志文件不存在: log path = {} not exist", file.getAbsolutePath());
+            throw new UnexpectedException(
+                    ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {file.getAbsolutePath()}));
+        }
         LinkedList<String> logContent = new LinkedList<>();
         try (ReversedLinesFileReader reader = new ReversedLinesFileReader(file, StandardCharsets.UTF_8)) {
             int bytes = 0;
-            int lineCount = 0;
             String line;
             while ((line = reader.readLine()) != null) {
                 bytes += line.getBytes().length;
@@ -67,7 +72,6 @@ public class LogUtils {
                     break;
                 }
                 logContent.addFirst(line + "\n");
-                lineCount++;
             }
 
         } catch (Exception ex) {

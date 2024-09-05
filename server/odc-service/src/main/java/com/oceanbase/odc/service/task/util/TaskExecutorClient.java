@@ -19,6 +19,8 @@ import java.io.IOException;
 
 import org.springframework.stereotype.Component;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.ExceptionUtils;
@@ -44,20 +46,22 @@ public class TaskExecutorClient {
 
     public String getLogContent(@NonNull String executorEndpoint, @NonNull Long jobId, @NonNull OdcTaskLogLevel level) {
         String url = executorEndpoint + String.format(JobExecutorUrls.QUERY_LOG, jobId) + "?logType=" + level.getName();
-        log.info("Try query log from executor, jobId={}, url={}", jobId, url);
+        log.info("尝试请求远程POD：Try query log from executor, jobId={}, url={}", jobId, url);
         try {
             SuccessResponse<String> response =
                     HttpClientUtils.request("GET", url,
                             new TypeReference<SuccessResponse<String>>() {});
             if (response != null && response.getSuccessful()) {
+                log.info("请求远程成功：{}", JSON.toJSONString(response, SerializerFeature.PrettyFormat));
                 return response.getData();
             } else {
+                log.info("请求远程失败: {}", JSON.toJSONString(response, SerializerFeature.PrettyFormat));
                 return String.format("Get log content failed, jobId=%s, response=%s",
                         jobId, JsonUtils.toJson(response));
             }
         } catch (IOException e) {
             // Occur io timeout when pod deleted manual
-            log.warn("Query log from executor occur error, executorEndpoint={}, jobId={}, causeMessage={}",
+            log.warn("请求远程报错Query log from executor occur error, executorEndpoint={}, jobId={}, causeMessage={}",
                     executorEndpoint, jobId, ExceptionUtils.getRootCauseReason(e));
             return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"jobId", jobId});
         }

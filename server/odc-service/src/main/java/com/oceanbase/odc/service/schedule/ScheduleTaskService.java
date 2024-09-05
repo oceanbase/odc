@@ -240,7 +240,8 @@ public class ScheduleTaskService {
     }
 
     public Page<ScheduleTaskOverview> getScheduleTaskListResp(Pageable pageable, Long scheduleId) {
-        return list(pageable, scheduleId).map(ScheduleTaskOverviewMapper::map);
+        return list(pageable, scheduleId).map(e -> ScheduleTaskOverviewMapper.map(e).setFullLogDownloadUrl(
+                scheduledTaskLoggerService.getFullLogDownloadUrl(scheduleId, e.getId(), OdcTaskLogLevel.ALL)));
 
     }
 

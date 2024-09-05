@@ -17,21 +17,22 @@ package com.oceanbase.odc.service.config;
 
 import java.io.File;
 
+import javax.annotation.PostConstruct;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import cn.hutool.core.io.FileUtil;
-import lombok.Getter;
+import lombok.Data;
 
-@ConfigurationProperties(prefix = "odc.log")
+@ConfigurationProperties(prefix = "odc.web.log")
 @Component
-@Getter
+@Data
 public class LoggerProperty {
 
     // This is the directory path for storing temporary log files from scheduled tasks pods, defaulting
     // to the classpath if not explicitly set.
-    private String tempScheduleTaskLogDir =
-            FileUtil.normalize(System.getProperty("user.dir") + File.separator + "log/running-job-temp-logs");
+    private String tempScheduleTaskLogDir;
 
     private String directory = "./log";
 
@@ -39,4 +40,12 @@ public class LoggerProperty {
 
     // unit：B
     private Long maxSizeCount = 1024L * 1024;
+
+    @PostConstruct
+    public void init() {
+        if (this.tempScheduleTaskLogDir == null) {
+            this.tempScheduleTaskLogDir =
+                    FileUtil.normalize(System.getProperty("user.dir") + File.separator + "log/running-job-temp-logs");
+        }
+    }
 }

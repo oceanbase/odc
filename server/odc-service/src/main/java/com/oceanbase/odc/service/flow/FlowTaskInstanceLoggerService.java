@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.flow;
 import java.io.File;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -51,17 +50,18 @@ public class FlowTaskInstanceLoggerService {
     private final RequestDispatcher requestDispatcher;
     private final TaskDispatchChecker dispatchChecker;
     private final TaskService taskService;
-    @Autowired
-    private LoggerProperty loggerProperty;
+    private final LoggerProperty loggerProperty;
 
     public FlowTaskInstanceLoggerService(FlowTaskInstanceService flowTaskInstanceService,
             RequestDispatcher requestDispatcher,
             TaskDispatchChecker dispatchChecker,
-            TaskService taskService) {
+            TaskService taskService,
+            LoggerProperty loggerProperty) {
         this.flowTaskInstanceService = flowTaskInstanceService;
         this.requestDispatcher = requestDispatcher;
         this.dispatchChecker = dispatchChecker;
         this.taskService = taskService;
+        this.loggerProperty = loggerProperty;
     }
 
     @SneakyThrows

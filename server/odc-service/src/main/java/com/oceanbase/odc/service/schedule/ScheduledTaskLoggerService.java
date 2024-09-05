@@ -94,10 +94,11 @@ public class ScheduledTaskLoggerService {
 
     public String getLog(Long scheduleTaskId, OdcTaskLogLevel level) {
         try {
+            log.info("准备getLog(), {}, {}", scheduleTaskId, level);
             return LogUtils.getLatestLogContent(getLogFile(scheduleTaskId, level), loggerProperty.getMaxLimitedCount(),
                     loggerProperty.getMaxSizeCount());
         } catch (Exception e) {
-            log.warn("{}, taskId={}", LogUtils.DEFAULT_LOG_CONTENT, scheduleTaskId);
+            log.warn("{}, taskId={}", LogUtils.DEFAULT_LOG_CONTENT, scheduleTaskId, e);
             return LogUtils.DEFAULT_LOG_CONTENT;
         }
     }
@@ -108,6 +109,9 @@ public class ScheduledTaskLoggerService {
 
     @SneakyThrows
     public String getFullLogDownloadUrl(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel level) {
+        log.info("支持OSS：ObjectUtil.isNotNull(cloudObjectStorageService) = {}",
+                ObjectUtil.isNotNull(cloudObjectStorageService));
+        log.info("支持OSS：cloudObjectStorageService.supported() = {}", cloudObjectStorageService.supported());
         if (ObjectUtil.isNotNull(cloudObjectStorageService) && cloudObjectStorageService.supported()) {
             ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(scheduleTaskId);
             Long jobId = taskEntity.getJobId();
@@ -138,6 +142,7 @@ public class ScheduledTaskLoggerService {
         JobEntity jobEntity = taskFrameworkService.find(jobId);
         PreConditions.notNull(jobEntity, "job not found by id " + jobId);
         if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
+            log.info("OSSSS支持：cloudObjectStorageService.supported() = {}", cloudObjectStorageService.supported());
             if (!cloudObjectStorageService.supported()) {
                 throw new RuntimeException("CloudObjectStorageService is not supported.");
             }
@@ -151,6 +156,7 @@ public class ScheduledTaskLoggerService {
             Optional<String> bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobId,
                     JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
             if (objId.isPresent() && bucketName.isPresent()) {
+                log.info("任务已完成");
                 if (log.isDebugEnabled()) {
                     log.debug("job: {} is finished, try to get log from local or oss.", jobEntity.getId());
                 }
@@ -162,6 +168,7 @@ public class ScheduledTaskLoggerService {
 
                 File tempFile = cloudObjectStorageService.downloadToTempFile(objId.get());
                 try (FileInputStream inputStream = new FileInputStream(tempFile)) {
+                    log.info("远程文件oss下载成功");
                     FileUtils.copyInputStreamToFile(inputStream, localFile);
                 } finally {
                     FileUtils.deleteQuietly(tempFile);
@@ -170,10 +177,13 @@ public class ScheduledTaskLoggerService {
             }
 
             if (jobEntity.getExecutorDestroyedTime() == null && jobEntity.getExecutorEndpoint() != null) {
+                log.info("任务未完成");
                 if (log.isDebugEnabled()) {
                     log.debug("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
                 }
                 String logContent = taskExecutorClient.getLogContent(jobEntity.getExecutorEndpoint(), jobId, level);
+                log.info("请求远程的日志内容：{}", logContent);
+                log.info("远程日志写入的位置：{}", tempFilePath);
                 return FileUtil.writeUtf8String(logContent, tempFilePath);
             }
         }
