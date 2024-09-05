@@ -170,25 +170,42 @@ public class FlowTaskInstanceService {
 
     private final Set<String> supportedBucketName = new HashSet<>(Arrays.asList("async", "structure-comparison"));
 
+    /**
+     * 执行任务
+     *
+     * @param id 流程实例ID
+     * @return FlowInstanceDetailResp 流程实例详情响应
+     * @throws IOException IO异常
+     */
     public FlowInstanceDetailResp executeTask(@NotNull Long id) throws IOException {
+        // 获取状态为PENDING的任务实例列表
         List<FlowTaskInstance> instances =
-                filterTaskInstance(id, instance -> instance.getStatus() == FlowNodeStatus.PENDING, false);
+            filterTaskInstance(id, instance -> instance.getStatus() == FlowNodeStatus.PENDING, false);
+        // 判断任务实例列表是否为空
         PreConditions.validExists(ResourceType.ODC_FLOW_TASK_INSTANCE, "flowInstanceId", id,
-                () -> instances.size() > 0);
+            () -> instances.size() > 0);
+        // 判断任务实例列表是否只有一个元素
         Verify.singleton(instances, "FlowTaskInstance");
 
+        // 获取第一个任务实例
         FlowTaskInstance taskInstance = instances.get(0);
+        // 获取任务实体
         TaskEntity taskEntity = taskService.detail(taskInstance.getTargetTaskId());
+        // 如果任务类型为IMPORT并且任务实体不在当前机器上，则需要转发执行
         if (taskEntity.getTaskType() == TaskType.IMPORT && !dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
             /**
              * 对于导入任务，由于文件是上传到某台机器上的，因此任务的实际执行也一定要在那台机器上才行。 如果确认执行动作发送到了非任务所在机器，就需要转发，否则任务会因为找不到上传文件而报错。异步
              * 执行之所以没这个问题是因为接入了 {@code objectStorage} ，后续如果导入任务也接入了 {@code objectStorage} 则不用再有此逻辑。
              */
             ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
+            // 转发执行
             DispatchResponse response = requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
+            // 返回响应结果
             return response.getContentByType(new TypeReference<SuccessResponse<FlowInstanceDetailResp>>() {}).getData();
         }
+        // 确认执行任务实例
         taskInstance.confirmExecute();
+        // 返回流程实例详情响应
         return FlowInstanceDetailResp.withIdAndType(id, taskInstance.getTaskType());
     }
 
