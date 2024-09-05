@@ -103,7 +103,7 @@ public class UploadFileResult {
 
     private UploadFileResult(String fileName, ExportOutput exportOutput) {
         if (!exportOutput.isLegal()) {
-            this.errorCode = ErrorCodes.ImportInvalidZip;
+            this.errorCode = exportOutput.isZip() ? ErrorCodes.ImportInvalidZip : ErrorCodes.ImportInvalidDir;
             this.errorMessage = this.errorCode.getLocalizedMessage(new Object[] {});
             return;
         }
@@ -117,7 +117,11 @@ public class UploadFileResult {
             names.addAll(dbObject.getOutputFiles().stream()
                     .map(AbstractOutputFile::getObjectName).collect(Collectors.toList()));
         }
-        this.fileType = "ZIP";
+        if (exportOutput.isZip()) {
+            this.fileType = "ZIP";
+        } else {
+            this.fileType = "DIR";
+        }
         this.containsSchema = exportOutput.isContainsSchema();
         this.containsData = exportOutput.isContainsData();
         this.fileName = fileName;

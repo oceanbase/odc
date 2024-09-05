@@ -335,7 +335,7 @@ public class DatabaseService {
         return databases.stream().filter(database -> Objects.nonNull(database.getDataSource()))
                 .map(Database::getDataSource)
                 .collect(Collectors.collectingAndThen(
-                        Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(ConnectionConfig::getId))),
+                        Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(ConnectionConfig::getName))),
                         ArrayList::new));
     }
 

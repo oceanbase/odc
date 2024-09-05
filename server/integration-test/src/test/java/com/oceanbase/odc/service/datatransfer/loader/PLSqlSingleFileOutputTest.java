@@ -25,11 +25,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.util.StreamUtils;
 
-public class PlSqlSingleFileOutputTest {
+public class PLSqlSingleFileOutputTest {
     private static final String SQL_FILE_PATH = "src/test/resources/datatransfer/PlSqlOutput.sql";
     private static final String DEST_FILE_PATH = "src/test/resources/datatransfer/obCompatible.sql";
 
-    private final PlSqlSingleFileOutput plSqlSingleFileOutput = new PlSqlSingleFileOutput(new File(SQL_FILE_PATH));
+    private final PLSqlSingleFileOutput plSqlSingleFileOutput = new PLSqlSingleFileOutput(new File(SQL_FILE_PATH));
 
     @Test
     public void test_Support() {

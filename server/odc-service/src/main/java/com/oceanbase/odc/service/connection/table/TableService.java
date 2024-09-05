@@ -20,6 +20,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -105,7 +106,7 @@ public class TableService {
                 Connection conn = ds.getConnection()) {
             TableExtensionPoint point = SchemaPluginUtil.getTableExtension(dataSource.getDialectType());
             Set<String> latestTableNames = point.list(conn, database.getName())
-                    .stream().map(DBObjectIdentity::getName).collect(Collectors.toSet());
+                    .stream().map(DBObjectIdentity::getName).collect(Collectors.toCollection(LinkedHashSet::new));
             if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
                 return latestTableNames.stream().map(tableName -> {
                     Table table = new Table();
@@ -115,11 +116,13 @@ public class TableService {
                 }).collect(Collectors.toList());
             }
             List<DBObjectEntity> tables =
-                    dbObjectRepository.findByDatabaseIdAndType(params.getDatabaseId(), DBObjectType.TABLE);
+                    dbObjectRepository.findByDatabaseIdAndTypeOrderByNameAsc(params.getDatabaseId(),
+                            DBObjectType.TABLE);
             Set<String> existTableNames = tables.stream().map(DBObjectEntity::getName).collect(Collectors.toSet());
             if (latestTableNames.size() != existTableNames.size() || !existTableNames.containsAll(latestTableNames)) {
                 syncDBTables(conn, database, dataSource.getDialectType());
-                tables = dbObjectRepository.findByDatabaseIdAndType(params.getDatabaseId(), DBObjectType.TABLE);
+                tables = dbObjectRepository.findByDatabaseIdAndTypeOrderByNameAsc(params.getDatabaseId(),
+                        DBObjectType.TABLE);
             }
             return entitiesToModels(tables, database, params.getIncludePermittedAction());
         }
