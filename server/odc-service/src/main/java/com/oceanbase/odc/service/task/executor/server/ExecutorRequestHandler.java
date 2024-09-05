@@ -19,15 +19,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.collections4.MapUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.ObjectUtil;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.UrlUtils;
-import com.oceanbase.odc.service.config.LoggerProperty;
 import com.oceanbase.odc.service.task.constants.JobExecutorUrls;
 import com.oceanbase.odc.service.task.executor.logger.LogBiz;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
@@ -47,7 +44,6 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.4
  */
 @Slf4j
-@Component
 public class ExecutorRequestHandler {
 
     private final Pattern queryLogUrlPattern = Pattern.compile(String.format(JobExecutorUrls.QUERY_LOG, "([0-9]+)"));
@@ -58,15 +54,12 @@ public class ExecutorRequestHandler {
 
     private final LogBiz executorBiz;
 
-    @Autowired
-    private LoggerProperty loggerProperty;
-
     public ExecutorRequestHandler() {
         this.executorBiz = new LogBizImpl();
     }
 
     public SuccessResponse<Object> process(HttpMethod httpMethod, String uri, String requestData) {
-        if (uri == null || uri.trim().length() == 0) {
+        if (uri == null || uri.trim().isEmpty()) {
             return Responses.single("request error: uri is empty.");
         }
 
@@ -80,8 +73,8 @@ public class ExecutorRequestHandler {
                 Long jobId = Long.parseLong(matcher.group(1));
                 String logContent = executorBiz.getLog(jobId,
                         UrlUtils.getQueryParameterFirst(uri, "logType"),
-                        (maxLine == null ? loggerProperty.getMaxLimitedCount() : Long.parseLong(maxLine)),
-                        (maxSize == null ? loggerProperty.getMaxSizeCount() : Long.parseLong(maxSize)));
+                        (maxLine == null ? 10000L : Long.parseLong(maxLine)),
+                        (maxSize == null ? (long) (2 << 19) : Long.parseLong(maxSize)));
                 return Responses.single(logContent);
             }
             matcher = stopTaskPattern.matcher(path);

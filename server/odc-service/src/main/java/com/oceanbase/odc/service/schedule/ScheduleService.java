@@ -699,22 +699,23 @@ public class ScheduleService {
 
     @SkipAuthorize("odc internal usage")
     public List<String> getFullLogDownloadUrl(Long scheduleId, List<Long> scheduleTaskIds) {
+        log.info("远程调用：ODC MAN获取schedule log下载地址, {}, {}", scheduleId, scheduleTaskIds);
         return scheduleTaskIds.stream().map(taskId -> scheduledTaskLoggerService.getFullLogDownloadUrl(
                 scheduleId, taskId, OdcTaskLogLevel.ALL)).collect(Collectors.toList());
     }
 
-    public String getLog(Long scheduleId, OdcTaskLogLevel logLevel, boolean skipAuth) {
+    public String getLog(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel logLevel, boolean skipAuth) {
         if (!skipAuth) {
-            nullSafeGetByIdWithCheckPermission(scheduleId);
+            nullSafeGetByIdWithCheckPermission(scheduleId, false);
         }
-        return scheduledTaskLoggerService.getLog(scheduleId, logLevel);
+        return scheduledTaskLoggerService.getLog(scheduleTaskId, logLevel);
     }
 
-    public List<BinaryDataResult> downloadLog(Long scheduleId, boolean skipAuth) {
+    public List<BinaryDataResult> downloadLog(Long scheduleId, Long scheduleTaskId, boolean skipAuth) {
         if (!skipAuth) {
             nullSafeGetByIdWithCheckPermission(scheduleId);
         }
-        File logFile = scheduledTaskLoggerService.downloadLog(scheduleId, OdcTaskLogLevel.ALL);
+        File logFile = scheduledTaskLoggerService.downloadLog(scheduleTaskId, OdcTaskLogLevel.ALL);
         return Collections.singletonList(new FileBasedDataResult(logFile));
     }
 

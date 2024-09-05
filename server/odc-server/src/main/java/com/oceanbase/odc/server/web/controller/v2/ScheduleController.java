@@ -123,7 +123,7 @@ public class ScheduleController {
             method = RequestMethod.GET)
     public SuccessResponse<String> getTaskLog(@PathVariable Long scheduleId, @PathVariable Long taskId,
             @RequestParam OdcTaskLogLevel logType) {
-        return Responses.success(scheduleService.getLog(scheduleId, logType, false));
+        return Responses.success(scheduleService.getLog(scheduleId, taskId, logType, false));
     }
 
     @ApiOperation(value = "DownloadScheduleTaskLog", notes = "下载计划任务全量日志")
@@ -131,7 +131,7 @@ public class ScheduleController {
             method = RequestMethod.GET)
     public SuccessResponse<InputStreamResource> downloadScheduleTaskLog(@PathVariable Long scheduleId,
             @PathVariable Long taskId) {
-        List<BinaryDataResult> results = scheduleService.downloadLog(scheduleId, false);
+        List<BinaryDataResult> results = scheduleService.downloadLog(scheduleId, taskId, false);
         PreConditions.validExists(ResourceType.ODC_FILE, "id", taskId, () -> CollUtil.isNotEmpty(results));
         return Responses.single(new InputStreamResource(results.get(0).getInputStream()));
     }

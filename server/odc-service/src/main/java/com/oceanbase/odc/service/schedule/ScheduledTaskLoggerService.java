@@ -22,6 +22,7 @@ import java.util.Optional;
 import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Service;
 
+import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
@@ -140,6 +141,7 @@ public class ScheduledTaskLoggerService {
     @SneakyThrows
     private File getLogFileFromTaskFramework(Long jobId, OdcTaskLogLevel level) {
         JobEntity jobEntity = taskFrameworkService.find(jobId);
+        log.info("JJJJJJJObid: {}, {}\n", JSON.toJSONString(jobEntity), jobEntity.getId());
         PreConditions.notNull(jobEntity, "job not found by id " + jobId);
         if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
             log.info("OSSSS支持：cloudObjectStorageService.supported() = {}", cloudObjectStorageService.supported());
@@ -150,11 +152,13 @@ public class ScheduledTaskLoggerService {
             String tempFilePath =
                     FileUtil.normalize(loggerProperty.getTempScheduleTaskLogDir() + File.separator
                             + String.format("tmp-task-%s.log", jobId));
+            log.info("临时运行日志存储位置: {}", tempFilePath);
             String attributeKey = OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
                     : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
             Optional<String> objId = taskFrameworkService.findByJobIdAndAttributeKey(jobId, attributeKey);
             Optional<String> bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobId,
                     JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
+            log.info("OSS信息：{}, {}\n", objId, bucketName);
             if (objId.isPresent() && bucketName.isPresent()) {
                 log.info("任务已完成");
                 if (log.isDebugEnabled()) {
@@ -176,6 +180,8 @@ public class ScheduledTaskLoggerService {
                 return localFile;
             }
 
+            log.info("判断是否完成：getExecutorDestroyedTime = {}", jobEntity.getExecutorDestroyedTime());
+            log.info("判断是否完成：getExecutorEndpoint = {}", jobEntity.getExecutorEndpoint());
             if (jobEntity.getExecutorDestroyedTime() == null && jobEntity.getExecutorEndpoint() != null) {
                 log.info("任务未完成");
                 if (log.isDebugEnabled()) {
@@ -206,11 +212,13 @@ public class ScheduledTaskLoggerService {
         String filePath = String.format(LOG_PATH_PATTERN, loggerProperty.getDirectory(),
                 scheduleTask.getJobName(), scheduleTask.getJobGroup(), scheduleTask.getId(),
                 level.name().toLowerCase());
+        log.info("本地读取日志：{}", filePath);
         return new File(filePath);
     }
 
     private File getLogFile(Long scheduleTaskId, OdcTaskLogLevel level) {
         ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(scheduleTaskId);
+        log.info("任务框架支持吗？:{}. jobId = {}", taskFrameworkEnabledProperties.isEnabled(), taskEntity.getJobId());
         if (taskFrameworkEnabledProperties.isEnabled() && taskEntity.getJobId() != null) {
             try {
                 return getLogFileFromTaskFramework(taskEntity.getJobId(), level);
@@ -221,6 +229,7 @@ public class ScheduledTaskLoggerService {
         }
         ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
         if (!dispatchChecker.isThisMachine(executorInfo)) {
+            log.info("换机：{}\n", JSON.toJSONString(executorInfo));
             try {
                 DispatchResponse response =
                         requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());

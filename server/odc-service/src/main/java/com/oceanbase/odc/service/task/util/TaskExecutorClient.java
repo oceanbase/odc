@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.task.util;
 
 import java.io.IOException;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.alibaba.fastjson.JSON;
@@ -26,6 +27,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.config.LoggerProperty;
 import com.oceanbase.odc.service.task.constants.JobExecutorUrls;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.executor.server.ExecutorRequestHandler;
@@ -44,8 +46,15 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class TaskExecutorClient {
 
+    @Autowired
+    private LoggerProperty loggerProperty;
+
     public String getLogContent(@NonNull String executorEndpoint, @NonNull Long jobId, @NonNull OdcTaskLogLevel level) {
-        String url = executorEndpoint + String.format(JobExecutorUrls.QUERY_LOG, jobId) + "?logType=" + level.getName();
+        String url = new StringBuilder(executorEndpoint)
+                .append(String.format(JobExecutorUrls.QUERY_LOG, jobId))
+                .append("?logType=" + level.getName())
+                .append("&fetchMaxLine=" + loggerProperty.getMaxLimitedCount())
+                .append("&fetchMaxByteSize=" + loggerProperty.getMaxSizeCount()).toString();
         log.info("尝试请求远程POD：Try query log from executor, jobId={}, url={}", jobId, url);
         try {
             SuccessResponse<String> response =
