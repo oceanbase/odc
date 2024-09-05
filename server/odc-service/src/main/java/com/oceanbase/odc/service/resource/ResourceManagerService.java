@@ -92,13 +92,15 @@ public class ResourceManagerService {
         for (Resource resource : resources.getContent()) {
             ResourceID resourceID = resource.getResourceID();
             if (resourceID == null) {
-                resource.setResourceState(ResourceState.UNKNOWN);
+                List<Long> list = state2Resources.computeIfAbsent(ResourceState.UNKNOWN, key -> new ArrayList<>());
+                list.add(resource.getId());
                 continue;
             }
             ResourceOperatorTag tag = resource.getResourceOperatorTag();
             Optional<Object> optional = get(resourceID, tag, typeAndTag2Resources);
             if (!optional.isPresent()) {
-                resource.setResourceState(ResourceState.UNKNOWN);
+                List<Long> list = state2Resources.computeIfAbsent(ResourceState.UNKNOWN, key -> new ArrayList<>());
+                list.add(resource.getId());
                 continue;
             }
             resource.setResourceConfig(optional.get());
