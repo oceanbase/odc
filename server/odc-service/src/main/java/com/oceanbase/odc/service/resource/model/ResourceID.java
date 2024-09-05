@@ -30,9 +30,7 @@ import lombok.Setter;
 @Setter
 @EqualsAndHashCode
 public class ResourceID {
-
     private String uniqueIdentifier;
     private Class<?> type;
     private String namespace;
-
 }

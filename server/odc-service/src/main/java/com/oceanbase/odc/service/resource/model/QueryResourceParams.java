@@ -32,7 +32,5 @@ import lombok.ToString;
 @Setter
 @ToString
 public class QueryResourceParams {
-
     private List<Long> ids;
-
 }

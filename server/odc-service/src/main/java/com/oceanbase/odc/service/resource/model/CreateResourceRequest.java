@@ -15,24 +15,19 @@
  */
 package com.oceanbase.odc.service.resource.model;
 
-import com.oceanbase.odc.service.cloud.model.CloudProvider;
-
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
- * {@link ResourceOperatorTag}
+ * {@link CreateResourceRequest}
  *
  * @author yh263208
- * @date 2024-09-03 15:15
+ * @date 2024-09-05 12:18
  * @since ODC_release_4.3.2
  */
 @Getter
 @Setter
-@EqualsAndHashCode
-public class ResourceOperatorTag {
-    private String defaultNamespace = "default";
-    private String region;
-    private CloudProvider cloudProvider;
+public class CreateResourceRequest {
+    private Object resourceConfig;
+    private ResourceOperatorTag resourceOperatorTag;
 }

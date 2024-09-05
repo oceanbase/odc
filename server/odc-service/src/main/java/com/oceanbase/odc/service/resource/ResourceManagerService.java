@@ -35,6 +35,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.metadb.resource.ResourceRepository;
+import com.oceanbase.odc.service.resource.model.CreateResourceRequest;
 import com.oceanbase.odc.service.resource.model.QueryResourceParams;
 import com.oceanbase.odc.service.resource.model.ResourceID;
 import com.oceanbase.odc.service.resource.model.ResourceOperatorTag;
@@ -59,9 +60,9 @@ public class ResourceManagerService {
     private List<ResourceOperatorBuilder<?>> resourceOperatorBuilders;
 
     @Transactional
-    public Resource create(@NonNull Resource config) throws Exception {
-        Object resourceConfig = config.getResourceConfig();
-        ResourceOperatorTag resourceOperatorTag = config.getResourceOperatorTag();
+    public Resource create(@NonNull CreateResourceRequest request) throws Exception {
+        Object resourceConfig = request.getResourceConfig();
+        ResourceOperatorTag resourceOperatorTag = request.getResourceOperatorTag();
         PreConditions.notNull(resourceConfig, "ResourceConfig");
         PreConditions.notNull(resourceOperatorTag, "ResourceOperatorTag");
 
