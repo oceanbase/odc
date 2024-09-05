@@ -47,10 +47,13 @@ public abstract class AbstractFsm<STATE, EVENT> {
             throw new IllegalStateException("Current state is not set");
         }
         List<FsmStateTransfer<STATE, EVENT>> transfers = this.fsmStateTransfers.stream()
-                .filter(t -> t.matchesState(this.currentState) && t.matchesEvent(event))
-                .collect(Collectors.toList());
+                .filter(t -> t.matchesState(this.currentState)).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(transfers)) {
-            throw new IllegalStateException("Illegal state " + this.currentState + " for event " + event);
+            throw new IllegalStateException("State " + this.currentState + " is the final state");
+        }
+        transfers = transfers.stream().filter(t -> t.matchesEvent(event)).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(transfers)) {
+            throw new IllegalStateException("Unknown event " + event + " for state " + this.currentState);
         } else if (transfers.size() != 1) {
             throw new IllegalStateException("More than one routes for state "
                     + this.currentState + " and event " + event);
