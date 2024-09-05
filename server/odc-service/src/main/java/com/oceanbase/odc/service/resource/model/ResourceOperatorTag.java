@@ -20,6 +20,7 @@ import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 /**
  * {@link ResourceOperatorTag}
@@ -30,6 +31,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@ToString
 @EqualsAndHashCode
 public class ResourceOperatorTag {
     private String defaultNamespace = "default";

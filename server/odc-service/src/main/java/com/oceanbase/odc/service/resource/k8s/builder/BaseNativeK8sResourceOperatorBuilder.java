@@ -51,9 +51,9 @@ public abstract class BaseNativeK8sResourceOperatorBuilder<T extends KubernetesO
         implements ResourceOperatorBuilder<T> {
 
     private static final long TIMEOUT_MILLS = 60000;
-    private final Object lock = new Object();
-    private volatile boolean apiClientAvailable = false;
-    private volatile boolean apiClientSet = false;
+    private static final Object LOCK = new Object();
+    private static boolean API_CLIENT_AVAILABLE = false;
+    private static boolean API_CLIENT_SET = false;
     protected String defaultNamespace;
     @Autowired
     private TaskFrameworkProperties taskFrameworkProperties;
@@ -64,14 +64,14 @@ public abstract class BaseNativeK8sResourceOperatorBuilder<T extends KubernetesO
         if (properties != null && StringUtils.isNotBlank(properties.getNamespace())) {
             this.defaultNamespace = properties.getNamespace();
         }
-        if (this.apiClientSet) {
+        if (API_CLIENT_SET) {
             return;
         }
-        synchronized (this.lock) {
-            if (this.apiClientSet) {
+        synchronized (LOCK) {
+            if (API_CLIENT_SET) {
                 return;
             }
-            this.apiClientSet = true;
+            API_CLIENT_SET = true;
             if (properties == null) {
                 return;
             }
@@ -96,14 +96,14 @@ public abstract class BaseNativeK8sResourceOperatorBuilder<T extends KubernetesO
                     .pingInterval(1, TimeUnit.MINUTES)
                     .build());
             Configuration.setDefaultApiClient(apiClient);
-            this.apiClientAvailable = true;
+            API_CLIENT_AVAILABLE = true;
         }
     }
 
     protected abstract boolean doSupports(@NonNull Class<?> clazz);
 
     public boolean supports(@NonNull Class<?> clazz) {
-        return this.apiClientAvailable && doSupports(clazz);
+        return API_CLIENT_AVAILABLE && doSupports(clazz);
     }
 
 }

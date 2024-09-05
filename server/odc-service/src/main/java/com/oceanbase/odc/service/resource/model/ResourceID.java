@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.resource.model;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 /**
  * {@link ResourceID}
@@ -28,6 +29,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@ToString
 @EqualsAndHashCode
 public class ResourceID {
     private String uniqueIdentifier;

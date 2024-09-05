@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.resource.model;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 /**
  * {@link CreateResourceRequest}
@@ -27,6 +28,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@ToString
 public class CreateResourceRequest {
     private Object resourceConfig;
     private ResourceOperatorTag resourceOperatorTag;
