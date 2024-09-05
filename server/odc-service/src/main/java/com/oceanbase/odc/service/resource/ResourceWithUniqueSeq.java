@@ -15,15 +15,25 @@
  */
 package com.oceanbase.odc.service.resource;
 
+import com.oceanbase.odc.metadb.resource.ResourceEntity;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
 /**
- * Resource type
- * 
  * @author longpeng.zlp
- * @date 2024/8/12 10:56
+ * @date 2024/9/5 14:29
  */
-public enum ResourceMode {
-    // local process of current machine
-    LOCAL_PROCESS,
-    // remote
-    REMOTE_K8S
+@AllArgsConstructor
+@Getter
+public class ResourceWithUniqueSeq<T extends Resource> {
+    /**
+     * unique seq equals to {@link ResourceEntity#getId()}
+     */
+    private final Long uniqueSeq;
+
+    /**
+     * resource to return
+     */
+    private final T resource;
 }

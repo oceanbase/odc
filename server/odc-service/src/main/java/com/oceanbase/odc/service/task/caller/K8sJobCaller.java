@@ -23,6 +23,7 @@ import com.oceanbase.odc.metadb.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.resource.ResourceTag;
+import com.oceanbase.odc.service.resource.ResourceWithUniqueSeq;
 import com.oceanbase.odc.service.resource.k8s.DefaultResourceOperatorBuilder;
 import com.oceanbase.odc.service.resource.k8s.K8sPodResource;
 import com.oceanbase.odc.service.resource.k8s.K8sResourceContext;
@@ -58,9 +59,9 @@ public class K8sJobCaller extends BaseJobCaller {
 
     @Override
     public ExecutorIdentifier doStart(JobContext context) throws JobException {
-        K8sPodResource resource =
+        ResourceWithUniqueSeq<K8sPodResource> resource =
                 resourceManager.createResource(DEFAULT_TASK_RESOURCE_TAG, buildK8sResourceContext(context));
-        String arn = resource.id().getName();
+        String arn = resource.getResource().resourceID().getName();
         return DefaultExecutorIdentifier.builder().namespace(defaultPodConfig.getNamespace())
                 .executorName(arn).build();
     }

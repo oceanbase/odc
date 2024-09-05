@@ -21,7 +21,6 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.metadb.resource.ResourceID;
 import com.oceanbase.odc.metadb.resource.ResourceRepository;
-import com.oceanbase.odc.service.resource.ResourceMode;
 import com.oceanbase.odc.service.resource.ResourceOperatorBuilder;
 import com.oceanbase.odc.service.resource.ResourceTag;
 import com.oceanbase.odc.service.resource.k8s.client.K8sJobClient;
@@ -72,7 +71,7 @@ public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K
      */
     public ResourceEntity toResourceEntity(K8sPodResource k8sResource) {
         ResourceEntity resourceEntity = new ResourceEntity();
-        resourceEntity.setResourceMode(ResourceMode.REMOTE_K8S);
+        resourceEntity.setResourceType(CLOUD_K8S_POD_TYPE);
         resourceEntity.setEndpoint(k8sResource.endpoint().getResourceURL());
         resourceEntity.setCreateTime(k8sResource.createDate());
         resourceEntity.setRegion(k8sResource.getRegion());

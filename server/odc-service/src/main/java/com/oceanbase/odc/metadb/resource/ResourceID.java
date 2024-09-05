@@ -16,7 +16,8 @@
 package com.oceanbase.odc.metadb.resource;
 
 /**
- * resource id all resource entity id should contains this class
+ * resource id all resource entity id should contains this class resource id should be impl as
+ * global unique for possible
  * 
  * @author longpeng.zlp
  * @date 2024/9/2 16:47

@@ -21,7 +21,6 @@ import com.oceanbase.odc.metadb.resource.ResourceID;
 import com.oceanbase.odc.metadb.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.Resource;
 import com.oceanbase.odc.service.resource.ResourceEndPoint;
-import com.oceanbase.odc.service.resource.ResourceMode;
 import com.oceanbase.odc.service.resource.ResourceState;
 
 import lombok.AllArgsConstructor;
@@ -68,12 +67,12 @@ public class K8sPodResource implements Resource {
 
     private Date createDate;
 
-    public ResourceID id() {
+    public ResourceID resourceID() {
         return new ResourceID(new ResourceLocation(region, group), namespace, arn);
     }
 
-    public ResourceMode type() {
-        return ResourceMode.LOCAL_PROCESS;
+    public String type() {
+        return DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE;
     }
 
     public ResourceEndPoint endpoint() {
@@ -86,7 +85,6 @@ public class K8sPodResource implements Resource {
         return new ResourceEndPoint(sb.toString());
     }
 
-    @Override
     public ResourceState resourceState() {
         return resourceState;
     }

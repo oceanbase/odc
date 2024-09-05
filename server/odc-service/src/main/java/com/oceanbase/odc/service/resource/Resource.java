@@ -28,12 +28,7 @@ import com.oceanbase.odc.metadb.resource.ResourceID;
 @Evolving
 public interface Resource {
     /**
-     * resource ID
+     * resource ID in string, may not unique
      */
-    ResourceID id();
-
-    /**
-     * resource state
-     */
-    ResourceState resourceState();
+    ResourceID resourceID();
 }

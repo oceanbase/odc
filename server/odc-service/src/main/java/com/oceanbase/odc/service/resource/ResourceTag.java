@@ -32,7 +32,7 @@ public class ResourceTag {
      */
     private final ResourceLocation resourceLocation;
     /**
-     * type of the resource, eg service, pod this field will be used to select operator
+     * type of the resource, eg service, pod. this field will be used to select resource operator
      */
     private final String type;
 }

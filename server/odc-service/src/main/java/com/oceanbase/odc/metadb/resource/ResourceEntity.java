@@ -29,8 +29,8 @@ import javax.persistence.Table;
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
-import com.oceanbase.odc.service.resource.ResourceMode;
 import com.oceanbase.odc.service.resource.ResourceState;
+import com.oceanbase.odc.service.resource.ResourceTag;
 
 import lombok.Data;
 import lombok.ToString;
@@ -98,11 +98,10 @@ public class ResourceEntity {
     private String resourceName;
 
     /**
-     * Resource type, enum: MEMORY, REMOTE_K8S
+     * Resource type, equals to {@link ResourceTag#getType()}
      */
-    @Enumerated(value = EnumType.STRING)
-    @Column(name = "resource_mode", updatable = false, nullable = false)
-    private ResourceMode resourceMode;
+    @Column(name = "resource_type", updatable = false, nullable = false)
+    private String resourceType;
 
     /**
      * endpoint of the resource to access
@@ -110,11 +109,13 @@ public class ResourceEntity {
     @Column(name = "endpoint", updatable = false)
     private String endpoint;
 
-
     /**
      * resource status, enum: ResourceState
      */
     @Enumerated(value = EnumType.STRING)
     @Column(name = STATUS, nullable = false)
     private ResourceState status;
+
+    @Column(name = "resource_properties")
+    private String resourceProperties;
 }

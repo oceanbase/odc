@@ -9,9 +9,10 @@ CREATE TABLE IF NOT EXISTS `task_resource` (
 `group_name` varchar(1024) NOT NULL COMMENT 'group name',
 `namespace` varchar(1024) NOT NULL COMMENT 'namespace name',
 `name` varchar(1024) NOT NULL COMMENT 'resource name',
-`resource_mode` varchar(128) NOT NULL COMMENT 'resource mode, candidate is MEMORY,REMOTE_K8S',
+`resource_type` varchar(128) NOT NULL COMMENT 'resource type, eg memory, k8s',
 `endpoint` varchar(128) NOT NULL COMMENT 'endpoint',
 `status` varchar(128) NOT NULL COMMENT 'status, candidate is CREATING,RUNNING,DESTROYING,DESTROYED,ERROR_STATE,UNKNOWN',
+`resource_properties` longtext COMMENT 'resource detailed properties',
 PRIMARY KEY (`id`),
-CONSTRAINT `resource_unique` UNIQUE (`region`, `group_name`, `namespace`, `name`)
+INDEX `resource_unique` (`region`, `group_name`, `namespace`, `name`)
 );

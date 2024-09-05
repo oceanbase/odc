@@ -22,6 +22,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.oceanbase.odc.metadb.resource.ResourceID;
+import com.oceanbase.odc.metadb.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.resource.k8s.client.K8sJobClient;
 import com.oceanbase.odc.service.task.exception.JobException;
@@ -67,7 +69,7 @@ public class K8SResourceOperatorTest {
     public void testK8SResourceOperatorQuery() throws JobException {
         K8SResourceOperator operator = new K8SResourceOperator(context);
         operator.create(k8sResourceContext);
-        K8sPodResourceID resourceID = new K8sPodResourceID(regionName, groupName, "", resourceName);
+        ResourceID resourceID = new ResourceID(new ResourceLocation(regionName, groupName), "name", resourceName);
         Optional<K8sPodResource> k8sPodResource = operator.query(resourceID);
         Assert.assertTrue(k8sPodResource.isPresent());
         K8sPodResource resource = k8sPodResource.get();
@@ -78,7 +80,7 @@ public class K8SResourceOperatorTest {
     @Test
     public void testK8SResourceOperatorDestroy() throws JobException {
         K8SResourceOperator operator = new K8SResourceOperator(context);
-        K8sPodResourceID resourceID = new K8sPodResourceID(regionName, groupName, "name", resourceName);
+        ResourceID resourceID = new ResourceID(new ResourceLocation(regionName, groupName), "name", resourceName);
         operator.create(k8sResourceContext);
         Assert.assertEquals(operator.destroy(resourceID), "name:" + resourceName);
     }
@@ -86,7 +88,7 @@ public class K8SResourceOperatorTest {
     @Test
     public void testK8SResourceOperatorCanNotBeDestroyed() throws JobException {
         K8SResourceOperator operator = new K8SResourceOperator(context);
-        K8sPodResourceID resourceID = new K8sPodResourceID(regionName, groupName, "name", resourceName);
+        ResourceID resourceID = new ResourceID(new ResourceLocation(regionName, groupName), "name", resourceName);
         operator.create(k8sResourceContext);
         Assert.assertFalse(operator.canBeDestroyed(resourceID));
     }
@@ -95,7 +97,7 @@ public class K8SResourceOperatorTest {
     public void testK8SResourceOperatorCanBeDestroyed() throws JobException {
         context = new K8sResourceOperatorContext(mockK8sJobClient, (r) -> 1000L, 500L);
         K8SResourceOperator operator = new K8SResourceOperator(context);
-        K8sPodResourceID resourceID = new K8sPodResourceID(regionName, groupName, "name", resourceName);
+        ResourceID resourceID = new ResourceID(new ResourceLocation(regionName, groupName), "name", resourceName);
         operator.create(k8sResourceContext);
         Assert.assertTrue(operator.canBeDestroyed(resourceID));
     }
