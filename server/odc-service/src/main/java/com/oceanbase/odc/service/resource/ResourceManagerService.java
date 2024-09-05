@@ -96,10 +96,14 @@ public class ResourceManagerService {
                 continue;
             }
             ResourceOperatorTag tag = resource.getResourceOperatorTag();
-            Object res = nullSafeGet(resourceID, tag, typeAndTag2Resources);
-            resource.setResourceConfig(res);
+            Optional<Object> optional = get(resourceID, tag, typeAndTag2Resources);
+            if (!optional.isPresent()) {
+                resource.setResourceState(ResourceState.UNKNOWN);
+                continue;
+            }
+            resource.setResourceConfig(optional.get());
             ResourceState newState = moveToNextState(resource.getResourceState(),
-                    getResourceOperator(resourceID.getType(), tag), res);
+                    getResourceOperator(resourceID.getType(), tag), optional.get());
             List<Long> list = state2Resources.computeIfAbsent(newState, key -> new ArrayList<>());
             list.add(resource.getId());
         }
@@ -113,10 +117,14 @@ public class ResourceManagerService {
         Map<Class<?>, Map<ResourceOperatorTag, List<Object>>> typeAndTag2Resources = new HashMap<>();
         List<Resource> returnVal = new ArrayList<>();
         for (Map.Entry<ResourceID, ResourceOperatorTag> entry : parameters.entrySet()) {
+            ResourceID id = entry.getKey();
+            ResourceOperatorTag tag = entry.getValue();
             Resource item = new Resource();
-            item.setResourceID(entry.getKey());
-            item.setResourceConfig(nullSafeGet(entry.getKey(), entry.getValue(), typeAndTag2Resources));
-            item.setResourceOperatorTag(entry.getValue());
+            item.setResourceID(id);
+            Object cfg = get(id, tag, typeAndTag2Resources)
+                    .orElseThrow(() -> new IllegalStateException("No Resource found by id " + id + " and tag " + tag));
+            item.setResourceConfig(cfg);
+            item.setResourceOperatorTag(tag);
             returnVal.add(item);
         }
         return returnVal;
@@ -164,8 +172,15 @@ public class ResourceManagerService {
         log.info("Delete resource succeed, id={}, resourceId={}", id, resourceID);
     }
 
+    public void destroy(@NonNull ResourceID resourceID, @NonNull ResourceOperatorTag tag) throws Exception {
+        Resource resource = nullSafeGet(resourceID, tag);
+        ResourceID rId = resource.getResourceID();
+        getResourceOperator(rId.getType(), resource.getResourceOperatorTag()).destroy(rId);
+        log.info("Delete resource succeed, resourceId={}, tag={}", rId, tag);
+    }
+
     @SuppressWarnings("all")
-    private Object nullSafeGet(ResourceID resourceID, ResourceOperatorTag tag,
+    private Optional<Object> get(ResourceID resourceID, ResourceOperatorTag tag,
             Map<Class<?>, Map<ResourceOperatorTag, List<Object>>> typeAndTag2Resources) throws Exception {
         Class<?> type = resourceID.getType();
         Map<ResourceOperatorTag, List<Object>> tag2Operator = typeAndTag2Resources
@@ -179,10 +194,10 @@ public class ResourceManagerService {
         List<Object> list = resourceList.stream()
                 .filter(o -> resourceID.equals(resourceOperator.getKey(o)))
                 .collect(Collectors.toList());
-        if (list.size() != 1) {
+        if (list.size() > 1) {
             throw new IllegalStateException("There are more than one resource found by id " + resourceID);
         }
-        return list.get(0);
+        return list.size() == 1 ? Optional.of(list.get(0)) : Optional.empty();
     }
 
     private ResourceState moveToNextState(ResourceState current, ResourceOperator<?> resourceOperator, Object config) {
