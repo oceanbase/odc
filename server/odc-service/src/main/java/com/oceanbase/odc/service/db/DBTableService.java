@@ -106,7 +106,6 @@ public class DBTableService {
                     ConnectionSessionConstants.BACKEND_DS_KEY)
                     .execute((ConnectionCallback<DBTable>) con -> getTableExtensionPoint(connectionSession)
                             .getDetail(con, schemaName, tableName));
-            table.setType(type == null ? DBObjectType.TABLE : type);
             return table;
         } catch (Exception e) {
             log.warn("Query table information failed, table name=%s.", e);

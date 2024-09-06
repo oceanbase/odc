@@ -148,6 +148,11 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public Boolean isExternalTable(String schemaName, String tableName) {
+        return null;
+    }
+
+    @Override
     public List<DBObjectIdentity> listViews(String schemaName) {
         throw new UnsupportedOperationException("Not supported yet");
     }

@@ -90,9 +90,14 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
         table.setOwner(schemaName);
         table.setName(tableName);
         table.setColumns(schemaAccessor.listTableColumns(schemaName, tableName));
-        table.setConstraints(schemaAccessor.listTableConstraints(schemaName, tableName));
+        if (!Boolean.TRUE.equals(schemaAccessor.isExternalTable(schemaName, tableName))) {
+            table.setConstraints(schemaAccessor.listTableConstraints(schemaName, tableName));
+            table.setIndexes(schemaAccessor.listTableIndexes(schemaName, tableName));
+            table.setType(DBObjectType.TABLE);
+        } else {
+            table.setType(DBObjectType.EXTERNAL_TABLE);
+        }
         table.setPartition(parser.getPartition());
-        table.setIndexes(schemaAccessor.listTableIndexes(schemaName, tableName));
         table.setDDL(ddl);
         table.setTableOptions(schemaAccessor.getTableOptions(schemaName, tableName));
         table.setStats(getTableStats(connection, schemaName, tableName));

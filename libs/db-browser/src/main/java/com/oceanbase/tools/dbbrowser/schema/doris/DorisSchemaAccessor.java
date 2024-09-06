@@ -235,6 +235,11 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
         throw new UnsupportedOperationException("Not supported yet");
     }
 
+    @Override
+    public Boolean isExternalTable(String schemaName, String tableName) {
+        return null;
+    }
+
     protected List<DBObjectIdentity> listBaseTables(String schemaName, String tableNameLike)
             throws DataAccessException {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();

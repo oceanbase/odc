@@ -258,6 +258,11 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public Boolean isExternalTable(String schemaName, String tableName) {
+        return null;
+    }
+
+    @Override
     public List<DBObjectIdentity> listViews(String schemaName) {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("select OWNER as schema_name, 'VIEW' as type, view_name as name from ");

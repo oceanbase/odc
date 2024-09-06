@@ -51,4 +51,9 @@ public class OBMySQLBetween400And432SchemaAccessor extends OBMySQLSchemaAccessor
         throw new UnsupportedOperationException(
                 "External table is supported by odc after the 432 version of oceanbase");
     }
+
+    @Override
+    public Boolean isExternalTable(String schemaName, String tableName) {
+        return null;
+    }
 }

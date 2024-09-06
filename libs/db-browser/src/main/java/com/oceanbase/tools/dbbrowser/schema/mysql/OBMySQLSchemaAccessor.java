@@ -398,7 +398,29 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             sb.value(tableNameLike);
         }
         sb.append(" ORDER BY schema_name, table_name");
-
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
+    }
+
+    @Override
+    public Boolean isExternalTable(String schemaName, String tableName) {
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append("SELECT table_type FROM information_schema.tables");
+        if (StringUtils.isNotBlank(schemaName)) {
+            sb.append(" Where table_schema=");
+            sb.value(schemaName);
+        }
+        if (StringUtils.isNotBlank(tableName)) {
+            sb.append(" AND table_name = ");
+            sb.value(tableName);
+        }
+        String tableType = jdbcOperations.queryForObject(sb.toString(), String.class);
+        if (tableType == null) {
+            throw new IllegalArgumentException("table name: " + tableName + " is not exist");
+        }
+        if (StringUtils.equalsIgnoreCase(tableType, "EXTERNAL TABLE")) {
+            return Boolean.TRUE;
+        } else {
+            return Boolean.FALSE;
+        }
     }
 }
