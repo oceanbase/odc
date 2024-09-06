@@ -122,6 +122,9 @@ public class ScheduleTaskService {
     private UserRepository userRepository;
 
     @Autowired
+    private JobRepository jobRepository;
+
+    @Autowired
     private ScheduledTaskLoggerService scheduledTaskLoggerService;
 
     private final ScheduleTaskMapper scheduleTaskMapper = ScheduleTaskMapper.INSTANCE;
