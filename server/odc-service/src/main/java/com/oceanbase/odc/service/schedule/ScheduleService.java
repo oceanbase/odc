@@ -329,11 +329,6 @@ public class ScheduleService {
                 throw new UnsupportedException();
         }
 
-        if (targetSchedule.getType() == ScheduleType.SQL_PLAN) {
-            log.info("sql plan is not executed for the moment, scheduleId={}", targetSchedule.getId());
-            return;
-        }
-
         // start change quartzJob
         ChangeQuartJobParam quartzJobReq = new ChangeQuartJobParam();
         quartzJobReq.setOperationType(req.getOperationType());

@@ -43,6 +43,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Charsets;
@@ -53,6 +54,7 @@ import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
@@ -163,6 +165,7 @@ public class FlowTaskInstanceService {
 
     private final Set<String> supportedBucketName = new HashSet<>(Arrays.asList("async", "structure-comparison"));
 
+    @Transactional(rollbackFor = Exception.class)
     public FlowInstanceDetailResp executeTask(@NotNull Long id) throws IOException {
         List<FlowTaskInstance> instances =
                 filterTaskInstance(id, instance -> instance.getStatus() == FlowNodeStatus.PENDING, false);
@@ -182,7 +185,11 @@ public class FlowTaskInstanceService {
             return response.getContentByType(new TypeReference<SuccessResponse<FlowInstanceDetailResp>>() {}).getData();
         }
         taskInstance.confirmExecute();
-        return FlowInstanceDetailResp.withIdAndType(id, taskInstance.getTaskType());
+        flowInstanceRepository.updateStatusById(id, FlowStatus.EXECUTING);
+        FlowInstanceDetailResp flowInstanceDetailResp = FlowInstanceDetailResp.withIdAndType(id,
+                taskInstance.getTaskType());
+        flowInstanceDetailResp.setStatus(FlowStatus.EXECUTING);
+        return flowInstanceDetailResp;
     }
 
     public String getLog(@NotNull Long flowInstanceId, OdcTaskLogLevel level, boolean skipAuth) throws IOException {

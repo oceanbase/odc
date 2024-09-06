@@ -46,6 +46,7 @@ import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskSpecs;
+import com.oceanbase.odc.metadb.task.JobRepository;
 import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
@@ -144,7 +145,8 @@ public class ScheduleTaskService {
                 res.setExecutionDetails(dlmService.getExecutionDetailByScheduleTaskId(scheduleTask.getId()));
             }
             case SQL_PLAN:
-                res.setExecutionDetails(scheduleTask.getResultJson());
+                jobRepository.findByIdNative(scheduleTask.getId())
+                        .ifPresent(jobEntity -> res.setExecutionDetails(jobEntity.getResultJson()));
             default:
                 break;
         }

@@ -73,6 +73,7 @@ import com.oceanbase.odc.service.sqlcheck.factory.RestrictTableCollationFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.RestrictTableNameCaseFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.RestrictUniqueIndexNamingFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.SelectStarExistsFactory;
+import com.oceanbase.odc.service.sqlcheck.factory.SqlAffectedRowsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.SyntaxErrorExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.TableNameInBlackListFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.TooLongCharLengthFactory;
@@ -151,6 +152,7 @@ public class SqlCheckRules {
         rules.add(new ObjectNameUsingReservedWordsFactory());
         rules.add(new OfflineDdlExistsFactory(jdbc));
         rules.add(new TruncateTableExistsFactory());
+        rules.add(new SqlAffectedRowsFactory(jdbc));
         return rules;
     }
 
