@@ -699,7 +699,6 @@ public class ScheduleService {
 
     @SkipAuthorize("odc internal usage")
     public List<String> getFullLogDownloadUrl(Long scheduleId, List<Long> scheduleTaskIds) {
-        log.info("远程调用：ODC MAN获取schedule log下载地址, {}, {}", scheduleId, scheduleTaskIds);
         return scheduleTaskIds.stream().map(taskId -> scheduledTaskLoggerService.getFullLogDownloadUrl(
                 scheduleId, taskId, OdcTaskLogLevel.ALL)).collect(Collectors.toList());
     }

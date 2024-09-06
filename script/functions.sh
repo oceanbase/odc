@@ -328,19 +328,6 @@ function maven_install_libs() {
     build_module "ob-sql-parser" "${maven_extra_args[@]}" || return 2
     build_module "db-browser" "${maven_extra_args[@]}" || return 2
 
-#    for module_name in *; do
-#        if [ -d "$module_name" ]; then
-#            pushd "$module_name" || return 2
-#            func_echo "start install lib $module_name"
-#            if ! mvn clean install -Dmaven.test.skip=true ${maven_extra_args[@]} -s $setting_xml_path; then
-#                func_echo "maven install lib $module_name with args ${maven_extra_args[@]} failed"
-#            else
-#                func_echo "maven install lib $module_name with args ${maven_extra_args[@]} succeed"
-#            fi
-#            popd
-#        fi
-#    done
-
     popd
     pushd "${ODC_DIR}/import" || return 1
 
