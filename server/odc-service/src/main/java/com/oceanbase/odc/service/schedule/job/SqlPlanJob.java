@@ -34,7 +34,6 @@ import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
@@ -67,7 +66,7 @@ public class SqlPlanJob implements OdcJob {
     public final ScheduleService scheduleService;
     public final ConnectProperties connectProperties;
     public final JobScheduler jobScheduler;
-    public final DataMaskingService dataMaskingService;
+
 
     public SqlPlanJob() {
         this.taskFrameworkProperties = SpringContextUtil.getBean(TaskFrameworkEnabledProperties.class);
@@ -76,7 +75,6 @@ public class SqlPlanJob implements OdcJob {
         this.scheduleService = SpringContextUtil.getBean(ScheduleService.class);
         this.connectProperties = SpringContextUtil.getBean(ConnectProperties.class);
         this.jobScheduler = SpringContextUtil.getBean(JobScheduler.class);
-        this.dataMaskingService = SpringContextUtil.getBean(DataMaskingService.class);
     }
 
     @Override
@@ -125,7 +123,6 @@ public class SqlPlanJob implements OdcJob {
         parameters.setQueryLimit(sqlPlanParameters.getQueryLimit());
         parameters.setErrorStrategy(sqlPlanParameters.getErrorStrategy());
         parameters.setSessionTimeZone(connectProperties.getDefaultTimeZone());
-        parameters.setNeedDataMasking(dataMaskingService.isMaskingEnabled());
         Map<String, String> jobData = new HashMap<>();
         ConnectionConfig connectionConfig = databaseService.findDataSourceForTaskById(
                 sqlPlanParameters.getDatabaseId());
