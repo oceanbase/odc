@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.core.fsm;
+package com.oceanbase.odc.core.dfa;
 
 import java.util.List;
 
@@ -21,15 +21,15 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class K8sPodStatusFsm extends AbstractFsm<String, String> {
+public class K8sPodStatusDfa extends AbstractDfa<String, String> {
 
-    public K8sPodStatusFsm(@NonNull List<FsmStateTransfer<String, String>> fsmStateTransfers) {
-        super(fsmStateTransfers);
+    public K8sPodStatusDfa(@NonNull List<DfaStateTransfer<String, String>> dfaStateTransfers) {
+        super(dfaStateTransfers);
     }
 
     @Override
-    protected void onStateTransfer(String currentState, String nextState, String s) throws Exception {
-        log.info("Transfer state succeed, currentState={}, nextState={}, event={}", currentState, nextState, s);
+    protected void onStateTransfer(String currentState, String nextState, String input) throws Exception {
+        log.info("Transfer state succeed, currentState={}, nextState={}, event={}", currentState, nextState, input);
     }
 
 }

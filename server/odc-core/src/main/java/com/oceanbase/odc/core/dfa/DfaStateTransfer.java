@@ -13,21 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.core.fsm;
+package com.oceanbase.odc.core.dfa;
 
 /**
- * {@link FsmStateTransfer}
+ * {@link DfaStateTransfer}
  *
  * @author yh263208
  * @date 2024-09-04 20:32
  * @since ODC_release_4.3.2
  */
-public interface FsmStateTransfer<STATE, EVENT> {
+public interface DfaStateTransfer<STATE, INPUT> {
 
     STATE next();
 
     boolean matchesState(STATE state);
 
-    boolean matchesEvent(EVENT event);
+    boolean matchesInput(INPUT input);
 
 }

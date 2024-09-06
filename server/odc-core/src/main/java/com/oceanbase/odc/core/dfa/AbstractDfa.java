@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.core.fsm;
+package com.oceanbase.odc.core.dfa;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,45 +25,45 @@ import lombok.NonNull;
 import lombok.Setter;
 
 /**
- * {@link AbstractFsm}
+ * {@link AbstractDfa}
  *
  * @author yh263208
  * @date 2024-09-04 20:21
  * @since ODC_release_4.3.2
  */
-public abstract class AbstractFsm<STATE, EVENT> {
+public abstract class AbstractDfa<STATE, INPUT> {
 
     @Setter
     @Getter
     private STATE currentState;
-    private final List<FsmStateTransfer<STATE, EVENT>> fsmStateTransfers;
+    private final List<DfaStateTransfer<STATE, INPUT>> dfaStateTransfers;
 
-    public AbstractFsm(@NonNull List<FsmStateTransfer<STATE, EVENT>> fsmStateTransfers) {
-        this.fsmStateTransfers = fsmStateTransfers;
+    public AbstractDfa(@NonNull List<DfaStateTransfer<STATE, INPUT>> dfaStateTransfers) {
+        this.dfaStateTransfers = dfaStateTransfers;
     }
 
-    public AbstractFsm<STATE, EVENT> next(EVENT event) throws Exception {
+    public AbstractDfa<STATE, INPUT> next(INPUT input) throws Exception {
         if (this.currentState == null) {
             throw new IllegalStateException("Current state is not set");
         }
-        List<FsmStateTransfer<STATE, EVENT>> transfers = this.fsmStateTransfers.stream()
+        List<DfaStateTransfer<STATE, INPUT>> transfers = this.dfaStateTransfers.stream()
                 .filter(t -> t.matchesState(this.currentState)).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(transfers)) {
             throw new IllegalStateException("State " + this.currentState + " is the final state");
         }
-        transfers = transfers.stream().filter(t -> t.matchesEvent(event)).collect(Collectors.toList());
+        transfers = transfers.stream().filter(t -> t.matchesInput(input)).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(transfers)) {
-            throw new IllegalStateException("Unknown event " + event + " for state " + this.currentState);
+            throw new IllegalStateException("Unknown input " + input + " for state " + this.currentState);
         } else if (transfers.size() != 1) {
             throw new IllegalStateException("More than one routes for state "
-                    + this.currentState + " and event " + event);
+                    + this.currentState + " and input " + input);
         }
         STATE nextState = transfers.get(0).next();
-        onStateTransfer(currentState, nextState, event);
+        onStateTransfer(currentState, nextState, input);
         this.currentState = nextState;
         return this;
     }
 
-    protected abstract void onStateTransfer(STATE currentState, STATE nextState, EVENT event) throws Exception;
+    protected abstract void onStateTransfer(STATE currentState, STATE nextState, INPUT input) throws Exception;
 
 }

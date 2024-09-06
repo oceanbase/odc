@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.core.fsm;
+package com.oceanbase.odc.core.dfa;
 
 import java.util.Arrays;
 
@@ -21,13 +21,13 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * Test cases for {@link AbstractFsm}
+ * Test cases for {@link AbstractDfa}
  *
  * @author yh263208
  * @date 2024-09-04 21:44
  * @since ODC_release_4.3.2
  */
-public class FsmTest {
+public class DfaTest {
 
     private static final String FIND_MACHINE = "Find Machine";
     private static final String POD_CREATED_SUCCEED = "Pod Created Succeed";
@@ -37,7 +37,7 @@ public class FsmTest {
 
     @Test
     public void next_stateExistsRightEvent_nextStateSucceed() throws Exception {
-        AbstractFsm<String, String> fsm = buildFsm();
+        AbstractDfa<String, String> fsm = buildFsm();
         fsm.setCurrentState("Pending");
         fsm.next(FIND_MACHINE);
         Assert.assertEquals("Creating", fsm.getCurrentState());
@@ -45,14 +45,14 @@ public class FsmTest {
 
     @Test(expected = IllegalStateException.class)
     public void next_illegalState_expThrown() throws Exception {
-        AbstractFsm<String, String> fsm = buildFsm();
+        AbstractDfa<String, String> fsm = buildFsm();
         fsm.setCurrentState("Abc");
         fsm.next(FIND_MACHINE);
     }
 
     @Test
     public void next_reachFinalState_expThrown() throws Exception {
-        AbstractFsm<String, String> fsm = buildFsm();
+        AbstractDfa<String, String> fsm = buildFsm();
         fsm.setCurrentState("Pending");
         fsm.next(FIND_MACHINE)
                 .next(POD_CREATED_SUCCEED)
@@ -60,13 +60,13 @@ public class FsmTest {
                 .next(POD_DELETED);
     }
 
-    private AbstractFsm<String, String> buildFsm() {
-        return new K8sPodStatusFsm(Arrays.asList(
-                new K8sPodStatusFsmTransfer("Pending", "Creating", FIND_MACHINE),
-                new K8sPodStatusFsmTransfer("Creating", "Running", POD_CREATED_SUCCEED),
-                new K8sPodStatusFsmTransfer("Creating", "ImgBackOff", IMG_PULL_ERR),
-                new K8sPodStatusFsmTransfer("Running", "Deleting", POD_DELETE),
-                new K8sPodStatusFsmTransfer("Deleting", "Deleted", POD_DELETED)));
+    private AbstractDfa<String, String> buildFsm() {
+        return new K8sPodStatusDfa(Arrays.asList(
+                new K8sPodStatusDfaTransfer("Pending", "Creating", FIND_MACHINE),
+                new K8sPodStatusDfaTransfer("Creating", "Running", POD_CREATED_SUCCEED),
+                new K8sPodStatusDfaTransfer("Creating", "ImgBackOff", IMG_PULL_ERR),
+                new K8sPodStatusDfaTransfer("Running", "Deleting", POD_DELETE),
+                new K8sPodStatusDfaTransfer("Deleting", "Deleted", POD_DELETED)));
     }
 
 }

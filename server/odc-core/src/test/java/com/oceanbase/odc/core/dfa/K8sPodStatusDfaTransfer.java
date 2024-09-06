@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.core.fsm;
+package com.oceanbase.odc.core.dfa;
 
-public class K8sPodStatusFsmTransfer implements FsmStateTransfer<String, String> {
+public class K8sPodStatusDfaTransfer implements DfaStateTransfer<String, String> {
 
     private final String targetState;
     private final String nextState;
     private final String targetEvent;
 
-    public K8sPodStatusFsmTransfer(String targetState, String nextState, String targetEvent) {
+    public K8sPodStatusDfaTransfer(String targetState, String nextState, String targetEvent) {
         this.targetState = targetState;
         this.nextState = nextState;
         this.targetEvent = targetEvent;
@@ -38,7 +38,7 @@ public class K8sPodStatusFsmTransfer implements FsmStateTransfer<String, String>
     }
 
     @Override
-    public boolean matchesEvent(String s) {
+    public boolean matchesInput(String s) {
         return this.targetEvent.equals(s);
     }
 
