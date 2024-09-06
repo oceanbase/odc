@@ -12,9 +12,14 @@ OBCLIENT_VERSION_NUMBER=2.2.4
 
 ODC_FUNCTION_SCRIPT_SOURCE=$(readlink -f $0)
 
+echo "[我的ODC-Server:0]： $0"
+
 # global environment variables, may refer out of function.sh
 export ODC_SCRIPT_DIR=$(dirname ${ODC_FUNCTION_SCRIPT_SOURCE})
 export ODC_DIR=$(dirname ${ODC_SCRIPT_DIR})
+
+echo "[我的ODC-Server:ODC_SCRIPT_DIR]： $ODC_SCRIPT_DIR"
+echo "[我的ODC-Server:ODC_DIR]： $ODC_DIR"
 
 # oss related environment variables
 export ODC_OSS_ENDPOINT=${oss_endpoint:-}
@@ -299,13 +304,12 @@ function maven_build_jar() {
     popd
     return 0
 }
-
 function build_module() {
     local module=$1
-    local setting_xml_path="${ODC_DIR}/builds/settings.xml"
+    local maven_extra_args=$@
     pushd "$module" || return 2
     func_echo "start install lib $module"
-    if ! mvn clean install -Dmaven.test.skip=true ${maven_extra_args[@]} -s $setting_xml_path; then
+    if ! mvn clean install -Dmaven.test.skip=true ${maven_extra_args[@]}; then
         func_echo "maven install lib $module with args ${maven_extra_args[@]} failed"
         return 1
     else
@@ -320,7 +324,6 @@ function maven_install_libs() {
     pushd "${ODC_DIR}/libs" || return 1
 
     func_echo "maven install libs ..."
-    local setting_xml_path="${ODC_DIR}/builds/settings.xml"
 
 # 必须先打 ob-sql-parser 包
     build_module "ob-sql-parser" "${maven_extra_args[@]}" || return 2
@@ -331,7 +334,7 @@ function maven_install_libs() {
 
     func_echo "start install lib pty4j-0.11.4.jar"
 
-    if ! mvn install:install-file -Dfile=./pty4j-0.11.4.jar -DgroupId=org.jetbrains.pty4j -DartifactId=pty4j -Dversion=0.11.4 -Dpackaging=jar ${maven_extra_args[@]} -s $setting_xml_path; then
+    if ! mvn install:install-file -Dfile=./pty4j-0.11.4.jar -DgroupId=org.jetbrains.pty4j -DartifactId=pty4j -Dversion=0.11.4 -Dpackaging=jar ${maven_extra_args[@]}; then
         func_echo "maven install lib pty4j-0.11.4.jar failed"
     else
         func_echo "maven install lib pty4j-0.11.4.jar succeed"
@@ -339,7 +342,7 @@ function maven_install_libs() {
 
     func_echo "start install lib purejavacomm-0.0.11.1.jar"
 
-    if ! mvn install:install-file -Dfile=./purejavacomm-0.0.11.1.jar -DgroupId=org.jetbrains.pty4j -DartifactId=purejavacomm -Dversion=0.0.11.1 -Dpackaging=jar ${maven_extra_args[@]} -s $setting_xml_path; then
+    if ! mvn install:install-file -Dfile=./purejavacomm-0.0.11.1.jar -DgroupId=org.jetbrains.pty4j -DartifactId=purejavacomm -Dversion=0.0.11.1 -Dpackaging=jar ${maven_extra_args[@]}; then
         func_echo "maven install lib purejavacomm-0.0.11.1.jar failed"
     else
         func_echo "maven install lib purejavacomm-0.0.11.1.jar succeed"
@@ -389,7 +392,6 @@ function maven_build_rpm() {
     local rpm_release=$1
     shift
     local mvn_extra_args=$@
-    local setting_xml_path=${ODC_DIR}/builds/settings.xml
     if [ -z "$rpm_release" ]; then
         echo "Usage: maven_build_rpm <rpm_release>"
         return 1
@@ -398,7 +400,7 @@ function maven_build_rpm() {
     pushd "${ODC_DIR}" || return 2
 
     func_echo "maven build rpm package starting..."
-    if ! mvn ${mvn_extra_args[@]} -s $setting_xml_path --file server/odc-server/pom.xml rpm:rpm \
+    if ! mvn ${mvn_extra_args[@]} --file server/odc-server/pom.xml rpm:rpm \
         -Drpm.prefix=${RPM_DEFAULT_INSTALL_PREFIX} \
         -Drpm.release=${rpm_release}; then
         func_echo "maven build rpm failed"
