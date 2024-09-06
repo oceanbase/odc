@@ -30,6 +30,8 @@ public enum ScheduleType {
 
     DATA_DELETE,
 
-    ONLINE_SCHEMA_CHANGE_COMPLETE;
+    ONLINE_SCHEMA_CHANGE_COMPLETE,
+
+    LOAD_DATA;
 
 }
