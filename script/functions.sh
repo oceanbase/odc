@@ -288,10 +288,8 @@ function maven_build_jar() {
 
     func_echo "maven build jar package starting..."
     func_echo "maven_extra_args: ${maven_extra_args[@]}"
-    local setting_xml_path="${ODC_DIR}/builds/settings.xml"
-
     mvn help:system ${maven_extra_args[@]}
-    if ! mvn clean install -Dmaven.test.skip=true ${maven_extra_args[@]} -s $setting_xml_path; then
+    if ! mvn clean install -Dmaven.test.skip=true ${maven_extra_args[@]}; then
         func_echo "maven build jar ${maven_extra_args[@]} failed"
         popd
         return 2
