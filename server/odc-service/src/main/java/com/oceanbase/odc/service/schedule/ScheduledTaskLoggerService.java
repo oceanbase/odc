@@ -22,7 +22,6 @@ import java.util.Optional;
 import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Service;
 
-import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
