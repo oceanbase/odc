@@ -76,6 +76,10 @@ public class BatchCreateWorksheetsPreProcessor {
         }
     }
 
+    public int size() {
+        return createPathToObjectIdMap.size();
+    }
+
     private static Path getParentPath(Path path, String objectId) {
         if (path.isSystemDefine()) {
             throw new IllegalArgumentException("invalid crate path : " + path);

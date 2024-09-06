@@ -25,8 +25,10 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+import javax.persistence.Transient;
+
+import org.hibernate.annotations.Generated;
+import org.hibernate.annotations.GenerationTime;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -46,12 +48,11 @@ public class CollaborationWorksheetEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "create_time", nullable = false, updatable = false)
-    @Temporal(TemporalType.TIMESTAMP)
+    @Generated(GenerationTime.ALWAYS)
+    @Column(name = "create_time", insertable = false, updatable = false)
     private Date createTime;
 
-    @Column(name = "update_time", nullable = false)
-    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "update_time")
     private Date updateTime;
 
     @Column(name = "project_id", nullable = false)
@@ -77,4 +78,7 @@ public class CollaborationWorksheetEntity {
 
     @Column(name = "version", nullable = false)
     private Long version;
+
+    @Transient
+    private Date lastAccessTime;
 }

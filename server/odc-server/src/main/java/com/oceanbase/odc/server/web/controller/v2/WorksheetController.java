@@ -50,6 +50,7 @@ import com.oceanbase.odc.service.worksheet.model.ListWorksheetsReq;
 import com.oceanbase.odc.service.worksheet.model.UpdateWorksheetReq;
 import com.oceanbase.odc.service.worksheet.model.WorksheetMetaResp;
 import com.oceanbase.odc.service.worksheet.model.WorksheetResp;
+import com.oceanbase.odc.service.worksheet.service.DefaultWorksheetService;
 
 import lombok.SneakyThrows;
 
@@ -66,6 +67,8 @@ public class WorksheetController {
 
     @Resource
     private WorksheetServiceFacade worksheetServiceFacade;
+    @Resource
+    private DefaultWorksheetService defaultWorksheetService;
 
     @PostMapping("/worksheets/generateUploadUrl")
     public SuccessResponse<GenerateWorksheetUploadUrlResp> generateUploadUrl(
@@ -101,8 +104,8 @@ public class WorksheetController {
     @PostMapping("/worksheets/flatList")
     public PaginatedResponse<WorksheetMetaResp> flatListWorksheets(
             @PathVariable("projectId") Long projectId,
-            @PageableDefault(size = 100, sort = {"accessTime", "id"}, direction = Direction.DESC) Pageable pageable) {
-        return Responses.paginated(new PaginatedData<>());
+            @PageableDefault(size = 100, sort = {"lastAccessTime"}, direction = Direction.DESC) Pageable pageable) {
+        return Responses.paginated(defaultWorksheetService.flatListWorksheets(projectId, pageable));
     }
 
     @PostMapping("/worksheets/batchUpload")
