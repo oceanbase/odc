@@ -67,7 +67,7 @@ public class LogUtils {
                     logContent.add(String.format("[ODC INFO]: \n"
                             + "Logs exceed max limitation (%s rows or %s MB), only the latest part is displayed.\n"
                             + "Please download the log file for the full content.", fetchMaxLine,
-                            BinarySizeUnit.convertTo(fetchMaxByteSize, BinarySizeUnit.B, BinarySizeUnit.MB)));
+                            BinarySizeUnit.B.of(fetchMaxByteSize).convert(BinarySizeUnit.MB)));
                     break;
                 }
                 logContent.addFirst(line + "\n");
