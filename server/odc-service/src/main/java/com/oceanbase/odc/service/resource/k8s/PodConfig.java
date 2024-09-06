@@ -13,7 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.config;
+package com.oceanbase.odc.service.resource.k8s;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import com.oceanbase.odc.service.task.constants.JobConstants;
 
@@ -21,79 +25,45 @@ import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2024-01-10
+ * @date 2023-11-16
  * @since 4.2.4
  */
 @Data
-public class K8sProperties {
+public class PodConfig {
 
-    private String kubeUrl;
-    private String namespace;
-    private String kubeConfig;
     private String region;
-    private String group;
 
-    /**
-     * pod image name with version, odc job will be running in this image
-     */
-    private String podImageName;
-    /**
-     * pod pending timeout
-     */
+    private String namespace;
+
+    private String image;
+
+    private List<String> command;
+
+    private Map<String, String> environments = new HashMap<>();
+
+    private Map<String, String> labels = new HashMap<>();
+
+    private String imagePullPolicy = JobConstants.IMAGE_PULL_POLICY_ALWAYS;
+
     private Long podPendingTimeoutSeconds;
 
-    /**
-     * pod request cpu
-     */
     private Double requestCpu;
 
-    /**
-     * pod request memory
-     */
     private Long requestMem;
 
-    /**
-     * pod limit cpu
-     */
     private Double limitCpu;
 
-    /**
-     * pod limit memory
-     */
     private Long limitMem;
 
-    /**
-     * pod enable mount
-     */
     private Boolean enableMount;
-    /**
-     * pod mount disk absolute path
-     */
+
     private String mountPath;
 
-    /**
-     * pod mount disk size
-     */
     private Long mountDiskSize;
 
-    /**
-     * max node count in pool
-     */
     private Long maxNodeCount;
 
-    /**
-     * node cpu
-     */
     private Double nodeCpu;
 
-    /**
-     * node memory
-     */
     private Long nodeMemInMB;
-
-    /**
-     * executor listen port, will use random port if not set or 0
-     */
-    private Integer executorListenPort = JobConstants.JOB_POD_DEFAULT_LISTEN_PORT;
-
 }
