@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.server;
 
+import static com.oceanbase.odc.core.alarm.AlarmEventNames.SERVER_RESTART;
+
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -39,6 +42,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.security.SensitiveDataUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.authority.interceptor.MethodAuthorizedPostProcessor;
 import com.oceanbase.odc.migrate.AbstractMetaDBMigrate;
 import com.oceanbase.odc.service.config.SystemConfigBootstrap;
@@ -83,6 +87,7 @@ public class OdcServer {
             log.info("Task executor exit.");
             return;
         }
+        AlarmUtils.alarm(SERVER_RESTART, LocalDateTime.now().toString());
         initEnv();
         System.setProperty("spring.cloud.bootstrap.enabled", "true");
         PluginSpringApplication.run(OdcServer.class, args);
