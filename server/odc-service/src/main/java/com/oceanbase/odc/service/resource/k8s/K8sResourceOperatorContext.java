@@ -17,9 +17,8 @@ package com.oceanbase.odc.service.resource.k8s;
 
 import java.util.function.Function;
 
-import com.oceanbase.odc.metadb.resource.ResourceID;
-import com.oceanbase.odc.service.resource.ResourceOperatorContext;
-import com.oceanbase.odc.service.resource.k8s.client.K8sJobClient;
+import com.oceanbase.odc.service.resource.ResourceID;
+import com.oceanbase.odc.service.resource.k8s.client.K8sJobClientSelector;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -30,8 +29,8 @@ import lombok.Data;
  */
 @AllArgsConstructor
 @Data
-public class K8sResourceOperatorContext implements ResourceOperatorContext {
-    private final K8sJobClient k8sJobClient;
+public class K8sResourceOperatorContext {
+    private final K8sJobClientSelector k8sJobClientSelector;
     private final Function<ResourceID, Long> createElapsedTimeFunc;
     private final long podPendingTimeoutSeconds;
 }

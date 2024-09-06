@@ -18,14 +18,14 @@ package com.oceanbase.odc.service.resource.k8s;
 import com.oceanbase.odc.service.resource.ResourceContext;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 
 /**
  * @author longpeng.zlp
  * @date 2024/8/26 11:32
  */
 @AllArgsConstructor
-@Data
+@Getter
 public class K8sResourceContext implements ResourceContext {
     /**
      * default pod config for current k8s region
@@ -46,19 +46,14 @@ public class K8sResourceContext implements ResourceContext {
     private final String group;
 
     /**
+     * type to choose {@link com.oceanbase.odc.service.resource.ResourceOperator}
+     */
+    private final String type;
+
+    /**
      * extended for debug
      */
     private final Object extraData;
-
-    @Override
-    public double cpuCore() {
-        return podConfig.getNodeCpu();
-    }
-
-    @Override
-    public long memInMB() {
-        return podConfig.getLimitMem();
-    }
 
     public String region() {
         return region;
@@ -70,6 +65,11 @@ public class K8sResourceContext implements ResourceContext {
 
     public String resourceNamespace() {
         return podConfig.getNamespace();
+    }
+
+    @Override
+    public String type() {
+        return type;
     }
 
     @Override

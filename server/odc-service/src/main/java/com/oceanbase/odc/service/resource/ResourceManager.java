@@ -20,11 +20,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-import org.apache.commons.lang3.tuple.Pair;
-
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
-import com.oceanbase.odc.metadb.resource.ResourceID;
-import com.oceanbase.odc.metadb.resource.ResourceLocation;
 import com.oceanbase.odc.metadb.resource.ResourceRepository;
 import com.oceanbase.odc.service.resource.k8s.DefaultResourceOperatorBuilder;
 import com.oceanbase.odc.service.task.exception.JobException;
@@ -59,30 +55,32 @@ public class ResourceManager {
     }
 
     /**
-     * directly create k8s resource
-     * 
-     * @param k8sResourceContext context to create pod
+     * directly create resource
+     *
+     * @param resourceLocation location of the resource
+     * @param type type of the resource
+     * @param resourceContext to create pod
      * @return
      */
-    public <RC extends ResourceContext, R extends Resource> ResourceWithUniqueSeq<R> createResource(
-            ResourceTag resourceTag,
-            RC k8sResourceContext) throws JobException {
+    public <RC extends ResourceContext, R extends Resource> ResourceWithID<R> createResource(
+            ResourceLocation resourceLocation, String type,
+            RC resourceContext) throws JobException {
         // get builder and operator and create
         ResourceOperatorBuilder<RC, R> operatorBuilder =
-                (ResourceOperatorBuilder<RC, R>) getOperatorBuilder(resourceTag);
-        ResourceOperator<RC, R> resourceOperator = operatorBuilder.build(resourceTag);
-        R k8sResource = resourceOperator.create(k8sResourceContext);
+                (ResourceOperatorBuilder<RC, R>) getOperatorBuilder(resourceLocation, type);
+        ResourceOperator<RC, R> resourceOperator = operatorBuilder.build();
+        R resource = resourceOperator.create(resourceContext);
         // if save resource to db failed, rollback it
         ResourceEntity savedEntity = null;
         try {
-            savedEntity = resourceRepository.save(operatorBuilder.toResourceEntity(k8sResource));
+            savedEntity = resourceRepository.save(operatorBuilder.toResourceEntity(resource));
         } catch (Throwable e) {
-            log.info("save resource={} failed, rollback creation", k8sResource);
+            log.info("save resource={} failed, rollback creation", resource);
             // release resource if save db failed
-            resourceOperator.destroy(k8sResource.resourceID());
+            resourceOperator.destroy(resource.resourceID());
             throw new JobException("save resource to meta store failed", e);
         }
-        return new ResourceWithUniqueSeq<>(savedEntity.getId(), k8sResource);
+        return new ResourceWithID<>(savedEntity.getId(), resource);
     }
 
     /**
@@ -92,9 +90,11 @@ public class ResourceManager {
      * @return
      * @throws JobException
      */
-    public <R extends Resource> Optional<R> query(ResourceTag resourceTag, ResourceID resourceID) throws JobException {
-        ResourceOperatorBuilder<?, R> operatorBuilder = (ResourceOperatorBuilder<?, R>) getOperatorBuilder(resourceTag);
-        ResourceOperator<?, R> resourceOperator = operatorBuilder.build(resourceTag);
+    public <R extends Resource> Optional<R> query(ResourceID resourceID) throws JobException {
+        ResourceOperatorBuilder<?, R> operatorBuilder =
+                (ResourceOperatorBuilder<?, R>) getOperatorBuilder(resourceID.getResourceLocation(),
+                        resourceID.getType());
+        ResourceOperator<?, R> resourceOperator = operatorBuilder.build();
         return resourceOperator.query(resourceID);
     }
 
@@ -105,11 +105,11 @@ public class ResourceManager {
      * @throws JobException
      */
     public <R extends Resource> Optional<R> query(long uniqueSeq) throws JobException {
-        Pair<ResourceTag, ResourceID> resourceTagResourceIDPair = queryByUniqueSeq(uniqueSeq);
-        if (null == resourceTagResourceIDPair) {
+        ResourceID resourceID = queryById(uniqueSeq);
+        if (null == resourceID) {
             return Optional.empty();
         } else {
-            return query(resourceTagResourceIDPair.getLeft(), resourceTagResourceIDPair.getRight());
+            return query(resourceID);
         }
     }
 
@@ -131,7 +131,7 @@ public class ResourceManager {
             resourceEntity.setRegion(resourceID.getResourceLocation().getRegion());
             resourceEntity.setGroupName(resourceID.getResourceLocation().getGroup());
             resourceEntity.setNamespace(resourceID.getNamespace());
-            resourceEntity.setResourceName(resourceID.getName());
+            resourceEntity.setResourceName(resourceID.getIdentifier());
             resourceEntity.setStatus(ResourceState.DESTROYING);
             resourceRepository.save(resourceEntity);
         } else {
@@ -143,30 +143,29 @@ public class ResourceManager {
     /**
      * destroy by uniqueSeq equals {@link ResourceEntity#getId()}
      * 
-     * @param uniqueSeq
      * @return
      * @throws JobException
      */
-    public String destroy(long uniqueSeq) throws JobException {
-        Pair<ResourceTag, ResourceID> resourceTagResourceIDPair = queryByUniqueSeq(uniqueSeq);
-        if (null == resourceTagResourceIDPair) {
+    public String destroy(long id) throws JobException {
+        ResourceID resourceID = queryById(id);
+        if (null == resourceID) {
             return null;
         } else {
-            return destroy(resourceTagResourceIDPair.getLeft(), resourceTagResourceIDPair.getRight());
+            return destroy(resourceID);
         }
     }
 
     /**
-     * real destroy by resource tag and resource id
+     * real destroy by resource id
      * 
-     * @param resourceTag
      * @param resourceID
      * @return
      * @throws JobException
      */
-    public String destroy(ResourceTag resourceTag, ResourceID resourceID) throws JobException {
-        ResourceOperatorBuilder<?, ?> operatorBuilder = getOperatorBuilder(resourceTag);
-        ResourceOperator<?, ?> resourceOperator = operatorBuilder.build(resourceTag);
+    public String destroy(ResourceID resourceID) throws JobException {
+        ResourceOperatorBuilder<?, ?> operatorBuilder =
+                getOperatorBuilder(resourceID.getResourceLocation(), resourceID.getType());
+        ResourceOperator<?, ?> resourceOperator = operatorBuilder.build();
         String ret = resourceOperator.destroy(resourceID);
         // then update db status
         resourceRepository.updateResourceStatus(resourceID, ResourceState.DESTROYED.name());
@@ -180,34 +179,33 @@ public class ResourceManager {
      * @param resourceID
      * @return
      */
-    public boolean canBeDestroyed(ResourceTag resourceTag, ResourceID resourceID) {
-        ResourceOperatorBuilder<?, ?> operatorBuilder = getOperatorBuilder(resourceTag);
-        ResourceOperator<?, ?> resourceOperator = operatorBuilder.build(resourceTag);
+    public boolean canBeDestroyed(ResourceID resourceID) {
+        ResourceOperatorBuilder<?, ?> operatorBuilder =
+                getOperatorBuilder(resourceID.getResourceLocation(), resourceID.getType());
+        ResourceOperator<?, ?> resourceOperator = operatorBuilder.build();
         return resourceOperator.canBeDestroyed(resourceID);
     }
 
     /**
-     * find resource operator by resource tag
+     * find resource operator by resource location and type
      *
      * @return
      */
-    protected ResourceOperatorBuilder<?, ?> getOperatorBuilder(ResourceTag resourceTag) {
+    protected ResourceOperatorBuilder<?, ?> getOperatorBuilder(ResourceLocation resourceLocation, String type) {
         for (ResourceOperatorBuilder<?, ?> candidate : resourceOperatorBuilders) {
-            if (candidate.match(resourceTag)) {
+            if (candidate.match(resourceLocation, type)) {
                 return candidate;
             }
         }
-        throw new IllegalStateException("resource operator not found for " + resourceTag);
+        throw new IllegalStateException("resource operator not found for " + resourceLocation + ":" + type);
     }
 
-    protected Pair<ResourceTag, ResourceID> queryByUniqueSeq(long seq) {
-        Optional<ResourceEntity> resourceEntity = resourceRepository.findById(seq);
+    protected ResourceID queryById(long id) {
+        Optional<ResourceEntity> resourceEntity = resourceRepository.findById(id);
         if (resourceEntity.isPresent()) {
             ResourceEntity tmp = resourceEntity.get();
             ResourceLocation resourceLocation = new ResourceLocation(tmp.getRegion(), tmp.getGroupName());
-            return Pair.of(
-                    new ResourceTag(resourceLocation, tmp.getResourceType()),
-                    new ResourceID(resourceLocation, tmp.getNamespace(), tmp.getResourceName()));
+            return new ResourceID(resourceLocation, tmp.getResourceType(), tmp.getNamespace(), tmp.getResourceName());
         } else {
             return null;
         }

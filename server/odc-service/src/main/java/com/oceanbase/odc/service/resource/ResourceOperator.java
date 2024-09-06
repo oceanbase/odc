@@ -19,7 +19,6 @@ import java.util.Optional;
 
 import org.apache.hadoop.classification.InterfaceStability.Evolving;
 
-import com.oceanbase.odc.metadb.resource.ResourceID;
 import com.oceanbase.odc.service.task.exception.JobException;
 
 /**
@@ -39,6 +38,15 @@ public interface ResourceOperator<RC extends ResourceContext, R extends Resource
      * @return resource, may not available, maybe creating
      */
     R create(RC resourceContext) throws JobException;
+
+    /**
+     * modify a resource with resourceID
+     * 
+     * @param resourceContext
+     * @return
+     * @throws JobException
+     */
+    R patch(ResourceID resourceID, RC resourceContext) throws JobException;
 
     /**
      * query if resource with resource id existed

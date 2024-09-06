@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.resource;
+package com.oceanbase.odc.service.resource;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 /**
  * resource id all resource entity id should contains this class resource id should be impl as
@@ -22,6 +25,8 @@ package com.oceanbase.odc.metadb.resource;
  * @author longpeng.zlp
  * @date 2024/9/2 16:47
  */
+@AllArgsConstructor
+@Getter
 public class ResourceID {
     /**
      * location of the resource
@@ -29,30 +34,18 @@ public class ResourceID {
     private final ResourceLocation resourceLocation;
 
     /**
+     * resource type, this type will used to choose a {@link ResourceOperator} of
+     * {@link #resourceLocation} eg: k8s pod resource type, k8s service resource type
+     */
+    private final String type;
+
+    /**
      * name space of the resource eg: a namespace of k8s cluster
      */
     private final String namespace;
 
     /**
-     * name of resource. eg: a pod name
+     * identifier of resource. eg: a pod name
      */
-    private final String name;
-
-    public ResourceID(ResourceLocation resourceLocation, String namespace, String name) {
-        this.resourceLocation = resourceLocation;
-        this.namespace = namespace;
-        this.name = name;
-    }
-
-    public ResourceLocation getResourceLocation() {
-        return resourceLocation;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getNamespace() {
-        return namespace;
-    }
+    private final String identifier;
 }

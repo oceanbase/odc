@@ -17,8 +17,8 @@
 package com.oceanbase.odc.service.task.caller;
 
 import com.oceanbase.odc.common.event.AbstractEvent;
-import com.oceanbase.odc.metadb.resource.ResourceID;
 import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;

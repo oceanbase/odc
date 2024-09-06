@@ -26,14 +26,11 @@ import org.apache.hadoop.classification.InterfaceStability.Evolving;
 @Evolving
 public interface ResourceContext {
     /**
-     * cpu core expected for running task
+     * type of this resource context, to match {@link ResourceOperator}
+     * 
+     * @return
      */
-    double cpuCore();
-
-    /**
-     * memory size in MB expected for running task
-     */
-    long memInMB();
+    String type();
 
     /**
      * name of the resource, default is task name of this job

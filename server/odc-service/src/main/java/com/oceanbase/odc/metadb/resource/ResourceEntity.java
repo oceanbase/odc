@@ -29,8 +29,8 @@ import javax.persistence.Table;
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
+import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceState;
-import com.oceanbase.odc.service.resource.ResourceTag;
 
 import lombok.Data;
 import lombok.ToString;
@@ -98,7 +98,7 @@ public class ResourceEntity {
     private String resourceName;
 
     /**
-     * Resource type, equals to {@link ResourceTag#getType()}
+     * Resource type, equals to {@link ResourceID#getType()}
      */
     @Column(name = "resource_type", updatable = false, nullable = false)
     private String resourceType;

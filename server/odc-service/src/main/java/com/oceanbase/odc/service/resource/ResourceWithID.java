@@ -15,24 +15,25 @@
  */
 package com.oceanbase.odc.service.resource;
 
-import com.oceanbase.odc.metadb.resource.ResourceLocation;
+import com.oceanbase.odc.metadb.resource.ResourceEntity;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 
 /**
  * @author longpeng.zlp
- * @date 2024/9/3 17:16
+ * @date 2024/9/5 14:29
  */
 @AllArgsConstructor
-@Data
-public class ResourceTag {
+@Getter
+public class ResourceWithID<T extends Resource> {
     /**
-     * location of the resource
+     * unique seq equals to {@link ResourceEntity#getId()}
      */
-    private final ResourceLocation resourceLocation;
+    private final Long id;
+
     /**
-     * type of the resource, eg service, pod. this field will be used to select resource operator
+     * resource to return
      */
-    private final String type;
+    private final T resource;
 }

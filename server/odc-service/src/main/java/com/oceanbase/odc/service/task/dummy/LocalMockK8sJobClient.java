@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.Optional;
 
 import com.oceanbase.odc.service.resource.ResourceState;
+import com.oceanbase.odc.service.resource.k8s.DefaultResourceOperatorBuilder;
 import com.oceanbase.odc.service.resource.k8s.K8sPodResource;
 import com.oceanbase.odc.service.resource.k8s.K8sResourceContext;
 import com.oceanbase.odc.service.resource.k8s.client.K8sJobClient;
@@ -52,6 +53,7 @@ public class LocalMockK8sJobClient implements K8sJobClientSelector {
                     JobCallerBuilder.buildK8sEnv(jobContext));
             ExecutorIdentifier executorIdentifier = jobCaller.doStart(jobContext);
             return new K8sPodResource(k8sResourceContext.getRegion(), k8sResourceContext.getGroup(),
+                    k8sResourceContext.type(),
                     k8sResourceContext.resourceNamespace(),
                     k8sResourceContext.resourceName(), ResourceState.RUNNING,
                     "127.0.0.1:" + executorIdentifier.getPort(), new Date(System.currentTimeMillis()));
@@ -74,7 +76,8 @@ public class LocalMockK8sJobClient implements K8sJobClientSelector {
         @Override
         public Optional<K8sPodResource> get(String namespace, String arn) throws JobException {
             K8sPodResource ret = new K8sPodResource(ResourceIDUtil.DEFAULT_REGION_PROP_NAME,
-                    ResourceIDUtil.DEFAULT_GROUP_PROP_NAME, namespace, arn, ResourceState.RUNNING,
+                    ResourceIDUtil.DEFAULT_GROUP_PROP_NAME, DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE,
+                    namespace, arn, ResourceState.RUNNING,
                     "127.0.0.1", new Date(System.currentTimeMillis()));
             return Optional.of(ret);
         }

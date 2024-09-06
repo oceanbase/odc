@@ -22,5 +22,19 @@ import com.oceanbase.odc.metadb.resource.ResourceEntity;
  * @date 2024/9/3 19:20
  */
 public interface ResourceEntityConverter<T extends Resource> {
+    /**
+     * convert resource to ResourceEntity
+     * 
+     * @param resource
+     * @return
+     */
     ResourceEntity toResourceEntity(T resource);
+
+    /**
+     * convert resourceEntity to resource
+     * 
+     * @param resourceEntity
+     * @return
+     */
+    T toResource(ResourceEntity resourceEntity);
 }

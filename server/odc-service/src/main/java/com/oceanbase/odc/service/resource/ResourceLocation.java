@@ -15,10 +15,25 @@
  */
 package com.oceanbase.odc.service.resource;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
 /**
+ * location of the resource
+ * 
  * @author longpeng.zlp
- * @date 2024/9/3 16:39
+ * @date 2024/9/4 10:42
  */
-public interface ResourceOperatorMatcher {
-    boolean match(ResourceTag resourceTag);
+@AllArgsConstructor
+@Getter
+public class ResourceLocation {
+    /**
+     * region of the resource, that associate to a geography area eg: shanghai/beijing/singapore
+     */
+    private final String region;
+    /**
+     * group of resource. eg: a k8s cluster of alibaba cloud a k8s cluster of tencent cloud a vpc of aws
+     * cloud this group will be associated to a management endpoint
+     */
+    private final String group;
 }

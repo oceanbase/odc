@@ -17,10 +17,10 @@ package com.oceanbase.odc.service.resource.k8s;
 
 import java.util.Date;
 
-import com.oceanbase.odc.metadb.resource.ResourceID;
-import com.oceanbase.odc.metadb.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.Resource;
 import com.oceanbase.odc.service.resource.ResourceEndPoint;
+import com.oceanbase.odc.service.resource.ResourceID;
+import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceState;
 
 import lombok.AllArgsConstructor;
@@ -46,6 +46,11 @@ public class K8sPodResource implements Resource {
     private String group;
 
     /**
+     * type of this k8sResource
+     */
+    private String type;
+
+    /**
      * namespace of k8s
      */
     private String namespace;
@@ -68,11 +73,11 @@ public class K8sPodResource implements Resource {
     private Date createDate;
 
     public ResourceID resourceID() {
-        return new ResourceID(new ResourceLocation(region, group), namespace, arn);
+        return new ResourceID(new ResourceLocation(region, group), type, namespace, arn);
     }
 
     public String type() {
-        return DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE;
+        return type;
     }
 
     public ResourceEndPoint endpoint() {

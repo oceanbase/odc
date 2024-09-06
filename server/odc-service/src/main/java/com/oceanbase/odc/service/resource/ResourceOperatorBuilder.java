@@ -17,16 +17,27 @@ package com.oceanbase.odc.service.resource;
 
 
 /**
+ * operator builder to build operator by location adn type
+ * 
  * @author longpeng.zlp
  * @date 2024/9/2 17:15
  */
 public interface ResourceOperatorBuilder<RC extends ResourceContext, R extends Resource>
-        extends ResourceOperatorMatcher, ResourceEntityConverter<R> {
+        extends ResourceEntityConverter<R> {
     /**
-     * context to build operator
+     * get resource operator by location info
      *
      * @return k8s operator to manipulate k8s cluster
      */
-    ResourceOperator<RC, R> build(ResourceTag resourceTag);
+    ResourceOperator<RC, R> build();
+
+    /**
+     * if this operator builder matched with given type
+     * 
+     * @param type
+     * @param resourceLocation location of the resource
+     * @return
+     */
+    boolean match(ResourceLocation resourceLocation, String type);
 }
 

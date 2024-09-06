@@ -22,10 +22,11 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.oceanbase.odc.metadb.resource.ResourceID;
-import com.oceanbase.odc.metadb.resource.ResourceLocation;
+import com.oceanbase.odc.service.resource.ResourceID;
+import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.resource.k8s.client.K8sJobClient;
+import com.oceanbase.odc.service.resource.k8s.client.K8sJobClientSelector;
 import com.oceanbase.odc.service.task.exception.JobException;
 
 /**
@@ -38,8 +39,10 @@ public class K8SResourceOperatorTest {
     private final String resourceName = "myResource";
     private final String regionName = "region";
     private final String groupName = "group";
+    private final String defaultType = DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE;
     private K8sResourceOperatorContext context;
     private MockK8sJobClient mockK8sJobClient;
+    private MockK8sJobSelector mockK8sJobSelector;
     private K8sResourceContext k8sResourceContext;
     private PodConfig podConfig;
     private Object extraData = new String("objectName");
@@ -47,11 +50,12 @@ public class K8SResourceOperatorTest {
     @Before
     public void init() {
         mockK8sJobClient = new MockK8sJobClient();
-        context = new K8sResourceOperatorContext(mockK8sJobClient, (r) -> 1000L, 5000L);
+        mockK8sJobSelector = new MockK8sJobSelector(mockK8sJobClient);
+        context = new K8sResourceOperatorContext(mockK8sJobSelector, (r) -> 1000L, 5000L);
         podConfig = new PodConfig();
         podConfig.setImage("myImage");
         k8sResourceContext = new K8sResourceContext(podConfig, resourceName,
-                regionName, groupName, extraData);
+                regionName, groupName, defaultType, extraData);
     }
 
     /**
@@ -69,7 +73,8 @@ public class K8SResourceOperatorTest {
     public void testK8SResourceOperatorQuery() throws JobException {
         K8SResourceOperator operator = new K8SResourceOperator(context);
         operator.create(k8sResourceContext);
-        ResourceID resourceID = new ResourceID(new ResourceLocation(regionName, groupName), "name", resourceName);
+        ResourceID resourceID =
+                new ResourceID(new ResourceLocation(regionName, groupName), defaultType, "name", resourceName);
         Optional<K8sPodResource> k8sPodResource = operator.query(resourceID);
         Assert.assertTrue(k8sPodResource.isPresent());
         K8sPodResource resource = k8sPodResource.get();
@@ -80,7 +85,8 @@ public class K8SResourceOperatorTest {
     @Test
     public void testK8SResourceOperatorDestroy() throws JobException {
         K8SResourceOperator operator = new K8SResourceOperator(context);
-        ResourceID resourceID = new ResourceID(new ResourceLocation(regionName, groupName), "name", resourceName);
+        ResourceID resourceID =
+                new ResourceID(new ResourceLocation(regionName, groupName), defaultType, "name", resourceName);
         operator.create(k8sResourceContext);
         Assert.assertEquals(operator.destroy(resourceID), "name:" + resourceName);
     }
@@ -88,18 +94,33 @@ public class K8SResourceOperatorTest {
     @Test
     public void testK8SResourceOperatorCanNotBeDestroyed() throws JobException {
         K8SResourceOperator operator = new K8SResourceOperator(context);
-        ResourceID resourceID = new ResourceID(new ResourceLocation(regionName, groupName), "name", resourceName);
+        ResourceID resourceID =
+                new ResourceID(new ResourceLocation(regionName, groupName), defaultType, "name", resourceName);
         operator.create(k8sResourceContext);
         Assert.assertFalse(operator.canBeDestroyed(resourceID));
     }
 
     @Test
     public void testK8SResourceOperatorCanBeDestroyed() throws JobException {
-        context = new K8sResourceOperatorContext(mockK8sJobClient, (r) -> 1000L, 500L);
+        context = new K8sResourceOperatorContext(mockK8sJobSelector, (r) -> 1000L, 500L);
         K8SResourceOperator operator = new K8SResourceOperator(context);
-        ResourceID resourceID = new ResourceID(new ResourceLocation(regionName, groupName), "name", resourceName);
+        ResourceID resourceID =
+                new ResourceID(new ResourceLocation(regionName, groupName), defaultType, "name", resourceName);
         operator.create(k8sResourceContext);
         Assert.assertTrue(operator.canBeDestroyed(resourceID));
+    }
+
+    private class MockK8sJobSelector implements K8sJobClientSelector {
+        private final MockK8sJobClient mockK8sJobClient;
+
+        private MockK8sJobSelector(MockK8sJobClient mockK8sJobClient) {
+            this.mockK8sJobClient = mockK8sJobClient;
+        }
+
+        @Override
+        public K8sJobClient select(String resourceGroup) {
+            return mockK8sJobClient;
+        }
     }
 
     /**
@@ -128,6 +149,7 @@ public class K8SResourceOperatorTest {
 
         private K8sPodResource buildByK8sContext(K8sResourceContext k8sResourceContext) {
             return new K8sPodResource(k8sResourceContext.region(), k8sResourceContext.getGroup(),
+                    DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE,
                     k8sResourceContext.resourceNamespace(), k8sResourceContext.getResourceName(),
                     ResourceState.CREATING,
                     "localhost:8080", new Date(1024));

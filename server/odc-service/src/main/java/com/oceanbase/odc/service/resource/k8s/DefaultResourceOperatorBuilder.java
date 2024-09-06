@@ -19,11 +19,10 @@ import java.util.Optional;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
-import com.oceanbase.odc.metadb.resource.ResourceID;
 import com.oceanbase.odc.metadb.resource.ResourceRepository;
+import com.oceanbase.odc.service.resource.ResourceID;
+import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceOperatorBuilder;
-import com.oceanbase.odc.service.resource.ResourceTag;
-import com.oceanbase.odc.service.resource.k8s.client.K8sJobClient;
 import com.oceanbase.odc.service.resource.k8s.client.K8sJobClientSelector;
 
 import lombok.AllArgsConstructor;
@@ -42,9 +41,8 @@ public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K
     private final ResourceRepository resourceRepository;
 
     @Override
-    public K8SResourceOperator build(ResourceTag resourceTag) {
-        K8sJobClient k8sJobClient = k8sJobClientSelector.select(resourceTag.getResourceLocation().getRegion());
-        return new K8SResourceOperator(new K8sResourceOperatorContext(k8sJobClient,
+    public K8SResourceOperator build() {
+        return new K8SResourceOperator(new K8sResourceOperatorContext(k8sJobClientSelector,
                 this::getResourceCreateTimeInSeconds, podPendingTimeoutSeconds));
     }
 
@@ -71,7 +69,7 @@ public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K
      */
     public ResourceEntity toResourceEntity(K8sPodResource k8sResource) {
         ResourceEntity resourceEntity = new ResourceEntity();
-        resourceEntity.setResourceType(CLOUD_K8S_POD_TYPE);
+        resourceEntity.setResourceType(k8sResource.type());
         resourceEntity.setEndpoint(k8sResource.endpoint().getResourceURL());
         resourceEntity.setCreateTime(k8sResource.createDate());
         resourceEntity.setRegion(k8sResource.getRegion());
@@ -82,14 +80,26 @@ public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K
         return resourceEntity;
     }
 
+    @Override
+    public K8sPodResource toResource(ResourceEntity resourceEntity) {
+        return new K8sPodResource(
+                resourceEntity.getRegion(),
+                resourceEntity.getGroupName(),
+                resourceEntity.getResourceType(),
+                resourceEntity.getNamespace(),
+                resourceEntity.getResourceName(),
+                resourceEntity.getStatus(),
+                resourceEntity.getEndpoint(),
+                resourceEntity.getCreateTime());
+    }
+
     /**
      * cloud K8s pod match this builder
      * 
-     * @param resourceTag
      * @return
      */
     @Override
-    public boolean match(ResourceTag resourceTag) {
-        return StringUtils.equalsIgnoreCase(resourceTag.getType(), CLOUD_K8S_POD_TYPE);
+    public boolean match(ResourceLocation resourceLocation, String type) {
+        return StringUtils.equalsIgnoreCase(type, CLOUD_K8S_POD_TYPE);
     }
 }

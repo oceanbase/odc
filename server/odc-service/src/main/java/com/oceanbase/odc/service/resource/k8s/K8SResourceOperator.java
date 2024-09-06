@@ -19,9 +19,10 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import com.google.common.base.Preconditions;
-import com.oceanbase.odc.metadb.resource.ResourceID;
+import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceOperator;
 import com.oceanbase.odc.service.resource.ResourceState;
+import com.oceanbase.odc.service.resource.k8s.client.K8sJobClient;
 import com.oceanbase.odc.service.task.exception.JobException;
 
 import lombok.AllArgsConstructor;
@@ -41,16 +42,24 @@ public class K8SResourceOperator implements ResourceOperator<K8sResourceContext,
     @Override
     public K8sPodResource create(K8sResourceContext k8sResourceContext) throws JobException {
         Preconditions.checkArgument(null != k8sResourceContext.region());
-        K8sPodResource ret = context.getK8sJobClient().create(k8sResourceContext);
+        K8sPodResource ret = selectClient(k8sResourceContext.getRegion()).create(k8sResourceContext);
         ret.setRegion(k8sResourceContext.getRegion());
         ret.setGroup(k8sResourceContext.resourceGroup());
+        ret.setType(k8sResourceContext.getType());
         return ret;
+    }
+
+    @Override
+    public K8sPodResource patch(ResourceID resourceID, K8sResourceContext resourceContext) throws JobException {
+        // TODO(shanlu): make up this logic if needed
+        throw new JobException("not impl yet");
     }
 
     @Override
     public Optional<K8sPodResource> query(ResourceID resourceID) throws JobException {
         checkResourceID(resourceID);
-        Optional<K8sPodResource> ret = context.getK8sJobClient().get(resourceID.getNamespace(), resourceID.getName());
+        Optional<K8sPodResource> ret = selectClient(resourceID.getResourceLocation().getRegion())
+                .get(resourceID.getNamespace(), resourceID.getIdentifier());
         if (ret.isPresent()) {
             ret.get().setRegion(resourceID.getResourceLocation().getRegion());
         }
@@ -61,7 +70,8 @@ public class K8SResourceOperator implements ResourceOperator<K8sResourceContext,
     public String destroy(ResourceID resourceID) throws JobException {
         checkResourceID(resourceID);
         // first destroy
-        return context.getK8sJobClient().delete(resourceID.getNamespace(), resourceID.getName());
+        return selectClient(resourceID.getResourceLocation().getRegion()).delete(resourceID.getNamespace(),
+                resourceID.getIdentifier());
     }
 
     @Override
@@ -74,7 +84,8 @@ public class K8SResourceOperator implements ResourceOperator<K8sResourceContext,
         Optional<K8sPodResource> query;
 
         try {
-            query = context.getK8sJobClient().get(resourceID.getNamespace(), resourceID.getName());
+            query = selectClient(resourceID.getResourceLocation().getRegion()).get(resourceID.getNamespace(),
+                    resourceID.getIdentifier());
         } catch (JobException e) {
             log.warn("Get k8s pod occur error, resource={}", resourceID, e);
             return false;
@@ -91,6 +102,10 @@ public class K8SResourceOperator implements ResourceOperator<K8sResourceContext,
             }
         }
         return isPodIdle();
+    }
+
+    private K8sJobClient selectClient(String region) {
+        return context.getK8sJobClientSelector().select(region);
     }
 
     private void checkResourceID(ResourceID resourceID) {

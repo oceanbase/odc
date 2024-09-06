@@ -23,15 +23,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.metadb.resource.ResourceID;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
+import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.resource.k8s.K8sPodResource;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.caller.K8sJobCaller;
 import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
@@ -81,7 +80,7 @@ public class ExecutorEndpointManager {
         try {
             ResourceID resourceID = ResourceIDUtil.getResourceID(executorIdentifier, je);
             Optional<K8sPodResource> resourceOptional =
-                    resourceManager.query(K8sJobCaller.DEFAULT_TASK_RESOURCE_TAG, resourceID);
+                    resourceManager.query(resourceID);
             if (resourceOptional.isPresent()) {
                 K8sPodResource response = resourceOptional.get();
                 String podIpAddress = response.getPodIpAddress();

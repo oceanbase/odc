@@ -52,7 +52,7 @@ public class LocalMockK8sJobClientTest {
         LocalMockK8sJobClient localMockK8sJobClient = new LocalMockK8sJobClient();
         K8sJobClient k8sJobClient = localMockK8sJobClient.select("any");
         K8sResourceContext k8sResourceContext =
-                new K8sResourceContext(new PodConfig(), "local", "local", "image", null);
+                new K8sResourceContext(new PodConfig(), "local", "local", "image", "local", null);
         K8sPodResource k8sResource = k8sJobClient.create(k8sResourceContext);
         Assert.assertNotNull(k8sResource);
     }

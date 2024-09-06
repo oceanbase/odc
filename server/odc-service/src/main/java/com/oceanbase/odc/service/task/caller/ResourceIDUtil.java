@@ -17,9 +17,10 @@ package com.oceanbase.odc.service.task.caller;
 
 import java.util.Map;
 
-import com.oceanbase.odc.metadb.resource.ResourceID;
-import com.oceanbase.odc.metadb.resource.ResourceLocation;
 import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.service.resource.ResourceID;
+import com.oceanbase.odc.service.resource.ResourceLocation;
+import com.oceanbase.odc.service.resource.k8s.DefaultResourceOperatorBuilder;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -71,7 +72,8 @@ public class ResourceIDUtil {
             Map<String, String> jobProperties) {
         String region = checkAndGetJobProperties(jobProperties, DEFAULT_REGION_PROP_NAME, DEFAULT_PROP_VALUE);
         String group = checkAndGetJobProperties(jobProperties, DEFAULT_GROUP_PROP_NAME, DEFAULT_PROP_VALUE);
-        return new ResourceID(new ResourceLocation(region, group), executorIdentifier.getNamespace(),
+        return new ResourceID(new ResourceLocation(region, group), DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE,
+                executorIdentifier.getNamespace(),
                 executorIdentifier.getExecutorName());
     }
 
