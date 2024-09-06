@@ -51,6 +51,7 @@ import lombok.extern.slf4j.Slf4j;
  * @Date: 2023/5/8 19:27
  * @Descripition: TODO Store runtime data and use it to resume execution from a breakpoint.
  */
+@Deprecated
 @Component
 @Slf4j
 public class DataArchiveJobStore implements IJobStore {

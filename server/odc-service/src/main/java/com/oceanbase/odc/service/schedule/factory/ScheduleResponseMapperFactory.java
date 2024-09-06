@@ -175,6 +175,7 @@ public class ScheduleResponseMapperFactory {
                 ScheduleTaskEntity scheduleTask = scheduleId2ScheduleTask.get(o.getId());
                 overview.setLatestFireTime(scheduleTask.getFireTime());
                 overview.setLatestExecutionStatus(scheduleTask.getStatus());
+                overview.setLatestExecutionProgressPercentage(scheduleTask.getProgressPercentage());
             }
             return overview;
         }).collect(Collectors.toMap(ScheduleOverview::getScheduleId, o -> o));

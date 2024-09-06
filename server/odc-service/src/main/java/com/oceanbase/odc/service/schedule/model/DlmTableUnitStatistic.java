@@ -33,4 +33,6 @@ public class DlmTableUnitStatistic {
 
     private Long readRowsPerSecond = 0L;
 
+    private double progressPercentage = 0.0;
+
 }

@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -211,7 +212,16 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
 
     @Override
     public double getProgress() {
-        return progress;
+        if (result != null) {
+            if (result.size() == 0) {
+                // No tables need to be executed
+                return 100;
+            }
+            return result.values().stream().filter(Objects::nonNull)
+                    .mapToDouble(o -> o.getStatistic().getProgressPercentage()).sum() / result.size();
+        }
+        // The task has not been initialized yet
+        return 0;
     }
 
     @Override

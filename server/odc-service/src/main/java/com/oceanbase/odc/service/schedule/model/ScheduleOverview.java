@@ -50,4 +50,6 @@ public class ScheduleOverview {
 
     private TaskStatus latestExecutionStatus;
 
+    private double latestExecutionProgressPercentage = 0.0;
+
 }
