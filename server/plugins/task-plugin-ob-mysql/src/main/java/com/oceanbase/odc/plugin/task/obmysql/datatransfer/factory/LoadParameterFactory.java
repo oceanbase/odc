@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.hadoop.fs.Path;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
@@ -59,6 +60,7 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
     @Override
     protected LoadParameter doGenerate(File workingDir) throws IOException {
         LoadParameter parameter = new LoadParameter();
+        setFileConfig(parameter, workingDir);
         if (transferConfig.isStopWhenError()) {
             parameter.setMaxErrors(0);
             parameter.setMaxDiscards(0);
@@ -72,11 +74,11 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
             parameter.setMaxDiscards(-1);
         }
         setTransferFormat(parameter, transferConfig);
-        if (transferConfig.isCompressed()) {
+        if (transferConfig.isZipOrDir()) {
             /**
              * 导入导出组件产出物导入，需要详细设置
              */
-            setWhiteListForZip(parameter, transferConfig);
+            setWhiteListForZipOrDir(parameter, transferConfig);
             if (transferConfig.isTransferDDL()) {
                 parameter.setIncludeDdl(true);
                 parameter.setReplaceObjectIfExists(transferConfig.isReplaceSchemaWhenExists());
@@ -101,8 +103,8 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
         return parameter;
     }
 
-    private void setWhiteListForZip(LoadParameter parameter, DataTransferConfig config) throws IOException {
-        if (!config.isCompressed()) {
+    private void setWhiteListForZipOrDir(LoadParameter parameter, DataTransferConfig config) throws IOException {
+        if (!config.isZipOrDir()) {
             return;
         }
         Map<ObjectType, Set<String>> whiteList = parameter.getWhiteListMap();
@@ -141,23 +143,24 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
         }
         DataTransferFormat format = transferConfig.getDataTransferFormat();
         if (DataTransferFormat.SQL.equals(format)) {
-            if (transferConfig.isCompressed()) {
+            boolean isZipOrDirImport = transferConfig.isZipOrDir();
+            if (isZipOrDirImport) {
                 parameter.setDataFormat(DataFormat.SQL);
                 parameter.setFileSuffix(DataFormat.SQL.getDefaultFileSuffix());
             } else {
                 parameter.setDataFormat(DataFormat.MIX);
                 parameter.setFileSuffix(DataFormat.MIX.getDefaultFileSuffix());
             }
-            parameter.setExternal(!transferConfig.isCompressed());
+            parameter.setExternal(!isZipOrDirImport);
         } else if (DataTransferFormat.CSV.equals(format)) {
             parameter.setDataFormat(DataFormat.CSV);
             parameter.setFileSuffix(DataFormat.CSV.getDefaultFileSuffix());
-            parameter.setExternal(!transferConfig.isCompressed());
+            parameter.setExternal(!transferConfig.isZipOrDir());
         }
     }
 
     private boolean isExternalCsv(DataTransferConfig config) {
-        return DataTransferFormat.CSV == config.getDataTransferFormat() && !transferConfig.isCompressed();
+        return DataTransferFormat.CSV == config.getDataTransferFormat() && !transferConfig.isZipOrDir();
     }
 
     private void setCsvMappings(LoadParameter parameter, DataTransferConfig transferConfig) {
@@ -194,7 +197,7 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
      * </pre>
      */
     private void setWhiteListForExternalCsv(LoadParameter parameter, DataTransferConfig config,
-            File workingDir) {
+            File workingDir) throws IOException {
         if (!isExternalCsv(config)) {
             return;
         }
@@ -208,7 +211,10 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
         if (!csvFile.exists()) {
             throw new IllegalStateException("Input csv file does not exist");
         }
-        parameter.setInputFile(csvFile);
+        Path path = new Path(csvFile.getAbsolutePath());
+        parameter.setInputFile(parameter.getStorageConfig().getFileSystem().getFileStatus(path));
+        parameter.setFilePath(path.getParent().toString());
+
         List<DataTransferObject> objectList = config.getExportDbObjects();
         Validate.isTrue(CollectionUtils.isNotEmpty(objectList), "Import objects is necessary");
         parameter.getWhiteListMap().putAll(

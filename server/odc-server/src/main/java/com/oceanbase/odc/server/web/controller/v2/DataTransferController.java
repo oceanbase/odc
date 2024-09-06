@@ -78,9 +78,10 @@ public class DataTransferController {
      **/
     @ApiOperation(value = "getMetaInfo", notes = "上传导入文件")
     @RequestMapping(value = "/getMetaInfo", method = RequestMethod.GET)
-    public SuccessResponse<UploadFileResult> getMetaInfo(@RequestParam String fileName)
+    public SuccessResponse<UploadFileResult> getMetaInfo(@RequestParam String fileName,
+            @RequestParam(required = false) String fileType)
             throws IOException, URISyntaxException {
-        return Responses.single(dataTransferService.getMetaInfo(fileName));
+        return Responses.single(dataTransferService.getMetaInfo(fileName, fileType));
     }
 
     /**
