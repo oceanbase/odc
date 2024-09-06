@@ -24,7 +24,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.oceanbase.odc.common.util.SystemUtils;
-import com.oceanbase.odc.service.task.executor.server.TraceDecoratorThreadFactory;
+import com.oceanbase.odc.service.task.executor.TraceDecoratorThreadFactory;
 
 @Configuration
 public class StatefulRouteConfiguration {

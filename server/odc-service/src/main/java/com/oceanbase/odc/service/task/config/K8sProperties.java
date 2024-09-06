@@ -31,6 +31,7 @@ public class K8sProperties {
     private String namespace;
     private String kubeConfig;
     private String region;
+    private String group;
     /**
      * pod image name with version, odc job will be running in this image
      */

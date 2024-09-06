@@ -123,7 +123,7 @@ import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
-import com.oceanbase.odc.service.task.runtime.PreCheckTaskParameters.AuthorizedDatabase;
+import com.oceanbase.odc.service.task.base.precheck.PreCheckTaskParameters.AuthorizedDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 
 import lombok.NonNull;

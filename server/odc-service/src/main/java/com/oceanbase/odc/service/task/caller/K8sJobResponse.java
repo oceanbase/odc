@@ -22,7 +22,6 @@ package com.oceanbase.odc.service.task.caller;
  */
 public interface K8sJobResponse {
 
-
     /**
      * deploy region
      */
