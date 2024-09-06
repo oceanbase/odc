@@ -156,8 +156,8 @@ public class EnvironmentService {
         return innerDetail(id);
     }
 
-    @PreAuthenticate(actions = "select", resourceType = "ODC_ENVIRONMENT", indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("odc internal usage")
     public List<Environment> getByIdIn(@NotNull Collection<Long> ids) {
         List<EnvironmentEntity> entity = environmentRepository.findByIdIn(ids);
         return entity.stream().map(e -> {

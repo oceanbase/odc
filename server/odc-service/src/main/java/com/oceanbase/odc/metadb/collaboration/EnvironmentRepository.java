@@ -40,9 +40,6 @@ public interface EnvironmentRepository extends JpaRepository<EnvironmentEntity, 
     @Transactional
     int updateEnabledById(@Param("id") Long id, @Param("enabled") Boolean enabled);
 
-    @Query(value = "select name, style from collaboration_environment where id in (:ids)", nativeQuery = true)
-    @Modifying
-    @Transactional
     List<EnvironmentEntity> findByIdIn(@Param("ids") Collection<Long> ids);
 
 }
