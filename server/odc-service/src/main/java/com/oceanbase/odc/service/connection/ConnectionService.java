@@ -34,7 +34,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
-import javax.swing.text.html.parser.Entity;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -81,7 +80,6 @@ import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
-import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
 import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionAttributeEntity;
@@ -423,10 +421,10 @@ public class ConnectionService {
     public PaginatedData<ConnectionConfig> listByProjectId(@NotNull Long projectId, @NotNull Boolean basic) {
         List<ConnectionConfig> connections;
         List<Long> environmentIds = repository.findByDatabaseProjectId(projectId).stream()
-            .map(ConnectionEntity::getEnvironmentId)
-            .distinct().collect(Collectors.toList());
+                .map(ConnectionEntity::getEnvironmentId)
+                .distinct().collect(Collectors.toList());
         Map<Long, Environment> environmentMap = environmentService.getByIdIn(environmentIds).stream()
-            .collect(Collectors.toMap(Environment::getId, environment -> environment));
+                .collect(Collectors.toMap(Environment::getId, environment -> environment));
         if (basic) {
             connections = repository.findByDatabaseProjectId(projectId).stream().map(e -> {
                 ConnectionConfig c = new ConnectionConfig();
