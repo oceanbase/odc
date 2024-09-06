@@ -216,6 +216,7 @@ public class DatabaseService {
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public Database detail(@NonNull Long id) {
+        // test
         Database database = entityToModel(databaseRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
         horizontalDataPermissionValidator.checkCurrentOrganization(database);
