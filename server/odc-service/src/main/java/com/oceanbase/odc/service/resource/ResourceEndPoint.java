@@ -27,5 +27,5 @@ import lombok.Data;
 @AllArgsConstructor
 @Data
 public class ResourceEndPoint {
-    private final String resourceURL;
+    private final String resourceUrl;
 }
