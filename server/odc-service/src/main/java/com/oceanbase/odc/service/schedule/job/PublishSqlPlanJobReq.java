@@ -42,5 +42,6 @@ public class PublishSqlPlanJobReq {
 
     private String sessionTimeZone;
 
+    private boolean needDataMasking;
 
 }

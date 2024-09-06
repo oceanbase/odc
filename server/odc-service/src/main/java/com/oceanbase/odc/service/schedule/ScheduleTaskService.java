@@ -54,6 +54,7 @@ import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskSpecs;
+import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.JobRepository;
 import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -291,6 +292,14 @@ public class ScheduleTaskService {
         Map<Long, Database> databaseMap = scheduleResponseMapperFactory.getDatabaseInfoByIds(databaseIds).stream()
                 .collect(Collectors.toMap(Database::getId, Function.identity()));
 
+        // get job result json
+        List<Long> jobIds = scheduleTaskPage.getContent().stream().map(ScheduleTask::getJobId).collect(
+                Collectors.toList());
+
+        Map<Long, String> resultMap = jobRepository.findAllById(jobIds).stream()
+                .filter(jobEntity -> jobEntity.getResultJson() != null)
+                .collect(Collectors.toMap(JobEntity::getId, JobEntity::getResultJson));
+
         return scheduleTaskPage.map(task -> {
             Schedule schedule = scheduleMap.get(task.getJobName());
             ScheduleTaskListOverview overview = ScheduleTaskListOverviewMapper.map(task);
@@ -299,7 +308,7 @@ public class ScheduleTaskService {
             if (schedule.getType() == ScheduleType.SQL_PLAN) {
                 SqlPlanAttributes attribute = new SqlPlanAttributes();
                 attribute.setDatabaseInfo(databaseMap.get(schedule.getDatabaseId()));
-                attribute.setTaskResult(JsonUtils.fromJson(task.getResultJson(), SqlPlanTaskResult.class));
+                attribute.setTaskResult(JsonUtils.fromJson(resultMap.get(task.getJobId()), SqlPlanTaskResult.class));
                 Map<Long, String> id2Attributes = new HashMap<>();
                 id2Attributes.put(task.getId(), JsonUtils.toJson(attribute));
                 overview.setAttributes(JSON.parseObject(id2Attributes.get(task.getId())));

@@ -28,10 +28,13 @@ import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
+import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
@@ -44,6 +47,9 @@ import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.executor.task.SqlPlanTask;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
+import com.oceanbase.odc.service.task.schedule.JobScheduler;
+import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
+import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -56,15 +62,21 @@ import lombok.extern.slf4j.Slf4j;
 public class SqlPlanJob implements OdcJob {
 
     public final TaskFrameworkEnabledProperties taskFrameworkProperties;
+    public final ScheduleTaskRepository scheduleTaskRepository;
     public final DatabaseService databaseService;
     public final ScheduleService scheduleService;
     public final ConnectProperties connectProperties;
+    public final JobScheduler jobScheduler;
+    public final DataMaskingService dataMaskingService;
 
     public SqlPlanJob() {
         this.taskFrameworkProperties = SpringContextUtil.getBean(TaskFrameworkEnabledProperties.class);
+        this.scheduleTaskRepository = SpringContextUtil.getBean(ScheduleTaskRepository.class);
         this.databaseService = SpringContextUtil.getBean(DatabaseService.class);
         this.scheduleService = SpringContextUtil.getBean(ScheduleService.class);
         this.connectProperties = SpringContextUtil.getBean(ConnectProperties.class);
+        this.jobScheduler = SpringContextUtil.getBean(JobScheduler.class);
+        this.dataMaskingService = SpringContextUtil.getBean(DataMaskingService.class);
     }
 
     @Override
@@ -113,16 +125,41 @@ public class SqlPlanJob implements OdcJob {
         parameters.setQueryLimit(sqlPlanParameters.getQueryLimit());
         parameters.setErrorStrategy(sqlPlanParameters.getErrorStrategy());
         parameters.setSessionTimeZone(connectProperties.getDefaultTimeZone());
+        parameters.setNeedDataMasking(dataMaskingService.isMaskingEnabled());
         Map<String, String> jobData = new HashMap<>();
         ConnectionConfig connectionConfig = databaseService.findDataSourceForTaskById(
                 sqlPlanParameters.getDatabaseId());
         jobData.put(JobParametersKeyConstants.CONNECTION_CONFIG, JsonUtils.toJson(connectionConfig));
         jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON, JsonUtils.toJson(parameters));
-        DefaultJobDefinition.builder().jobClass(SqlPlanTask.class)
+
+        SingleJobProperties singleJobProperties = new SingleJobProperties();
+        singleJobProperties.setEnableRetryAfterHeartTimeout(true);
+        singleJobProperties.setMaxRetryTimesAfterHeartTimeout(1);
+        Map<String, String> jobProperties = new HashMap<>(singleJobProperties.toJobProperties());
+
+        Map<String, Object> attributes = getDatasourceAttributesByDatabaseId(sqlPlanParameters.getDatabaseId());
+        if (attributes != null && !attributes.isEmpty() && attributes.containsKey("cloudProvider")
+                && attributes.containsKey("region")) {
+            JobPropertiesUtils.setCloudProvider(jobProperties,
+                    CloudProvider.fromValue(attributes.get("cloudProvider").toString()));
+            JobPropertiesUtils.setRegionName(jobProperties, attributes.get("region").toString());
+        }
+        DefaultJobDefinition jd = DefaultJobDefinition.builder().jobClass(SqlPlanTask.class)
                 .jobType("SQL_PLAN")
                 .jobParameters(jobData)
+                .jobProperties(jobProperties)
                 .build();
 
+        Long jobId = jobScheduler.scheduleJobNow(jd);
+        scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
+        log.info("Publish sql plan job to task framework success, scheduleTaskId={}, jobId={}",
+                taskEntity.getId(),
+                jobId);
+    }
+
+
+    public Map<String, Object> getDatasourceAttributesByDatabaseId(Long databaseId) {
+        return databaseService.findDataSourceForTaskById(databaseId).getAttributes();
     }
 
     @Override
