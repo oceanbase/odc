@@ -12,14 +12,9 @@ OBCLIENT_VERSION_NUMBER=2.2.4
 
 ODC_FUNCTION_SCRIPT_SOURCE=$(readlink -f $0)
 
-echo "[我的ODC-Server:0]： $0"
-
 # global environment variables, may refer out of function.sh
 export ODC_SCRIPT_DIR=$(dirname ${ODC_FUNCTION_SCRIPT_SOURCE})
 export ODC_DIR=$(dirname ${ODC_SCRIPT_DIR})
-
-echo "[我的ODC-Server:ODC_SCRIPT_DIR]： $ODC_SCRIPT_DIR"
-echo "[我的ODC-Server:ODC_DIR]： $ODC_DIR"
 
 # oss related environment variables
 export ODC_OSS_ENDPOINT=${oss_endpoint:-}
