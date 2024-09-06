@@ -124,6 +124,7 @@ public class WorksheetControllerIntegrationTest {
         objectNames = new ArrayList<>();
         MockitoAnnotations.openMocks(this);
         when(authenticationFacade.currentUserId()).thenReturn(1L);
+        when(authenticationFacade.currentOrganizationId()).thenReturn(1L);
 
         ObjectStorageConfiguration configuration = ITConfigurations.getOssConfiguration();
         CloudClient cloudClient = new CloudResourceConfigurations().publicEndpointCloudClient(() -> configuration);
@@ -321,6 +322,43 @@ public class WorksheetControllerIntegrationTest {
                 "/Worksheets/a_der.sql"),
                 listResponse.getData().getContents().stream().map(WorksheetMetaResp::getPath).collect(
                         Collectors.toList()));
+    }
+
+    @Test
+    public void flatListWorksheets() throws Exception {
+        List<String> addPaths = Arrays.asList(
+                "/Worksheets/folder1/",
+                "/Worksheets/folder1/sub1/",
+                "/Worksheets/folder1/sub1/file_der2.sql",
+                "/Worksheets/folder1/sub2/",
+                "/Worksheets/folder1/file1.sql",
+                "/Worksheets/folder2/",
+                "/Worksheets/a_der.sql",
+                "/Worksheets/b.sql");
+        int i = 0;
+        for (String path : addPaths) {
+            if (new Path(path).isFile()) {
+                mockMvc.perform(MockMvcRequestBuilders.post("/api/v2/project/{projectId}/worksheets", projectId)
+                        .param("path", path)
+                        .param("objectId", UUID.randomUUID().toString())
+                        .param("totalLength", i++ + "")
+                        .accept(MediaType.APPLICATION_JSON))
+                        .andExpect(status().isOk()).andReturn();
+            } else {
+                mockMvc.perform(MockMvcRequestBuilders.post("/api/v2/project/{projectId}/worksheets", projectId)
+                        .param("path", path)
+                        .accept(MediaType.APPLICATION_JSON))
+                        .andExpect(status().isOk()).andReturn();
+            }
+        }
+        MvcResult mvcResult = mockMvc
+                .perform(MockMvcRequestBuilders.post("/api/v2/project/{projectId}/worksheets/flatList", projectId)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk()).andReturn();
+        ListResponse<WorksheetMetaResp> listResponse =
+                JsonUtils.fromJson(mvcResult.getResponse().getContentAsString(),
+                        new TypeReference<ListResponse<WorksheetMetaResp>>() {});
+        assertEquals(addPaths.size(), listResponse.getData().getContents().size());
     }
 
     @Test

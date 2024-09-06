@@ -45,7 +45,8 @@ public enum LimitMetric implements Translatable {
     EXPORT_OBJECT_COUNT,
     TABLE_NAME_LENGTH,
     WORKSHEET_CHANGE_COUNT,
-    WORKSHEET_SAME_LEVEL_COUNT;
+    WORKSHEET_SAME_LEVEL_COUNT,
+    WORKSHEET_PROJECT_COUNT;
 
     @Override
     public String code() {
