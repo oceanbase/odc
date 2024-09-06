@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.collaboration;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,5 +39,10 @@ public interface EnvironmentRepository extends JpaRepository<EnvironmentEntity, 
     @Modifying
     @Transactional
     int updateEnabledById(@Param("id") Long id, @Param("enabled") Boolean enabled);
+
+    @Query(value = "select name, style from collaboration_environment where id in (:ids)", nativeQuery = true)
+    @Modifying
+    @Transactional
+    List<EnvironmentEntity> findByIdIn(@Param("ids") Collection<Long> ids);
 
 }
