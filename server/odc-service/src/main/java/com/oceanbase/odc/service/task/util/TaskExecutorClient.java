@@ -55,22 +55,19 @@ public class TaskExecutorClient {
                 .append("?logType=" + level.getName())
                 .append("&fetchMaxLine=" + loggerProperty.getMaxLimitedCount())
                 .append("&fetchMaxByteSize=" + loggerProperty.getMaxSizeCount()).toString();
-        log.info("尝试请求远程POD：Try query log from executor, jobId={}, url={}", jobId, url);
         try {
             SuccessResponse<String> response =
                     HttpClientUtils.request("GET", url,
                             new TypeReference<SuccessResponse<String>>() {});
             if (response != null && response.getSuccessful()) {
-                log.info("请求远程成功：{}", JSON.toJSONString(response, SerializerFeature.PrettyFormat));
                 return response.getData();
             } else {
-                log.info("请求远程失败: {}", JSON.toJSONString(response, SerializerFeature.PrettyFormat));
                 return String.format("Get log content failed, jobId=%s, response=%s",
                         jobId, JsonUtils.toJson(response));
             }
         } catch (IOException e) {
             // Occur io timeout when pod deleted manual
-            log.warn("请求远程报错Query log from executor occur error, executorEndpoint={}, jobId={}, causeMessage={}",
+            log.warn("Query log from executor occur error, executorEndpoint={}, jobId={}, causeMessage={}",
                     executorEndpoint, jobId, ExceptionUtils.getRootCauseReason(e));
             return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"jobId", jobId});
         }

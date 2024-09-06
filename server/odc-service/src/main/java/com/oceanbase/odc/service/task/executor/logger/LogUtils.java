@@ -41,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LogUtils {
 
-    public final static String DEFAULT_LOG_CONTENT = "Read Log Failed";
+    public final static String DEFAULT_LOG_CONTENT = "read log failed, may be log file not exist";
     public final static String TASK_LOG_PATH_PATTERN = "%s/task/%s/task-log.%s";
 
     public static String getLatestLogContent(String file, Long fetchMaxLine, Long fetchMaxByteSize) {
@@ -54,9 +54,8 @@ public class LogUtils {
 
     public static String getLatestLogContent(@NonNull File file, Long fetchMaxLine, Long fetchMaxByteSize) {
         if (!FileUtil.exist(file)) {
-            log.warn("日志文件不存在: log path = {} not exist", file.getAbsolutePath());
-            throw new UnexpectedException(
-                    ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {file.getAbsolutePath()}));
+            log.warn(ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {file.getAbsolutePath()}));
+            return DEFAULT_LOG_CONTENT;
         }
         LinkedList<String> logContent = new LinkedList<>();
         try (ReversedLinesFileReader reader = new ReversedLinesFileReader(file, StandardCharsets.UTF_8)) {

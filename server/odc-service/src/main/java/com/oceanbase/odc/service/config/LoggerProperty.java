@@ -30,8 +30,7 @@ import lombok.Data;
 @Data
 public class LoggerProperty {
 
-    // This is the directory path for storing temporary log files from scheduled tasks pods, defaulting
-    // to the classpath if not explicitly set.
+    // This is the directory path for storing temporary log files from scheduled tasks pods
     private String tempScheduleTaskLogDir;
 
     private String directory = "./log";

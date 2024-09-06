@@ -36,6 +36,7 @@ import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
+import cn.hutool.core.io.FileUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -70,7 +71,7 @@ public class FlowTaskInstanceLoggerService {
                 flowTaskInstanceService.getLogDownloadableTaskEntity(flowInstanceId, skipAuth);
         if (!taskEntityOptional.isPresent()) {
             log.warn("get log failed, flowInstanceId: {}, skipAuth: {}", flowInstanceId, skipAuth);
-            return "get log failed";
+            return String.format("get log failed, id=%s", flowInstanceId);
         }
         TaskEntity taskEntity = taskEntityOptional.get();
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
@@ -100,11 +101,12 @@ public class FlowTaskInstanceLoggerService {
     }
 
     public File getLogFile(Long userId, String flowInstanceId, TaskType type, OdcTaskLogLevel logLevel) {
+        String logFilePath = taskService.getLogFilePath(userId, flowInstanceId, type, logLevel);
         try {
-            return taskService.getLogFile(userId, flowInstanceId, type, logLevel);
+            return taskService.getLogFile(logFilePath);
         } catch (NotFoundException ex) {
             log.warn(ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", flowInstanceId}));
-            return null;
+            return FileUtil.writeUtf8String(LogUtils.DEFAULT_LOG_CONTENT, logFilePath);
         }
     }
 
