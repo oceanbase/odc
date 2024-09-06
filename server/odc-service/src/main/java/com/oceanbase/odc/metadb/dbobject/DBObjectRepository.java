@@ -39,6 +39,8 @@ public interface DBObjectRepository extends OdcJpaRepository<DBObjectEntity, Lon
 
     List<DBObjectEntity> findByDatabaseIdAndType(Long databaseId, DBObjectType type);
 
+    List<DBObjectEntity> findByDatabaseIdAndTypeOrderByNameAsc(Long databaseId, DBObjectType type);
+
     List<DBObjectEntity> findByDatabaseIdAndTypeIn(Long databaseId, Collection<DBObjectType> types);
 
     List<DBObjectEntity> findByDatabaseIdInAndType(Collection<Long> databaseIds, DBObjectType type);

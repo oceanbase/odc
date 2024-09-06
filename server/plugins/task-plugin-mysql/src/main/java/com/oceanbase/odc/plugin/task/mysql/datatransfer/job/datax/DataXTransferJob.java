@@ -136,12 +136,13 @@ public class DataXTransferJob extends AbstractJob {
         String[] customJvmParams = jobConfig.getJvmParams();
         Set<String> jvmParams = Sets
                 .newHashSet(ArrayUtils.isEmpty(customJvmParams) ? Constants.DEFAULT_DATAX_JVM_PARAMS : customJvmParams);
+        dataxHomePath = dataxHomePath.endsWith("/") ? dataxHomePath : dataxHomePath + "/";
         List<String> command = new ArrayList<>();
         command.add("java");
         command.add("-server");
         command.addAll(jvmParams);
         command.add("-classpath");
-        command.add(Paths.get(dataxHomePath, SystemUtils.isOnWindows() ? "lib/*" : "lib/*:.").toString());
+        command.add(dataxHomePath + (SystemUtils.isOnWindows() ? "lib/*" : "lib/*:."));
         command.add("-Dfile.encoding=UTF-8");
         command.add("-Dlogback.statusListenerClass=ch.qos.logback.core.status.NopStatusListener");
         command.add("-Djava.security.egd=file:///dev/urandom");
