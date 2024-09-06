@@ -24,6 +24,9 @@ import java.util.Set;
 import javax.annotation.Resource;
 import javax.validation.constraints.Size;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,6 +37,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.service.common.response.ListResponse;
+import com.oceanbase.odc.service.common.response.PaginatedData;
+import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.worksheet.WorksheetServiceFacade;
@@ -91,6 +96,13 @@ public class WorksheetController {
             @PathVariable("projectId") Long projectId,
             ListWorksheetsReq req) {
         return Responses.list(worksheetServiceFacade.listWorksheets(projectId, req));
+    }
+
+    @PostMapping("/worksheets/flatList")
+    public PaginatedResponse<WorksheetMetaResp> flatListWorksheets(
+            @PathVariable("projectId") Long projectId,
+            @PageableDefault(size = 100, sort = {"accessTime", "id"}, direction = Direction.DESC) Pageable pageable) {
+        return Responses.paginated(new PaginatedData<>());
     }
 
     @PostMapping("/worksheets/batchUpload")
