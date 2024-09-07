@@ -25,9 +25,9 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import javax.annotation.PostConstruct;
 import javax.transaction.Transactional;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -58,9 +58,10 @@ public class ResourceManager {
     private ResourceRepository resourceRepository;
     private final List<ResourceOperatorBuilder<?, ?>> resourceOperatorBuilders = new ArrayList<>();
 
-    @PostConstruct
-    public void setUp(@Autowired List<ResourceOperatorBuilder<?, ?>> builders) {
-        this.resourceOperatorBuilders.addAll(builders);
+    public ResourceManager(@Autowired(required = false) List<ResourceOperatorBuilder<?, ?>> builders) {
+        if (CollectionUtils.isNotEmpty(builders)) {
+            this.resourceOperatorBuilders.addAll(builders);
+        }
     }
 
     /**
@@ -80,8 +81,8 @@ public class ResourceManager {
      * @param resourceContext to create pod
      * @return
      */
-    @Transactional
     @SuppressWarnings("all")
+    @Transactional
     @SkipAuthorize("odc internal usage")
     public <RC extends ResourceContext, R extends Resource> ResourceWithID<R> create(
             @NonNull ResourceLocation resourceLocation,
@@ -110,8 +111,8 @@ public class ResourceManager {
         return new ResourceWithID<>(savedEntity.getId(), resource);
     }
 
-    @Transactional
     @SuppressWarnings("all")
+    @Transactional
     @SkipAuthorize("odc internal usage")
     public <R extends Resource> Page<ResourceWithID<R>> list(
             @NonNull QueryResourceParams params, @NonNull Pageable pageable) throws Exception {
@@ -163,8 +164,8 @@ public class ResourceManager {
      * @return
      * @throws Exception
      */
-    @Transactional
     @SuppressWarnings("all")
+    @Transactional
     @SkipAuthorize("odc internal usage")
     public <R extends Resource> Optional<R> query(@NonNull Long id) throws Exception {
         Optional<ResourceEntity> optional = this.resourceRepository.findById(id);
@@ -190,7 +191,7 @@ public class ResourceManager {
         // update job destroyed, let scheduler DestroyExecutorJob scan and destroy it
         Optional<ResourceEntity> savedResource = resourceRepository.findByResourceID(resourceID);
         if (!savedResource.isPresent()) {
-            // create task_resource with DESTROYING state
+            // create resource_resource with DESTROYING state
             ResourceEntity resourceEntity = new ResourceEntity();
             resourceEntity.setResourceType(DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE);
             resourceEntity.setEndpoint("unknown");

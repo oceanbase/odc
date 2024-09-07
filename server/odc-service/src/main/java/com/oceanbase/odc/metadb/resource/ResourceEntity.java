@@ -44,7 +44,7 @@ import lombok.ToString;
 @Data
 @Entity
 @ToString
-@Table(name = "task_resource")
+@Table(name = "resource_resource")
 public class ResourceEntity {
     public static final String CREATE_TIME = "createTime";
     public static final String STATUS = "status";
