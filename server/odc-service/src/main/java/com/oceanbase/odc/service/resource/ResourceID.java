@@ -21,6 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.ToString;
 
 /**
  * resource id all resource entity id should contains this class resource id should be impl as
@@ -31,6 +32,7 @@ import lombok.NonNull;
  */
 @AllArgsConstructor
 @Getter
+@ToString
 @EqualsAndHashCode
 public class ResourceID {
     /**

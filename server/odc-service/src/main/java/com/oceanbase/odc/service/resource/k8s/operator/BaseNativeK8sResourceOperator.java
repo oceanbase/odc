@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import com.oceanbase.odc.service.resource.ResourceID;
+import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceOperator;
 import com.oceanbase.odc.service.resource.k8s.model.K8sResource;
 
@@ -37,9 +38,12 @@ import lombok.NonNull;
 public abstract class BaseNativeK8sResourceOperator<T extends K8sResource> implements ResourceOperator<T, T> {
 
     protected final String defaultNamespace;
+    protected final ResourceLocation resourceLocation;
 
-    public BaseNativeK8sResourceOperator(@NonNull String defaultNamespace) {
+    public BaseNativeK8sResourceOperator(@NonNull String defaultNamespace,
+            @NonNull ResourceLocation resourceLocation) {
         this.defaultNamespace = defaultNamespace;
+        this.resourceLocation = resourceLocation;
     }
 
     @Override
@@ -71,14 +75,6 @@ public abstract class BaseNativeK8sResourceOperator<T extends K8sResource> imple
     @Override
     public boolean canBeDestroyed(ResourceID resourceID) {
         return true;
-    }
-
-    protected ResourceID getKey(T config) {
-        if (config.getMetadata() == null) {
-            throw new IllegalStateException("Meta data is null");
-        }
-        return new ResourceID(config.resourceLocation(), config.type(),
-                config.getMetadata().getNamespace(), config.getMetadata().getName());
     }
 
     protected abstract T doCreate(T resourceContext) throws Exception;

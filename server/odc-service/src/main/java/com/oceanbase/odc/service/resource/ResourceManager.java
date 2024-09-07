@@ -85,11 +85,10 @@ public class ResourceManager {
     @Transactional
     @SkipAuthorize("odc internal usage")
     public <RC extends ResourceContext, R extends Resource> ResourceWithID<R> create(
-            @NonNull ResourceLocation resourceLocation,
-            @NonNull String type, @NonNull RC resourceContext) throws Exception {
+            @NonNull ResourceLocation resourceLocation, @NonNull RC resourceContext) throws Exception {
         // get builder and operator and create
         ResourceOperatorBuilder<RC, R> operatorBuilder =
-                (ResourceOperatorBuilder<RC, R>) getOperatorBuilder(type);
+                (ResourceOperatorBuilder<RC, R>) getOperatorBuilder(resourceContext.type());
         ResourceOperator<RC, R> resourceOperator = operatorBuilder.build(resourceLocation);
         R resource = resourceOperator.create(resourceContext);
         // if save resource to db failed, rollback it
@@ -97,6 +96,8 @@ public class ResourceManager {
         try {
             savedEntity = operatorBuilder.toResourceEntity(resource);
             savedEntity.setStatus(ResourceState.CREATING);
+            savedEntity.setRegion(resourceLocation.getRegion());
+            savedEntity.setGroupName(resourceLocation.getGroup());
             savedEntity = this.resourceRepository.save(savedEntity);
         } catch (Exception e) {
             log.info("Save resource failed, resourceID={}", resource.resourceID(), e);
@@ -114,29 +115,28 @@ public class ResourceManager {
     @SuppressWarnings("all")
     @Transactional
     @SkipAuthorize("odc internal usage")
-    public <R extends Resource> Page<ResourceWithID<R>> list(
+    public Page<ResourceWithID<Resource>> list(
             @NonNull QueryResourceParams params, @NonNull Pageable pageable) throws Exception {
         Specification<ResourceEntity> spec = Specification
                 .where(ResourceSpecs.idIn(params.getIds()));
         Page<ResourceEntity> resourceEntities = this.resourceRepository.findAll(spec, pageable);
-
         Map<String, List<ResourceEntity>> type2Resource = resourceEntities.stream()
                 .collect(Collectors.groupingBy(ResourceEntity::getResourceType));
-        Map<ResourceID, R> resourceId2Resource = new HashMap<>();
+        Map<ResourceID, Resource> resourceId2Resource = new HashMap<>();
         Map<ResourceState, List<Long>> status2ResourceIds = new HashMap<>();
         for (Entry<String, List<ResourceEntity>> entry : type2Resource.entrySet()) {
-            ResourceOperatorBuilder<?, R> resourceOperatorBuilder =
-                    (ResourceOperatorBuilder<?, R>) getOperatorBuilder(entry.getKey());
-            List<R> rs = resourceOperatorBuilder.toResources(entry.getValue());
+            ResourceOperatorBuilder<?, Resource> resourceOperatorBuilder =
+                    (ResourceOperatorBuilder<?, Resource>) getOperatorBuilder(entry.getKey());
+            List<Resource> rs = resourceOperatorBuilder.toResources(entry.getValue());
             for (int i = 0; i < rs.size(); i++) {
-                R r = rs.get(i);
+                Resource r = rs.get(i);
                 resourceId2Resource.put(r.resourceID(), r);
                 List<Long> ids = status2ResourceIds.computeIfAbsent(
                         r.resourceState(), k -> new ArrayList<>());
                 ids.add(entry.getValue().get(i).getId());
             }
         }
-        Page<ResourceWithID<R>> returnVal =
+        Page<ResourceWithID<Resource>> returnVal =
                 resourceEntities.map(e -> new ResourceWithID<>(e.getId(), resourceId2Resource.get(new ResourceID(e))));
         status2ResourceIds.forEach((key, value) -> resourceRepository.updateStatusByIdIn(value, key));
         return returnVal;
@@ -232,7 +232,7 @@ public class ResourceManager {
         String ret = resourceOperator.destroy(resourceID);
         // then update db status
         this.resourceRepository.updateResourceStatus(resourceID, ResourceState.DESTROYING);
-        log.info("Delete resource succeed, resourceID={}", resourceID);
+        log.info("Delete resource succeed, resourceID={}, ret={}", resourceID, ret);
         return ret;
     }
 

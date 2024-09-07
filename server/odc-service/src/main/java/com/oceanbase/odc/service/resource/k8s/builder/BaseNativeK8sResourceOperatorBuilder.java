@@ -86,9 +86,9 @@ public abstract class BaseNativeK8sResourceOperatorBuilder<T extends K8sResource
 
     protected abstract boolean doMatch(String type);
 
-    protected abstract T newInstanceByEntity(ResourceEntity resourceEntity);
+    protected abstract T newResourceByEntity(ResourceEntity resourceEntity);
 
-    protected abstract T fullFillByEntity(T resource, ResourceEntity resourceEntity);
+    protected abstract T fullFillExistsResourceByEntity(T resource, ResourceEntity resourceEntity);
 
     @Override
     public boolean match(@NonNull String type) {
@@ -101,10 +101,8 @@ public abstract class BaseNativeK8sResourceOperatorBuilder<T extends K8sResource
         resourceEntity.setResourceName(resource.resourceName());
         resourceEntity.setResourceProperties(null);
         resourceEntity.setResourceType(resource.type());
-        resourceEntity.setRegion(resource.resourceLocation().getRegion());
         resourceEntity.setEndpoint(null);
-        resourceEntity.setGroupName(resource.resourceLocation().getGroup());
-        resourceEntity.setNamespace(resource.resourceID().getNamespace());
+        resourceEntity.setNamespace(this.defaultNamespace);
         return resourceEntity;
     }
 
@@ -113,9 +111,11 @@ public abstract class BaseNativeK8sResourceOperatorBuilder<T extends K8sResource
         Map<ResourceLocation, List<T>> loc2Res = new HashMap<>();
         resourceEntities.forEach(e -> {
             ResourceLocation location = new ResourceLocation(e.getRegion(), e.getGroupName());
-            List<T> resources = loc2Res.computeIfAbsent(location, k -> new ArrayList<>());
+            if (loc2Res.containsKey(location)) {
+                return;
+            }
             try {
-                resources.addAll(build(location).list());
+                loc2Res.put(location, new ArrayList<>(build(location).list()));
             } catch (Exception ex) {
                 throw new IllegalStateException(ex);
             }
@@ -126,14 +126,14 @@ public abstract class BaseNativeK8sResourceOperatorBuilder<T extends K8sResource
                     loc, e.getResourceType(), e.getNamespace(), e.getResourceName());
             List<T> resources = loc2Res.get(loc);
             if (CollectionUtils.isEmpty(resources)) {
-                return newInstanceByEntity(e);
+                return newResourceByEntity(e);
             }
             List<T> matches = resources.stream().filter(p -> Objects.equals(p.resourceID(), resourceID))
                     .collect(Collectors.toList());
             if (CollectionUtils.isEmpty(matches)) {
-                return newInstanceByEntity(e);
+                return newResourceByEntity(e);
             } else if (matches.size() == 1) {
-                return fullFillByEntity(matches.get(0), e);
+                return fullFillExistsResourceByEntity(matches.get(0), e);
             }
             throw new IllegalStateException("There are Multi resources found by id " + resourceID);
         }).collect(Collectors.toList());

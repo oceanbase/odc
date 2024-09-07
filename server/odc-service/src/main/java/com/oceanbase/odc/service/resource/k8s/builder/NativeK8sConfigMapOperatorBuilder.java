@@ -20,46 +20,47 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceOperator;
-import com.oceanbase.odc.service.resource.k8s.model.K8sPod;
-import com.oceanbase.odc.service.resource.k8s.operator.NativeK8sPodOperator;
+import com.oceanbase.odc.service.resource.ResourceState;
+import com.oceanbase.odc.service.resource.k8s.model.K8sConfigMap;
+import com.oceanbase.odc.service.resource.k8s.operator.NativeK8sConfigMapOperator;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import lombok.NonNull;
 
 /**
- * {@link NativeK8sPodOperatorBuilder}
+ * {@link NativeK8sConfigMapOperatorBuilder}
  *
  * @author yh263208
- * @date 2024-09-06 20:51
+ * @date 2024-09-07 18:55
  * @since ODC_release_4.3.2
  */
 @Component
-public class NativeK8sPodOperatorBuilder extends BaseNativeK8sResourceOperatorBuilder<K8sPod> {
+public class NativeK8sConfigMapOperatorBuilder extends BaseNativeK8sResourceOperatorBuilder<K8sConfigMap> {
 
     @Override
     protected boolean doMatch(String type) {
-        return K8sPod.TYPE.equals(type);
+        return K8sConfigMap.TYPE.equals(type);
     }
 
     @Override
-    protected K8sPod fullFillExistsResourceByEntity(K8sPod resource, ResourceEntity e) {
-        resource.setResourceState(e.getStatus());
+    protected K8sConfigMap newResourceByEntity(ResourceEntity e) {
+        K8sConfigMap k8sConfigMap = new K8sConfigMap(new ResourceLocation(e), e.getStatus());
+        V1ObjectMeta meta = new V1ObjectMeta();
+        meta.setName(e.getResourceName());
+        meta.setNamespace(e.getNamespace());
+        k8sConfigMap.setMetadata(meta);
+        return k8sConfigMap;
+    }
+
+    @Override
+    protected K8sConfigMap fullFillExistsResourceByEntity(K8sConfigMap resource, ResourceEntity e) {
+        resource.setResourceState(ResourceState.AVAILABLE);
         return resource;
     }
 
     @Override
-    protected K8sPod newResourceByEntity(ResourceEntity e) {
-        K8sPod k8sPod = new K8sPod(new ResourceLocation(e), e.getStatus());
-        V1ObjectMeta meta = new V1ObjectMeta();
-        meta.setName(e.getResourceName());
-        meta.setNamespace(e.getNamespace());
-        k8sPod.setMetadata(meta);
-        return k8sPod;
-    }
-
-    @Override
-    public ResourceOperator<K8sPod, K8sPod> build(@NonNull ResourceLocation location) {
-        return new NativeK8sPodOperator(this.defaultNamespace, location);
+    public ResourceOperator<K8sConfigMap, K8sConfigMap> build(@NonNull ResourceLocation resourceLocation) {
+        return new NativeK8sConfigMapOperator(this.defaultNamespace, resourceLocation);
     }
 
 }

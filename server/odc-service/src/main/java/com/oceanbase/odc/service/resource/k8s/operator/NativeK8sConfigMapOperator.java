@@ -21,30 +21,30 @@ import java.util.stream.Collectors;
 import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceState;
-import com.oceanbase.odc.service.resource.k8s.model.K8sPod;
+import com.oceanbase.odc.service.resource.k8s.model.K8sConfigMap;
 
 import io.kubernetes.client.openapi.apis.CoreV1Api;
-import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Status;
 import lombok.NonNull;
 
 /**
- * {@link NativeK8sPodOperator}
+ * {@link NativeK8sConfigMapOperator}
  *
  * @author yh263208
- * @date 2024-09-06 20:25
+ * @date 2024-09-07 18:47
  * @since ODC_release_4.3.2
  */
-public class NativeK8sPodOperator extends BaseNativeK8sResourceOperator<K8sPod> {
+public class NativeK8sConfigMapOperator extends BaseNativeK8sResourceOperator<K8sConfigMap> {
 
-    public NativeK8sPodOperator(@NonNull String defaultNamespace, @NonNull ResourceLocation resourceLocation) {
+    public NativeK8sConfigMapOperator(@NonNull String defaultNamespace, @NonNull ResourceLocation resourceLocation) {
         super(defaultNamespace, resourceLocation);
     }
 
     @Override
-    protected K8sPod doCreate(K8sPod resourceContext) throws Exception {
-        V1Pod pod = new CoreV1Api().createNamespacedPod(
+    protected K8sConfigMap doCreate(K8sConfigMap resourceContext) throws Exception {
+        new CoreV1Api().createNamespacedConfigMap(
                 this.defaultNamespace, resourceContext, null, null, null, null);
-        resourceContext.setStatus(pod.getStatus());
         resourceContext.setResourceState(ResourceState.CREATING);
         return resourceContext;
     }
@@ -54,28 +54,29 @@ public class NativeK8sPodOperator extends BaseNativeK8sResourceOperator<K8sPod> 
         if (resourceID.getIdentifier() == null) {
             throw new IllegalArgumentException("Resource name is null");
         }
-        V1Pod pod = new CoreV1Api().deleteNamespacedPod(resourceID.getIdentifier(),
-                this.defaultNamespace, null, null, null, null, null, null);
-        return pod == null || pod.getMetadata() == null ? null : pod.getMetadata().getName();
+        V1Status v1Status = new CoreV1Api().deleteNamespacedConfigMap(
+                resourceID.getIdentifier(), this.defaultNamespace, null, null, null, null, null, null);
+        return v1Status == null ? null : v1Status.getStatus();
     }
 
     @Override
-    public List<K8sPod> list() throws Exception {
-        List<V1Pod> pods = new CoreV1Api().listNamespacedPod(this.defaultNamespace,
+    public List<K8sConfigMap> list() throws Exception {
+        List<V1ConfigMap> configMaps = new CoreV1Api().listNamespacedConfigMap(this.defaultNamespace,
                 null, null, null, null, null, null, null, null, null, null, null).getItems();
-        return pods.stream().map(v1Pod -> {
-            K8sPod k8sPod = new K8sPod(this.resourceLocation, ResourceState.UNKNOWN);
-            k8sPod.setStatus(v1Pod.getStatus());
-            k8sPod.setKind(v1Pod.getKind());
-            k8sPod.setMetadata(v1Pod.getMetadata());
-            k8sPod.setApiVersion(v1Pod.getApiVersion());
-            k8sPod.setSpec(v1Pod.getSpec());
-            return k8sPod;
+        return configMaps.stream().map(item -> {
+            K8sConfigMap configMap = new K8sConfigMap(this.resourceLocation, ResourceState.UNKNOWN);
+            configMap.setKind(item.getKind());
+            configMap.setMetadata(item.getMetadata());
+            configMap.setApiVersion(item.getApiVersion());
+            configMap.setData(item.getData());
+            configMap.setBinaryData(item.getBinaryData());
+            configMap.setImmutable(item.getImmutable());
+            return configMap;
         }).collect(Collectors.toList());
     }
 
     @Override
-    public K8sPod patch(ResourceID resourceID, K8sPod resourceContext) throws Exception {
+    public K8sConfigMap patch(ResourceID resourceID, K8sConfigMap resourceContext) throws Exception {
         throw new UnsupportedOperationException("Unsupported yet");
     }
 

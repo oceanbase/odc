@@ -21,6 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.ToString;
 
 /**
  * location of the resource
@@ -30,6 +31,7 @@ import lombok.NonNull;
  */
 @AllArgsConstructor
 @Getter
+@ToString
 @EqualsAndHashCode
 public class ResourceLocation {
     /**

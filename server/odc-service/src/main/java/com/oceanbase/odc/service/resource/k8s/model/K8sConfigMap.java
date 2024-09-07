@@ -18,27 +18,27 @@ package com.oceanbase.odc.service.resource.k8s.model;
 import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceState;
 
-import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 
 /**
- * {@link K8sPod}
+ * {@link K8sConfigMap}
  *
  * @author yh263208
- * @date 2024-09-06 18:05
+ * @date 2024-09-07 18:45
  * @since ODC_release_4.3.2
  */
 @Getter
 @Setter
-public class K8sPod extends V1Pod implements K8sResource {
+public class K8sConfigMap extends V1ConfigMap implements K8sResource {
 
-    public static final String TYPE = "K8S_POD";
+    public static final String TYPE = "K8S_CONFIG_MAP";
     private ResourceState resourceState;
     private final ResourceLocation resourceLocation;
 
-    public K8sPod(@NonNull ResourceLocation resourceLocation, @NonNull ResourceState resourceState) {
+    public K8sConfigMap(@NonNull ResourceLocation resourceLocation, @NonNull ResourceState resourceState) {
         this.resourceState = resourceState;
         this.resourceLocation = resourceLocation;
     }
