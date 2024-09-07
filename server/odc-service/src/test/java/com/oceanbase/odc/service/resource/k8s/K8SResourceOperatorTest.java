@@ -63,7 +63,7 @@ public class K8SResourceOperatorTest {
      */
     @Test
     public void testK8SResourceOperatorCreate() throws JobException {
-        K8SResourceOperator operator = new K8SResourceOperator(context);
+        K8sResourceOperator operator = new K8sResourceOperator(context);
         K8sPodResource k8sPodResource = operator.create(k8sResourceContext);
         Assert.assertEquals(k8sPodResource.getArn(), resourceName);
         Assert.assertEquals(k8sPodResource.getPodIpAddress(), "localhost:8080");
@@ -71,7 +71,7 @@ public class K8SResourceOperatorTest {
 
     @Test
     public void testK8SResourceOperatorQuery() throws JobException {
-        K8SResourceOperator operator = new K8SResourceOperator(context);
+        K8sResourceOperator operator = new K8sResourceOperator(context);
         operator.create(k8sResourceContext);
         ResourceID resourceID =
                 new ResourceID(new ResourceLocation(regionName, groupName), defaultType, "name", resourceName);
@@ -84,7 +84,7 @@ public class K8SResourceOperatorTest {
 
     @Test
     public void testK8SResourceOperatorDestroy() throws JobException {
-        K8SResourceOperator operator = new K8SResourceOperator(context);
+        K8sResourceOperator operator = new K8sResourceOperator(context);
         ResourceID resourceID =
                 new ResourceID(new ResourceLocation(regionName, groupName), defaultType, "name", resourceName);
         operator.create(k8sResourceContext);
@@ -93,7 +93,7 @@ public class K8SResourceOperatorTest {
 
     @Test
     public void testK8SResourceOperatorCanNotBeDestroyed() throws JobException {
-        K8SResourceOperator operator = new K8SResourceOperator(context);
+        K8sResourceOperator operator = new K8sResourceOperator(context);
         ResourceID resourceID =
                 new ResourceID(new ResourceLocation(regionName, groupName), defaultType, "name", resourceName);
         operator.create(k8sResourceContext);
@@ -103,7 +103,7 @@ public class K8SResourceOperatorTest {
     @Test
     public void testK8SResourceOperatorCanBeDestroyed() throws JobException {
         context = new K8sResourceOperatorContext(mockK8sJobSelector, (r) -> 1000L, 500L);
-        K8SResourceOperator operator = new K8SResourceOperator(context);
+        K8sResourceOperator operator = new K8sResourceOperator(context);
         ResourceID resourceID =
                 new ResourceID(new ResourceLocation(regionName, groupName), defaultType, "name", resourceName);
         operator.create(k8sResourceContext);

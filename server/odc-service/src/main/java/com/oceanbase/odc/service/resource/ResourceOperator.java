@@ -15,11 +15,10 @@
  */
 package com.oceanbase.odc.service.resource;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.apache.hadoop.classification.InterfaceStability.Evolving;
-
-import com.oceanbase.odc.service.task.exception.JobException;
 
 /**
  * operator resource create / recycle / destroy
@@ -37,16 +36,16 @@ public interface ResourceOperator<RC extends ResourceContext, R extends Resource
      * @param resourceContext resource config
      * @return resource, may not available, maybe creating
      */
-    R create(RC resourceContext) throws JobException;
+    R create(RC resourceContext) throws Exception;
 
     /**
      * modify a resource with resourceID
      * 
      * @param resourceContext
      * @return
-     * @throws JobException
+     * @throws Exception
      */
-    R patch(ResourceID resourceID, RC resourceContext) throws JobException;
+    R patch(ResourceID resourceID, RC resourceContext) throws Exception;
 
     /**
      * query if resource with resource id existed
@@ -54,7 +53,7 @@ public interface ResourceOperator<RC extends ResourceContext, R extends Resource
      * @param resourceID
      * @return
      */
-    Optional<R> query(ResourceID resourceID) throws JobException;
+    Optional<R> query(ResourceID resourceID) throws Exception;
 
     /**
      * destroy resource with resourceID destroy may not real destroy
@@ -62,7 +61,14 @@ public interface ResourceOperator<RC extends ResourceContext, R extends Resource
      * @param resourceID
      * @return
      */
-    String destroy(ResourceID resourceID) throws JobException;
+    String destroy(ResourceID resourceID) throws Exception;
+
+    /**
+     * List all resource
+     *
+     * @return list of the resource
+     */
+    List<R> list() throws Exception;
 
     /**
      * detect if resource can be destroyed
@@ -71,4 +77,5 @@ public interface ResourceOperator<RC extends ResourceContext, R extends Resource
      * @return true if resource can be destroyed
      */
     boolean canBeDestroyed(ResourceID resourceID);
+
 }

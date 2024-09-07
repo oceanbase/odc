@@ -15,7 +15,9 @@
  */
 package com.oceanbase.odc.service.resource.k8s;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
@@ -41,8 +43,8 @@ public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K
     private final ResourceRepository resourceRepository;
 
     @Override
-    public K8SResourceOperator build() {
-        return new K8SResourceOperator(new K8sResourceOperatorContext(k8sJobClientSelector,
+    public K8sResourceOperator build(ResourceLocation resourceLocation) {
+        return new K8sResourceOperator(new K8sResourceOperatorContext(k8sJobClientSelector,
                 this::getResourceCreateTimeInSeconds, podPendingTimeoutSeconds));
     }
 
@@ -81,8 +83,8 @@ public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K
     }
 
     @Override
-    public K8sPodResource toResource(ResourceEntity resourceEntity) {
-        return new K8sPodResource(
+    public List<K8sPodResource> toResources(List<ResourceEntity> resourceEntities) {
+        return resourceEntities.stream().map(resourceEntity -> new K8sPodResource(
                 resourceEntity.getRegion(),
                 resourceEntity.getGroupName(),
                 resourceEntity.getResourceType(),
@@ -90,7 +92,7 @@ public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K
                 resourceEntity.getResourceName(),
                 resourceEntity.getStatus(),
                 resourceEntity.getEndpoint(),
-                resourceEntity.getCreateTime());
+                resourceEntity.getCreateTime())).collect(Collectors.toList());
     }
 
     /**
@@ -99,7 +101,7 @@ public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K
      * @return
      */
     @Override
-    public boolean match(ResourceLocation resourceLocation, String type) {
+    public boolean match(String type) {
         return StringUtils.equalsIgnoreCase(type, CLOUD_K8S_POD_TYPE);
     }
 }

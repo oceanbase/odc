@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.resource.k8s;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -36,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @AllArgsConstructor
 @Slf4j
-public class K8SResourceOperator implements ResourceOperator<K8sResourceContext, K8sPodResource> {
+public class K8sResourceOperator implements ResourceOperator<K8sResourceContext, K8sPodResource> {
     private final K8sResourceOperatorContext context;
 
     @Override
@@ -72,6 +73,11 @@ public class K8SResourceOperator implements ResourceOperator<K8sResourceContext,
         // first destroy
         return selectClient(resourceID.getResourceLocation().getRegion()).delete(resourceID.getNamespace(),
                 resourceID.getIdentifier());
+    }
+
+    @Override
+    public List<K8sPodResource> list() throws Exception {
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override

@@ -13,31 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource;
+package com.oceanbase.odc.metadb.resource;
 
-import java.util.List;
+import java.util.Collection;
 
-import com.oceanbase.odc.metadb.resource.ResourceEntity;
+import org.springframework.data.jpa.domain.Specification;
+
+import com.oceanbase.odc.common.jpa.SpecificationUtil;
 
 /**
- * @author longpeng.zlp
- * @date 2024/9/3 19:20
+ * {@link ResourceSpecs}
+ *
+ * @author yh263208
+ * @date 2024-09-07 15:06
+ * @since ODC_release_4.3.2
  */
-public interface ResourceEntityConverter<T extends Resource> {
-    /**
-     * convert resource to ResourceEntity
-     * 
-     * @param resource
-     * @return
-     */
-    ResourceEntity toResourceEntity(T resource);
+public class ResourceSpecs {
 
-    /**
-     * convert resourceEntity to resource
-     * 
-     * @param resourceEntities
-     * @return
-     */
-    List<T> toResources(List<ResourceEntity> resourceEntities);
+    public static Specification<ResourceEntity> idIn(Collection<Long> ids) {
+        return SpecificationUtil.columnIn(ResourceEntity_.ID, ids);
+    }
 
 }

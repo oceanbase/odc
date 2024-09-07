@@ -13,29 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource;
+package com.oceanbase.odc.service.resource.k8s.model;
 
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
+import java.util.List;
+
 import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
- * location of the resource
- * 
- * @author longpeng.zlp
- * @date 2024/9/4 10:42
+ * {@link QueryResourceParams}
+ *
+ * @author yh263208
+ * @date 2024-09-04 16:07
+ * @since ODC_release_4.3.2
  */
-@AllArgsConstructor
 @Getter
-@EqualsAndHashCode
-public class ResourceLocation {
-    /**
-     * region of the resource, that associate to a geography area eg: shanghai/beijing/singapore
-     */
-    private final String region;
-    /**
-     * group of resource. eg: a k8s cluster of alibaba cloud a k8s cluster of tencent cloud a vpc of aws
-     * cloud this group will be associated to a management endpoint
-     */
-    private final String group;
+@Setter
+@ToString
+public class QueryResourceParams {
+    private List<Long> ids;
 }

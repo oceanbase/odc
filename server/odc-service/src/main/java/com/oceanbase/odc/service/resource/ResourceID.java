@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.resource;
 
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 /**
@@ -27,6 +28,7 @@ import lombok.Getter;
  */
 @AllArgsConstructor
 @Getter
+@EqualsAndHashCode
 public class ResourceID {
     /**
      * location of the resource
