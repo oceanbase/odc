@@ -136,7 +136,7 @@ public class ResourceManager {
             }
         }
         Page<ResourceWithID<R>> returnVal =
-                resourceEntities.map(e -> new ResourceWithID<>(e.getId(), resourceId2Resource.get(buildResourceID(e))));
+                resourceEntities.map(e -> new ResourceWithID<>(e.getId(), resourceId2Resource.get(new ResourceID(e))));
         status2ResourceIds.forEach((key, value) -> resourceRepository.updateStatusByIdIn(value, key));
         return returnVal;
     }
@@ -213,7 +213,7 @@ public class ResourceManager {
         if (!optional.isPresent()) {
             throw new IllegalStateException("Resource is not found by id " + id);
         }
-        return destroy(buildResourceID(optional.get()));
+        return destroy(new ResourceID(optional.get()));
     }
 
     /**
@@ -260,15 +260,6 @@ public class ResourceManager {
             }
         }
         throw new IllegalStateException("Resource operator builder is not found by " + type);
-    }
-
-    private ResourceID buildResourceID(@NonNull ResourceEntity resourceEntity) {
-        return new ResourceID(buildResourceLocation(resourceEntity), resourceEntity.getResourceType(),
-                resourceEntity.getNamespace(), resourceEntity.getResourceName());
-    }
-
-    private ResourceLocation buildResourceLocation(@NonNull ResourceEntity resourceEntity) {
-        return new ResourceLocation(resourceEntity.getRegion(), resourceEntity.getGroupName());
     }
 
 }

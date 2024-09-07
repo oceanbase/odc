@@ -15,9 +15,12 @@
  */
 package com.oceanbase.odc.service.resource;
 
+import com.oceanbase.odc.metadb.resource.ResourceEntity;
+
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NonNull;
 
 /**
  * location of the resource
@@ -38,4 +41,10 @@ public class ResourceLocation {
      * cloud this group will be associated to a management endpoint
      */
     private final String group;
+
+    public ResourceLocation(@NonNull ResourceEntity resourceEntity) {
+        this.region = resourceEntity.getRegion();
+        this.group = resourceEntity.getGroupName();
+    }
+
 }
