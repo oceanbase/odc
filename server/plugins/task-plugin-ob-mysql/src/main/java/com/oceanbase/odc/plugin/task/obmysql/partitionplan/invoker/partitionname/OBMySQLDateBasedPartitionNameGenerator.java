@@ -44,15 +44,15 @@ public class OBMySQLDateBasedPartitionNameGenerator implements DateBasedPartitio
 
     @Override
     public String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
-            @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
-            @NonNull DateBasedPartitionNameGeneratorConfig config, List<String> previousExprs) {
+            @NonNull Integer targetPartitionIndex, @NonNull List<DBTablePartitionDefinition> targets,
+            @NonNull DateBasedPartitionNameGeneratorConfig config) {
         int index = DBTablePartitionUtil.getPartitionKeyIndex(
                 dbTable, config.getRefPartitionKey(), this::unquoteIdentifier);
-        Date baseDate = getBaseDate(
-                connection, config.getRefPartitionKey(),
-                config.getNamingSuffixStrategy() == NamingSuffixStrategy.PARTITION_UPPER_BOUND
-                        ? target.getMaxValues().get(index)
-                        : previousExprs.get(index));
+        String bound = targets.size() == 1 ? targets.get(0).getMaxValues().get(index)
+                : config.getNamingSuffixStrategy() == NamingSuffixStrategy.PARTITION_LOWER_BOUND
+                        ? targets.get(0).getMaxValues().get(index)
+                        : targets.get(1).getMaxValues().get(index);
+        Date baseDate = getBaseDate(connection, config.getRefPartitionKey(), bound);
         return config.getNamingPrefix() + new SimpleDateFormat(config.getNamingSuffixExpression()).format(baseDate);
     }
 

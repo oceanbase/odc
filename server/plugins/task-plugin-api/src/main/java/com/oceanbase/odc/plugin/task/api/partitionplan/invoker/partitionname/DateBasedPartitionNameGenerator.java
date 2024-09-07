@@ -27,9 +27,8 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 import lombok.NonNull;
 
 /**
- * {@link DateBasedPartitionNameGenerator} Generate partition names using the lower bound of the
- * partition.
- * 
+ * {@link DateBasedPartitionNameGenerator}
+ *
  * @author yh263208
  * @date 2024-01-22 17:08
  * @since ODC_release_4.2.4
@@ -37,8 +36,8 @@ import lombok.NonNull;
 public interface DateBasedPartitionNameGenerator extends PartitionNameGenerator {
 
     String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
-            @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
-            @NonNull DateBasedPartitionNameGeneratorConfig config, @NonNull List<String> base) throws Exception;
+            @NonNull Integer targetPartitionIndex, @NonNull List<DBTablePartitionDefinition> targets,
+            @NonNull DateBasedPartitionNameGeneratorConfig config) throws Exception;
 
     @Override
     default String getName() {
@@ -47,12 +46,10 @@ public interface DateBasedPartitionNameGenerator extends PartitionNameGenerator 
 
     @Override
     default String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
-            @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
+            @NonNull Integer targetPartitionIndex, @NonNull List<DBTablePartitionDefinition> targets,
             @NonNull Map<String, Object> parameters) throws Exception {
-        return generate(connection, dbTable, targetPartitionIndex, target, ParameterUtil.nullSafeExtract(
-                parameters, PARTITION_NAME_GENERATOR_KEY, DateBasedPartitionNameGeneratorConfig.class),
-                ParameterUtil.nullSafeExtract(parameters, PREVIOUS_PARTITION_EXPRS,
-                        List.class));
+        return generate(connection, dbTable, targetPartitionIndex, targets, ParameterUtil.nullSafeExtract(
+                parameters, PARTITION_NAME_GENERATOR_KEY, DateBasedPartitionNameGeneratorConfig.class));
     }
 
 }

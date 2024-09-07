@@ -394,7 +394,7 @@ public class PartitionPlanService {
             throw new IllegalStateException("Partition definitions is empty");
         }
         DBTablePartitionDefinition lastDef = partition.getPartitionDefinitions().get(size - 1);
-        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, lastDef);
+        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, Arrays.asList(lastDef));
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, 0);
         return generator.invoke(connection, dbTable, parameters);
     }
@@ -437,15 +437,12 @@ public class PartitionPlanService {
                 }
             }
         }
-        List<DBTablePartitionDefinition> partitionDefinitions = dbTable.getPartition().getPartitionDefinitions();
-        DBTablePartitionDefinition lastDef = partitionDefinitions.get(partitionDefinitions.size() - 1);
-        List<String> lastMaxValues = lastDef.getMaxValues();
-
+        DBTablePartitionDefinition previousDef = dbTable.getPartition().getPartitionDefinitions()
+                .get(dbTable.getPartition().getPartitionDefinitions().size() - 1);
         List<DBTablePartitionDefinition> createPartitions = new LinkedList<>();
-
-        for (Entry<Integer, List<String>> s : lineNum2CreateExprs.entrySet()) {
+        for (Entry<Integer, List<String>> entry : lineNum2CreateExprs.entrySet()) {
             DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
-            definition.setMaxValues(s.getValue());
+            definition.setMaxValues(entry.getValue());
             PartitionNameGenerator invoker = extensionPoint
                     .getPartitionNameGeneratorGeneratorByName(tableConfig.getPartitionNameInvoker());
             if (invoker == null) {
@@ -453,9 +450,8 @@ public class PartitionPlanService {
                         "Failed to get invoker by name, " + tableConfig.getPartitionNameInvoker());
             }
             Map<String, Object> parameters = tableConfig.getPartitionNameInvokerParameters();
-            parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
-            parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, s.getKey());
-            parameters.put(PartitionNameGenerator.PREVIOUS_PARTITION_EXPRS, lastMaxValues);
+            parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, Arrays.asList(previousDef, definition));
+            parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, entry.getKey());
             try {
                 definition.setName(invoker.invoke(connection, dbTable, parameters));
             } catch (Exception e) {
@@ -463,10 +459,9 @@ public class PartitionPlanService {
             }
             if (removeExistingPartitionElement(dbTable, definition, extensionPoint)) {
                 createPartitions.add(definition);
-                lastMaxValues = definition.getMaxValues();
+                previousDef = definition;
             }
         }
-
         strategyListMap.put(PartitionPlanStrategy.CREATE, createPartitions);
         strategyListMap.put(PartitionPlanStrategy.DROP, droppedPartitions);
         DBTablePartition partition = dbTable.getPartition();

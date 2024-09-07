@@ -16,6 +16,7 @@
 package com.oceanbase.odc.plugin.task.oboracle.partitionplan;
 
 import java.sql.Connection;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -96,11 +97,11 @@ public class OBOracleDateBasedPartitionNameGeneratorTest {
         Map<String, Object> parameters = new HashMap<>();
         DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
         definition.setMaxValues(Collections.singletonList("Timestamp '2024-03-01 00:00:00.1234'"));
-        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
+        DBTablePartitionDefinition previousDef = new DBTablePartitionDefinition();
+        previousDef.setMaxValues(Collections.singletonList("Timestamp '2024-02-29 00:00:00.1234'"));
+        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, Arrays.asList(previousDef, definition));
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, 0);
         parameters.put(PartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);
-        parameters.put(PartitionNameGenerator.PREVIOUS_PARTITION_EXPRS,
-                Collections.singletonList("Timestamp '2024-02-29 00:00:00.1234'"));
         return parameters;
     }
 
