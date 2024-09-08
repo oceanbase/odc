@@ -110,7 +110,8 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
         // The default limit in loader-dumper is 64MB. If there is no limit, set it to -1
         long exportFileMaxSize = transferConfig.getExportFileMaxSize();
         if (exportFileMaxSize <= 0) {
-            parameter.setBlockSize(MAX_BLOCK_SIZE_MEGABYTE);
+            parameter.setBlockSize(
+                    BinarySizeUnit.MB.of(MAX_BLOCK_SIZE_MEGABYTE).convert(BinarySizeUnit.B).getSizeDigit());
         } else if (exportFileMaxSize > MAX_BLOCK_SIZE_MEGABYTE) {
             throw new IllegalArgumentException(String.format("exportFileMaxSize %s MB has exceeded limit %s MB",
                     exportFileMaxSize, MAX_BLOCK_SIZE_MEGABYTE));

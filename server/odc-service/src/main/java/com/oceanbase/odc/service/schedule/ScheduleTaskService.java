@@ -54,6 +54,7 @@ import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskSpecs;
+import com.oceanbase.odc.metadb.task.JobRepository;
 import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -137,6 +138,9 @@ public class ScheduleTaskService {
     @Autowired
     private LogicalDatabaseChangeService logicalDatabaseChangeService;
 
+    @Autowired
+    private JobRepository jobRepository;
+
     private final ScheduleTaskMapper scheduleTaskMapper = ScheduleTaskMapper.INSTANCE;
 
     @Value("${odc.log.directory:./log}")
@@ -161,7 +165,8 @@ public class ScheduleTaskService {
                 res.setExecutionDetails(dlmService.getExecutionDetailByScheduleTaskId(scheduleTask.getId()));
             }
             case SQL_PLAN:
-                res.setExecutionDetails(scheduleTask.getResultJson());
+                jobRepository.findByIdNative(scheduleTask.getId())
+                        .ifPresent(jobEntity -> res.setExecutionDetails(jobEntity.getResultJson()));
             case LOGICAL_DATABASE_CHANGE:
                 res.setExecutionDetails(
                         JsonUtils.toJson(logicalDatabaseChangeService.listSchemaChangeRecords(scheduleTask.getId())));

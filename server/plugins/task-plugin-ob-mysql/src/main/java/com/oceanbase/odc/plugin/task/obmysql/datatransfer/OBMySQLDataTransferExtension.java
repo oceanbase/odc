@@ -76,7 +76,7 @@ public class OBMySQLDataTransferExtension implements DataTransferExtensionPoint 
         try (SingleConnectionDataSource dataSource = ConnectionUtil.getDataSource(connectionInfo, "");
                 Connection connection = dataSource.getConnection()) {
             String dbVersion = PluginUtil.getInformationExtension(connectionInfo).getDBVersion(connection);
-            if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "4.0.0")) {
+            if (VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "4.1.0")) {
                 types.add(ObjectType.SEQUENCE);
             }
         }
