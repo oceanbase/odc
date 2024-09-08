@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -113,6 +112,6 @@ public class LogicalDatabaseController {
     @RequestMapping(value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/previewSqls", method = RequestMethod.POST)
     public ListResponse<PreviewSqlResp> previewSqls(@PathVariable Long logicalDatabaseId,
             @RequestBody PreviewSqlReq req) {
-        throw new NotImplementedException();
+        return Responses.list(databaseService.preview(logicalDatabaseId, req));
     }
 }

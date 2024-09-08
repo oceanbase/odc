@@ -17,7 +17,10 @@ package com.oceanbase.odc.service.connection.logicaldatabase.model;
 
 import com.oceanbase.odc.service.connection.database.model.Database;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @Author: Lebie
@@ -25,6 +28,9 @@ import lombok.Data;
  * @Description: []
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PreviewSqlResp {
     private String sql;
     private Database database;

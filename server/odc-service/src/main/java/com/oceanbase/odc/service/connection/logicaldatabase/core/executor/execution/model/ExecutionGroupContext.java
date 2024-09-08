@@ -86,8 +86,23 @@ public final class ExecutionGroupContext<T, R> {
     }
 
     public void terminate(String executionUnitId) {
-        ExecutionUnit<T, R> executionUnit = id2ExecutionUnit.get(executionUnitId);
-        executionUnit.terminate(this);
+        try {
+            ExecutionUnit<T, R> executionUnit = id2ExecutionUnit.get(executionUnitId);
+            executionUnit.terminate(this);
+        } catch (Exception ex) {
+            log.warn("ExecutionUnit terminate failed, id={}", executionUnitId, ex);
+        }
+
+    }
+
+    public void terminateAll() {
+        for (ExecutionUnit<T, R> unit : id2ExecutionUnit.values()) {
+            try {
+                unit.terminate(this);
+            } catch (Exception ex) {
+                log.warn("ExecutionUnit terminate failed, id={}", unit.getId(), ex);
+            }
+        }
     }
 
     public void skip(String executionUnitId) {

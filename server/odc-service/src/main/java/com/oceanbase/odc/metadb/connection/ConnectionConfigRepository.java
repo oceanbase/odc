@@ -57,6 +57,7 @@ public interface ConnectionConfigRepository
 
     List<ConnectionEntity> findByOrganizationIdAndTenantName(Long organizationId, String tenantName);
 
+
     @Transactional
     @Query(value = "select distinct(c_c.*) from `connect_connection` as c_c inner join `connect_database` as c_d "
             + "on c_c.id = c_d.connection_id where c_d.project_id = :projectId",

@@ -15,15 +15,33 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.model;
 
+import java.util.List;
+
+import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionStatus;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.session.model.SqlExecuteResult;
+
+import lombok.Data;
+
 /**
  * @Author: Lebie
- * @Date: 2024/9/4 12:26
+ * @Date: 2024/9/4 12:21
  * @Description: []
  */
-public enum SchemaChangeRecordStatus {
-    PENDING,
-    RUNNING,
-    SUCCESS,
-    FAILED,
-    TERMINATED,
+@Data
+public class SqlExecutionUnitResp {
+    private Long id;
+
+    private Database database;
+
+    private ConnectionConfig dataSource;
+
+    private List<SqlExecuteResult> sqlExecuteResults;
+
+    private Integer totalSqlCount;
+
+    private Integer completedSqlCount;
+
+    private ExecutionStatus status;
 }

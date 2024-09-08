@@ -33,7 +33,6 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execut
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionGroupContext;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionResult;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionStatus;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionUnit;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionInfoUtil;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
@@ -83,7 +82,7 @@ public class SqlExecutionCallback implements ExecutionCallback<SqlExecuteReq, Sq
 
     @Override
     public void terminate(ExecutionGroupContext<SqlExecuteReq, SqlExecutionResultWrapper> context)
-        throws Exception {
+            throws Exception {
         String connectionId = ConnectionSessionUtil.getConsoleConnectionId(connectionSession);
         Verify.notNull(connectionId, "ConnectionId");
         ConnectionConfig conn = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
@@ -99,18 +98,6 @@ public class SqlExecutionCallback implements ExecutionCallback<SqlExecuteReq, Sq
                 log.warn("Kill query occur error, connectionId={}", connectionId, e);
             }
         }
-    }
-
-    @Override
-    public void onFailed(ExecutionUnit<SqlExecuteReq, SqlExecutionResultWrapper> unit,
-            ExecutionGroupContext<SqlExecuteReq, SqlExecutionResultWrapper> context) {
-
-    }
-
-    @Override
-    public void onSuccess(ExecutionUnit<SqlExecuteReq, SqlExecutionResultWrapper> unit,
-            ExecutionGroupContext<SqlExecuteReq, SqlExecutionResultWrapper> result) {
-
     }
 
     private ExecutionStatus getExecutionStatus(@NonNull SqlExecuteStatus sqlStatus) {

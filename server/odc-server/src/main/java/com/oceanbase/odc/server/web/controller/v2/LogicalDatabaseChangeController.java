@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseChangeService;
-import com.oceanbase.odc.service.connection.logicaldatabase.model.SchemaChangeRecord;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.SqlExecutionUnitResp;
 import com.oceanbase.odc.service.task.exception.JobException;
 
 /**
@@ -43,7 +43,7 @@ public class LogicalDatabaseChangeController {
 
     @RequestMapping(value = "/scheduleTasks/{scheduleTaskId:[\\d]+}/records/{recordId:[\\d]+}",
             method = RequestMethod.GET)
-    public SuccessResponse<SchemaChangeRecord> detailPhysicalDatabaseChangeTask(@PathVariable Long scheduleTaskId,
+    public SuccessResponse<SqlExecutionUnitResp> detailPhysicalDatabaseChangeTask(@PathVariable Long scheduleTaskId,
             @PathVariable Long recordId) {
         return Responses.success(logicalDatabaseChangeService.detail(scheduleTaskId, recordId));
     }

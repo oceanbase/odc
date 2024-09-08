@@ -97,7 +97,6 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
     protected boolean doStart(JobContext context) throws Exception {
         try {
             DialectType dialectType = taskParameters.getLogicalDatabaseResp().getDialectType();
-            // 分句
             List<String> sqls =
                     SqlUtils.split(dialectType, taskParameters.getSqlContent(),
                             StringUtils.isEmpty(taskParameters.getDelimiter()) ? ";" : taskParameters.getDelimiter());

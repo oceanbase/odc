@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.TraceStage;
 import com.oceanbase.odc.common.util.TraceWatch;

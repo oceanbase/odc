@@ -43,14 +43,8 @@ public class ExecutionUnit<T, R> {
             ExecutionResult<R> result = callback.execute(context);
             log.info("ExecutionUnit execute success, id: {}, result: {}", id, result);
             context.setExecutionResult(id, result);
-            if (result.getStatus() == ExecutionStatus.SUCCESS) {
-                callback.onSuccess(this, context);
-            } else {
-                callback.onFailed(this, context);
-            }
         } catch (Exception e) {
             log.warn("ExecutionUnit execute failed, id: {}", id, e);
-            callback.onFailed(this, context);
         }
     }
 

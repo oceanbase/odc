@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -38,9 +39,8 @@ import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDBExecutionRep
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionStatus;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionUnit;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalDBChangeExecutionUnit;
-import com.oceanbase.odc.service.connection.logicaldatabase.model.SchemaChangeRecord;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.SqlExecutionUnitResp;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
@@ -73,6 +73,7 @@ public class LogicalDatabaseChangeService {
         PreConditions.notEmpty(executionUnits, "executionUnits");
         Long scheduleTaskId = executionUnits.get(0).getScheduleTaskId();
         Lock lock = jdbcLockRegistry.obtain(getScheduleTaskIdLockKey(scheduleTaskId));
+        List<LogicalDBChangeExecutionUnitEntity> entities = new ArrayList<>();
         if (!lock.tryLock(5, TimeUnit.SECONDS)) {
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
         }
@@ -87,8 +88,9 @@ public class LogicalDatabaseChangeService {
                 } else {
                     entity = mapper.modelToEntity(executionUnit);
                 }
-                executionRepository.save(entity);
+                entities.add(entity);
             });
+            executionRepository.saveAll(entities);
         } finally {
             lock.unlock();
         }
@@ -150,19 +152,19 @@ public class LogicalDatabaseChangeService {
         return true;
     }
 
-    public SchemaChangeRecord detail(@NonNull Long scheduleTaskId, @NonNull Long recordId) {
+    public SqlExecutionUnitResp detail(@NonNull Long scheduleTaskId, @NonNull Long recordId) {
         List<LogicalDBChangeExecutionUnitEntity> entities =
                 executionRepository.findByScheduleTaskIdAndPhysicalDatabaseIdOrderByExecutionOrderAsc(scheduleTaskId,
                         recordId);
         Database database = databaseService.detail(recordId);
-        SchemaChangeRecord schemaChangeRecord = new SchemaChangeRecord();
+        SqlExecutionUnitResp schemaChangeRecord = new SqlExecutionUnitResp();
         schemaChangeRecord.setId(recordId);
         schemaChangeRecord.setDatabase(database);
         schemaChangeRecord.setDataSource(database.getDataSource());
         schemaChangeRecord.setTotalSqlCount(entities.size());
         int currentExecutionIndex = getCurrentIndex(entities);
         schemaChangeRecord
-            .setCompletedSqlCount(currentExecutionIndex + 1);
+                .setCompletedSqlCount(currentExecutionIndex + 1);
         schemaChangeRecord.setStatus(entities.get(currentExecutionIndex).getStatus());
         schemaChangeRecord.setSqlExecuteResults(entities.stream()
                 .map(entity -> JsonUtils.fromJson(entity.getExecutionResultJson(), SqlExecuteResult.class)).collect(
@@ -170,7 +172,7 @@ public class LogicalDatabaseChangeService {
         return schemaChangeRecord;
     }
 
-    public List<SchemaChangeRecord> listSchemaChangeRecords(@NonNull Long scheduleTaskId) {
+    public List<SqlExecutionUnitResp> listSchemaChangeRecords(@NonNull Long scheduleTaskId) {
         List<LogicalDBChangeExecutionUnitEntity> entities =
                 executionRepository.findByScheduleTaskIdOrderByExecutionOrderAsc(scheduleTaskId);
         if (CollectionUtils.isEmpty(entities)) {
@@ -182,7 +184,7 @@ public class LogicalDatabaseChangeService {
                 .stream().collect(Collectors.toMap(
                         Database::getId, database -> database));
         return databaseId2Executions.entrySet().stream().map(entry -> {
-            SchemaChangeRecord schemaChangeRecord = new SchemaChangeRecord();
+            SqlExecutionUnitResp schemaChangeRecord = new SqlExecutionUnitResp();
             Database database = id2Database.get(entry.getKey());
             schemaChangeRecord.setId(entry.getKey());
             schemaChangeRecord.setDatabase(database);
