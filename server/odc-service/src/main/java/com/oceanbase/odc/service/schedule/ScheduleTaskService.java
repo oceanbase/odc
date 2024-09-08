@@ -162,7 +162,9 @@ public class ScheduleTaskService {
                 res.setExecutionDetails(dlmService.getExecutionDetailByScheduleTaskId(scheduleTask.getId()));
             }
             case SQL_PLAN:
-                jobRepository.findByIdNative(scheduleTask.getId())
+                // sql plan task detail should display sql content
+                res.setParameters(JsonUtils.toJson(scheduleTask.getParameters()));
+                jobRepository.findByIdNative(scheduleTask.getJobId())
                         .ifPresent(jobEntity -> res.setExecutionDetails(jobEntity.getResultJson()));
             default:
                 break;

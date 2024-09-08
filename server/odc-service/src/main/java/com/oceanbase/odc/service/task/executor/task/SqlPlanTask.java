@@ -26,11 +26,13 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.StatementCallback;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.CSVUtils;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
@@ -56,6 +58,7 @@ import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.schedule.job.PublishSqlPlanJobReq;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+import com.oceanbase.odc.service.session.initializer.ConsoleTimeoutInitializer;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanTaskResult;
 import com.oceanbase.odc.service.task.caller.JobContext;
@@ -97,6 +100,17 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                 PublishSqlPlanJobReq.class);
         this.connectionSession = generateSession();
         this.executor = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
+        long timeoutUs = TimeUnit.MILLISECONDS.toMicros(parameters.getTimeoutMillis());
+        if (timeoutUs < 0) {
+            throw new IllegalArgumentException(
+                    "Timeout settings is too large, " + parameters.getTimeoutMillis());
+        }
+        ConnectionInitializer initializer =
+                new ConsoleTimeoutInitializer(timeoutUs, connectionSession.getDialectType());
+        executor.execute((ConnectionCallback<Void>) con -> {
+            initializer.init(con);
+            return null;
+        });
         initFile();
     }
 
