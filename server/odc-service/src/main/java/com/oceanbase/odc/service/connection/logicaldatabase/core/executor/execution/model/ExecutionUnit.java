@@ -27,11 +27,13 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 public class ExecutionUnit<T, R> {
     private final String id;
+    private final Long order;
     private final ExecutionCallback<T, R> callback;
     private final T input;
 
-    public ExecutionUnit(String id, ExecutionCallback<T, R> executionCallback, T input) {
+    public ExecutionUnit(String id, Long order, ExecutionCallback<T, R> executionCallback, T input) {
         this.id = id;
+        this.order = order;
         this.callback = executionCallback;
         this.input = input;
     }
@@ -39,6 +41,7 @@ public class ExecutionUnit<T, R> {
     public void execute(ExecutionGroupContext<T, R> context) {
         try {
             ExecutionResult<R> result = callback.execute(context);
+            log.info("ExecutionUnit execute success, id: {}, result: {}", id, result);
             context.setExecutionResult(id, result);
             if (result.getStatus() == ExecutionStatus.SUCCESS) {
                 callback.onSuccess(this, context);
@@ -69,7 +72,7 @@ public class ExecutionUnit<T, R> {
     public void skip(ExecutionGroupContext<T, R> context) {
         ExecutionResult<R> result = context.getExecutionResult(id);
         synchronized (result) {
-            if (result.getStatus() == ExecutionStatus.FAILED) {
+            if (result.getStatus() == ExecutionStatus.FAILED || result.getStatus() == ExecutionStatus.TERMINATED) {
                 result.setStatus(ExecutionStatus.SKIPPED);
             }
         }

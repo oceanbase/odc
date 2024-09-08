@@ -714,7 +714,10 @@ public class ConnectionService {
     }
 
     @SkipAuthorize("odc internal usages")
-    public List<ConnectionConfig> innerListByIds(@NotEmpty Collection<Long> ids) {
+    public List<ConnectionConfig> innerListByIds(Collection<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
         return repository.findByIdIn(ids).stream().map(mapper::entityToModel).collect(Collectors.toList());
     }
 

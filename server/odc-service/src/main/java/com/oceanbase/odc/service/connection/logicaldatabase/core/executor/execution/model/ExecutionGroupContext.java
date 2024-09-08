@@ -22,12 +22,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @Author: Lebie
  * @Date: 2024/8/28 17:29
  * @Description: []
  */
+@Slf4j
 public final class ExecutionGroupContext<T, R> {
 
     private final Collection<ExecutionGroup<T, R>> executionGroups;
@@ -46,7 +48,8 @@ public final class ExecutionGroupContext<T, R> {
         this.executorService = executorService;
         this.executionId2Result = new ConcurrentHashMap<>();
         executionGroups.stream().flatMap(group -> group.getExecutionUnits().stream())
-                .forEach(unit -> executionId2Result.put(unit.getId(), new ExecutionResult<>(ExecutionStatus.PENDING)));
+                .forEach(unit -> executionId2Result.put(unit.getId(), new ExecutionResult<>(ExecutionStatus.PENDING,
+                        unit.getOrder())));
         this.id2ExecutionUnit = executionGroups.stream().flatMap(group -> group.getExecutionUnits().stream())
                 .collect(Collectors.toMap(ExecutionUnit::getId, unit -> unit));
     }
@@ -73,10 +76,12 @@ public final class ExecutionGroupContext<T, R> {
     }
 
     public boolean isCompleted() {
+        log.info("completedGroupCount={},executionId2Result={}", completedGroupCount, executionId2Result);
         return executionId2Result.values().stream().allMatch(ExecutionResult::isCompleted);
     }
 
     public Map<String, ExecutionResult<R>> getResults() {
+        log.info("executionId2Result={}", executionId2Result);
         return executionId2Result;
     }
 

@@ -20,7 +20,7 @@ import java.sql.SQLException;
 public interface ExecutionCallback<T, R> {
     ExecutionResult<R> execute(ExecutionGroupContext<T, R> context) throws SQLException;
 
-    void terminate(ExecutionGroupContext<T, R> context) throws SQLException;
+    void terminate(ExecutionGroupContext<T, R> context) throws Exception;
 
     void onFailed(ExecutionUnit<T, R> unit, ExecutionGroupContext<T, R> context);
 

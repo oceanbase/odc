@@ -40,7 +40,7 @@ public final class OBExecutionGroup extends ExecutionGroup<SqlExecuteReq, SqlExe
             return Collections.emptyList();
         }
         return executionUnits.stream()
-                .collect(Collectors.groupingBy(unit -> unit.getInput().getConnectionConfig().getClusterName()))
+                .collect(Collectors.groupingBy(unit -> unit.getInput().getConnectionConfig().getTenantName()))
                 .values().stream().map(ExecutionSubGroup::new).collect(Collectors.toList());
     }
 }

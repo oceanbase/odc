@@ -16,10 +16,8 @@
 package com.oceanbase.odc.service.schedule.model;
 
 import java.io.Serializable;
-import java.util.Set;
 
-import com.oceanbase.odc.core.shared.constant.ConnectType;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
 
 import lombok.Data;
 
@@ -31,11 +29,10 @@ import lombok.Data;
 @Data
 public class PublishLogicalDatabaseChangeReq implements Serializable {
     private static final long serialVersionUID = 1L;
-
+    private Long scheduleTaskId;
     private String sqlContent;
     private String delimiter;
     private Long timeoutMillis;
-    private Long logicalDatabaseId;
-    private ConnectType connectType;
-    private Set<DataNode> allDataNodes;
+    private DetailLogicalDatabaseResp logicalDatabaseResp;
 }
+

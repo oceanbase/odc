@@ -66,8 +66,13 @@ public class LogicalDBChangeResultProcessor implements ResultProcessor {
             List<LogicalDBChangeExecutionUnit> executionUnits = executionId2Result.entrySet().stream().map(entry -> {
                 LogicalDBChangeExecutionUnit executionUnit = new LogicalDBChangeExecutionUnit();
                 executionUnit.setExecutionId(entry.getKey());
+                executionUnit.setStatus(entry.getValue().getStatus());
                 executionUnit.setExecutionResult(entry.getValue().getResult().getSqlExecuteResult());
-                executionUnit.setSql(entry.getValue().getResult().getSqlExecuteResult().getExecuteSql());
+                executionUnit.setSql(entry.getValue().getResult().getSql());
+                executionUnit.setScheduleTaskId(entry.getValue().getResult().getScheduleTaskId());
+                executionUnit.setLogicalDatabaseId(entry.getValue().getResult().getLogicalDatabaseId());
+                executionUnit.setPhysicalDatabaseId(entry.getValue().getResult().getPhysicalDatabaseId());
+                executionUnit.setExecutionOrder(entry.getValue().getOrder());
                 return executionUnit;
             }).collect(Collectors.toList());
             logicalDatabaseChangeService.upsert(executionUnits);

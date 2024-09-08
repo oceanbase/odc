@@ -49,6 +49,7 @@ import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingRepositor
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.connection.database.DatabaseMapper;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
@@ -72,6 +73,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Validated
 public class LogicalDatabaseService {
+    private final DatabaseMapper databaseMapper = DatabaseMapper.INSTANCE;
 
     @Autowired
     private ProjectPermissionValidator projectPermissionValidator;
@@ -111,7 +113,7 @@ public class LogicalDatabaseService {
 
 
     @Transactional(rollbackFor = Exception.class)
-    public Boolean create(@Valid CreateLogicalDatabaseReq req) {
+    public Database create(@Valid CreateLogicalDatabaseReq req) {
         preCheck(req);
 
         Long organizationId = authenticationFacade.currentOrganizationId();
@@ -145,7 +147,7 @@ public class LogicalDatabaseService {
         });
         databaseMappingRepository.batchCreate(mappings);
 
-        return true;
+        return databaseMapper.entityToModel(savedLogicalDatabase);
     }
 
     public DetailLogicalDatabaseResp detail(@NotNull Long id) {

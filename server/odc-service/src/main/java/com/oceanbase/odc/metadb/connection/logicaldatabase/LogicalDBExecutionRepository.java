@@ -15,10 +15,18 @@
  */
 package com.oceanbase.odc.metadb.connection.logicaldatabase;
 
+import java.util.List;
 import java.util.Optional;
 
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
 public interface LogicalDBExecutionRepository extends OdcJpaRepository<LogicalDBChangeExecutionUnitEntity, Long> {
     Optional<LogicalDBChangeExecutionUnitEntity> findByExecutionId(String executionId);
+
+    List<LogicalDBChangeExecutionUnitEntity> findByScheduleTaskIdOrderByExecutionOrderAsc(Long scheduleTaskId);
+
+
+    List<LogicalDBChangeExecutionUnitEntity> findByScheduleTaskIdAndPhysicalDatabaseIdOrderByExecutionOrderAsc(
+            Long scheduleTaskId,
+            Long physicalDatabaseId);
 }

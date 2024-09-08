@@ -32,9 +32,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SqlExecuteReq {
     private String sql;
+    private Long order;
     private long timeoutMillis;
     private DialectType dialectType;
     private ConnectionConfig connectionConfig;
     private Long logicalDatabaseId;
     private Long physicalDatabaseId;
+    private Long scheduleTaskId;
 }

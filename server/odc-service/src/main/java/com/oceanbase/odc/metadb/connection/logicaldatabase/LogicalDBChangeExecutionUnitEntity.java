@@ -19,6 +19,8 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -26,6 +28,8 @@ import javax.persistence.Table;
 
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
+
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionStatus;
 
 import lombok.Data;
 
@@ -46,6 +50,9 @@ public class LogicalDBChangeExecutionUnitEntity {
     @Column(name = "execution_id", nullable = false, updatable = false)
     private String executionId;
 
+    @Column(name = "execution_order", nullable = false, updatable = false)
+    private Long executionOrder;
+
     @Column(name = "schedule_task_id", nullable = false)
     private Long scheduleTaskId;
 
@@ -60,6 +67,10 @@ public class LogicalDBChangeExecutionUnitEntity {
 
     @Column(name = "execution_result_json", nullable = false)
     private String executionResultJson;
+
+    @Column(name = "status", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private ExecutionStatus status;
 
     @Generated(GenerationTime.ALWAYS)
     @Column(name = "create_time", insertable = false, updatable = false)

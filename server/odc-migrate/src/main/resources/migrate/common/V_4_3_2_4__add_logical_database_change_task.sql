@@ -3,11 +3,16 @@ CREATE TABLE IF NOT EXISTS logicaldatabase_database_change_execution_unit (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `execution_id` varchar(64) NOT NULL COMMENT 'execution id of the logical database change task, uuid',
+  `execution_order` bigint(20) NOT NULL COMMENT 'execution order',
   `schedule_task_id` bigint(20) NOT NULL COMMENT 'ID of the related schedule task, refer to schedule_task.id',
   `logical_database_id` bigint(20) NOT NULL COMMENT 'logical database id, reference to connect_database.id',
   `physical_database_id` bigint(20) NOT NULL COMMENT 'physical database id, reference to connect_database.id',
   `sql_content` text COMMENT 'sql content',
   `execution_result_json` text NOT NULL COMMENT 'execution result json, see SqlExecutionResultWrapper',
-  CONSTRAINT `pk_logical_db_change_exec_id` PRIMARY KEY (`id`),
-  CONSTRAINT `uk_database_schema_column_database_id_object_id_name` UNIQUE KEY (`execution_id`)
+  `status` varchar(32) NOT NULL COMMENT 'status of the execution, see ExecutionStatus',
+  CONSTRAINT `pk_logical_db_change_id` PRIMARY KEY (`id`),
+  CONSTRAINT `uk_logical_db_change_execution_id` UNIQUE KEY (`execution_id`),
+  CONSTRAINT `uk_logical_db_change_sti_pdi_order` UNIQUE KEY (`schedule_task_id`, `physical_database_id`, `execution_order`)
 ) COMMENT = 'logical database change task execution units';
+
+alter table schedule_schedule modify column connection_id bigint(20) COMMENT 'reference to connect_connection.id';

@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.core.model;
 
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionStatus;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 
 import lombok.Data;
@@ -27,10 +28,12 @@ import lombok.Data;
 @Data
 public class LogicalDBChangeExecutionUnit {
     private Long id;
+    private Long executionOrder;
     private Long scheduleTaskId;
     private String executionId;
     private String sql;
     private Long logicalDatabaseId;
     private Long physicalDatabaseId;
     private SqlExecuteResult executionResult;
+    private ExecutionStatus status;
 }

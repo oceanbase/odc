@@ -107,7 +107,6 @@ public class SqlExecuteResult {
     private boolean withFullLinkTrace = false;
     private String traceEmptyReason;
     private boolean withQueryProfile;
-    @JsonIgnore
     private SqlTuple sqlTuple;
 
     public static SqlExecuteResult emptyResult(@NonNull SqlTuple sqlTuple, @NonNull SqlExecuteStatus status) {

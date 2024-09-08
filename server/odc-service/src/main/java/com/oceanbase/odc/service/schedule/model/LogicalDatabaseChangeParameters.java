@@ -15,13 +15,6 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
-import java.util.List;
-import java.util.Set;
-
-import com.oceanbase.odc.core.shared.constant.ConnectType;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.RewriteContext;
-
 import lombok.Data;
 
 /**
@@ -35,8 +28,4 @@ public class LogicalDatabaseChangeParameters implements ScheduleTaskParameters {
     private String delimiter;
     private Long timeoutMillis;
     private Long databaseId;
-    private ConnectType connectType;
-    private List<RewriteContext> rewriteContexts;
-    private Set<DataNode> allDataNodes;
-
 }

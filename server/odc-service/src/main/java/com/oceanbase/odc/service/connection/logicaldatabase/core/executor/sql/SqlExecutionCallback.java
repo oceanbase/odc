@@ -24,6 +24,8 @@ import org.springframework.jdbc.core.StatementCallback;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
@@ -32,16 +34,21 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execut
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionResult;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionStatus;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionUnit;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.util.ConnectionInfoUtil;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
+import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @Author: Lebie
  * @Date: 2024/8/28 21:04
  * @Description: []
  */
+@Slf4j
 public class SqlExecutionCallback implements ExecutionCallback<SqlExecuteReq, SqlExecutionResultWrapper> {
     private ConnectionSession connectionSession;
     private OdcStatementCallBack statementCallBack;
@@ -53,6 +60,7 @@ public class SqlExecutionCallback implements ExecutionCallback<SqlExecuteReq, Sq
         this.statementCallBack =
                 new OdcStatementCallBack(Arrays.asList(SqlTuple.newTuple(req.getSql())), connectionSession, true, 1000);
         this.timeoutMillis = req.getTimeoutMillis();
+        this.req = req;
     }
 
     @Override
@@ -69,13 +77,29 @@ public class SqlExecutionCallback implements ExecutionCallback<SqlExecuteReq, Sq
         JdbcGeneralResult result = results.get(0);
         return new ExecutionResult<>(
                 new SqlExecutionResultWrapper(result.getSqlTuple().getExecutedSql(), new SqlExecuteResult(result),
-                        req.getLogicalDatabaseId(), req.getPhysicalDatabaseId()),
-                getExecutionStatus(result.getStatus()));
+                        req.getLogicalDatabaseId(), req.getPhysicalDatabaseId(), req.getScheduleTaskId()),
+                getExecutionStatus(result.getStatus()), req.getOrder());
     }
 
     @Override
     public void terminate(ExecutionGroupContext<SqlExecuteReq, SqlExecutionResultWrapper> context)
-            throws SQLException {}
+        throws Exception {
+        String connectionId = ConnectionSessionUtil.getConsoleConnectionId(connectionSession);
+        Verify.notNull(connectionId, "ConnectionId");
+        ConnectionConfig conn = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
+        Verify.notNull(conn, "ConnectionConfig");
+        DruidDataSourceFactory factory = new DruidDataSourceFactory(conn);
+        try {
+            ConnectionInfoUtil.killQuery(connectionId, factory, connectionSession.getDialectType());
+        } catch (Exception e) {
+            if (connectionSession.getDialectType().isOceanbase()) {
+                ConnectionSessionUtil.killQueryByDirectConnect(connectionId, factory);
+                log.info("Kill query by direct connect succeed, connectionId={}", connectionId);
+            } else {
+                log.warn("Kill query occur error, connectionId={}", connectionId, e);
+            }
+        }
+    }
 
     @Override
     public void onFailed(ExecutionUnit<SqlExecuteReq, SqlExecutionResultWrapper> unit,

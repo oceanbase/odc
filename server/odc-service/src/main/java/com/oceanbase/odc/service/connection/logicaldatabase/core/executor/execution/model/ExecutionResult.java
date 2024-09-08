@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execu
 import java.io.Serializable;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @Author: Lebie
@@ -25,18 +26,22 @@ import lombok.Data;
  * @Description: []
  */
 @Data
+@NoArgsConstructor
 public class ExecutionResult<R> implements Serializable {
     private static final long serialVersionUID = 1L;
     private R result;
+    private Long order;
     private ExecutionStatus status;
 
-    public ExecutionResult(ExecutionStatus status) {
+    public ExecutionResult(ExecutionStatus status, Long order) {
         this.status = status;
+        this.order = order;
     }
 
-    public ExecutionResult(R result, ExecutionStatus status) {
+    public ExecutionResult(R result, ExecutionStatus status, Long order) {
         this.result = result;
         this.status = status;
+        this.order = order;
     }
 
     public boolean isCompleted() {

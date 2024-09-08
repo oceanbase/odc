@@ -34,4 +34,5 @@ public class SqlExecutionResultWrapper {
     private SqlExecuteResult sqlExecuteResult;
     private Long logicalDatabaseId;
     private Long physicalDatabaseId;
+    private Long scheduleTaskId;
 }

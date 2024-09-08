@@ -31,6 +31,7 @@ import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.ToString;
 
@@ -52,7 +53,6 @@ public class SqlTuple {
     private final String sqlId;
     private final String originalSql;
     private final String executedSql;
-    @JsonProperty(access = Access.WRITE_ONLY)
     private final TraceWatch sqlWatch;
     @JsonIgnore
     @Getter(AccessLevel.NONE)
