@@ -111,7 +111,6 @@ public class SqlPlanJob implements OdcJob {
 
     private void executeInTaskFramework(JobExecutionContext context) {
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
-        log.info("sql plan job execute in task framework, jobId={}", taskEntity.getJobName());
         SqlPlanParameters sqlPlanParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                 SqlPlanParameters.class);
         PublishSqlPlanJobReq parameters = new PublishSqlPlanJobReq();
@@ -126,8 +125,8 @@ public class SqlPlanJob implements OdcJob {
         Map<String, String> jobData = new HashMap<>();
         ConnectionConfig connectionConfig = databaseService.findDataSourceForTaskById(
                 sqlPlanParameters.getDatabaseId());
-        jobData.put(JobParametersKeyConstants.CONNECTION_CONFIG, JsonUtils.toJson(connectionConfig));
-        jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON, JsonUtils.toJson(parameters));
+        jobData.put(JobParametersKeyConstants.CONNECTION_CONFIG, JobUtils.toJson(connectionConfig));
+        jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON, JobUtils.toJson(parameters));
 
         SingleJobProperties singleJobProperties = new SingleJobProperties();
         singleJobProperties.setEnableRetryAfterHeartTimeout(true);
