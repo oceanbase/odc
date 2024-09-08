@@ -112,7 +112,7 @@ public class SqlPlanJob implements OdcJob {
 
     private void executeInTaskFramework(JobExecutionContext context) {
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
-        SqlPlanParameters sqlPlanParameters = JobUtils.fromJson(taskEntity.getParametersJson(),
+        SqlPlanParameters sqlPlanParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                 SqlPlanParameters.class);
         PublishSqlPlanJobReq parameters = new PublishSqlPlanJobReq();
         parameters.setSqlContent(sqlPlanParameters.getSqlContent());
