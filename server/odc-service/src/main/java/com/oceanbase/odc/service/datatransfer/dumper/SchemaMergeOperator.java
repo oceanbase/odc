@@ -85,6 +85,7 @@ public class SchemaMergeOperator {
     private static final String STRUCTURE_FOR = " structure for ";
     private static final String BLANK_SPACE = " ";
     private static final String UNDERLINE = "_";
+    private static final String DEFAULT_DELIMITER_STMT = "delimiter ;";
 
     private final DialectType dialectType;
     private final String schemaName;
@@ -171,6 +172,10 @@ public class SchemaMergeOperator {
         writer.write(title);
         try (InputStream in = url.openStream()) {
             IOUtils.copy(in, writer, StandardCharsets.UTF_8);
+        }
+        if (ObjectType.isPlSql(identifier.getTarget().getObjectType().getName())) {
+            writer.write(LINE_BREAKER);
+            writer.write(DEFAULT_DELIMITER_STMT);
         }
         writer.write(DOUBLE_LINE_BREAKER);
         writer.flush();
