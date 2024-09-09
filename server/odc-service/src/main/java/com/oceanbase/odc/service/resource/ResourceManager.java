@@ -130,8 +130,7 @@ public class ResourceManager {
             ResourceOperatorBuilder<?, Resource> builder =
                     (ResourceOperatorBuilder<?, Resource>) getOperatorBuilder(e.getResourceType());
             ResourceState newState = moveToNextState(e.getStatus(), builder, optional);
-            List<Long> ids = status2ResourceIds.computeIfAbsent(
-                    newState, k -> new ArrayList<>());
+            List<Long> ids = status2ResourceIds.computeIfAbsent(newState, k -> new ArrayList<>());
             ids.add(e.getId());
             return new ResourceWithID<>(e.getId(), optional.orElseGet(() -> builder.toResource(e)));
         });
