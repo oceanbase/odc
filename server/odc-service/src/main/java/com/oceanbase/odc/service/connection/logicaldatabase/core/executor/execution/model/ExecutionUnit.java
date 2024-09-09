@@ -38,13 +38,22 @@ public class ExecutionUnit<T, R> {
         this.input = input;
     }
 
+    public void beforeExecute(ExecutionGroupContext<T, R> context) {
+        try {
+            ExecutionResult<R> result = callback.beforeExecute(context);
+            context.setExecutionResult(id, result);
+        } catch (Exception e) {
+            log.warn("ExecutionUnit execute failed, executionId={}", id, e);
+        }
+    }
+
     public void execute(ExecutionGroupContext<T, R> context) {
         try {
             ExecutionResult<R> result = callback.execute(context);
-            log.info("ExecutionUnit execute success, id: {}, result: {}", id, result);
+            log.info("ExecutionUnit execute success, executionId={}, ", id);
             context.setExecutionResult(id, result);
         } catch (Exception e) {
-            log.warn("ExecutionUnit execute failed, id: {}", id, e);
+            log.warn("ExecutionUnit execute failed, executionId={}", id, e);
         }
     }
 
@@ -58,7 +67,7 @@ public class ExecutionUnit<T, R> {
                 }
             }
         } catch (Exception e) {
-            log.warn("ExecutionUnit terminate failed, id: {}", id, e);
+            log.warn("ExecutionUnit terminate failed, executionId={}", id, e);
             context.getExecutionResult(id).setStatus(ExecutionStatus.FAILED);
         }
     }

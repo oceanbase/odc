@@ -37,12 +37,10 @@ import org.springframework.validation.annotation.Validated;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
@@ -60,7 +58,6 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.LogicalTableExpressionParseUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.RelationFactorRewriter;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.RewriteContext;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.RewriteResult;
@@ -74,10 +71,7 @@ import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
-import com.oceanbase.odc.service.session.util.DBSchemaExtractor;
-import com.oceanbase.odc.service.session.util.DBSchemaExtractor.DBSchemaIdentity;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
-import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
@@ -196,7 +190,7 @@ public class LogicalDatabaseService {
         Set<Long> physicalDBIds =
                 databaseMappingRepository.findByLogicalDatabaseId(logicalDatabaseId).stream()
                         .map(DatabaseMappingEntity::getPhysicalDatabaseId).collect(Collectors.toSet());
-        return databaseService.listDatabasesByIds(physicalDBIds);
+        return databaseService.listDatabasesDetailsByIds(physicalDBIds);
     }
 
     public Set<Long> listDataSourceIds(@NotNull Long logicalDatabaseId) {
@@ -282,10 +276,11 @@ public class LogicalDatabaseService {
             Statement statement = SqlParser.parseMysqlStatement(sql);
             Set<DataNode> dataNodesToExecute;
             if (statement instanceof CreateTable) {
-                dataNodesToExecute = getDataNodesFromCreateTable(sql, logicalDatabase.getDialectType(), allDataNodes);
+                dataNodesToExecute = LogicalDatabaseUtils.getDataNodesFromCreateTable(sql,
+                        logicalDatabase.getDialectType(), allDataNodes);
             } else {
-                dataNodesToExecute =
-                        getDataNodesFromNotCreateTable(sql, logicalDatabase.getDialectType(), logicalDatabase);
+                dataNodesToExecute = LogicalDatabaseUtils.getDataNodesFromNotCreateTable(sql,
+                        logicalDatabase.getDialectType(), logicalDatabase);
             }
             RewriteResult rewriteResult = sqlRewriter.rewrite(
                     new RewriteContext(statement, logicalDatabase.getDialectType(), dataNodesToExecute));
@@ -300,39 +295,5 @@ public class LogicalDatabaseService {
                 .map(entry -> PreviewSqlResp.builder().database(id2Database.getOrDefault(entry.getKey(), null))
                         .sql(StringUtils.join(entry.getValue(), delimiter)).build())
                 .collect(Collectors.toList());
-    }
-
-    private Set<DataNode> getDataNodesFromCreateTable(String sql, DialectType dialectType, Set<DataNode> allDataNodes) {
-        Map<String, DataNode> databaseName2DataNodes = allDataNodes.stream()
-                .collect(Collectors.toMap(dataNode -> dataNode.getSchemaName(), dataNode -> dataNode,
-                        (value1, value2) -> value1));
-        Map<DBSchemaIdentity, Set<SqlType>> identity2SqlTypes = DBSchemaExtractor.listDBSchemasWithSqlTypes(
-                Arrays.asList(SqlTuple.newTuple(sql)), dialectType, null);
-        DBSchemaIdentity identity = identity2SqlTypes.keySet().iterator().next();
-        String logicalTableExpression = "";
-        if (StringUtils.isNotEmpty(identity.getSchema())) {
-            logicalTableExpression = identity.getSchema() + ".";
-        }
-        logicalTableExpression += identity.getTable();
-        log.info("logical table expression = {}", logicalTableExpression);
-        Set<DataNode> dataNodesToExecute =
-                LogicalTableExpressionParseUtils.resolve(logicalTableExpression).stream().collect(
-                        Collectors.toSet());
-        dataNodesToExecute.forEach(dataNode -> dataNode.setDatabaseId(
-                databaseName2DataNodes.getOrDefault(dataNode.getSchemaName(), dataNode).getDatabaseId()));
-        log.info("data nodes to execute = {}", dataNodesToExecute);
-        return dataNodesToExecute;
-    }
-
-    private Set<DataNode> getDataNodesFromNotCreateTable(String sql, DialectType dialectType,
-            DetailLogicalDatabaseResp detailLogicalDatabaseResp) {
-        List<DetailLogicalTableResp> logicalTables = detailLogicalDatabaseResp.getLogicalTables();
-        Map<String, Set<DataNode>> logicalTableName2DataNodes = logicalTables.stream()
-                .collect(Collectors.toMap(DetailLogicalTableResp::getName,
-                        resp -> resp.getAllPhysicalTables().stream().collect(Collectors.toSet())));
-        Map<DBSchemaIdentity, Set<SqlType>> identity2SqlTypes = DBSchemaExtractor.listDBSchemasWithSqlTypes(
-                Arrays.asList(SqlTuple.newTuple(sql)), dialectType, detailLogicalDatabaseResp.getName());
-        DBSchemaIdentity identity = identity2SqlTypes.keySet().iterator().next();
-        return logicalTableName2DataNodes.getOrDefault(identity.getTable(), Collections.emptySet());
     }
 }

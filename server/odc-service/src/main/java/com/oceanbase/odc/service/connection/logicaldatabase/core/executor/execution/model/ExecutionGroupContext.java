@@ -16,12 +16,17 @@
 package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
+import org.springframework.util.CollectionUtils;
+
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -38,7 +43,7 @@ public final class ExecutionGroupContext<T, R> {
 
     private final ExecutorService executorService;
 
-    private volatile Map<String, ExecutionResult<R>> executionId2Result;
+    private Map<String, ExecutionResult<R>> executionId2Result;
 
     @Getter
     private int completedGroupCount = 0;
@@ -55,12 +60,17 @@ public final class ExecutionGroupContext<T, R> {
     }
 
     public void execute() throws InterruptedException {
+        if (CollectionUtils.isEmpty(executionGroups)) {
+            return;
+        }
+        executionGroups.forEach(group -> group.getExecutionUnits().forEach(unit -> unit.beforeExecute(this)));
         for (ExecutionGroup<T, R> group : executionGroups) {
             if (Thread.currentThread().isInterrupted()) {
                 Thread.currentThread().interrupt();
                 throw new InterruptedException();
             }
             group.execute(this.executorService, this);
+            waitForCompletion(group.getExecutionUnits().stream().map(ExecutionUnit::getId).collect(Collectors.toSet()));
             completedGroupCount++;
         }
     }
@@ -70,18 +80,14 @@ public final class ExecutionGroupContext<T, R> {
     }
 
     public void setExecutionResult(String executionId, ExecutionResult<R> result) {
-        synchronized (result) {
-            executionId2Result.put(executionId, result);
-        }
+        executionId2Result.put(executionId, result);
     }
 
     public boolean isCompleted() {
-        log.info("completedGroupCount={},executionId2Result={}", completedGroupCount, executionId2Result);
         return executionId2Result.values().stream().allMatch(ExecutionResult::isCompleted);
     }
 
     public Map<String, ExecutionResult<R>> getResults() {
-        log.info("executionId2Result={}", executionId2Result);
         return executionId2Result;
     }
 
@@ -90,7 +96,7 @@ public final class ExecutionGroupContext<T, R> {
             ExecutionUnit<T, R> executionUnit = id2ExecutionUnit.get(executionUnitId);
             executionUnit.terminate(this);
         } catch (Exception ex) {
-            log.warn("ExecutionUnit terminate failed, id={}", executionUnitId, ex);
+            log.warn("ExecutionUnit terminate failed, executionId={}", executionUnitId, ex);
         }
 
     }
@@ -100,7 +106,7 @@ public final class ExecutionGroupContext<T, R> {
             try {
                 unit.terminate(this);
             } catch (Exception ex) {
-                log.warn("ExecutionUnit terminate failed, id={}", unit.getId(), ex);
+                log.warn("ExecutionUnit terminate failed, executionId={}", unit.getId(), ex);
             }
         }
     }
@@ -108,6 +114,23 @@ public final class ExecutionGroupContext<T, R> {
     public void skip(String executionUnitId) {
         ExecutionUnit<T, R> executionUnit = id2ExecutionUnit.get(executionUnitId);
         executionUnit.skip(this);
+    }
+
+    private void waitForCompletion(@NonNull Set<String> executionIds) throws InterruptedException {
+        while (!Thread.currentThread().isInterrupted()) {
+            List<ExecutionResult<R>> incompleteResults = executionIds.stream()
+                    .map(this::getExecutionResult).filter(result -> !result.isCompleted())
+                    .collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(incompleteResults)) {
+                break;
+            }
+            try {
+                Thread.sleep(500L);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw e;
+            }
+        }
     }
 }
 

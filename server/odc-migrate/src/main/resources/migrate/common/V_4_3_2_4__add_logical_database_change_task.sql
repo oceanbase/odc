@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS logicaldatabase_database_change_execution_unit (
+CREATE TABLE IF NOT EXISTS `logicaldatabase_database_change_execution_unit` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

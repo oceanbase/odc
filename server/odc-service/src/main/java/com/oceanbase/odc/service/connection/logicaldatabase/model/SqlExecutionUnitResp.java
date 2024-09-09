@@ -19,8 +19,8 @@ import java.util.List;
 
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionStatus;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionResultWrapper;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 
 import lombok.Data;
 
@@ -37,7 +37,7 @@ public class SqlExecutionUnitResp {
 
     private ConnectionConfig dataSource;
 
-    private List<SqlExecuteResult> sqlExecuteResults;
+    private List<SqlExecutionResultWrapper> sqlExecuteResults;
 
     private Integer totalSqlCount;
 

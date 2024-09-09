@@ -63,6 +63,17 @@ public class SqlExecutionCallback implements ExecutionCallback<SqlExecuteReq, Sq
     }
 
     @Override
+    public ExecutionResult<SqlExecutionResultWrapper> beforeExecute(
+            ExecutionGroupContext<SqlExecuteReq, SqlExecutionResultWrapper> context) {
+        SqlExecutionResultWrapper resultWrapper =
+                new SqlExecutionResultWrapper(req.getLogicalDatabaseId(), req.getPhysicalDatabaseId(),
+                        req.getScheduleTaskId(), null);
+        resultWrapper.setExecuteSql(req.getSql());
+        resultWrapper.setStatus(SqlExecuteStatus.CREATED);
+        return new ExecutionResult<>(resultWrapper, ExecutionStatus.PENDING, req.getOrder());
+    }
+
+    @Override
     public ExecutionResult<SqlExecutionResultWrapper> execute(
             ExecutionGroupContext<SqlExecuteReq, SqlExecutionResultWrapper> context)
             throws SQLException {
@@ -74,9 +85,10 @@ public class SqlExecutionCallback implements ExecutionCallback<SqlExecuteReq, Sq
                     return statementCallBack.doInStatement(stmt);
                 });
         JdbcGeneralResult result = results.get(0);
+        log.info("SqlExecutionCallback execute result, connectionReset={}", result.isConnectionReset());
         return new ExecutionResult<>(
-                new SqlExecutionResultWrapper(result.getSqlTuple().getExecutedSql(), new SqlExecuteResult(result),
-                        req.getLogicalDatabaseId(), req.getPhysicalDatabaseId(), req.getScheduleTaskId()),
+                new SqlExecutionResultWrapper(req.getLogicalDatabaseId(), req.getPhysicalDatabaseId(),
+                        req.getScheduleTaskId(), new SqlExecuteResult(result)),
                 getExecutionStatus(result.getStatus()), req.getOrder());
     }
 
@@ -107,14 +119,15 @@ public class SqlExecutionCallback implements ExecutionCallback<SqlExecuteReq, Sq
                 executionStatus = ExecutionStatus.SUCCESS;
                 break;
             case FAILED:
+            case CANCELED:
                 executionStatus = ExecutionStatus.FAILED;
                 break;
             case RUNNING:
                 executionStatus = ExecutionStatus.RUNNING;
                 break;
-            case CANCELED:
             case CREATED:
                 executionStatus = ExecutionStatus.PENDING;
+                break;
         }
         return executionStatus;
     }

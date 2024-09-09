@@ -39,10 +39,10 @@ import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDBExecutionRep
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionStatus;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionResultWrapper;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalDBChangeExecutionUnit;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.SqlExecutionUnitResp;
 import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.exception.JobException;
 
@@ -157,22 +157,23 @@ public class LogicalDatabaseChangeService {
                 executionRepository.findByScheduleTaskIdAndPhysicalDatabaseIdOrderByExecutionOrderAsc(scheduleTaskId,
                         recordId);
         Database database = databaseService.detail(recordId);
-        SqlExecutionUnitResp schemaChangeRecord = new SqlExecutionUnitResp();
-        schemaChangeRecord.setId(recordId);
-        schemaChangeRecord.setDatabase(database);
-        schemaChangeRecord.setDataSource(database.getDataSource());
-        schemaChangeRecord.setTotalSqlCount(entities.size());
+        SqlExecutionUnitResp resp = new SqlExecutionUnitResp();
+        resp.setId(recordId);
+        resp.setDatabase(database);
+        resp.setDataSource(database.getDataSource());
+        resp.setTotalSqlCount(entities.size());
         int currentExecutionIndex = getCurrentIndex(entities);
-        schemaChangeRecord
+        resp
                 .setCompletedSqlCount(currentExecutionIndex + 1);
-        schemaChangeRecord.setStatus(entities.get(currentExecutionIndex).getStatus());
-        schemaChangeRecord.setSqlExecuteResults(entities.stream()
-                .map(entity -> JsonUtils.fromJson(entity.getExecutionResultJson(), SqlExecuteResult.class)).collect(
+        resp.setStatus(entities.get(currentExecutionIndex).getStatus());
+        resp.setSqlExecuteResults(entities.stream()
+                .map(entity -> JsonUtils.fromJson(entity.getExecutionResultJson(), SqlExecutionResultWrapper.class))
+                .collect(
                         Collectors.toList()));
-        return schemaChangeRecord;
+        return resp;
     }
 
-    public List<SqlExecutionUnitResp> listSchemaChangeRecords(@NonNull Long scheduleTaskId) {
+    public List<SqlExecutionUnitResp> listSqlExecutionUnits(@NonNull Long scheduleTaskId) {
         List<LogicalDBChangeExecutionUnitEntity> entities =
                 executionRepository.findByScheduleTaskIdOrderByExecutionOrderAsc(scheduleTaskId);
         if (CollectionUtils.isEmpty(entities)) {
@@ -184,18 +185,18 @@ public class LogicalDatabaseChangeService {
                 .stream().collect(Collectors.toMap(
                         Database::getId, database -> database));
         return databaseId2Executions.entrySet().stream().map(entry -> {
-            SqlExecutionUnitResp schemaChangeRecord = new SqlExecutionUnitResp();
+            SqlExecutionUnitResp resp = new SqlExecutionUnitResp();
             Database database = id2Database.get(entry.getKey());
-            schemaChangeRecord.setId(entry.getKey());
-            schemaChangeRecord.setDatabase(database);
-            schemaChangeRecord.setDataSource(database.getDataSource());
+            resp.setId(entry.getKey());
+            resp.setDatabase(database);
+            resp.setDataSource(database.getDataSource());
             List<LogicalDBChangeExecutionUnitEntity> executionUnits = entry.getValue();
-            schemaChangeRecord.setTotalSqlCount(executionUnits.size());
+            resp.setTotalSqlCount(executionUnits.size());
             int currentExecutionIndex = getCurrentIndex(executionUnits);
-            schemaChangeRecord
+            resp
                     .setCompletedSqlCount(currentExecutionIndex + 1);
-            schemaChangeRecord.setStatus(executionUnits.get(currentExecutionIndex).getStatus());
-            return schemaChangeRecord;
+            resp.setStatus(executionUnits.get(currentExecutionIndex).getStatus());
+            return resp;
         }).collect(Collectors.toList());
     }
 

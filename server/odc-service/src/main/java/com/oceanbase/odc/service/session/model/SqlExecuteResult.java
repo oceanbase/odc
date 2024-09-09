@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.TraceStage;
 import com.oceanbase.odc.common.util.TraceWatch;
@@ -62,6 +63,7 @@ import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
+import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -106,6 +108,7 @@ public class SqlExecuteResult {
     private boolean withFullLinkTrace = false;
     private String traceEmptyReason;
     private boolean withQueryProfile;
+    @JsonIgnore
     private SqlTuple sqlTuple;
 
     public static SqlExecuteResult emptyResult(@NonNull SqlTuple sqlTuple, @NonNull SqlExecuteStatus status) {
@@ -448,12 +451,13 @@ public class SqlExecuteResult {
                 + getOriginSql() + "\nTotal: " + total + "\nTrack: " + track;
     }
 
-    @Getter
-    static class ExecutionTimer {
-        private final String name;
-        private final long startTimeMillis;
-        private final long totalDurationMicroseconds;
-        private final List<ExecutionStage> stages = new LinkedList<>();
+    @Data
+    @NoArgsConstructor
+    public static class ExecutionTimer {
+        private String name;
+        private long startTimeMillis;
+        private long totalDurationMicroseconds;
+        private List<ExecutionStage> stages = new LinkedList<>();
 
         public ExecutionTimer(@NonNull TraceWatch traceWatch) {
             List<TraceStage> subStages = traceWatch.getStageList();
@@ -468,12 +472,13 @@ public class SqlExecuteResult {
         }
     }
 
-    @Getter
-    static class ExecutionStage {
-        private final String stageName;
-        private final long startTimeMillis;
-        private final long totalDurationMicroseconds;
-        private final List<ExecutionStage> subStages = new LinkedList<>();
+    @Data
+    @NoArgsConstructor
+    public static class ExecutionStage {
+        private String stageName;
+        private long startTimeMillis;
+        private long totalDurationMicroseconds;
+        private List<ExecutionStage> subStages = new LinkedList<>();
 
         public ExecutionStage(@NonNull TraceStage traceStage) {
             List<TraceStage> stages = traceStage.getSubStageList();

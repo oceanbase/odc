@@ -16,8 +16,10 @@
 package com.oceanbase.odc.service.schedule.model;
 
 import java.io.Serializable;
+import java.util.Map;
 
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
 import lombok.Data;
 
@@ -34,5 +36,6 @@ public class PublishLogicalDatabaseChangeReq implements Serializable {
     private String delimiter;
     private Long timeoutMillis;
     private DetailLogicalDatabaseResp logicalDatabaseResp;
+    private Map<String, ConnectionConfig> schemaName2ConnectionConfig;
 }
 

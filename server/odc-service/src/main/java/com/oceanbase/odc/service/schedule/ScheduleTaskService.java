@@ -169,7 +169,7 @@ public class ScheduleTaskService {
                         .ifPresent(jobEntity -> res.setExecutionDetails(jobEntity.getResultJson()));
             case LOGICAL_DATABASE_CHANGE:
                 res.setExecutionDetails(
-                        JsonUtils.toJson(logicalDatabaseChangeService.listSchemaChangeRecords(scheduleTask.getId())));
+                        JsonUtils.toJson(logicalDatabaseChangeService.listSqlExecutionUnits(scheduleTask.getId())));
             default:
                 break;
         }

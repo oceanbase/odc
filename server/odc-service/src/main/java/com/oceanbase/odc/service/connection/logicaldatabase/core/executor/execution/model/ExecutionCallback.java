@@ -18,6 +18,8 @@ package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execu
 import java.sql.SQLException;
 
 public interface ExecutionCallback<T, R> {
+    ExecutionResult<R> beforeExecute(ExecutionGroupContext<T, R> context);
+
     ExecutionResult<R> execute(ExecutionGroupContext<T, R> context) throws SQLException;
 
     void terminate(ExecutionGroupContext<T, R> context) throws Exception;

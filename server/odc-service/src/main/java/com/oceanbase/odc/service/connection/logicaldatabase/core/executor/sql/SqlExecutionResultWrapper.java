@@ -15,11 +15,14 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
+import com.oceanbase.odc.service.session.model.SqlExecuteResult.ExecutionTimer;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
 /**
  * @Author: Lebie
@@ -27,12 +30,35 @@ import lombok.NoArgsConstructor;
  * @Description: []
  */
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
 public class SqlExecutionResultWrapper {
-    private String sql;
-    private SqlExecuteResult sqlExecuteResult;
+    private String executeSql;
+    private String originSql;
+    private SqlExecuteStatus status;
+    private String traceId;
+    private String track;
+    private int errorCode;
+    private ExecutionTimer timer;
     private Long logicalDatabaseId;
     private Long physicalDatabaseId;
     private Long scheduleTaskId;
+    @JsonIgnore
+    private SqlExecuteResult sqlExecuteResult;
+
+    public SqlExecutionResultWrapper(@NonNull Long logicalDatabaseId, @NonNull Long physicalDatabaseId,
+            @NonNull Long scheduleTaskId, SqlExecuteResult sqlExecuteResult) {
+        this.logicalDatabaseId = logicalDatabaseId;
+        this.physicalDatabaseId = physicalDatabaseId;
+        this.scheduleTaskId = scheduleTaskId;
+        this.sqlExecuteResult = sqlExecuteResult;
+        if (sqlExecuteResult != null) {
+            this.executeSql = sqlExecuteResult.getExecuteSql();
+            this.originSql = sqlExecuteResult.getOriginSql();
+            this.status = sqlExecuteResult.getStatus();
+            this.traceId = sqlExecuteResult.getTraceId();
+            this.track = sqlExecuteResult.getTrack();
+            this.errorCode = sqlExecuteResult.getErrorCode();
+            this.timer = sqlExecuteResult.getTimer();
+        }
+    }
 }

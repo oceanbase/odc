@@ -16,11 +16,10 @@
 package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model;
 
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.stream.Collectors;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @Author: Lebie
@@ -28,6 +27,7 @@ import lombok.Getter;
  * @Description: []
  */
 @Getter
+@Slf4j
 public abstract class ExecutionGroup<T, R> {
     private final List<ExecutionUnit<T, R>> executionUnits;
     private final List<ExecutionSubGroup<T, R>> subGroups;
@@ -42,28 +42,6 @@ public abstract class ExecutionGroup<T, R> {
     public void execute(ExecutorService executorService, ExecutionGroupContext<T, R> context) {
         for (ExecutionSubGroup<T, R> subGroup : subGroups) {
             executorService.submit(() -> subGroup.execute(context));
-        }
-        waitForCompletion(context, executionUnits.stream().map(ExecutionUnit::getId).collect(Collectors.toSet()));
-    }
-
-    private void waitForCompletion(ExecutionGroupContext<T, R> context, Set<String> executionIds) {
-        List<ExecutionResult<R>> results = executionIds.stream()
-                .map(context::getExecutionResult).collect(Collectors.toList());
-        while (!Thread.currentThread().isInterrupted()) {
-            List<R> incompleteTasks = results.stream()
-                    .filter(result -> !result.isCompleted())
-                    .map(ExecutionResult::getResult)
-                    .collect(Collectors.toList());
-            if (incompleteTasks.isEmpty()) {
-                break;
-            }
-            synchronized (incompleteTasks) {
-                try {
-                    incompleteTasks.wait(1000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }
         }
     }
 }

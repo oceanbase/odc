@@ -67,8 +67,8 @@ public class LogicalDBChangeResultProcessor implements ResultProcessor {
                 LogicalDBChangeExecutionUnit executionUnit = new LogicalDBChangeExecutionUnit();
                 executionUnit.setExecutionId(entry.getKey());
                 executionUnit.setStatus(entry.getValue().getStatus());
-                executionUnit.setExecutionResult(entry.getValue().getResult().getSqlExecuteResult());
-                executionUnit.setSql(entry.getValue().getResult().getSql());
+                executionUnit.setExecutionResult(entry.getValue().getResult());
+                executionUnit.setSql(entry.getValue().getResult().getExecuteSql());
                 executionUnit.setScheduleTaskId(entry.getValue().getResult().getScheduleTaskId());
                 executionUnit.setLogicalDatabaseId(entry.getValue().getResult().getLogicalDatabaseId());
                 executionUnit.setPhysicalDatabaseId(entry.getValue().getResult().getPhysicalDatabaseId());

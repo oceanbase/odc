@@ -28,6 +28,7 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseService;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalTableService;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.LogicalDatabaseChangeParameters;
@@ -78,7 +79,10 @@ public class LogicalDatabaseChangeJob implements OdcJob {
                 LogicalDatabaseChangeParameters.class);
         PublishLogicalDatabaseChangeReq req = new PublishLogicalDatabaseChangeReq();
         req.setSqlContent(parameters.getSqlContent());
-        req.setLogicalDatabaseResp(logicalDatabaseService.detail(parameters.getDatabaseId()));
+        DetailLogicalDatabaseResp logicalDatabaseResp = logicalDatabaseService.detail(parameters.getDatabaseId());
+        logicalDatabaseResp.getPhysicalDatabases().stream().forEach(
+                database -> database.setDataSource(connectionService.getForConnect(database.getDataSource().getId())));
+        req.setLogicalDatabaseResp(logicalDatabaseResp);
         req.setDelimiter(parameters.getDelimiter());
         req.setTimeoutMillis(parameters.getTimeoutMillis());
         req.setScheduleTaskId(taskEntity.getId());

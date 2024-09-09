@@ -22,8 +22,8 @@ import org.mapstruct.factory.Mappers;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDBChangeExecutionUnitEntity;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionResultWrapper;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalDBChangeExecutionUnit;
-import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 
 /**
  * @Author: Lebie
@@ -42,12 +42,12 @@ public interface LogicalDatabaseExecutionMapper {
     LogicalDBChangeExecutionUnitEntity modelToEntity(LogicalDBChangeExecutionUnit model);
 
     @Named("fromJson")
-    static SqlExecuteResult fromJson(String json) {
-        return JsonUtils.fromJson(json, SqlExecuteResult.class);
+    static SqlExecutionResultWrapper fromJson(String json) {
+        return JsonUtils.fromJson(json, SqlExecutionResultWrapper.class);
     }
 
     @Named("toJson")
-    static String toJson(SqlExecuteResult result) {
+    static String toJson(SqlExecutionResultWrapper result) {
         return JsonUtils.toJson(result);
     }
 }

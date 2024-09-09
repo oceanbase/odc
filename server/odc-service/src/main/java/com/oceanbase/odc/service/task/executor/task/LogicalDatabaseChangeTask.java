@@ -16,8 +16,6 @@
 package com.oceanbase.odc.service.task.executor.task;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -25,13 +23,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.MapUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.common.util.SqlUtils;
+import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutorEngine;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionCallback;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionGroup;
@@ -44,24 +43,18 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.Sq
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionCallback;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionResultWrapper;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.LogicalTableExpressionParseUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.RelationFactorRewriter;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.RewriteContext;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.RewriteResult;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.SqlRewriter;
-import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
-import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalTableResp;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
 import com.oceanbase.odc.service.schedule.model.PublishLogicalDatabaseChangeReq;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
-import com.oceanbase.odc.service.session.util.DBSchemaExtractor;
-import com.oceanbase.odc.service.session.util.DBSchemaExtractor.DBSchemaIdentity;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
-import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 import com.oceanbase.tools.loaddump.utils.CollectionUtils;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
@@ -100,23 +93,23 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
             List<String> sqls =
                     SqlUtils.split(dialectType, taskParameters.getSqlContent(),
                             StringUtils.isEmpty(taskParameters.getDelimiter()) ? ";" : taskParameters.getDelimiter());
-            Set<DataNode> allDataNodes = taskParameters.getLogicalDatabaseResp().getLogicalTables().stream()
-                    .map(DetailLogicalTableResp::getAllPhysicalTables).flatMap(List::stream)
+            Set<DataNode> allDataNodes = taskParameters.getLogicalDatabaseResp().getPhysicalDatabases().stream()
+                    .map(database -> new DataNode(database.getDataSource(), database.getId(), database.getName()))
                     .collect(Collectors.toSet());
-            log.info("all data nodes = {}", allDataNodes);
             Map<Long, DataNode> databaseId2DataNodes = allDataNodes.stream()
                     .collect(Collectors.toMap(dataNode -> dataNode.getDatabaseId(), dataNode -> dataNode,
                             (value1, value2) -> value1));
 
-            log.info("databaseId2DataNodes = {}", databaseId2DataNodes);
+            long order = 0;
             for (String sql : sqls) {
                 Statement statement = SqlParser.parseMysqlStatement(sql);
                 Set<DataNode> dataNodesToExecute;
                 if (statement instanceof CreateTable) {
-                    dataNodesToExecute = getDataNodesFromCreateTable(sql, dialectType, allDataNodes);
-                } else {
                     dataNodesToExecute =
-                            getDataNodesFromNotCreateTable(sql, dialectType, taskParameters.getLogicalDatabaseResp());
+                            LogicalDatabaseUtils.getDataNodesFromCreateTable(sql, dialectType, allDataNodes);
+                } else {
+                    dataNodesToExecute = LogicalDatabaseUtils.getDataNodesFromNotCreateTable(sql, dialectType,
+                            taskParameters.getLogicalDatabaseResp());
                 }
                 RewriteResult rewriteResult = sqlRewriter.rewrite(
                         new RewriteContext(statement, dialectType, dataNodesToExecute));
@@ -124,9 +117,11 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
                         .collect(Collectors.groupingBy(
                                 entry -> entry.getKey().getDatabaseId(),
                                 Collectors.mapping(entry -> entry.getValue(), Collectors.toList())));
-                log.info("databaseId2RewrittenSql = {}", databaseId2RewrittenSqls);
+                if (MapUtils.isEmpty(databaseId2RewrittenSqls)) {
+                    log.warn("cannot recognize the sql, sql = {}", sql);
+                    continue;
+                }
                 List<ExecutionUnit<SqlExecuteReq, SqlExecutionResultWrapper>> executionUnits = new ArrayList<>();
-                long order = 0;
                 for (Entry<Long, DataNode> entry : databaseId2DataNodes.entrySet()) {
                     Long databaseId = entry.getKey();
                     DataNode dataNode = entry.getValue();
@@ -135,7 +130,6 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
                     SqlExecuteReq req = new SqlExecuteReq();
                     req.setSql(rewrittenSqls);
                     req.setDialectType(dialectType);
-                    log.info("connection config = {}, execute sql = {}", dataNode.getDataSourceConfig(), rewrittenSqls);
                     req.setConnectionConfig(dataNode.getDataSourceConfig());
                     ConnectionSession connectionSession = generateSession(dataNode.getDataSourceConfig());
                     connectionSessions.add(connectionSession);
@@ -147,11 +141,15 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
                                             taskParameters.getLogicalDatabaseResp().getId(),
                                             dataNode.getDatabaseId(), taskParameters.getScheduleTaskId()));
                     executionUnits.add(new ExecutionUnit<>(StringUtils.uuid(), order, callback, req));
-                    executionGroups.add(dialectType == DialectType.MYSQL ? new MySQLExecutionGroup(executionUnits)
-                            : new OBExecutionGroup(executionUnits));
-                    order++;
                 }
+                order++;
+                executionGroups.add(dialectType == DialectType.MYSQL ? new MySQLExecutionGroup(executionUnits)
+                        : new OBExecutionGroup(executionUnits));
             }
+            log.info("start logical database change task, generatedSql = {}", executionGroups.stream().map(
+                    group -> group.getExecutionUnits().stream().map(unit -> unit.getInput().getSql()).collect(
+                            Collectors.joining(taskParameters.getDelimiter())))
+                    .collect(Collectors.joining(taskParameters.getDelimiter())));
             executorEngine = new ExecutorEngine<SqlExecuteReq, SqlExecuteResult>(100);
             this.executionGroupContext = executorEngine.execute(executionGroups);
         } catch (Exception ex) {
@@ -159,7 +157,6 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
             return false;
         }
         while (!Thread.currentThread().isInterrupted()) {
-            log.info("logical database change task is running");
             if (this.executionGroupContext.isCompleted()) {
                 log.info("logical database change task is completed");
                 return true;
@@ -176,7 +173,7 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
 
     @Override
     protected void doStop() throws Exception {
-
+        this.executionGroupContext.terminateAll();
     }
 
     @Override
@@ -240,39 +237,5 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
                 // eat exception
             }
         }
-    }
-
-    private Set<DataNode> getDataNodesFromCreateTable(String sql, DialectType dialectType, Set<DataNode> allDataNodes) {
-        Map<String, DataNode> databaseName2DataNodes = allDataNodes.stream()
-                .collect(Collectors.toMap(dataNode -> dataNode.getSchemaName(), dataNode -> dataNode,
-                        (value1, value2) -> value1));
-        Map<DBSchemaIdentity, Set<SqlType>> identity2SqlTypes = DBSchemaExtractor.listDBSchemasWithSqlTypes(
-                Arrays.asList(SqlTuple.newTuple(sql)), dialectType, null);
-        DBSchemaIdentity identity = identity2SqlTypes.keySet().iterator().next();
-        String logicalTableExpression = "";
-        if (StringUtils.isNotEmpty(identity.getSchema())) {
-            logicalTableExpression = identity.getSchema() + ".";
-        }
-        logicalTableExpression += identity.getTable();
-        log.info("logical table expression = {}", logicalTableExpression);
-        Set<DataNode> dataNodesToExecute =
-                LogicalTableExpressionParseUtils.resolve(logicalTableExpression).stream().collect(
-                        Collectors.toSet());
-        dataNodesToExecute.forEach(dataNode -> dataNode.setDatabaseId(
-                databaseName2DataNodes.getOrDefault(dataNode.getSchemaName(), dataNode).getDatabaseId()));
-        log.info("data nodes to execute = {}", dataNodesToExecute);
-        return dataNodesToExecute;
-    }
-
-    private Set<DataNode> getDataNodesFromNotCreateTable(String sql, DialectType dialectType,
-            DetailLogicalDatabaseResp detailLogicalDatabaseResp) {
-        List<DetailLogicalTableResp> logicalTables = detailLogicalDatabaseResp.getLogicalTables();
-        Map<String, Set<DataNode>> logicalTableName2DataNodes = logicalTables.stream()
-                .collect(Collectors.toMap(DetailLogicalTableResp::getName,
-                        resp -> resp.getAllPhysicalTables().stream().collect(Collectors.toSet())));
-        Map<DBSchemaIdentity, Set<SqlType>> identity2SqlTypes = DBSchemaExtractor.listDBSchemasWithSqlTypes(
-                Arrays.asList(SqlTuple.newTuple(sql)), dialectType, detailLogicalDatabaseResp.getName());
-        DBSchemaIdentity identity = identity2SqlTypes.keySet().iterator().next();
-        return logicalTableName2DataNodes.getOrDefault(identity.getTable(), Collections.emptySet());
     }
 }
