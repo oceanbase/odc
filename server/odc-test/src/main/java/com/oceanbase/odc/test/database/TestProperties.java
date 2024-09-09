@@ -37,15 +37,20 @@ public class TestProperties {
 
     static {
         try {
+            // 获取当前类的保护域的代码源的位置
             URL location = TestProperties.class.getProtectionDomain().getCodeSource().getLocation();
+            // 获取代码源的URI，并将其转换为路径
             Path filepath = Paths.get(location.toURI()).getParent().getParent().getParent().getParent()
-                    .resolve("local-unit-test.properties");
+                .resolve("local-unit-test.properties");
+            // 如果指定的属性文件存在，则加载其中的配置项
             if (Files.exists(filepath)) {
                 properties = EncryptableConfigurations.loadProperties(filepath.toString());
             } else {
+                // 否则创建一个空的属性列表
                 properties = new HashMap<>();
             }
         } catch (URISyntaxException e) {
+            // 如果出现语法错误，则抛出异常
             throw new IllegalStateException(e);
         }
     }
