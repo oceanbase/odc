@@ -132,7 +132,7 @@ public class ResourceManager {
             }
             ResourceOperatorBuilder<?, Resource> builder =
                     (ResourceOperatorBuilder<?, Resource>) getOperatorBuilder(e.getResourceType());
-            ResourceState newState = moveToNextState(e.getStatus(), builder, optional);
+            ResourceState newState = moveToNextState(e, builder, optional);
             List<Long> ids = status2ResourceIds.computeIfAbsent(newState, k -> new ArrayList<>());
             ids.add(e.getId());
             return new ResourceWithID<>(e.getId(), optional.orElseGet(() -> builder.toResource(e)));
@@ -160,7 +160,7 @@ public class ResourceManager {
                 (ResourceOperatorBuilder<?, R>) getOperatorBuilder(resourceID.getType());
         Optional<R> optional = resourceOperatorBuilder.build(resourceID.getResourceLocation()).query(resourceID);
         if (re.isPresent()) {
-            ResourceState newState = moveToNextState(re.get().getStatus(), resourceOperatorBuilder, optional);
+            ResourceState newState = moveToNextState(re.get(), resourceOperatorBuilder, optional);
             if (!Objects.equals(newState, re.get().getStatus())) {
                 this.resourceRepository.updateResourceStatus(resourceID, newState);
             }
@@ -187,7 +187,7 @@ public class ResourceManager {
                 (ResourceOperatorBuilder<?, R>) getOperatorBuilder(entity.getResourceType());
         ResourceID resourceID = new ResourceID(entity);
         Optional<R> optional = builder.build(resourceID.getResourceLocation()).query(resourceID);
-        ResourceState newState = moveToNextState(entity.getStatus(), builder, optional);
+        ResourceState newState = moveToNextState(entity, builder, optional);
         if (!Objects.equals(newState, entity.getStatus())) {
             this.resourceRepository.updateStatusById(entity.getId(), newState);
         }
@@ -287,9 +287,9 @@ public class ResourceManager {
         return ret;
     }
 
-    private <R extends Resource> ResourceState moveToNextState(ResourceState current,
-            ResourceOperatorBuilder<?, ?> builder, Optional<R> optional) {
-        return current;
+    private <R extends Resource> ResourceState moveToNextState(ResourceEntity entity,
+            ResourceOperatorBuilder<?, R> builder, Optional<R> optional) {
+        return entity.getStatus();
     }
 
     @SuppressWarnings("all")
