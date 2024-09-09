@@ -40,17 +40,19 @@ import lombok.NonNull;
 public abstract class BaseNativeK8sResourceOperatorBuilder<T extends K8sResource>
         implements ResourceOperatorBuilder<T, T> {
 
-    protected String defaultNamespace;
+    private boolean apiClientSet = false;
+    protected String defaultNamespace = "default";
 
     public BaseNativeK8sResourceOperatorBuilder(TaskFrameworkProperties frameworkProperties) throws IOException {
         K8sProperties properties = frameworkProperties.getK8sProperties();
-        if (properties != null && StringUtils.isNotBlank(properties.getNamespace())) {
-            this.defaultNamespace = properties.getNamespace();
-        }
-        if (Configuration.getDefaultApiClient() == null && properties != null) {
+        if (properties != null) {
             ApiClient apiClient = NativeK8sJobClient.generateNativeK8sApiClient(properties);
             if (apiClient != null) {
+                this.apiClientSet = true;
                 Configuration.setDefaultApiClient(apiClient);
+            }
+            if (StringUtils.isNotBlank(properties.getNamespace())) {
+                this.defaultNamespace = properties.getNamespace();
             }
         }
     }
@@ -59,7 +61,7 @@ public abstract class BaseNativeK8sResourceOperatorBuilder<T extends K8sResource
 
     @Override
     public boolean match(@NonNull String type) {
-        return Configuration.getDefaultApiClient() != null && doMatch(type);
+        return this.apiClientSet && doMatch(type);
     }
 
     @Override
