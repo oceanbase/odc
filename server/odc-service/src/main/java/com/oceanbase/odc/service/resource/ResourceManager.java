@@ -145,11 +145,22 @@ public class ResourceManager {
      * @return
      * @throws Exception
      */
+    @SuppressWarnings("all")
     @Transactional
     @SkipAuthorize("odc internal usage")
     public <R extends Resource> Optional<R> query(@NonNull ResourceID resourceID) throws Exception {
-        Optional<ResourceEntity> optional = this.resourceRepository.findByResourceID(resourceID);
-        return optional.isPresent() ? Optional.of(doQuery(optional.get())) : Optional.empty();
+        Optional<ResourceEntity> re = this.resourceRepository.findByResourceID(resourceID);
+        if (!re.isPresent()) {
+            log.warn("Resource is not found, resourceID={}", resourceID);
+        }
+        ResourceOperatorBuilder<?, R> resourceOperatorBuilder =
+                (ResourceOperatorBuilder<?, R>) getOperatorBuilder(resourceID.getType());
+        Optional<R> optional = resourceOperatorBuilder.build(resourceID.getResourceLocation()).query(resourceID);
+        if (re.isPresent()) {
+            ResourceState newState = moveToNextState(re.get().getStatus(), resourceOperatorBuilder, optional);
+            this.resourceRepository.updateResourceStatus(resourceID, newState);
+        }
+        return optional;
     }
 
     /**
@@ -158,11 +169,22 @@ public class ResourceManager {
      * @return
      * @throws Exception
      */
+    @SuppressWarnings("all")
     @Transactional
     @SkipAuthorize("odc internal usage")
     public <R extends Resource> Optional<ResourceWithID<R>> query(@NonNull Long id) throws Exception {
-        Optional<ResourceEntity> optional = this.resourceRepository.findById(id);
-        return optional.isPresent() ? Optional.of(new ResourceWithID<>(id, doQuery(optional.get()))) : Optional.empty();
+        Optional<ResourceEntity> re = this.resourceRepository.findById(id);
+        if (!re.isPresent()) {
+            return Optional.empty();
+        }
+        ResourceEntity entity = re.get();
+        ResourceOperatorBuilder<?, R> builder =
+                (ResourceOperatorBuilder<?, R>) getOperatorBuilder(entity.getResourceType());
+        ResourceID resourceID = new ResourceID(entity);
+        Optional<R> optional = builder.build(resourceID.getResourceLocation()).query(resourceID);
+        ResourceState newState = moveToNextState(entity.getStatus(), builder, optional);
+        this.resourceRepository.updateStatusById(entity.getId(), newState);
+        return Optional.of(new ResourceWithID<>(id, optional.orElseGet(() -> builder.toResource(entity))));
     }
 
     /**
@@ -249,24 +271,13 @@ public class ResourceManager {
     }
 
     private String doDestroy(@NonNull ResourceID resourceID) throws Exception {
-        ResourceOperatorBuilder<?, ?> operatorBuilder = getOperatorBuilder(resourceID.getType());
-        ResourceOperator<?, ?> resourceOperator = operatorBuilder.build(resourceID.getResourceLocation());
+        ResourceOperator<?, ?> resourceOperator = getOperatorBuilder(resourceID.getType())
+                .build(resourceID.getResourceLocation());
         String ret = resourceOperator.destroy(resourceID);
         // then update db status
         this.resourceRepository.updateResourceStatus(resourceID, ResourceState.DESTROYING);
         log.info("Delete resource succeed, resourceID={}, ret={}", resourceID, ret);
         return ret;
-    }
-
-    @SuppressWarnings("all")
-    private <R extends Resource> R doQuery(@NonNull ResourceEntity resourceEntity) throws Exception {
-        ResourceOperatorBuilder<?, ?> builder = getOperatorBuilder(resourceEntity.getResourceType());
-        Map<String, Map<ResourceLocation, List<Resource>>> cache = new HashMap<>();
-        Optional<R> optional = query(new ResourceID(resourceEntity), cache);
-        R resource = optional.orElseGet(() -> (R) builder.toResource(resourceEntity));
-        ResourceState newState = moveToNextState(resourceEntity.getStatus(), builder, optional);
-        this.resourceRepository.updateStatusById(resourceEntity.getId(), newState);
-        return resource;
     }
 
     private <R extends Resource> ResourceState moveToNextState(ResourceState current,
