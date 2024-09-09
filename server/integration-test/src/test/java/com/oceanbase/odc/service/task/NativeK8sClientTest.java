@@ -64,7 +64,8 @@ public class NativeK8sClientTest {
         String exceptedJobName = JobUtils.generateExecutorName(jobIdentity);
         List<String> cmd = Arrays.asList("perl", "-Mbignum=bpi", "-wle", "print bpi(2000)");
         PodConfig podParam = new PodConfig();
-        K8sResourceContext context = new K8sResourceContext(podParam, exceptedJobName, imageName, "group", podParam);
+        K8sResourceContext context =
+                new K8sResourceContext(podParam, exceptedJobName, imageName, "group", "type", podParam);
         K8sPodResource generateJobOfName = k8sClient.create(context);
         Assert.assertEquals(exceptedJobName, generateJobOfName);
 

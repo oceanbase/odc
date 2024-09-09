@@ -28,7 +28,7 @@ public enum ResourceState {
     // resource is created, compute resource available
     // task will only yield to resource with state running
     // k8s running
-    RUNNING,
+    AVAILABLE,
     // when submit destroy resource request
     // resource will be shut down even there is task running on it
     // k8s terminating

@@ -18,14 +18,15 @@ package com.oceanbase.odc.service.task.dummy;
 import java.util.Date;
 import java.util.Optional;
 
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.resource.k8s.DefaultResourceOperatorBuilder;
 import com.oceanbase.odc.service.resource.k8s.K8sPodResource;
 import com.oceanbase.odc.service.resource.k8s.K8sResourceContext;
 import com.oceanbase.odc.service.resource.k8s.client.K8sJobClient;
 import com.oceanbase.odc.service.resource.k8s.client.K8sJobClientSelector;
+import com.oceanbase.odc.service.task.caller.DefaultExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
-import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.JobCallerBuilder;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.ProcessJobCaller;
@@ -51,11 +52,11 @@ public class LocalMockK8sJobClient implements K8sJobClientSelector {
             JobContext jobContext = getJobContext(k8sResourceContext.getExtraData());
             ProcessJobCaller jobCaller = (ProcessJobCaller) JobCallerBuilder.buildProcessCaller(jobContext,
                     JobCallerBuilder.buildK8sEnv(jobContext));
-            ExecutorIdentifier executorIdentifier = jobCaller.doStart(jobContext);
+            DefaultExecutorIdentifier executorIdentifier = (DefaultExecutorIdentifier) jobCaller.doStart(jobContext);
             return new K8sPodResource(k8sResourceContext.getRegion(), k8sResourceContext.getGroup(),
                     k8sResourceContext.type(),
-                    k8sResourceContext.resourceNamespace(),
-                    k8sResourceContext.resourceName(), ResourceState.RUNNING,
+                    executorIdentifier.getNamespace(),
+                    executorIdentifier.getExecutorName(), ResourceState.AVAILABLE,
                     "127.0.0.1:" + executorIdentifier.getPort(), new Date(System.currentTimeMillis()));
         }
 
@@ -77,13 +78,15 @@ public class LocalMockK8sJobClient implements K8sJobClientSelector {
         public Optional<K8sPodResource> get(String namespace, String arn) throws JobException {
             K8sPodResource ret = new K8sPodResource(ResourceIDUtil.DEFAULT_REGION_PROP_NAME,
                     ResourceIDUtil.DEFAULT_GROUP_PROP_NAME, DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE,
-                    namespace, arn, ResourceState.RUNNING,
+                    namespace, arn, ResourceState.AVAILABLE,
                     "127.0.0.1", new Date(System.currentTimeMillis()));
             return Optional.of(ret);
         }
 
         @Override
         public String delete(String namespace, String arn) throws JobException {
+            long pid = Long.parseLong(namespace);
+            SystemUtils.killProcessByPid(pid);
             return namespace + ":" + arn;
         }
     }

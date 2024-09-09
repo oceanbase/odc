@@ -72,7 +72,7 @@ public class NativeK8sJobClient implements K8sJobClient {
     // pair left is resource state, right is matching list
     private static final Pair<ResourceState, List<String>>[] K8S_PHASE_MATCHER = new Pair[] {
             Pair.of(ResourceState.CREATING, Arrays.asList("Pending", "INIT")),
-            Pair.of(ResourceState.RUNNING, Arrays.asList("Running", "ALLOCATED")),
+            Pair.of(ResourceState.AVAILABLE, Arrays.asList("Running", "ALLOCATED")),
             Pair.of(ResourceState.DESTROYING, Arrays.asList("Terminating", "PENDING_DELETE")),
             Pair.of(ResourceState.UNKNOWN, Arrays.asList("unknown", "UNKNOWN"))
     };
@@ -122,7 +122,7 @@ public class NativeK8sJobClient implements K8sJobClient {
             V1Pod createdJob = api.createNamespacedPod(namespace, job, null, null,
                     null, null);
             // return pod status
-            return new K8sPodResource(null, null, namespace, createdJob.getMetadata().getName(), null,
+            return new K8sPodResource(null, null, null, namespace, createdJob.getMetadata().getName(),
                     k8sPodPhaseToResourceState(createdJob.getStatus().getPhase()),
                     createdJob.getStatus().getPodIP(), new Date(System.currentTimeMillis() / 1000));
         } catch (ApiException e) {

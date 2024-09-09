@@ -70,7 +70,7 @@ public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K
     public ResourceEntity toResourceEntity(K8sPodResource k8sResource) {
         ResourceEntity resourceEntity = new ResourceEntity();
         resourceEntity.setResourceType(k8sResource.type());
-        resourceEntity.setEndpoint(k8sResource.endpoint().getResourceURL());
+        resourceEntity.setEndpoint(k8sResource.endpoint().getResourceUrl());
         resourceEntity.setCreateTime(k8sResource.createDate());
         resourceEntity.setRegion(k8sResource.getRegion());
         resourceEntity.setGroupName(k8sResource.getGroup());

@@ -29,4 +29,11 @@ public interface Resource {
      * resource ID in string, may not unique
      */
     ResourceID resourceID();
+
+    /**
+     * state of the resource
+     * 
+     * @return
+     */
+    ResourceState resourceState();
 }

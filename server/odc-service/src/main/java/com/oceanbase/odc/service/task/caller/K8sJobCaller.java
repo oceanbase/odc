@@ -61,7 +61,7 @@ public class K8sJobCaller extends BaseJobCaller {
                 resourceManager.createResource(DEFAULT_TASK_RESOURCE_LOCATION,
                         DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE, buildK8sResourceContext(context));
         String arn = resource.getResource().resourceID().getIdentifier();
-        return DefaultExecutorIdentifier.builder().namespace(defaultPodConfig.getNamespace())
+        return DefaultExecutorIdentifier.builder().namespace(resource.getResource().getNamespace())
                 .executorName(arn).build();
     }
 
