@@ -256,9 +256,16 @@ public class ScheduleTaskService {
 
 
     public Page<ScheduleTask> list(Pageable pageable, Long scheduleId) {
+        return listEntity(pageable, scheduleId).map(scheduleTaskMapper::entityToModel);
+    }
+
+    /**
+     * for internal usage
+     */
+    public Page<ScheduleTaskEntity> listEntity(Pageable pageable, Long scheduleId) {
         Specification<ScheduleTaskEntity> specification =
                 Specification.where(ScheduleTaskSpecs.jobNameEquals(scheduleId.toString()));
-        return scheduleTaskRepository.findAll(specification, pageable).map(scheduleTaskMapper::entityToModel);
+        return scheduleTaskRepository.findAll(specification, pageable);
     }
 
     public Page<ScheduleTaskOverview> getScheduleTaskListResp(Pageable pageable, Long scheduleId) {
