@@ -44,6 +44,4 @@ public class ScheduleTaskDetailRespHist {
 
     private String jobGroup;
 
-    private String fullLogDownloadUrl;
-
 }

@@ -48,8 +48,6 @@ public class ScheduleTaskOverview {
      */
     private String jobGroup;
 
-    private String fullLogDownloadUrl;
-
     public String getJobGroup() {
         return type == null ? null : type.name();
     }

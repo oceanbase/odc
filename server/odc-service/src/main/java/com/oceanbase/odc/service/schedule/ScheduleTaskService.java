@@ -78,7 +78,6 @@ import com.oceanbase.odc.service.sqlplan.model.SqlPlanTaskResult;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
-import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
 import lombok.extern.slf4j.Slf4j;
@@ -138,8 +137,6 @@ public class ScheduleTaskService {
         res.setFireTime(scheduleTask.getFireTime());
         res.setCreateTime(scheduleTask.getCreateTime());
         res.setUpdateTime(scheduleTask.getUpdateTime());
-        res.setFullLogDownloadUrl(scheduledTaskLoggerService.getFullLogDownloadUrl(scheduleId, scheduleTask.getId(),
-                OdcTaskLogLevel.ALL));
         switch (res.getType()) {
             case DATA_ARCHIVE:
             case DATA_ARCHIVE_ROLLBACK:
@@ -237,7 +234,6 @@ public class ScheduleTaskService {
     }
 
 
-
     public Page<ScheduleTask> list(Pageable pageable, Long scheduleId) {
         Specification<ScheduleTaskEntity> specification =
                 Specification.where(ScheduleTaskSpecs.jobNameEquals(scheduleId.toString()));
@@ -245,9 +241,7 @@ public class ScheduleTaskService {
     }
 
     public Page<ScheduleTaskOverview> getScheduleTaskListResp(Pageable pageable, Long scheduleId) {
-        return list(pageable, scheduleId).map(e -> ScheduleTaskOverviewMapper.map(e).setFullLogDownloadUrl(
-                scheduledTaskLoggerService.getFullLogDownloadUrl(scheduleId, e.getId(), OdcTaskLogLevel.ALL)));
-
+        return list(pageable, scheduleId).map(ScheduleTaskOverviewMapper::map);
     }
 
     public Page<ScheduleTaskListOverview> getConditionalScheduleTaskListResp(Pageable pageable,

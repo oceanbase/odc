@@ -559,7 +559,6 @@ public class ScheduleService {
         returnValue.setJobName(schedule.getId().toString());
         returnValue.setJobGroup(detailResp.getType().name());
         returnValue.setExecutionDetails(detailResp.getExecutionDetails());
-        returnValue.setFullLogDownloadUrl(detailResp.getFullLogDownloadUrl());
         return returnValue;
     }
 
@@ -692,10 +691,17 @@ public class ScheduleService {
         return downloadUrls;
     }
 
+    public String getFullLogDownloadUrl(Long scheduleId, Long scheduleTaskId, boolean skipAuth) {
+        if (!skipAuth) {
+            nullSafeGetByIdWithCheckPermission(scheduleId, false);
+        }
+        return scheduledTaskLoggerService.getFullLogDownloadUrl(scheduleId, scheduleTaskId, OdcTaskLogLevel.ALL);
+    }
+
     @SkipAuthorize("odc internal usage")
     public List<String> getFullLogDownloadUrl(Long scheduleId, List<Long> scheduleTaskIds) {
-        return scheduleTaskIds.stream().map(taskId -> scheduledTaskLoggerService.getFullLogDownloadUrl(
-                scheduleId, taskId, OdcTaskLogLevel.ALL)).collect(Collectors.toList());
+        return scheduleTaskIds.stream().map(taskId -> getFullLogDownloadUrl(scheduleId, taskId, true))
+                .collect(Collectors.toList());
     }
 
     public String getLog(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel logLevel, boolean skipAuth) {
