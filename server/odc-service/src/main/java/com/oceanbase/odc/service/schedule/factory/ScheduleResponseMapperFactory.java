@@ -412,11 +412,11 @@ public class ScheduleResponseMapperFactory {
             }
             case SQL_PLAN: {
                 SqlPlanParameters parameters = (SqlPlanParameters) schedule.getParameters();
-                if(parameters.getDatabaseId() == null){
+                if (parameters.getDatabaseId() == null) {
                     return parameters;
                 }
                 List<Database> databases = getDatabaseByIds(Collections.singleton(parameters.getDatabaseId()));
-                if(!databases.isEmpty()){
+                if (!databases.isEmpty()) {
                     parameters.setDatabaseInfo(databases.get(0));
                 }
                 return parameters;
