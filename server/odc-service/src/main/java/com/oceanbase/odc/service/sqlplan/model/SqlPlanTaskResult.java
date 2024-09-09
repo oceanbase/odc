@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.service.sqlplan.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import lombok.Data;
 
 @Data
@@ -28,7 +31,7 @@ public class SqlPlanTaskResult {
 
     private long failedStatements = 0;
 
-    private String failedRecord;
+    private List<String> failedRecord;
 
     /**
      * sql execution json file download url
@@ -58,6 +61,13 @@ public class SqlPlanTaskResult {
     public void incrementFailedStatements() {
         this.failedStatements++;
         incrementFinishedStatements();
+    }
+
+    public void addFailedRecord(String record) {
+        if (this.failedRecord == null) {
+            this.failedRecord = new ArrayList<>();
+        }
+        this.failedRecord.add(record);
     }
 
 }

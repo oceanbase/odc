@@ -88,8 +88,6 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
 
     private String errorRecordPath = null;
 
-    private StringBuilder errorRecord = new StringBuilder();
-
     private final List<SqlExecuteResult> queryResultSetBuffer = new ArrayList<>();
 
     private final List<CSVExecuteResult> csvFileMappers = new ArrayList<>();
@@ -154,7 +152,6 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                 log.warn("Sql task execution failed, will continue to execute next statement.", e);
             }
         }
-        this.result.setFailedRecord(errorRecord.toString());
         log.info("The sql plan task execute finished,result={}", result);
 
         // all sql execute csv file list write to zip file
@@ -407,7 +404,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             try (FileWriter fw = new FileWriter(this.errorRecordPath, true)) {
                 String modifiedErrorMsg = generateErrorRecord(index, sql, result.getTrack());
                 fw.append(modifiedErrorMsg);
-                this.errorRecord.append(modifiedErrorMsg);
+                this.result.addFailedRecord(modifiedErrorMsg);
             } catch (IOException ex) {
                 log.warn("generate error record failed, sql index={}, sql={}, errorMsg={}", index, sql,
                         result.getTrack());
