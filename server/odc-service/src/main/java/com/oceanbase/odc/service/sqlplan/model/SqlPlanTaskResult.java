@@ -28,6 +28,8 @@ public class SqlPlanTaskResult {
 
     private long failedStatements = 0;
 
+    private String failedRecord;
+
     /**
      * sql execution json file download url
      */

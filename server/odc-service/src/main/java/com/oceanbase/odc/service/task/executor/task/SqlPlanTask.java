@@ -53,7 +53,6 @@ import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.schedule.job.PublishSqlPlanJobReq;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
@@ -88,6 +87,8 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
     private String zipFileRootPath;
 
     private String errorRecordPath = null;
+
+    private StringBuilder errorRecord = new StringBuilder();
 
     private final List<SqlExecuteResult> queryResultSetBuffer = new ArrayList<>();
 
@@ -153,6 +154,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                 log.warn("Sql task execution failed, will continue to execute next statement.", e);
             }
         }
+        this.result.setFailedRecord(errorRecord.toString());
         log.info("The sql plan task execute finished,result={}", result);
 
         // all sql execute csv file list write to zip file
@@ -378,8 +380,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             String ossAddress;
             try {
                 String objectName = cloudObjectStorageService.upload(file.getName(), file);
-                ossAddress = TaskDownloadUrlsProvider
-                        .concatBucketAndObjectName(cloudObjectStorageService.getBucketName(), objectName);
+                ossAddress = String.valueOf(cloudObjectStorageService.generateDownloadUrl(objectName));
                 log.info("upload sql plan task result file to OSS, file name={}", file.getName());
             } catch (Exception exception) {
                 log.warn("upload sql plan task result file to OSS, file name={}", file.getName());
@@ -406,6 +407,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             try (FileWriter fw = new FileWriter(this.errorRecordPath, true)) {
                 String modifiedErrorMsg = generateErrorRecord(index, sql, result.getTrack());
                 fw.append(modifiedErrorMsg);
+                this.errorRecord.append(modifiedErrorMsg);
             } catch (IOException ex) {
                 log.warn("generate error record failed, sql index={}, sql={}, errorMsg={}", index, sql,
                         result.getTrack());

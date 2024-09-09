@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -295,8 +296,8 @@ public class ScheduleTaskService {
                 .collect(Collectors.toMap(Database::getId, Function.identity()));
 
         // get job result json
-        List<Long> jobIds = scheduleTaskPage.getContent().stream().map(ScheduleTask::getJobId).collect(
-                Collectors.toList());
+        List<Long> jobIds = scheduleTaskPage.getContent().stream().map(ScheduleTask::getJobId).filter(Objects::nonNull)
+                .collect(Collectors.toList());
 
         Map<Long, String> resultMap = jobRepository.findAllById(jobIds).stream()
                 .filter(jobEntity -> jobEntity.getResultJson() != null)
