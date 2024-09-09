@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.task.executor.task;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.MapUtils;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -150,7 +152,11 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
                     group -> group.getExecutionUnits().stream().map(unit -> unit.getInput().getSql()).collect(
                             Collectors.joining(taskParameters.getDelimiter())))
                     .collect(Collectors.joining(taskParameters.getDelimiter())));
-            executorEngine = new ExecutorEngine<SqlExecuteReq, SqlExecuteResult>(100);
+            int maxSubGroupSize =
+                    executionGroups.stream().max(Comparator.comparingInt(group -> group.getSubGroups().size()))
+                            .map(group -> group.getExecutionUnits().size()).orElse(1);
+            executorEngine = new ExecutorEngine<SqlExecuteReq, SqlExecuteResult>(
+                    Math.max(SystemUtils.availableProcessors(), maxSubGroupSize));
             this.executionGroupContext = executorEngine.execute(executionGroups);
         } catch (Exception ex) {
             log.warn("start logical database change task failed, ", ex);
