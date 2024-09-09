@@ -305,7 +305,7 @@ public class DefaultWorksheetService implements WorksheetService {
     private void checkProjectWorksheetNumberLimit(Long projectId, BatchCreateWorksheetsPreProcessor createWorksheets) {
         long count = worksheetRepository.countByProjectId(projectId);
         if (count + createWorksheets.size() > PROJECT_WORKSHEET_NUM_LIMIT) {
-            throw new OverLimitException(LimitMetric.WORKSHEET_PROJECT_COUNT,
+            throw new OverLimitException(LimitMetric.WORKSHEET_COUNT_IN_PROJECT,
                     (double) PROJECT_WORKSHEET_NUM_LIMIT,
                     "create path num exceed project worksheet number limit,project id" + projectId
                             + ", create path num: " + createWorksheets.size()
