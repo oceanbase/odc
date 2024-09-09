@@ -161,12 +161,14 @@ public class ScheduleTaskService {
             case DATA_ARCHIVE_DELETE:
             case DATA_DELETE: {
                 res.setExecutionDetails(dlmService.getExecutionDetailByScheduleTaskId(scheduleTask.getId()));
+                break;
             }
             case SQL_PLAN:
                 // sql plan task detail should display sql content
                 res.setParameters(JsonUtils.toJson(scheduleTask.getParameters()));
                 jobRepository.findByIdNative(scheduleTask.getJobId())
                         .ifPresent(jobEntity -> res.setExecutionDetails(jobEntity.getResultJson()));
+                break;
             default:
                 break;
         }
