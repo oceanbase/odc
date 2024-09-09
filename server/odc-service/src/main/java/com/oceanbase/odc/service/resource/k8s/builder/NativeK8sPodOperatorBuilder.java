@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.service.resource.k8s.builder;
 
+import java.io.IOException;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
@@ -22,6 +25,7 @@ import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceOperator;
 import com.oceanbase.odc.service.resource.k8s.model.K8sPod;
 import com.oceanbase.odc.service.resource.k8s.operator.NativeK8sPodOperator;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import lombok.NonNull;
@@ -35,6 +39,10 @@ import lombok.NonNull;
  */
 @Component
 public class NativeK8sPodOperatorBuilder extends BaseNativeK8sResourceOperatorBuilder<K8sPod> {
+
+    public NativeK8sPodOperatorBuilder(@Autowired TaskFrameworkProperties frameworkProperties) throws IOException {
+        super(frameworkProperties);
+    }
 
     @Override
     protected boolean doMatch(String type) {

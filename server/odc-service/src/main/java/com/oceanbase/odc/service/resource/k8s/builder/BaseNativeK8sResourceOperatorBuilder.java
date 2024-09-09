@@ -17,10 +17,7 @@ package com.oceanbase.odc.service.resource.k8s.builder;
 
 import java.io.IOException;
 
-import javax.annotation.PostConstruct;
-
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.service.resource.ResourceOperatorBuilder;
@@ -43,34 +40,17 @@ import lombok.NonNull;
 public abstract class BaseNativeK8sResourceOperatorBuilder<T extends K8sResource>
         implements ResourceOperatorBuilder<T, T> {
 
-    private static final Object LOCK = new Object();
-    private static boolean API_CLIENT_SET = false;
-    private static boolean API_CLIENT_AVAILABLE = false;
     protected String defaultNamespace;
-    @Autowired
-    private TaskFrameworkProperties taskFrameworkProperties;
 
-    @PostConstruct
-    public void setUp() throws IOException {
-        K8sProperties properties = this.taskFrameworkProperties.getK8sProperties();
+    public BaseNativeK8sResourceOperatorBuilder(TaskFrameworkProperties frameworkProperties) throws IOException {
+        K8sProperties properties = frameworkProperties.getK8sProperties();
         if (properties != null && StringUtils.isNotBlank(properties.getNamespace())) {
             this.defaultNamespace = properties.getNamespace();
         }
-        if (API_CLIENT_SET) {
-            return;
-        }
-        synchronized (LOCK) {
-            if (API_CLIENT_SET) {
-                return;
-            }
-            API_CLIENT_SET = true;
-            if (properties == null) {
-                return;
-            }
+        if (Configuration.getDefaultApiClient() == null && properties != null) {
             ApiClient apiClient = NativeK8sJobClient.generateNativeK8sApiClient(properties);
             if (apiClient != null) {
                 Configuration.setDefaultApiClient(apiClient);
-                API_CLIENT_AVAILABLE = true;
             }
         }
     }
@@ -79,7 +59,7 @@ public abstract class BaseNativeK8sResourceOperatorBuilder<T extends K8sResource
 
     @Override
     public boolean match(@NonNull String type) {
-        return API_CLIENT_AVAILABLE && doMatch(type);
+        return Configuration.getDefaultApiClient() != null && doMatch(type);
     }
 
     @Override

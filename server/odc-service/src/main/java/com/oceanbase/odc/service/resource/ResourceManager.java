@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -119,13 +120,15 @@ public class ResourceManager {
                 .where(ResourceSpecs.idIn(params.getIds()));
         Map<String, Map<ResourceLocation, List<Resource>>> cache = new HashMap<>();
         Map<ResourceState, List<Long>> status2ResourceIds = new HashMap<>();
-        Page<ResourceWithID<Resource>> returnVal = this.resourceRepository.findAll(spec, pageable).map(e -> {
+        Page<ResourceEntity> resourceEntities = this.resourceRepository.findAll(spec, pageable);
+        Map<ResourceID, Resource> resourceIDResourceMap = findAll(resourceEntities.getContent().stream()
+                .map(ResourceID::new).collect(Collectors.toList()));
+        Page<ResourceWithID<Resource>> returnVal = resourceEntities.map(e -> {
             Optional<Resource> optional;
-            try {
-                optional = query(new ResourceID(e), cache);
-            } catch (Exception ex) {
-                log.warn("Failed to query resource, id={}", e.getId());
-                throw new IllegalStateException(ex);
+            if (resourceIDResourceMap.get(new ResourceID(e)) != null) {
+                optional = Optional.of(resourceIDResourceMap.get(new ResourceID(e)));
+            } else {
+                optional = Optional.empty();
             }
             ResourceOperatorBuilder<?, Resource> builder =
                     (ResourceOperatorBuilder<?, Resource>) getOperatorBuilder(e.getResourceType());
@@ -158,7 +161,9 @@ public class ResourceManager {
         Optional<R> optional = resourceOperatorBuilder.build(resourceID.getResourceLocation()).query(resourceID);
         if (re.isPresent()) {
             ResourceState newState = moveToNextState(re.get().getStatus(), resourceOperatorBuilder, optional);
-            this.resourceRepository.updateResourceStatus(resourceID, newState);
+            if (!Objects.equals(newState, re.get().getStatus())) {
+                this.resourceRepository.updateResourceStatus(resourceID, newState);
+            }
         }
         return optional;
     }
@@ -183,7 +188,9 @@ public class ResourceManager {
         ResourceID resourceID = new ResourceID(entity);
         Optional<R> optional = builder.build(resourceID.getResourceLocation()).query(resourceID);
         ResourceState newState = moveToNextState(entity.getStatus(), builder, optional);
-        this.resourceRepository.updateStatusById(entity.getId(), newState);
+        if (!Objects.equals(newState, entity.getStatus())) {
+            this.resourceRepository.updateStatusById(entity.getId(), newState);
+        }
         return Optional.of(new ResourceWithID<>(id, optional.orElseGet(() -> builder.toResource(entity))));
     }
 
@@ -286,24 +293,26 @@ public class ResourceManager {
     }
 
     @SuppressWarnings("all")
-    private <R extends Resource> Optional<R> query(ResourceID resourceID,
-            Map<String, Map<ResourceLocation, List<Resource>>> cache) throws Exception {
-        ResourceLocation location = resourceID.getResourceLocation();
-        Map<ResourceLocation, List<Resource>> location2Resource = cache
-                .computeIfAbsent(resourceID.getType(), c -> new HashMap<>());
-        List<Resource> resourceList = location2Resource.get(location);
-        ResourceOperator<?, ?> resourceOperator = getOperatorBuilder(resourceID.getType()).build(location);
-        if (resourceList == null) {
-            resourceList = new ArrayList<>(resourceOperator.list());
-            location2Resource.put(location, resourceList);
-        }
-        List<Resource> list = resourceList.stream()
-                .filter(o -> resourceID.equals(o.resourceID()))
-                .collect(Collectors.toList());
-        if (list.size() > 1) {
-            throw new IllegalStateException("There are more than one resource found by id " + resourceID);
-        }
-        return list.size() == 1 ? Optional.of((R) list.get(0)) : Optional.empty();
+    private Map<ResourceID, Resource> findAll(@NonNull List<ResourceID> ids) {
+        Map<String, List<ResourceID>> type2ResourceIDs = ids.stream()
+                .collect(Collectors.groupingBy(ResourceID::getType));
+        Map<ResourceID, Resource> returnVal = new HashMap<>();
+        type2ResourceIDs.forEach((type, rIds) -> {
+            ResourceOperatorBuilder<?, Resource> operatorBuilder =
+                    (ResourceOperatorBuilder<?, Resource>) getOperatorBuilder(type);
+            Map<ResourceLocation, List<ResourceID>> location2ResourceIDs = rIds
+                    .stream().collect(Collectors.groupingBy(ResourceID::getResourceLocation));
+            location2ResourceIDs.keySet().forEach(location -> {
+                try {
+                    operatorBuilder.build(location).list().forEach(
+                            resource -> returnVal.put(resource.resourceID(), resource));
+                } catch (Exception ex) {
+                    log.warn("Failed to list resources", ex);
+                    throw new IllegalStateException(ex);
+                }
+            });
+        });
+        return returnVal;
     }
 
 }
