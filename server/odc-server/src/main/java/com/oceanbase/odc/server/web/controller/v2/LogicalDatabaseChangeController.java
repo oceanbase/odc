@@ -41,24 +41,26 @@ public class LogicalDatabaseChangeController {
     @Autowired
     private LogicalDatabaseChangeService logicalDatabaseChangeService;
 
-    @RequestMapping(value = "/scheduleTasks/{scheduleTaskId:[\\d]+}/records/{recordId:[\\d]+}",
+    @RequestMapping(value = "/scheduleTasks/{scheduleTaskId:[\\d]+}/executionUnits/{executionUnitId:[\\d]+}",
             method = RequestMethod.GET)
     public SuccessResponse<SqlExecutionUnitResp> detailPhysicalDatabaseChangeTask(@PathVariable Long scheduleTaskId,
-            @PathVariable Long recordId) {
-        return Responses.success(logicalDatabaseChangeService.detail(scheduleTaskId, recordId));
+            @PathVariable Long executionUnitId) {
+        return Responses.success(logicalDatabaseChangeService.detail(scheduleTaskId, executionUnitId));
     }
 
-    @RequestMapping(value = "/scheduleTasks/{scheduleTaskId:[\\d]+}/records/{recordId:[\\d]+}/skipCurrent",
+    @RequestMapping(
+            value = "/scheduleTasks/{scheduleTaskId:[\\d]+}/executionUnits/{executionUnitId:[\\d]+}/skipCurrent",
             method = RequestMethod.POST)
     public SuccessResponse<Boolean> skipPhysicalDatabaseChangeTask(@PathVariable Long scheduleTaskId,
-            @PathVariable Long recordId) throws InterruptedException, JobException {
-        return Responses.success(logicalDatabaseChangeService.skipCurrent(scheduleTaskId, recordId));
+            @PathVariable Long executionUnitId) throws InterruptedException, JobException {
+        return Responses.success(logicalDatabaseChangeService.skipCurrent(scheduleTaskId, executionUnitId));
     }
 
-    @RequestMapping(value = "/scheduleTasks/{scheduleTaskId:[\\d]+}/records/{recordId:[\\d]+}/terminateCurrent",
+    @RequestMapping(
+            value = "/scheduleTasks/{scheduleTaskId:[\\d]+}/executionUnits/{executionUnitId:[\\d]+}/terminateCurrent",
             method = RequestMethod.POST)
     public SuccessResponse<Boolean> terminatePhysicalDatabaseChangeTask(@PathVariable Long scheduleTaskId,
-            @PathVariable Long recordId) throws InterruptedException, JobException {
-        return Responses.success(logicalDatabaseChangeService.terminateCurrent(scheduleTaskId, recordId));
+            @PathVariable Long executionUnitId) throws InterruptedException, JobException {
+        return Responses.success(logicalDatabaseChangeService.terminateCurrent(scheduleTaskId, executionUnitId));
     }
 }

@@ -190,7 +190,7 @@ public class LogicalDatabaseService {
         Set<Long> physicalDBIds =
                 databaseMappingRepository.findByLogicalDatabaseId(logicalDatabaseId).stream()
                         .map(DatabaseMappingEntity::getPhysicalDatabaseId).collect(Collectors.toSet());
-        return databaseService.listDatabasesDetailsByIds(physicalDBIds);
+        return databaseService.listDatabasesByIds(physicalDBIds);
     }
 
     public Set<Long> listDataSourceIds(@NotNull Long logicalDatabaseId) {

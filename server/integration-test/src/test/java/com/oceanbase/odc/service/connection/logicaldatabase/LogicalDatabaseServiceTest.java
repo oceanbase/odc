@@ -46,6 +46,7 @@ import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingReposi
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.connection.database.DatabaseMapper;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.CreateLogicalDatabaseReq;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
@@ -74,6 +75,8 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
     private LogicalDatabaseService logicalDatabaseService;
     @MockBean
     private DatabaseRepository databaseRepository;
+    @MockBean
+    private DatabaseService databaseService;
     @MockBean
     private AuthenticationFacade authenticationFacade;
     @MockBean
@@ -112,7 +115,7 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
         Set<Long> databaseIds = new HashSet<>();
         databaseIds.addAll(Arrays.asList(PHYSICAL_DATABASE_ID));
         req.setPhysicalDatabaseIds(databaseIds);
-        Assert.assertTrue(logicalDatabaseService.create(req));
+        Assert.assertNotNull(logicalDatabaseService.create(req));
     }
 
     @Test

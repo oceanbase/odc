@@ -98,14 +98,15 @@ public class LogicalDatabaseChangeService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public boolean skipCurrent(@NonNull Long scheduleTaskId, @NonNull Long recordId)
+    public boolean skipCurrent(@NonNull Long scheduleTaskId, @NonNull Long executionUnitId)
             throws InterruptedException, JobException {
         Lock lock = jdbcLockRegistry.obtain(getScheduleTaskIdLockKey(scheduleTaskId));
         if (!lock.tryLock(5, TimeUnit.SECONDS)) {
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
         }
         try {
-            Optional<LogicalDBChangeExecutionUnitEntity> unitOpt = findCurrentExecutionUnit(scheduleTaskId, recordId);
+            Optional<LogicalDBChangeExecutionUnitEntity> unitOpt =
+                    findCurrentExecutionUnit(scheduleTaskId, executionUnitId);
             if (!unitOpt.isPresent()) {
                 return false;
             }
@@ -125,14 +126,15 @@ public class LogicalDatabaseChangeService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public boolean terminateCurrent(@NonNull Long scheduleTaskId, @NonNull Long recordId)
+    public boolean terminateCurrent(@NonNull Long scheduleTaskId, @NonNull Long executionUnitId)
             throws InterruptedException, JobException {
         Lock lock = jdbcLockRegistry.obtain(getScheduleTaskIdLockKey(scheduleTaskId));
         if (!lock.tryLock(5, TimeUnit.SECONDS)) {
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
         }
         try {
-            Optional<LogicalDBChangeExecutionUnitEntity> unitOpt = findCurrentExecutionUnit(scheduleTaskId, recordId);
+            Optional<LogicalDBChangeExecutionUnitEntity> unitOpt =
+                    findCurrentExecutionUnit(scheduleTaskId, executionUnitId);
             if (!unitOpt.isPresent()) {
                 return false;
             }
@@ -152,13 +154,13 @@ public class LogicalDatabaseChangeService {
         return true;
     }
 
-    public SqlExecutionUnitResp detail(@NonNull Long scheduleTaskId, @NonNull Long recordId) {
+    public SqlExecutionUnitResp detail(@NonNull Long scheduleTaskId, @NonNull Long executionUnitId) {
         List<LogicalDBChangeExecutionUnitEntity> entities =
                 executionRepository.findByScheduleTaskIdAndPhysicalDatabaseIdOrderByExecutionOrderAsc(scheduleTaskId,
-                        recordId);
-        Database database = databaseService.detail(recordId);
+                        executionUnitId);
+        Database database = databaseService.detail(executionUnitId);
         SqlExecutionUnitResp resp = new SqlExecutionUnitResp();
-        resp.setId(recordId);
+        resp.setId(executionUnitId);
         resp.setDatabase(database);
         resp.setDataSource(database.getDataSource());
         resp.setTotalSqlCount(entities.size());
@@ -215,9 +217,9 @@ public class LogicalDatabaseChangeService {
     }
 
     private Optional<LogicalDBChangeExecutionUnitEntity> findCurrentExecutionUnit(@NonNull Long scheduleTaskId,
-            @NonNull Long recordId) {
+            @NonNull Long executionUnitId) {
         return executionRepository
-                .findByScheduleTaskIdAndPhysicalDatabaseIdOrderByExecutionOrderAsc(scheduleTaskId, recordId)
+                .findByScheduleTaskIdAndPhysicalDatabaseIdOrderByExecutionOrderAsc(scheduleTaskId, executionUnitId)
                 .stream().filter(executionUnit -> !executionUnit.getStatus().isCompleted()).findFirst();
     }
 

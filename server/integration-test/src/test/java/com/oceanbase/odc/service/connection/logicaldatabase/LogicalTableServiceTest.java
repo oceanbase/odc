@@ -25,6 +25,7 @@ import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.YamlUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.LogicalTableExpressionParseUtils;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -50,7 +51,7 @@ public class LogicalTableServiceTest extends ServiceTestEnv {
                 YamlUtils.fromYamlList(TEST_RESOURCE_VALID_EXPRESSION_FILE_PATH,
                         LogicalTableExpressionResolveTestCase.class);
         for (LogicalTableExpressionResolveTestCase testCase : testCases) {
-            List<DataNode> actual = logicalTableService.resolve(testCase.getExpression());
+            List<DataNode> actual = LogicalTableExpressionParseUtils.resolve(testCase.getExpression());
             List<DataNode> expected = testCase.getDataNodes();
             Assert.assertEquals(String.format("test case id = %d", testCase.getId()), expected.size(), actual.size());
             for (int i = 0; i < expected.size(); i++) {
@@ -73,7 +74,7 @@ public class LogicalTableServiceTest extends ServiceTestEnv {
                         LogicalTableExpressionResolveTestCase.class);
         for (LogicalTableExpressionResolveTestCase testCase : testCases) {
             try {
-                logicalTableService.resolve(testCase.getExpression());
+                LogicalTableExpressionParseUtils.resolve(testCase.getExpression());
             } catch (Exception ex) {
                 Assert.assertTrue(
                         String.format("test case id = %d, expected = %s, actual = %s", testCase.getId(),
