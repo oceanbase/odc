@@ -423,12 +423,17 @@ public class ConnectionService {
         List<Long> environmentIds = repository.findByDatabaseProjectId(projectId).stream()
                 .map(ConnectionEntity::getEnvironmentId)
                 .distinct().collect(Collectors.toList());
-        Map<Long, Environment> environmentMap = environmentService.getByIdIn(environmentIds).stream()
+        Map<Long, Environment> environmentMap = environmentService.list(QueryEnvironmentParam
+                .builder().ids(environmentIds).build())
+                .stream()
                 .collect(Collectors.toMap(Environment::getId, environment -> environment));
         if (basic) {
             connections = repository.findByDatabaseProjectId(projectId).stream().map(e -> {
                 ConnectionConfig c = new ConnectionConfig();
-                Environment environment = environmentMap.get(e.getEnvironmentId());
+                Environment environment = environmentMap.getOrDefault(e.getEnvironmentId(), null);
+                if (Objects.isNull(environment)) {
+                    throw new UnexpectedException("environment not found, id=" + e.getEnvironmentId());
+                }
                 c.setId(e.getId());
                 c.setName(e.getName());
                 c.setType(e.getType());
