@@ -198,13 +198,6 @@ public class ResourceManager {
         }
     }
 
-    @Transactional
-    @SkipAuthorize("odc internal usage")
-    public String destroy(@NonNull Long id) throws Exception {
-        Optional<ResourceEntity> optional = this.resourceRepository.findById(id);
-        return doDestroy(optional.orElseThrow(() -> new IllegalStateException("Resource not found by id " + id)));
-    }
-
     /**
      * real destroy by resource id
      * 
@@ -218,6 +211,13 @@ public class ResourceManager {
         Optional<ResourceEntity> optional = this.resourceRepository.findByResourceID(resourceID);
         return doDestroy(optional.orElseThrow(() -> new IllegalStateException(
                 "Resource not found by id " + resourceID)));
+    }
+
+    @Transactional
+    @SkipAuthorize("odc internal usage")
+    public String destroy(@NonNull Long id) throws Exception {
+        Optional<ResourceEntity> optional = this.resourceRepository.findById(id);
+        return doDestroy(optional.orElseThrow(() -> new IllegalStateException("Resource not found by id " + id)));
     }
 
     /**
