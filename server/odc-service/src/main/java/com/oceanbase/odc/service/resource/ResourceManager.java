@@ -149,13 +149,11 @@ public class ResourceManager {
      * @return
      * @throws Exception
      */
-    @SuppressWarnings("all")
+    @Transactional
     @SkipAuthorize("odc internal usage")
     public <R extends Resource> Optional<R> query(@NonNull ResourceID resourceID) throws Exception {
-        ResourceOperatorBuilder<?, R> operatorBuilder =
-                (ResourceOperatorBuilder<?, R>) getOperatorBuilder(resourceID.getType());
-        ResourceOperator<?, R> resourceOperator = operatorBuilder.build(resourceID.getResourceLocation());
-        return resourceOperator.query(resourceID);
+        Optional<ResourceEntity> optional = this.resourceRepository.findByResourceID(resourceID);
+        return optional.isPresent() ? doQuery(optional.get()) : Optional.empty();
     }
 
     /**
@@ -164,19 +162,11 @@ public class ResourceManager {
      * @return
      * @throws Exception
      */
-    @SuppressWarnings("all")
     @Transactional
     @SkipAuthorize("odc internal usage")
     public <R extends Resource> Optional<R> query(@NonNull Long id) throws Exception {
         Optional<ResourceEntity> optional = this.resourceRepository.findById(id);
-        if (!optional.isPresent()) {
-            return Optional.empty();
-        }
-        ResourceEntity resourceEntity = optional.get();
-        ResourceOperatorBuilder<?, ?> builder = getOperatorBuilder(resourceEntity.getResourceType());
-        R resource = (R) builder.toResources(Collections.singletonList(resourceEntity)).get(0);
-        this.resourceRepository.updateStatusById(id, resource.resourceState());
-        return Optional.of(resource);
+        return optional.isPresent() ? doQuery(optional.get()) : Optional.empty();
     }
 
     /**
@@ -208,13 +198,11 @@ public class ResourceManager {
         }
     }
 
+    @Transactional
     @SkipAuthorize("odc internal usage")
     public String destroy(@NonNull Long id) throws Exception {
         Optional<ResourceEntity> optional = this.resourceRepository.findById(id);
-        if (!optional.isPresent()) {
-            throw new IllegalStateException("Resource is not found by id " + id);
-        }
-        return destroy(new ResourceID(optional.get()));
+        return doDestroy(optional.orElseThrow(() -> new IllegalStateException("Resource not found by id " + id)));
     }
 
     /**
@@ -227,13 +215,9 @@ public class ResourceManager {
     @Transactional
     @SkipAuthorize("odc internal usage")
     public String destroy(@NonNull ResourceID resourceID) throws Exception {
-        ResourceOperatorBuilder<?, ?> operatorBuilder = getOperatorBuilder(resourceID.getType());
-        ResourceOperator<?, ?> resourceOperator = operatorBuilder.build(resourceID.getResourceLocation());
-        String ret = resourceOperator.destroy(resourceID);
-        // then update db status
-        this.resourceRepository.updateResourceStatus(resourceID, ResourceState.DESTROYING);
-        log.info("Delete resource succeed, resourceID={}, ret={}", resourceID, ret);
-        return ret;
+        Optional<ResourceEntity> optional = this.resourceRepository.findByResourceID(resourceID);
+        return doDestroy(optional.orElseThrow(() -> new IllegalStateException(
+                "Resource not found by id " + resourceID)));
     }
 
     /**
@@ -261,6 +245,25 @@ public class ResourceManager {
             }
         }
         throw new IllegalStateException("Resource operator builder is not found by " + type);
+    }
+
+    private String doDestroy(@NonNull ResourceEntity resourceEntity) throws Exception {
+        ResourceOperatorBuilder<?, ?> operatorBuilder = getOperatorBuilder(resourceEntity.getResourceType());
+        ResourceOperator<?, ?> resourceOperator = operatorBuilder.build(new ResourceLocation(resourceEntity));
+        ResourceID resourceID = new ResourceID(resourceEntity);
+        String ret = resourceOperator.destroy(resourceID);
+        // then update db status
+        this.resourceRepository.updateResourceStatus(resourceID, ResourceState.DESTROYING);
+        log.info("Delete resource succeed, resourceID={}, ret={}", resourceID, ret);
+        return ret;
+    }
+
+    @SuppressWarnings("all")
+    private <R extends Resource> Optional<R> doQuery(@NonNull ResourceEntity resourceEntity) throws Exception {
+        ResourceOperatorBuilder<?, ?> builder = getOperatorBuilder(resourceEntity.getResourceType());
+        R resource = (R) builder.toResources(Collections.singletonList(resourceEntity)).get(0);
+        this.resourceRepository.updateStatusById(resourceEntity.getId(), resource.resourceState());
+        return Optional.of(resource);
     }
 
 }
