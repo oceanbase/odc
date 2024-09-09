@@ -320,7 +320,7 @@ function maven_install_libs() {
 
     func_echo "maven install libs ..."
 
-# 必须先打 ob-sql-parser 包
+# need to build ob-sql-parser firstly
     build_module "ob-sql-parser" "${maven_extra_args[@]}" || return 2
     build_module "db-browser" "${maven_extra_args[@]}" || return 2
 
