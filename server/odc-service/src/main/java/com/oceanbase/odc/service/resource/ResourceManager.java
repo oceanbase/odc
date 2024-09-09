@@ -153,7 +153,7 @@ public class ResourceManager {
     @SkipAuthorize("odc internal usage")
     public <R extends Resource> Optional<R> query(@NonNull ResourceID resourceID) throws Exception {
         Optional<ResourceEntity> optional = this.resourceRepository.findByResourceID(resourceID);
-        return optional.isPresent() ? doQuery(optional.get()) : Optional.empty();
+        return optional.isPresent() ? Optional.of(doQuery(optional.get())) : Optional.empty();
     }
 
     /**
@@ -164,9 +164,9 @@ public class ResourceManager {
      */
     @Transactional
     @SkipAuthorize("odc internal usage")
-    public <R extends Resource> Optional<R> query(@NonNull Long id) throws Exception {
+    public <R extends Resource> Optional<ResourceWithID<R>> query(@NonNull Long id) throws Exception {
         Optional<ResourceEntity> optional = this.resourceRepository.findById(id);
-        return optional.isPresent() ? doQuery(optional.get()) : Optional.empty();
+        return optional.isPresent() ? Optional.of(new ResourceWithID<>(id, doQuery(optional.get()))) : Optional.empty();
     }
 
     /**
@@ -209,15 +209,20 @@ public class ResourceManager {
     @SkipAuthorize("odc internal usage")
     public String destroy(@NonNull ResourceID resourceID) throws Exception {
         Optional<ResourceEntity> optional = this.resourceRepository.findByResourceID(resourceID);
-        return doDestroy(optional.orElseThrow(() -> new IllegalStateException(
-                "Resource not found by id " + resourceID)));
+        if (!optional.isPresent()) {
+            log.warn("Resource is not found, resourceID={}", resourceID);
+        }
+        return doDestroy(resourceID);
     }
 
     @Transactional
     @SkipAuthorize("odc internal usage")
     public String destroy(@NonNull Long id) throws Exception {
         Optional<ResourceEntity> optional = this.resourceRepository.findById(id);
-        return doDestroy(optional.orElseThrow(() -> new IllegalStateException("Resource not found by id " + id)));
+        if (!optional.isPresent()) {
+            throw new IllegalStateException("Resource not found by id " + id);
+        }
+        return doDestroy(new ResourceID(optional.get()));
     }
 
     /**
@@ -247,10 +252,9 @@ public class ResourceManager {
         throw new IllegalStateException("Resource operator builder is not found by " + type);
     }
 
-    private String doDestroy(@NonNull ResourceEntity resourceEntity) throws Exception {
-        ResourceOperatorBuilder<?, ?> operatorBuilder = getOperatorBuilder(resourceEntity.getResourceType());
-        ResourceOperator<?, ?> resourceOperator = operatorBuilder.build(new ResourceLocation(resourceEntity));
-        ResourceID resourceID = new ResourceID(resourceEntity);
+    private String doDestroy(@NonNull ResourceID resourceID) throws Exception {
+        ResourceOperatorBuilder<?, ?> operatorBuilder = getOperatorBuilder(resourceID.getType());
+        ResourceOperator<?, ?> resourceOperator = operatorBuilder.build(resourceID.getResourceLocation());
         String ret = resourceOperator.destroy(resourceID);
         // then update db status
         this.resourceRepository.updateResourceStatus(resourceID, ResourceState.DESTROYING);
@@ -259,11 +263,11 @@ public class ResourceManager {
     }
 
     @SuppressWarnings("all")
-    private <R extends Resource> Optional<R> doQuery(@NonNull ResourceEntity resourceEntity) throws Exception {
+    private <R extends Resource> R doQuery(@NonNull ResourceEntity resourceEntity) throws Exception {
         ResourceOperatorBuilder<?, ?> builder = getOperatorBuilder(resourceEntity.getResourceType());
         R resource = (R) builder.toResources(Collections.singletonList(resourceEntity)).get(0);
         this.resourceRepository.updateStatusById(resourceEntity.getId(), resource.resourceState());
-        return Optional.of(resource);
+        return resource;
     }
 
 }
