@@ -36,6 +36,7 @@ import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
@@ -100,9 +101,10 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         this.connectionSession = generateSession();
         this.executor = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
         long timeoutUs = TimeUnit.MILLISECONDS.toMicros(parameters.getTimeoutMillis());
+        PreConditions.notNull(timeoutUs, "timeoutUs");
         if (timeoutUs < 0) {
             throw new IllegalArgumentException(
-                    "Timeout settings is too large, " + parameters.getTimeoutMillis());
+                    "Invalid timeout settings, " + parameters.getTimeoutMillis());
         }
         ConnectionInitializer initializer =
                 new ConsoleTimeoutInitializer(timeoutUs, connectionSession.getDialectType());
