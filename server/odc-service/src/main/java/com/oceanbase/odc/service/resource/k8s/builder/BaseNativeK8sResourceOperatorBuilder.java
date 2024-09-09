@@ -16,22 +16,13 @@
 package com.oceanbase.odc.service.resource.k8s.builder;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
-import com.oceanbase.odc.service.resource.ResourceID;
-import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceOperatorBuilder;
 import com.oceanbase.odc.service.resource.k8s.client.NativeK8sJobClient;
 import com.oceanbase.odc.service.resource.k8s.model.K8sResource;
@@ -86,10 +77,6 @@ public abstract class BaseNativeK8sResourceOperatorBuilder<T extends K8sResource
 
     protected abstract boolean doMatch(String type);
 
-    protected abstract T newResourceByEntity(ResourceEntity resourceEntity);
-
-    protected abstract T fullFillExistsResourceByEntity(T resource, ResourceEntity resourceEntity);
-
     @Override
     public boolean match(@NonNull String type) {
         return API_CLIENT_AVAILABLE && doMatch(type);
@@ -104,39 +91,6 @@ public abstract class BaseNativeK8sResourceOperatorBuilder<T extends K8sResource
         resourceEntity.setEndpoint("N/A");
         resourceEntity.setNamespace(this.defaultNamespace);
         return resourceEntity;
-    }
-
-    @Override
-    public List<T> toResources(List<ResourceEntity> resourceEntities) {
-        Map<ResourceLocation, List<T>> loc2Res = new HashMap<>();
-        resourceEntities.forEach(e -> {
-            ResourceLocation location = new ResourceLocation(e.getRegion(), e.getGroupName());
-            if (loc2Res.containsKey(location)) {
-                return;
-            }
-            try {
-                loc2Res.put(location, new ArrayList<>(build(location).list()));
-            } catch (Exception ex) {
-                throw new IllegalStateException(ex);
-            }
-        });
-        return resourceEntities.stream().map(e -> {
-            ResourceLocation loc = new ResourceLocation(e.getRegion(), e.getGroupName());
-            ResourceID resourceID = new ResourceID(
-                    loc, e.getResourceType(), e.getNamespace(), e.getResourceName());
-            List<T> resources = loc2Res.get(loc);
-            if (CollectionUtils.isEmpty(resources)) {
-                return newResourceByEntity(e);
-            }
-            List<T> matches = resources.stream().filter(p -> Objects.equals(p.resourceID(), resourceID))
-                    .collect(Collectors.toList());
-            if (CollectionUtils.isEmpty(matches)) {
-                return newResourceByEntity(e);
-            } else if (matches.size() == 1) {
-                return fullFillExistsResourceByEntity(matches.get(0), e);
-            }
-            throw new IllegalStateException("There are Multi resources found by id " + resourceID);
-        }).collect(Collectors.toList());
     }
 
 }

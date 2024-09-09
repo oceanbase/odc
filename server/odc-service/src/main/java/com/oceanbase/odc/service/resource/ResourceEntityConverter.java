@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.resource;
 
-import java.util.List;
-
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
 
 /**
@@ -35,9 +33,9 @@ public interface ResourceEntityConverter<T extends Resource> {
     /**
      * convert resourceEntity to resource
      * 
-     * @param resourceEntities
+     * @param resourceEntity
      * @return
      */
-    List<T> toResources(List<ResourceEntity> resourceEntities);
+    T toResource(ResourceEntity resourceEntity);
 
 }

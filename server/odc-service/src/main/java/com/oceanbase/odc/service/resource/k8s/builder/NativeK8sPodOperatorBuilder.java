@@ -42,13 +42,7 @@ public class NativeK8sPodOperatorBuilder extends BaseNativeK8sResourceOperatorBu
     }
 
     @Override
-    protected K8sPod fullFillExistsResourceByEntity(K8sPod resource, ResourceEntity e) {
-        resource.setResourceState(e.getStatus());
-        return resource;
-    }
-
-    @Override
-    protected K8sPod newResourceByEntity(ResourceEntity e) {
+    public K8sPod toResource(ResourceEntity e) {
         K8sPod k8sPod = new K8sPod(new ResourceLocation(e), e.getStatus());
         V1ObjectMeta meta = new V1ObjectMeta();
         meta.setName(e.getResourceName());

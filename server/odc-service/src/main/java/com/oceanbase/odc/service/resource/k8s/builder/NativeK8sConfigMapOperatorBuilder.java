@@ -20,7 +20,6 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceOperator;
-import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.resource.k8s.model.K8sConfigMap;
 import com.oceanbase.odc.service.resource.k8s.operator.NativeK8sConfigMapOperator;
 
@@ -43,7 +42,7 @@ public class NativeK8sConfigMapOperatorBuilder extends BaseNativeK8sResourceOper
     }
 
     @Override
-    protected K8sConfigMap newResourceByEntity(ResourceEntity e) {
+    public K8sConfigMap toResource(ResourceEntity e) {
         K8sConfigMap k8sConfigMap = new K8sConfigMap(new ResourceLocation(e), e.getStatus());
         V1ObjectMeta meta = new V1ObjectMeta();
         meta.setName(e.getResourceName());
@@ -52,11 +51,6 @@ public class NativeK8sConfigMapOperatorBuilder extends BaseNativeK8sResourceOper
         return k8sConfigMap;
     }
 
-    @Override
-    protected K8sConfigMap fullFillExistsResourceByEntity(K8sConfigMap resource, ResourceEntity e) {
-        resource.setResourceState(ResourceState.AVAILABLE);
-        return resource;
-    }
 
     @Override
     public ResourceOperator<K8sConfigMap, K8sConfigMap> build(@NonNull ResourceLocation resourceLocation) {

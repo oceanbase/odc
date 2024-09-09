@@ -15,9 +15,7 @@
  */
 package com.oceanbase.odc.service.resource.k8s;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
@@ -83,8 +81,8 @@ public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K
     }
 
     @Override
-    public List<K8sPodResource> toResources(List<ResourceEntity> resourceEntities) {
-        return resourceEntities.stream().map(resourceEntity -> new K8sPodResource(
+    public K8sPodResource toResource(ResourceEntity resourceEntity) {
+        return new K8sPodResource(
                 resourceEntity.getRegion(),
                 resourceEntity.getGroupName(),
                 resourceEntity.getResourceType(),
@@ -92,7 +90,7 @@ public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K
                 resourceEntity.getResourceName(),
                 resourceEntity.getStatus(),
                 resourceEntity.getEndpoint(),
-                resourceEntity.getCreateTime())).collect(Collectors.toList());
+                resourceEntity.getCreateTime());
     }
 
     /**

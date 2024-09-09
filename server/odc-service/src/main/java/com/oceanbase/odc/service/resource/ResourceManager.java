@@ -16,12 +16,10 @@
 package com.oceanbase.odc.service.resource;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -119,25 +117,24 @@ public class ResourceManager {
             @NonNull QueryResourceParams params, @NonNull Pageable pageable) throws Exception {
         Specification<ResourceEntity> spec = Specification
                 .where(ResourceSpecs.idIn(params.getIds()));
-        Page<ResourceEntity> resourceEntities = this.resourceRepository.findAll(spec, pageable);
-        Map<String, List<ResourceEntity>> type2Resource = resourceEntities.stream()
-                .collect(Collectors.groupingBy(ResourceEntity::getResourceType));
-        Map<ResourceID, Resource> resourceId2Resource = new HashMap<>();
+        Map<String, Map<ResourceLocation, List<Resource>>> cache = new HashMap<>();
         Map<ResourceState, List<Long>> status2ResourceIds = new HashMap<>();
-        for (Entry<String, List<ResourceEntity>> entry : type2Resource.entrySet()) {
-            ResourceOperatorBuilder<?, Resource> resourceOperatorBuilder =
-                    (ResourceOperatorBuilder<?, Resource>) getOperatorBuilder(entry.getKey());
-            List<Resource> rs = resourceOperatorBuilder.toResources(entry.getValue());
-            for (int i = 0; i < rs.size(); i++) {
-                Resource r = rs.get(i);
-                resourceId2Resource.put(r.resourceID(), r);
-                List<Long> ids = status2ResourceIds.computeIfAbsent(
-                        r.resourceState(), k -> new ArrayList<>());
-                ids.add(entry.getValue().get(i).getId());
+        Page<ResourceWithID<Resource>> returnVal = this.resourceRepository.findAll(spec, pageable).map(e -> {
+            Optional<Resource> optional;
+            try {
+                optional = query(new ResourceID(e), cache);
+            } catch (Exception ex) {
+                log.warn("Failed to query resource, id={}", e.getId());
+                throw new IllegalStateException(ex);
             }
-        }
-        Page<ResourceWithID<Resource>> returnVal =
-                resourceEntities.map(e -> new ResourceWithID<>(e.getId(), resourceId2Resource.get(new ResourceID(e))));
+            ResourceOperatorBuilder<?, Resource> builder =
+                    (ResourceOperatorBuilder<?, Resource>) getOperatorBuilder(e.getResourceType());
+            ResourceState newState = moveToNextState(e.getStatus(), builder, optional);
+            List<Long> ids = status2ResourceIds.computeIfAbsent(
+                    newState, k -> new ArrayList<>());
+            ids.add(e.getId());
+            return new ResourceWithID<>(e.getId(), optional.orElseGet(() -> builder.toResource(e)));
+        });
         status2ResourceIds.forEach((key, value) -> resourceRepository.updateStatusByIdIn(value, key));
         return returnVal;
     }
@@ -265,9 +262,38 @@ public class ResourceManager {
     @SuppressWarnings("all")
     private <R extends Resource> R doQuery(@NonNull ResourceEntity resourceEntity) throws Exception {
         ResourceOperatorBuilder<?, ?> builder = getOperatorBuilder(resourceEntity.getResourceType());
-        R resource = (R) builder.toResources(Collections.singletonList(resourceEntity)).get(0);
-        this.resourceRepository.updateStatusById(resourceEntity.getId(), resource.resourceState());
+        Map<String, Map<ResourceLocation, List<Resource>>> cache = new HashMap<>();
+        Optional<R> optional = query(new ResourceID(resourceEntity), cache);
+        R resource = optional.orElseGet(() -> (R) builder.toResource(resourceEntity));
+        ResourceState newState = moveToNextState(resourceEntity.getStatus(), builder, optional);
+        this.resourceRepository.updateStatusById(resourceEntity.getId(), newState);
         return resource;
+    }
+
+    private <R extends Resource> ResourceState moveToNextState(ResourceState current,
+            ResourceOperatorBuilder<?, ?> builder, Optional<R> optional) {
+        return current;
+    }
+
+    @SuppressWarnings("all")
+    private <R extends Resource> Optional<R> query(ResourceID resourceID,
+            Map<String, Map<ResourceLocation, List<Resource>>> cache) throws Exception {
+        ResourceLocation location = resourceID.getResourceLocation();
+        Map<ResourceLocation, List<Resource>> location2Resource = cache
+                .computeIfAbsent(resourceID.getType(), c -> new HashMap<>());
+        List<Resource> resourceList = location2Resource.get(location);
+        ResourceOperator<?, ?> resourceOperator = getOperatorBuilder(resourceID.getType()).build(location);
+        if (resourceList == null) {
+            resourceList = new ArrayList<>(resourceOperator.list());
+            location2Resource.put(location, resourceList);
+        }
+        List<Resource> list = resourceList.stream()
+                .filter(o -> resourceID.equals(o.resourceID()))
+                .collect(Collectors.toList());
+        if (list.size() > 1) {
+            throw new IllegalStateException("There are more than one resource found by id " + resourceID);
+        }
+        return list.size() == 1 ? Optional.of((R) list.get(0)) : Optional.empty();
     }
 
 }
