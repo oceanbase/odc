@@ -35,7 +35,7 @@ import com.oceanbase.odc.service.task.exception.JobException;
  * @author longpeng.zlp
  * @date 2024/9/3 11:30
  */
-public class K8SResourceOperatorTest {
+public class K8sResourceOperatorTest {
     private final String resourceName = "myResource";
     private final String regionName = "region";
     private final String groupName = "group";

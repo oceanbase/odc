@@ -101,7 +101,7 @@ public abstract class BaseNativeK8sResourceOperatorBuilder<T extends K8sResource
         resourceEntity.setResourceName(resource.resourceName());
         resourceEntity.setResourceProperties(null);
         resourceEntity.setResourceType(resource.type());
-        resourceEntity.setEndpoint(null);
+        resourceEntity.setEndpoint("N/A");
         resourceEntity.setNamespace(this.defaultNamespace);
         return resourceEntity;
     }
