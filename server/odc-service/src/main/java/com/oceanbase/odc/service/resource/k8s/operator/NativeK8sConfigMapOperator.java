@@ -46,6 +46,7 @@ public class NativeK8sConfigMapOperator extends BaseNativeK8sResourceOperator<K8
         new CoreV1Api().createNamespacedConfigMap(
                 this.defaultNamespace, resourceContext, null, null, null, null);
         resourceContext.setResourceState(ResourceState.CREATING);
+        resourceContext.setResourceLocation(this.resourceLocation);
         return resourceContext;
     }
 

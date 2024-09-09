@@ -46,6 +46,7 @@ public class NativeK8sPodOperator extends BaseNativeK8sResourceOperator<K8sPod> 
                 this.defaultNamespace, resourceContext, null, null, null, null);
         resourceContext.setStatus(pod.getStatus());
         resourceContext.setResourceState(ResourceState.CREATING);
+        resourceContext.setResourceLocation(this.resourceLocation);
         return resourceContext;
     }
 

@@ -20,6 +20,7 @@ import com.oceanbase.odc.service.resource.ResourceState;
 
 import io.kubernetes.client.openapi.models.V1Pod;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
 
@@ -32,11 +33,12 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@NoArgsConstructor
 public class K8sPod extends V1Pod implements K8sResource {
 
     public static final String TYPE = "K8S_POD";
     private ResourceState resourceState;
-    private final ResourceLocation resourceLocation;
+    private ResourceLocation resourceLocation;
 
     public K8sPod(@NonNull ResourceLocation resourceLocation, @NonNull ResourceState resourceState) {
         this.resourceState = resourceState;
