@@ -45,7 +45,7 @@ public final class ExecutorServiceManager {
         executorService = TtlExecutors.getTtlExecutorService(getExecutorService(executorSize, nameFormat));
     }
 
-    public ExecutorServiceManager(final int executorSize) {
+    public ExecutorServiceManager(int executorSize) {
         this(executorSize, DEFAULT_NAME_FORMAT);
     }
 
@@ -67,7 +67,7 @@ public final class ExecutorServiceManager {
         });
     }
 
-    private static ThreadFactory build(final String nameFormat) {
+    private static ThreadFactory build(String nameFormat) {
         return new ThreadFactoryBuilder().setDaemon(true).setNameFormat(NAME_FORMAT_PREFIX + nameFormat).build();
     }
 }
