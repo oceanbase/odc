@@ -238,7 +238,7 @@ public class ResourceManager {
      *
      * @return
      */
-    protected ResourceOperatorBuilder<?, ?> getOperatorBuilder(String type) {
+    private ResourceOperatorBuilder<?, ?> getOperatorBuilder(String type) {
         for (ResourceOperatorBuilder<?, ?> candidate : resourceOperatorBuilders) {
             if (candidate.match(type)) {
                 return candidate;
