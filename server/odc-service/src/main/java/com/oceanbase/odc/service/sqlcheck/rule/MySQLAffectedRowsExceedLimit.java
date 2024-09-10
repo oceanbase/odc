@@ -87,8 +87,8 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
                     switch (dialectType) {
                         case MYSQL:
                             affectedRows = (statement instanceof Insert)
-                                ? getMySqlAffectedRowsByCount(explainSql, jdbcOperations)
-                                : getMySqlAffectedRowsByExplain(explainSql, jdbcOperations);
+                                    ? getMySqlAffectedRowsByCount(explainSql, jdbcOperations)
+                                    : getMySqlAffectedRowsByExplain(explainSql, jdbcOperations);
                             break;
                         case OB_MYSQL:
                             affectedRows = getOBMySqlAffectedRows(explainSql, jdbcOperations);
@@ -123,10 +123,9 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
     }
 
     /**
-     * MySQL checks the count of value list.
-     * Process mode:
-     *      case1: For INSERT INTO ... VALUES(...) statements, ODC checks the count of value list.
-     *      case2: For INSERT INTO ... SELECT ... statements, ODC runs EXPLAIN statements to get affected rows.
+     * MySQL checks the count of value list. Process mode: case1: For INSERT INTO ... VALUES(...)
+     * statements, ODC checks the count of value list. case2: For INSERT INTO ... SELECT ... statements,
+     * ODC runs EXPLAIN statements to get affected rows.
      *
      * @param explainSql target sql
      * @return affected rows
