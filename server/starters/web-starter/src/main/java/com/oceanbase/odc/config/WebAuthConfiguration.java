@@ -18,7 +18,10 @@ package com.oceanbase.odc.config;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
+import com.oceanbase.odc.service.common.util.ConditionalOnProperty;
+
 @Configuration
 @Profile({"alipay"})
+@ConditionalOnProperty(value = "odc.iam.auth.type", havingValues = {"local", "alipay", "buc", "oauth2"})
 public class WebAuthConfiguration extends DefaultAuthConfiguration {
 }
