@@ -84,7 +84,7 @@ public class LogicalDatabaseChangeService {
                         executionRepository.findByExecutionId(executionUnit.getExecutionId());
                 if (opt.isPresent()) {
                     entity = opt.get();
-                    entity.setExecutionResultJson(JsonUtils.toJson(executionUnit.getExecutionResult()));
+                    entity.setExecutionResultJson(JsonUtils.toJson(executionUnit.getResult()));
                 } else {
                     entity = mapper.modelToEntity(executionUnit);
                 }

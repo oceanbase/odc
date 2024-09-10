@@ -28,12 +28,12 @@ import lombok.Data;
 @Data
 public class LogicalDBChangeExecutionUnit {
     private Long id;
-    private Long executionOrder;
+    private Long order;
     private Long scheduleTaskId;
     private String executionId;
     private String sql;
     private Long logicalDatabaseId;
     private Long physicalDatabaseId;
-    private SqlExecutionResultWrapper executionResult;
+    private SqlExecutionResultWrapper result;
     private ExecutionStatus status;
 }

@@ -34,11 +34,13 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalDB
 public interface LogicalDatabaseExecutionMapper {
     LogicalDatabaseExecutionMapper INSTANCE = Mappers.getMapper(LogicalDatabaseExecutionMapper.class);
 
-    @Mapping(target = "executionResult", source = "executionResultJson", qualifiedByName = "fromJson")
+    @Mapping(target = "result", source = "executionResultJson", qualifiedByName = "fromJson")
+    @Mapping(target = "order", source = "executionOrder")
     LogicalDBChangeExecutionUnit entityToModel(LogicalDBChangeExecutionUnitEntity entity);
 
 
-    @Mapping(target = "executionResultJson", source = "executionResult", qualifiedByName = "toJson")
+    @Mapping(target = "executionResultJson", source = "result", qualifiedByName = "toJson")
+    @Mapping(target = "executionOrder", source = "order")
     LogicalDBChangeExecutionUnitEntity modelToEntity(LogicalDBChangeExecutionUnit model);
 
     @Named("fromJson")
