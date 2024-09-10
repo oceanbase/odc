@@ -20,7 +20,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import com.alibaba.ttl.threadpool.TtlExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import lombok.Getter;
@@ -42,7 +41,7 @@ public final class ExecutorServiceManager {
 
 
     public ExecutorServiceManager(int executorSize, String nameFormat) {
-        executorService = TtlExecutors.getTtlExecutorService(getExecutorService(executorSize, nameFormat));
+        executorService = getExecutorService(executorSize, nameFormat);
     }
 
     public ExecutorServiceManager(int executorSize) {
