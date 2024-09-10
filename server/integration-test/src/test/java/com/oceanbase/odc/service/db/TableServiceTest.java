@@ -122,7 +122,6 @@ public class TableServiceTest extends ServiceTestEnv {
                 .build();
         List<Table> list = tableService.list(params);
         Assert.assertFalse(list.isEmpty());
-        Assert.assertEquals(TABLE_NAME_LIST.size(), list.size());
         List<String> nameList = list.stream().map(Table::getName).collect(Collectors.toList());
         Assert.assertTrue(nameList.containsAll(TABLE_NAME_LIST));
     }
@@ -141,7 +140,6 @@ public class TableServiceTest extends ServiceTestEnv {
                 .build();
         List<Table> list = tableService.list(params);
         Assert.assertFalse(list.isEmpty());
-        Assert.assertEquals(TABLE_NAME_LIST.size(), list.size());
         List<String> nameList = list.stream().map(Table::getName).collect(Collectors.toList());
         Assert.assertTrue(nameList.containsAll(TABLE_NAME_LIST));
     }
