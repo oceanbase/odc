@@ -86,7 +86,9 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
                 } else {
                     switch (dialectType) {
                         case MYSQL:
-                            affectedRows = getMySqlAffectedRows(explainSql, jdbcOperations);
+                            affectedRows = (statement instanceof Insert)
+                                ? getMySqlAffectedRowsByCount(explainSql, jdbcOperations)
+                                : getMySqlAffectedRowsByExplain(explainSql, jdbcOperations);
                             break;
                         case OB_MYSQL:
                             affectedRows = getOBMySqlAffectedRows(explainSql, jdbcOperations);
@@ -121,13 +123,38 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
     }
 
     /**
+     * MySQL checks the count of value list.
+     * Process mode:
+     *      case1: For INSERT INTO ... VALUES(...) statements, ODC checks the count of value list.
+     *      case2: For INSERT INTO ... SELECT ... statements, ODC runs EXPLAIN statements to get affected rows.
+     *
+     * @param explainSql target sql
+     * @return affected rows
+     */
+    private long getMySqlAffectedRowsByCount(String explainSql, JdbcOperations jdbc) {
+
+        explainSql = explainSql.toLowerCase();
+
+        if (explainSql.contains("value")) {
+            String valueList = extractValueList(explainSql);
+            return valueList.isEmpty() ? 0 : Arrays.stream(valueList.split("\\),")).count();
+        }
+
+        if (explainSql.contains("select")) {
+            return getMySqlAffectedRowsByExplain(explainSql, jdbc);
+        }
+
+        return 0;
+    }
+
+    /**
      * MySQL execute 'explain' statement
      *
      * @param explainSql target sql
      * @param jdbc jdbc Object
      * @return affected rows
      */
-    private long getMySqlAffectedRows(String explainSql, JdbcOperations jdbc) {
+    private long getMySqlAffectedRowsByExplain(String explainSql, JdbcOperations jdbc) {
 
         try {
             List<Long> resultSet = jdbc.query(explainSql,
@@ -210,5 +237,21 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
             return Long.parseLong(value);
         }
         return 0;
+    }
+
+    /**
+     * parse explain result set
+     *
+     * @param explainSql row
+     * @return value list
+     */
+    private String extractValueList(String explainSql) {
+        // Match "value" or "values"
+        String[] list = explainSql.split("value(s)?");
+        if (list.length > 1) {
+            String valuesPart = list[1].split(";")[0];
+            return valuesPart.trim();
+        }
+        return "";
     }
 }
