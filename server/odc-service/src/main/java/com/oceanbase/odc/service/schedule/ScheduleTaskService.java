@@ -125,12 +125,6 @@ public class ScheduleTaskService {
     @Autowired
     private JobRepository jobRepository;
 
-    @Autowired
-    private ScheduledTaskLoggerService scheduledTaskLoggerService;
-
-    @Autowired
-    private JobRepository jobRepository;
-
     private final ScheduleTaskMapper scheduleTaskMapper = ScheduleTaskMapper.INSTANCE;
 
     public ScheduleTaskDetailResp getScheduleTaskDetailResp(Long id, Long scheduleId) {

@@ -173,13 +173,13 @@ public class FlowInstanceController {
     @RequestMapping(value = "/{id:[\\d]+}/tasks/log", method = RequestMethod.GET)
     public SuccessResponse<String> getLog(@PathVariable Long id, @RequestParam OdcTaskLogLevel logType)
             throws IOException {
-        return Responses.single(flowTaskInstanceService.getLog(id, logType, false));
+        return Responses.single(flowTaskInstanceService.getLog(id, logType));
     }
 
     @ApiOperation(value = "downloadLog", notes = "下载任务完整日志")
     @RequestMapping(value = "/{id:[\\d]+}/tasks/log/download", method = RequestMethod.GET)
     public ResponseEntity<InputStreamResource> downloadLog(@PathVariable Long id) throws IOException {
-        List<BinaryDataResult> results = flowTaskInstanceService.downloadLog(id, false);
+        List<BinaryDataResult> results = flowTaskInstanceService.downloadLog(id);
         PreConditions.validExists(ResourceType.ODC_FILE, "id", id, () -> CollectionUtils.isNotEmpty(results));
         return WebResponseUtils.getFileAttachmentResponseEntity(
                 new InputStreamResource(results.get(0).getInputStream()), TaskLogFilenameGenerator.generate(id));

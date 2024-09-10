@@ -66,12 +66,24 @@ public class FlowTaskInstanceLoggerService {
     }
 
     @SneakyThrows
-    public String getLog(OdcTaskLogLevel level, Long flowInstanceId, boolean skipAuth) {
+    public String getLog(OdcTaskLogLevel level, Long flowInstanceId) {
         Optional<TaskEntity> taskEntityOptional =
-                flowTaskInstanceService.getLogDownloadableTaskEntity(flowInstanceId, skipAuth);
+                flowTaskInstanceService.getLogDownloadableTaskEntity(flowInstanceId, false);
+        return getLogContent(taskEntityOptional, level, flowInstanceId);
+    }
+
+    @SneakyThrows
+    public String getLogWithoutPermission(OdcTaskLogLevel level, Long flowInstanceId) {
+        Optional<TaskEntity> taskEntityOptional =
+                flowTaskInstanceService.getLogDownloadableTaskEntity(flowInstanceId, true);
+        return getLogContent(taskEntityOptional, level, flowInstanceId);
+    }
+
+    @SneakyThrows
+    private String getLogContent(Optional<TaskEntity> taskEntityOptional, OdcTaskLogLevel level, Long flowInstanceId) {
         if (!taskEntityOptional.isPresent()) {
-            log.warn("get log failed, flowInstanceId: {}, skipAuth: {}", flowInstanceId, skipAuth);
-            return String.format("get log failed, id=%s", flowInstanceId);
+            log.warn("get log failed, flowInstanceId={}", flowInstanceId);
+            return "Get log failed, the log file may not exists or removed, flowInstanceId" + flowInstanceId;
         }
         TaskEntity taskEntity = taskEntityOptional.get();
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
@@ -83,14 +95,12 @@ public class FlowTaskInstanceLoggerService {
     }
 
     @SneakyThrows
-    public File downloadLog(Long flowInstanceId, boolean skipAuth) {
+    public File downloadLog(Long flowInstanceId) {
         Optional<TaskEntity> taskEntityOptional =
-                flowTaskInstanceService.getLogDownloadableTaskEntity(flowInstanceId, skipAuth);
-        if (!taskEntityOptional.isPresent()) {
-            throw new NotFoundException(ErrorCodes.NotFound, new Object[] {flowInstanceId},
-                    ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", flowInstanceId}));
-        }
-        TaskEntity taskEntity = taskEntityOptional.get();
+                flowTaskInstanceService.getLogDownloadableTaskEntity(flowInstanceId, false);
+        TaskEntity taskEntity = taskEntityOptional
+                .orElseThrow(() -> new NotFoundException(ErrorCodes.NotFound, new Object[] {flowInstanceId},
+                        ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", flowInstanceId})));
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
             ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
             DispatchResponse response = requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
@@ -105,7 +115,7 @@ public class FlowTaskInstanceLoggerService {
         try {
             return taskService.getLogFile(logFilePath);
         } catch (NotFoundException ex) {
-            log.warn(ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", flowInstanceId}));
+            log.warn(ErrorCodes.TaskLogNotFound.getEnglishMessage(new Object[] {"Id", flowInstanceId}));
             return FileUtil.writeUtf8String(LogUtils.DEFAULT_LOG_CONTENT, logFilePath);
         }
     }

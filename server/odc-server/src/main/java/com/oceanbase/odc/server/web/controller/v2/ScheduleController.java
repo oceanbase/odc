@@ -126,8 +126,8 @@ public class ScheduleController {
         return Responses.success(scheduleService.getLog(scheduleId, taskId, logType));
     }
 
-    @ApiOperation(value = "GetFullLogDownloadUrl", notes = "获取下载全量日志的URL")
-    @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/log/get-download-url",
+    @ApiOperation(value = "GetFullLogDownloadUrl", notes = "get full log download url")
+    @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/log/getDownloadUrl",
             method = RequestMethod.GET)
     public SuccessResponse<String> getFullLogDownloadUrl(@PathVariable Long scheduleId,
             @PathVariable Long taskId) {
@@ -135,7 +135,7 @@ public class ScheduleController {
         return Responses.single(fullLogDownloadUrl);
     }
 
-    @ApiOperation(value = "DownloadScheduleTaskLog", notes = "下载计划任务全量日志")
+    @ApiOperation(value = "DownloadScheduleTaskLog", notes = "download full log")
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/log/download",
             method = RequestMethod.GET)
     public SuccessResponse<InputStreamResource> downloadScheduleTaskLog(@PathVariable Long scheduleId,

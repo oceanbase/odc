@@ -74,8 +74,8 @@ public class ExecutorRequestHandler {
                 Long jobId = Long.parseLong(matcher.group(1));
                 String logContent = executorBiz.getLog(jobId,
                         UrlUtils.getQueryParameterFirst(uri, "logType"),
-                        (maxLine == null ? LogUtils.DEFAULT_MAX_LINES : Long.parseLong(maxLine)),
-                        (maxSize == null ? LogUtils.DEFAULT_MAX_SIZE : Long.parseLong(maxSize)));
+                        (maxLine == null ? LogUtils.CONTENT_MAX_LINES : Long.parseLong(maxLine)),
+                        (maxSize == null ? LogUtils.CONTENT_MAX_SIZE : Long.parseLong(maxSize)));
                 return Responses.single(logContent);
             }
             matcher = stopTaskPattern.matcher(path);

@@ -192,12 +192,16 @@ public class FlowTaskInstanceService {
         return flowInstanceDetailResp;
     }
 
-    public String getLog(@NotNull Long flowInstanceId, OdcTaskLogLevel level, boolean skipAuth) throws IOException {
-        return flowTaskInstanceLoggerService.getLog(level, flowInstanceId, skipAuth);
+    public String getLog(@NotNull Long flowInstanceId, OdcTaskLogLevel level) throws IOException {
+        return flowTaskInstanceLoggerService.getLog(level, flowInstanceId);
     }
 
-    public List<BinaryDataResult> downloadLog(@NotNull Long flowInstanceId, boolean skipAuth) throws IOException {
-        File logFile = flowTaskInstanceLoggerService.downloadLog(flowInstanceId, skipAuth);
+    public String getLogWithoutPermission(@NotNull Long flowInstanceId, OdcTaskLogLevel level) {
+        return flowTaskInstanceLoggerService.getLogWithoutPermission(level, flowInstanceId);
+    }
+
+    public List<BinaryDataResult> downloadLog(@NotNull Long flowInstanceId) {
+        File logFile = flowTaskInstanceLoggerService.downloadLog(flowInstanceId);
         return Collections.singletonList(new FileBasedDataResult(logFile));
     }
 
