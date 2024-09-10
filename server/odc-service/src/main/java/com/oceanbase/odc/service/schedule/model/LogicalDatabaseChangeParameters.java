@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
+import javax.validation.constraints.Size;
+
 import lombok.Data;
 
 /**
@@ -24,6 +26,7 @@ import lombok.Data;
  */
 @Data
 public class LogicalDatabaseChangeParameters implements ScheduleTaskParameters {
+    @Size(max = 16777215, message = "The sql size should be less than 16,777,215 bytes")
     private String sqlContent;
     private String delimiter;
     private Long timeoutMillis;

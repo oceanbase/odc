@@ -28,16 +28,16 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execut
  * @Date: 2024/8/26 15:14
  * @Description: []
  */
-public final class ExecutorEngine<T, R> implements AutoCloseable {
+public final class GroupExecutionEngine<Input, Result> implements AutoCloseable {
     private final ExecutorServiceManager groupExecutorServiceManager;
 
-    public ExecutorEngine(int executorSize) {
+    public GroupExecutionEngine(int executorSize) {
         this.groupExecutorServiceManager = new ExecutorServiceManager(executorSize);
     }
 
-    public ExecutionGroupContext<T, R> execute(List<ExecutionGroup<T, R>> groups) {
+    public ExecutionGroupContext<Input, Result> execute(List<ExecutionGroup<Input, Result>> groups) {
         PreConditions.notEmpty(groups, "groups");
-        ExecutionGroupContext<T, R> executionContext =
+        ExecutionGroupContext<Input, Result> executionContext =
                 new ExecutionGroupContext<>(groups, this.groupExecutorServiceManager.getExecutorService());
         Executors.newSingleThreadExecutor().submit(() -> {
             try {

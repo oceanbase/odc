@@ -17,10 +17,10 @@ package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execu
 
 import java.sql.SQLException;
 
-public interface ExecutionCallback<T, R> {
-    ExecutionResult<R> beforeExecute(ExecutionGroupContext<T, R> context);
+public interface UnitExecution<Input, Result> {
+    ExecutionResult<Result> beforeExecute(ExecutionGroupContext<Input, Result> context);
 
-    ExecutionResult<R> execute(ExecutionGroupContext<T, R> context) throws SQLException;
+    ExecutionResult<Result> execute(ExecutionGroupContext<Input, Result> context) throws SQLException;
 
-    void terminate(ExecutionGroupContext<T, R> context) throws Exception;
+    void terminate(ExecutionGroupContext<Input, Result> context) throws Exception;
 }

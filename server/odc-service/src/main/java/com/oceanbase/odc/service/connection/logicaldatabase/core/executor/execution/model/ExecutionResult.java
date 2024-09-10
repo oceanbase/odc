@@ -27,9 +27,9 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @NoArgsConstructor
-public class ExecutionResult<R> implements Serializable {
+public class ExecutionResult<Result> implements Serializable {
     private static final long serialVersionUID = 1L;
-    private R result;
+    private Result result;
     private Long order;
     private ExecutionStatus status;
 
@@ -38,7 +38,7 @@ public class ExecutionResult<R> implements Serializable {
         this.order = order;
     }
 
-    public ExecutionResult(R result, ExecutionStatus status, Long order) {
+    public ExecutionResult(Result result, ExecutionStatus status, Long order) {
         this.result = result;
         this.status = status;
         this.order = order;

@@ -24,7 +24,7 @@ import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionGroup;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionSubGroup;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionUnit;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionSubGroupUnit;
 
 /**
  * @Author: Lebie
@@ -33,13 +33,13 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execut
  */
 public final class MySQLExecutionGroup extends ExecutionGroup<SqlExecuteReq, SqlExecutionResultWrapper> {
 
-    public MySQLExecutionGroup(List<ExecutionUnit<SqlExecuteReq, SqlExecutionResultWrapper>> executionUnits) {
+    public MySQLExecutionGroup(List<ExecutionSubGroupUnit<SqlExecuteReq, SqlExecutionResultWrapper>> executionUnits) {
         super(executionUnits);
     }
 
     @Override
     protected List<ExecutionSubGroup<SqlExecuteReq, SqlExecutionResultWrapper>> listSubGroups(
-            List<ExecutionUnit<SqlExecuteReq, SqlExecutionResultWrapper>> executionUnits) {
+            List<ExecutionSubGroupUnit<SqlExecuteReq, SqlExecutionResultWrapper>> executionUnits) {
         if (CollectionUtils.isEmpty(executionUnits)) {
             return Collections.emptyList();
         }

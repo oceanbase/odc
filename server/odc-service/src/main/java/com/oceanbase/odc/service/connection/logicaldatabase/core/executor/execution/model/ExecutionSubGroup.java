@@ -28,11 +28,11 @@ import lombok.RequiredArgsConstructor;
 
 @Data
 @RequiredArgsConstructor
-public class ExecutionSubGroup<T, R> {
-    private final List<ExecutionUnit<T, R>> executionUnits;
+public class ExecutionSubGroup<Input, Result> {
+    private final List<ExecutionSubGroupUnit<Input, Result>> executionUnits;
 
-    public void execute(ExecutionGroupContext<T, R> context) {
-        for (ExecutionUnit<T, R> executionUnit : executionUnits) {
+    public void execute(ExecutionGroupContext<Input, Result> context) {
+        for (ExecutionSubGroupUnit<Input, Result> executionUnit : executionUnits) {
             executionUnit.execute(context);
         }
     }

@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionGroup;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionSubGroup;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionUnit;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionSubGroupUnit;
 
 /**
  * @Author: Lebie
@@ -29,13 +29,13 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execut
  * @Description: []
  */
 public final class OBExecutionGroup extends ExecutionGroup<SqlExecuteReq, SqlExecutionResultWrapper> {
-    public OBExecutionGroup(List<ExecutionUnit<SqlExecuteReq, SqlExecutionResultWrapper>> executionUnits) {
+    public OBExecutionGroup(List<ExecutionSubGroupUnit<SqlExecuteReq, SqlExecutionResultWrapper>> executionUnits) {
         super(executionUnits);
     }
 
     @Override
     protected List<ExecutionSubGroup<SqlExecuteReq, SqlExecutionResultWrapper>> listSubGroups(
-            List<ExecutionUnit<SqlExecuteReq, SqlExecutionResultWrapper>> executionUnits) {
+            List<ExecutionSubGroupUnit<SqlExecuteReq, SqlExecutionResultWrapper>> executionUnits) {
         if (executionUnits.isEmpty()) {
             return Collections.emptyList();
         }

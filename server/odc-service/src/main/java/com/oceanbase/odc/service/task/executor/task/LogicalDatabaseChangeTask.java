@@ -33,17 +33,17 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseUtils;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutorEngine;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionCallback;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.GroupExecutionEngine;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionGroup;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionGroupContext;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionResult;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionUnit;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionSubGroupUnit;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.UnitExecution;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.MySQLExecutionGroup;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.OBExecutionGroup;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecuteReq;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionCallback;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionResultWrapper;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlUnitExecution;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.RelationFactorRewriter;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.RewriteContext;
@@ -76,7 +76,7 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
     private PublishLogicalDatabaseChangeReq taskParameters;
     private List<ExecutionGroup<SqlExecuteReq, SqlExecutionResultWrapper>> executionGroups;
     private List<ConnectionSession> connectionSessions;
-    private ExecutorEngine executorEngine;
+    private GroupExecutionEngine executorEngine;
 
     @Override
     protected void doInit(JobContext context) throws Exception {
@@ -123,7 +123,8 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
                     log.warn("cannot recognize the sql, sql = {}", sql);
                     continue;
                 }
-                List<ExecutionUnit<SqlExecuteReq, SqlExecutionResultWrapper>> executionUnits = new ArrayList<>();
+                List<ExecutionSubGroupUnit<SqlExecuteReq, SqlExecutionResultWrapper>> executionUnits =
+                        new ArrayList<>();
                 for (Entry<Long, DataNode> entry : databaseId2DataNodes.entrySet()) {
                     Long databaseId = entry.getKey();
                     DataNode dataNode = entry.getValue();
@@ -135,14 +136,14 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
                     req.setConnectionConfig(dataNode.getDataSourceConfig());
                     ConnectionSession connectionSession = generateSession(dataNode.getDataSourceConfig());
                     connectionSessions.add(connectionSession);
-                    ExecutionCallback<SqlExecuteReq, SqlExecutionResultWrapper> callback =
-                            new SqlExecutionCallback(connectionSession,
+                    UnitExecution<SqlExecuteReq, SqlExecutionResultWrapper> callback =
+                            new SqlUnitExecution(connectionSession,
                                     new SqlExecuteReq(rewrittenSqls, order, taskParameters.getTimeoutMillis(),
                                             dialectType,
                                             dataNode.getDataSourceConfig(),
                                             taskParameters.getLogicalDatabaseResp().getId(),
                                             dataNode.getDatabaseId(), taskParameters.getScheduleTaskId()));
-                    executionUnits.add(new ExecutionUnit<>(StringUtils.uuid(), order, callback, req));
+                    executionUnits.add(new ExecutionSubGroupUnit<>(StringUtils.uuid(), order, callback, req));
                 }
                 order++;
                 executionGroups.add(dialectType == DialectType.MYSQL ? new MySQLExecutionGroup(executionUnits)
@@ -155,7 +156,7 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
             int maxSubGroupSize =
                     executionGroups.stream().max(Comparator.comparingInt(group -> group.getSubGroups().size()))
                             .map(group -> group.getExecutionUnits().size()).orElse(1);
-            executorEngine = new ExecutorEngine<SqlExecuteReq, SqlExecuteResult>(
+            executorEngine = new GroupExecutionEngine<SqlExecuteReq, SqlExecuteResult>(
                     Math.max(SystemUtils.availableProcessors(), maxSubGroupSize));
             this.executionGroupContext = executorEngine.execute(executionGroups);
         } catch (Exception ex) {

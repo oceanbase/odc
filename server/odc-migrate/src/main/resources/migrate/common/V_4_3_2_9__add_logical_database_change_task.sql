@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS `logicaldatabase_database_change_execution_unit` (
   `schedule_task_id` bigint(20) NOT NULL COMMENT 'ID of the related schedule task, refer to schedule_task.id',
   `logical_database_id` bigint(20) NOT NULL COMMENT 'logical database id, reference to connect_database.id',
   `physical_database_id` bigint(20) NOT NULL COMMENT 'physical database id, reference to connect_database.id',
-  `sql_content` text COMMENT 'sql content',
+  `sql_content` mediumtext COMMENT 'sql content',
   `execution_result_json` text NOT NULL COMMENT 'execution result json, see SqlExecutionResultWrapper',
   `status` varchar(32) NOT NULL COMMENT 'status of the execution, see ExecutionStatus',
   CONSTRAINT `pk_logical_db_change_id` PRIMARY KEY (`id`),

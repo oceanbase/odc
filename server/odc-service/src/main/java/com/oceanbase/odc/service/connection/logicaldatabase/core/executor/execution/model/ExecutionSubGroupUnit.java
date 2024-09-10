@@ -27,20 +27,20 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Getter
-public class ExecutionUnit<T, R> {
+public class ExecutionSubGroupUnit<Input, Result> {
     private final String id;
     private final Long order;
-    private final ExecutionCallback<T, R> callback;
-    private final T input;
+    private final UnitExecution<Input, Result> callback;
+    private final Input input;
 
-    public ExecutionUnit(String id, Long order, ExecutionCallback<T, R> executionCallback, T input) {
+    public ExecutionSubGroupUnit(String id, Long order, UnitExecution<Input, Result> executionCallback, Input input) {
         this.id = id;
         this.order = order;
         this.callback = executionCallback;
         this.input = input;
     }
 
-    public void beforeExecute(ExecutionGroupContext<T, R> context) {
+    public void beforeExecute(ExecutionGroupContext<Input, Result> context) {
         try {
             context.setExecutionResult(id, (k, v) -> callback.beforeExecute(context));
         } catch (Exception e) {
@@ -48,7 +48,7 @@ public class ExecutionUnit<T, R> {
         }
     }
 
-    public void execute(ExecutionGroupContext<T, R> context) {
+    public void execute(ExecutionGroupContext<Input, Result> context) {
         context.setExecutionResult(id, (k, v) -> {
             if (v.getStatus() != ExecutionStatus.PENDING) {
                 throw new IllegalStateException(
@@ -61,7 +61,7 @@ public class ExecutionUnit<T, R> {
         context.setExecutionResult(id, (k, v) -> {
             try {
                 if (v.getStatus() == ExecutionStatus.RUNNING) {
-                    ExecutionResult<R> result = callback.execute(context);
+                    ExecutionResult<Result> result = callback.execute(context);
                     log.info("ExecutionUnit execute success, executionId={}", id);
                     return result;
                 }
@@ -77,7 +77,7 @@ public class ExecutionUnit<T, R> {
         log.info("ExecutionUnit execute success, executionId={}", id);
     }
 
-    public void terminate(ExecutionGroupContext<T, R> context) {
+    public void terminate(ExecutionGroupContext<Input, Result> context) {
         context.setExecutionResult(id, (k, v) -> {
             if (v.getStatus() == ExecutionStatus.RUNNING) {
                 try {
@@ -91,7 +91,7 @@ public class ExecutionUnit<T, R> {
         });
     }
 
-    public void skip(ExecutionGroupContext<T, R> context) {
+    public void skip(ExecutionGroupContext<Input, Result> context) {
         context.setExecutionResult(id, (k, v) -> {
             if (v.getStatus() == ExecutionStatus.FAILED || v.getStatus() == ExecutionStatus.TERMINATED) {
                 v.setStatus(ExecutionStatus.SKIPPED);

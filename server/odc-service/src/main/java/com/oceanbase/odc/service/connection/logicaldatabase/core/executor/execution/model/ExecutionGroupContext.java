@@ -36,20 +36,21 @@ import lombok.extern.slf4j.Slf4j;
  * @Description: []
  */
 @Slf4j
-public final class ExecutionGroupContext<T, R> {
+public final class ExecutionGroupContext<Input, Result> {
 
-    private final Collection<ExecutionGroup<T, R>> executionGroups;
+    private final Collection<ExecutionGroup<Input, Result>> executionGroups;
 
-    private final Map<String, ExecutionUnit<T, R>> id2ExecutionUnit;
+    private final Map<String, ExecutionSubGroupUnit<Input, Result>> id2ExecutionUnit;
 
     private final ExecutorService executorService;
 
-    private Map<String, ExecutionResult<R>> executionId2Result;
+    private Map<String, ExecutionResult<Result>> executionId2Result;
 
     @Getter
     private int completedGroupCount = 0;
 
-    public ExecutionGroupContext(Collection<ExecutionGroup<T, R>> executionGroups, ExecutorService executorService) {
+    public ExecutionGroupContext(Collection<ExecutionGroup<Input, Result>> executionGroups,
+            ExecutorService executorService) {
         this.executionGroups = executionGroups;
         this.executorService = executorService;
         this.executionId2Result = new ConcurrentHashMap<>();
@@ -57,7 +58,7 @@ public final class ExecutionGroupContext<T, R> {
                 .forEach(unit -> executionId2Result.put(unit.getId(), new ExecutionResult<>(ExecutionStatus.PENDING,
                         unit.getOrder())));
         this.id2ExecutionUnit = executionGroups.stream().flatMap(group -> group.getExecutionUnits().stream())
-                .collect(Collectors.toMap(ExecutionUnit::getId, unit -> unit));
+                .collect(Collectors.toMap(ExecutionSubGroupUnit::getId, unit -> unit));
     }
 
     public void execute() throws InterruptedException {
@@ -65,23 +66,24 @@ public final class ExecutionGroupContext<T, R> {
             return;
         }
         executionGroups.forEach(group -> group.getExecutionUnits().forEach(unit -> unit.beforeExecute(this)));
-        for (ExecutionGroup<T, R> group : executionGroups) {
+        for (ExecutionGroup<Input, Result> group : executionGroups) {
             if (Thread.currentThread().isInterrupted()) {
                 Thread.currentThread().interrupt();
                 throw new InterruptedException();
             }
             group.execute(this.executorService, this);
-            waitForCompletion(group.getExecutionUnits().stream().map(ExecutionUnit::getId).collect(Collectors.toSet()));
+            waitForCompletion(
+                    group.getExecutionUnits().stream().map(ExecutionSubGroupUnit::getId).collect(Collectors.toSet()));
             completedGroupCount++;
         }
     }
 
-    public ExecutionResult<R> getExecutionResult(String executionId) {
+    public ExecutionResult<Result> getExecutionResult(String executionId) {
         return executionId2Result.get(executionId);
     }
 
     public void setExecutionResult(String executionId,
-            BiFunction<String, ExecutionResult<R>, ExecutionResult<R>> result) {
+            BiFunction<String, ExecutionResult<Result>, ExecutionResult<Result>> result) {
         executionId2Result.compute(executionId, result);
     }
 
@@ -89,13 +91,13 @@ public final class ExecutionGroupContext<T, R> {
         return executionId2Result.values().stream().allMatch(ExecutionResult::isCompleted);
     }
 
-    public Map<String, ExecutionResult<R>> getResults() {
+    public Map<String, ExecutionResult<Result>> getResults() {
         return executionId2Result;
     }
 
     public void terminate(String executionUnitId) {
         try {
-            ExecutionUnit<T, R> executionUnit = id2ExecutionUnit.get(executionUnitId);
+            ExecutionSubGroupUnit<Input, Result> executionUnit = id2ExecutionUnit.get(executionUnitId);
             executionUnit.terminate(this);
         } catch (Exception ex) {
             log.warn("ExecutionUnit terminate failed, executionId={}", executionUnitId, ex);
@@ -104,7 +106,7 @@ public final class ExecutionGroupContext<T, R> {
     }
 
     public void terminateAll() {
-        for (ExecutionUnit<T, R> unit : id2ExecutionUnit.values()) {
+        for (ExecutionSubGroupUnit<Input, Result> unit : id2ExecutionUnit.values()) {
             try {
                 unit.terminate(this);
             } catch (Exception ex) {
@@ -114,13 +116,13 @@ public final class ExecutionGroupContext<T, R> {
     }
 
     public void skip(String executionUnitId) {
-        ExecutionUnit<T, R> executionUnit = id2ExecutionUnit.get(executionUnitId);
+        ExecutionSubGroupUnit<Input, Result> executionUnit = id2ExecutionUnit.get(executionUnitId);
         executionUnit.skip(this);
     }
 
     private void waitForCompletion(@NonNull Set<String> executionIds) throws InterruptedException {
         while (!Thread.currentThread().isInterrupted()) {
-            List<ExecutionResult<R>> incompleteResults = executionIds.stream()
+            List<ExecutionResult<Result>> incompleteResults = executionIds.stream()
                     .map(this::getExecutionResult).filter(result -> !result.isCompleted())
                     .collect(Collectors.toList());
             if (CollectionUtils.isEmpty(incompleteResults)) {

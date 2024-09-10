@@ -28,19 +28,20 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Getter
 @Slf4j
-public abstract class ExecutionGroup<T, R> {
-    private final List<ExecutionUnit<T, R>> executionUnits;
-    private final List<ExecutionSubGroup<T, R>> subGroups;
+public abstract class ExecutionGroup<Input, Result> {
+    private final List<ExecutionSubGroupUnit<Input, Result>> executionUnits;
+    private final List<ExecutionSubGroup<Input, Result>> subGroups;
 
-    public ExecutionGroup(List<ExecutionUnit<T, R>> executionUnits) {
+    public ExecutionGroup(List<ExecutionSubGroupUnit<Input, Result>> executionUnits) {
         this.executionUnits = executionUnits;
         this.subGroups = listSubGroups(executionUnits);
     }
 
-    protected abstract List<ExecutionSubGroup<T, R>> listSubGroups(List<ExecutionUnit<T, R>> executionUnits);
+    protected abstract List<ExecutionSubGroup<Input, Result>> listSubGroups(
+            List<ExecutionSubGroupUnit<Input, Result>> executionUnits);
 
-    public void execute(ExecutorService executorService, ExecutionGroupContext<T, R> context) {
-        for (ExecutionSubGroup<T, R> subGroup : subGroups) {
+    public void execute(ExecutorService executorService, ExecutionGroupContext<Input, Result> context) {
+        for (ExecutionSubGroup<Input, Result> subGroup : subGroups) {
             executorService.submit(() -> subGroup.execute(context));
         }
     }

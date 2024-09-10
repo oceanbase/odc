@@ -17,9 +17,11 @@ package com.oceanbase.odc.service.connection.logicaldatabase;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
@@ -71,6 +73,9 @@ public class LogicalDatabaseChangeService {
 
     public boolean upsert(List<LogicalDBChangeExecutionUnit> executionUnits) throws InterruptedException {
         PreConditions.notEmpty(executionUnits, "executionUnits");
+        Set<Long> scheduleTaskIds = new HashSet<>();
+        executionUnits.stream().forEach(unit -> scheduleTaskIds.add(unit.getScheduleTaskId()));
+        PreConditions.validSingleton(scheduleTaskIds, "scheduleTaskIds");
         Long scheduleTaskId = executionUnits.get(0).getScheduleTaskId();
         Lock lock = jdbcLockRegistry.obtain(getScheduleTaskIdLockKey(scheduleTaskId));
         List<LogicalDBChangeExecutionUnitEntity> entities = new ArrayList<>();
@@ -98,7 +103,7 @@ public class LogicalDatabaseChangeService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public boolean skipCurrent(@NonNull Long scheduleTaskId, @NonNull Long executionUnitId)
+    public boolean skipCurrent(@NonNull Long scheduleTaskId, @NonNull Long physicalDatabaseId)
             throws InterruptedException, JobException {
         Lock lock = jdbcLockRegistry.obtain(getScheduleTaskIdLockKey(scheduleTaskId));
         if (!lock.tryLock(5, TimeUnit.SECONDS)) {
@@ -106,7 +111,7 @@ public class LogicalDatabaseChangeService {
         }
         try {
             Optional<LogicalDBChangeExecutionUnitEntity> unitOpt =
-                    findCurrentExecutionUnit(scheduleTaskId, executionUnitId);
+                    findCurrentExecutionUnit(scheduleTaskId, physicalDatabaseId);
             if (!unitOpt.isPresent()) {
                 return false;
             }
@@ -126,7 +131,7 @@ public class LogicalDatabaseChangeService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public boolean terminateCurrent(@NonNull Long scheduleTaskId, @NonNull Long executionUnitId)
+    public boolean terminateCurrent(@NonNull Long scheduleTaskId, @NonNull Long physicalDatabaseId)
             throws InterruptedException, JobException {
         Lock lock = jdbcLockRegistry.obtain(getScheduleTaskIdLockKey(scheduleTaskId));
         if (!lock.tryLock(5, TimeUnit.SECONDS)) {
@@ -134,7 +139,7 @@ public class LogicalDatabaseChangeService {
         }
         try {
             Optional<LogicalDBChangeExecutionUnitEntity> unitOpt =
-                    findCurrentExecutionUnit(scheduleTaskId, executionUnitId);
+                    findCurrentExecutionUnit(scheduleTaskId, physicalDatabaseId);
             if (!unitOpt.isPresent()) {
                 return false;
             }
@@ -154,13 +159,13 @@ public class LogicalDatabaseChangeService {
         return true;
     }
 
-    public SqlExecutionUnitResp detail(@NonNull Long scheduleTaskId, @NonNull Long executionUnitId) {
+    public SqlExecutionUnitResp detail(@NonNull Long scheduleTaskId, @NonNull Long physicalDatabaseId) {
         List<LogicalDBChangeExecutionUnitEntity> entities =
                 executionRepository.findByScheduleTaskIdAndPhysicalDatabaseIdOrderByExecutionOrderAsc(scheduleTaskId,
-                        executionUnitId);
-        Database database = databaseService.detail(executionUnitId);
+                        physicalDatabaseId);
+        Database database = databaseService.detail(physicalDatabaseId);
         SqlExecutionUnitResp resp = new SqlExecutionUnitResp();
-        resp.setId(executionUnitId);
+        resp.setId(physicalDatabaseId);
         resp.setDatabase(database);
         resp.setDataSource(database.getDataSource());
         resp.setTotalSqlCount(entities.size());
@@ -217,9 +222,9 @@ public class LogicalDatabaseChangeService {
     }
 
     private Optional<LogicalDBChangeExecutionUnitEntity> findCurrentExecutionUnit(@NonNull Long scheduleTaskId,
-            @NonNull Long executionUnitId) {
+            @NonNull Long physicalDatabaseId) {
         return executionRepository
-                .findByScheduleTaskIdAndPhysicalDatabaseIdOrderByExecutionOrderAsc(scheduleTaskId, executionUnitId)
+                .findByScheduleTaskIdAndPhysicalDatabaseIdOrderByExecutionOrderAsc(scheduleTaskId, physicalDatabaseId)
                 .stream().filter(executionUnit -> !executionUnit.getStatus().isCompleted()).findFirst();
     }
 
