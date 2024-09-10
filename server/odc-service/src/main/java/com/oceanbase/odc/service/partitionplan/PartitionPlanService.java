@@ -393,7 +393,7 @@ public class PartitionPlanService {
             throw new IllegalStateException("Partition definitions is empty");
         }
         DBTablePartitionDefinition lastDef = partition.getPartitionDefinitions().get(size - 1);
-        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, Arrays.asList(lastDef));
+        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, Collections.singletonList(lastDef));
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, 0);
         return generator.invoke(connection, dbTable, parameters);
     }

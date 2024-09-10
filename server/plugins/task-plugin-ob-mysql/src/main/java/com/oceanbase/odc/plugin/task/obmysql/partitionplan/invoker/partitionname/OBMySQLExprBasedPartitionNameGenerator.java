@@ -57,7 +57,7 @@ public class OBMySQLExprBasedPartitionNameGenerator implements SqlExprBasedParti
             @NonNull SqlExprBasedGeneratorConfig config) {
         SqlExprCalculator calculator = getSqlExprCalculator(connection);
         SqlExprResult result = calculator.calculate(getRealGenerateExpression(
-                dbTable, targets.get(0), targetPartitionIndex, config));
+                dbTable, targets.get(targetPartitionIndex), targetPartitionIndex, config));
         return getCellDataProcessor(result.getDataType()).convertToSqlLiteral(result.getValue(), result.getDataType());
     }
 
