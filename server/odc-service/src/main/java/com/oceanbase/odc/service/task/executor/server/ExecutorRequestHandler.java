@@ -28,6 +28,7 @@ import com.oceanbase.odc.service.common.util.UrlUtils;
 import com.oceanbase.odc.service.task.constants.JobExecutorUrls;
 import com.oceanbase.odc.service.task.executor.logger.LogBiz;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.executor.task.BaseTask;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResultBuilder;
@@ -73,8 +74,8 @@ public class ExecutorRequestHandler {
                 Long jobId = Long.parseLong(matcher.group(1));
                 String logContent = executorBiz.getLog(jobId,
                         UrlUtils.getQueryParameterFirst(uri, "logType"),
-                        (maxLine == null ? 10000L : Long.parseLong(maxLine)),
-                        (maxSize == null ? (long) (2 << 19) : Long.parseLong(maxSize)));
+                        (maxLine == null ? LogUtils.DEFAULT_MAX_LINES : Long.parseLong(maxLine)),
+                        (maxSize == null ? LogUtils.DEFAULT_MAX_SIZE : Long.parseLong(maxSize)));
                 return Responses.single(logContent);
             }
             matcher = stopTaskPattern.matcher(path);
