@@ -143,6 +143,7 @@ public class EnvironmentService {
         List<EnvironmentEntity> entity = environmentRepository.findByIdIn(ids);
         return entity.stream().map(e -> {
             Environment environment = new Environment();
+            environment.setId(e.getId());
             environment.setName(e.getName());
             environment.setStyle(e.getStyle());
             return environment;
