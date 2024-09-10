@@ -27,10 +27,10 @@ import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.config.LoggerProperty;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
+import com.oceanbase.odc.service.schedule.LoggerProperty;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
@@ -112,7 +112,7 @@ public class FlowTaskInstanceLoggerService {
 
     private String getLog(Long userId, String jobId, TaskType type, OdcTaskLogLevel logLevel) {
         return LogUtils.getLatestLogContent(getLogFile(userId, jobId, type, logLevel),
-                loggerProperty.getMaxLimitedCount(),
-                loggerProperty.getMaxSizeCount());
+                loggerProperty.getMaxLines(),
+                loggerProperty.getMaxSize());
     }
 }

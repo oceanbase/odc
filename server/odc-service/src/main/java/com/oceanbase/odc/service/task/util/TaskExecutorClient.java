@@ -25,7 +25,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.config.LoggerProperty;
+import com.oceanbase.odc.service.schedule.LoggerProperty;
 import com.oceanbase.odc.service.task.constants.JobExecutorUrls;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.executor.server.ExecutorRequestHandler;
@@ -51,8 +51,8 @@ public class TaskExecutorClient {
         String url = new StringBuilder(executorEndpoint)
                 .append(String.format(JobExecutorUrls.QUERY_LOG, jobId))
                 .append("?logType=" + level.getName())
-                .append("&fetchMaxLine=" + loggerProperty.getMaxLimitedCount())
-                .append("&fetchMaxByteSize=" + loggerProperty.getMaxSizeCount()).toString();
+                .append("&fetchMaxLine=" + loggerProperty.getMaxLines())
+                .append("&fetchMaxByteSize=" + loggerProperty.getMaxSize()).toString();
         try {
             SuccessResponse<String> response =
                     HttpClientUtils.request("GET", url,

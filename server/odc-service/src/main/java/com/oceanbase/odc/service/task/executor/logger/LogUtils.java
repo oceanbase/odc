@@ -43,6 +43,8 @@ public class LogUtils {
 
     public final static String DEFAULT_LOG_CONTENT = "read log failed, may be log file not exist";
     public final static String TASK_LOG_PATH_PATTERN = "%s/task/%s/task-log.%s";
+    public final static long DEFAULT_MAX_LINES = 10000L;
+    public final static long DEFAULT_MAX_SIZE = 1024L * 1024;
 
     public static String getLatestLogContent(String file, Long fetchMaxLine, Long fetchMaxByteSize) {
         File logFile = new File(file);

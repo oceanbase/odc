@@ -691,30 +691,26 @@ public class ScheduleService {
         return downloadUrls;
     }
 
-    public String getFullLogDownloadUrl(Long scheduleId, Long scheduleTaskId, boolean skipAuth) {
-        if (!skipAuth) {
-            nullSafeGetByIdWithCheckPermission(scheduleId, false);
-        }
+    public String getFullLogDownloadUrl(Long scheduleId, Long scheduleTaskId) {
+        nullSafeGetByIdWithCheckPermission(scheduleId, false);
         return scheduledTaskLoggerService.getFullLogDownloadUrl(scheduleId, scheduleTaskId, OdcTaskLogLevel.ALL);
     }
 
-    @SkipAuthorize("odc internal usage")
-    public List<String> getFullLogDownloadUrl(Long scheduleId, List<Long> scheduleTaskIds) {
-        return scheduleTaskIds.stream().map(taskId -> getFullLogDownloadUrl(scheduleId, taskId, true))
-                .collect(Collectors.toList());
+    public String getFullLogDownloadUrlWithoutPermission(Long scheduleId, Long scheduleTaskId) {
+        return scheduledTaskLoggerService.getFullLogDownloadUrl(scheduleId, scheduleTaskId, OdcTaskLogLevel.ALL);
     }
 
-    public String getLog(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel logLevel, boolean skipAuth) {
-        if (!skipAuth) {
-            nullSafeGetByIdWithCheckPermission(scheduleId, false);
-        }
+    public String getLog(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel logLevel) {
+        nullSafeGetByIdWithCheckPermission(scheduleId, false);
         return scheduledTaskLoggerService.getLog(scheduleTaskId, logLevel);
     }
 
-    public List<BinaryDataResult> downloadLog(Long scheduleId, Long scheduleTaskId, boolean skipAuth) {
-        if (!skipAuth) {
-            nullSafeGetByIdWithCheckPermission(scheduleId);
-        }
+    public String getLogWithoutPermission(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel logLevel) {
+        return scheduledTaskLoggerService.getLog(scheduleTaskId, logLevel);
+    }
+
+    public List<BinaryDataResult> downloadLog(Long scheduleId, Long scheduleTaskId) {
+        nullSafeGetByIdWithCheckPermission(scheduleId);
         File logFile = scheduledTaskLoggerService.downloadLog(scheduleTaskId, OdcTaskLogLevel.ALL);
         return Collections.singletonList(new FileBasedDataResult(logFile));
     }

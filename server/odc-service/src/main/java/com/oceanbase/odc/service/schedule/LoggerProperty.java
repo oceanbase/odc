@@ -13,37 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.config;
+package com.oceanbase.odc.service.schedule;
 
 import java.io.File;
 
 import javax.annotation.PostConstruct;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Component;
 
 import cn.hutool.core.io.FileUtil;
 import lombok.Data;
 
-@ConfigurationProperties(prefix = "odc.web.log")
+@ConfigurationProperties(prefix = "odc.schedule.log")
 @Component
+@RefreshScope
 @Data
 public class LoggerProperty {
 
     // This is the directory path for storing temporary log files from scheduled tasks pods
-    private String tempScheduleTaskLogDir;
+    private String tempLogDir;
 
     private String directory = "./log";
 
-    private Long maxLimitedCount = 10000L;
+    private Long maxLines = 10000L;
 
     // unit：B
-    private Long maxSizeCount = 1024L * 1024;
+    private Long maxSize = 1024L * 1024;
 
     @PostConstruct
     public void init() {
-        if (this.tempScheduleTaskLogDir == null) {
-            this.tempScheduleTaskLogDir =
+        if (this.tempLogDir == null) {
+            this.tempLogDir =
                     FileUtil.normalize(System.getProperty("user.dir") + File.separator + "log/running-job-temp-logs");
         }
     }

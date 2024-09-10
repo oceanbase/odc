@@ -132,7 +132,7 @@ public class ScheduleControllerHist {
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/log", method = RequestMethod.GET)
     public SuccessResponse<String> getScheduleTaskLog(@PathVariable Long scheduleId, @PathVariable Long taskId,
             @RequestParam OdcTaskLogLevel logType) {
-        return Responses.single(scheduleService.getLog(scheduleId, taskId, logType, false));
+        return Responses.single(scheduleService.getLog(scheduleId, taskId, logType));
     }
 
 }

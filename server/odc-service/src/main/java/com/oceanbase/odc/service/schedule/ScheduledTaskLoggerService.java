@@ -29,7 +29,6 @@ import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.config.LoggerProperty;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.JobDispatchChecker;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
@@ -94,8 +93,8 @@ public class ScheduledTaskLoggerService {
 
     public String getLog(Long scheduleTaskId, OdcTaskLogLevel level) {
         try {
-            return LogUtils.getLatestLogContent(getLogFile(scheduleTaskId, level), loggerProperty.getMaxLimitedCount(),
-                    loggerProperty.getMaxSizeCount());
+            return LogUtils.getLatestLogContent(getLogFile(scheduleTaskId, level), loggerProperty.getMaxLines(),
+                    loggerProperty.getMaxSize());
         } catch (Exception e) {
             log.warn("{}, taskId={}", LogUtils.DEFAULT_LOG_CONTENT, scheduleTaskId, e);
             return LogUtils.DEFAULT_LOG_CONTENT;
@@ -143,7 +142,7 @@ public class ScheduledTaskLoggerService {
             }
 
             String tempFilePath =
-                    FileUtil.normalize(loggerProperty.getTempScheduleTaskLogDir() + File.separator
+                    FileUtil.normalize(loggerProperty.getTempLogDir() + File.separator
                             + String.format("tmp-task-%s.log", jobId));
             String attributeKey = OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
                     : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
