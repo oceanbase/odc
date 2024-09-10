@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,7 +35,6 @@ import com.oceanbase.odc.service.task.exception.JobException;
 @RestController
 @RequestMapping("/api/v2/logicaldatabase")
 public class LogicalDatabaseChangeController {
-    private static final Logger log = LoggerFactory.getLogger(LogicalDatabaseChangeController.class);
     @Autowired
     private LogicalDatabaseChangeService logicalDatabaseChangeService;
 
