@@ -22,9 +22,9 @@ import java.util.stream.Collectors;
 import org.mariadb.jdbc.HostAddress;
 import org.springframework.util.CollectionUtils;
 
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionGroup;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionSubGroup;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionSubGroupUnit;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionGroup;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionSubGroup;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionSubGroupUnit;
 
 /**
  * @Author: Lebie

@@ -19,8 +19,6 @@ import java.util.List;
 import java.util.concurrent.Executors;
 
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionGroup;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionGroupContext;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.thread.ExecutorServiceManager;
 
 /**

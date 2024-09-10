@@ -40,7 +40,7 @@ import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDBChangeExecut
 import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDBExecutionRepository;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionStatus;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionStatus;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionResultWrapper;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalDBChangeExecutionUnit;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.SqlExecutionUnitResp;

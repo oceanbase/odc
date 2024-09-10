@@ -29,10 +29,10 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionGroupContext;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionResult;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionStatus;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.UnitExecution;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionGroupContext;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionHandler;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionResult;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionStatus;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionInfoUtil;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
@@ -48,13 +48,13 @@ import lombok.extern.slf4j.Slf4j;
  * @Description: []
  */
 @Slf4j
-public class SqlUnitExecution implements UnitExecution<SqlExecuteReq, SqlExecutionResultWrapper> {
+public class SqlExecutionHandler implements ExecutionHandler<SqlExecuteReq, SqlExecutionResultWrapper> {
     private ConnectionSession connectionSession;
     private OdcStatementCallBack statementCallBack;
     private long timeoutMillis;
     private SqlExecuteReq req;
 
-    public SqlUnitExecution(@NonNull ConnectionSession connectionSession, SqlExecuteReq req) {
+    public SqlExecutionHandler(@NonNull ConnectionSession connectionSession, SqlExecuteReq req) {
         this.connectionSession = connectionSession;
         this.statementCallBack =
                 new OdcStatementCallBack(Arrays.asList(SqlTuple.newTuple(req.getSql())), connectionSession, true, 1000);

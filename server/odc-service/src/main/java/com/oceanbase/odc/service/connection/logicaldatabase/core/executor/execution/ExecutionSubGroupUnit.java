@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model;
+package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution;
 
 import java.sql.SQLException;
 
@@ -30,10 +30,11 @@ import lombok.extern.slf4j.Slf4j;
 public class ExecutionSubGroupUnit<Input, Result> {
     private final String id;
     private final Long order;
-    private final UnitExecution<Input, Result> callback;
+    private final ExecutionHandler<Input, Result> callback;
     private final Input input;
 
-    public ExecutionSubGroupUnit(String id, Long order, UnitExecution<Input, Result> executionCallback, Input input) {
+    public ExecutionSubGroupUnit(String id, Long order, ExecutionHandler<Input, Result> executionCallback,
+            Input input) {
         this.id = id;
         this.order = order;
         this.callback = executionCallback;

@@ -19,9 +19,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionGroup;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionSubGroup;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionSubGroupUnit;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionGroup;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionSubGroup;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionSubGroupUnit;
 
 /**
  * @Author: Lebie

@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.core.model;
 
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionStatus;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionStatus;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionResultWrapper;
 
 import lombok.Data;

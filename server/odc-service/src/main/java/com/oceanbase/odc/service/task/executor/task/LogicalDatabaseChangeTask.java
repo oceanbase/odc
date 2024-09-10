@@ -33,17 +33,17 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseUtils;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionGroup;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionGroupContext;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionHandler;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionResult;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionSubGroupUnit;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.GroupExecutionEngine;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionGroup;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionGroupContext;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionResult;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionSubGroupUnit;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.UnitExecution;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.MySQLExecutionGroup;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.OBExecutionGroup;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecuteReq;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionHandler;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionResultWrapper;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlUnitExecution;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.RelationFactorRewriter;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.RewriteContext;
@@ -136,8 +136,8 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
                     req.setConnectionConfig(dataNode.getDataSourceConfig());
                     ConnectionSession connectionSession = generateSession(dataNode.getDataSourceConfig());
                     connectionSessions.add(connectionSession);
-                    UnitExecution<SqlExecuteReq, SqlExecutionResultWrapper> callback =
-                            new SqlUnitExecution(connectionSession,
+                    ExecutionHandler<SqlExecuteReq, SqlExecutionResultWrapper> callback =
+                            new SqlExecutionHandler(connectionSession,
                                     new SqlExecuteReq(rewrittenSqls, order, taskParameters.getTimeoutMillis(),
                                             dialectType,
                                             dataNode.getDataSourceConfig(),

@@ -13,14 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model;
+package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution;
 
-import java.sql.SQLException;
+public enum ExecutionStatus {
+    SUCCESS,
+    FAILED,
+    SKIPPED,
+    RUNNING,
+    PENDING,
+    TERMINATED;
 
-public interface UnitExecution<Input, Result> {
-    ExecutionResult<Result> beforeExecute(ExecutionGroupContext<Input, Result> context);
-
-    ExecutionResult<Result> execute(ExecutionGroupContext<Input, Result> context) throws SQLException;
-
-    void terminate(ExecutionGroupContext<Input, Result> context) throws Exception;
+    public boolean isCompleted() {
+        return this == SUCCESS || this == FAILED || this == SKIPPED || this == TERMINATED;
+    }
 }

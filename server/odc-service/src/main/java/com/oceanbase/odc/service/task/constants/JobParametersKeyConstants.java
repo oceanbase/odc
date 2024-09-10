@@ -44,8 +44,8 @@ public class JobParametersKeyConstants {
 
     public static final String TASK_PARAMETER_JSON_KEY = "taskParameterJson";
 
-    public static final String LOGICAL_DATABASE_CHANGE_TERMINATE_UNIT = "logicalDatabaseChangeTerminateUnit";
+    public static final String LOGICAL_DATABASE_CHANGE_TERMINATE_UNIT = "logicalDatabaseChangeUnitTermination";
 
-    public static final String LOGICAL_DATABASE_CHANGE_SKIP_UNIT = "logicalDatabaseChangeSkipUnit";
+    public static final String LOGICAL_DATABASE_CHANGE_SKIP_UNIT = "logicalDatabaseChangeUnitSkip";
 
 }

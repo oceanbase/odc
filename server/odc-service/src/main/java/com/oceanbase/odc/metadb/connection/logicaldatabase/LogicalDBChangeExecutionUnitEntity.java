@@ -29,7 +29,7 @@ import javax.persistence.Table;
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model.ExecutionStatus;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionStatus;
 
 import lombok.Data;
 

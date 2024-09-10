@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model;
+package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution;
 
 import java.io.Serializable;
 
