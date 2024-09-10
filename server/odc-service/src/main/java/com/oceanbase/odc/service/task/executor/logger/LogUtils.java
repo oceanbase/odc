@@ -23,11 +23,14 @@ import java.util.Optional;
 
 import org.apache.commons.io.input.ReversedLinesFileReader;
 
+import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
+import cn.hutool.core.io.FileUtil;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -38,31 +41,38 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LogUtils {
 
-    public static final long MAX_LOG_LINE_COUNT = 10000;
-    public static final long MAX_LOG_BYTE_COUNT = 1024 * 1024;
-    private static final String TASK_LOG_PATH_PATTERN = "%s/task/%s/task-log.%s";
+    public final static String DEFAULT_LOG_CONTENT = "read log failed, may be log file not exist";
+    public final static String TASK_LOG_PATH_PATTERN = "%s/task/%s/task-log.%s";
+    public final static long DEFAULT_MAX_LINES = 10000L;
+    public final static long DEFAULT_MAX_SIZE = 1024L * 1024;
 
     public static String getLatestLogContent(String file, Long fetchMaxLine, Long fetchMaxByteSize) {
-
         File logFile = new File(file);
         if (!logFile.exists()) {
             return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {file});
         }
+        return getLatestLogContent(logFile, fetchMaxLine, fetchMaxByteSize);
+    }
+
+    public static String getLatestLogContent(@NonNull File file, Long fetchMaxLine, Long fetchMaxByteSize) {
+        if (!FileUtil.exist(file)) {
+            log.warn(ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {file.getAbsolutePath()}));
+            return DEFAULT_LOG_CONTENT;
+        }
         LinkedList<String> logContent = new LinkedList<>();
-        try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile, StandardCharsets.UTF_8)) {
+        try (ReversedLinesFileReader reader = new ReversedLinesFileReader(file, StandardCharsets.UTF_8)) {
             int bytes = 0;
-            int lineCount = 0;
             String line;
             while ((line = reader.readLine()) != null) {
                 bytes += line.getBytes().length;
-                if (lineCount >= fetchMaxLine || bytes >= fetchMaxByteSize) {
-                    logContent.addFirst("[ODC INFO]: \n"
-                            + "Logs exceed max limitation (10000 rows or 1 MB), only the latest part is displayed.\n"
-                            + "please download logs directly.");
+                if (logContent.size() >= fetchMaxLine || bytes >= fetchMaxByteSize) {
+                    logContent.add(String.format("[ODC INFO]: \n"
+                            + "Logs exceed max limitation (%s rows or %s MB), only the latest part is displayed.\n"
+                            + "Please download the log file for the full content.", fetchMaxLine,
+                            BinarySizeUnit.B.of(fetchMaxByteSize).convert(BinarySizeUnit.MB)));
                     break;
                 }
                 logContent.addFirst(line + "\n");
-                lineCount++;
             }
 
         } catch (Exception ex) {

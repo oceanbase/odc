@@ -43,6 +43,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Charsets;
@@ -53,6 +54,7 @@ import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
@@ -60,13 +62,11 @@ import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
-import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.response.ListResponse;
@@ -107,7 +107,6 @@ import com.oceanbase.odc.service.permission.project.ApplyProjectResult;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableResult;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleResult;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
-import com.oceanbase.odc.service.task.TaskLoggerService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
@@ -159,17 +158,14 @@ public class FlowTaskInstanceService {
     @Autowired
     private TaskFrameworkEnabledProperties taskFrameworkProperties;
     @Autowired
-    private TaskLoggerService taskLoggerService;
-    @Autowired
-    private EnvironmentRepository environmentRepository;
-    @Autowired
-    private EnvironmentService environmentService;
+    private FlowTaskInstanceLoggerService flowTaskInstanceLoggerService;
 
     @Value("${odc.task.async.result-preview-max-size-bytes:5242880}")
     private long resultPreviewMaxSizeBytes;
 
     private final Set<String> supportedBucketName = new HashSet<>(Arrays.asList("async", "structure-comparison"));
 
+    @Transactional(rollbackFor = Exception.class)
     public FlowInstanceDetailResp executeTask(@NotNull Long id) throws IOException {
         List<FlowTaskInstance> instances =
                 filterTaskInstance(id, instance -> instance.getStatus() == FlowNodeStatus.PENDING, false);
@@ -189,46 +185,20 @@ public class FlowTaskInstanceService {
             return response.getContentByType(new TypeReference<SuccessResponse<FlowInstanceDetailResp>>() {}).getData();
         }
         taskInstance.confirmExecute();
-        return FlowInstanceDetailResp.withIdAndType(id, taskInstance.getTaskType());
+        flowInstanceRepository.updateStatusById(id, FlowStatus.EXECUTING);
+        FlowInstanceDetailResp flowInstanceDetailResp = FlowInstanceDetailResp.withIdAndType(id,
+                taskInstance.getTaskType());
+        flowInstanceDetailResp.setStatus(FlowStatus.EXECUTING);
+        return flowInstanceDetailResp;
     }
 
     public String getLog(@NotNull Long flowInstanceId, OdcTaskLogLevel level, boolean skipAuth) throws IOException {
-        Optional<TaskEntity> taskEntityOptional = getLogDownloadableTaskEntity(flowInstanceId, skipAuth);
-        if (!taskEntityOptional.isPresent()) {
-            return null;
-        }
-        TaskEntity taskEntity = taskEntityOptional.get();
-        if (taskFrameworkProperties.isEnabled() && taskEntity.getJobId() != null) {
-            // TODO: get the latest part of log when task framework is enabled @krihy
-            return taskLoggerService.getLogByTaskFramework(level, taskEntity.getJobId());
-        }
-        if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
-            // The task is not executing on current machine, need to forward the request
-            ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
-            DispatchResponse response = requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
-            return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
-        }
-        return taskService.getLog(taskEntity.getCreatorId(), taskEntity.getId() + "", taskEntity.getTaskType(), level);
+        return flowTaskInstanceLoggerService.getLog(level, flowInstanceId, skipAuth);
     }
 
-    public List<BinaryDataResult> downloadLog(@NotNull Long flowInstanceId) throws IOException {
-        Optional<TaskEntity> taskEntityOptional = getLogDownloadableTaskEntity(flowInstanceId, false);
-        if (!taskEntityOptional.isPresent() || taskEntityOptional.get().getResultJson() == null) {
-            return Collections.emptyList();
-        }
-        TaskEntity taskEntity = taskEntityOptional.get();
-        // TODO: download log file when task framework is enabled @krihy
-        if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
-            // The task is not executing on current machine, need to forward the request
-            return dispatchRequest(taskEntity);
-        }
-        try {
-            File logFile = taskService.getLogFile(taskEntity.getCreatorId(), taskEntity.getId() + "",
-                    taskEntity.getTaskType(), OdcTaskLogLevel.ALL);
-            return Collections.singletonList(new FileBasedDataResult(logFile));
-        } catch (NotFoundException ex) {
-            return Collections.emptyList();
-        }
+    public List<BinaryDataResult> downloadLog(@NotNull Long flowInstanceId, boolean skipAuth) throws IOException {
+        File logFile = flowTaskInstanceLoggerService.downloadLog(flowInstanceId, skipAuth);
+        return Collections.singletonList(new FileBasedDataResult(logFile));
     }
 
     public List<? extends FlowTaskResult> getResult(@NotNull Long id, boolean skipAuth) throws IOException {
@@ -754,7 +724,7 @@ public class FlowTaskInstanceService {
         }, false);
     }
 
-    private Optional<TaskEntity> getLogDownloadableTaskEntity(@NotNull Long flowInstanceId, boolean skipAuth) {
+    public Optional<TaskEntity> getLogDownloadableTaskEntity(@NotNull Long flowInstanceId, boolean skipAuth) {
         return getTaskEntity(flowInstanceId,
                 instance -> (instance.getStatus().isFinalStatus() || instance.getStatus() == FlowNodeStatus.EXECUTING)
                         && instance.getTaskType() != TaskType.SQL_CHECK && instance.getTaskType() != TaskType.PRE_CHECK

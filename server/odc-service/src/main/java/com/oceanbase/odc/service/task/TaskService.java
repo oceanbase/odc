@@ -204,8 +204,7 @@ public class TaskService {
         }
     }
 
-    public File getLogFile(Long userId, String taskId, TaskType type, OdcTaskLogLevel logLevel)
-            throws NotFoundException {
+    public String getLogFilePath(Long userId, String taskId, TaskType type, OdcTaskLogLevel logLevel) {
         String filePath;
         switch (type) {
             case MULTIPLE_ASYNC:
@@ -265,11 +264,20 @@ public class TaskService {
                 throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
                         "Unsupported task type: " + type);
         }
+        return filePath;
+    }
+
+    public File getLogFile(String filePath) throws NotFoundException {
         File logFile = new File(filePath);
         if (!logFile.exists()) {
             throw new NotFoundException(ResourceType.ODC_FILE, "Path", filePath);
         }
         return logFile;
+    }
+
+    public File getLogFile(Long userId, String taskId, TaskType type, OdcTaskLogLevel logLevel)
+            throws NotFoundException {
+        return getLogFile(getLogFilePath(userId, taskId, type, logLevel));
     }
 
     @Transactional(rollbackFor = Exception.class)

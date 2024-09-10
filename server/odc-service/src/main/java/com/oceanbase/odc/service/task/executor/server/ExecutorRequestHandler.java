@@ -60,7 +60,7 @@ public class ExecutorRequestHandler {
     }
 
     public SuccessResponse<Object> process(HttpMethod httpMethod, String uri, String requestData) {
-        if (uri == null || uri.trim().length() == 0) {
+        if (uri == null || uri.trim().isEmpty()) {
             return Responses.single("request error: uri is empty.");
         }
 
@@ -74,8 +74,8 @@ public class ExecutorRequestHandler {
                 Long jobId = Long.parseLong(matcher.group(1));
                 String logContent = executorBiz.getLog(jobId,
                         UrlUtils.getQueryParameterFirst(uri, "logType"),
-                        (maxLine == null ? LogUtils.MAX_LOG_LINE_COUNT : Long.parseLong(maxLine)),
-                        (maxSize == null ? LogUtils.MAX_LOG_BYTE_COUNT : Long.parseLong(maxSize)));
+                        (maxLine == null ? LogUtils.DEFAULT_MAX_LINES : Long.parseLong(maxLine)),
+                        (maxSize == null ? LogUtils.DEFAULT_MAX_SIZE : Long.parseLong(maxSize)));
                 return Responses.single(logContent);
             }
             matcher = stopTaskPattern.matcher(path);
