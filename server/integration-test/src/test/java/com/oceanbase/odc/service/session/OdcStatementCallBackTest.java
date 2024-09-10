@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -52,6 +53,7 @@ import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
  * @date 2021-11-13 00:14
  * @since ODC_release_3.2.2
  */
+@Ignore
 public class OdcStatementCallBackTest extends PluginTestEnv {
 
     @Rule

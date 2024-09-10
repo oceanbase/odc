@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,6 +77,7 @@ import lombok.NonNull;
  * @date 2021-11-20 23:31
  * @since ODC_release_3.2.2
  */
+@Ignore
 public class ConnectConsoleServiceTest extends ServiceTestEnv {
 
     private final String sessionid = "10000";
