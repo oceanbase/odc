@@ -312,7 +312,6 @@ public class ScheduleTaskService {
         return scheduleTaskRepository.findByJobNameAndStatusIn(jobName, statuses);
     }
 
-
     public Optional<ScheduleTask> findByJobId(Long jobId) {
         List<ScheduleTaskEntity> scheduleTasks = scheduleTaskRepository.findByJobId(jobId);
         if (scheduleTasks != null) {
@@ -342,6 +341,7 @@ public class ScheduleTaskService {
         return scheduleTaskMapper.entityToModel(scheduleEntityOptional
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE_TASK, "id", id)));
     }
+
 
     public void correctScheduleTaskStatus(Long scheduleId) {
         List<ScheduleTaskEntity> toBeCorrectedList = listTaskByJobNameAndStatus(
