@@ -18,7 +18,7 @@ package com.oceanbase.odc.service.flow.task.model;
 import java.util.List;
 
 import com.oceanbase.odc.core.flow.model.AbstractFlowTaskResult;
-import com.oceanbase.odc.service.schedule.model.ScheduleTask;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -30,5 +30,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class OnlineSchemaChangeTaskResult extends AbstractFlowTaskResult {
-    private List<ScheduleTask> tasks;
+    private List<ScheduleTaskEntity> tasks;
 }

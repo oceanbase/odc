@@ -42,5 +42,4 @@ public class PublishSqlPlanJobReq {
 
     private String sessionTimeZone;
 
-
 }

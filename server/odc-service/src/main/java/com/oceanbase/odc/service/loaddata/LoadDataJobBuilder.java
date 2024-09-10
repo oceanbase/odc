@@ -13,27 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.plugin.task.api.partitionplan.model;
+package com.oceanbase.odc.service.loaddata;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import org.quartz.JobExecutionContext;
+
+import com.oceanbase.odc.service.task.schedule.JobDefinition;
 
 /**
- * {@link DateBasedPartitionNameGeneratorConfig}
- *
- * @author yh263208
- * @date 2024-01-22 17:21
- * @since ODC_release_4.2.4
+ * @author: liuyizhuo.lyz
+ * @date: 2024/9/2
  */
-@Getter
-@Setter
-@ToString
-public class DateBasedPartitionNameGeneratorConfig {
+public interface LoadDataJobBuilder {
 
-    private String namingPrefix;
-    private String namingSuffixExpression;
-    private String refPartitionKey;
-    private NamingSuffixStrategy namingSuffixStrategy = NamingSuffixStrategy.PARTITION_UPPER_BOUND;
+    JobDefinition build(JobExecutionContext jobExecutionContext);
 
 }

@@ -22,6 +22,7 @@ import javax.validation.constraints.NotNull;
 
 import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 import lombok.Data;
@@ -31,7 +32,7 @@ import lombok.Data;
  * @date 2021/3/15
  */
 @Data
-public class DatabaseChangeParameters implements Serializable, TaskParameters {
+public class DatabaseChangeParameters implements Serializable, TaskParameters, ScheduleTaskParameters {
     private String sqlContent;
     // 用于前端展示执行SQL文件名
     private List<String> sqlObjectNames;
