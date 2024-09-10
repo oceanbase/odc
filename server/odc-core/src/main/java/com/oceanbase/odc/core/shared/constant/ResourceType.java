@@ -100,6 +100,7 @@ public enum ResourceType implements Translatable {
     ODC_DATABASE_CHANGE_ORDER_TEMPLATE,
 
     ODC_WORKSHEET,
+    ODC_WORKSPACE,
 
 
     /**
