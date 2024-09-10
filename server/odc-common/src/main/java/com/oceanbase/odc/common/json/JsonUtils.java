@@ -235,7 +235,8 @@ public class JsonUtils {
             objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
             return objectMapper.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
-            log.error("failed to convert to json string, reason:{}, object:{} \n", e.getMessage(), JSON.toJSONString(obj, SerializerFeature.PrettyFormat));
+            log.error("failed to convert to json string, reason:{}, object:{} \n", e.getMessage(),
+                    JSON.toJSONString(obj, SerializerFeature.PrettyFormat));
             return null;
         }
     }
