@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.collaboration.environment.model;
 
-import java.util.List;
-
 import lombok.Builder;
 import lombok.Data;
 
@@ -30,7 +28,5 @@ import lombok.Data;
 public class QueryEnvironmentParam {
 
     private Boolean enabled;
-
-    private List<Long> ids;
 
 }

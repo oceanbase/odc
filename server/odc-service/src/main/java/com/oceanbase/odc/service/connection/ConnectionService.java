@@ -420,15 +420,14 @@ public class ConnectionService {
             resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public PaginatedData<ConnectionConfig> listByProjectId(@NotNull Long projectId, @NotNull Boolean basic) {
         List<ConnectionConfig> connections;
-        List<Long> environmentIds = repository.findByDatabaseProjectId(projectId).stream()
+        List<ConnectionEntity> entities = repository.findByDatabaseProjectId(projectId);
+        List<Long> environmentIds = entities.stream()
                 .map(ConnectionEntity::getEnvironmentId)
                 .distinct().collect(Collectors.toList());
-        Map<Long, Environment> environmentMap = environmentService.list(QueryEnvironmentParam
-                .builder().ids(environmentIds).build())
-                .stream()
+        Map<Long, Environment> environmentMap = environmentService.getByIdIn(environmentIds).stream()
                 .collect(Collectors.toMap(Environment::getId, environment -> environment));
         if (basic) {
-            connections = repository.findByDatabaseProjectId(projectId).stream().map(e -> {
+            connections = entities.stream().map(e -> {
                 ConnectionConfig c = new ConnectionConfig();
                 Environment environment = environmentMap.getOrDefault(e.getEnvironmentId(), null);
                 if (Objects.isNull(environment)) {
