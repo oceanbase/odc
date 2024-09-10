@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -437,12 +436,14 @@ public class PartitionPlanService {
                 }
             }
         }
-        DBTablePartitionDefinition previousDef = dbTable.getPartition().getPartitionDefinitions()
-                .get(dbTable.getPartition().getPartitionDefinitions().size() - 1);
-        List<DBTablePartitionDefinition> createPartitions = new LinkedList<>();
-        for (Entry<Integer, List<String>> entry : lineNum2CreateExprs.entrySet()) {
+        List<DBTablePartitionDefinition> definitions = lineNum2CreateExprs.values().stream().map(strings -> {
+            DBTablePartitionDefinition def = new DBTablePartitionDefinition();
+            def.setMaxValues(strings);
+            return def;
+        }).collect(Collectors.toList());
+        strategyListMap.put(PartitionPlanStrategy.CREATE, lineNum2CreateExprs.entrySet().stream().map(s -> {
             DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
-            definition.setMaxValues(entry.getValue());
+            definition.setMaxValues(s.getValue());
             PartitionNameGenerator invoker = extensionPoint
                     .getPartitionNameGeneratorGeneratorByName(tableConfig.getPartitionNameInvoker());
             if (invoker == null) {
@@ -450,19 +451,15 @@ public class PartitionPlanService {
                         "Failed to get invoker by name, " + tableConfig.getPartitionNameInvoker());
             }
             Map<String, Object> parameters = tableConfig.getPartitionNameInvokerParameters();
-            parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, Arrays.asList(previousDef, definition));
-            parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, entry.getKey());
+            parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definitions);
+            parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, s.getKey());
             try {
                 definition.setName(invoker.invoke(connection, dbTable, parameters));
             } catch (Exception e) {
                 throw new IllegalStateException(e);
             }
-            if (removeExistingPartitionElement(dbTable, definition, extensionPoint)) {
-                createPartitions.add(definition);
-                previousDef = definition;
-            }
-        }
-        strategyListMap.put(PartitionPlanStrategy.CREATE, createPartitions);
+            return definition;
+        }).filter(d -> removeExistingPartitionElement(dbTable, d, extensionPoint)).collect(Collectors.toList()));
         strategyListMap.put(PartitionPlanStrategy.DROP, droppedPartitions);
         DBTablePartition partition = dbTable.getPartition();
         return strategyListMap.entrySet().stream().filter(e -> CollectionUtils.isNotEmpty(e.getValue()))

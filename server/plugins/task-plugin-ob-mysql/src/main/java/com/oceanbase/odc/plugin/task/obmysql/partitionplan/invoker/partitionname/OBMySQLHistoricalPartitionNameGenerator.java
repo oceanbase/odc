@@ -40,12 +40,12 @@ public class OBMySQLHistoricalPartitionNameGenerator extends OBMySQLDateBasedPar
     }
 
     @Override
-    protected Date getBaseDate(@NonNull Connection connection,
+    protected Date getPartitionUpperBound(@NonNull Connection connection,
             @NonNull String partitionKey, @NonNull String upperBound) {
         if (StringUtils.startsWith(partitionKey, TARGET_FUNCTION_NAME)) {
             return new Date(Long.parseLong(upperBound) * 1000);
         }
-        return super.getBaseDate(connection, partitionKey, upperBound);
+        return super.getPartitionUpperBound(connection, partitionKey, upperBound);
     }
 
 }

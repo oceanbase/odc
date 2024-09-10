@@ -46,7 +46,7 @@ public interface PartitionNameGenerator extends AutoPartitionKeyInvoker<String> 
     default String invoke(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull Map<String, Object> parameters) throws Exception {
         Object value = parameters.get(TARGET_PARTITION_DEF_KEY);
-        if (!(value instanceof List<?>) || ((List<?>) value).isEmpty() || ((List<?>) value).size() > 2
+        if (!(value instanceof List<?>) || ((List<?>) value).isEmpty()
                 || !(((List<?>) value).get(0) instanceof DBTablePartitionDefinition)) {
             throw new IllegalArgumentException("Missing target partition candidate");
         }

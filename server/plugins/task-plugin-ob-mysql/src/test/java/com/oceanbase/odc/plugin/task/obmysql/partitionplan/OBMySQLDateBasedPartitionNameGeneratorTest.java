@@ -16,7 +16,6 @@
 package com.oceanbase.odc.plugin.task.obmysql.partitionplan;
 
 import java.sql.Connection;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -63,7 +62,7 @@ public class OBMySQLDateBasedPartitionNameGeneratorTest {
             config.setRefPartitionKey("col");
             PartitionNameGenerator generator = new OBMySQLDateBasedPartitionNameGenerator();
             String actual = generator.invoke(connection, dbTable, getParameters(config));
-            String expect = "p20240301";
+            String expect = "p20240302";
             Assert.assertEquals(expect, actual);
         }
     }
@@ -88,7 +87,7 @@ public class OBMySQLDateBasedPartitionNameGeneratorTest {
             config.setNamingSuffixStrategy(NamingSuffixStrategy.PARTITION_LOWER_BOUND);
             PartitionNameGenerator generator = new OBMySQLDateBasedPartitionNameGenerator();
             String actual = generator.invoke(connection, dbTable, getParameters(config));
-            String expect = "p20240229";
+            String expect = "p20240301";
             Assert.assertEquals(expect, actual);
         }
     }
@@ -96,10 +95,8 @@ public class OBMySQLDateBasedPartitionNameGeneratorTest {
     private Map<String, Object> getParameters(DateBasedPartitionNameGeneratorConfig config) {
         Map<String, Object> parameters = new HashMap<>();
         DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
-        definition.setMaxValues(Collections.singletonList("'2024-03-01 00:00:00'"));
-        DBTablePartitionDefinition previousDef = new DBTablePartitionDefinition();
-        previousDef.setMaxValues(Collections.singletonList("'2024-02-29 00:00:00'"));
-        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, Arrays.asList(previousDef, definition));
+        definition.setMaxValues(Collections.singletonList("'2024-03-02 00:00:00'"));
+        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, Collections.singletonList(definition));
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, 0);
         parameters.put(PartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);
         return parameters;

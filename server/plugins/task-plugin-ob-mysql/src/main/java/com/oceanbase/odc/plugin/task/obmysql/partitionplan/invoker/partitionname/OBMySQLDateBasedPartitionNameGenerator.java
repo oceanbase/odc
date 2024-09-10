@@ -48,11 +48,17 @@ public class OBMySQLDateBasedPartitionNameGenerator implements DateBasedPartitio
             @NonNull DateBasedPartitionNameGeneratorConfig config) {
         int index = DBTablePartitionUtil.getPartitionKeyIndex(
                 dbTable, config.getRefPartitionKey(), this::unquoteIdentifier);
-        String bound = targets.size() == 1 ? targets.get(0).getMaxValues().get(index)
-                : config.getNamingSuffixStrategy() == NamingSuffixStrategy.PARTITION_LOWER_BOUND
-                        ? targets.get(0).getMaxValues().get(index)
-                        : targets.get(1).getMaxValues().get(index);
-        Date baseDate = getBaseDate(connection, config.getRefPartitionKey(), bound);
+        DBTablePartitionDefinition baseDef;
+        if (config.getNamingSuffixStrategy() == NamingSuffixStrategy.PARTITION_LOWER_BOUND) {
+            baseDef = targetPartitionIndex == 0
+                    ? dbTable.getPartition().getPartitionDefinitions()
+                            .get(dbTable.getPartition().getPartitionDefinitions().size() - 1)
+                    : targets.get(targetPartitionIndex - 1);
+        } else {
+            baseDef = targets.get(targetPartitionIndex);
+        }
+        Date baseDate = getPartitionUpperBound(
+                connection, config.getRefPartitionKey(), baseDef.getMaxValues().get(index));
         return config.getNamingPrefix() + new SimpleDateFormat(config.getNamingSuffixExpression()).format(baseDate);
     }
 
@@ -60,7 +66,7 @@ public class OBMySQLDateBasedPartitionNameGenerator implements DateBasedPartitio
         return new OBMySQLAutoPartitionExtensionPoint().unquoteIdentifier(identifier);
     }
 
-    protected Date getBaseDate(@NonNull Connection connection,
+    protected Date getPartitionUpperBound(@NonNull Connection connection,
             @NonNull String partitionKey, @NonNull String upperBound) {
         SqlExprCalculator calculator = new OBMySQLExprCalculator(connection);
         SqlExprResult value = calculator.calculate("convert(" + upperBound + ", datetime)");
