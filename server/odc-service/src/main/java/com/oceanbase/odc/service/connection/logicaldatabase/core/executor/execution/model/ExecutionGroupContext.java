@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import org.springframework.util.CollectionUtils;
@@ -79,8 +80,9 @@ public final class ExecutionGroupContext<T, R> {
         return executionId2Result.get(executionId);
     }
 
-    public void setExecutionResult(String executionId, ExecutionResult<R> result) {
-        executionId2Result.put(executionId, result);
+    public void setExecutionResult(String executionId,
+            BiFunction<String, ExecutionResult<R>, ExecutionResult<R>> result) {
+        executionId2Result.compute(executionId, result);
     }
 
     public boolean isCompleted() {

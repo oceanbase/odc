@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.model;
 
+import java.sql.SQLException;
+
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,45 +42,62 @@ public class ExecutionUnit<T, R> {
 
     public void beforeExecute(ExecutionGroupContext<T, R> context) {
         try {
-            ExecutionResult<R> result = callback.beforeExecute(context);
-            context.setExecutionResult(id, result);
+            context.setExecutionResult(id, (k, v) -> callback.beforeExecute(context));
         } catch (Exception e) {
-            log.warn("ExecutionUnit execute failed, executionId={}", id, e);
+            log.warn("ExecutionUnit execute failed, executionId={}, ex=", id, e);
         }
     }
 
     public void execute(ExecutionGroupContext<T, R> context) {
-        try {
-            ExecutionResult<R> result = callback.execute(context);
-            log.info("ExecutionUnit execute success, executionId={}, ", id);
-            context.setExecutionResult(id, result);
-        } catch (Exception e) {
-            log.warn("ExecutionUnit execute failed, executionId={}", id, e);
-        }
+        context.setExecutionResult(id, (k, v) -> {
+            if (v.getStatus() != ExecutionStatus.PENDING) {
+                throw new IllegalStateException(
+                        "ExecutionUnit is not in PENDING status, executionId=" + id + ", status=" + v.getStatus());
+            }
+            log.info("ExecutionUnit starts to execute, executionId={}", id);
+            v.setStatus(ExecutionStatus.RUNNING);
+            return v;
+        });
+        context.setExecutionResult(id, (k, v) -> {
+            try {
+                if (v.getStatus() == ExecutionStatus.RUNNING) {
+                    ExecutionResult<R> result = callback.execute(context);
+                    log.info("ExecutionUnit execute success, executionId={}", id);
+                    return result;
+                }
+                log.warn("Abort to execute, as the ExecutionUnit({}) is not in RUNNING status, executionId={}",
+                        v.getStatus(), id);
+                return v;
+            } catch (SQLException e) {
+                log.warn("ExecutionUnit execute failed, executionId={}, ex=", id, e);
+                v.setStatus(ExecutionStatus.FAILED);
+                return v;
+            }
+        });
+        log.info("ExecutionUnit execute success, executionId={}", id);
     }
 
     public void terminate(ExecutionGroupContext<T, R> context) {
-        try {
-            ExecutionResult<R> result = context.getExecutionResult(id);
-            synchronized (result) {
-                if (result.getStatus() == ExecutionStatus.RUNNING) {
+        context.setExecutionResult(id, (k, v) -> {
+            if (v.getStatus() == ExecutionStatus.RUNNING) {
+                try {
                     callback.terminate(context);
-                    context.getExecutionResult(id).setStatus(ExecutionStatus.TERMINATED);
+                    v.setStatus(ExecutionStatus.TERMINATED);
+                } catch (Exception e) {
+                    log.warn("ExecutionUnit terminate failed, executionId={}", id, e);
                 }
             }
-        } catch (Exception e) {
-            log.warn("ExecutionUnit terminate failed, executionId={}", id, e);
-            context.getExecutionResult(id).setStatus(ExecutionStatus.FAILED);
-        }
+            return v;
+        });
     }
 
     public void skip(ExecutionGroupContext<T, R> context) {
-        ExecutionResult<R> result = context.getExecutionResult(id);
-        synchronized (result) {
-            if (result.getStatus() == ExecutionStatus.FAILED || result.getStatus() == ExecutionStatus.TERMINATED) {
-                result.setStatus(ExecutionStatus.SKIPPED);
+        context.setExecutionResult(id, (k, v) -> {
+            if (v.getStatus() == ExecutionStatus.FAILED || v.getStatus() == ExecutionStatus.TERMINATED) {
+                v.setStatus(ExecutionStatus.SKIPPED);
             }
-        }
+            return v;
+        });
     }
 
 }
