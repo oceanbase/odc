@@ -70,7 +70,7 @@ public class OBMySQLExprBasedPartitionNameGeneratorTest {
         Map<String, Object> parameters = new HashMap<>();
         DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
         definition.setMaxValues(Collections.singletonList("'2024-01-25 00:00:00'"));
-        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
+        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, Collections.singletonList(definition));
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, index);
         parameters.put(PartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);
         return parameters;

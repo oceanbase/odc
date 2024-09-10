@@ -15,25 +15,12 @@
  */
 package com.oceanbase.odc.plugin.task.api.partitionplan.model;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-
 /**
- * {@link DateBasedPartitionNameGeneratorConfig}
- *
- * @author yh263208
- * @date 2024-01-22 17:21
- * @since ODC_release_4.2.4
+ * @Author：tinker
+ * @Date: 2024/9/4 22:16
+ * @Descripition:
  */
-@Getter
-@Setter
-@ToString
-public class DateBasedPartitionNameGeneratorConfig {
-
-    private String namingPrefix;
-    private String namingSuffixExpression;
-    private String refPartitionKey;
-    private NamingSuffixStrategy namingSuffixStrategy = NamingSuffixStrategy.PARTITION_UPPER_BOUND;
-
+public enum NamingSuffixStrategy {
+    PARTITION_LOWER_BOUND,
+    PARTITION_UPPER_BOUND
 }
