@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -210,6 +211,12 @@ public class OBMySQLAutoPartitionExtensionPointTest {
                     .getPartitionNameGeneratorGeneratorByName("CUSTOM_PARTITION_NAME_GENERATOR");
             DBTablePartition partition = new DBTablePartition();
             partition.setPartitionDefinitions(new ArrayList<>());
+            List<DBTablePartitionDefinition> targets = new LinkedList<>();
+            for (int i = 0; i < generateCount; i++) {
+                DBTablePartitionDefinition def = new DBTablePartitionDefinition();
+                def.setMaxValues(Arrays.asList(pk1Values.get(i), pk2Values.get(i)));
+                targets.add(def);
+            }
             for (int i = 0; i < generateCount; i++) {
                 DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
                 definition.setMaxValues(Arrays.asList(pk1Values.get(i), pk2Values.get(i)));
@@ -219,7 +226,7 @@ public class OBMySQLAutoPartitionExtensionPointTest {
                         + PartitionPlanVariableKey.INTERVAL.getVariable() + "), '%Y%m%d'))");
                 config2.setIntervalGenerateExpr("86400");
                 definition.setName(nameGen.invoke(connection, dbTable,
-                        getSqlExprBasedNameGeneratorParameters(i, config2, definition)));
+                        getSqlExprBasedNameGeneratorParameters(i, config2, targets)));
                 partition.getPartitionDefinitions().add(definition);
             }
             partition.setPartitionOption(dbTable.getPartition().getPartitionOption());
@@ -277,9 +284,9 @@ public class OBMySQLAutoPartitionExtensionPointTest {
     }
 
     private Map<String, Object> getSqlExprBasedNameGeneratorParameters(int index, SqlExprBasedGeneratorConfig config,
-            DBTablePartitionDefinition definition) {
+            List<DBTablePartitionDefinition> definition) {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, Collections.singletonList(definition));
+        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, index);
         parameters.put(PartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);
         return parameters;
