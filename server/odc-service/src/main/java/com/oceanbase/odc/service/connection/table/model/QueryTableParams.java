@@ -37,9 +37,10 @@ public class QueryTableParams {
     @NotNull
     private Boolean includePermittedAction;
     /**
-     * table belonging to type in this collection needs to be fetched. if null, only fetch collection of
-     * basic table
+     * table belonging to type in this collection needs to be fetched. if types is empty, return an
+     * empty collection.
      */
+    @NotNull
     private List<DBObjectType> types;
 
 }
