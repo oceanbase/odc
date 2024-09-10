@@ -13,31 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource;
+package com.oceanbase.odc.service.resource.k8s.model;
 
-import java.util.Optional;
+import java.util.List;
 
-import com.oceanbase.odc.metadb.resource.ResourceEntity;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
- * @author longpeng.zlp
- * @date 2024/9/3 19:20
+ * {@link QueryResourceParams}
+ *
+ * @author yh263208
+ * @date 2024-09-04 16:07
+ * @since ODC_release_4.3.2
  */
-public interface ResourceEntityConverter<T extends Resource> {
-    /**
-     * convert resource to ResourceEntity
-     * 
-     * @param resource
-     * @return
-     */
-    ResourceEntity toResourceEntity(T resource);
-
-    /**
-     * convert resourceEntity to resource
-     * 
-     * @param resourceEntity
-     * @return
-     */
-    T toResource(ResourceEntity resourceEntity, Optional<T> runtimeResource);
-
+@Getter
+@Setter
+@ToString
+public class QueryResourceParams {
+    private List<Long> ids;
 }

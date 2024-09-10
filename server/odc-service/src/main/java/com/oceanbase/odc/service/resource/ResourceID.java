@@ -15,8 +15,13 @@
  */
 package com.oceanbase.odc.service.resource;
 
+import com.oceanbase.odc.metadb.resource.ResourceEntity;
+
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NonNull;
+import lombok.ToString;
 
 /**
  * resource id all resource entity id should contains this class resource id should be impl as
@@ -27,6 +32,8 @@ import lombok.Getter;
  */
 @AllArgsConstructor
 @Getter
+@ToString
+@EqualsAndHashCode
 public class ResourceID {
     /**
      * location of the resource
@@ -48,4 +55,12 @@ public class ResourceID {
      * identifier of resource. eg: a pod name
      */
     private final String identifier;
+
+    public ResourceID(@NonNull ResourceEntity resourceEntity) {
+        this.resourceLocation = new ResourceLocation(resourceEntity);
+        this.type = resourceEntity.getResourceType();
+        this.namespace = resourceEntity.getNamespace();
+        this.identifier = resourceEntity.getResourceName();
+    }
+
 }

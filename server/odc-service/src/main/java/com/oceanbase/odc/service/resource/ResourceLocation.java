@@ -15,8 +15,13 @@
  */
 package com.oceanbase.odc.service.resource;
 
+import com.oceanbase.odc.metadb.resource.ResourceEntity;
+
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NonNull;
+import lombok.ToString;
 
 /**
  * location of the resource
@@ -26,6 +31,8 @@ import lombok.Getter;
  */
 @AllArgsConstructor
 @Getter
+@ToString
+@EqualsAndHashCode
 public class ResourceLocation {
     /**
      * region of the resource, that associate to a geography area eg: shanghai/beijing/singapore
@@ -36,4 +43,10 @@ public class ResourceLocation {
      * cloud this group will be associated to a management endpoint
      */
     private final String group;
+
+    public ResourceLocation(@NonNull ResourceEntity resourceEntity) {
+        this.region = resourceEntity.getRegion();
+        this.group = resourceEntity.getGroupName();
+    }
+
 }

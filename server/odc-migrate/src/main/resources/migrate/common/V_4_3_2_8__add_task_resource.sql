@@ -1,7 +1,7 @@
 --
--- Add task_resource table
+-- Add resource_resource table
 --
-CREATE TABLE IF NOT EXISTS `task_resource` (
+CREATE TABLE IF NOT EXISTS `resource_resource` (
 `id` bigint(20) NOT NULL AUTO_INCREMENT,
 `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
 `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',

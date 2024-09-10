@@ -45,6 +45,7 @@ import com.oceanbase.odc.service.resource.k8s.K8sPodResource;
 import com.oceanbase.odc.service.resource.k8s.K8sResourceContext;
 import com.oceanbase.odc.service.resource.k8s.PodConfig;
 import com.oceanbase.odc.service.task.config.K8sProperties;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.exception.JobException;
 
 import io.kubernetes.client.openapi.ApiClient;
@@ -82,18 +83,33 @@ public class NativeK8sJobClient implements K8sJobClient {
 
     public NativeK8sJobClient(K8sProperties k8sProperties) throws IOException {
         this.k8sProperties = k8sProperties;
-        ApiClient apiClient = null;
-        if (StringUtils.isNotBlank(k8sProperties.getKubeConfig())) {
-            byte[] kubeConfigBytes = EncodeUtils.base64DecodeFromString(k8sProperties.getKubeConfig());
-            Verify.notNull(kubeConfigBytes, "kube config");
-            try (Reader targetReader = new InputStreamReader(new ByteArrayInputStream(kubeConfigBytes))) {
-                KubeConfig kubeConfig = KubeConfig.loadKubeConfig(targetReader);
+        ApiClient apiClient = generateNativeK8sApiClient(k8sProperties);
+        Verify.notNull(apiClient, "k8s api client");
+        Configuration.setDefaultApiClient(apiClient);
+    }
+
+    public static ApiClient generateNativeK8sApiClient(
+            @NonNull TaskFrameworkProperties taskFrameworkProperties) throws IOException {
+        if (taskFrameworkProperties.getK8sProperties() == null) {
+            return null;
+        }
+        return generateNativeK8sApiClient(taskFrameworkProperties.getK8sProperties());
+    }
+
+    public static ApiClient generateNativeK8sApiClient(@NonNull K8sProperties properties) throws IOException {
+        ApiClient apiClient;
+        if (StringUtils.isNotBlank(properties.getKubeConfig())) {
+            byte[] config = EncodeUtils.base64DecodeFromString(properties.getKubeConfig());
+            Verify.notNull(config, "kube config");
+            try (Reader reader = new InputStreamReader(new ByteArrayInputStream(config))) {
+                KubeConfig kubeConfig = KubeConfig.loadKubeConfig(reader);
                 apiClient = ClientBuilder.kubeconfig(kubeConfig).build();
             }
-        } else if (StringUtils.isNotBlank(k8sProperties.getKubeUrl())) {
-            apiClient = Config.defaultClient().setBasePath(k8sProperties.getKubeUrl());
+        } else if (StringUtils.isNotBlank(properties.getKubeUrl())) {
+            apiClient = Config.defaultClient().setBasePath(properties.getKubeUrl());
+        } else {
+            return null;
         }
-        Verify.notNull(apiClient, "k8s api client");
         apiClient.setHttpClient(apiClient
                 .getHttpClient()
                 .newBuilder()
@@ -101,7 +117,7 @@ public class NativeK8sJobClient implements K8sJobClient {
                 .connectTimeout(TIMEOUT_MILLS, TimeUnit.MILLISECONDS)
                 .pingInterval(1, TimeUnit.MINUTES)
                 .build());
-        Configuration.setDefaultApiClient(apiClient);
+        return apiClient;
     }
 
     @Override

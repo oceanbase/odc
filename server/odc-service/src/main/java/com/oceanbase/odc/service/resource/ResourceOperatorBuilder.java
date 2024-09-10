@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.resource;
 
+import lombok.NonNull;
 
 /**
  * operator builder to build operator by location adn type
@@ -29,15 +30,14 @@ public interface ResourceOperatorBuilder<RC extends ResourceContext, R extends R
      *
      * @return k8s operator to manipulate k8s cluster
      */
-    ResourceOperator<RC, R> build();
+    ResourceOperator<RC, R> build(@NonNull ResourceLocation resourceLocation);
 
     /**
      * if this operator builder matched with given type
      * 
-     * @param type
-     * @param resourceLocation location of the resource
-     * @return
+     * @param type \ * @return
      */
-    boolean match(ResourceLocation resourceLocation, String type);
+    boolean match(@NonNull String type);
+
 }
 

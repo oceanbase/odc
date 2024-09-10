@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.resource;
 
+import java.util.Collection;
 import java.util.Optional;
 
 import javax.transaction.Transactional;
@@ -26,9 +27,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.oceanbase.odc.service.resource.ResourceID;
+import com.oceanbase.odc.service.resource.ResourceState;
 
 /**
- * jdbc query for task_resource table
+ * jdbc query for resource_resource table
  * 
  * @author longpeng.zlp
  * @date 2024/8/14 17:51
@@ -36,18 +38,28 @@ import com.oceanbase.odc.service.resource.ResourceID;
 public interface ResourceRepository extends JpaRepository<ResourceEntity, Long>,
         JpaSpecificationExecutor<ResourceEntity> {
     @Transactional
-    @Query(value = "update `task_resource` set "
-            + " `status`=:status "
+    @Query(value = "update `resource_resource` set "
+            + " `status`=:#{#status.name()} "
             + " where `region` = :#{#resourceID.getResourceLocation().getRegion()} and `group_name` = :#{#resourceID.getResourceLocation().getGroup()}  "
             + " and `resource_type` = :#{#resourceID.getType()} "
             + " and `namespace` = :#{#resourceID.getNamespace()} and `name` = :#{#resourceID.getIdentifier()}",
             nativeQuery = true)
     @Modifying
     int updateResourceStatus(@Param("resourceID") ResourceID resourceID,
-            @Param("status") String resourceState);
+            @Param("status") ResourceState resourceState);
 
     @Transactional
-    @Query(value = "delete from `task_resource`  "
+    @Query(value = "update resource_resource set status=:#{#status.name()} where id=:id", nativeQuery = true)
+    @Modifying
+    int updateStatusById(@Param("id") Long id, @Param("status") ResourceState status);
+
+    @Transactional
+    @Query(value = "update resource_resource set status=:#{#status.name()} where id in (:ids)", nativeQuery = true)
+    @Modifying
+    int updateStatusByIdIn(@Param("ids") Collection<Long> ids, @Param("status") ResourceState status);
+
+    @Transactional
+    @Query(value = "delete from `resource_resource`  "
             + " where `region` = :#{#resourceID.getResourceLocation().getRegion()} and `group_name` = :#{#resourceID.getResourceLocation().getGroup()}  "
             + " and `resource_type` = :#{#resourceID.getType()} "
             + " and `namespace` = :#{#resourceID.getNamespace()} and `name` = :#{#resourceID.getIdentifier()} limit 1",
@@ -55,7 +67,7 @@ public interface ResourceRepository extends JpaRepository<ResourceEntity, Long>,
     @Modifying
     int deleteResource(@Param("resourceID") ResourceID resourceID);
 
-    @Query(value = "SELECT * FROM `task_resource` "
+    @Query(value = "SELECT * FROM `resource_resource` "
             + "WHERE `region` = :#{#resourceID.getResourceLocation().getRegion()} and `group_name` = :#{#resourceID.getResourceLocation().getGroup()}  "
             + " and `resource_type` = :#{#resourceID.getType()} "
             + " and `namespace` = :#{#resourceID.getNamespace()} and `name` = :#{#resourceID.getIdentifier()}",
