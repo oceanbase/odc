@@ -81,7 +81,7 @@ public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K
     }
 
     @Override
-    public K8sPodResource toResource(ResourceEntity resourceEntity) {
+    public K8sPodResource toResource(ResourceEntity resourceEntity, Optional<K8sPodResource> runtimeResource) {
         return new K8sPodResource(
                 resourceEntity.getRegion(),
                 resourceEntity.getGroupName(),

@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.resource.k8s.builder;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -50,12 +51,18 @@ public class NativeK8sPodOperatorBuilder extends BaseNativeK8sResourceOperatorBu
     }
 
     @Override
-    public K8sPod toResource(ResourceEntity e) {
+    public K8sPod toResource(ResourceEntity e, Optional<K8sPod> runtimeResource) {
         K8sPod k8sPod = new K8sPod(new ResourceLocation(e), e.getStatus());
         V1ObjectMeta meta = new V1ObjectMeta();
         meta.setName(e.getResourceName());
         meta.setNamespace(e.getNamespace());
         k8sPod.setMetadata(meta);
+        if (runtimeResource.isPresent()) {
+            k8sPod.setKind(runtimeResource.get().getKind());
+            k8sPod.setSpec(runtimeResource.get().getSpec());
+            k8sPod.setStatus(runtimeResource.get().getStatus());
+            k8sPod.setApiVersion(runtimeResource.get().getApiVersion());
+        }
         return k8sPod;
     }
 

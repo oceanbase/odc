@@ -132,10 +132,10 @@ public class ResourceManager {
             }
             ResourceOperatorBuilder<?, Resource> builder =
                     (ResourceOperatorBuilder<?, Resource>) getOperatorBuilder(e.getResourceType());
-            ResourceState newState = moveToNextState(e, builder, optional);
-            List<Long> ids = status2ResourceIds.computeIfAbsent(newState, k -> new ArrayList<>());
+            Resource resource = builder.toResource(e, optional);
+            List<Long> ids = status2ResourceIds.computeIfAbsent(resource.resourceState(), k -> new ArrayList<>());
             ids.add(e.getId());
-            return new ResourceWithID<>(e.getId(), optional.orElseGet(() -> builder.toResource(e)));
+            return new ResourceWithID<>(e.getId(), resource);
         });
         status2ResourceIds.forEach((key, value) -> resourceRepository.updateStatusByIdIn(value, key));
         return returnVal;
@@ -160,9 +160,9 @@ public class ResourceManager {
                 (ResourceOperatorBuilder<?, R>) getOperatorBuilder(resourceID.getType());
         Optional<R> optional = resourceOperatorBuilder.build(resourceID.getResourceLocation()).query(resourceID);
         if (re.isPresent()) {
-            ResourceState newState = moveToNextState(re.get(), resourceOperatorBuilder, optional);
-            if (!Objects.equals(newState, re.get().getStatus())) {
-                this.resourceRepository.updateResourceStatus(resourceID, newState);
+            Resource resource = resourceOperatorBuilder.toResource(re.get(), optional);
+            if (!Objects.equals(resource.resourceState(), re.get().getStatus())) {
+                this.resourceRepository.updateResourceStatus(resourceID, resource.resourceState());
             }
         }
         return optional;
@@ -187,11 +187,11 @@ public class ResourceManager {
                 (ResourceOperatorBuilder<?, R>) getOperatorBuilder(entity.getResourceType());
         ResourceID resourceID = new ResourceID(entity);
         Optional<R> optional = builder.build(resourceID.getResourceLocation()).query(resourceID);
-        ResourceState newState = moveToNextState(entity, builder, optional);
-        if (!Objects.equals(newState, entity.getStatus())) {
-            this.resourceRepository.updateStatusById(entity.getId(), newState);
+        R resource = builder.toResource(entity, optional);
+        if (!Objects.equals(resource.resourceState(), entity.getStatus())) {
+            this.resourceRepository.updateStatusById(entity.getId(), resource.resourceState());
         }
-        return Optional.of(new ResourceWithID<>(id, optional.orElseGet(() -> builder.toResource(entity))));
+        return Optional.of(new ResourceWithID<>(id, resource));
     }
 
     /**
@@ -285,11 +285,6 @@ public class ResourceManager {
         this.resourceRepository.updateResourceStatus(resourceID, ResourceState.DESTROYING);
         log.info("Delete resource succeed, resourceID={}, ret={}", resourceID, ret);
         return ret;
-    }
-
-    private <R extends Resource> ResourceState moveToNextState(ResourceEntity entity,
-            ResourceOperatorBuilder<?, R> builder, Optional<R> optional) {
-        return entity.getStatus();
     }
 
     @SuppressWarnings("all")

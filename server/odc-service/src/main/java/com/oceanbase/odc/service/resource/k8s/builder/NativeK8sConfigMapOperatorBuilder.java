@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.resource.k8s.builder;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -51,12 +52,19 @@ public class NativeK8sConfigMapOperatorBuilder extends BaseNativeK8sResourceOper
     }
 
     @Override
-    public K8sConfigMap toResource(ResourceEntity e) {
+    public K8sConfigMap toResource(ResourceEntity e, Optional<K8sConfigMap> runtimeResource) {
         K8sConfigMap k8sConfigMap = new K8sConfigMap(new ResourceLocation(e), e.getStatus());
         V1ObjectMeta meta = new V1ObjectMeta();
         meta.setName(e.getResourceName());
         meta.setNamespace(e.getNamespace());
         k8sConfigMap.setMetadata(meta);
+        if (runtimeResource.isPresent()) {
+            k8sConfigMap.setData(runtimeResource.get().getData());
+            k8sConfigMap.setKind(runtimeResource.get().getKind());
+            k8sConfigMap.setImmutable(runtimeResource.get().getImmutable());
+            k8sConfigMap.setApiVersion(runtimeResource.get().getApiVersion());
+            k8sConfigMap.setBinaryData(runtimeResource.get().getBinaryData());
+        }
         return k8sConfigMap;
     }
 
