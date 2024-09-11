@@ -13,31 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
+package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution;
 
-/**
- * @Author：tinker
- * @Date: 2024/6/18 16:56
- * @Descripition:
- */
-public enum ScheduleTaskType {
+public enum ExecutionStatus {
+    SUCCESS,
+    FAILED,
+    SKIPPED,
+    RUNNING,
+    PENDING,
+    TERMINATED;
 
-    SQL_PLAN,
-
-    PARTITION_PLAN,
-
-    DATA_ARCHIVE,
-
-    DATA_ARCHIVE_DELETE,
-
-    DATA_DELETE,
-
-    DATA_ARCHIVE_ROLLBACK,
-
-    ONLINE_SCHEMA_CHANGE_COMPLETE,
-
-    LOGICAL_DATABASE_CHANGE,
-
-    LOAD_DATA
-
+    public boolean isCompleted() {
+        return this == SUCCESS || this == FAILED || this == SKIPPED || this == TERMINATED;
+    }
 }

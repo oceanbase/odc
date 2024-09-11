@@ -31,6 +31,7 @@ import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
+import com.oceanbase.odc.service.schedule.model.LogicalDatabaseChangeParameters;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
@@ -113,6 +114,10 @@ public class ScheduleChangePreprocessor implements InitializingBean {
             }
             case SQL_PLAN: {
                 SqlPlanParameters parameters = (SqlPlanParameters) req.getParameters();
+                return parameters.getDatabaseId();
+            }
+            case LOGICAL_DATABASE_CHANGE: {
+                LogicalDatabaseChangeParameters parameters = (LogicalDatabaseChangeParameters) req.getParameters();
                 return parameters.getDatabaseId();
             }
             default:
