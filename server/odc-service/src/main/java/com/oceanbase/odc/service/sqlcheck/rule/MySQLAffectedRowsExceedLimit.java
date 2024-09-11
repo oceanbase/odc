@@ -134,16 +134,11 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
 
         explainSql = explainSql.toLowerCase();
 
-        if (explainSql.contains("value")) {
-            String valueList = extractValueList(explainSql);
-            return valueList.isEmpty() ? 0 : Arrays.stream(valueList.split("\\),")).count();
-        }
-
         if (explainSql.contains("select")) {
             return getMySqlAffectedRowsByExplain(explainSql, jdbc);
+        } else {
+            return explainSql.split("\\),").length;
         }
-
-        return 0;
     }
 
     /**
@@ -238,19 +233,4 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
         return 0;
     }
 
-    /**
-     * parse explain result set
-     *
-     * @param explainSql row
-     * @return value list
-     */
-    private String extractValueList(String explainSql) {
-        // Match "value" or "values"
-        String[] list = explainSql.split("value(s)?");
-        if (list.length > 1) {
-            String valuesPart = list[1].split(";")[0];
-            return valuesPart.trim();
-        }
-        return "";
-    }
 }
