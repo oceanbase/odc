@@ -76,7 +76,7 @@ public class DBTableController {
     public SuccessResponse<DBTable> getTable(@PathVariable String sessionId,
             @PathVariable(required = false) String databaseName,
             @PathVariable String tableName,
-            @RequestParam(name = "type", defaultValue = "TABLE") DBObjectType type) {
+            @RequestParam(required = false, name = "type", defaultValue = "TABLE") DBObjectType type) {
         Base64.Decoder decoder = Base64.getDecoder();
         tableName = new String(decoder.decode(tableName));
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
