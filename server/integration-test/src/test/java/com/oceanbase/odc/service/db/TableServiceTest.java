@@ -22,9 +22,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +38,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
+import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -69,39 +70,40 @@ public class TableServiceTest extends ServiceTestEnv {
     @MockBean
     private DBResourcePermissionHelper dbResourcePermissionHelper;
 
+    private static final String OB_MYSQL_TABLE_CREATE_TEMPLATE = "CREATE TABLE IF NOT EXISTS %s (\n"
+            + "  id BIGINT NOT NULL AUTO_INCREMENT,\n"
+            + "  PRIMARY key (`id`)\n"
+            + ")";
+
+    private static final String OB_ORACLE_TABLE_CREATE_TEMPLATE = "CREATE TABLE %s (\n"
+            + "  id NUMBER PRIMARY KEY\n"
+            + ")";
+
     private final static List<String> TABLE_NAME_LIST = Arrays.asList("test_table_1", "test_table_2", "test_table_3");
 
     private final static Long DATABASE_ID = 1L;
 
     private static final Long USER_ID = 1L;
 
-    @Before
-    public void setUp() {
-        ConnectionSession session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
-        StringBuilder sb = new StringBuilder();
-        for (String name : TABLE_NAME_LIST) {
-            sb.append(String.format("CREATE TABLE IF NOT EXISTS %s (\n"
-                    + "  id BIGINT NOT NULL AUTO_INCREMENT,\n"
-                    + "  PRIMARY key (`id`)\n"
-                    + ");", name));
-        }
-        session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute(sb.toString());
+    @BeforeClass
+    public static void setUp() {
+        createTablesByConnectType(ConnectType.OB_MYSQL, TABLE_NAME_LIST, OB_MYSQL_TABLE_CREATE_TEMPLATE);
+        createTablesByConnectType(ConnectType.OB_ORACLE, TABLE_NAME_LIST, OB_ORACLE_TABLE_CREATE_TEMPLATE);
+        createTablesByConnectType(ConnectType.MYSQL, TABLE_NAME_LIST, OB_MYSQL_TABLE_CREATE_TEMPLATE);
+        createTablesByConnectType(ConnectType.ORACLE, TABLE_NAME_LIST, OB_ORACLE_TABLE_CREATE_TEMPLATE);
     }
 
-    @After
-    public void clear() {
-        ConnectionSession connectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
-        JdbcOperations jdbcOperations =
-                connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
-        StringBuilder sb = new StringBuilder();
-        for (String name : TABLE_NAME_LIST) {
-            sb.append(String.format("drop table %s;", name));
-        }
-        jdbcOperations.execute(sb.toString());
+    @AfterClass
+    public static void clear() {
+        dropTablesByConnectTypes(ConnectType.OB_MYSQL, TABLE_NAME_LIST);
+        dropTablesByConnectTypes(ConnectType.OB_ORACLE, TABLE_NAME_LIST);
+        dropTablesByConnectTypes(ConnectType.MYSQL, TABLE_NAME_LIST);
+        dropTablesByConnectTypes(ConnectType.ORACLE, TABLE_NAME_LIST);
     }
 
     @Test
-    public void list_whenTypesIsEmpty_getEmptyList() throws SQLException, InterruptedException {
+    public void list_whenConnectionTypeIsOBMysqlAndTypesIsEmpty_getEmptyList()
+            throws SQLException, InterruptedException {
         QueryTableParams params = QueryTableParams.builder()
                 .databaseId(DATABASE_ID)
                 .types(Collections.emptyList())
@@ -112,36 +114,51 @@ public class TableServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    public void list_getTableListInIndividualOrganization_succeed() throws SQLException, InterruptedException {
-        Mockito.when(authenticationFacade.currentUser()).thenReturn(getIndivisualUser());
-        Mockito.when(databaseService.detail(Mockito.any())).thenReturn(getDatabase());
-        QueryTableParams params = QueryTableParams.builder()
-                .databaseId(DATABASE_ID)
-                .types(Collections.singletonList(DBObjectType.TABLE))
-                .includePermittedAction(false)
-                .build();
-        List<Table> list = tableService.list(params);
-        Assert.assertFalse(list.isEmpty());
-        List<String> nameList = list.stream().map(Table::getName).collect(Collectors.toList());
-        Assert.assertTrue(nameList.containsAll(TABLE_NAME_LIST));
+    public void list_whenConnectionTypeIsOBMysqlAndOrganizationTypeIsIndividual_succeed()
+            throws SQLException, InterruptedException {
+        testByConnectionTypeInIndividualSpace(ConnectType.OB_MYSQL);
     }
 
     @Test
-    public void list_getTableListInTeamOrganization_succeed() throws SQLException, InterruptedException {
-        Mockito.when(authenticationFacade.currentUser()).thenReturn(getTeamUser());
-        Mockito.when(databaseService.detail(Mockito.any())).thenReturn(getDatabase());
-        Mockito.when(dbObjectRepository.findByDatabaseIdAndTypeOrderByNameAsc(Mockito.anyLong(), Mockito.any()))
-                .thenReturn(getTableEntities());
-        Mockito.when(dbResourcePermissionHelper.getTablePermissions(Mockito.any())).thenReturn(new HashMap<>());
-        QueryTableParams params = QueryTableParams.builder()
-                .databaseId(DATABASE_ID)
-                .types(Collections.singletonList(DBObjectType.TABLE))
-                .includePermittedAction(false)
-                .build();
-        List<Table> list = tableService.list(params);
-        Assert.assertFalse(list.isEmpty());
-        List<String> nameList = list.stream().map(Table::getName).collect(Collectors.toList());
-        Assert.assertTrue(nameList.containsAll(TABLE_NAME_LIST));
+    public void list_whenConnectionTypeIsOBMysqlAndOrganizationTypeIsTeam_succeed()
+            throws SQLException, InterruptedException {
+        testByConnectionTypeInTeamSpace(ConnectType.OB_MYSQL);
+    }
+
+    @Test
+    public void list_whenConnectionTypeIsMysqlAndOrganizationTypeIsIndividual_succeed()
+            throws SQLException, InterruptedException {
+        testByConnectionTypeInIndividualSpace(ConnectType.MYSQL);
+    }
+
+    @Test
+    public void list_whenConnectionTypeIsMysqlAndOrganizationTypeIsTeam_succeed()
+            throws SQLException, InterruptedException {
+        testByConnectionTypeInTeamSpace(ConnectType.MYSQL);
+    }
+
+    @Test
+    public void list_whenConnectionTypeIsOBOracleAndOrganizationTypeIsIndividual_succeed()
+            throws SQLException, InterruptedException {
+        testByConnectionTypeInIndividualSpace(ConnectType.OB_ORACLE);
+    }
+
+    @Test
+    public void list_whenConnectionTypeIsOBOracleAndOrganizationTypeIsTeam_succeed()
+            throws SQLException, InterruptedException {
+        testByConnectionTypeInTeamSpace(ConnectType.OB_ORACLE);
+    }
+
+    @Test
+    public void list_whenConnectionTypeIsOracleAndOrganizationTypeIsIndividual_succeed()
+            throws SQLException, InterruptedException {
+        testByConnectionTypeInIndividualSpace(ConnectType.ORACLE);
+    }
+
+    @Test
+    public void list_whenConnectionTypeIsOracleAndOrganizationTypeIsTeam_succeed()
+            throws SQLException, InterruptedException {
+        testByConnectionTypeInTeamSpace(ConnectType.ORACLE);
     }
 
     private List<DBObjectEntity> getTableEntities() {
@@ -166,15 +183,80 @@ public class TableServiceTest extends ServiceTestEnv {
         return user;
     }
 
-    private Database getDatabase() {
+    private Database getDatabaseByConnectType(ConnectType connectType) {
         Database database = new Database();
         database.setId(DATABASE_ID);
-        ConnectionSession session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        ConnectionSession session = TestConnectionUtil.getTestConnectionSession(connectType);
         ConnectionConfig connectionConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
         String currentSchema = ConnectionSessionUtil.getCurrentSchema(session);
         database.setName(currentSchema);
         database.setDataSource(connectionConfig);
         return database;
+    }
+
+    private boolean containsAllIgnoreCase(List<String> list, List<String> toCheck) {
+        for (String item : toCheck) {
+            boolean found = false;
+            for (String listItem : list) {
+                if (listItem.equalsIgnoreCase(item)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static void createTablesByConnectType(ConnectType connectType, List<String> tableNames, String format) {
+        ConnectionSession session = TestConnectionUtil.getTestConnectionSession(connectType);
+        SyncJdbcExecutor syncJdbcExecutor = session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
+        for (String name : tableNames) {
+            syncJdbcExecutor.execute(String.format(format, name));
+        }
+    }
+
+    private static void dropTablesByConnectTypes(ConnectType connectType, List<String> tableNames) {
+        ConnectionSession connectionSession = TestConnectionUtil.getTestConnectionSession(connectType);
+        JdbcOperations jdbcOperations =
+                connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
+        for (String name : tableNames) {
+            jdbcOperations.execute(String.format("drop table %s", name));
+        }
+    }
+
+    private void testByConnectionTypeInIndividualSpace(ConnectType connectType)
+            throws SQLException, InterruptedException {
+        Mockito.when(authenticationFacade.currentUser()).thenReturn(getIndivisualUser());
+        Mockito.when(databaseService.detail(Mockito.any())).thenReturn(getDatabaseByConnectType(connectType));
+        QueryTableParams params = QueryTableParams.builder()
+                .databaseId(DATABASE_ID)
+                .types(Collections.singletonList(DBObjectType.TABLE))
+                .includePermittedAction(false)
+                .build();
+        List<Table> list = tableService.list(params);
+        Assert.assertFalse(list.isEmpty());
+        List<String> nameList = list.stream().map(Table::getName).collect(Collectors.toList());
+        Assert.assertTrue(containsAllIgnoreCase(nameList, TABLE_NAME_LIST));
+    }
+
+    private void testByConnectionTypeInTeamSpace(ConnectType obMysql) throws SQLException, InterruptedException {
+        Mockito.when(authenticationFacade.currentUser()).thenReturn(getTeamUser());
+        Mockito.when(databaseService.detail(Mockito.any())).thenReturn(getDatabaseByConnectType(obMysql));
+        Mockito.when(dbObjectRepository.findByDatabaseIdAndTypeOrderByNameAsc(Mockito.anyLong(), Mockito.any()))
+                .thenReturn(getTableEntities());
+        Mockito.when(dbResourcePermissionHelper.getTablePermissions(Mockito.any())).thenReturn(new HashMap<>());
+        QueryTableParams params = QueryTableParams.builder()
+                .databaseId(DATABASE_ID)
+                .types(Collections.singletonList(DBObjectType.TABLE))
+                .includePermittedAction(false)
+                .build();
+        List<Table> list = tableService.list(params);
+        Assert.assertFalse(list.isEmpty());
+        List<String> nameList = list.stream().map(Table::getName).collect(Collectors.toList());
+        Assert.assertTrue(containsAllIgnoreCase(nameList, TABLE_NAME_LIST));
     }
 
 }
