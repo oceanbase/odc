@@ -17,7 +17,6 @@
 package com.oceanbase.odc.service.task.listener;
 
 import java.util.Map;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -26,10 +25,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.metadb.task.TaskEntity;
-import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.service.dlm.DLMService;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
