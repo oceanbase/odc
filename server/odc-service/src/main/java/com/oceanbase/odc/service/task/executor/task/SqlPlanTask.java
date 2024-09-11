@@ -29,6 +29,7 @@ import org.apache.commons.io.FileUtils;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.StatementCallback;
 
+import com.amazonaws.util.CollectionUtils;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.CSVUtils;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -117,13 +118,13 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
 
     @Override
     protected boolean doStart(JobContext context) throws Exception {
-        String sqlContent = parameters.getSqlContent();
-        log.info("sql content={}", sqlContent);
-        // todo: Download the attachment that needs to execute SQL from OSS
-        SqlCommentProcessor processor = ConnectionSessionUtil.getSqlCommentProcessor(connectionSession);
 
-        List<OffsetString> offsetStringList = processor.split(new StringBuffer(), sqlContent);
-        result.setTotalStatements(offsetStringList.size());
+        if (CollectionUtils.isNullOrEmpty(parameters.getSqlObjectIds())
+                && StringUtils.isBlank(parameters.getSqlContent())) {
+            log.warn("Sql content and sql object id can not be null at the same time.");
+            return false;
+        }
+        List<OffsetString> offsetStringList = getSplitSql();
 
         for (int i = 0; i <= offsetStringList.size() - 1; i++) {
             OffsetString offsetString = offsetStringList.get(i);
@@ -163,6 +164,47 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         return true;
     }
 
+    private List<OffsetString> getSplitSql() {
+        SqlCommentProcessor processor = ConnectionSessionUtil.getSqlCommentProcessor(connectionSession);
+        StringBuffer buffer = new StringBuffer();
+        List<OffsetString> splitSqlList = new ArrayList<>();
+
+        if (CollectionUtils.isNullOrEmpty(parameters.getSqlObjectIds())) {
+            String sqlContent = parameters.getSqlContent();
+            log.info("SQL content={}", sqlContent);
+
+            List<OffsetString> offsetStringList = processor.split(buffer, sqlContent);
+            result.setTotalStatements(offsetStringList.size());
+
+            return offsetStringList;
+        }
+
+        CloudObjectStorageService cloudObjectStorageService = getCloudObjectStorageService();
+
+        if (Objects.isNull(cloudObjectStorageService) || !cloudObjectStorageService.supported()) {
+            log.warn("Cloud object storage service not supported.");
+            throw new UnexpectedException("Cloud object storage service not supported");
+        }
+
+        for (String objectId : parameters.getSqlObjectIds()) {
+            try {
+                byte[] bytes = cloudObjectStorageService.readContent(objectId);
+                if (Objects.isNull(bytes)) {
+                    log.warn("Read content from cloud storage returned null, objectId={}", objectId);
+                    continue;
+                }
+                log.info("successfully read content from cloud storage, objectId={}", objectId);
+                String sqlContent = new String(bytes, StandardCharsets.UTF_8);
+                List<OffsetString> offsetStringList = processor.split(buffer, sqlContent);
+                splitSqlList.addAll(offsetStringList);
+            } catch (IOException e) {
+                log.warn("Read content from cloud storage failed, objectId={}", objectId, e);
+            }
+        }
+
+        this.result.setTotalStatements(splitSqlList.size());
+        return splitSqlList;
+    }
 
 
     @Override
