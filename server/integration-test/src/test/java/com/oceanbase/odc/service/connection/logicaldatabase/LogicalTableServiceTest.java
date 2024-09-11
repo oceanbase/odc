@@ -17,12 +17,15 @@ package com.oceanbase.odc.service.connection.logicaldatabase;
 
 import java.util.List;
 
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.ServiceTestEnv;
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.YamlUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.LogicalTableExpressionParseUtils;
@@ -44,6 +47,10 @@ public class LogicalTableServiceTest extends ServiceTestEnv {
 
     @Autowired
     private LogicalTableService logicalTableService;
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
 
     @Test
     public void testResolve_ValidExpression() {
@@ -73,16 +80,8 @@ public class LogicalTableServiceTest extends ServiceTestEnv {
                 YamlUtils.fromYamlList(TEST_RESOURCE_INVALID_EXPRESSION_FILE_PATH,
                         LogicalTableExpressionResolveTestCase.class);
         for (LogicalTableExpressionResolveTestCase testCase : testCases) {
-            try {
-                LogicalTableExpressionParseUtils.resolve(testCase.getExpression());
-            } catch (Exception ex) {
-                Assert.assertTrue(
-                        String.format("test case id = %d, expected = %s, actual = %s", testCase.getId(),
-                                testCase.getErrorMessageAbstract(), ex.getMessage()),
-                        StringUtils.containsIgnoreCase(ex.getMessage(), testCase.getErrorMessageAbstract()));
-                continue;
-            }
-            Assert.fail(String.format("test case id = %d, exception expected but not thrown", testCase.getId()));
+            thrown.expectMessage(new ContainsIgnoreCase(testCase.getErrorMessageAbstract()));
+            LogicalTableExpressionParseUtils.resolve(testCase.getExpression());
         }
     }
 
@@ -94,5 +93,27 @@ public class LogicalTableServiceTest extends ServiceTestEnv {
         private String expression;
         private List<DataNode> dataNodes;
         private String errorMessageAbstract;
+    }
+
+    class ContainsIgnoreCase extends BaseMatcher<String> {
+        private final String substring;
+
+        public ContainsIgnoreCase(String substring) {
+            this.substring = substring.toLowerCase();
+        }
+
+        @Override
+        public boolean matches(Object item) {
+            if (item == null) {
+                return false;
+            }
+            String str = item.toString().toLowerCase();
+            return str.contains(substring);
+        }
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendValue(substring);
+        }
     }
 }
