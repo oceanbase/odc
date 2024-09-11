@@ -18,9 +18,9 @@ package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execu
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 
 import lombok.Getter;
 
@@ -55,14 +55,7 @@ public final class ExecutorServiceManager {
 
     public void close() {
         SHUTDOWN_EXECUTOR.execute(() -> {
-            try {
-                executorService.shutdown();
-                while (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
-                    executorService.shutdownNow();
-                }
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-            }
+            ExecutorUtils.gracefulShutdown(executorService, NAME_FORMAT_PREFIX, 5);
         });
     }
 

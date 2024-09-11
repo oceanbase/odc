@@ -168,6 +168,10 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
                 log.info("logical database change task is completed");
                 return true;
             }
+            if (CollectionUtils.isNotEmpty(this.executionGroupContext.getThrowables())) {
+                log.warn("logical database change task failed, ", this.executionGroupContext.getThrowables());
+                return false;
+            }
             try {
                 Thread.sleep(500L);
             } catch (InterruptedException e) {

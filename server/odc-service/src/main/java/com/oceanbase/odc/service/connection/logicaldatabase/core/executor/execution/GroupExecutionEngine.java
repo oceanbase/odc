@@ -16,8 +16,10 @@
 package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.thread.ExecutorServiceManager;
 
@@ -28,6 +30,7 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execut
  */
 public final class GroupExecutionEngine<Input, Result> implements AutoCloseable {
     private final ExecutorServiceManager groupExecutorServiceManager;
+    private ExecutorService daemonExecutorService;
 
     public GroupExecutionEngine(int executorSize) {
         this.groupExecutorServiceManager = new ExecutorServiceManager(executorSize);
@@ -37,12 +40,13 @@ public final class GroupExecutionEngine<Input, Result> implements AutoCloseable 
         PreConditions.notEmpty(groups, "groups");
         ExecutionGroupContext<Input, Result> executionContext =
                 new ExecutionGroupContext<>(groups, this.groupExecutorServiceManager.getExecutorService());
-        Executors.newSingleThreadExecutor().submit(() -> {
+        daemonExecutorService = Executors.newSingleThreadExecutor();
+        daemonExecutorService.submit(() -> {
             try {
                 executionContext.execute();
             } catch (InterruptedException e) {
+                executionContext.addThrowable(e);
                 Thread.currentThread().interrupt();
-                throw new RuntimeException("Execution interrupted, ", e);
             }
         });
         return executionContext;
@@ -51,6 +55,9 @@ public final class GroupExecutionEngine<Input, Result> implements AutoCloseable 
     @Override
     public void close() throws Exception {
         this.groupExecutorServiceManager.close();
+        if (this.daemonExecutorService != null) {
+            ExecutorUtils.gracefulShutdown(this.daemonExecutorService, "group-executor-daemon", 5);
+        }
     }
 
 }

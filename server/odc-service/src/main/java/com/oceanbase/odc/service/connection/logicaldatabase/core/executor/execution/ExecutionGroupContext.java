@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,9 @@ public final class ExecutionGroupContext<Input, Result> {
     private Map<String, ExecutionResult<Result>> executionId2Result;
 
     @Getter
+    private final List<Throwable> throwables;
+
+    @Getter
     private int completedGroupCount = 0;
 
     public ExecutionGroupContext(Collection<ExecutionGroup<Input, Result>> executionGroups,
@@ -59,6 +63,7 @@ public final class ExecutionGroupContext<Input, Result> {
                         unit.getOrder())));
         this.id2ExecutionUnit = executionGroups.stream().flatMap(group -> group.getExecutionUnits().stream())
                 .collect(Collectors.toMap(ExecutionSubGroupUnit::getId, unit -> unit));
+        this.throwables = new ArrayList<>();
     }
 
     public void execute() throws InterruptedException {
@@ -118,6 +123,10 @@ public final class ExecutionGroupContext<Input, Result> {
     public void skip(String executionUnitId) {
         ExecutionSubGroupUnit<Input, Result> executionUnit = id2ExecutionUnit.get(executionUnitId);
         executionUnit.skip(this);
+    }
+
+    public void addThrowable(Throwable throwable) {
+        this.throwables.add(throwable);
     }
 
     private void waitForCompletion(@NonNull Set<String> executionIds) throws InterruptedException {
