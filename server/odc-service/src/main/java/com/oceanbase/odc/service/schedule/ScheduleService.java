@@ -49,6 +49,7 @@ import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
@@ -66,6 +67,8 @@ import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
+import com.oceanbase.odc.service.flow.FlowInstanceService;
+import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.util.DescriptionGenerator;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
@@ -79,6 +82,8 @@ import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.schedule.factory.ScheduleResponseMapperFactory;
+import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
+import com.oceanbase.odc.service.schedule.flowtask.ApprovalFlowService;
 import com.oceanbase.odc.service.schedule.model.ChangeQuartJobParam;
 import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
 import com.oceanbase.odc.service.schedule.model.OperationType;
@@ -176,6 +181,9 @@ public class ScheduleService {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private ApprovalFlowService approvalFlowService;
+
     private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
 
 
@@ -243,22 +251,25 @@ public class ScheduleService {
             }
         }
 
-        Long approvalFlowInstanceId = createApprovalFlow();
-
-        if (approvalFlowInstanceId == null) {
-            executeChangeSchedule(req);
-        }
-
         // create change log for this request
         ScheduleChangeLog changeLog = scheduleChangeLogService.createChangeLog(
                 ScheduleChangeLog.build(targetSchedule.getId(), req.getOperationType(),
                         JsonUtils.toJson(targetSchedule.getParameters()),
                         req.getOperationType() == OperationType.UPDATE
                                 ? JsonUtils.toJson(req.getUpdateScheduleReq().getParameters())
-                                : null,
-                        approvalFlowInstanceId, approvalFlowInstanceId == null ? ScheduleChangeStatus.SUCCESS
-                                : ScheduleChangeStatus.APPROVING));
+                                : null, ScheduleChangeStatus.APPROVING));
         log.info("Create change log success,changLog={}", changeLog);
+
+        Long approvalFlowInstanceId = approvalFlowService.create(req);
+
+        if (approvalFlowInstanceId == null) {
+            log.info("No need to create approval flow,changelogId={}",changeLog.getId());
+            executeChangeSchedule(req);
+        }else{
+            scheduleChangeLogService.updateFlowInstanceIdById(changeLog.getId(),approvalFlowInstanceId);
+            log.info("Create approval flow success,changelogId={},flowInstanceId",approvalFlowInstanceId);
+        }
+
         return targetSchedule;
     }
 
@@ -277,6 +288,7 @@ public class ScheduleService {
         }
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public void executeChangeSchedule(ScheduleChangeParams req) {
         Schedule targetSchedule = nullSafeGetModelById(req.getScheduleId());
         // start to change schedule
@@ -332,11 +344,8 @@ public class ScheduleService {
         quartzJobReq.setTriggerConfig(targetSchedule.getTriggerConfig());
         quartzJobService.changeQuartzJob(quartzJobReq);
 
-    }
+        scheduleChangeLogService.updateStatusById(req.getScheduleChangeLogId(),ScheduleChangeStatus.SUCCESS);
 
-    // return null if approval is not necessary
-    private Long createApprovalFlow() {
-        return null;
     }
 
     public ScheduleEntity create(ScheduleEntity scheduleConfig) {

@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeStatus;
 
 /**
  * @Author：tinker
@@ -30,5 +31,9 @@ public interface ScheduleChangeLogRepository extends OdcJpaRepository<ScheduleCh
     List<ScheduleChangeLogEntity> findByScheduleId(Long scheduleId);
 
     Optional<ScheduleChangeLogEntity> findByIdAndScheduleId(Long id, Long scheduleId);
+
+    int updateStatusById(Long id, ScheduleChangeStatus status);
+
+    int updateFlowInstanceIdById(Long id,Long flowInstanceId);
 
 }

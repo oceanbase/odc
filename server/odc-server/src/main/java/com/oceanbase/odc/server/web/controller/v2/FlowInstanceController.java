@@ -16,6 +16,7 @@
 package com.oceanbase.odc.server.web.controller.v2;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +60,11 @@ import com.oceanbase.odc.service.flow.util.TaskLogFilenameGenerator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
+import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
+import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
+import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
@@ -84,10 +90,15 @@ public class FlowInstanceController {
     private AuthenticationFacade authenticationFacade;
     @Autowired
     private PartitionPlanScheduleService partitionPlanScheduleService;
+    @Autowired
+    private ScheduleService scheduleService;
 
     @ApiOperation(value = "createFlowInstance", notes = "创建流程实例，返回流程实例")
     @RequestMapping(value = "/", method = RequestMethod.POST)
     public ListResponse<FlowInstanceDetailResp> createFlowInstance(@RequestBody CreateFlowInstanceReq flowInstanceReq) {
+        if(flowInstanceReq.getTaskType() == TaskType.ALTER_SCHEDULE){
+            dispatchCreateSchedule(flowInstanceReq);
+        }
         flowInstanceReq.validate();
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             return Responses.list(flowInstanceService.createIndividualFlowInstance(flowInstanceReq));
@@ -244,6 +255,37 @@ public class FlowInstanceController {
     @GetMapping(value = "/{id:[\\d]+}/tasks/partitionPlans/getDetail")
     public SuccessResponse<PartitionPlanConfig> getPartitionPlan(@PathVariable Long id) {
         return Responses.ok(this.partitionPlanScheduleService.getPartitionPlanByFlowInstanceId(id));
+    }
+
+    private List<FlowInstanceDetailResp> dispatchCreateSchedule(CreateFlowInstanceReq createReq){
+        AlterScheduleParameters parameters = (AlterScheduleParameters) createReq.getParameters();
+        ScheduleChangeParams scheduleChangeParams;
+        switch (parameters.getOperationType()) {
+            case CREATE: {
+                CreateScheduleReq createScheduleReq = new CreateScheduleReq();
+                createScheduleReq.setParameters(parameters.getScheduleTaskParameters());
+                createScheduleReq.setTriggerConfig(parameters.getTriggerConfig());
+                createScheduleReq.setType(parameters.getType());
+                createScheduleReq.setDescription(parameters.getDescription());
+                scheduleChangeParams = ScheduleChangeParams.with(createScheduleReq);
+                break;
+            }
+            case UPDATE: {
+                UpdateScheduleReq updateScheduleReq = new UpdateScheduleReq();
+                updateScheduleReq.setParameters(parameters.getScheduleTaskParameters());
+                updateScheduleReq.setTriggerConfig(parameters.getTriggerConfig());
+                updateScheduleReq.setType(parameters.getType());
+                updateScheduleReq.setDescription(parameters.getDescription());
+                scheduleChangeParams = ScheduleChangeParams.with(parameters.getTaskId(), updateScheduleReq);
+                break;
+            }
+            default: {
+                scheduleChangeParams =
+                    ScheduleChangeParams.with(parameters.getTaskId(), parameters.getOperationType());
+            }
+        }
+        scheduleService.changeSchedule(scheduleChangeParams);
+        return Collections.singletonList(FlowInstanceDetailResp.withIdAndType(-1L, TaskType.ALTER_SCHEDULE));
     }
 
 }

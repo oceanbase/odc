@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.schedule.alarm;
 import java.util.Date;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
-@ConditionalOnMissingBean(ScheduleAlarmClient.class)
+@Profile("alipay")
 public class DefaultScheduleAlarmClient implements ScheduleAlarmClient {
 
     @Override

@@ -19,9 +19,13 @@ import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.flow.task.BaseODCFlowTaskDelegate;
+import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.task.TaskService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +36,6 @@ import lombok.extern.slf4j.Slf4j;
  * @Descripition:
  */
 @Slf4j
-@Deprecated
 public class AlterScheduleTask extends BaseODCFlowTaskDelegate<AlterScheduleResult> {
 
     @Autowired
@@ -47,11 +50,20 @@ public class AlterScheduleTask extends BaseODCFlowTaskDelegate<AlterScheduleResu
             throws Exception {
         AlterScheduleTraceContextHolder.trace(authenticationFacade.currentUser().getId(), taskId);
         AlterScheduleResult taskResult = new AlterScheduleResult();
+        ScheduleService scheduleService = SpringContextUtil.getBean(ScheduleService.class);
         log.info("Start to alter schedule task.");
-        taskService.start(taskId);
-        taskService.succeed(taskId, taskResult);
-        isSuccessful = true;
-        log.info("Alter schedule succeed,taskId={}", taskId);
+        try{
+            AlterScheduleParameters parameters = FlowTaskUtil.getAlterScheduleTaskParameters(execution);
+            taskService.start(taskId);
+            scheduleService.executeChangeSchedule(parameters.getScheduleChangeParams());
+            taskService.succeed(taskId, taskResult);
+            isSuccessful = true;
+            log.info("Alter schedule succeed,taskId={}", taskId);
+        }catch (Exception e){
+            log.warn("Alter schedule failed,taskId={}",taskId,e);
+            isFailure = true;
+            taskService.fail(taskId,0,taskResult);
+        }
         return taskResult;
     }
 
