@@ -13,37 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase.model;
+package com.oceanbase.odc.service.connection.logicaldatabase.core.model;
 
-import java.util.Date;
-import java.util.List;
-
-import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
-import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionStatus;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionResultWrapper;
 
 import lombok.Data;
 
 /**
  * @Author: Lebie
- * @Date: 2024/5/7 19:39
+ * @Date: 2024/9/3 19:46
  * @Description: []
  */
-
 @Data
-public class DetailLogicalTableResp {
+public class LogicalDBChangeExecutionUnit {
     private Long id;
-
-    private String name;
-
-    private String expression;
-
-    private Integer physicalTableCount;
-
-    private List<DataNode> allPhysicalTables;
-
-    private List<DataNode> inconsistentPhysicalTables;
-
-    private List<LogicalTableTopologyResp> topologies;
-
-    private DBTable basePhysicalTable;
+    private Long order;
+    private Long scheduleTaskId;
+    private String executionId;
+    private String sql;
+    private Long logicalDatabaseId;
+    private Long physicalDatabaseId;
+    private SqlExecutionResultWrapper result;
+    private ExecutionStatus status;
 }
