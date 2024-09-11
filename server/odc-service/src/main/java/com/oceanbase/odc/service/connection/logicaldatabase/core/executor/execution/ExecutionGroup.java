@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -38,7 +40,7 @@ public abstract class ExecutionGroup<Input, Result> {
     private final List<ExecutionSubGroup<Input, Result>> subGroups;
 
     public ExecutionGroup(List<ExecutionSubGroupUnit<Input, Result>> executionUnits) {
-        this.executionUnits = executionUnits;
+        this.executionUnits = Collections.unmodifiableList(new ArrayList<>(executionUnits));
         this.subGroups = listSubGroups(executionUnits);
     }
 
