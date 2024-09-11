@@ -22,6 +22,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
+import com.oceanbase.odc.plugin.connect.model.oracle.UserRole;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
@@ -131,5 +132,10 @@ public class DataSourceInfoMapper {
                 connectionConfig.getServiceName(), connectionConfig.getCatalogName());
         return ConnectionPluginUtil.getConnectionExtension(connectionConfig.getDialectType())
                 .generateJdbcUrl(jdbcUrlProperty);
+    }
+
+    private static String getOracleUsername(ConnectionConfig connectionConfig) {
+        return connectionConfig.getUserRole() == UserRole.SYSDBA ? connectionConfig.getUsername() + " as sysdba"
+                : connectionConfig.getUsername();
     }
 }
