@@ -21,7 +21,6 @@ import java.util.concurrent.Executors;
 
 import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.thread.ExecutorServiceManager;
 
 /**
  * @Author: Lebie
@@ -33,7 +32,7 @@ public final class GroupExecutionEngine<Input, Result> implements AutoCloseable 
     private ExecutorService daemonExecutorService;
 
     public GroupExecutionEngine(int executorSize) {
-        this.groupExecutorServiceManager = new ExecutorServiceManager(executorSize);
+        this.groupExecutorServiceManager = new ExecutorServiceManager(executorSize, "logical-database-change-executor");
     }
 
     public ExecutionGroupContext<Input, Result> execute(List<ExecutionGroup<Input, Result>> groups) {

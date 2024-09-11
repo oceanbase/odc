@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.thread;
+package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,24 +33,20 @@ import lombok.Getter;
 public final class ExecutorServiceManager {
 
     private static final String DEFAULT_NAME_FORMAT = "%d";
-    private static final String NAME_FORMAT_PREFIX = "logical-database-change-";
+    private static final String NAME_FORMAT_PREFIX = "default-executor-";
 
-    private static final ExecutorService SHUTDOWN_EXECUTOR = Executors.newSingleThreadExecutor(build("closer"));
+    private static final ExecutorService SHUTDOWN_EXECUTOR = Executors.newSingleThreadExecutor(build("closer-"));
 
     private final ExecutorService executorService;
 
 
-    public ExecutorServiceManager(int executorSize, String nameFormat) {
-        executorService = getExecutorService(executorSize, nameFormat);
+    public ExecutorServiceManager(int executorSize, String nameFormatPrefix) {
+        executorService = getExecutorService(executorSize, nameFormatPrefix);
     }
 
-    public ExecutorServiceManager(int executorSize) {
-        this(executorSize, DEFAULT_NAME_FORMAT);
-    }
-
-    private ExecutorService getExecutorService(int executorSize, String nameFormat) {
-        return 0 == executorSize ? Executors.newCachedThreadPool(build(nameFormat))
-                : Executors.newFixedThreadPool(executorSize, build(nameFormat));
+    private ExecutorService getExecutorService(int executorSize, String nameFormatPrefix) {
+        return 0 == executorSize ? Executors.newCachedThreadPool(build(nameFormatPrefix))
+                : Executors.newFixedThreadPool(executorSize, build(nameFormatPrefix));
     }
 
     public void close() {
@@ -59,7 +55,7 @@ public final class ExecutorServiceManager {
         });
     }
 
-    private static ThreadFactory build(String nameFormat) {
-        return new ThreadFactoryBuilder().setDaemon(true).setNameFormat(NAME_FORMAT_PREFIX + nameFormat).build();
+    private static ThreadFactory build(String nameFormatPrefix) {
+        return new ThreadFactoryBuilder().setDaemon(true).setNameFormat(nameFormatPrefix + "%d").build();
     }
 }

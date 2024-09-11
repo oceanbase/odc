@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution;
 
-import java.sql.SQLException;
-
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
