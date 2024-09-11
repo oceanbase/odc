@@ -165,15 +165,15 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
                 Thread.sleep(500L);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw e;
+                return false;
             }
         }
-        throw new InterruptedException("logical database change task has been interrupted");
+        return false;
     }
 
     @Override
     protected void doStop() throws Exception {
-        this.executionGroupContext.terminateAll();
+        this.executorEngine.terminateAll();
     }
 
     @Override
@@ -203,14 +203,14 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
             String executionUnitId =
                     currentJobParameters.get(JobParametersKeyConstants.LOGICAL_DATABASE_CHANGE_SKIP_UNIT);
             if (StringUtils.isNotEmpty(executionUnitId)) {
-                this.executionGroupContext.skip(executionUnitId);
+                this.executorEngine.skip(executionUnitId);
             }
         }
         if (currentJobParameters.containsKey(JobParametersKeyConstants.LOGICAL_DATABASE_CHANGE_TERMINATE_UNIT)) {
             String executionUnitId =
                     currentJobParameters.get(JobParametersKeyConstants.LOGICAL_DATABASE_CHANGE_SKIP_UNIT);
             if (StringUtils.isNotEmpty(executionUnitId)) {
-                this.executionGroupContext.terminate(executionUnitId);
+                this.executorEngine.terminate(executionUnitId);
             }
         }
     }

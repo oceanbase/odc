@@ -19,16 +19,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-import org.springframework.util.CollectionUtils;
-
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -38,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public final class ExecutionGroupContext<Input, Result> {
-
+    @Getter
     private final Collection<ExecutionGroup<Input, Result>> executionGroups;
 
     private final Map<String, ExecutionSubGroupUnit<Input, Result>> id2ExecutionUnit;
@@ -66,21 +62,8 @@ public final class ExecutionGroupContext<Input, Result> {
         this.throwables = new ArrayList<>();
     }
 
-    public void execute() throws InterruptedException {
-        if (CollectionUtils.isEmpty(executionGroups)) {
-            return;
-        }
-        executionGroups.forEach(group -> group.getExecutionUnits().forEach(unit -> unit.beforeExecute(this)));
-        for (ExecutionGroup<Input, Result> group : executionGroups) {
-            if (Thread.currentThread().isInterrupted()) {
-                Thread.currentThread().interrupt();
-                throw new InterruptedException();
-            }
-            group.execute(this.executorService, this);
-            waitForCompletion(
-                    group.getExecutionUnits().stream().map(ExecutionSubGroupUnit::getId).collect(Collectors.toSet()));
-            completedGroupCount++;
-        }
+    public synchronized void increaseCompletedGroupCount() {
+        completedGroupCount++;
     }
 
     public ExecutionResult<Result> getExecutionResult(String executionId) {
@@ -100,50 +83,16 @@ public final class ExecutionGroupContext<Input, Result> {
         return executionId2Result;
     }
 
-    public void terminate(String executionUnitId) {
-        try {
-            ExecutionSubGroupUnit<Input, Result> executionUnit = id2ExecutionUnit.get(executionUnitId);
-            executionUnit.terminate(this);
-        } catch (Exception ex) {
-            log.warn("ExecutionUnit terminate failed, executionId={}", executionUnitId, ex);
-        }
-
+    public ExecutionSubGroupUnit<Input, Result> getExecutionUnit(String executionId) {
+        return id2ExecutionUnit.get(executionId);
     }
 
-    public void terminateAll() {
-        for (ExecutionSubGroupUnit<Input, Result> unit : id2ExecutionUnit.values()) {
-            try {
-                unit.terminate(this);
-            } catch (Exception ex) {
-                log.warn("ExecutionUnit terminate failed, executionId={}", unit.getId(), ex);
-            }
-        }
-    }
-
-    public void skip(String executionUnitId) {
-        ExecutionSubGroupUnit<Input, Result> executionUnit = id2ExecutionUnit.get(executionUnitId);
-        executionUnit.skip(this);
+    public List<ExecutionSubGroupUnit<Input, Result>> listAllExecutionUnits() {
+        return new ArrayList<>(id2ExecutionUnit.values());
     }
 
     public void addThrowable(Throwable throwable) {
         this.throwables.add(throwable);
-    }
-
-    private void waitForCompletion(@NonNull Set<String> executionIds) throws InterruptedException {
-        while (!Thread.currentThread().isInterrupted()) {
-            List<ExecutionResult<Result>> incompleteResults = executionIds.stream()
-                    .map(this::getExecutionResult).filter(result -> !result.isCompleted())
-                    .collect(Collectors.toList());
-            if (CollectionUtils.isEmpty(incompleteResults)) {
-                break;
-            }
-            try {
-                Thread.sleep(500L);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw e;
-            }
-        }
     }
 }
 
