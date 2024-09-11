@@ -70,7 +70,7 @@ public class OBOracleExprBasedPartitionNameGeneratorTest {
         Map<String, Object> parameters = new HashMap<>();
         DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
         definition.setMaxValues(Collections.singletonList("TO_DATE('2022-01-01 12:00:00'"));
-        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
+        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, Collections.singletonList(definition));
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, index);
         parameters.put(PartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);
         return parameters;

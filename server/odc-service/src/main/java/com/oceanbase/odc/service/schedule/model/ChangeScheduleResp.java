@@ -13,27 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.plugin.task.api.partitionplan.model;
+package com.oceanbase.odc.service.schedule.model;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import lombok.Data;
 
 /**
- * {@link DateBasedPartitionNameGeneratorConfig}
- *
- * @author yh263208
- * @date 2024-01-22 17:21
- * @since ODC_release_4.2.4
+ * @author jingtian
+ * @date 2024/8/26
  */
-@Getter
-@Setter
-@ToString
-public class DateBasedPartitionNameGeneratorConfig {
-
-    private String namingPrefix;
-    private String namingSuffixExpression;
-    private String refPartitionKey;
-    private NamingSuffixStrategy namingSuffixStrategy = NamingSuffixStrategy.PARTITION_UPPER_BOUND;
-
+@Data
+public class ChangeScheduleResp extends Schedule {
+    @JsonIgnore
+    private ScheduleChangeLog changeLog;
 }

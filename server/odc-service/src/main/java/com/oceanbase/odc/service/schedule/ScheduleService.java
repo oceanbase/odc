@@ -34,6 +34,7 @@ import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanMap;
 import org.springframework.data.domain.Page;
@@ -85,6 +86,7 @@ import com.oceanbase.odc.service.schedule.factory.ScheduleResponseMapperFactory;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.flowtask.ApprovalFlowService;
 import com.oceanbase.odc.service.schedule.model.ChangeQuartJobParam;
+import com.oceanbase.odc.service.schedule.model.ChangeScheduleResp;
 import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
@@ -188,7 +190,7 @@ public class ScheduleService {
 
 
     @Transactional(rollbackFor = Exception.class)
-    public Schedule changeSchedule(ScheduleChangeParams req) {
+    public ChangeScheduleResp changeSchedule(ScheduleChangeParams req) {
 
         preprocessor.process(req);
         Schedule targetSchedule;
@@ -270,7 +272,10 @@ public class ScheduleService {
             log.info("Create approval flow success,changelogId={},flowInstanceId",approvalFlowInstanceId);
         }
 
-        return targetSchedule;
+        ChangeScheduleResp returnVal = new ChangeScheduleResp();
+        BeanUtils.copyProperties(targetSchedule, returnVal);
+        returnVal.setChangeLog(changeLog);
+        return returnVal;
     }
 
     private void validateTriggerConfig(TriggerConfig triggerConfig) {
@@ -630,6 +635,12 @@ public class ScheduleService {
                 scheduleResponseMapperFactory.generateScheduleOverviewListMapper(returnValue.getContent());
 
         return returnValue.map(o -> id2Overview.get(o.getId()));
+    }
+
+    public Page<Schedule> listScheduleWithParameterSkipPermissionCheck(@NotNull Pageable pageable,
+            @NotNull QueryScheduleParams params) {
+        params.setOrganizationId(authenticationFacade.currentOrganizationId());
+        return scheduleRepository.find(pageable, params).map(scheduleMapper::entityToModel);
     }
 
     public Page<ScheduleTaskOverview> listScheduleTaskOverview(@NotNull Pageable pageable, @NotNull Long scheduleId) {

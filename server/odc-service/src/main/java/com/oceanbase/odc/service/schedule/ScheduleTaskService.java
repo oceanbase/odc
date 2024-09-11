@@ -333,7 +333,6 @@ public class ScheduleTaskService {
         return scheduleTaskRepository.findByJobNameAndStatusIn(jobName, statuses);
     }
 
-
     public Optional<ScheduleTask> findByJobId(Long jobId) {
         List<ScheduleTaskEntity> scheduleTasks = scheduleTaskRepository.findByJobId(jobId);
         if (scheduleTasks != null) {
@@ -362,6 +361,12 @@ public class ScheduleTaskService {
                 scheduleTaskRepository.findByIdAndJobName(id, scheduleId.toString());
         return scheduleTaskMapper.entityToModel(scheduleEntityOptional
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE_TASK, "id", id)));
+    }
+
+    public List<ScheduleTask> listByJobNames(Set<String> jobNames) {
+        return scheduleTaskRepository.findByJobNames(jobNames).stream()
+                .map(scheduleTaskMapper::entityToModel)
+                .collect(Collectors.toList());
     }
 
     public String getLogWithoutPermission(Long taskId, OdcTaskLogLevel logLevel) {

@@ -420,12 +420,31 @@ public class ConnectionService {
             resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public PaginatedData<ConnectionConfig> listByProjectId(@NotNull Long projectId, @NotNull Boolean basic) {
         List<ConnectionConfig> connections;
+        List<ConnectionEntity> entities = repository.findByDatabaseProjectId(projectId);
+        List<Long> environmentIds = entities.stream()
+                .map(ConnectionEntity::getEnvironmentId)
+                .distinct().collect(Collectors.toList());
+        Map<Long, Environment> environmentMap = environmentService.getByIdIn(environmentIds).stream()
+                .collect(Collectors.toMap(Environment::getId, environment -> environment));
         if (basic) {
-            connections = repository.findByDatabaseProjectId(projectId).stream().map(e -> {
+            connections = entities.stream().map(e -> {
                 ConnectionConfig c = new ConnectionConfig();
+                Environment environment = environmentMap.getOrDefault(e.getEnvironmentId(), null);
+                if (Objects.isNull(environment)) {
+                    throw new UnexpectedException("environment not found, id=" + e.getEnvironmentId());
+                }
                 c.setId(e.getId());
                 c.setName(e.getName());
                 c.setType(e.getType());
+
+                c.setHost(e.getHost());
+                c.setPort(e.getPort());
+                c.setUsername(e.getUsername());
+                c.setTenantName(e.getTenantName());
+                c.setClusterName(e.getClusterName());
+                c.setEnvironmentName(environment.getName());
+                c.setEnvironmentStyle(environment.getStyle());
+
                 return c;
             }).collect(Collectors.toList());
         } else {

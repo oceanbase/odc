@@ -16,6 +16,7 @@
 package com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname;
 
 import java.sql.Connection;
+import java.util.List;
 import java.util.Map;
 
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.AutoPartitionKeyInvoker;
@@ -38,21 +39,22 @@ public interface PartitionNameGenerator extends AutoPartitionKeyInvoker<String> 
     String PARTITION_NAME_GENERATOR_KEY = "partitionNameGeneratorConfig";
 
     String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
-            @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
+            @NonNull Integer targetPartitionIndex, @NonNull List<DBTablePartitionDefinition> targets,
             @NonNull Map<String, Object> parameters) throws Exception;
 
     @Override
     default String invoke(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull Map<String, Object> parameters) throws Exception {
         Object value = parameters.get(TARGET_PARTITION_DEF_KEY);
-        if (!(value instanceof DBTablePartitionDefinition)) {
+        if (!(value instanceof List<?>) || ((List<?>) value).isEmpty()
+                || !(((List<?>) value).get(0) instanceof DBTablePartitionDefinition)) {
             throw new IllegalArgumentException("Missing target partition candidate");
         }
         Object index = parameters.get(TARGET_PARTITION_DEF_INDEX_KEY);
         if (!(index instanceof Integer) || ((Integer) index) < 0) {
             throw new IllegalArgumentException("Target partition index is missing or illegal");
         }
-        return generate(connection, dbTable, (Integer) index, (DBTablePartitionDefinition) value, parameters);
+        return generate(connection, dbTable, (Integer) index, (List<DBTablePartitionDefinition>) value, parameters);
     }
 
 }

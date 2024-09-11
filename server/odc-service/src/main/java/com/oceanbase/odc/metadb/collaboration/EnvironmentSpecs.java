@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.metadb.collaboration;
 
+import java.util.Collection;
+
 import org.springframework.data.jpa.domain.Specification;
 
 import com.oceanbase.odc.common.jpa.SpecificationUtil;
@@ -31,5 +33,9 @@ public class EnvironmentSpecs {
 
     public static Specification<EnvironmentEntity> enabledEquals(Boolean enabled) {
         return SpecificationUtil.columnEqual("enabled", enabled);
+    }
+
+    public static Specification<EnvironmentEntity> idIn(Collection<Long> ids) {
+        return SpecificationUtil.columnIn("id", ids);
     }
 }
