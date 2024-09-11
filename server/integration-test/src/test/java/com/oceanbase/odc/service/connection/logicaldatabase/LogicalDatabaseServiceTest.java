@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -45,7 +46,6 @@ import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingEntity
 import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
-import com.oceanbase.odc.service.connection.database.DatabaseMapper;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.CreateLogicalDatabaseReq;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
@@ -68,12 +68,13 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
     private static final Long LOGICAL_DATABASE_ID = 2L;
     private static final String LOGICAL_DATABASE_NAME = "lebie_test";
     private static final String LOGICAL_DATABASE_ALIAS = "lebie_test_alias";
-    private static final DatabaseMapper databaseMapper = DatabaseMapper.INSTANCE;
 
     @Autowired
     private LogicalDatabaseService logicalDatabaseService;
     @MockBean
     private DatabaseRepository databaseRepository;
+    @MockBean
+    private LogicalTableService logicalTableService;
     @MockBean
     private AuthenticationFacade authenticationFacade;
     @MockBean
@@ -112,19 +113,20 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
         Set<Long> databaseIds = new HashSet<>();
         databaseIds.addAll(Arrays.asList(PHYSICAL_DATABASE_ID));
         req.setPhysicalDatabaseIds(databaseIds);
-        Assert.assertTrue(logicalDatabaseService.create(req));
+        Assert.assertNotNull(logicalDatabaseService.create(req));
     }
 
     @Test
     public void testDetail() {
         when(databaseMappingRepository.findByLogicalDatabaseId(anyLong())).thenReturn(listDatabaseMappings(1));
+        when(logicalTableService.list(anyLong())).thenReturn(Collections.emptyList());
         Assert.assertNotNull(logicalDatabaseService.detail(LOGICAL_DATABASE_ID));
     }
 
     @Test
-    public void testListPhysicalDatabaseIds() {
+    public void testListPhysicalDatabases() {
         when(databaseMappingRepository.findByLogicalDatabaseId(anyLong())).thenReturn(listDatabaseMappings(1));
-        Assert.assertEquals(1, logicalDatabaseService.listPhysicalDatabaseIds(LOGICAL_DATABASE_ID).size());
+        Assert.assertEquals(1, logicalDatabaseService.listPhysicalDatabases(LOGICAL_DATABASE_ID).size());
     }
 
     private ConnectionEntity getConnectionEntity() {

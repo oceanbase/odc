@@ -59,6 +59,8 @@ public interface ScheduleTaskMapper {
                 return JsonUtils.fromJson(entity.getParametersJson(), OnlineSchemaChangeParameters.class);
             case SQL_PLAN:
                 return JsonUtils.fromJson(entity.getParametersJson(), SqlPlanParameters.class);
+            case LOGICAL_DATABASE_CHANGE:
+                return JsonUtils.fromJson(entity.getParametersJson(), LogicalDatabaseChangeParameters.class);
             default:
                 throw new UnsupportedException();
         }

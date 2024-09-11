@@ -53,6 +53,8 @@ public interface ScheduleMapper {
                 return JsonUtils.fromJson(entity.getJobParametersJson(), DataDeleteParameters.class);
             case SQL_PLAN:
                 return JsonUtils.fromJson(entity.getJobParametersJson(), SqlPlanParameters.class);
+            case LOGICAL_DATABASE_CHANGE:
+                return JsonUtils.fromJson(entity.getJobParametersJson(), LogicalDatabaseChangeParameters.class);
             default:
                 throw new UnsupportedException();
         }

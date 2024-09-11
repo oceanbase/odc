@@ -13,31 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
+package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution;
 
-/**
- * @Author：tinker
- * @Date: 2024/6/18 16:56
- * @Descripition:
- */
-public enum ScheduleTaskType {
+import java.sql.SQLException;
 
-    SQL_PLAN,
+public interface ExecutionHandler<Input, Result> {
+    // TODO: this method is hard to understand, try refactor it later
+    ExecutionResult<Result> beforeExecute(ExecutionGroupContext<Input, Result> context);
 
-    PARTITION_PLAN,
+    ExecutionResult<Result> execute(ExecutionGroupContext<Input, Result> context) throws SQLException;
 
-    DATA_ARCHIVE,
-
-    DATA_ARCHIVE_DELETE,
-
-    DATA_DELETE,
-
-    DATA_ARCHIVE_ROLLBACK,
-
-    ONLINE_SCHEMA_CHANGE_COMPLETE,
-
-    LOGICAL_DATABASE_CHANGE,
-
-    LOAD_DATA
-
+    void terminate(ExecutionGroupContext<Input, Result> context) throws Exception;
 }
