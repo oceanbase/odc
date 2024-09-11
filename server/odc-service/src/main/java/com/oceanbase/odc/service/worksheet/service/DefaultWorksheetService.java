@@ -15,15 +15,17 @@
  */
 package com.oceanbase.odc.service.worksheet.service;
 
-import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstants.CHANGE_FILE_NUM_LIMIT;
+import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstants.CHANGE_WORKSHEET_NUM_LIMIT;
 import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstants.NAME_LENGTH_LIMIT;
 import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstants.PATH_LENGTH_LIMIT;
-import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstants.SAME_LEVEL_NUM_LIMIT;
+import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstants.PROJECT_WORKSHEET_NUM_LIMIT;
+import static com.oceanbase.odc.service.worksheet.constants.WorksheetConstants.SAME_LEVEL_WORKSHEET_NUM_LIMIT;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -32,6 +34,9 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.google.common.collect.Iterables;
@@ -48,6 +53,7 @@ import com.oceanbase.odc.metadb.worksheet.CollaborationWorksheetEntity;
 import com.oceanbase.odc.metadb.worksheet.CollaborationWorksheetRepository;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.client.ObjectStorageClient;
+import com.oceanbase.odc.service.resourcehistory.ResourceLastAccessService;
 import com.oceanbase.odc.service.worksheet.constants.WorksheetConstants;
 import com.oceanbase.odc.service.worksheet.converter.WorksheetConverter;
 import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheetsPreProcessor;
@@ -74,14 +80,17 @@ public class DefaultWorksheetService implements WorksheetService {
     CollaborationWorksheetRepository worksheetRepository;
     ObjectStorageClient objectStorageClient;
     AuthenticationFacade authenticationFacade;
+    ResourceLastAccessService resourceLastAccessService;
 
     public DefaultWorksheetService(
             ObjectStorageClient objectStorageClient,
             CollaborationWorksheetRepository worksheetRepository,
-            AuthenticationFacade authenticationFacade) {
+            AuthenticationFacade authenticationFacade,
+            ResourceLastAccessService resourceLastAccessService) {
         this.objectStorageClient = objectStorageClient;
         this.worksheetRepository = worksheetRepository;
         this.authenticationFacade = authenticationFacade;
+        this.resourceLastAccessService = resourceLastAccessService;
     }
 
     @Override
@@ -129,7 +138,13 @@ public class DefaultWorksheetService implements WorksheetService {
                         + projectId + "，path:" + path + ",objectId:" + worksheet.getObjectId(), e);
             }
         }
-
+        try {
+            resourceLastAccessService.add(currentOrganizationId(), projectId, currentUserId(),
+                    ResourceType.ODC_WORKSHEET, worksheetOptional.get().getId(), new Date());
+        } catch (Throwable e) {
+            log.warn("add last access time has exception, projectId:{}，path:{},objectId:{}",
+                    projectId, path, worksheet.getObjectId(), e);
+        }
         return WorksheetConverter.convertEntityToResp(worksheetOptional.get(), contentDownloadUrl);
     }
 
@@ -141,6 +156,17 @@ public class DefaultWorksheetService implements WorksheetService {
                 projectId, path.getStandardPath(),
                 minLevelNumberFilter, maxLevelNumberFilter, nameLike);
         return entities.stream().map(WorksheetConverter::convertEntityToMetaResp).collect(Collectors.toList());
+    }
+
+    public Page<WorksheetMetaResp> flatListWorksheets(Long projectId, Pageable pageable) {
+        PreConditions.notNull(projectId, "projectId");
+        long organizationId = authenticationFacade.currentOrganizationId();
+        long userId = authenticationFacade.currentUserId();
+        Page<CollaborationWorksheetEntity> entities =
+                worksheetRepository.leftJoinResourceLastAccess(organizationId, projectId, userId, pageable);
+        return new PageImpl<>(entities.stream().map(WorksheetConverter::convertEntityToMetaResp)
+                .collect(Collectors.toList()),
+                pageable, entities.getTotalElements());
     }
 
     @Override
@@ -173,9 +199,9 @@ public class DefaultWorksheetService implements WorksheetService {
     @Override
     public BatchOperateWorksheetsResp batchDeleteWorksheets(Long projectId, List<Path> paths) {
         List<CollaborationWorksheetEntity> deleteWorksheets = listWithSubListByProjectIdAndPaths(projectId, paths);
-        if (deleteWorksheets.size() > CHANGE_FILE_NUM_LIMIT) {
+        if (deleteWorksheets.size() > CHANGE_WORKSHEET_NUM_LIMIT) {
             throw new OverLimitException(LimitMetric.WORKSHEET_CHANGE_COUNT,
-                    (double) CHANGE_FILE_NUM_LIMIT, "delete number is over limit " + CHANGE_FILE_NUM_LIMIT);
+                    (double) CHANGE_WORKSHEET_NUM_LIMIT, "delete number is over limit " + CHANGE_WORKSHEET_NUM_LIMIT);
         }
         if (CollectionUtils.isEmpty(deleteWorksheets)) {
             return new BatchOperateWorksheetsResp();
@@ -254,9 +280,9 @@ public class DefaultWorksheetService implements WorksheetService {
         if (CollectionUtils.isEmpty(downloadWorksheets)) {
             return;
         }
-        if (downloadWorksheets.size() > CHANGE_FILE_NUM_LIMIT) {
+        if (downloadWorksheets.size() > CHANGE_WORKSHEET_NUM_LIMIT) {
             throw new OverLimitException(LimitMetric.WORKSHEET_CHANGE_COUNT,
-                    (double) CHANGE_FILE_NUM_LIMIT, "download number is over limit " + CHANGE_FILE_NUM_LIMIT);
+                    (double) CHANGE_WORKSHEET_NUM_LIMIT, "download number is over limit " + CHANGE_WORKSHEET_NUM_LIMIT);
         }
         for (CollaborationWorksheetEntity worksheet : downloadWorksheets) {
             downloadWorksheetToDirectory(projectId, worksheet, commParentPath, destinationDirectory);
@@ -276,8 +302,20 @@ public class DefaultWorksheetService implements WorksheetService {
         });
     }
 
+    private void checkProjectWorksheetNumberLimit(Long projectId, BatchCreateWorksheetsPreProcessor createWorksheets) {
+        long count = worksheetRepository.countByProjectId(projectId);
+        if (count + createWorksheets.size() > PROJECT_WORKSHEET_NUM_LIMIT) {
+            throw new OverLimitException(LimitMetric.WORKSHEET_COUNT_IN_PROJECT,
+                    (double) PROJECT_WORKSHEET_NUM_LIMIT,
+                    "create path num exceed project worksheet number limit,project id" + projectId
+                            + ", create path num: " + createWorksheets.size()
+                            + ",project worksheet number: " + count);
+        }
+    }
+
     private void createCheck(Long projectId, BatchCreateWorksheetsPreProcessor createWorksheets) {
         checkPathOrNameLength(createWorksheets.getCreatePathToObjectIdMap().keySet());
+        checkProjectWorksheetNumberLimit(projectId, createWorksheets);
 
         // the exist worksheets number + to create worksheets number can't exceed limit
         Integer levelNumOfToCreatePath = createWorksheets.getParentPath().getLevelNum() + 1;
@@ -285,9 +323,9 @@ public class DefaultWorksheetService implements WorksheetService {
                 createWorksheets.getParentPath().getStandardPath(), levelNumOfToCreatePath, levelNumOfToCreatePath,
                 null);
         int toCreateNum = createWorksheets.getCreatePathToObjectIdMap().size();
-        if (existNum + toCreateNum > SAME_LEVEL_NUM_LIMIT) {
+        if (existNum + toCreateNum > SAME_LEVEL_WORKSHEET_NUM_LIMIT) {
             throw new OverLimitException(LimitMetric.WORKSHEET_SAME_LEVEL_COUNT,
-                    (double) SAME_LEVEL_NUM_LIMIT,
+                    (double) SAME_LEVEL_WORKSHEET_NUM_LIMIT,
                     "create path num exceed limit, create path num: " + toCreateNum
                             + ", same level exist file num: " + existNum);
         }
@@ -320,6 +358,10 @@ public class DefaultWorksheetService implements WorksheetService {
 
     private long currentUserId() {
         return authenticationFacade.currentUserId();
+    }
+
+    private long currentOrganizationId() {
+        return authenticationFacade.currentOrganizationId();
     }
 
     private void deleteByObjectIdsInObjectStorage(List<CollaborationWorksheetEntity> toDeletes) {
@@ -451,9 +493,10 @@ public class DefaultWorksheetService implements WorksheetService {
                 subFile.setExtension(movePathOptional.get().getExtension());
                 changedWorksheets.add(subFile);
 
-                if (changedWorksheets.size() > CHANGE_FILE_NUM_LIMIT - 1) {
-                    throw new OverLimitException(LimitMetric.WORKSHEET_CHANGE_COUNT, (double) CHANGE_FILE_NUM_LIMIT,
-                            "change num is over limit " + CHANGE_FILE_NUM_LIMIT);
+                if (changedWorksheets.size() > CHANGE_WORKSHEET_NUM_LIMIT - 1) {
+                    throw new OverLimitException(LimitMetric.WORKSHEET_CHANGE_COUNT,
+                            (double) CHANGE_WORKSHEET_NUM_LIMIT,
+                            "change num is over limit " + CHANGE_WORKSHEET_NUM_LIMIT);
                 }
             }
         }

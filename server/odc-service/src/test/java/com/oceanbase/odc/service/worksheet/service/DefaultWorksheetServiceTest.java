@@ -47,6 +47,7 @@ import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.client.ObjectStorageClient;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
+import com.oceanbase.odc.service.resourcehistory.ResourceLastAccessService;
 import com.oceanbase.odc.service.worksheet.constants.WorksheetConstants;
 import com.oceanbase.odc.service.worksheet.domain.BatchCreateWorksheetsPreProcessor;
 import com.oceanbase.odc.service.worksheet.domain.Path;
@@ -97,6 +98,8 @@ public class DefaultWorksheetServiceTest {
     private ObjectStorageClient objectStorageClient;
     @Mock
     private AuthenticationFacade authenticationFacade;
+    @Mock
+    private ResourceLastAccessService resourceLastAccessService;
 
     private DefaultWorksheetService defaultWorksheetService;
     private File destinationDirectory;
@@ -106,7 +109,7 @@ public class DefaultWorksheetServiceTest {
         MockitoAnnotations.initMocks(this);
         defaultWorksheetService =
                 new DefaultWorksheetService(objectStorageClient,
-                        worksheetRepository, authenticationFacade);
+                        worksheetRepository, authenticationFacade, resourceLastAccessService);
         destinationDirectory = WorksheetPathUtil.createFileWithParent(
                 WorksheetUtil.getWorksheetDownloadDirectory() + "project1", true);
 
@@ -217,7 +220,7 @@ public class DefaultWorksheetServiceTest {
                 new BatchCreateWorksheetsPreProcessor(batchUploadWorksheetsReq);
         when(worksheetRepository.countByPathLikeWithFilter(projectId,
                 parentPath.getStandardPath(), 2, 2, null))
-                        .thenReturn(new Long(WorksheetConstants.SAME_LEVEL_NUM_LIMIT - 2));
+                        .thenReturn(new Long(WorksheetConstants.SAME_LEVEL_WORKSHEET_NUM_LIMIT - 2));
         when(worksheetRepository.saveAllAndFlush(anyList()))
                 .thenAnswer(invocation -> {
                     List<CollaborationWorksheetEntity> entities = invocation.getArgument(0);

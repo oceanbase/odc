@@ -35,6 +35,7 @@ public class WorksheetConverter {
                 .size(entity.getSize())
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
+                .lastAccessTime(entity.getLastAccessTime())
                 .build();
     }
 
@@ -47,6 +48,7 @@ public class WorksheetConverter {
                 .size(entity.getSize())
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
+                .lastAccessTime(entity.getLastAccessTime())
                 .version(entity.getVersion())
                 .contentDownloadUrl(contentDownloadUrl)
                 .build();

@@ -37,11 +37,16 @@ public class WorksheetConstants {
     /**
      * the limit number of change worksheet in an operation
      */
-    public static final int CHANGE_FILE_NUM_LIMIT = 2000;
+    public static final int CHANGE_WORKSHEET_NUM_LIMIT = 2000;
     /**
      * the limit number of worksheets in the same level
      */
-    public static final int SAME_LEVEL_NUM_LIMIT = 1000;
+    public static final int SAME_LEVEL_WORKSHEET_NUM_LIMIT = 1000;
+
+    /**
+     * the limit number of worksheets in project
+     */
+    public static final int PROJECT_WORKSHEET_NUM_LIMIT = 100_000;
 
     /**
      * the duration of download worksheet in seconds
