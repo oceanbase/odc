@@ -16,6 +16,7 @@
 package com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname;
 
 import java.sql.Connection;
+import java.util.List;
 import java.util.Map;
 
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.DateBasedPartitionNameGeneratorConfig;
@@ -35,7 +36,7 @@ import lombok.NonNull;
 public interface DateBasedPartitionNameGenerator extends PartitionNameGenerator {
 
     String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
-            @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
+            @NonNull Integer targetPartitionIndex, @NonNull List<DBTablePartitionDefinition> targets,
             @NonNull DateBasedPartitionNameGeneratorConfig config) throws Exception;
 
     @Override
@@ -45,9 +46,9 @@ public interface DateBasedPartitionNameGenerator extends PartitionNameGenerator 
 
     @Override
     default String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
-            @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
+            @NonNull Integer targetPartitionIndex, @NonNull List<DBTablePartitionDefinition> targets,
             @NonNull Map<String, Object> parameters) throws Exception {
-        return generate(connection, dbTable, targetPartitionIndex, target, ParameterUtil.nullSafeExtract(
+        return generate(connection, dbTable, targetPartitionIndex, targets, ParameterUtil.nullSafeExtract(
                 parameters, PARTITION_NAME_GENERATOR_KEY, DateBasedPartitionNameGeneratorConfig.class));
     }
 

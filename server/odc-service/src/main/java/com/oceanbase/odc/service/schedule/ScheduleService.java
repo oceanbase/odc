@@ -632,6 +632,12 @@ public class ScheduleService {
         return returnValue.map(o -> id2Overview.get(o.getId()));
     }
 
+    public Page<Schedule> listScheduleWithParameterSkipPermissionCheck(@NotNull Pageable pageable,
+            @NotNull QueryScheduleParams params) {
+        params.setOrganizationId(authenticationFacade.currentOrganizationId());
+        return scheduleRepository.find(pageable, params).map(scheduleMapper::entityToModel);
+    }
+
     public Page<ScheduleTaskOverview> listScheduleTaskOverview(@NotNull Pageable pageable, @NotNull Long scheduleId) {
         nullSafeGetByIdWithCheckPermission(scheduleId, false);
         return scheduleTaskService.getScheduleTaskListResp(pageable, scheduleId);

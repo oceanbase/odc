@@ -39,7 +39,8 @@ public enum OBInstanceType implements Translatable {
     K8s_DEDICATED("K8s_DEDICATED"),
     // K8s共享集群模式
     K8s_SHARED("K8s_SHARED"),
-    ANALYTICAL_CLUSTER("ANALYTICAL_CLUSTER");
+    ANALYTICAL_CLUSTER("ANALYTICAL_CLUSTER"),
+    KV_CLUSTER("KV_CLUSTER");
 
     @Getter
     private String value;

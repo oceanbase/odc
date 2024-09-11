@@ -38,4 +38,6 @@ public enum ScheduleTaskType {
 
     LOGICAL_DATABASE_CHANGE,
 
+    LOAD_DATA
+
 }
