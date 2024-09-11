@@ -33,13 +33,13 @@ public final class GroupExecutionEngine<Input, Result> implements AutoCloseable 
 
     public GroupExecutionEngine(int executorSize) {
         this.groupExecutorServiceManager = new ExecutorServiceManager(executorSize, "logical-database-change-executor");
+        daemonExecutorService = Executors.newSingleThreadExecutor();
     }
 
     public ExecutionGroupContext<Input, Result> execute(List<ExecutionGroup<Input, Result>> groups) {
         PreConditions.notEmpty(groups, "groups");
         ExecutionGroupContext<Input, Result> executionContext =
                 new ExecutionGroupContext<>(groups, this.groupExecutorServiceManager.getExecutorService());
-        daemonExecutorService = Executors.newSingleThreadExecutor();
         daemonExecutorService.submit(() -> {
             try {
                 executionContext.execute();

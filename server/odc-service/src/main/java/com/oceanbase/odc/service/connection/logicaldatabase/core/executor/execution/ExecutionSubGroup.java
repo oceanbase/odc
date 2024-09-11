@@ -19,6 +19,7 @@ import java.util.List;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @Author: Lebie
@@ -28,11 +29,17 @@ import lombok.RequiredArgsConstructor;
 
 @Data
 @RequiredArgsConstructor
+@Slf4j
 public class ExecutionSubGroup<Input, Result> {
     private final List<ExecutionSubGroupUnit<Input, Result>> executionUnits;
 
     public void execute(ExecutionGroupContext<Input, Result> context) {
         for (ExecutionSubGroupUnit<Input, Result> executionUnit : executionUnits) {
+            if (Thread.currentThread().isInterrupted()) {
+                Thread.currentThread().interrupt();
+                log.warn("ExecutionUnit is interrupted, executionId={}", executionUnit.getId());
+                return;
+            }
             executionUnit.execute(context);
         }
     }
