@@ -46,11 +46,19 @@ public class TestDBConfigurations {
     private static final String TEST_DORIS_DATABASE_NAME = IsolatedNameGenerator.generateUpperCase("ODC");
     private static final String TEST_ORACLE_DATABASE_NAME = IsolatedNameGenerator.generateUpperCase("ODC");
 
+    /**
+     * 测试数据库配置类的私有构造函数
+     */
     private TestDBConfigurations() {
+        // 创建一个线程，用于在JVM关闭时释放资源
         Thread shutdownHookThread = new Thread(this::expireResources);
+        // 设置线程为守护线程，当主线程结束时，守护线程也会随之结束
         shutdownHookThread.setDaemon(true);
+        // 设置线程名称
         shutdownHookThread.setName("thread-odc-unit-test-shutdown-hook");
+        // 将线程添加到JVM的关闭钩子中，确保在JVM关闭时执行
         Runtime.getRuntime().addShutdownHook(shutdownHookThread);
+        // 记录日志，表示测试数据库配置已初始化
         log.info("TestDBConfigurations initialized");
     }
 

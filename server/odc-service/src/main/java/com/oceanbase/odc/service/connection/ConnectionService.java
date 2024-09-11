@@ -729,10 +729,19 @@ public class ConnectionService {
         return repository.findByIdIn(ids).stream().map(mapper::entityToModel).collect(Collectors.toList());
     }
 
+    /**
+     * 获取连接配置信息，不进行权限校验
+     *
+     * @param id 连接配置ID
+     * @return 连接配置信息
+     */
     @SkipAuthorize("internal usage")
     public ConnectionConfig getForConnectionSkipPermissionCheck(@NotNull Long id) {
+        // 调用internalGetSkipUserCheck方法获取连接配置信息
         ConnectionConfig connection = internalGetSkipUserCheck(id, false, false);
+        // 对连接配置信息进行适配
         adaptConnectionConfig(connection);
+        // 返回连接配置信息
         return connection;
     }
 
@@ -922,10 +931,21 @@ public class ConnectionService {
         return connection;
     }
 
+    /**
+     * 该方法用于获取连接配置信息，不需要进行用户权限校验
+     *
+     * @param id              连接配置ID
+     * @param withEnvironment 是否包含环境信息
+     * @param withProject     是否包含项目信息
+     * @return 连接配置对象
+     */
     @SkipAuthorize("odc internal usage")
     public ConnectionConfig internalGetSkipUserCheck(Long id, boolean withEnvironment, boolean withProject) {
+        // 将实体对象转换为连接配置对象
         ConnectionConfig config = entityToModel(getEntity(id), withEnvironment, withProject);
+        // 根据连接配置ID查询属性列表
         List<ConnectionAttributeEntity> entities = this.attributeRepository.findByConnectionId(config.getId());
+        // 将属性列表转换为属性MAP并设置到连接配置对象中
         config.setAttributes(attrEntitiesToMap(entities));
         return config;
     }
@@ -1067,19 +1087,32 @@ public class ConnectionService {
         models.forEach(c -> c.setAttributes(attrEntitiesToMap(id2Attrs.getOrDefault(c.getId(), new ArrayList<>()))));
     }
 
+    /**
+     * 适配连接配置
+     *
+     * @param connection 连接配置
+     */
     private void adaptConnectionConfig(ConnectionConfig connection) {
+        // 获取查询超时时间
         int queryTimeoutSeconds = connection.queryTimeoutSeconds();
+        // 获取最小查询超时时间
         Integer minQueryTimeoutSeconds = connectProperties.getMinQueryTimeoutSeconds();
+        // 如果查询超时时间小于最小查询超时时间，则使用最小查询超时时间
         if (queryTimeoutSeconds < minQueryTimeoutSeconds) {
             connection.setQueryTimeoutSeconds(minQueryTimeoutSeconds);
             log.debug("queryTimeoutSeconds less than minQueryTimeoutSeconds, use {} instead", minQueryTimeoutSeconds);
         }
+        // 解密密码
         connectionEncryption.decryptPasswords(connection);
         // Adapter should be called after decrypting passwords.
+        // 适配器应该在解密密码后调用
         environmentAdapter.adaptConfig(connection);
+        // SSL适配器
         connectionSSLAdaptor.adapt(connection);
+        // 获取OB租户端点
         OBTenantEndpoint endpoint = connection.getEndpoint();
         if (Objects.nonNull(endpoint)) {
+            // 如果虚拟主机和虚拟端口都不为空，则设置主机和端口
             if (StringUtils.isNotBlank(endpoint.getVirtualHost()) && Objects.nonNull(endpoint.getVirtualPort())) {
                 connection.setHost(endpoint.getVirtualHost());
                 connection.setPort(endpoint.getVirtualPort());
