@@ -29,13 +29,16 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
+import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionGroupContext;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionHandler;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionResult;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionStatus;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionInfoUtil;
+import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 
@@ -50,15 +53,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SqlExecutionHandler implements ExecutionHandler<SqlExecuteReq, SqlExecutionResultWrapper> {
     private ConnectionSession connectionSession;
-    private OdcStatementCallBack statementCallBack;
-    private long timeoutMillis;
     private SqlExecuteReq req;
 
-    public SqlExecutionHandler(@NonNull ConnectionSession connectionSession, SqlExecuteReq req) {
-        this.connectionSession = connectionSession;
-        this.statementCallBack =
-                new OdcStatementCallBack(Arrays.asList(SqlTuple.newTuple(req.getSql())), connectionSession, true, 1000);
-        this.timeoutMillis = req.getTimeoutMillis();
+    public SqlExecutionHandler(@NonNull SqlExecuteReq req) {
         this.req = req;
     }
 
@@ -77,24 +74,36 @@ public class SqlExecutionHandler implements ExecutionHandler<SqlExecuteReq, SqlE
     public ExecutionResult<SqlExecutionResultWrapper> execute(
             ExecutionGroupContext<SqlExecuteReq, SqlExecutionResultWrapper> context)
             throws SQLException {
-        List<JdbcGeneralResult> results = connectionSession
-                .getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY)
-                .execute((StatementCallback<List<JdbcGeneralResult>>) stmt -> {
-                    stmt.setQueryTimeout(
-                            (int) TimeUnit.MILLISECONDS.toSeconds(timeoutMillis));
-                    return statementCallBack.doInStatement(stmt);
-                });
-        JdbcGeneralResult result = results.get(0);
-        log.info("SqlExecutionCallback execute result, connectionReset={}", result.isConnectionReset());
-        return new ExecutionResult<>(
-                new SqlExecutionResultWrapper(req.getLogicalDatabaseId(), req.getPhysicalDatabaseId(),
-                        req.getScheduleTaskId(), new SqlExecuteResult(result)),
-                getExecutionStatus(result.getStatus()), req.getOrder());
+        this.connectionSession = generateSession(req.getConnectionConfig());
+        try {
+            OdcStatementCallBack statementCallBack = new OdcStatementCallBack(
+                    Arrays.asList(SqlTuple.newTuple(req.getSql())), connectionSession, true, 1000);
+            List<JdbcGeneralResult> results = connectionSession
+                    .getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY)
+                    .execute((StatementCallback<List<JdbcGeneralResult>>) stmt -> {
+                        stmt.setQueryTimeout(
+                                (int) TimeUnit.MILLISECONDS.toSeconds(req.getTimeoutMillis()));
+                        return statementCallBack.doInStatement(stmt);
+                    });
+            JdbcGeneralResult result = results.get(0);
+            log.info("SqlExecutionCallback execute result, connectionReset={}", result.isConnectionReset());
+            return new ExecutionResult<>(
+                    new SqlExecutionResultWrapper(req.getLogicalDatabaseId(), req.getPhysicalDatabaseId(),
+                            req.getScheduleTaskId(), new SqlExecuteResult(result)),
+                    getExecutionStatus(result.getStatus()), req.getOrder());
+        } finally {
+            tryExpireConnectionSession(this.connectionSession);
+        }
+
     }
 
     @Override
     public void terminate(ExecutionGroupContext<SqlExecuteReq, SqlExecutionResultWrapper> context)
             throws Exception {
+        if (this.connectionSession == null || this.connectionSession.isExpired()) {
+            log.warn("ConnectionSession is null or expired, skip terminate");
+            return;
+        }
         String connectionId = ConnectionSessionUtil.getConsoleConnectionId(connectionSession);
         Verify.notNull(connectionId, "ConnectionId");
         ConnectionConfig conn = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
@@ -108,6 +117,27 @@ public class SqlExecutionHandler implements ExecutionHandler<SqlExecuteReq, SqlE
                 log.info("Kill query by direct connect succeed, connectionId={}", connectionId);
             } else {
                 log.warn("Kill query occur error, connectionId={}", connectionId, e);
+            }
+        }
+    }
+
+    private ConnectionSession generateSession(@NonNull ConnectionConfig connectionConfig) {
+        DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(connectionConfig);
+        sessionFactory.setSessionTimeoutMillis(this.req.getTimeoutMillis());
+        ConnectionSession connectionSession = sessionFactory.generateSession();
+        SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(), true,
+                true);
+        ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
+        ConnectionSessionUtil.setColumnAccessor(connectionSession, new DatasourceColumnAccessor(connectionSession));
+        return connectionSession;
+    }
+
+    private void tryExpireConnectionSession(ConnectionSession connectionSession) {
+        if (connectionSession != null && !connectionSession.isExpired()) {
+            try {
+                connectionSession.expire();
+            } catch (Exception e) {
+                // eat exception
             }
         }
     }

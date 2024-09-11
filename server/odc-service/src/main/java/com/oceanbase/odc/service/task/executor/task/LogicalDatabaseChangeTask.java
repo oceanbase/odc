@@ -27,10 +27,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.MapUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
-import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionGroup;
@@ -49,10 +46,7 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.Relatio
 import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.RewriteContext;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.RewriteResult;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.SqlRewriter;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
 import com.oceanbase.odc.service.schedule.model.PublishLogicalDatabaseChangeReq;
-import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
@@ -61,7 +55,6 @@ import com.oceanbase.tools.loaddump.utils.CollectionUtils;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -75,7 +68,6 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
     private ExecutionGroupContext<SqlExecuteReq, SqlExecutionResultWrapper> executionGroupContext;
     private PublishLogicalDatabaseChangeReq taskParameters;
     private List<ExecutionGroup<SqlExecuteReq, SqlExecutionResultWrapper>> executionGroups;
-    private List<ConnectionSession> connectionSessions;
     private GroupExecutionEngine executorEngine;
 
     @Override
@@ -85,7 +77,6 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
                 PublishLogicalDatabaseChangeReq.class);
         sqlRewriter = new RelationFactorRewriter();
         executionGroups = new ArrayList<>();
-        connectionSessions = new ArrayList<>();
     }
 
     @Override
@@ -134,10 +125,8 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
                     req.setSql(rewrittenSqls);
                     req.setDialectType(dialectType);
                     req.setConnectionConfig(dataNode.getDataSourceConfig());
-                    ConnectionSession connectionSession = generateSession(dataNode.getDataSourceConfig());
-                    connectionSessions.add(connectionSession);
                     ExecutionHandler<SqlExecuteReq, SqlExecutionResultWrapper> callback =
-                            new SqlExecutionHandler(connectionSession,
+                            new SqlExecutionHandler(
                                     new SqlExecuteReq(rewrittenSqls, order, taskParameters.getTimeoutMillis(),
                                             dialectType,
                                             dataNode.getDataSourceConfig(),
@@ -189,9 +178,6 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
 
     @Override
     protected void doClose() throws Exception {
-        if (CollectionUtils.isNotEmpty(this.connectionSessions)) {
-            this.connectionSessions.stream().forEach(this::tryExpireConnectionSession);
-        }
         if (this.executorEngine != null) {
             this.executorEngine.close();
         }
@@ -225,27 +211,6 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
                     currentJobParameters.get(JobParametersKeyConstants.LOGICAL_DATABASE_CHANGE_SKIP_UNIT);
             if (StringUtils.isNotEmpty(executionUnitId)) {
                 this.executionGroupContext.terminate(executionUnitId);
-            }
-        }
-    }
-
-    private ConnectionSession generateSession(@NonNull ConnectionConfig connectionConfig) {
-        DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(connectionConfig);
-        sessionFactory.setSessionTimeoutMillis(this.taskParameters.getTimeoutMillis());
-        ConnectionSession connectionSession = sessionFactory.generateSession();
-        SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(), true,
-                true);
-        ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
-        ConnectionSessionUtil.setColumnAccessor(connectionSession, new DatasourceColumnAccessor(connectionSession));
-        return connectionSession;
-    }
-
-    private void tryExpireConnectionSession(ConnectionSession connectionSession) {
-        if (connectionSession != null && !connectionSession.isExpired()) {
-            try {
-                connectionSession.expire();
-            } catch (Exception e) {
-                // eat exception
             }
         }
     }
