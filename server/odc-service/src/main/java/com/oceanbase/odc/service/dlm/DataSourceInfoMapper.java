@@ -115,7 +115,7 @@ public class DataSourceInfoMapper {
             case ORACLE:
                 dataSourceInfo.setJdbcUrl(getJdbcUrl(connectionConfig));
                 dataSourceInfo.setDatabaseType(DataBaseType.ORACLE);
-                dataSourceInfo.setFullUserName(connectionConfig.getUsername());
+                dataSourceInfo.setFullUserName(getOracleUsername(connectionConfig));
                 break;
             default:
                 log.warn(String.format("Unsupported datasource type:%s", connectionConfig.getDialectType()));
