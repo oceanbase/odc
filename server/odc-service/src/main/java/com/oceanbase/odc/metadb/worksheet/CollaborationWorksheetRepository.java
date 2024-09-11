@@ -22,6 +22,10 @@ import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -31,10 +35,10 @@ import org.springframework.data.repository.query.Param;
 
 import com.oceanbase.odc.common.jdbc.JdbcTemplateUtils;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 
 public interface CollaborationWorksheetRepository extends JpaRepository<CollaborationWorksheetEntity, Long>,
         JpaSpecificationExecutor<CollaborationWorksheetEntity>, OdcJpaRepository<CollaborationWorksheetEntity, Long> {
-
     Optional<CollaborationWorksheetEntity> findByProjectIdAndPath(Long projectId, String path);
 
     @Query("SELECT c FROM CollaborationWorksheetEntity c WHERE c.projectId = :projectId AND c.path IN :paths")
@@ -61,6 +65,53 @@ public interface CollaborationWorksheetRepository extends JpaRepository<Collabor
                         nameLikeFilter);
         return findAll(specs);
     }
+
+    default Page<CollaborationWorksheetEntity> leftJoinResourceLastAccess(Long organizationId, Long projectId,
+            Long userId,
+            Pageable pageable) {
+        String orderColumn = "rl.last_access_time";
+        String direction = "DESC";
+        // Set sorting parameters based on pageable
+        if (!pageable.getSort().isEmpty()) {
+            Order order = pageable.getSort().iterator().next();
+
+            if (order.getProperty().equals("updateTime")) {
+                orderColumn = "ws.update_time";
+            }
+            direction = order.getDirection().name();
+        }
+
+        String sql = String.format("SELECT ws.*, rl.last_access_time "
+                + "FROM collaboration_worksheet ws "
+                + "LEFT OUTER JOIN history_resource_last_access rl ON rl.resource_id = ws.id "
+                + "AND rl.organization_id = ?1 AND rl.project_id = ?2 "
+                + "AND rl.user_id = ?3 AND rl.resource_type = ?4 "
+                + "WHERE ws.project_id = ?2 "
+                + "ORDER BY %s %s, ws.id %s", orderColumn, direction, direction);
+
+        javax.persistence.Query nativeQuery =
+                getEntityManager().createNativeQuery(sql, CollaborationWorksheetEntity.class);
+
+        // Set parameters
+        nativeQuery.setParameter(1, organizationId);
+        nativeQuery.setParameter(2, projectId);
+        nativeQuery.setParameter(3, userId);
+        nativeQuery.setParameter(4, ResourceType.ODC_WORKSHEET.name());
+
+        // Set pagination parameters
+        nativeQuery.setFirstResult((int) pageable.getOffset());
+        nativeQuery.setMaxResults(pageable.getPageSize());
+
+        // Execute query and process results
+        List<CollaborationWorksheetEntity> resultList = nativeQuery.getResultList();
+
+        // Count total items
+        long total = countByProjectId(projectId);
+
+        return new PageImpl<>(resultList, pageable, total);
+    }
+
+    long countByProjectId(Long projectId);
 
     default long countByPathLikeWithFilter(Long projectId, String path,
             Integer minLevelNumberFilter, Integer maxLevelNumberFilter, String nameLikeFilter) {

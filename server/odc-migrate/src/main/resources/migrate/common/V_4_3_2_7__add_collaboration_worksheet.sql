@@ -13,5 +13,6 @@ CREATE TABLE IF NOT EXISTS `collaboration_worksheet` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_collaboration_worksheet_project_id_path` (`project_id`,`path`),
   UNIQUE KEY `uk_collaboration_worksheet_object_id` (`object_id`),
+  KEY `idx_collaboration_worksheet_project_id_update_time` (`project_id`,`update_time`),
   KEY `idx_collaboration_worksheet_project_id_path_level_path` (`project_id`,`path_level`,`path`)
 ) COMMENT = 'worksheet for project';
