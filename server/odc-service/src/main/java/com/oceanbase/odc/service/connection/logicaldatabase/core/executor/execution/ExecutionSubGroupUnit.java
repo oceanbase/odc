@@ -73,7 +73,6 @@ public class ExecutionSubGroupUnit<Input, Result> {
                 return v;
             }
         });
-        log.info("ExecutionUnit execute success, executionId={}", id);
     }
 
     public void terminate(ExecutionGroupContext<Input, Result> context) {

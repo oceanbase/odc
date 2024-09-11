@@ -71,6 +71,7 @@ public class LogicalDatabaseChangeService {
     @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
 
+    @Transactional(rollbackFor = Exception.class)
     public boolean upsert(List<LogicalDBChangeExecutionUnit> executionUnits) throws InterruptedException {
         PreConditions.notEmpty(executionUnits, "executionUnits");
         Set<Long> scheduleTaskIds = new HashSet<>();
@@ -90,6 +91,7 @@ public class LogicalDatabaseChangeService {
                 if (opt.isPresent()) {
                     entity = opt.get();
                     entity.setExecutionResultJson(JsonUtils.toJson(executionUnit.getResult()));
+                    entity.setStatus(executionUnit.getStatus());
                 } else {
                     entity = mapper.modelToEntity(executionUnit);
                 }
