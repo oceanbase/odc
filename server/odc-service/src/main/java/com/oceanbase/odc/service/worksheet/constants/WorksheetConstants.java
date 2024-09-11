@@ -46,7 +46,7 @@ public class WorksheetConstants {
     /**
      * the limit number of worksheets in project
      */
-    public static final int PROJECT_WORKSHEET_NUM_LIMIT = 100_000;
+    public static final int PROJECT_WORKSHEET_NUM_LIMIT = 200_000;
 
     /**
      * the duration of download worksheet in seconds
@@ -54,4 +54,6 @@ public class WorksheetConstants {
     public static final long MAX_DURATION_DOWNLOAD_SECONDS = 60 * 60L;
 
     public static final String ROOT_PATH_NAME = "";
+
+    public static final String DEFAULT_WORKSHEET_GROUP_ID = "default";
 }

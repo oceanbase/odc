@@ -75,33 +75,39 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
     private WorksheetServiceFactory worksheetServiceFactory;
 
     @Override
-    public GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, GenerateWorksheetUploadUrlReq req) {
+    public GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, String groupId,
+            GenerateWorksheetUploadUrlReq req) {
+        groupId = WorksheetUtil.fillGroupWithDefault(groupId);
         Path path = new Path(req.getPath());
         WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
                 path.getLocation());
-        return projectFileService.generateUploadUrl(projectId, path);
+        return projectFileService.generateUploadUrl(projectId, groupId, path);
     }
 
 
     @Override
-    public WorksheetMetaResp createWorksheet(Long projectId, String pathStr, String objectId, Long size) {
+    public WorksheetMetaResp createWorksheet(Long projectId, String groupId, String pathStr, String objectId,
+            Long size) {
+        groupId = WorksheetUtil.fillGroupWithDefault(groupId);
         Path createPath = new Path(pathStr);
         WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
                 createPath.getLocation());
-        return projectFileService.createWorksheet(projectId, createPath, objectId, size);
+        return projectFileService.createWorksheet(projectId, groupId, createPath, objectId, size);
     }
 
 
     @Override
-    public WorksheetResp getWorksheetDetail(Long projectId, String pathStr) {
+    public WorksheetResp getWorksheetDetail(Long projectId, String groupId, String pathStr) {
+        groupId = WorksheetUtil.fillGroupWithDefault(groupId);
         Path path = new Path(pathStr);
         WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
                 path.getLocation());
-        return projectFileService.getWorksheetDetails(projectId, path);
+        return projectFileService.getWorksheetDetails(projectId, groupId, path);
     }
 
     @Override
-    public List<WorksheetMetaResp> listWorksheets(Long projectId, ListWorksheetsReq req) {
+    public List<WorksheetMetaResp> listWorksheets(Long projectId, String groupId, ListWorksheetsReq req) {
+        groupId = WorksheetUtil.fillGroupWithDefault(groupId);
         Integer depth = req.getDepth() == null ? 1 : req.getDepth();
         PreConditions.notNull(req.getPath(), "path");
         Path path = new Path(req.getPath());
@@ -111,71 +117,79 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
             PreConditions.validArgumentState(!path.isRepos(), ErrorCodes.BadArgument, null,
                     "path can not be repos,must have git repo id");
             workSheetsSearch.addAll(worksheetServiceFactory.getProjectFileService(WorksheetLocation.REPOS)
-                    .listWorksheets(projectId, path, depth, req.getNameLike()));
+                    .listWorksheets(projectId, groupId, path, depth, req.getNameLike()));
         }
         if (path.isRoot() || path.getLocation() == WorksheetLocation.WORKSHEETS) {
             workSheetsSearch.addAll(worksheetServiceFactory.getProjectFileService(WorksheetLocation.WORKSHEETS)
-                    .listWorksheets(projectId, path, depth, req.getNameLike()));
+                    .listWorksheets(projectId, groupId, path, depth, req.getNameLike()));
         }
         return workSheetsSearch.searchByNameLike(PROJECT_FILES_NAME_LIKE_SEARCH_LIMIT);
     }
 
     @Override
-    public BatchOperateWorksheetsResp batchUploadWorksheets(Long projectId, BatchUploadWorksheetsReq req) {
+    public BatchOperateWorksheetsResp batchUploadWorksheets(Long projectId, String groupId,
+            BatchUploadWorksheetsReq req) {
+        groupId = WorksheetUtil.fillGroupWithDefault(groupId);
         BatchCreateWorksheetsPreProcessor batchCreateWorksheetsPreProcessor =
                 new BatchCreateWorksheetsPreProcessor(req);
         Path parentPath = batchCreateWorksheetsPreProcessor.getParentPath();
         WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
                 parentPath.getLocation());
-        return projectFileService.batchUploadWorksheets(projectId,
+        return projectFileService.batchUploadWorksheets(projectId, groupId,
                 batchCreateWorksheetsPreProcessor);
     }
 
     @Override
-    public BatchOperateWorksheetsResp batchDeleteWorksheets(Long projectId, List<String> paths) {
+    public BatchOperateWorksheetsResp batchDeleteWorksheets(Long projectId, String groupId, List<String> paths) {
+        groupId = WorksheetUtil.fillGroupWithDefault(groupId);
         BatchOperateWorksheetsDivider batchOperateWorksheetsDivider = new BatchOperateWorksheetsDivider(paths);
 
         BatchOperateWorksheetsResp batchOperateWorksheetsResult = new BatchOperateWorksheetsResp();
         if (CollectionUtils.isNotEmpty(batchOperateWorksheetsDivider.getNormalPaths())) {
             batchOperateWorksheetsResult.addResult(
                     worksheetServiceFactory.getProjectFileService(WorksheetLocation.WORKSHEETS)
-                            .batchDeleteWorksheets(projectId, batchOperateWorksheetsDivider.getNormalPaths()));
+                            .batchDeleteWorksheets(projectId, groupId, batchOperateWorksheetsDivider.getNormalPaths()));
         }
         if (CollectionUtils.isNotEmpty(batchOperateWorksheetsDivider.getReposPaths())) {
             batchOperateWorksheetsResult.addResult(
                     worksheetServiceFactory.getProjectFileService(WorksheetLocation.REPOS)
-                            .batchDeleteWorksheets(projectId, batchOperateWorksheetsDivider.getReposPaths()));
+                            .batchDeleteWorksheets(projectId, groupId, batchOperateWorksheetsDivider.getReposPaths()));
         }
         return batchOperateWorksheetsResult;
     }
 
     @Override
-    public List<WorksheetMetaResp> renameWorksheet(Long projectId, String pathStr, String destinationPath) {
+    public List<WorksheetMetaResp> renameWorksheet(Long projectId, String groupId, String pathStr,
+            String destinationPath) {
+        groupId = WorksheetUtil.fillGroupWithDefault(groupId);
         Path path = new Path(pathStr);
         Path destPath = new Path(destinationPath);
         WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
                 path.getLocation());
-        return projectFileService.renameWorksheet(projectId, path, destPath);
+        return projectFileService.renameWorksheet(projectId, groupId, path, destPath);
     }
 
 
     @Override
-    public List<WorksheetMetaResp> editWorksheet(Long projectId, String pathStr, UpdateWorksheetReq req) {
+    public List<WorksheetMetaResp> editWorksheet(Long projectId, String groupId, String pathStr,
+            UpdateWorksheetReq req) {
+        groupId = WorksheetUtil.fillGroupWithDefault(groupId);
         Path path = new Path(pathStr);
         WorksheetService projectFileService = worksheetServiceFactory.getProjectFileService(
                 path.getLocation());
-        return projectFileService.editWorksheet(projectId, path, req.getObjectId(), req.getSize(),
-                req.getPreviousVersion());
+        return projectFileService.editWorksheet(projectId, groupId, path, req.getObjectId(),
+                req.getSize(), req.getPreviousVersion());
     }
 
 
     @Override
-    public String batchDownloadWorksheets(Long projectId, Set<String> paths) {
+    public String batchDownloadWorksheets(Long projectId, String groupId, Set<String> paths) {
+        groupId = WorksheetUtil.fillGroupWithDefault(groupId);
         BatchOperateWorksheetsDivider batchOperateWorksheetsDivider = new BatchOperateWorksheetsDivider(paths);
         if (batchOperateWorksheetsDivider.size() == 1) {
             Path downloadPath = batchOperateWorksheetsDivider.findFirst().get();
             return worksheetServiceFactory.getProjectFileService(downloadPath.getLocation())
-                    .generateDownloadUrl(projectId, downloadPath);
+                    .generateDownloadUrl(projectId, groupId, downloadPath);
         }
         Path commonParentPath =
                 WorksheetPathUtil.findCommonPath(batchOperateWorksheetsDivider.all());
@@ -187,13 +201,13 @@ public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
         try {
             if (CollectionUtils.isNotEmpty(batchOperateWorksheetsDivider.getNormalPaths())) {
                 worksheetServiceFactory.getProjectFileService(WorksheetLocation.WORKSHEETS)
-                        .downloadPathsToDirectory(projectId, batchOperateWorksheetsDivider.getNormalPaths(),
-                                commonParentPath, downloadDirectory);
+                        .downloadPathsToDirectory(projectId, groupId,
+                                batchOperateWorksheetsDivider.getNormalPaths(), commonParentPath, downloadDirectory);
             }
             if (CollectionUtils.isNotEmpty(batchOperateWorksheetsDivider.getReposPaths())) {
                 worksheetServiceFactory.getProjectFileService(WorksheetLocation.REPOS)
-                        .downloadPathsToDirectory(projectId, batchOperateWorksheetsDivider.getReposPaths(),
-                                commonParentPath, downloadDirectory);
+                        .downloadPathsToDirectory(projectId, groupId,
+                                batchOperateWorksheetsDivider.getReposPaths(), commonParentPath, downloadDirectory);
             }
             String zipFileStr =
                     WorksheetUtil.getWorksheetDownloadZipPath(parentOfDownloadDirectory, rootDirectoryName);

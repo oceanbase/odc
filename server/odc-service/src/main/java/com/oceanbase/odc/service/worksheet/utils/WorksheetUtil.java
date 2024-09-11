@@ -20,8 +20,11 @@ import java.util.Date;
 import java.util.TimeZone;
 import java.util.UUID;
 
+import org.apache.commons.lang.StringUtils;
+
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
 import com.oceanbase.odc.service.objectstorage.cloud.util.CloudObjectStorageUtil;
+import com.oceanbase.odc.service.worksheet.constants.WorksheetConstants;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 
 /**
@@ -72,5 +75,9 @@ public class WorksheetUtil {
     public static String getZipFileName(String fileName) {
         return String.format("%s.zip",
                 fileName);
+    }
+
+    public static String fillGroupWithDefault(String groupId) {
+        return StringUtils.isBlank(groupId) ? WorksheetConstants.DEFAULT_WORKSHEET_GROUP_ID : groupId;
     }
 }
