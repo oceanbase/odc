@@ -63,7 +63,7 @@ public abstract class ExecutionGroup<Input, Result> {
                     .map(context::getExecutionResult).filter(result -> !result.isCompleted())
                     .collect(Collectors.toList());
             if (CollectionUtils.isEmpty(incompleteResults)) {
-                break;
+                return;
             }
             try {
                 Thread.sleep(500L);
