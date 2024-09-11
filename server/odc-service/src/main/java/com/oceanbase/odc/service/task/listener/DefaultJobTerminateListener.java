@@ -57,50 +57,38 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
     @Autowired
     private ScheduleService scheduleService;
     @Autowired
-    private ScheduleTaskRepository scheduleTaskRepository;
-    @Autowired
-    private TaskRepository taskRepository;
-    @Autowired
     private DLMService dlmService;
 
     @Override
     public void onEvent(JobTerminateEvent event) {
         JobEntity jobEntity = taskFrameworkService.find(event.getJi().getId());
-        if ("DLM".equals(jobEntity.getJobType())) {
-            scheduleTaskService.findByJobId(jobEntity.getId()).ifPresent(o -> {
-                TaskStatus taskStatus = dlmService.getTaskStatus(o.getId());
-                scheduleTaskRepository.updateStatusById(o.getId(), taskStatus);
-                log.info("Update schedule task status to {} succeed,scheduleTaskId={}", taskStatus, o.getId());
+        scheduleTaskService.findByJobId(jobEntity.getId()).ifPresent(o -> {
+            TaskStatus taskStatus = "DLM".equals(jobEntity.getJobType()) ? dlmService.getTaskStatus(o.getId())
+                    : event.getStatus().convertTaskStatus();
+            scheduleTaskService.updateStatusById(o.getId(), taskStatus);
+            log.info("Update schedule task status to {} succeed,scheduleTaskId={}", taskStatus, o.getId());
+            // Refresh the schedule status after the task is completed.
+            scheduleService.refreshScheduleStatus(Long.parseLong(o.getJobName()));
+            // Trigger the alarm if the task is failed or canceled.
+            if (taskStatus == TaskStatus.FAILED) {
+                ScheduleAlarmUtils.fail(o.getId());
+            }
+            if (taskStatus == TaskStatus.CANCELED) {
+                ScheduleAlarmUtils.timeout(o.getId());
+            }
+            // Trigger the data-delete job if necessary after the data-archive task is completed.
+            if ("DLM".equals(jobEntity.getJobType())) {
                 DLMJobReq parameters = JsonUtils.fromJson(
                         JsonUtils
                                 .fromJson(jobEntity.getJobParametersJson(), new TypeReference<Map<String, String>>() {})
                                 .get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
                         DLMJobReq.class);
-                scheduleService.refreshScheduleStatus(Long.parseLong(o.getJobName()));
-                if (taskStatus == TaskStatus.FAILED) {
-                    ScheduleAlarmUtils.fail(o.getId());
-                }
-                if (taskStatus == TaskStatus.CANCELED) {
-                    ScheduleAlarmUtils.timeout(o.getId());
-                }
-                // Trigger the data-delete job if necessary after the data-archive task is completed.
                 if (parameters.getJobType() == JobType.MIGRATE && parameters.isDeleteAfterMigration()
                         && taskStatus == TaskStatus.DONE) {
                     scheduleTaskService.triggerDataArchiveDelete(o.getId());
                     log.info("Trigger delete job succeed.");
                 }
-            });
-            return;
-        }
-        // update status for task_task.
-        Optional<TaskEntity> taskEntity = taskRepository.findByJobId(jobEntity.getId());
-        if (taskEntity.isPresent() && !taskEntity.get().getStatus().isTerminated()) {
-            int row = taskRepository.updateStatusById(taskEntity.get().getId(),
-                    event.getStatus().convertTaskStatus());
-            if (row >= 1) {
-                log.info("Update taskTask successfully, taskId={}, status={}.", taskEntity.get().getId(),
-                        event.getStatus().convertTaskStatus());
             }
-        }
+        });
     }
 }
