@@ -38,7 +38,7 @@ import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.model.ChangeScheduleResponse;
+import com.oceanbase.odc.service.schedule.model.ChangeScheduleResp;
 import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
@@ -201,7 +201,7 @@ public class ScheduleController {
     }
 
     @RequestMapping(value = "/schedules/{id:[\\d]+}", method = RequestMethod.PUT)
-    public SuccessResponse<ChangeScheduleResponse> updateSchedule(@PathVariable Long id,
+    public SuccessResponse<ChangeScheduleResp> updateSchedule(@PathVariable Long id,
             @RequestBody UpdateScheduleReq req) {
         return Responses.success(scheduleService.changeSchedule(ScheduleChangeParams.with(id, req)));
     }

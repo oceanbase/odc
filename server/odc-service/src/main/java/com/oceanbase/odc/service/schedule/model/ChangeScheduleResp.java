@@ -24,7 +24,7 @@ import lombok.Data;
  * @date 2024/8/26
  */
 @Data
-public class ChangeScheduleResponse extends Schedule {
+public class ChangeScheduleResp extends Schedule {
     @JsonIgnore
     private ScheduleChangeLog changeLog;
 }

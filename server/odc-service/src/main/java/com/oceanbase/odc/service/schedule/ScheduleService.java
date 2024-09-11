@@ -81,7 +81,7 @@ import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.schedule.factory.ScheduleResponseMapperFactory;
 import com.oceanbase.odc.service.schedule.model.ChangeQuartJobParam;
-import com.oceanbase.odc.service.schedule.model.ChangeScheduleResponse;
+import com.oceanbase.odc.service.schedule.model.ChangeScheduleResp;
 import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
@@ -182,7 +182,7 @@ public class ScheduleService {
 
 
     @Transactional(rollbackFor = Exception.class)
-    public ChangeScheduleResponse changeSchedule(ScheduleChangeParams req) {
+    public ChangeScheduleResp changeSchedule(ScheduleChangeParams req) {
 
         preprocessor.process(req);
         Schedule targetSchedule;
@@ -261,7 +261,7 @@ public class ScheduleService {
                         approvalFlowInstanceId, approvalFlowInstanceId == null ? ScheduleChangeStatus.SUCCESS
                                 : ScheduleChangeStatus.APPROVING));
         log.info("Create change log success,changLog={}", changeLog);
-        ChangeScheduleResponse returnVal = new ChangeScheduleResponse();
+        ChangeScheduleResp returnVal = new ChangeScheduleResp();
         BeanUtils.copyProperties(targetSchedule, returnVal);
         returnVal.setChangeLog(changeLog);
         return returnVal;
