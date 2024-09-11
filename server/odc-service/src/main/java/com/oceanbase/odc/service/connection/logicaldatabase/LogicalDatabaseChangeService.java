@@ -181,6 +181,7 @@ public class LogicalDatabaseChangeService {
     }
 
     public List<SqlExecutionUnitResp> listSqlExecutionUnits(@NonNull Long scheduleTaskId) {
+        // TODO: optimize the sql for performance
         List<LogicalDBChangeExecutionUnitEntity> entities =
                 executionRepository.findByScheduleTaskIdOrderByExecutionOrderAsc(scheduleTaskId);
         if (CollectionUtils.isEmpty(entities)) {

@@ -94,7 +94,6 @@ public class SqlExecutionHandler implements ExecutionHandler<SqlExecuteReq, SqlE
         } finally {
             tryExpireConnectionSession(this.connectionSession);
         }
-
     }
 
     @Override

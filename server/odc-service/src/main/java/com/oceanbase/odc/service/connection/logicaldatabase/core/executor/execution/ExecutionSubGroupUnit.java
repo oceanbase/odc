@@ -69,7 +69,7 @@ public class ExecutionSubGroupUnit<Input, Result> {
                 log.warn("Abort to execute, as the ExecutionUnit({}) is not in RUNNING status, executionId={}",
                         v.getStatus(), id);
                 return v;
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 log.warn("ExecutionUnit execute failed, executionId={}, ex=", id, e);
                 v.setStatus(ExecutionStatus.FAILED);
                 return v;

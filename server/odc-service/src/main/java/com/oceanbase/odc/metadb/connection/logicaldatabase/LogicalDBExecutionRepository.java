@@ -25,7 +25,6 @@ public interface LogicalDBExecutionRepository extends OdcJpaRepository<LogicalDB
 
     List<LogicalDBChangeExecutionUnitEntity> findByScheduleTaskIdOrderByExecutionOrderAsc(Long scheduleTaskId);
 
-
     List<LogicalDBChangeExecutionUnitEntity> findByScheduleTaskIdAndPhysicalDatabaseIdOrderByExecutionOrderAsc(
             Long scheduleTaskId, Long physicalDatabaseId);
 }

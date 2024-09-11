@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execu
 import java.sql.SQLException;
 
 public interface ExecutionHandler<Input, Result> {
+    // TODO: this method is hard to understand, try refactor it later
     ExecutionResult<Result> beforeExecute(ExecutionGroupContext<Input, Result> context);
 
     ExecutionResult<Result> execute(ExecutionGroupContext<Input, Result> context) throws SQLException;
