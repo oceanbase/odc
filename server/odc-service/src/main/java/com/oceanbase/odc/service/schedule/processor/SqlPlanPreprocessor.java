@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
@@ -42,8 +41,6 @@ public class SqlPlanPreprocessor implements Preprocessor {
                     ? (SqlPlanParameters) req.getCreateScheduleReq().getParameters()
                     : (SqlPlanParameters) req.getUpdateScheduleReq().getParameters();
             Database database = databaseService.detail(parameters.getDatabaseId());
-            ConnectionConfig dataSource = database.getDataSource();
-            dataSource.setName(database.getName());
             parameters.setDatabaseInfo(database);
         }
     }
