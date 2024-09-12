@@ -26,6 +26,7 @@ import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceOperator;
 import com.oceanbase.odc.service.resource.k8s.model.K8sDeployment;
 import com.oceanbase.odc.service.resource.k8s.operator.NativeK8sDeploymentOperator;
+import com.oceanbase.odc.service.resource.k8s.operator.NativeK8sPodOperator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -53,7 +54,8 @@ public class NativeK8sDeploymentOperatorBuilder extends BaseNativeK8sResourceOpe
 
     @Override
     public ResourceOperator<K8sDeployment, K8sDeployment> build(@NonNull ResourceLocation resourceLocation) {
-        return new NativeK8sDeploymentOperator(this.defaultNamespace, resourceLocation);
+        return new NativeK8sDeploymentOperator(this.defaultNamespace,
+                resourceLocation, new NativeK8sPodOperator(this.defaultNamespace, resourceLocation));
     }
 
     @Override

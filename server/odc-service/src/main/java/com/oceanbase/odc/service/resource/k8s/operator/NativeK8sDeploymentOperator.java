@@ -20,8 +20,10 @@ import java.util.stream.Collectors;
 
 import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceLocation;
+import com.oceanbase.odc.service.resource.ResourceOperator;
 import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.resource.k8s.model.K8sDeployment;
+import com.oceanbase.odc.service.resource.k8s.model.K8sPod;
 
 import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.models.V1Deployment;
@@ -37,8 +39,13 @@ import lombok.NonNull;
  */
 public class NativeK8sDeploymentOperator extends BaseNativeK8sResourceOperator<K8sDeployment> {
 
-    public NativeK8sDeploymentOperator(@NonNull String defaultNamespace, @NonNull ResourceLocation resourceLocation) {
+    private final ResourceOperator<K8sPod, K8sPod> resourceOperator;
+
+    public NativeK8sDeploymentOperator(@NonNull String defaultNamespace,
+            @NonNull ResourceLocation resourceLocation,
+            @NonNull ResourceOperator<K8sPod, K8sPod> resourceOperator) {
         super(defaultNamespace, resourceLocation);
+        this.resourceOperator = resourceOperator;
     }
 
     @Override
@@ -48,6 +55,7 @@ public class NativeK8sDeploymentOperator extends BaseNativeK8sResourceOperator<K
         resourceContext.setStatus(deployment.getStatus());
         resourceContext.setResourceState(ResourceState.CREATING);
         resourceContext.setResourceLocation(this.resourceLocation);
+        resourceContext.setResourceOperator(this.resourceOperator);
         return resourceContext;
     }
 
@@ -77,6 +85,7 @@ public class NativeK8sDeploymentOperator extends BaseNativeK8sResourceOperator<K
             deployment.setMetadata(item.getMetadata());
             deployment.setApiVersion(item.getApiVersion());
             deployment.setSpec(item.getSpec());
+            deployment.setResourceOperator(this.resourceOperator);
             return deployment;
         }).collect(Collectors.toList());
     }
