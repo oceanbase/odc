@@ -222,9 +222,15 @@ public class LogicalDatabaseService {
     public boolean extractLogicalTables(@NotNull Long logicalDatabaseId) {
         Database logicalDatabase =
                 databaseService.getBasicSkipPermissionCheck(logicalDatabaseId);
-        Verify.equals(logicalDatabase.getType(), DatabaseType.LOGICAL, "database type");
         projectPermissionValidator.checkProjectRole(logicalDatabase.getProject().getId(),
                 Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER));
+        return extractLogicalTablesSkipAuth(logicalDatabaseId);
+    }
+
+    public boolean extractLogicalTablesSkipAuth(@NotNull Long logicalDatabaseId) {
+        Database logicalDatabase =
+                databaseService.getBasicSkipPermissionCheck(logicalDatabaseId);
+        Verify.equals(logicalDatabase.getType(), DatabaseType.LOGICAL, "database type");
         try {
             syncManager.submitExtractLogicalTablesTask(logicalDatabase);
         } catch (TaskRejectedException ex) {
