@@ -50,7 +50,6 @@ import lombok.NoArgsConstructor;
 public class DataNode {
     private static final String DELIMITER = ".";
 
-    @JsonIgnore
     private ConnectionConfig dataSourceConfig;
 
     private Long databaseId;
@@ -68,6 +67,12 @@ public class DataNode {
         this.databaseId = databaseId;
         this.schemaName = schemaName;
         this.tableName = tableName;
+    }
+
+    public DataNode(ConnectionConfig connectionConfig, Long databaseId, String schemaName) {
+        this.dataSourceConfig = connectionConfig;
+        this.databaseId = databaseId;
+        this.schemaName = schemaName;
     }
 
     public String getFullName() {

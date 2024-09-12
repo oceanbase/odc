@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.collaboration.environment.model;
+package com.oceanbase.odc.service.schedule.model;
 
-import lombok.Builder;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.Data;
 
 /**
- * @Author: Lebie
- * @Date: 2024/1/30 18:53
- * @Description: []
+ * @author jingtian
+ * @date 2024/8/26
  */
 @Data
-@Builder
-public class QueryEnvironmentParam {
-
-    private Boolean enabled;
-
+public class ChangeScheduleResp extends Schedule {
+    @JsonIgnore
+    private ScheduleChangeLog changeLog;
 }

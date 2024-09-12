@@ -13,37 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase.model;
+package com.oceanbase.odc.service.schedule.model;
 
-import java.util.Date;
-import java.util.List;
+import java.io.Serializable;
+import java.util.Map;
 
-import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
-import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
 import lombok.Data;
 
 /**
  * @Author: Lebie
- * @Date: 2024/5/7 19:39
+ * @Date: 2024/9/3 17:41
  * @Description: []
  */
-
 @Data
-public class DetailLogicalTableResp {
-    private Long id;
-
-    private String name;
-
-    private String expression;
-
-    private Integer physicalTableCount;
-
-    private List<DataNode> allPhysicalTables;
-
-    private List<DataNode> inconsistentPhysicalTables;
-
-    private List<LogicalTableTopologyResp> topologies;
-
-    private DBTable basePhysicalTable;
+public class PublishLogicalDatabaseChangeReq implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private Long scheduleTaskId;
+    private String sqlContent;
+    private String delimiter;
+    private Long timeoutMillis;
+    private DetailLogicalDatabaseResp logicalDatabaseResp;
+    private Map<String, ConnectionConfig> schemaName2ConnectionConfig;
 }
+

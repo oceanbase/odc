@@ -13,20 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.collaboration.environment.model;
+package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution;
 
-import lombok.Builder;
-import lombok.Data;
+import java.sql.SQLException;
 
-/**
- * @Author: Lebie
- * @Date: 2024/1/30 18:53
- * @Description: []
- */
-@Data
-@Builder
-public class QueryEnvironmentParam {
+public interface ExecutionHandler<Input, Result> {
+    // TODO: this method is hard to understand, try refactor it later
+    ExecutionResult<Result> beforeExecute(ExecutionGroupContext<Input, Result> context);
 
-    private Boolean enabled;
+    ExecutionResult<Result> execute(ExecutionGroupContext<Input, Result> context) throws SQLException;
 
+    void terminate(ExecutionGroupContext<Input, Result> context) throws Exception;
 }

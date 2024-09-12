@@ -57,7 +57,7 @@ public class ScheduleEntity implements Serializable {
     private String name;
     @Column(name = "organization_id", nullable = false)
     private Long organizationId;
-    @Column(name = "connection_id", nullable = false)
+    @Column(name = "connection_id")
     private Long dataSourceId;
     @Column(name = "database_name", nullable = false)
     private String databaseName;

@@ -13,20 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.collaboration.environment.model;
+package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution;
 
-import lombok.Builder;
-import lombok.Data;
+public enum ExecutionStatus {
+    SUCCESS,
+    FAILED,
+    SKIPPED,
+    RUNNING,
+    PENDING,
+    TERMINATED;
 
-/**
- * @Author: Lebie
- * @Date: 2024/1/30 18:53
- * @Description: []
- */
-@Data
-@Builder
-public class QueryEnvironmentParam {
-
-    private Boolean enabled;
-
+    public boolean isCompleted() {
+        return this == SUCCESS || this == FAILED || this == SKIPPED || this == TERMINATED;
+    }
 }

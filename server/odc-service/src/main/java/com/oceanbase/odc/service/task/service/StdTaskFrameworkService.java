@@ -73,6 +73,7 @@ import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.listener.DefaultJobProcessUpdateEvent;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.processor.DLMResultProcessor;
+import com.oceanbase.odc.service.task.processor.LogicalDBChangeResultProcessor;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
@@ -122,6 +123,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     private ExecutorEndpointManager executorEndpointManager;
     @Autowired
     private DLMResultProcessor dlmResultProcessor;
+    @Autowired
+    private LogicalDBChangeResultProcessor logicalDBChangeResultProcessor;
 
     @Override
     public JobEntity find(Long id) {
@@ -371,6 +374,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
             if ("DLM".equals(je.getJobType())) {
                 dlmResultProcessor.process(result);
+            } else if ("LogicalDatabaseChange".equals(je.getJobType())) {
+                logicalDBChangeResultProcessor.process(result);
             }
             return true;
         } catch (Exception exception) {
@@ -403,6 +408,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         log.info("Progress changed, will update result, jobId={}, currentProgress={}", id, result.getProgress());
         if ("DLM".equals(je.getJobType())) {
             dlmResultProcessor.process(result);
+        } else if ("LogicalDatabaseChange".equals(je.getJobType())) {
+            logicalDBChangeResultProcessor.process(result);
         }
         saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
 
@@ -476,6 +483,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         JobEntity jse = new JobEntity();
         if ("DLM".equals(currentJob.getJobType())) {
             dlmResultProcessor.process(taskResult);
+        } else if ("LogicalDatabaseChange".equals(currentJob.getJobType())) {
+            logicalDBChangeResultProcessor.process(taskResult);
         }
         jse.setResultJson(taskResult.getResultJson());
         jse.setStatus(taskResult.getStatus());
