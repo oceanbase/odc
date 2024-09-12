@@ -168,11 +168,6 @@ import com.oceanbase.odc.service.regulation.approval.model.ApprovalNodeConfig;
 import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
-import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
-import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
-import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
-import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
@@ -308,15 +303,14 @@ public class FlowInstanceService {
 
     /**
      * inner create alter schedule flow instance
-     * */
+     */
     @EnablePreprocess
     @Transactional
     public Long createAlterSchedule(CreateFlowInstanceReq createReq) {
-        Long connId = createReq.getConnectionId();
-        ConnectionConfig conn = connectionService.getForConnectionSkipPermissionCheck(connId);
         List<RiskLevel> riskLevels = riskLevelService.list();
         Verify.notEmpty(riskLevels, "riskLevels");
-        FlowInstanceDetailResp flowInstanceDetailResp = buildFlowInstance(riskLevels,createReq, Collections.singletonList(conn));
+        FlowInstanceDetailResp flowInstanceDetailResp =
+                buildFlowInstance(riskLevels, createReq, Collections.emptyList());
         return flowInstanceDetailResp.getId();
     }
 

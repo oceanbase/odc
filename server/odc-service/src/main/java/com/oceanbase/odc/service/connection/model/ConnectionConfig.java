@@ -311,7 +311,7 @@ public class ConnectionConfig
     @JsonIgnore
     private OBInstanceRoleType instanceRoleType;
 
-    @JsonIgnore
+    // @JsonIgnore
     private transient Map<String, Object> attributes;
 
     /**

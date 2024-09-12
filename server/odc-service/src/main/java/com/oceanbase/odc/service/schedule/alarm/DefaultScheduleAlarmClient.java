@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.schedule.alarm;
 
 import java.util.Date;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.schedule.flowtask;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +32,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 
 @Service
 @Profile("alipay")
-public class DefaultApprovalFlowService implements ApprovalFlowService{
+public class DefaultApprovalFlowService implements ApprovalFlowService {
 
     @Autowired
     private FlowInstanceService flowInstanceService;
@@ -41,6 +40,7 @@ public class DefaultApprovalFlowService implements ApprovalFlowService{
     @Override
     public Long create(ScheduleChangeParams params) {
         CreateFlowInstanceReq req = new CreateFlowInstanceReq();
+        req.setParentFlowInstanceId(params.getScheduleId());
         req.setTaskType(TaskType.ALTER_SCHEDULE);
         AlterScheduleParameters alterScheduleParameters = new AlterScheduleParameters();
         alterScheduleParameters.setScheduleChangeParams(params);

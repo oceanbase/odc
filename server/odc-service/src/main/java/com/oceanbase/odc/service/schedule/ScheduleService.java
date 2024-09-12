@@ -54,7 +54,6 @@ import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -86,7 +85,6 @@ import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.schedule.factory.ScheduleResponseMapperFactory;
-import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.flowtask.ApprovalFlowService;
 import com.oceanbase.odc.service.schedule.model.ChangeQuartJobParam;
 import com.oceanbase.odc.service.schedule.model.ChangeScheduleResp;
@@ -260,29 +258,58 @@ public class ScheduleService {
             }
         }
 
-        // create change log for this request
-        ScheduleChangeLog changeLog = scheduleChangeLogService.createChangeLog(
-                ScheduleChangeLog.build(targetSchedule.getId(), req.getOperationType(),
-                        JsonUtils.toJson(targetSchedule.getParameters()),
-                        req.getOperationType() == OperationType.UPDATE
-                                ? JsonUtils.toJson(req.getUpdateScheduleReq().getParameters())
-                                : null, ScheduleChangeStatus.APPROVING));
-        log.info("Create change log success,changLog={}", changeLog);
+        ScheduleChangeLog scheduleChangelog;
+        try {
+            scheduleChangelog = createScheduleChangelog(req, targetSchedule);
+        } catch (InterruptedException e) {
+            log.error("Create change log failed", e);
+            throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
+        }
 
-        Long approvalFlowInstanceId = approvalFlowService.create(req);
-
-        if (approvalFlowInstanceId == null) {
-            log.info("No need to create approval flow,changelogId={}",changeLog.getId());
+        if (scheduleChangelog.getFlowInstanceId() == null) {
+            log.info("No need to create approval flow,changelogId={}", scheduleChangelog.getId());
             executeChangeSchedule(req);
-        }else{
-            scheduleChangeLogService.updateFlowInstanceIdById(changeLog.getId(),approvalFlowInstanceId);
-            log.info("Create approval flow success,changelogId={},flowInstanceId",approvalFlowInstanceId);
         }
 
         ChangeScheduleResp returnVal = new ChangeScheduleResp();
         BeanUtils.copyProperties(targetSchedule, returnVal);
-        returnVal.setChangeLog(changeLog);
+        returnVal.setChangeLog(scheduleChangelog);
         return returnVal;
+    }
+
+    private ScheduleChangeLog createScheduleChangelog(ScheduleChangeParams req, Schedule targetSchedule)
+            throws InterruptedException {
+        Lock lock = jdbcLockRegistry.obtain(getScheduleChangeLockKey(req.getScheduleId()));
+        // create change log for this request
+        if (!lock.tryLock(10, TimeUnit.SECONDS)) {
+            throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
+        }
+        try {
+            if (scheduleChangeLogService.hasApprovingChangeLog(targetSchedule.getId())) {
+                log.warn("Concurrent change schedule request is not allowed,scheduleId={}", targetSchedule.getId());
+                throw new ConflictException(ErrorCodes.ResourceModifying,
+                        "Concurrent change schedule request is not allowed");
+            }
+
+            ScheduleChangeLog changeLog = scheduleChangeLogService.createChangeLog(
+                    ScheduleChangeLog.build(targetSchedule.getId(), req.getOperationType(),
+                            JsonUtils.toJson(targetSchedule.getParameters()),
+                            req.getOperationType() == OperationType.UPDATE
+                                    ? JsonUtils.toJson(req.getUpdateScheduleReq().getParameters())
+                                    : null,
+                            ScheduleChangeStatus.APPROVING));
+            log.info("Create change log success,changLog={}", changeLog);
+            Long approvalFlowInstanceId = approvalFlowService.create(req);
+            if (approvalFlowInstanceId != null) {
+                changeLog.setFlowInstanceId(approvalFlowInstanceId);
+                scheduleChangeLogService.updateFlowInstanceIdById(changeLog.getId(), approvalFlowInstanceId);
+                log.info("Create approval flow success,changelogId={},flowInstanceId", approvalFlowInstanceId);
+            }
+            return changeLog;
+        } finally {
+            lock.unlock();
+        }
+
     }
 
     private void validateTriggerConfig(TriggerConfig triggerConfig) {
@@ -356,7 +383,7 @@ public class ScheduleService {
         quartzJobReq.setTriggerConfig(targetSchedule.getTriggerConfig());
         quartzJobService.changeQuartzJob(quartzJobReq);
 
-        scheduleChangeLogService.updateStatusById(req.getScheduleChangeLogId(),ScheduleChangeStatus.SUCCESS);
+        scheduleChangeLogService.updateStatusById(req.getScheduleChangeLogId(), ScheduleChangeStatus.SUCCESS);
 
     }
 
@@ -890,5 +917,9 @@ public class ScheduleService {
 
     private String getLogicalDatabaseChangeActionLockKey(@NonNull String executionId) {
         return "logical-database-change-action-execution-" + executionId;
+    }
+
+    private String getScheduleChangeLockKey(@NonNull Long scheduleId) {
+        return "schedule-change-" + scheduleId;
     }
 }

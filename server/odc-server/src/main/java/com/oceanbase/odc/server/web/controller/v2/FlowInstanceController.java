@@ -63,9 +63,12 @@ import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
+import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
+import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
 import io.swagger.annotations.ApiOperation;
@@ -96,8 +99,8 @@ public class FlowInstanceController {
     @ApiOperation(value = "createFlowInstance", notes = "创建流程实例，返回流程实例")
     @RequestMapping(value = "/", method = RequestMethod.POST)
     public ListResponse<FlowInstanceDetailResp> createFlowInstance(@RequestBody CreateFlowInstanceReq flowInstanceReq) {
-        if(flowInstanceReq.getTaskType() == TaskType.ALTER_SCHEDULE){
-            dispatchCreateSchedule(flowInstanceReq);
+        if (flowInstanceReq.getTaskType() == TaskType.ALTER_SCHEDULE) {
+            return Responses.list(dispatchCreateSchedule(flowInstanceReq));
         }
         flowInstanceReq.validate();
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
@@ -257,8 +260,15 @@ public class FlowInstanceController {
         return Responses.ok(this.partitionPlanScheduleService.getPartitionPlanByFlowInstanceId(id));
     }
 
-    private List<FlowInstanceDetailResp> dispatchCreateSchedule(CreateFlowInstanceReq createReq){
+    private List<FlowInstanceDetailResp> dispatchCreateSchedule(CreateFlowInstanceReq createReq) {
         AlterScheduleParameters parameters = (AlterScheduleParameters) createReq.getParameters();
+        // adapt history parameters
+        if ((parameters.getOperationType() == OperationType.CREATE
+                || parameters.getOperationType() == OperationType.UPDATE)
+                && parameters.getType() == ScheduleType.SQL_PLAN) {
+            SqlPlanParameters sqlPlanParameters = (SqlPlanParameters) parameters.getScheduleTaskParameters();
+            sqlPlanParameters.setDatabaseId(createReq.getDatabaseId());
+        }
         ScheduleChangeParams scheduleChangeParams;
         switch (parameters.getOperationType()) {
             case CREATE: {
@@ -281,7 +291,7 @@ public class FlowInstanceController {
             }
             default: {
                 scheduleChangeParams =
-                    ScheduleChangeParams.with(parameters.getTaskId(), parameters.getOperationType());
+                        ScheduleChangeParams.with(parameters.getTaskId(), parameters.getOperationType());
             }
         }
         scheduleService.changeSchedule(scheduleChangeParams);

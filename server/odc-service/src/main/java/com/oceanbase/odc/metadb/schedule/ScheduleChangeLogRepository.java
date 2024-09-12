@@ -18,6 +18,11 @@ package com.oceanbase.odc.metadb.schedule;
 import java.util.List;
 import java.util.Optional;
 
+import javax.transaction.Transactional;
+
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeStatus;
 
@@ -32,8 +37,14 @@ public interface ScheduleChangeLogRepository extends OdcJpaRepository<ScheduleCh
 
     Optional<ScheduleChangeLogEntity> findByIdAndScheduleId(Long id, Long scheduleId);
 
+    @Transactional
+    @Modifying
+    @Query("update ScheduleChangeLogEntity e set e.status = ?2 where e.id = ?1")
     int updateStatusById(Long id, ScheduleChangeStatus status);
 
-    int updateFlowInstanceIdById(Long id,Long flowInstanceId);
+    @Transactional
+    @Modifying
+    @Query("update ScheduleChangeLogEntity e set e.flowInstanceId = ?2 where e.id = ?1")
+    int updateFlowInstanceIdById(Long id, Long flowInstanceId);
 
 }
