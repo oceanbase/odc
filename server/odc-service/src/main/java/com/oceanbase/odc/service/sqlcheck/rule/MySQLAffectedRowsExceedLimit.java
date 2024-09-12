@@ -22,6 +22,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.springframework.jdbc.core.JdbcOperations;
 
@@ -87,7 +89,7 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
                     switch (dialectType) {
                         case MYSQL:
                             affectedRows = (statement instanceof Insert)
-                                    ? getMySqlAffectedRowsByCount(explainSql, jdbcOperations)
+                                    ? getMySqlAffectedRowsByCount(statement.getText())
                                     : getMySqlAffectedRowsByExplain(explainSql, jdbcOperations);
                             break;
                         case OB_MYSQL:
@@ -127,18 +129,36 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
      * statements, ODC checks the count of value list. case2: For INSERT INTO ... SELECT ... statements,
      * ODC runs EXPLAIN statements to get affected rows.
      *
-     * @param explainSql target sql
+     * @param sql target sql
      * @return affected rows
      */
-    private long getMySqlAffectedRowsByCount(String explainSql, JdbcOperations jdbc) {
+    private long getMySqlAffectedRowsByCount(String sql) {
 
-        explainSql = explainSql.toLowerCase();
+        sql = sql.trim().replace("\n", "").toUpperCase();
+        String valuesRegex = "\\)\\s*VALUES?\\s*\\(";
+        String selectRegex = "\\)\\s*SELECT";
 
-        if (explainSql.contains("select")) {
-            return getMySqlAffectedRowsByExplain(explainSql, jdbc);
-        } else {
-            return explainSql.split("\\),").length;
+        Pattern valuesPattern = Pattern.compile(valuesRegex);
+        Pattern selectPattern = Pattern.compile(selectRegex);
+        Matcher valuesMatcher = valuesPattern.matcher(sql);
+        Matcher selectMatcher = selectPattern.matcher(sql);
+
+        if (valuesMatcher.find()) {
+            String [] valueList = sql.split(valuesRegex);
+            Pattern pattern = Pattern.compile("\\(.*?\\)");
+            Matcher matcher = pattern.matcher("(" + valueList[1]);
+            int count = 0;
+            while (matcher.find()) {
+                count++;
+            }
+            return count;
         }
+
+        if (selectMatcher.find()) {
+            return getMySqlAffectedRowsByExplain("EXPLAIN " + sql, jdbcOperations);
+        }
+        log.warn("Unsupported insert sql syntax: " + sql);
+        return -1;
     }
 
     /**
