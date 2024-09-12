@@ -23,42 +23,44 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.service.resource.ResourceState;
+import com.oceanbase.odc.service.resource.k8s.model.K8sResource;
 
 /**
- * {@link K8sPodStatusTransferBuilder}
+ * {@link K8sResourceStatusTransferBuilder}
  *
  * @author yh263208
  * @date 2024-09-11 17:21
  * @since ODC_release_4.3.2
  */
-public class K8sPodStatusTransferBuilder {
+public class K8sResourceStatusTransferBuilder<T extends K8sResource> {
 
     private Set<ResourceState> candidates = new HashSet<>();
     private ResourceState next;
-    private List<K8sPodMatcher> k8sPodMatchers = new ArrayList<>();
+    private List<? extends K8sResourceMatcher<T>> k8sResourceMatchers = new ArrayList<>();
 
-    public List<K8sPodStatusTransfer> build() {
+    public List<K8sResourceStatusTransfer<T>> build() {
         return this.candidates.stream().map(state -> {
-            K8sPodStatusTransfer transfer = new K8sPodStatusTransfer();
+            K8sResourceStatusTransfer<T> transfer = new K8sResourceStatusTransfer<>();
             transfer.setFrom(state);
             transfer.setNext(next);
-            transfer.setK8sPodMatchers(k8sPodMatchers);
+            transfer.setK8sResourceMatchers(k8sResourceMatchers);
             return transfer;
         }).collect(Collectors.toList());
     }
 
-    public K8sPodStatusTransferBuilder from(ResourceState... candidates) {
+    public K8sResourceStatusTransferBuilder<T> from(ResourceState... candidates) {
         this.candidates = new HashSet<>(Arrays.asList(candidates));
         return this;
     }
 
-    public K8sPodStatusTransferBuilder matchesPod(List<K8sPodMatcher> k8sPodMatcher) {
-        this.k8sPodMatchers = k8sPodMatcher;
+    public K8sResourceStatusTransferBuilder<T> to(ResourceState next) {
+        this.next = next;
         return this;
     }
 
-    public K8sPodStatusTransferBuilder to(ResourceState next) {
-        this.next = next;
+    public K8sResourceStatusTransferBuilder<T> matchesK8sResource(
+            List<? extends K8sResourceMatcher<T>> k8sResourceMatchers) {
+        this.k8sResourceMatchers = k8sResourceMatchers;
         return this;
     }
 

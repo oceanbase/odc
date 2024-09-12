@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.k8s.status;
+package com.oceanbase.odc.service.resource.k8s.status.pod;
 
 import java.util.HashSet;
 import java.util.List;
@@ -24,6 +24,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 
 import com.oceanbase.odc.service.resource.k8s.model.K8sPod;
+import com.oceanbase.odc.service.resource.k8s.status.K8sResourceMatcher;
 
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import lombok.Setter;
@@ -36,7 +37,7 @@ import lombok.Setter;
  * @since ODC_release_4.3.2
  */
 @Setter
-public class K8sPodMatcher {
+public class K8sPodMatcher implements K8sResourceMatcher<K8sPod> {
 
     private boolean matchesNullK8sPod;
 
@@ -53,6 +54,7 @@ public class K8sPodMatcher {
     private boolean matchesAllContainerStatus;
     private Set<K8sPodContainerStatus> containerStatusNotIn = new HashSet<>();
 
+    @Override
     public boolean matches(K8sPod k8sPod) {
         if (k8sPod == null && this.matchesNullK8sPod) {
             return true;

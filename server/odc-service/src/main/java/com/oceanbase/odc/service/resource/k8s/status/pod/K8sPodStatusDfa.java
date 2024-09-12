@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.k8s.status;
+package com.oceanbase.odc.service.resource.k8s.status.pod;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +24,7 @@ import com.oceanbase.odc.common.dfa.AbstractDfa;
 import com.oceanbase.odc.common.dfa.DfaStateTransfer;
 import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.resource.k8s.model.K8sPod;
+import com.oceanbase.odc.service.resource.k8s.status.K8sResourceStatusTransferBuilder;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -43,16 +44,16 @@ public class K8sPodStatusDfa extends AbstractDfa<ResourceState, K8sPod> {
         ResourceState[] fromState = new ResourceState[] {
                 ResourceState.CREATING, ResourceState.AVAILABLE, ResourceState.ERROR_STATE
         };
-        transfers.addAll(K8sPodStatusTransfer.builder().from(fromState)
-                .matchesPod(getCreatingPodMatchers()).to(ResourceState.CREATING).build());
-        transfers.addAll(K8sPodStatusTransfer.builder().from(fromState)
-                .matchesPod(getErrorPodMatchers()).to(ResourceState.ERROR_STATE).build());
-        transfers.addAll(K8sPodStatusTransfer.builder().from(fromState)
-                .matchesPod(getAvailablePodMatchers()).to(ResourceState.AVAILABLE).build());
-        transfers.addAll(K8sPodStatusTransfer.builder().from(fromState)
-                .matchesPod(getPodNonExistsMatchers()).to(ResourceState.UNKNOWN).build());
-        transfers.addAll(K8sPodStatusTransfer.builder().from(ResourceState.DESTROYING)
-                .matchesPod(getPodNonExistsMatchers()).to(ResourceState.DESTROYED).build());
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(fromState)
+                .matchesK8sResource(getCreatingPodMatchers()).to(ResourceState.CREATING).build());
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(fromState)
+                .matchesK8sResource(getErrorPodMatchers()).to(ResourceState.ERROR_STATE).build());
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(fromState)
+                .matchesK8sResource(getAvailablePodMatchers()).to(ResourceState.AVAILABLE).build());
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(fromState)
+                .matchesK8sResource(getPodNonExistsMatchers()).to(ResourceState.UNKNOWN).build());
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(ResourceState.DESTROYING)
+                .matchesK8sResource(getPodNonExistsMatchers()).to(ResourceState.DESTROYED).build());
         return new K8sPodStatusDfa(transfers);
     }
 

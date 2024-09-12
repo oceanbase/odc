@@ -19,26 +19,26 @@ import java.util.List;
 
 import com.oceanbase.odc.common.dfa.DfaStateTransfer;
 import com.oceanbase.odc.service.resource.ResourceState;
-import com.oceanbase.odc.service.resource.k8s.model.K8sPod;
+import com.oceanbase.odc.service.resource.k8s.model.K8sResource;
 
 import lombok.Setter;
 
 /**
- * {@link K8sPodStatusTransfer}
+ * {@link K8sResourceStatusTransfer}
  *
  * @author yh263208
  * @date 2024-09-11 16:10
  * @since ODC_release_4.3.2
  */
 @Setter
-public class K8sPodStatusTransfer implements DfaStateTransfer<ResourceState, K8sPod> {
+public class K8sResourceStatusTransfer<T extends K8sResource> implements DfaStateTransfer<ResourceState, T> {
 
     private ResourceState from;
     private ResourceState next;
-    private List<K8sPodMatcher> k8sPodMatchers;
+    private List<? extends K8sResourceMatcher<T>> k8sResourceMatchers;
 
-    public static K8sPodStatusTransferBuilder builder() {
-        return new K8sPodStatusTransferBuilder();
+    public static <T extends K8sResource> K8sResourceStatusTransferBuilder<T> builder() {
+        return new K8sResourceStatusTransferBuilder<>();
     }
 
     @Override
@@ -52,8 +52,8 @@ public class K8sPodStatusTransfer implements DfaStateTransfer<ResourceState, K8s
     }
 
     @Override
-    public boolean matchesInput(K8sPod k8sPod) {
-        return this.k8sPodMatchers.stream().anyMatch(m -> m.matches(k8sPod));
+    public boolean matchesInput(T k8sResource) {
+        return this.k8sResourceMatchers.stream().anyMatch(m -> m.matches(k8sResource));
     }
 
 }

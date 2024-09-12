@@ -27,7 +27,7 @@ import com.oceanbase.odc.service.resource.ResourceOperator;
 import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.resource.k8s.model.K8sPod;
 import com.oceanbase.odc.service.resource.k8s.operator.NativeK8sPodOperator;
-import com.oceanbase.odc.service.resource.k8s.status.K8sPodStatusDfa;
+import com.oceanbase.odc.service.resource.k8s.status.pod.K8sPodStatusDfa;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
