@@ -13,37 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase.model;
+package com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql;
 
-import java.util.Date;
-import java.util.List;
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
-import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
-import com.oceanbase.tools.dbbrowser.model.DBTable;
-
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @Author: Lebie
- * @Date: 2024/5/7 19:39
+ * @Date: 2024/9/2 18:45
  * @Description: []
  */
-
 @Data
-public class DetailLogicalTableResp {
-    private Long id;
-
-    private String name;
-
-    private String expression;
-
-    private Integer physicalTableCount;
-
-    private List<DataNode> allPhysicalTables;
-
-    private List<DataNode> inconsistentPhysicalTables;
-
-    private List<LogicalTableTopologyResp> topologies;
-
-    private DBTable basePhysicalTable;
+@NoArgsConstructor
+@AllArgsConstructor
+public class SqlExecuteReq {
+    private String sql;
+    private Long order;
+    private long timeoutMillis;
+    private DialectType dialectType;
+    private ConnectionConfig connectionConfig;
+    private Long logicalDatabaseId;
+    private Long physicalDatabaseId;
+    private Long scheduleTaskId;
 }

@@ -13,37 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.logicaldatabase.model;
+package com.oceanbase.odc.service.schedule.model;
 
-import java.util.Date;
-import java.util.List;
-
-import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
-import com.oceanbase.tools.dbbrowser.model.DBTable;
+import javax.validation.constraints.Size;
 
 import lombok.Data;
 
 /**
  * @Author: Lebie
- * @Date: 2024/5/7 19:39
+ * @Date: 2024/8/30 16:41
  * @Description: []
  */
-
 @Data
-public class DetailLogicalTableResp {
-    private Long id;
-
-    private String name;
-
-    private String expression;
-
-    private Integer physicalTableCount;
-
-    private List<DataNode> allPhysicalTables;
-
-    private List<DataNode> inconsistentPhysicalTables;
-
-    private List<LogicalTableTopologyResp> topologies;
-
-    private DBTable basePhysicalTable;
+public class LogicalDatabaseChangeParameters implements ScheduleTaskParameters {
+    @Size(max = 16777215, message = "The sql size should be less than 16,777,215 bytes")
+    private String sqlContent;
+    private String delimiter;
+    private Long timeoutMillis;
+    private Long databaseId;
 }

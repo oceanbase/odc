@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
@@ -39,6 +41,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanMap;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,12 +49,14 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
+import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
@@ -68,8 +73,6 @@ import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
-import com.oceanbase.odc.service.flow.FlowInstanceService;
-import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.util.DescriptionGenerator;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
@@ -116,6 +119,7 @@ import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -182,6 +186,9 @@ public class ScheduleService {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private JdbcLockRegistry jdbcLockRegistry;
 
     @Autowired
     private ApprovalFlowService approvalFlowService;
@@ -844,6 +851,28 @@ public class ScheduleService {
         return rateLimitConfiguration;
     }
 
+    public void syncActionsToLogicalDatabaseTask(@NonNull Long scheduleTaskId, @NonNull String action,
+            @NonNull String executionUnitId)
+            throws InterruptedException, JobException {
+        Lock lock = jdbcLockRegistry.obtain(getLogicalDatabaseChangeActionLockKey(executionUnitId));
+        if (!lock.tryLock(5, TimeUnit.SECONDS)) {
+            throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
+        }
+        try {
+            Optional<ScheduleTask> taskOpt = scheduleTaskService.findById(scheduleTaskId);
+            if (taskOpt.isPresent() && taskOpt.get().getStatus() == TaskStatus.RUNNING
+                    && taskOpt.get().getJobId() != null) {
+                ScheduleTask task = taskOpt.get();
+                Map<String, String> map = new HashMap<>();
+                map.put(action, executionUnitId);
+                SpringContextUtil.getBean(JobScheduler.class).modifyJobParameters(task.getJobId(), map);
+                log.info("Sync actions to executor success:{}", map);
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
     private void syncRateLimitToRunningTask(Long scheduleId, RateLimitConfiguration rateLimit) {
         Optional<ScheduleTask> latestTask = getLatestTask(scheduleId);
         if (latestTask.isPresent() && latestTask.get().getStatus() == TaskStatus.RUNNING
@@ -857,7 +886,9 @@ public class ScheduleService {
                 log.warn("Sync limit config failed,jobId={}", latestTask.get().getJobId(), e);
             }
         }
-
     }
 
+    private String getLogicalDatabaseChangeActionLockKey(@NonNull String executionId) {
+        return "logical-database-change-action-execution-" + executionId;
+    }
 }

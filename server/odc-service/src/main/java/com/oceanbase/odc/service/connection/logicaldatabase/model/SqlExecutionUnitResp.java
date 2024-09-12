@@ -15,35 +15,33 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.model;
 
-import java.util.Date;
 import java.util.List;
 
-import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
-import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionStatus;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionResultWrapper;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
 import lombok.Data;
 
 /**
  * @Author: Lebie
- * @Date: 2024/5/7 19:39
+ * @Date: 2024/9/4 12:21
  * @Description: []
  */
-
 @Data
-public class DetailLogicalTableResp {
+public class SqlExecutionUnitResp {
     private Long id;
 
-    private String name;
+    private Database database;
 
-    private String expression;
+    private ConnectionConfig dataSource;
 
-    private Integer physicalTableCount;
+    private List<SqlExecutionResultWrapper> sqlExecuteResults;
 
-    private List<DataNode> allPhysicalTables;
+    private Integer totalSqlCount;
 
-    private List<DataNode> inconsistentPhysicalTables;
+    private Integer completedSqlCount;
 
-    private List<LogicalTableTopologyResp> topologies;
-
-    private DBTable basePhysicalTable;
+    private ExecutionStatus status;
 }
