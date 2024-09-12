@@ -25,8 +25,6 @@ import java.util.Map;
 import org.json.JSONObject;
 import org.json.XML;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -232,11 +230,9 @@ public class JsonUtils {
             return null;
         }
         try {
-            objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
             return objectMapper.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
-            log.error("failed to convert to json string, reason:{}, object:{} \n", e.getMessage(),
-                    JSON.toJSONString(obj, SerializerFeature.PrettyFormat));
+            log.error("failed to convert to json string, reason:{} \n", e.getMessage());
             return null;
         }
     }

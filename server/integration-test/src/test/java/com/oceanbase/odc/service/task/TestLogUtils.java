@@ -43,7 +43,7 @@ public class TestLogUtils {
             a.write("go".getBytes());
             a.write("\n".getBytes());
             String s = LogUtils.getLatestLogContent(fileName, 2L, 100L);
-            Assert.assertTrue(s.endsWith("java\ngo\n"));
+            Assert.assertTrue(s.startsWith("java\ngo\n") && !s.startsWith("test\n"));
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
