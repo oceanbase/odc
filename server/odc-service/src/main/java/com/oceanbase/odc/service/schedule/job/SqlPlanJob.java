@@ -34,6 +34,7 @@ import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
@@ -128,9 +129,10 @@ public class SqlPlanJob implements OdcJob {
         parameters.setErrorStrategy(sqlPlanParameters.getErrorStrategy());
         parameters.setSessionTimeZone(connectProperties.getDefaultTimeZone());
         Map<String, String> jobData = new HashMap<>();
-        ConnectionConfig connectionConfig = databaseService.findDataSourceForTaskById(
-                sqlPlanParameters.getDatabaseId());
-        jobData.put(JobParametersKeyConstants.CONNECTION_CONFIG, JobUtils.toJson(connectionConfig));
+        Database database = databaseService.detail(sqlPlanParameters.getDatabaseId());
+        ConnectionConfig dataSource = database.getDataSource();
+        dataSource.setDefaultSchema(database.getName());
+        jobData.put(JobParametersKeyConstants.CONNECTION_CONFIG, JobUtils.toJson(dataSource));
         jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON, JobUtils.toJson(parameters));
 
         SingleJobProperties singleJobProperties = new SingleJobProperties();
