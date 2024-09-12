@@ -24,6 +24,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -125,23 +127,20 @@ public class DBSchemaExtractor {
                         && basicResult.getSqlType() != SqlType.UNKNOWN) {
                     sqlType = basicResult.getSqlType();
                 }
-                if (sqlType == SqlType.ALTER) {
-                    String originalSql = sqlTuple.getOriginalSql();
-                    String removedSql;
-                    if (originalSql.contains(".")) {
-                        removedSql = originalSql.substring(originalSql.indexOf('.') + 1).trim();
-                    } else {
-                        String regex = "(?i)alter\\s+table\\s+";
-                        removedSql = originalSql.replaceFirst(regex, "").trim();
-                    }
+                if (sqlType == SqlType.ALTER && isAlterTable(sqlTuple.getOriginalSql())) {
+                    String removedAfterRenameToSql =
+                            sqlTuple.getOriginalSql().replaceFirst("(?i)rename\\s+to\\s+.*", "").trim();
+                    String containedOriginalTableSql = removedAfterRenameToSql.contains(".")
+                            ? removedAfterRenameToSql.substring(removedAfterRenameToSql.indexOf('.') + 1).trim()
+                            : removedAfterRenameToSql.replaceFirst("(?i)alter\\s+table\\s+", "").trim();
                     DBSchemaIdentity alterIndentity = null;
-                    int beginPost = removedSql.length();
+                    int beginPost = containedOriginalTableSql.length();
                     for (DBSchemaIdentity identity : identities) {
                         String tableName = identity.getTable();
                         if (StringUtils.isBlank(tableName)) {
                             continue;
                         }
-                        int index = removedSql.indexOf(tableName);
+                        int index = containedOriginalTableSql.indexOf(tableName);
                         if (index == -1) {
                             continue;
                         }
@@ -167,6 +166,13 @@ public class DBSchemaExtractor {
             }
         }
         return res;
+    }
+
+    private static boolean isAlterTable(String sql) {
+        String regex = "^\\s*ALTER\\s+TABLE\\s+.*";
+        Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(sql);
+        return matcher.find();
     }
 
     private static Set<DBSchemaIdentity> listDBSchemas(AbstractSyntaxTree ast, DialectType dialectType,
