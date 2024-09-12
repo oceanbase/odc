@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.task.executor.task;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -120,7 +121,8 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
                     Long databaseId = entry.getKey();
                     DataNode dataNode = entry.getValue();
                     String rewrittenSqls =
-                            databaseId2RewrittenSqls.get(databaseId).stream().collect(Collectors.joining(";"));
+                            databaseId2RewrittenSqls.getOrDefault(databaseId, Collections.emptyList()).stream()
+                                    .collect(Collectors.joining(taskParameters.getDelimiter()));
                     SqlExecuteReq req = new SqlExecuteReq();
                     req.setSql(rewrittenSqls);
                     req.setDialectType(dialectType);
