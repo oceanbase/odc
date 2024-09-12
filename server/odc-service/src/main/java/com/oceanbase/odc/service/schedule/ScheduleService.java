@@ -189,6 +189,9 @@ public class ScheduleService {
     @Autowired
     private ScheduledTaskLoggerService scheduledTaskLoggerService;
 
+    @Autowired
+    private JdbcLockRegistry jdbcLockRegistry;
+
     private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
 
 
