@@ -45,6 +45,7 @@ public class K8sPodMatcher implements K8sResourceMatcher<K8sPod> {
     private Set<String> podStatusNotIn = new HashSet<>();
 
     private boolean ignoreContainerStatus;
+    private boolean noContainerStatus;
     private boolean forAllContainers;
     private boolean forAnyContainers;
     private Set<K8sPodContainerStatus> containerStatusIn = new HashSet<>();
@@ -84,7 +85,7 @@ public class K8sPodMatcher implements K8sResourceMatcher<K8sPod> {
         if (this.ignoreContainerStatus) {
             containersMatches = true;
         } else if (CollectionUtils.isEmpty(k8sPod.getStatus().getContainerStatuses())) {
-            return false;
+            containersMatches = this.noContainerStatus;
         } else {
             List<V1ContainerStatus> containerStatuses = k8sPod.getStatus().getContainerStatuses();
             if (this.forAllContainers) {

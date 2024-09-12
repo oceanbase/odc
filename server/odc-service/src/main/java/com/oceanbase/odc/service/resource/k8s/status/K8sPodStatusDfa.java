@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.resource.k8s.status;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
 import com.oceanbase.odc.common.dfa.AbstractDfa;
@@ -72,13 +73,13 @@ public class K8sPodStatusDfa extends AbstractDfa<ResourceState, K8sPod> {
 
     private static List<K8sPodMatcher> getCreatingPodMatchers() {
         K8sPodMatcher m1 = new K8sPodMatcher();
-        m1.setIgnoreContainerStatus(true);
         m1.setPodStatusIn(Collections.singleton("Pending"));
+        m1.setForAllContainers(true);
+        m1.setContainerStatusIn(K8sPodContainerStatus.getNonErrorStatuses());
 
         K8sPodMatcher m2 = new K8sPodMatcher();
-        m2.setPodStatusIn(Collections.singleton("Running"));
-        m2.setForAllContainers(true);
-        m2.setContainerStatusIn(K8sPodContainerStatus.getCreatingStatuses());
+        m2.setPodStatusIn(Collections.singleton("Pending"));
+        m2.setNoContainerStatus(true);
 
         K8sPodMatcher m3 = new K8sPodMatcher();
         m3.setPodStatusIn(Collections.singleton("Running"));
@@ -99,7 +100,7 @@ public class K8sPodStatusDfa extends AbstractDfa<ResourceState, K8sPod> {
         m2.setPodStatusIn(Collections.singleton("Unknown"));
 
         K8sPodMatcher m3 = new K8sPodMatcher();
-        m3.setPodStatusIn(Collections.singleton("Running"));
+        m3.setPodStatusIn(new HashSet<>(Arrays.asList("Pending", "Running")));
         m3.setForAnyContainers(true);
         m3.setMatchesAllContainerStatus(true);
         m3.setContainerStatusNotIn(K8sPodContainerStatus.getNonErrorStatuses());

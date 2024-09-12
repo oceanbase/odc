@@ -92,6 +92,14 @@ public class K8sPodStatusDfaTest {
     }
 
     @Test
+    public void next_currentStateIsPendingError_nextStateErrorState() throws Exception {
+        K8sPodStatusDfa dfa = K8sPodStatusDfa.getInstance();
+        dfa.setCurrentState(ResourceState.CREATING);
+        ResourceState actual = dfa.next(getPendingErrorPod()).getCurrentState();
+        Assert.assertEquals(ResourceState.ERROR_STATE, actual);
+    }
+
+    @Test
     public void next_podIsNull_nextStateUnknown() throws Exception {
         K8sPodStatusDfa dfa = K8sPodStatusDfa.getInstance();
         dfa.setCurrentState(ResourceState.CREATING);
@@ -131,6 +139,16 @@ public class K8sPodStatusDfaTest {
         status.setPhase("Running");
         status.setContainerStatuses(Arrays.asList(getRunningStatus(true), getRunningStatus(false),
                 getWaitingStatus("ContainerCannotRun"), getTerminatedStatus("DeadlineExceeded")));
+        k8sPod.setStatus(status);
+        return k8sPod;
+    }
+
+    public static K8sPod getPendingErrorPod() {
+        K8sPod k8sPod = new K8sPod();
+        V1PodStatus status = new V1PodStatus();
+        status.setPhase("Pending");
+        status.setContainerStatuses(Arrays.asList(getRunningStatus(true), getRunningStatus(false),
+                getWaitingStatus("ImagePullBackOff"), getTerminatedStatus("DeadlineExceeded")));
         k8sPod.setStatus(status);
         return k8sPod;
     }
