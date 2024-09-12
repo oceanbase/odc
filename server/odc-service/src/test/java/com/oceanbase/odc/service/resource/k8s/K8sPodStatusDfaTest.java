@@ -25,7 +25,7 @@ import org.junit.Test;
 
 import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.resource.k8s.model.K8sPod;
-import com.oceanbase.odc.service.resource.k8s.status.pod.K8sPodStatusDfa;
+import com.oceanbase.odc.service.resource.k8s.status.K8sPodStatusDfa;
 
 import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStateRunning;

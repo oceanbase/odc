@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.k8s.status.pod;
+package com.oceanbase.odc.service.resource.k8s.status;
 
 import java.util.Arrays;
 import java.util.HashSet;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.k8s.status.pod;
+package com.oceanbase.odc.service.resource.k8s.status;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,7 +24,6 @@ import com.oceanbase.odc.common.dfa.AbstractDfa;
 import com.oceanbase.odc.common.dfa.DfaStateTransfer;
 import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.resource.k8s.model.K8sPod;
-import com.oceanbase.odc.service.resource.k8s.status.K8sResourceStatusTransferBuilder;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;

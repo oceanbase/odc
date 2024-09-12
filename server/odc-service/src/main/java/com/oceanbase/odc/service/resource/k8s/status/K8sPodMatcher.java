@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.k8s.status.pod;
+package com.oceanbase.odc.service.resource.k8s.status;
 
 import java.util.HashSet;
 import java.util.List;
@@ -24,7 +24,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 
 import com.oceanbase.odc.service.resource.k8s.model.K8sPod;
-import com.oceanbase.odc.service.resource.k8s.status.K8sResourceMatcher;
 
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import lombok.Setter;

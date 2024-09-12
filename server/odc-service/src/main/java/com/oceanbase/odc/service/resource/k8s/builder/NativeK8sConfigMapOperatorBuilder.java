@@ -24,12 +24,15 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceOperator;
+import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.resource.k8s.model.K8sConfigMap;
 import com.oceanbase.odc.service.resource.k8s.operator.NativeK8sConfigMapOperator;
+import com.oceanbase.odc.service.resource.k8s.status.K8sConfigMapStatusDfa;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * {@link NativeK8sConfigMapOperatorBuilder}
@@ -38,6 +41,7 @@ import lombok.NonNull;
  * @date 2024-09-07 18:55
  * @since ODC_release_4.3.2
  */
+@Slf4j
 @Component
 public class NativeK8sConfigMapOperatorBuilder extends BaseNativeK8sResourceOperatorBuilder<K8sConfigMap> {
 
@@ -53,7 +57,15 @@ public class NativeK8sConfigMapOperatorBuilder extends BaseNativeK8sResourceOper
 
     @Override
     public K8sConfigMap toResource(ResourceEntity e, Optional<K8sConfigMap> runtimeResource) {
-        K8sConfigMap k8sConfigMap = new K8sConfigMap(new ResourceLocation(e), e.getStatus());
+        ResourceState nextState = e.getStatus();
+        try {
+            K8sConfigMapStatusDfa dfa = K8sConfigMapStatusDfa.getInstance();
+            dfa.setCurrentState(e.getStatus());
+            nextState = dfa.next(runtimeResource.orElse(null)).getCurrentState();
+        } catch (Exception exception) {
+            log.warn("Failed to get next configmap's status, id={}", e.getId(), exception);
+        }
+        K8sConfigMap k8sConfigMap = new K8sConfigMap(new ResourceLocation(e), nextState);
         V1ObjectMeta meta = new V1ObjectMeta();
         meta.setName(e.getResourceName());
         meta.setNamespace(e.getNamespace());
