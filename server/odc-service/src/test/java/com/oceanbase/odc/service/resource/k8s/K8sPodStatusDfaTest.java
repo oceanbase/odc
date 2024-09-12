@@ -99,7 +99,7 @@ public class K8sPodStatusDfaTest {
         Assert.assertEquals(ResourceState.UNKNOWN, actual);
     }
 
-    private K8sPod getRunningCreatingPod() {
+    public static K8sPod getRunningCreatingPod() {
         K8sPod k8sPod = new K8sPod();
         V1PodStatus status = new V1PodStatus();
         status.setPhase("Running");
@@ -109,7 +109,7 @@ public class K8sPodStatusDfaTest {
         return k8sPod;
     }
 
-    private K8sPod getFailedErrorPod() {
+    public static K8sPod getFailedErrorPod() {
         K8sPod k8sPod = new K8sPod();
         V1PodStatus status = new V1PodStatus();
         status.setPhase("Failed");
@@ -117,7 +117,7 @@ public class K8sPodStatusDfaTest {
         return k8sPod;
     }
 
-    private K8sPod getUnknownErrorPod() {
+    public static K8sPod getUnknownErrorPod() {
         K8sPod k8sPod = new K8sPod();
         V1PodStatus status = new V1PodStatus();
         status.setPhase("Unknown");
@@ -125,7 +125,7 @@ public class K8sPodStatusDfaTest {
         return k8sPod;
     }
 
-    private K8sPod getRunningErrorPod() {
+    public static K8sPod getRunningErrorPod() {
         K8sPod k8sPod = new K8sPod();
         V1PodStatus status = new V1PodStatus();
         status.setPhase("Running");
@@ -135,7 +135,7 @@ public class K8sPodStatusDfaTest {
         return k8sPod;
     }
 
-    private K8sPod getPendingCreatingPod() {
+    public static K8sPod getPendingCreatingPod() {
         K8sPod k8sPod = new K8sPod();
         V1PodStatus status = new V1PodStatus();
         status.setPhase("Pending");
@@ -143,7 +143,7 @@ public class K8sPodStatusDfaTest {
         return k8sPod;
     }
 
-    private K8sPod getAvailablePod() {
+    public static K8sPod getAvailablePod() {
         K8sPod k8sPod = new K8sPod();
         V1PodStatus status = new V1PodStatus();
         status.setPhase("Running");
@@ -152,7 +152,7 @@ public class K8sPodStatusDfaTest {
         return k8sPod;
     }
 
-    private V1ContainerStatus getRunningStatus(boolean ready) {
+    public static V1ContainerStatus getRunningStatus(boolean ready) {
         V1ContainerStatus status = new V1ContainerStatus();
         status.setReady(ready);
         V1ContainerState state = new V1ContainerState();
@@ -163,7 +163,7 @@ public class K8sPodStatusDfaTest {
         return status;
     }
 
-    private V1ContainerStatus getWaitingStatus(String reason) {
+    public static V1ContainerStatus getWaitingStatus(String reason) {
         V1ContainerStatus status = new V1ContainerStatus();
         status.setReady(false);
         V1ContainerState state = new V1ContainerState();
@@ -174,7 +174,7 @@ public class K8sPodStatusDfaTest {
         return status;
     }
 
-    private V1ContainerStatus getTerminatedStatus(String reason) {
+    public static V1ContainerStatus getTerminatedStatus(String reason) {
         V1ContainerStatus status = new V1ContainerStatus();
         status.setReady(false);
         V1ContainerState state = new V1ContainerState();

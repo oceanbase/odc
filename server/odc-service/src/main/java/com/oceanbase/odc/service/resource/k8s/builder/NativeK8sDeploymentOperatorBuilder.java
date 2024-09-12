@@ -24,13 +24,16 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceOperator;
+import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.resource.k8s.model.K8sDeployment;
 import com.oceanbase.odc.service.resource.k8s.operator.NativeK8sDeploymentOperator;
 import com.oceanbase.odc.service.resource.k8s.operator.NativeK8sPodOperator;
+import com.oceanbase.odc.service.resource.k8s.status.K8sDeploymentStatusDfa;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * {@link NativeK8sDeploymentOperatorBuilder}
@@ -39,6 +42,7 @@ import lombok.NonNull;
  * @date 2024-09-10 11:28
  * @since ODC_release_4.3.2
  */
+@Slf4j
 @Component
 public class NativeK8sDeploymentOperatorBuilder extends BaseNativeK8sResourceOperatorBuilder<K8sDeployment> {
 
@@ -60,7 +64,15 @@ public class NativeK8sDeploymentOperatorBuilder extends BaseNativeK8sResourceOpe
 
     @Override
     public K8sDeployment toResource(ResourceEntity e, Optional<K8sDeployment> runtimeResource) {
-        K8sDeployment k8sDeployment = new K8sDeployment(new ResourceLocation(e), e.getStatus());
+        ResourceState nextState = e.getStatus();
+        try {
+            K8sDeploymentStatusDfa dfa = K8sDeploymentStatusDfa.getInstance(e.getStatus());
+            dfa.setCurrentState(e.getStatus());
+            nextState = dfa.next(runtimeResource.orElse(null)).getCurrentState();
+        } catch (Exception exception) {
+            log.warn("Failed to get next deployment's status, id={}", e.getId(), exception);
+        }
+        K8sDeployment k8sDeployment = new K8sDeployment(new ResourceLocation(e), nextState);
         V1ObjectMeta meta = new V1ObjectMeta();
         meta.setName(e.getResourceName());
         meta.setNamespace(e.getNamespace());

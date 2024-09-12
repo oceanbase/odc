@@ -38,7 +38,7 @@ import lombok.Setter;
 @Setter
 public class K8sPodMatcher implements K8sResourceMatcher<K8sPod> {
 
-    private boolean matchesNullK8sPod;
+    private boolean matchesNullPod;
 
     private Set<String> podStatusIn = new HashSet<>();
     private boolean matchesAllPodStatus;
@@ -55,14 +55,14 @@ public class K8sPodMatcher implements K8sResourceMatcher<K8sPod> {
 
     @Override
     public boolean matches(K8sPod k8sPod) {
-        if (k8sPod == null && this.matchesNullK8sPod) {
+        if (k8sPod == null && this.matchesNullPod) {
             return true;
         } else if (k8sPod == null) {
             return false;
-        } else if (this.matchesNullK8sPod) {
+        } else if (this.matchesNullPod) {
             return false;
         }
-        // k8sPod != null && !this.matchesNullK8sPod
+        // k8sPod != null && !this.matchesNullPod
         Validate.notNull(k8sPod.getStatus());
         Validate.notNull(k8sPod.getStatus().getPhase());
         String phase = k8sPod.getStatus().getPhase();

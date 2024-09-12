@@ -66,7 +66,7 @@ public class K8sPodStatusDfa extends AbstractDfa<ResourceState, K8sPod> {
 
     private static List<K8sPodMatcher> getPodNonExistsMatchers() {
         K8sPodMatcher m1 = new K8sPodMatcher();
-        m1.setMatchesNullK8sPod(true);
+        m1.setMatchesNullPod(true);
         return Collections.singletonList(m1);
     }
 
