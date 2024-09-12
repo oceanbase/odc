@@ -108,8 +108,16 @@ public class DBSchemaExtractor {
         return schemaName;
     }
 
+    /**
+     * 列出给定SQL元组列表中每个元组所属的数据库模式及其对应的SQL类型
+     *
+     * @param sqlTuples     SQL元组列表
+     * @param dialectType   方言类型
+     * @param defaultSchema 默认模式
+     * @return Map<DBSchemaIdentity, Set < SqlType>> 数据库模式与对应的SQL类型的映射关系
+     */
     public static Map<DBSchemaIdentity, Set<SqlType>> listDBSchemasWithSqlTypes(List<SqlTuple> sqlTuples,
-            DialectType dialectType, String defaultSchema) {
+        DialectType dialectType, String defaultSchema) {
         Map<DBSchemaIdentity, Set<SqlType>> res = new HashMap<>();
         for (SqlTuple sqlTuple : sqlTuples) {
             try {
@@ -117,73 +125,100 @@ public class DBSchemaExtractor {
                 if (ast == null) {
                     sqlTuple.initAst(AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0));
                     ast = sqlTuple.getAst();
+                    // 解析失败时忽略异常
                 }
+                // 获取SQL元组所属的数据库模式
                 Set<DBSchemaIdentity> identities = listDBSchemas(ast, dialectType, defaultSchema);
                 SqlType sqlType = SqlType.OTHERS;
                 BasicResult basicResult = ast.getParseResult();
+                // 获取SQL类型
                 if (Objects.nonNull(basicResult) && Objects.nonNull(basicResult.getSqlType())
-                        && basicResult.getSqlType() != SqlType.UNKNOWN) {
+                    && basicResult.getSqlType() != SqlType.UNKNOWN) {
                     sqlType = basicResult.getSqlType();
+                    // 解析失败时忽略异常
                 }
+                // 将数据库模式与对应的SQL类型添加到映射关系中
                 for (DBSchemaIdentity identity : identities) {
                     res.computeIfAbsent(identity, k -> new HashSet<>()).add(sqlType);
+                    // 解析失败时忽略异常
                 }
             } catch (Exception e) {
                 // just eat exception due to parse failed
+                // 解析失败时忽略异常
             }
+            // 解析失败时忽略异常
         }
         return res;
+        // 解析失败时忽略异常
     }
 
     private static Set<DBSchemaIdentity> listDBSchemas(AbstractSyntaxTree ast, DialectType dialectType,
-            String defaultSchema) {
+        String defaultSchema) {
         Set<DBSchemaIdentity> identities = new HashSet<>();
         BasicResult basicResult = ast.getParseResult();
+        // 判断方言类型是否为MySQL或Doris
         if (dialectType.isMysql() || dialectType.isDoris()) {
             if (basicResult.isPlDdl() || basicResult instanceof ParseMysqlPLResult) {
                 OBMySQLPLRelationFactorVisitor visitor = new OBMySQLPLRelationFactorVisitor();
+                // 访问AST根节点
                 visitor.visit(ast.getRoot());
+                // 获取数据库模式标识符集合
                 identities = visitor.getIdentities();
             } else {
                 OBMySQLRelationFactorVisitor visitor = new OBMySQLRelationFactorVisitor();
+                // 访问AST根节点
                 visitor.visit(ast.getRoot());
+                // 获取数据库模式标识符集合
                 identities = visitor.getIdentities();
             }
-            identities = identities.stream().map(e -> {
-                DBSchemaIdentity i = new DBSchemaIdentity(e.getSchema(), e.getTable());
-                String schema = StringUtils.isNotBlank(i.getSchema()) ? i.getSchema() : defaultSchema;
-                i.setSchema(StringUtils.unquoteMySqlIdentifier(schema));
-                i.setTable(StringUtils.unquoteMySqlIdentifier(i.getTable()));
-                return i;
-            }).collect(Collectors.toSet());
+            identities = identities.stream()
+                .filter(e -> Objects.nonNull(e.getSchema()) || Objects.nonNull(e.getTable())).map(e -> {
+                    DBSchemaIdentity i = new DBSchemaIdentity(e.getSchema(), e.getTable());
+                    // 获取模式，如果为空则使用默认模式
+                    String schema = StringUtils.isNotBlank(i.getSchema()) ? i.getSchema() : defaultSchema;
+                    // 去除模式中的转义字符
+                    i.setSchema(StringUtils.unquoteMySqlIdentifier(schema));
+                    // 去除表中的转义字符
+                    i.setTable(StringUtils.unquoteMySqlIdentifier(i.getTable()));
+                    return i;
+                }).collect(Collectors.toSet());
+            // 判断方言类型是否为Oracle
         } else if (dialectType.isOracle()) {
             if (basicResult.isPlDdl() || basicResult instanceof ParseOraclePLResult) {
                 OBOraclePLRelationFactorVisitor visitor = new OBOraclePLRelationFactorVisitor();
+                // 访问AST根节点
                 visitor.visit(ast.getRoot());
+                // 获取数据库模式标识符集合
                 identities = visitor.getIdentities();
             } else {
                 OBOracleRelationFactorVisitor visitor = new OBOracleRelationFactorVisitor();
+                // 访问AST根节点
                 visitor.visit(ast.getRoot());
+                // 获取数据库模式标识符集合
                 identities = visitor.getIdentities();
             }
-            identities = identities.stream().map(e -> {
-                DBSchemaIdentity i = new DBSchemaIdentity(e.getSchema(), e.getTable());
-                String schema = StringUtils.isNotBlank(i.getSchema()) ? i.getSchema() : defaultSchema;
-                if (StringUtils.startsWith(schema, "\"") && StringUtils.endsWith(schema, "\"")) {
-                    schema = StringUtils.unquoteOracleIdentifier(schema);
-                } else {
-                    schema = StringUtils.upperCase(schema);
-                }
-                String table = StringUtils.isNotBlank(i.getTable()) ? i.getTable() : null;
-                if (StringUtils.startsWith(table, "\"") && StringUtils.endsWith(table, "\"")) {
-                    table = StringUtils.unquoteOracleIdentifier(table);
-                } else {
-                    table = StringUtils.upperCase(table);
-                }
-                i.setSchema(schema);
-                i.setTable(table);
-                return i;
-            }).collect(Collectors.toSet());
+            identities = identities.stream()
+                .filter(e -> Objects.nonNull(e.getSchema()) || Objects.nonNull(e.getTable())).map(e -> {
+                    DBSchemaIdentity i = new DBSchemaIdentity(e.getSchema(), e.getTable());
+                    // 获取模式，如果为空则使用默认模式
+                    String schema = StringUtils.isNotBlank(i.getSchema()) ? i.getSchema() : defaultSchema;
+                    // 判断模式是否被引号包裹
+                    if (StringUtils.startsWith(schema, "\"") && StringUtils.endsWith(schema, "\"")) {
+                        schema = StringUtils.unquoteOracleIdentifier(schema);
+                    } else {
+                        schema = StringUtils.upperCase(schema);
+                    }
+                    String table = StringUtils.isNotBlank(i.getTable()) ? i.getTable() : null;
+                    // 判断表是否被引号包裹
+                    if (StringUtils.startsWith(table, "\"") && StringUtils.endsWith(table, "\"")) {
+                        table = StringUtils.unquoteOracleIdentifier(table);
+                    } else {
+                        table = StringUtils.upperCase(table);
+                    }
+                    i.setSchema(schema);
+                    i.setTable(table);
+                    return i;
+                }).collect(Collectors.toSet());
         }
         return identities;
     }
