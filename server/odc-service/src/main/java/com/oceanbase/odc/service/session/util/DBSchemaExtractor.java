@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import org.antlr.v4.runtime.tree.RuleNode;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.common.util.StringUtils;
@@ -257,6 +258,17 @@ public class DBSchemaExtractor {
             }
         }
 
+        @Override
+        protected boolean shouldVisitNextChild(RuleNode node, RelationFactor currentResult) {
+            if (node.getChild(0) != null
+                    && node.getChild(0).getChild(0) != null
+                    && "RENAME".equalsIgnoreCase(node.getChild(0).getChild(0).getText())
+                    && node.getChild(0).getChild(1) != null
+                    && "TO".equalsIgnoreCase(node.getChild(0).getChild(1).getText())) {
+                return false;
+            }
+            return true;
+        }
     }
 
 
