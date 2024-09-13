@@ -62,6 +62,9 @@ public class BatchOperateWorksheetsResp {
         if (CollectionUtils.isEmpty(worksheets)) {
             return;
         }
+        if (allSuccessful == null) {
+            allSuccessful = true;
+        }
         if (successfulFiles == null) {
             successfulFiles = new ArrayList<>();
         }
@@ -71,6 +74,9 @@ public class BatchOperateWorksheetsResp {
     public void addSuccess(WorksheetMetaResp worksheet) {
         if (worksheet == null) {
             return;
+        }
+        if (allSuccessful == null) {
+            allSuccessful = true;
         }
         if (successfulFiles == null) {
             successfulFiles = new ArrayList<>();

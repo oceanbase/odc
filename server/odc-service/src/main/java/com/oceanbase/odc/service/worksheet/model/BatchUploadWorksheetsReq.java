@@ -31,6 +31,8 @@ import lombok.NoArgsConstructor;
  * @since 4.3.2
  */
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class BatchUploadWorksheetsReq {
     @Size(min = 1, max = 100)
     private List<UploadWorksheetTuple> worksheets;

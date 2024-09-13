@@ -22,9 +22,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -36,16 +39,27 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.metadb.resourcehistory.ResourceLastAccessEntity;
+import com.oceanbase.odc.metadb.resourcehistory.ResourceLastAccessRepository;
 import com.oceanbase.odc.server.OdcServer;
+import com.oceanbase.odc.service.resourcehistory.ResourceLastAccessService;
 import com.oceanbase.odc.service.worksheet.domain.Path;
+
+import cn.hutool.core.lang.Tuple;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = OdcServer.class)
@@ -54,8 +68,12 @@ public class CollaborationWorksheetRepositoryTest {
 
     @Autowired
     private CollaborationWorksheetRepository collaborationWorksheetRepository;
+    @Autowired
+    private ResourceLastAccessService resourceLastAccessService;
+    @Autowired
+    private ResourceLastAccessRepository resourceLastAccessRepository;
 
-
+    final long organizationId = 1L;
     final long projectId = 1L;
     long incrId = 0;
     long creatorId = 0;
@@ -81,9 +99,15 @@ public class CollaborationWorksheetRepositoryTest {
 
     }
 
+    @Before
+    public void setup() {
+        clear();
+    }
+
     @After
     public void clear() {
         collaborationWorksheetRepository.deleteByProjectId(projectId);
+        resourceLastAccessRepository.delete(ResourceLastAccessEntity.builder().organizationId(organizationId).build());
     }
 
     @Test
@@ -200,11 +224,80 @@ public class CollaborationWorksheetRepositoryTest {
                 "/Worksheets/folder1/", 1, 4, "le2"));
     }
 
-    private void assertPathEquals(Collection<CollaborationWorksheetEntity> c1,
-            Collection<CollaborationWorksheetEntity> c2) {
-        assertEquals(c1.size(), c2.size());
-        assertEquals(c1.stream().map(CollaborationWorksheetEntity::getPath).collect(Collectors.toSet()),
-                c2.stream().map(CollaborationWorksheetEntity::getPath).collect(Collectors.toSet()));
+    @Test
+    public void testLeftJoinResourceLastAccess_SortByUpdateTime_FirstPage() {
+        int totalSize = 19;
+        int pageSize = 10;
+        PageRequest pageRequest =
+                PageRequest.of(0, pageSize, Sort.by(Direction.DESC, "updateTime"));
+
+        Tuple tuple = prepareTestDateForLeftJoinResourceLastAccess(totalSize);
+        List<Long> exceptFirstPageListIdsOrderByUpdateTimeDesc =
+                tuple.<List<Long>>get(0).subList((int) pageRequest.getOffset(), pageSize);
+
+        Page<CollaborationWorksheetEntity> result = collaborationWorksheetRepository
+                .leftJoinResourceLastAccess(organizationId, projectId, creatorId, pageRequest);
+
+        assertEquals(exceptFirstPageListIdsOrderByUpdateTimeDesc,
+                result.getContent().stream().map(CollaborationWorksheetEntity::getId)
+                        .collect(Collectors.toList()));
+    }
+
+    @Test
+    public void testLeftJoinResourceLastAccess_SortByUpdateTime_LastPage() {
+        int totalSize = 19;
+        int pageSize = 10;
+        PageRequest pageRequest =
+                PageRequest.of(lastPage(totalSize, pageSize), pageSize, Sort.by(Direction.DESC, "updateTime"));
+
+        Tuple tuple = prepareTestDateForLeftJoinResourceLastAccess(totalSize);
+        List<Long> exceptFirstPageListIdsOrderByUpdateTimeDesc =
+                tuple.<List<Long>>get(0).subList((int) pageRequest.getOffset(), totalSize);
+
+        Page<CollaborationWorksheetEntity> result = collaborationWorksheetRepository
+                .leftJoinResourceLastAccess(organizationId, projectId, creatorId, pageRequest);
+
+        assertEquals(exceptFirstPageListIdsOrderByUpdateTimeDesc,
+                result.getContent().stream().map(CollaborationWorksheetEntity::getId).collect(
+                        Collectors.toList()));
+    }
+
+    @Test
+    public void testLeftJoinResourceLastAccess_SortByLastAccessTime_FirstPage() {
+        int totalSize = 19;
+        int pageSize = 10;
+        PageRequest pageRequest =
+                PageRequest.of(0, pageSize, Sort.by(Direction.DESC, "lastAccessTime"));
+
+        Tuple tuple = prepareTestDateForLeftJoinResourceLastAccess(totalSize);
+        List<Long> exceptFirstPageListIdsOrderByLastAccessTimeDesc =
+                tuple.<List<Long>>get(1).subList((int) pageRequest.getOffset(), pageSize);
+
+        Page<CollaborationWorksheetEntity> result = collaborationWorksheetRepository
+                .leftJoinResourceLastAccess(organizationId, projectId, creatorId, pageRequest);
+
+        assertEquals(exceptFirstPageListIdsOrderByLastAccessTimeDesc,
+                result.getContent().stream().map(CollaborationWorksheetEntity::getId)
+                        .collect(Collectors.toList()));
+    }
+
+    @Test
+    public void testLeftJoinResourceLastAccess_SortByLastAccessTime_LastPage() {
+        int totalSize = 19;
+        int pageSize = 10;
+        PageRequest pageRequest =
+                PageRequest.of(lastPage(totalSize, pageSize), pageSize, Sort.by(Direction.DESC, "lastAccessTime"));
+
+        Tuple tuple = prepareTestDateForLeftJoinResourceLastAccess(totalSize);
+        List<Long> exceptFirstPageListIdsOrderByLastAccessTimeDesc =
+                tuple.<List<Long>>get(1).subList((int) pageRequest.getOffset(), totalSize);
+
+        Page<CollaborationWorksheetEntity> result = collaborationWorksheetRepository
+                .leftJoinResourceLastAccess(organizationId, projectId, creatorId, pageRequest);
+
+        assertEquals(exceptFirstPageListIdsOrderByLastAccessTimeDesc,
+                result.getContent().stream().map(CollaborationWorksheetEntity::getId)
+                        .collect(Collectors.toList()));
     }
 
     @Test
@@ -339,4 +432,49 @@ public class CollaborationWorksheetRepositoryTest {
         }
     }
 
+    private void assertPathEquals(Collection<CollaborationWorksheetEntity> c1,
+            Collection<CollaborationWorksheetEntity> c2) {
+        assertEquals(c1.size(), c2.size());
+        assertEquals(c1.stream().map(CollaborationWorksheetEntity::getPath).collect(Collectors.toSet()),
+                c2.stream().map(CollaborationWorksheetEntity::getPath).collect(Collectors.toSet()));
+    }
+
+    private int lastPage(int totalSize, int pageSize) {
+        return totalSize % pageSize == 0 ? totalSize / pageSize - 1 : totalSize / pageSize;
+    }
+
+    private Tuple prepareTestDateForLeftJoinResourceLastAccess(int totalSize) {
+        long updateTs = 1L;
+
+        Set<CollaborationWorksheetEntity> worksheets = new HashSet<>();
+        for (int i = 0; i < totalSize; i++) {
+            CollaborationWorksheetEntity worksheet = newWorksheet("/Worksheets/folder1/file" + i + ".sql");
+            worksheet.setUpdateTime(new Date(updateTs + i * 1000L));
+            worksheets.add(worksheet);
+        }
+        collaborationWorksheetRepository.saveAllAndFlush(worksheets);
+        List<Long> listIdsOrderByUpdateTimeDesc =
+                worksheets.stream().sorted(Comparator.comparing(CollaborationWorksheetEntity::getUpdateTime).reversed())
+                        .map(CollaborationWorksheetEntity::getId).collect(Collectors.toList());
+
+        long lastAccessTs = System.currentTimeMillis();
+        int i = 0;
+        List<Long> listIdsOrderByLastAccessDesc = new ArrayList<>();
+        List<Long> listIdsWithLastAccessIsNull = new ArrayList<>();
+        while (i < listIdsOrderByUpdateTimeDesc.size()) {
+            resourceLastAccessService.add(organizationId, projectId, creatorId,
+                    ResourceType.ODC_WORKSHEET, listIdsOrderByUpdateTimeDesc.get(i), new Date(lastAccessTs - i * 1000));
+            listIdsOrderByLastAccessDesc.add(listIdsOrderByUpdateTimeDesc.get(i));
+            if (i + 1 < listIdsOrderByUpdateTimeDesc.size() - 1) {
+                listIdsWithLastAccessIsNull.add(listIdsOrderByUpdateTimeDesc.get(i + 1));
+            }
+            i = i + 2;
+        }
+        // Due to some worksheet users not having accessed it, there is no last access time.
+        // When the recent last time is null, it will be sorted in descending order based on the id.
+        listIdsOrderByLastAccessDesc.addAll(listIdsWithLastAccessIsNull.stream()
+                .sorted(Comparator.reverseOrder()).collect(Collectors.toList()));
+
+        return new Tuple(listIdsOrderByUpdateTimeDesc, listIdsOrderByLastAccessDesc);
+    }
 }

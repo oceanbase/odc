@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -54,6 +55,7 @@ import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskSpecs;
+import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.JobRepository;
 import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -159,10 +161,14 @@ public class ScheduleTaskService {
             case DATA_ARCHIVE_DELETE:
             case DATA_DELETE: {
                 res.setExecutionDetails(dlmService.getExecutionDetailByScheduleTaskId(scheduleTask.getId()));
+                break;
             }
             case SQL_PLAN:
-                jobRepository.findByIdNative(scheduleTask.getId())
+                // sql plan task detail should display sql content
+                res.setParameters(JsonUtils.toJson(scheduleTask.getParameters()));
+                jobRepository.findByIdNative(scheduleTask.getJobId())
                         .ifPresent(jobEntity -> res.setExecutionDetails(jobEntity.getResultJson()));
+                break;
             default:
                 break;
         }
@@ -252,9 +258,16 @@ public class ScheduleTaskService {
 
 
     public Page<ScheduleTask> list(Pageable pageable, Long scheduleId) {
+        return listEntity(pageable, scheduleId).map(scheduleTaskMapper::entityToModel);
+    }
+
+    /**
+     * for internal usage
+     */
+    public Page<ScheduleTaskEntity> listEntity(Pageable pageable, Long scheduleId) {
         Specification<ScheduleTaskEntity> specification =
                 Specification.where(ScheduleTaskSpecs.jobNameEquals(scheduleId.toString()));
-        return scheduleTaskRepository.findAll(specification, pageable).map(scheduleTaskMapper::entityToModel);
+        return scheduleTaskRepository.findAll(specification, pageable);
     }
 
     public Page<ScheduleTaskOverview> getScheduleTaskListResp(Pageable pageable, Long scheduleId) {
@@ -291,6 +304,14 @@ public class ScheduleTaskService {
         Map<Long, Database> databaseMap = scheduleResponseMapperFactory.getDatabaseInfoByIds(databaseIds).stream()
                 .collect(Collectors.toMap(Database::getId, Function.identity()));
 
+        // get job result json
+        List<Long> jobIds = scheduleTaskPage.getContent().stream().map(ScheduleTask::getJobId).filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        Map<Long, String> resultMap = jobRepository.findAllById(jobIds).stream()
+                .filter(jobEntity -> jobEntity.getResultJson() != null)
+                .collect(Collectors.toMap(JobEntity::getId, JobEntity::getResultJson));
+
         return scheduleTaskPage.map(task -> {
             Schedule schedule = scheduleMap.get(task.getJobName());
             ScheduleTaskListOverview overview = ScheduleTaskListOverviewMapper.map(task);
@@ -299,7 +320,7 @@ public class ScheduleTaskService {
             if (schedule.getType() == ScheduleType.SQL_PLAN) {
                 SqlPlanAttributes attribute = new SqlPlanAttributes();
                 attribute.setDatabaseInfo(databaseMap.get(schedule.getDatabaseId()));
-                attribute.setTaskResult(JsonUtils.fromJson(task.getResultJson(), SqlPlanTaskResult.class));
+                attribute.setTaskResult(JsonUtils.fromJson(resultMap.get(task.getJobId()), SqlPlanTaskResult.class));
                 Map<Long, String> id2Attributes = new HashMap<>();
                 id2Attributes.put(task.getId(), JsonUtils.toJson(attribute));
                 overview.setAttributes(JSON.parseObject(id2Attributes.get(task.getId())));
@@ -311,7 +332,6 @@ public class ScheduleTaskService {
     public List<ScheduleTaskEntity> listTaskByJobNameAndStatus(String jobName, List<TaskStatus> statuses) {
         return scheduleTaskRepository.findByJobNameAndStatusIn(jobName, statuses);
     }
-
 
     public Optional<ScheduleTask> findByJobId(Long jobId) {
         List<ScheduleTaskEntity> scheduleTasks = scheduleTaskRepository.findByJobId(jobId);
@@ -341,6 +361,12 @@ public class ScheduleTaskService {
                 scheduleTaskRepository.findByIdAndJobName(id, scheduleId.toString());
         return scheduleTaskMapper.entityToModel(scheduleEntityOptional
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE_TASK, "id", id)));
+    }
+
+    public List<ScheduleTask> listByJobNames(Set<String> jobNames) {
+        return scheduleTaskRepository.findByJobNames(jobNames).stream()
+                .map(scheduleTaskMapper::entityToModel)
+                .collect(Collectors.toList());
     }
 
     public String getLogWithoutPermission(Long taskId, OdcTaskLogLevel logLevel) {

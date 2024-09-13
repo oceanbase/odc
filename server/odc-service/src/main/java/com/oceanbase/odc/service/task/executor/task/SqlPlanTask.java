@@ -26,14 +26,17 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.StatementCallback;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.CSVUtils;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
@@ -51,11 +54,11 @@ import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.flow.task.util.TaskDownloadUrlsProvider;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.schedule.job.PublishSqlPlanJobReq;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+import com.oceanbase.odc.service.session.initializer.ConsoleTimeoutInitializer;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanTaskResult;
 import com.oceanbase.odc.service.task.caller.JobContext;
@@ -97,6 +100,18 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                 PublishSqlPlanJobReq.class);
         this.connectionSession = generateSession();
         this.executor = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
+        long timeoutUs = TimeUnit.MILLISECONDS.toMicros(parameters.getTimeoutMillis());
+        PreConditions.notNull(timeoutUs, "timeoutUs");
+        if (timeoutUs < 0) {
+            throw new IllegalArgumentException(
+                    "Invalid timeout settings, " + parameters.getTimeoutMillis());
+        }
+        ConnectionInitializer initializer =
+                new ConsoleTimeoutInitializer(timeoutUs, connectionSession.getDialectType());
+        executor.execute((ConnectionCallback<Void>) con -> {
+            initializer.init(con);
+            return null;
+        });
         initFile();
     }
 
@@ -364,8 +379,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             String ossAddress;
             try {
                 String objectName = cloudObjectStorageService.upload(file.getName(), file);
-                ossAddress = TaskDownloadUrlsProvider
-                        .concatBucketAndObjectName(cloudObjectStorageService.getBucketName(), objectName);
+                ossAddress = String.valueOf(cloudObjectStorageService.generateDownloadUrl(objectName));
                 log.info("upload sql plan task result file to OSS, file name={}", file.getName());
             } catch (Exception exception) {
                 log.warn("upload sql plan task result file to OSS, file name={}", file.getName());
@@ -392,6 +406,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             try (FileWriter fw = new FileWriter(this.errorRecordPath, true)) {
                 String modifiedErrorMsg = generateErrorRecord(index, sql, result.getTrack());
                 fw.append(modifiedErrorMsg);
+                this.result.addFailedRecord(modifiedErrorMsg);
             } catch (IOException ex) {
                 log.warn("generate error record failed, sql index={}, sql={}, errorMsg={}", index, sql,
                         result.getTrack());
