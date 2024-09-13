@@ -41,7 +41,6 @@ import lombok.Setter;
 @Setter
 public class K8sDeploymentMatcher implements K8sResourceMatcher<K8sDeployment> {
 
-    private boolean matchesNullDeployment;
     private boolean replicasEnough;
     private boolean replicasNonEnough;
     private boolean forAllPods;
@@ -59,14 +58,9 @@ public class K8sDeploymentMatcher implements K8sResourceMatcher<K8sDeployment> {
 
     @Override
     public boolean matches(K8sDeployment k8sResource) {
-        if (k8sResource == null && this.matchesNullDeployment) {
-            return true;
-        } else if (k8sResource == null) {
-            return false;
-        } else if (this.matchesNullDeployment) {
+        if (k8sResource == null) {
             return false;
         }
-        // k8sResource != null && !this.matchesNullDeployment
         boolean matches = true;
         V1DeploymentSpec spec = k8sResource.getSpec();
         Validate.notNull(spec);

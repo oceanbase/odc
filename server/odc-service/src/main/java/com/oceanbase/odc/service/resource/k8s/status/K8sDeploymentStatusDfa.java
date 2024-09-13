@@ -52,9 +52,9 @@ public class K8sDeploymentStatusDfa extends AbstractDfa<ResourceState, K8sDeploy
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>().from(fromState)
                 .matchesK8sResource(getAvailableDeploymentMatchers(current)).to(ResourceState.AVAILABLE).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>().from(fromState)
-                .matchesK8sResource(getDeploymentNonExistsMatchers(current)).to(ResourceState.UNKNOWN).build());
+                .matchesK8sResource(Collections.singletonList(Objects::isNull)).to(ResourceState.UNKNOWN).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>().from(ResourceState.DESTROYING)
-                .matchesK8sResource(getDeploymentNonExistsMatchers(current)).to(ResourceState.DESTROYED).build());
+                .matchesK8sResource(Collections.singletonList(Objects::isNull)).to(ResourceState.DESTROYED).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>().from(ResourceState.DESTROYING)
                 .matchesK8sResource(Collections.singletonList(Objects::nonNull)).to(ResourceState.DESTROYING).build());
         return new K8sDeploymentStatusDfa(transfers);
@@ -65,12 +65,6 @@ public class K8sDeploymentStatusDfa extends AbstractDfa<ResourceState, K8sDeploy
         m1.setReplicasEnough(true);
         m1.setForAllPods(true);
         m1.setPodStatusIn(new HashSet<>(Collections.singletonList(ResourceState.AVAILABLE)));
-        return Collections.singletonList(m1);
-    }
-
-    private static List<K8sDeploymentMatcher> getDeploymentNonExistsMatchers(ResourceState resourceState) {
-        K8sDeploymentMatcher m1 = new K8sDeploymentMatcher(resourceState);
-        m1.setMatchesNullDeployment(true);
         return Collections.singletonList(m1);
     }
 

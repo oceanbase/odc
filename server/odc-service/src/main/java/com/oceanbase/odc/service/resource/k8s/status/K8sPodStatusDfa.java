@@ -52,9 +52,9 @@ public class K8sPodStatusDfa extends AbstractDfa<ResourceState, K8sPod> {
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(fromState)
                 .matchesK8sResource(getAvailablePodMatchers()).to(ResourceState.AVAILABLE).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(fromState)
-                .matchesK8sResource(getPodNonExistsMatchers()).to(ResourceState.UNKNOWN).build());
+                .matchesK8sResource(Collections.singletonList(Objects::isNull)).to(ResourceState.UNKNOWN).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(ResourceState.DESTROYING)
-                .matchesK8sResource(getPodNonExistsMatchers()).to(ResourceState.DESTROYED).build());
+                .matchesK8sResource(Collections.singletonList(Objects::isNull)).to(ResourceState.DESTROYED).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(ResourceState.DESTROYING)
                 .matchesK8sResource(Collections.singletonList(Objects::nonNull)).to(ResourceState.DESTROYING).build());
         return new K8sPodStatusDfa(transfers);
@@ -65,12 +65,6 @@ public class K8sPodStatusDfa extends AbstractDfa<ResourceState, K8sPod> {
         m1.setPodStatusIn(Collections.singleton("Running"));
         m1.setForAllContainers(true);
         m1.setContainerStatusIn(Collections.singleton(K8sPodContainerStatus.getRunningStatus()));
-        return Collections.singletonList(m1);
-    }
-
-    private static List<K8sPodMatcher> getPodNonExistsMatchers() {
-        K8sPodMatcher m1 = new K8sPodMatcher();
-        m1.setMatchesNullPod(true);
         return Collections.singletonList(m1);
     }
 
