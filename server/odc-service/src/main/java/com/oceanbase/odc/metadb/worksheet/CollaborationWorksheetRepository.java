@@ -39,21 +39,22 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 
 public interface CollaborationWorksheetRepository extends JpaRepository<CollaborationWorksheetEntity, Long>,
         JpaSpecificationExecutor<CollaborationWorksheetEntity>, OdcJpaRepository<CollaborationWorksheetEntity, Long> {
-    Optional<CollaborationWorksheetEntity> findByOrganizationIdAndProjectIdAndGroupIdAndPath(Long organizationId,
-            Long projectId, String groupId, String path);
+    Optional<CollaborationWorksheetEntity> findByOrganizationIdAndProjectIdAndWorkspaceIdAndPath(Long organizationId,
+            Long projectId, Long workspaceId, String path);
 
     @Query("SELECT c FROM CollaborationWorksheetEntity c WHERE c.organizationId = :organizationId AND c.projectId = :projectId "
-            + "AND c.groupId = :groupId AND c.path IN :paths")
-    List<CollaborationWorksheetEntity> findByOrganizationIdAndProjectIdAndGroupIdAndInPaths(
+            + "AND c.workspaceId = :workspaceId AND c.path IN :paths")
+    List<CollaborationWorksheetEntity> findByOrganizationIdAndProjectIdAndWorkspaceIdAndInPaths(
             @Param("organizationId") Long organizationId,
-            @Param("projectId") Long projectId, @Param("groupId") String groupId, @Param("paths") List<String> paths);
+            @Param("projectId") Long projectId, @Param("workspaceId") Long workspaceId,
+            @Param("paths") List<String> paths);
 
     /**
      * Fuzzy query based on path and need to handle some filtering conditions
      *
      * @param organizationId organization id
      * @param projectId project id
-     * @param groupId groupId value
+     * @param workspaceId workspaceId value
      * @param path find path
      * @param minLevelNumberFilter the minimum level number of the path，if the is null or less/equal to
      *        0,it will not be filtered
@@ -64,16 +65,16 @@ public interface CollaborationWorksheetRepository extends JpaRepository<Collabor
      * @return CollaborationWorksheetEntity list
      */
     default List<CollaborationWorksheetEntity> findByPathLikeWithFilter(Long organizationId, Long projectId,
-            String groupId, String path,
+            Long workspaceId, String path,
             Integer minLevelNumberFilter, Integer maxLevelNumberFilter, String nameLikeFilter) {
         Specification<CollaborationWorksheetEntity> specs =
-                getSpecs(organizationId, projectId, groupId, path, minLevelNumberFilter, maxLevelNumberFilter,
+                getSpecs(organizationId, projectId, workspaceId, path, minLevelNumberFilter, maxLevelNumberFilter,
                         nameLikeFilter);
         return findAll(specs);
     }
 
     default Page<CollaborationWorksheetEntity> leftJoinResourceLastAccess(Long organizationId, Long projectId,
-            String groupId, Long userId, Pageable pageable) {
+            Long workspaceId, Long userId, Pageable pageable) {
         String orderColumn = "rl.last_access_time";
         String direction = "DESC";
         // Set sorting parameters based on pageable
@@ -91,7 +92,7 @@ public interface CollaborationWorksheetRepository extends JpaRepository<Collabor
                 + "LEFT OUTER JOIN history_resource_last_access rl "
                 + "ON rl.organization_id=ws.organization_id AND rl.project_id=ws.project_id AND rl.resource_id = ws.id "
                 + "AND rl.user_id = ?4 AND rl.resource_type = ?5 "
-                + "WHERE ws.organization_id = ?1 AND ws.project_id = ?2 AND ws.group_id = ?3 "
+                + "WHERE ws.organization_id = ?1 AND ws.project_id = ?2 AND ws.workspace_id = ?3 "
                 + "ORDER BY %s %s, ws.id %s", orderColumn, direction, direction);
 
         javax.persistence.Query nativeQuery =
@@ -100,7 +101,7 @@ public interface CollaborationWorksheetRepository extends JpaRepository<Collabor
         // Set parameters
         nativeQuery.setParameter(1, organizationId);
         nativeQuery.setParameter(2, projectId);
-        nativeQuery.setParameter(3, groupId);
+        nativeQuery.setParameter(3, workspaceId);
         nativeQuery.setParameter(4, userId);
         nativeQuery.setParameter(5, ResourceType.ODC_WORKSHEET.name());
 
@@ -112,31 +113,31 @@ public interface CollaborationWorksheetRepository extends JpaRepository<Collabor
         List<CollaborationWorksheetEntity> resultList = nativeQuery.getResultList();
 
         // Count total items
-        long total = countByOrganizationIdAndProjectIdAndGroupId(organizationId, projectId, groupId);
+        long total = countByOrganizationIdAndProjectIdAndWorkspaceId(organizationId, projectId, workspaceId);
 
         return new PageImpl<>(resultList, pageable, total);
     }
 
-    long countByOrganizationIdAndProjectIdAndGroupId(Long organizationId, Long projectId, String groupId);
+    long countByOrganizationIdAndProjectIdAndWorkspaceId(Long organizationId, Long projectId, Long workspaceId);
 
     long countByOrganizationIdAndProjectId(Long organizationId, Long projectId);
 
     default long countByPathLikeWithFilter(Long organizationId, Long projectId,
-            String groupId, String path,
+            Long workspaceId, String path,
             Integer minLevelNumberFilter, Integer maxLevelNumberFilter, String nameLikeFilter) {
         Specification<CollaborationWorksheetEntity> specs =
-                getSpecs(organizationId, projectId, groupId, path, minLevelNumberFilter, maxLevelNumberFilter,
+                getSpecs(organizationId, projectId, workspaceId, path, minLevelNumberFilter, maxLevelNumberFilter,
                         nameLikeFilter);
         return count(specs);
     }
 
     static Specification<CollaborationWorksheetEntity> getSpecs(Long organizationId, Long projectId,
-            String groupId, String path,
+            Long workspaceId, String path,
             Integer minLevelNumberFilter, Integer maxLevelNumberFilter, String nameLikeFilter) {
         Specification<CollaborationWorksheetEntity> specs = Specification
                 .where(OdcJpaRepository.eq(CollaborationWorksheetEntity_.organizationId, organizationId))
                 .and(OdcJpaRepository.eq(CollaborationWorksheetEntity_.projectId, projectId))
-                .and(OdcJpaRepository.eq(CollaborationWorksheetEntity_.groupId, groupId))
+                .and(OdcJpaRepository.eq(CollaborationWorksheetEntity_.workspaceId, workspaceId))
                 .and(OdcJpaRepository.startsWith(CollaborationWorksheetEntity_.path, path));
         boolean min = minLevelNumberFilter != null && minLevelNumberFilter > 0;
         boolean max = maxLevelNumberFilter != null && maxLevelNumberFilter > 0;
@@ -164,10 +165,10 @@ public interface CollaborationWorksheetRepository extends JpaRepository<Collabor
     @Modifying
     @Transactional
     @Query("DELETE CollaborationWorksheetEntity c WHERE"
-            + " c.organizationId = :organizationId AND c.projectId = :projectId AND c.groupId = :groupId"
+            + " c.organizationId = :organizationId AND c.projectId = :projectId AND c.workspaceId = :workspaceId"
             + " AND c.path LIKE CONCAT(:path,'%')")
     int batchDeleteByPathLike(@Param("organizationId") Long organizationId,
-            @Param("projectId") Long projectId, @Param("groupId") String groupId, @Param("path") String path);
+            @Param("projectId") Long projectId, @Param("workspaceId") Long workspaceId, @Param("path") String path);
 
     /**
      * only for test

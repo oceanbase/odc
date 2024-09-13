@@ -54,6 +54,4 @@ public class WorksheetConstants {
     public static final long MAX_DURATION_DOWNLOAD_SECONDS = 60 * 60L;
 
     public static final String ROOT_PATH_NAME = "";
-
-    public static final String DEFAULT_WORKSHEET_GROUP_ID = "default";
 }

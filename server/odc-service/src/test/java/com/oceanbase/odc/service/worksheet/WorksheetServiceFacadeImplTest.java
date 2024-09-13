@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.worksheet;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -41,7 +40,6 @@ import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.objectstorage.client.ObjectStorageClient;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
-import com.oceanbase.odc.service.worksheet.constants.WorksheetConstants;
 import com.oceanbase.odc.service.worksheet.domain.Path;
 import com.oceanbase.odc.service.worksheet.factory.WorksheetServiceFactory;
 import com.oceanbase.odc.service.worksheet.model.WorksheetLocation;
@@ -50,8 +48,6 @@ import com.oceanbase.odc.service.worksheet.service.RepoWorksheetService;
 
 @RunWith(MockitoJUnitRunner.class)
 public class WorksheetServiceFacadeImplTest {
-    Long projectId = 1L;
-    String groupId = WorksheetConstants.DEFAULT_WORKSHEET_GROUP_ID;
     @Mock
     private ProjectRepository projectRepository;
     @Mock
@@ -65,6 +61,9 @@ public class WorksheetServiceFacadeImplTest {
 
     @InjectMocks
     private WorksheetServiceFacadeImpl worksheetServiceFacade;
+
+    Long projectId = 1L;
+    Long groupId = 1L;
 
     @After
     public void clear() {
@@ -82,7 +81,7 @@ public class WorksheetServiceFacadeImplTest {
 
         when(worksheetServiceFactory.getProjectFileService(WorksheetLocation.WORKSHEETS))
                 .thenReturn(defaultWorksheetService);
-        when(defaultWorksheetService.generateDownloadUrl(any(), anyString(), any()))
+        when(defaultWorksheetService.generateDownloadUrl(any(), anyLong(), any()))
                 .thenAnswer(invocation -> invocation.getArgument(2, Path.class).getStandardPath());
 
         String result = worksheetServiceFacade.batchDownloadWorksheets(projectId, groupId, paths);

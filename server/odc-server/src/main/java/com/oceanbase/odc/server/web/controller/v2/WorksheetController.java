@@ -61,7 +61,7 @@ import lombok.SneakyThrows;
  * @since 4.3.2
  */
 @RestController
-@RequestMapping("/api/v2/project/{projectId}")
+@RequestMapping("/api/v2/project/{projectId:[\\d]+}/workspaces/{workspaceId:[\\d]+}")
 public class WorksheetController {
 
     @Resource
@@ -72,88 +72,88 @@ public class WorksheetController {
     @PostMapping("/worksheets/generateUploadUrl")
     public SuccessResponse<GenerateWorksheetUploadUrlResp> generateUploadUrl(
             @PathVariable("projectId") Long projectId,
-            @RequestParam("groupId") String groupId,
+            @PathVariable("workspaceId") Long workspaceId,
             @RequestBody GenerateWorksheetUploadUrlReq req) {
-        return Responses.success(worksheetServiceFacade.generateUploadUrl(projectId, groupId, req));
+        return Responses.success(worksheetServiceFacade.generateUploadUrl(projectId, workspaceId, req));
     }
 
     @PostMapping("/worksheets")
     public SuccessResponse<WorksheetMetaResp> createWorksheet(
             @PathVariable("projectId") Long projectId,
-            @RequestParam("groupId") String groupId,
+            @PathVariable("workspaceId") Long workspaceId,
             @RequestParam("path") String path,
             @RequestParam(value = "objectId", required = false) String objectId,
             @RequestParam(value = "size", required = false) Long size) {
-        return Responses.success(worksheetServiceFacade.createWorksheet(projectId, groupId, path, objectId, size));
+        return Responses.success(worksheetServiceFacade.createWorksheet(projectId, workspaceId, path, objectId, size));
     }
 
     @SneakyThrows(UnsupportedEncodingException.class)
     @GetMapping(value = "/worksheets/{path}")
     public SuccessResponse<WorksheetResp> getWorksheetDetail(
             @PathVariable("projectId") Long projectId,
-            @RequestParam("groupId") String groupId,
+            @PathVariable("workspaceId") Long workspaceId,
             @PathVariable("path") String path) {
         String decodedPath = URLDecoder.decode(path, String.valueOf(StandardCharsets.UTF_8));
-        return Responses.success(worksheetServiceFacade.getWorksheetDetail(projectId, groupId, decodedPath));
+        return Responses.success(worksheetServiceFacade.getWorksheetDetail(projectId, workspaceId, decodedPath));
     }
 
     @GetMapping("/worksheets")
     public ListResponse<WorksheetMetaResp> listWorksheets(
             @PathVariable("projectId") Long projectId,
-            @RequestParam("groupId") String groupId,
+            @PathVariable("workspaceId") Long workspaceId,
             ListWorksheetsReq req) {
-        return Responses.list(worksheetServiceFacade.listWorksheets(projectId, groupId, req));
+        return Responses.list(worksheetServiceFacade.listWorksheets(projectId, workspaceId, req));
     }
 
     @PostMapping("/worksheets/flatList")
     public PaginatedResponse<WorksheetMetaResp> flatListWorksheets(
             @PathVariable("projectId") Long projectId,
-            @RequestParam("groupId") String groupId,
+            @PathVariable("workspaceId") Long workspaceId,
             @PageableDefault(size = 100, sort = {"lastAccessTime"}, direction = Direction.DESC) Pageable pageable) {
-        return Responses.paginated(defaultWorksheetService.flatListWorksheets(projectId, groupId, pageable));
+        return Responses.paginated(defaultWorksheetService.flatListWorksheets(projectId, workspaceId, pageable));
     }
 
     @PostMapping("/worksheets/batchUpload")
     public SuccessResponse<BatchOperateWorksheetsResp> batchUploadWorksheets(
             @PathVariable("projectId") Long projectId,
-            @RequestParam("groupId") String groupId,
+            @PathVariable("workspaceId") Long workspaceId,
             @RequestBody BatchUploadWorksheetsReq req) {
-        return Responses.success(worksheetServiceFacade.batchUploadWorksheets(projectId, groupId, req));
+        return Responses.success(worksheetServiceFacade.batchUploadWorksheets(projectId, workspaceId, req));
     }
 
     @PostMapping("/worksheets/batchDelete")
     public SuccessResponse<BatchOperateWorksheetsResp> batchDeleteWorksheets(
             @PathVariable("projectId") Long projectId,
-            @RequestParam("groupId") String groupId,
+            @PathVariable("workspaceId") Long workspaceId,
             @RequestBody @Size(min = 1, max = 100) List<String> paths) {
-        return Responses.success(worksheetServiceFacade.batchDeleteWorksheets(projectId, groupId, paths));
+        return Responses.success(worksheetServiceFacade.batchDeleteWorksheets(projectId, workspaceId, paths));
     }
 
     @PostMapping("/worksheets/rename")
     public ListResponse<WorksheetMetaResp> renameWorksheet(
             @PathVariable("projectId") Long projectId,
-            @RequestParam("groupId") String groupId,
+            @PathVariable("workspaceId") Long workspaceId,
             @RequestParam("path") String path,
             @RequestParam("destinationPath") String destinationPath) {
-        return Responses.list(worksheetServiceFacade.renameWorksheet(projectId, groupId, path, destinationPath));
+        return Responses.list(worksheetServiceFacade.renameWorksheet(projectId, workspaceId, path, destinationPath));
     }
 
     @SneakyThrows(UnsupportedEncodingException.class)
     @PutMapping("/worksheets/{path}")
     public ListResponse<WorksheetMetaResp> editWorksheet(
             @PathVariable("projectId") Long projectId,
-            @RequestParam("groupId") String groupId,
+            @PathVariable("workspaceId") Long workspaceId,
             @PathVariable("path") String path,
             @RequestBody UpdateWorksheetReq req) {
         String decodedPath = URLDecoder.decode(path, String.valueOf(StandardCharsets.UTF_8));
-        return Responses.list(worksheetServiceFacade.editWorksheet(projectId, groupId, decodedPath, req));
+        return Responses.list(worksheetServiceFacade.editWorksheet(projectId, workspaceId, decodedPath, req));
     }
 
     @PostMapping("/worksheets/batchDownload")
     public SuccessResponse<String> batchDownloadWorksheets(
             @PathVariable("projectId") Long projectId,
-            @RequestParam("groupId") String groupId,
+            @PathVariable("workspaceId") Long workspaceId,
             @RequestBody Set<String> paths) {
-        return Responses.success(worksheetServiceFacade.batchDownloadWorksheets(projectId, groupId, paths));
+        return Responses.success(worksheetServiceFacade.batchDownloadWorksheets(projectId, workspaceId, paths));
     }
 }

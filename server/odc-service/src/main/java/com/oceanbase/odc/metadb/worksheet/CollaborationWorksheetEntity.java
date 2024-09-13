@@ -61,8 +61,8 @@ public class CollaborationWorksheetEntity {
     @Column(name = "project_id", nullable = false)
     private Long projectId;
 
-    @Column(name = "group_id", nullable = false)
-    private String groupId;
+    @Column(name = "workspace_id", nullable = false)
+    private Long workspaceId;
 
     @Column(name = "creator_id", nullable = false)
     private Long creatorId;
