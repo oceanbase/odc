@@ -19,6 +19,7 @@ import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
+import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 
 /**
@@ -35,8 +36,12 @@ public class DefaultApprovalFlowClient implements ApprovalFlowClient {
         req.setParentFlowInstanceId(params.getScheduleId());
         req.setTaskType(TaskType.ALTER_SCHEDULE);
         AlterScheduleParameters alterScheduleParameters = new AlterScheduleParameters();
+        alterScheduleParameters.setTaskId(params.getScheduleId());
         alterScheduleParameters.setScheduleChangeParams(params);
         alterScheduleParameters.setOperationType(params.getOperationType());
+        alterScheduleParameters.setTriggerConfig(
+                params.getOperationType() == OperationType.CREATE ? params.getCreateScheduleReq().getTriggerConfig()
+                        : params.getUpdateScheduleReq().getTriggerConfig());
         req.setParameters(alterScheduleParameters);
         return SpringContextUtil.getBean(FlowInstanceService.class).createAlterSchedule(req);
     }
