@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 
 import com.oceanbase.odc.common.dfa.AbstractDfa;
 import com.oceanbase.odc.common.dfa.DfaStateTransfer;
@@ -54,6 +55,8 @@ public class K8sPodStatusDfa extends AbstractDfa<ResourceState, K8sPod> {
                 .matchesK8sResource(getPodNonExistsMatchers()).to(ResourceState.UNKNOWN).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(ResourceState.DESTROYING)
                 .matchesK8sResource(getPodNonExistsMatchers()).to(ResourceState.DESTROYED).build());
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(ResourceState.DESTROYING)
+                .matchesK8sResource(Collections.singletonList(Objects::nonNull)).to(ResourceState.DESTROYING).build());
         return new K8sPodStatusDfa(transfers);
     }
 
