@@ -43,7 +43,7 @@
         <ob-data-mocker.version>0.2.2</ob-data-mocker.version>
 
         <!-- dependency version -->
-        <springframework.version>5.3.26</springframework.version>
+        <springframework.version>6.1.13</springframework.version>
         <spring-security.version>5.7.12</spring-security.version>
         <spring-integration.version>5.5.18</spring-integration.version>
         <springboot.version>2.7.12</springboot.version>
