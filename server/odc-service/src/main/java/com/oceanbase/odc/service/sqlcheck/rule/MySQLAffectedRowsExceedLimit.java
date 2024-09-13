@@ -144,7 +144,7 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
         Matcher selectMatcher = selectPattern.matcher(sql);
 
         if (valuesMatcher.find()) {
-            String [] valueList = sql.split(valuesRegex);
+            String[] valueList = sql.split(valuesRegex);
             Pattern pattern = Pattern.compile("\\(.*?\\)");
             Matcher matcher = pattern.matcher("(" + valueList[1]);
             int count = 0;
