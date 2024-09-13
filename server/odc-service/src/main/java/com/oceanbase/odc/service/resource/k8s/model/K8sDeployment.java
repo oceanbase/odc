@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.resource.k8s.model;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -46,6 +47,7 @@ public class K8sDeployment extends V1Deployment implements K8sResource {
     private ResourceState resourceState;
     private ResourceLocation resourceLocation;
     private ResourceOperator<K8sPod, K8sPod> resourceOperator;
+    private List<K8sPod> k8sPodList = null;
 
     public K8sDeployment(@NonNull ResourceLocation resourceLocation, @NonNull ResourceState resourceState) {
         this.resourceState = resourceState;
@@ -67,11 +69,14 @@ public class K8sDeployment extends V1Deployment implements K8sResource {
         return this.resourceLocation;
     }
 
-    public List<K8sPod> getK8sPods() throws Exception {
+    public synchronized List<K8sPod> getK8sPods() throws Exception {
+        if (this.k8sPodList != null) {
+            return this.k8sPodList;
+        }
         if (this.resourceOperator == null) {
             throw new IllegalStateException("K8s Pod operator is null");
         }
-        return this.resourceOperator.list().stream().filter(pod -> {
+        this.k8sPodList = this.resourceOperator.list().stream().filter(pod -> {
             if (!pod.resourceName().startsWith(resourceName())
                     || pod.getMetadata() == null) {
                 return false;
@@ -80,6 +85,7 @@ public class K8sDeployment extends V1Deployment implements K8sResource {
             return pod.resourceID().equals(
                     new ResourceID(resourceLocation(), K8sPod.TYPE, meta.getNamespace(), meta.getName()));
         }).collect(Collectors.toList());
+        return this.k8sPodList;
     }
 
 }
