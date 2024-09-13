@@ -197,6 +197,7 @@ public class DBSchemaExtractor {
 
         private final Set<DBSchemaIdentity> identities = new HashSet<>();
 
+        @Override
         public RelationFactor visitCreate_index_stmt(Create_index_stmtContext ctx) {
             for (int i = 0; i < ctx.getChildCount(); i++) {
                 if (i != 2) {
@@ -331,6 +332,7 @@ public class DBSchemaExtractor {
 
         private final Set<DBSchemaIdentity> identities = new HashSet<>();
 
+        @Override
         public RelationFactor visitCreate_index_stmt(OBParser.Create_index_stmtContext ctx) {
             for (int i = 0; i < ctx.getChildCount(); i++) {
                 if (i != 2) {
