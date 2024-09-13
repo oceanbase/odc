@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import org.antlr.v4.runtime.tree.RuleNode;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.common.util.StringUtils;
@@ -42,6 +41,7 @@ import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLExpressionFactory;
 import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLFromReferenceFactory;
 import com.oceanbase.tools.sqlparser.adapter.oracle.OracleExpressionFactory;
 import com.oceanbase.tools.sqlparser.adapter.oracle.OracleFromReferenceFactory;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_table_actionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_database_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Database_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Dot_relation_factorContext;
@@ -49,6 +49,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Normal_relation_factorCont
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factor_with_starContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_nameContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Rename_table_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Simple_exprContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Use_database_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
@@ -198,6 +199,21 @@ public class DBSchemaExtractor {
         private final Set<DBSchemaIdentity> identities = new HashSet<>();
 
         @Override
+        public RelationFactor visitAlter_table_action(Alter_table_actionContext ctx) {
+            if (ctx.RENAME() != null) {
+                return null;
+            }
+            return this.visitChildren(ctx);
+        }
+
+        @Override
+        public RelationFactor visitRename_table_stmt(Rename_table_stmtContext ctx) {
+            ctx.rename_table_actions().rename_table_action().forEach(
+                    item -> addRelationFactor(MySQLFromReferenceFactory.getRelationFactor(item.relation_factor(0))));
+            return null;
+        }
+
+        @Override
         public RelationFactor visitRelation_factor(Relation_factorContext ctx) {
             addRelationFactor(MySQLFromReferenceFactory.getRelationFactor(ctx));
             return null;
@@ -256,18 +272,6 @@ public class DBSchemaExtractor {
             if (StringUtils.isBlank(rf.getUserVariable())) {
                 identities.add(new DBSchemaIdentity(rf.getSchema(), rf.getRelation()));
             }
-        }
-
-        @Override
-        protected boolean shouldVisitNextChild(RuleNode node, RelationFactor currentResult) {
-            if (node.getChild(0) != null
-                    && node.getChild(0).getChild(0) != null
-                    && "RENAME".equalsIgnoreCase(node.getChild(0).getChild(0).getText())
-                    && node.getChild(0).getChild(1) != null
-                    && "TO".equalsIgnoreCase(node.getChild(0).getChild(1).getText())) {
-                return false;
-            }
-            return true;
         }
     }
 
@@ -332,6 +336,21 @@ public class DBSchemaExtractor {
             extends com.oceanbase.tools.sqlparser.oboracle.OBParserBaseVisitor<RelationFactor> {
 
         private final Set<DBSchemaIdentity> identities = new HashSet<>();
+
+        @Override
+        public RelationFactor visitAlter_table_action(OBParser.Alter_table_actionContext ctx) {
+            if (ctx.RENAME() != null) {
+                return null;
+            }
+            return this.visitChildren(ctx);
+        }
+
+        @Override
+        public RelationFactor visitRename_table_stmt(OBParser.Rename_table_stmtContext ctx) {
+            addRelationFactor(OracleFromReferenceFactory.getRelationFactor(
+                    ctx.rename_table_actions().rename_table_action().relation_factor(0)));
+            return null;
+        }
 
         @Override
         public RelationFactor visitRelation_factor(OBParser.Relation_factorContext ctx) {
