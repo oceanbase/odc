@@ -234,9 +234,17 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
         return reference;
     }
 
+    /**
+     * 获取关系因素
+     *
+     * @param c Normal_relation_factorContext对象
+     * @return 返回关系名称
+     */
     private static String getRelation(Normal_relation_factorContext c) {
+        // 获取关系名称列表
         List<String> names = c.relation_name().stream()
-                .map(RuleContext::getText).collect(Collectors.toList());
+            .map(RuleContext::getText).collect(Collectors.toList());
+        // 如果存在MySQL保留关键字，则返回该关键字
         if (c.mysql_reserved_keyword() != null) {
             return c.mysql_reserved_keyword().getText();
         } else if (names.size() == 2) {
@@ -244,6 +252,7 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
         } else if (names.size() == 1) {
             return names.get(0);
         }
+        // 否则返回null
         return null;
     }
 
