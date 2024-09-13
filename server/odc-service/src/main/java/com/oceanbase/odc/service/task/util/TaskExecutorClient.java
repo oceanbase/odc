@@ -25,7 +25,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.schedule.LoggerProperty;
+import com.oceanbase.odc.service.schedule.ScheduleLogProperties;
 import com.oceanbase.odc.service.task.constants.JobExecutorUrls;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.executor.server.ExecutorRequestHandler;
@@ -45,7 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TaskExecutorClient {
 
     @Autowired
-    private LoggerProperty loggerProperty;
+    private ScheduleLogProperties loggerProperty;
 
     public String getLogContent(@NonNull String executorEndpoint, @NonNull Long jobId, @NonNull OdcTaskLogLevel level) {
         String url = new StringBuilder(executorEndpoint)
