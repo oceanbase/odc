@@ -107,6 +107,14 @@ public class ScheduleTaskRepositoryTest extends ServiceTestEnv {
         Assert.equals(latestTask.getId(), latestTaskOptional.get().getId());
     }
 
+    @Test
+    public void testFindByJobNames() {
+        taskRepository.deleteAll();
+        createScheduleTask();
+        List<ScheduleTaskEntity> tasks = taskRepository.findByJobNames(Collections.singleton("1"));
+        Assert.equals(1, tasks.size());
+    }
+
     private ScheduleTaskEntity createScheduleTask() {
         ScheduleTaskEntity entity = new ScheduleTaskEntity();
         entity.setStatus(TaskStatus.PREPARING);
