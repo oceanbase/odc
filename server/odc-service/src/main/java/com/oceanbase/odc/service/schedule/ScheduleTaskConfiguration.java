@@ -15,13 +15,10 @@
  */
 package com.oceanbase.odc.service.schedule;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 
-import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.schedule.alarm.DefaultScheduleAlarmClient;
 import com.oceanbase.odc.service.schedule.alarm.ScheduleAlarmClient;
 import com.oceanbase.odc.service.schedule.flowtask.ApprovalFlowClient;
@@ -37,11 +34,10 @@ import com.oceanbase.odc.service.schedule.flowtask.DefaultApprovalFlowClient;
 public class ScheduleTaskConfiguration {
 
 
-    @Lazy
     @Bean
     @ConditionalOnMissingBean(ApprovalFlowClient.class)
-    public ApprovalFlowClient approvalFlowService(@Autowired FlowInstanceService flowInstanceService) {
-        return new DefaultApprovalFlowClient(flowInstanceService);
+    public ApprovalFlowClient approvalFlowService() {
+        return new DefaultApprovalFlowClient();
     }
 
     @Bean
