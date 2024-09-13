@@ -129,7 +129,7 @@ public class ScheduleController {
 
     @ApiOperation(value = "GetFullLogDownloadUrl", notes = "get full log download url")
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/log/getDownloadUrl",
-            method = RequestMethod.GET)
+            method = RequestMethod.POST)
     public SuccessResponse<String> getFullLogDownloadUrl(@PathVariable Long scheduleId,
             @PathVariable Long taskId) {
         String fullLogDownloadUrl = scheduleService.getFullLogDownloadUrl(scheduleId, taskId);

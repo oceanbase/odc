@@ -30,16 +30,26 @@ import lombok.Data;
 @Component
 @RefreshScope
 @Data
-public class LoggerProperty {
+public class ScheduleLogProperties {
 
-    // This is the directory path for storing temporary log files from scheduled tasks pods
+    /**
+     * This is the directory path where temporary log files from running tasks inside the pod are stored
+     */
     private String tempLogDir;
 
+    /**
+     * This is a root path that stores all flow task instance log file and schedule task log file
+     */
     private String directory = "./log";
 
+    /**
+     * The limited of max lines can read from log file
+     */
     private Long maxLines = 10000L;
 
-    // unit：B
+    /**
+     * unit：B
+     */
     private Long maxSize = 1024L * 1024;
 
     @PostConstruct

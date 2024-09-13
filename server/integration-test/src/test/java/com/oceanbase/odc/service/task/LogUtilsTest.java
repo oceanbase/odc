@@ -29,7 +29,7 @@ import com.oceanbase.odc.service.task.executor.logger.LogUtils;
  * @date 2024-03-22
  * @since 4.2.4
  */
-public class TestLogUtils {
+public class LogUtilsTest {
 
     @Test
     public void test_readPartLogContent() {
@@ -64,6 +64,26 @@ public class TestLogUtils {
             a.write("\n".getBytes());
             String s = LogUtils.getLatestLogContent(fileName, 3L, 100L);
             Assert.assertEquals("test\njava\ngo\n", s);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            file.delete();
+        }
+    }
+
+    @Test
+    public void test_writePartSizeLogContent() {
+        String fileName = "./test3.log";
+        File file = new File(fileName);
+        try (FileOutputStream a = new FileOutputStream(file)) {
+            a.write("test".getBytes());
+            a.write("\n".getBytes());
+            a.write("java".getBytes());
+            a.write("\n".getBytes());
+            a.write("go".getBytes());
+            a.write("\n".getBytes());
+            String s = LogUtils.getLatestLogContent(fileName, 10L, 8L);
+            Assert.assertTrue(s.startsWith("java\ngo\n") && !s.startsWith("test\n"));
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {

@@ -722,11 +722,11 @@ public class ScheduleService {
 
     public String getLog(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel logLevel) {
         nullSafeGetByIdWithCheckPermission(scheduleId, false);
-        return scheduledTaskLoggerService.getLog(scheduleTaskId, logLevel);
+        return scheduledTaskLoggerService.getLogContent(scheduleTaskId, logLevel);
     }
 
     public String getLogWithoutPermission(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel logLevel) {
-        return scheduledTaskLoggerService.getLog(scheduleTaskId, logLevel);
+        return scheduledTaskLoggerService.getLogContent(scheduleTaskId, logLevel);
     }
 
     public List<BinaryDataResult> downloadLog(Long scheduleId, Long scheduleTaskId) {

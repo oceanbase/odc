@@ -30,7 +30,7 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
-import com.oceanbase.odc.service.schedule.LoggerProperty;
+import com.oceanbase.odc.service.schedule.ScheduleLogProperties;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
@@ -51,13 +51,13 @@ public class FlowTaskInstanceLoggerService {
     private final RequestDispatcher requestDispatcher;
     private final TaskDispatchChecker dispatchChecker;
     private final TaskService taskService;
-    private final LoggerProperty loggerProperty;
+    private final ScheduleLogProperties loggerProperty;
 
     public FlowTaskInstanceLoggerService(FlowTaskInstanceService flowTaskInstanceService,
             RequestDispatcher requestDispatcher,
             TaskDispatchChecker dispatchChecker,
             TaskService taskService,
-            LoggerProperty loggerProperty) {
+            ScheduleLogProperties loggerProperty) {
         this.flowTaskInstanceService = flowTaskInstanceService;
         this.requestDispatcher = requestDispatcher;
         this.dispatchChecker = dispatchChecker;
@@ -66,14 +66,14 @@ public class FlowTaskInstanceLoggerService {
     }
 
     @SneakyThrows
-    public String getLog(OdcTaskLogLevel level, Long flowInstanceId) {
+    public String getLogContent(OdcTaskLogLevel level, Long flowInstanceId) {
         Optional<TaskEntity> taskEntityOptional =
                 flowTaskInstanceService.getLogDownloadableTaskEntity(flowInstanceId, false);
         return getLogContent(taskEntityOptional, level, flowInstanceId);
     }
 
     @SneakyThrows
-    public String getLogWithoutPermission(OdcTaskLogLevel level, Long flowInstanceId) {
+    public String getLogContentWithoutPermission(OdcTaskLogLevel level, Long flowInstanceId) {
         Optional<TaskEntity> taskEntityOptional =
                 flowTaskInstanceService.getLogDownloadableTaskEntity(flowInstanceId, true);
         return getLogContent(taskEntityOptional, level, flowInstanceId);
@@ -83,7 +83,7 @@ public class FlowTaskInstanceLoggerService {
     private String getLogContent(Optional<TaskEntity> taskEntityOptional, OdcTaskLogLevel level, Long flowInstanceId) {
         if (!taskEntityOptional.isPresent()) {
             log.warn("get log failed, flowInstanceId={}", flowInstanceId);
-            return "Get log failed, the log file may not exists or removed, flowInstanceId" + flowInstanceId;
+            return LogUtils.DEFAULT_LOG_CONTENT;
         }
         TaskEntity taskEntity = taskEntityOptional.get();
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {

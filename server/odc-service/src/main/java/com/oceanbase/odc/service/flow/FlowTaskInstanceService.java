@@ -193,11 +193,11 @@ public class FlowTaskInstanceService {
     }
 
     public String getLog(@NotNull Long flowInstanceId, OdcTaskLogLevel level) throws IOException {
-        return flowTaskInstanceLoggerService.getLog(level, flowInstanceId);
+        return flowTaskInstanceLoggerService.getLogContent(level, flowInstanceId);
     }
 
     public String getLogWithoutPermission(@NotNull Long flowInstanceId, OdcTaskLogLevel level) {
-        return flowTaskInstanceLoggerService.getLogWithoutPermission(level, flowInstanceId);
+        return flowTaskInstanceLoggerService.getLogContentWithoutPermission(level, flowInstanceId);
     }
 
     public List<BinaryDataResult> downloadLog(@NotNull Long flowInstanceId) {

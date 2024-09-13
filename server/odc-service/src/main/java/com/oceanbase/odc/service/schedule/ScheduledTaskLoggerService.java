@@ -59,6 +59,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ScheduledTaskLoggerService {
 
     private static final String LOG_PATH_PATTERN = "%s/scheduleTask/%s-%s/%s/log.%s";
+    private static final String DOWNLOAD_LOG_URL_PATTERN = "/api/v2/schedule/schedules/%s/tasks/%s/log/download";
 
     private final ScheduleTaskService scheduleTaskService;
     private final TaskFrameworkEnabledProperties taskFrameworkEnabledProperties;
@@ -68,7 +69,7 @@ public class ScheduledTaskLoggerService {
     private final JobDispatchChecker jobDispatchChecker;
     private final TaskExecutorClient taskExecutorClient;
 
-    private final LoggerProperty loggerProperty;
+    private final ScheduleLogProperties loggerProperty;
     private final CloudObjectStorageService cloudObjectStorageService;
 
     public ScheduledTaskLoggerService(ScheduleTaskService scheduleTaskService,
@@ -78,7 +79,7 @@ public class ScheduledTaskLoggerService {
             TaskFrameworkService taskFrameworkService,
             JobDispatchChecker jobDispatchChecker,
             TaskExecutorClient taskExecutorClient,
-            LoggerProperty loggerProperty,
+            ScheduleLogProperties loggerProperty,
             CloudObjectStorageService cloudObjectStorageService) {
         this.scheduleTaskService = scheduleTaskService;
         this.taskFrameworkEnabledProperties = taskFrameworkEnabledProperties;
@@ -91,12 +92,12 @@ public class ScheduledTaskLoggerService {
         this.cloudObjectStorageService = cloudObjectStorageService;
     }
 
-    public String getLog(Long scheduleTaskId, OdcTaskLogLevel level) {
+    public String getLogContent(Long scheduleTaskId, OdcTaskLogLevel level) {
         try {
             return LogUtils.getLatestLogContent(getLogFile(scheduleTaskId, level), loggerProperty.getMaxLines(),
                     loggerProperty.getMaxSize());
         } catch (Exception e) {
-            log.warn("{}, taskId={}", LogUtils.DEFAULT_LOG_CONTENT, scheduleTaskId, e);
+            log.warn("get log failed, scheduleTaskId={}", scheduleTaskId);
             return LogUtils.DEFAULT_LOG_CONTENT;
         }
     }
@@ -107,7 +108,10 @@ public class ScheduledTaskLoggerService {
 
     @SneakyThrows
     public String getFullLogDownloadUrl(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel level) {
-        if (ObjectUtil.isNotNull(cloudObjectStorageService) && cloudObjectStorageService.supported()) {
+        if (ObjectUtil.isNull(cloudObjectStorageService)) {
+            return String.format(DOWNLOAD_LOG_URL_PATTERN, scheduleId, scheduleTaskId);
+        }
+        if (cloudObjectStorageService.supported()) {
             ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(scheduleTaskId);
             Long jobId = taskEntity.getJobId();
             if (jobId == null) {
@@ -129,7 +133,7 @@ public class ScheduledTaskLoggerService {
             }
             return StrUtil.EMPTY;
         }
-        return String.format("/api/v2/schedule/schedules/%s/tasks/%s/log/download", scheduleId, scheduleTaskId);
+        return String.format(DOWNLOAD_LOG_URL_PATTERN, scheduleId, scheduleTaskId);
     }
 
     @SneakyThrows
