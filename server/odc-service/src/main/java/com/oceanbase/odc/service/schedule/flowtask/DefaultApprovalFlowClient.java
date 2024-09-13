@@ -15,10 +15,6 @@
  */
 package com.oceanbase.odc.service.schedule.flowtask;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Service;
-
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
@@ -30,12 +26,13 @@ import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
  * @Descripition:
  */
 
-@Service
-@Profile("alipay")
-public class DefaultApprovalFlowService implements ApprovalFlowService {
+public class DefaultApprovalFlowClient implements ApprovalFlowClient {
 
-    @Autowired
     private FlowInstanceService flowInstanceService;
+
+    public DefaultApprovalFlowClient(FlowInstanceService flowInstanceService) {
+        this.flowInstanceService = flowInstanceService;
+    }
 
     @Override
     public Long create(ScheduleChangeParams params) {

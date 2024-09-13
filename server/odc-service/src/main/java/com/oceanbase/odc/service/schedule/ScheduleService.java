@@ -85,7 +85,7 @@ import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.schedule.factory.ScheduleResponseMapperFactory;
-import com.oceanbase.odc.service.schedule.flowtask.ApprovalFlowService;
+import com.oceanbase.odc.service.schedule.flowtask.ApprovalFlowClient;
 import com.oceanbase.odc.service.schedule.model.ChangeQuartJobParam;
 import com.oceanbase.odc.service.schedule.model.ChangeScheduleResp;
 import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
@@ -189,7 +189,7 @@ public class ScheduleService {
     private JdbcLockRegistry jdbcLockRegistry;
 
     @Autowired
-    private ApprovalFlowService approvalFlowService;
+    private ApprovalFlowClient approvalFlowService;
 
     private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
 

@@ -22,7 +22,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
  * @Date: 2024/9/10 17:09
  * @Descripition:
  */
-public interface ApprovalFlowService {
+public interface ApprovalFlowClient {
 
     Long create(ScheduleChangeParams params);
 
