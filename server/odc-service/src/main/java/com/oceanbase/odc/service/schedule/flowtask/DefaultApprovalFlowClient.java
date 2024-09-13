@@ -36,6 +36,7 @@ public class DefaultApprovalFlowClient implements ApprovalFlowClient {
         req.setTaskType(TaskType.ALTER_SCHEDULE);
         AlterScheduleParameters alterScheduleParameters = new AlterScheduleParameters();
         alterScheduleParameters.setScheduleChangeParams(params);
+        alterScheduleParameters.setOperationType(params.getOperationType());
         req.setParameters(alterScheduleParameters);
         return SpringContextUtil.getBean(FlowInstanceService.class).createAlterSchedule(req);
     }
