@@ -203,6 +203,9 @@ public class DBSchemaExtractor {
             if (ctx.RENAME() != null) {
                 return null;
             }
+            if (ctx.alter_partition_option() != null) {
+                return null;
+            }
             return this.visitChildren(ctx);
         }
 
@@ -340,6 +343,9 @@ public class DBSchemaExtractor {
         @Override
         public RelationFactor visitAlter_table_action(OBParser.Alter_table_actionContext ctx) {
             if (ctx.RENAME() != null) {
+                return null;
+            }
+            if (ctx.alter_partition_option() != null) {
                 return null;
             }
             return this.visitChildren(ctx);
