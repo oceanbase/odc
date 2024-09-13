@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.schedule;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,7 +40,7 @@ public class ScheduleTaskConfiguration {
     @Lazy
     @Bean
     @ConditionalOnMissingBean(ApprovalFlowClient.class)
-    public ApprovalFlowClient approvalFlowService(FlowInstanceService flowInstanceService) {
+    public ApprovalFlowClient approvalFlowService(@Autowired FlowInstanceService flowInstanceService) {
         return new DefaultApprovalFlowClient(flowInstanceService);
     }
 
