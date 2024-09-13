@@ -45,8 +45,8 @@ public class K8sDeployment extends V1Deployment implements K8sResource {
     public static final String TYPE = "K8S_DEPLOYMENT";
     private ResourceState resourceState;
     private ResourceLocation resourceLocation;
-    private ResourceOperator<K8sPod, K8sPod> resourceOperator;
     private List<K8sPod> k8sPodList = null;
+    private ResourceOperator<K8sPod, K8sPod> resourceOperator;
 
     public K8sDeployment(@NonNull ResourceLocation resourceLocation, @NonNull ResourceState resourceState) {
         this.resourceState = resourceState;
