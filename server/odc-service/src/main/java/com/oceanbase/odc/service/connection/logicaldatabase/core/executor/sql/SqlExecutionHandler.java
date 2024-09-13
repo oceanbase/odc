@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.springframework.jdbc.core.StatementCallback;
 
+import com.aliyuncs.utils.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
@@ -74,6 +75,15 @@ public class SqlExecutionHandler implements ExecutionHandler<SqlExecuteReq, SqlE
     public ExecutionResult<SqlExecutionResultWrapper> execute(
             ExecutionGroupContext<SqlExecuteReq, SqlExecutionResultWrapper> context)
             throws SQLException {
+        if (StringUtils.isEmpty(req.getSql())) {
+            return new ExecutionResult<>(
+                    new SqlExecutionResultWrapper(req.getLogicalDatabaseId(), req.getPhysicalDatabaseId(),
+                            req.getScheduleTaskId(),
+                            SqlExecuteResult.emptyResult(SqlTuple.newTuple("-- No SQL needs to execute in this run"),
+                                    SqlExecuteStatus.SUCCESS)),
+                    ExecutionStatus.SUCCESS, req.getOrder());
+        }
+
         this.connectionSession = generateSession(req.getConnectionConfig());
         try {
             OdcStatementCallBack statementCallBack = new OdcStatementCallBack(
