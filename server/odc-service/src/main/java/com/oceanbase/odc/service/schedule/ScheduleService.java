@@ -299,6 +299,7 @@ public class ScheduleService {
                                     : null,
                             ScheduleChangeStatus.APPROVING));
             log.info("Create change log success,changLog={}", changeLog);
+            req.setScheduleChangeLogId(changeLog.getId());
             Long approvalFlowInstanceId = approvalFlowService.create(req);
             if (approvalFlowInstanceId != null) {
                 changeLog.setFlowInstanceId(approvalFlowInstanceId);
@@ -384,6 +385,8 @@ public class ScheduleService {
         quartzJobService.changeQuartzJob(quartzJobReq);
 
         scheduleChangeLogService.updateStatusById(req.getScheduleChangeLogId(), ScheduleChangeStatus.SUCCESS);
+        log.info("Change schedule success,scheduleId={},operationType={},changelogId={}", targetSchedule.getId(),
+                req.getOperationType(), req.getScheduleChangeLogId());
 
     }
 
