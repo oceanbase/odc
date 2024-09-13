@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.schedule;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.schedule.alarm.DefaultScheduleAlarmClient;
@@ -35,6 +36,7 @@ import com.oceanbase.odc.service.schedule.flowtask.DefaultApprovalFlowClient;
 public class ScheduleTaskConfiguration {
 
 
+    @Lazy
     @Bean
     @ConditionalOnMissingBean(ApprovalFlowClient.class)
     public ApprovalFlowClient approvalFlowService(FlowInstanceService flowInstanceService) {
