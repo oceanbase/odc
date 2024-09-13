@@ -125,42 +125,8 @@ public class DBSchemaExtractor {
                         && basicResult.getSqlType() != SqlType.UNKNOWN) {
                     sqlType = basicResult.getSqlType();
                 }
-                if (sqlType == SqlType.ALTER) {
-                    String originalSql = sqlTuple.getOriginalSql();
-                    String removedSql;
-                    if (originalSql.contains(".")) {
-                        removedSql = originalSql.substring(originalSql.indexOf('.') + 1).trim();
-                    } else {
-                        String regex = "(?i)alter\\s+table\\s+";
-                        removedSql = originalSql.replaceFirst(regex, "").trim();
-                    }
-                    DBSchemaIdentity alterIndentity = null;
-                    int beginPost = removedSql.length();
-                    for (DBSchemaIdentity identity : identities) {
-                        String tableName = identity.getTable();
-                        if (StringUtils.isBlank(tableName)) {
-                            continue;
-                        }
-                        int index = removedSql.indexOf(tableName);
-                        if (index == -1) {
-                            continue;
-                        }
-                        if (index < beginPost) {
-                            alterIndentity = identity;
-                            beginPost = index;
-                        } else if (index == beginPost && alterIndentity != null) {
-                            alterIndentity =
-                                    alterIndentity.getTable().length() > tableName.length() ? alterIndentity : identity;
-                        }
-                    }
-                    if (alterIndentity == null) {
-                        throw new IllegalStateException("table name not found");
-                    }
-                    res.computeIfAbsent(alterIndentity, k -> new HashSet<>()).add(sqlType);
-                } else {
-                    for (DBSchemaIdentity identity : identities) {
-                        res.computeIfAbsent(identity, k -> new HashSet<>()).add(sqlType);
-                    }
+                for (DBSchemaIdentity identity : identities) {
+                    res.computeIfAbsent(identity, k -> new HashSet<>()).add(sqlType);
                 }
             } catch (Exception e) {
                 // just eat exception due to parse failed
