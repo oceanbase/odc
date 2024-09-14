@@ -370,7 +370,7 @@ public class ScheduleResponseMapperFactory {
     }
 
     private List<Database> getDatabaseByIds(Set<Long> ids) {
-        List<Database> databases = databaseService.listDatabasesByIds(ids);
+        List<Database> databases = databaseService.listDatabasesDetailsByIds(ids);
         Set<Long> connectionIds =
                 databases.stream().filter(e -> e.getDataSource() != null && e.getDataSource().getId() != null)
                         .map(e -> e.getDataSource().getId()).collect(Collectors.toSet());
