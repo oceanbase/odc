@@ -46,7 +46,7 @@ public class WorksheetConstants {
     /**
      * the limit number of worksheets in project
      */
-    public static final int PROJECT_WORKSHEET_NUM_LIMIT = 100_000;
+    public static final int PROJECT_WORKSHEET_NUM_LIMIT = 200_000;
 
     /**
      * the duration of download worksheet in seconds

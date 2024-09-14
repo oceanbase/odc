@@ -48,7 +48,6 @@ import com.oceanbase.odc.service.worksheet.service.RepoWorksheetService;
 
 @RunWith(MockitoJUnitRunner.class)
 public class WorksheetServiceFacadeImplTest {
-    Long projectId = 1L;
     @Mock
     private ProjectRepository projectRepository;
     @Mock
@@ -62,6 +61,9 @@ public class WorksheetServiceFacadeImplTest {
 
     @InjectMocks
     private WorksheetServiceFacadeImpl worksheetServiceFacade;
+
+    Long projectId = 1L;
+    Long groupId = 1L;
 
     @After
     public void clear() {
@@ -79,10 +81,10 @@ public class WorksheetServiceFacadeImplTest {
 
         when(worksheetServiceFactory.getProjectFileService(WorksheetLocation.WORKSHEETS))
                 .thenReturn(defaultWorksheetService);
-        when(defaultWorksheetService.generateDownloadUrl(any(), any()))
-                .thenAnswer(invocation -> invocation.getArgument(1, Path.class).getStandardPath());
+        when(defaultWorksheetService.generateDownloadUrl(any(), anyLong(), any()))
+                .thenAnswer(invocation -> invocation.getArgument(2, Path.class).getStandardPath());
 
-        String result = worksheetServiceFacade.batchDownloadWorksheets(projectId, paths);
+        String result = worksheetServiceFacade.batchDownloadWorksheets(projectId, groupId, paths);
 
         assertEquals(path.getStandardPath(), result);
     }
@@ -106,7 +108,7 @@ public class WorksheetServiceFacadeImplTest {
         when(objectStorageClient.generateDownloadUrl(any(), anyLong()))
                 .thenAnswer(invocation -> new URL("http://" + invocation.getArgument(0, String.class)));
 
-        String result = worksheetServiceFacade.batchDownloadWorksheets(projectId, paths);
+        String result = worksheetServiceFacade.batchDownloadWorksheets(projectId, groupId, paths);
 
         assert StringUtils.isNotBlank(result) && result.endsWith(".zip");
         // Verify

@@ -31,26 +31,27 @@ import com.oceanbase.odc.service.worksheet.model.WorksheetResp;
  * @since 4.3.2
  */
 public interface WorksheetService {
-    GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, Path path);
+    GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, Long workspaceId, Path path);
 
-    WorksheetMetaResp createWorksheet(Long projectId, Path createPath, String objectId, Long size);
+    WorksheetMetaResp createWorksheet(Long projectId, Long workspaceId, Path createPath, String objectId, Long size);
 
-    WorksheetResp getWorksheetDetails(Long projectId, Path path);
+    WorksheetResp getWorksheetDetails(Long projectId, Long workspaceId, Path path);
 
-    List<WorksheetMetaResp> listWorksheets(Long projectId, Path path, Integer depth, String nameLike);
+    List<WorksheetMetaResp> listWorksheets(Long projectId, Long workspaceId, Path path, Integer depth,
+            String nameLike);
 
     BatchOperateWorksheetsResp batchUploadWorksheets(Long projectId,
-            BatchCreateWorksheetsPreProcessor batchCreateWorksheetsPreProcessor);
+            Long workspaceId, BatchCreateWorksheetsPreProcessor batchCreateWorksheetsPreProcessor);
 
-    BatchOperateWorksheetsResp batchDeleteWorksheets(Long projectId, List<Path> paths);
+    BatchOperateWorksheetsResp batchDeleteWorksheets(Long projectId, Long workspaceId, List<Path> paths);
 
-    List<WorksheetMetaResp> renameWorksheet(Long projectId, Path path, Path destinationPath);
+    List<WorksheetMetaResp> renameWorksheet(Long projectId, Long workspaceId, Path path, Path destinationPath);
 
-    List<WorksheetMetaResp> editWorksheet(Long projectId, Path path, String objectId, Long size,
+    List<WorksheetMetaResp> editWorksheet(Long projectId, Long workspaceId, Path path, String objectId, Long size,
             Long readVersion);
 
-    String generateDownloadUrl(Long projectId, Path path);
+    String generateDownloadUrl(Long projectId, Long workspaceId, Path path);
 
-    void downloadPathsToDirectory(Long projectId, List<Path> paths, Path commParentPath,
+    void downloadPathsToDirectory(Long projectId, Long workspaceId, List<Path> paths, Path commParentPath,
             File destinationDirectory);
 }

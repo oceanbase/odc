@@ -55,8 +55,14 @@ public class CollaborationWorksheetEntity {
     @Column(name = "update_time")
     private Date updateTime;
 
+    @Column(name = "organization_id", nullable = false)
+    private Long organizationId;
+
     @Column(name = "project_id", nullable = false)
     private Long projectId;
+
+    @Column(name = "workspace_id", nullable = false)
+    private Long workspaceId;
 
     @Column(name = "creator_id", nullable = false)
     private Long creatorId;

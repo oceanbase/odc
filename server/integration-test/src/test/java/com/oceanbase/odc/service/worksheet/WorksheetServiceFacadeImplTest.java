@@ -58,11 +58,13 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 import com.oceanbase.odc.ITConfigurations;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.metadb.resourcehistory.ResourceLastAccessEntity;
+import com.oceanbase.odc.metadb.resourcehistory.ResourceLastAccessRepository;
+import com.oceanbase.odc.metadb.worksheet.CollaborationWorksheetRepository;
 import com.oceanbase.odc.server.OdcServer;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -93,20 +95,27 @@ public class WorksheetServiceFacadeImplTest {
     WorksheetServiceFacadeImpl worksheetServiceFacade;
     @Autowired
     DefaultWorksheetService defaultWorksheetService;
+    @Autowired
+    CollaborationWorksheetRepository collaborationWorksheetRepository;
+    @Autowired
+    private ResourceLastAccessRepository resourceLastAccessRepository;
     @MockBean
     AuthenticationFacade authenticationFacade;
-    ObjectMapper objectMapper = new ObjectMapper();
+
     public static final String TEST_FILE_PATH = "src/test/resources/data/test0001.txt";
     public static final String TEST_FILE_PATH2 = "src/test/resources/data/中文名称.txt";
     public static final String TEST_DOWNLOAD_FILE = CloudObjectStorageConstants.TEMP_DIR + "/download/temp";
-    Long projectId;
+
+    final long organizationId = 1L;
+    final long projectId = 1L;
+    final long workspaceId = 1L;
     CloudObjectStorageClient cloudObjectStorageClient;
     File tempFile;
     List<String> objectNames;
 
     @Before
     public void setUp() {
-        projectId = System.currentTimeMillis();
+        clear();
         objectNames = new ArrayList<>();
 
         ObjectStorageConfiguration configuration = ITConfigurations.getOssConfiguration();
@@ -128,27 +137,29 @@ public class WorksheetServiceFacadeImplTest {
         if (CollectionUtils.isNotEmpty(objectNames)) {
             cloudObjectStorageClient.deleteObjects(objectNames);
         }
+        collaborationWorksheetRepository.deleteByOrganizationIdAndProjectId(organizationId, projectId);
+        resourceLastAccessRepository.delete(ResourceLastAccessEntity.builder().organizationId(organizationId).build());
     }
 
     @Test
     public void generateUploadUrl_Normal() throws Exception {
         GenerateWorksheetUploadUrlReq req = new GenerateWorksheetUploadUrlReq();
         req.setPath("/Worksheets/ods_user.sql");
-        GenerateWorksheetUploadUrlResp resp = worksheetServiceFacade.generateUploadUrl(projectId, req);
+        GenerateWorksheetUploadUrlResp resp = worksheetServiceFacade.generateUploadUrl(projectId, workspaceId, req);
         assertNotNull(resp.getUploadUrl());
     }
 
     @Test
     public void createWorksheet_Folder() throws Exception {
         String path = "/Worksheets/folder1/";
-        WorksheetMetaResp resp = worksheetServiceFacade.createWorksheet(projectId, path, null, null);
+        WorksheetMetaResp resp = worksheetServiceFacade.createWorksheet(projectId, workspaceId, path, null, null);
         assertEquals(path, resp.getPath());
     }
 
     @Test
     public void createWorksheet_FileWithContentEmpty() throws Exception {
         String path = "/Worksheets/file.sql";
-        WorksheetMetaResp resp = worksheetServiceFacade.createWorksheet(projectId, path, null, null);
+        WorksheetMetaResp resp = worksheetServiceFacade.createWorksheet(projectId, workspaceId, path, null, null);
         assertEquals(path, resp.getPath());
     }
 
@@ -156,7 +167,7 @@ public class WorksheetServiceFacadeImplTest {
     public void createWorksheet_File() throws Exception {
         String path = "/Worksheets/file.sql";
         WorksheetMetaResp resp =
-                worksheetServiceFacade.createWorksheet(projectId, path, UUID.randomUUID().toString(), 1L);
+                worksheetServiceFacade.createWorksheet(projectId, workspaceId, path, UUID.randomUUID().toString(), 1L);
         assertEquals(path, resp.getPath());
     }
 
@@ -164,13 +175,14 @@ public class WorksheetServiceFacadeImplTest {
     public void getWorksheetDetail() throws Exception {
         GenerateWorksheetUploadUrlReq req = new GenerateWorksheetUploadUrlReq();
         req.setPath("/Worksheets/ods_user.sql");
-        GenerateWorksheetUploadUrlResp uploadUrlResp = worksheetServiceFacade.generateUploadUrl(projectId, req);
+        GenerateWorksheetUploadUrlResp uploadUrlResp =
+                worksheetServiceFacade.generateUploadUrl(projectId, workspaceId, req);
         objectNames.add(uploadUrlResp.getObjectId());
         File uploadFile = new File(TEST_FILE_PATH);
         uploadByPreSignedUrl(uploadUrlResp.getUploadUrl(), uploadFile);
-        worksheetServiceFacade.createWorksheet(projectId, "/Worksheets/a.sql", uploadUrlResp.getObjectId(),
+        worksheetServiceFacade.createWorksheet(projectId, workspaceId, "/Worksheets/a.sql", uploadUrlResp.getObjectId(),
                 uploadFile.length());
-        WorksheetResp resp = worksheetServiceFacade.getWorksheetDetail(projectId, "/Worksheets/a.sql");
+        WorksheetResp resp = worksheetServiceFacade.getWorksheetDetail(projectId, workspaceId, "/Worksheets/a.sql");
         tempFile = createFileWithParent(TEST_DOWNLOAD_FILE);
         downloadFromUrlToFile(new URL(resp.getContentDownloadUrl()), tempFile);
         assertEquals("test0001", readFirstLine(tempFile));
@@ -184,7 +196,7 @@ public class WorksheetServiceFacadeImplTest {
         ListWorksheetsReq req = new ListWorksheetsReq();
         req.setPath("/Worksheets/");
         req.setDepth(1);
-        List<WorksheetMetaResp> worksheets = worksheetServiceFacade.listWorksheets(projectId, req);
+        List<WorksheetMetaResp> worksheets = worksheetServiceFacade.listWorksheets(projectId, workspaceId, req);
         assertEquals(Arrays.asList(
                 "/Worksheets/folder1/",
                 "/Worksheets/folder2/",
@@ -196,7 +208,7 @@ public class WorksheetServiceFacadeImplTest {
         req.setPath("/Worksheets/");
         req.setDepth(0);
         req.setNameLike("der");
-        worksheets = worksheetServiceFacade.listWorksheets(projectId, req);
+        worksheets = worksheetServiceFacade.listWorksheets(projectId, workspaceId, req);
         assertEquals(Arrays.asList(
                 "/Worksheets/folder1/",
                 "/Worksheets/folder1/sub1/file_der2.sql",
@@ -211,7 +223,7 @@ public class WorksheetServiceFacadeImplTest {
         List<String> addPaths = prepareWorksheetList();
 
         Page<WorksheetMetaResp> worksheetMetaResponses =
-                defaultWorksheetService.flatListWorksheets(projectId, PageRequest.of(0, 100));
+                defaultWorksheetService.flatListWorksheets(projectId, workspaceId, PageRequest.of(0, 100));
         assertEquals(worksheetMetaResponses.toList().size(), addPaths.size());
     }
 
@@ -219,14 +231,14 @@ public class WorksheetServiceFacadeImplTest {
     public void batchUploadWorksheets() {
         List<String> addPaths = Arrays.asList("/Worksheets/a.sql", "/Worksheets/b.sql", "/Worksheets/c/");
         BatchOperateWorksheetsResp batchOperateWorksheetsResp =
-                worksheetServiceFacade.batchUploadWorksheets(projectId, new BatchUploadWorksheetsReq(
+                worksheetServiceFacade.batchUploadWorksheets(projectId, workspaceId, new BatchUploadWorksheetsReq(
                         addPaths.stream().map(this::newUploadWorksheetTuple).collect(Collectors.toList())));
         assertTrue(batchOperateWorksheetsResp.getAllSuccessful());
 
         ListWorksheetsReq req = new ListWorksheetsReq();
         req.setPath("/Worksheets/");
         req.setDepth(1);
-        List<WorksheetMetaResp> worksheets = worksheetServiceFacade.listWorksheets(projectId, req);
+        List<WorksheetMetaResp> worksheets = worksheetServiceFacade.listWorksheets(projectId, workspaceId, req);
         assertEquals(Arrays.asList(
                 "/Worksheets/c/",
                 "/Worksheets/a.sql",
@@ -239,13 +251,14 @@ public class WorksheetServiceFacadeImplTest {
     public void batchDeleteWorksheets() {
         List<String> addPaths = prepareWorksheetList();
 
-        BatchOperateWorksheetsResp response = worksheetServiceFacade.batchDeleteWorksheets(projectId, addPaths);
+        BatchOperateWorksheetsResp response =
+                worksheetServiceFacade.batchDeleteWorksheets(projectId, workspaceId, addPaths);
         assertTrue(response.getAllSuccessful());
 
         ListWorksheetsReq req = new ListWorksheetsReq();
         req.setPath("/Worksheets/");
         req.setDepth(0);
-        List<WorksheetMetaResp> worksheets = worksheetServiceFacade.listWorksheets(projectId, req);
+        List<WorksheetMetaResp> worksheets = worksheetServiceFacade.listWorksheets(projectId, workspaceId, req);
         assertEquals(Collections.emptyList(), worksheets);
     }
 
@@ -261,14 +274,14 @@ public class WorksheetServiceFacadeImplTest {
         String pathStr = "/Worksheets/folder1/";
         String destinationPath = "/Worksheets/folder3/";
         List<WorksheetMetaResp> renamedWorksheets =
-                worksheetServiceFacade.renameWorksheet(projectId, pathStr, destinationPath);
+                worksheetServiceFacade.renameWorksheet(projectId, workspaceId, pathStr, destinationPath);
         assertEquals(expectPaths.stream().sorted().collect(Collectors.toList()),
                 renamedWorksheets.stream().map(WorksheetMetaResp::getPath).sorted().collect(Collectors.toList()));
 
         ListWorksheetsReq listReq = new ListWorksheetsReq();
         listReq.setPath("/Worksheets/folder3/");
         listReq.setDepth(0);
-        List<WorksheetMetaResp> worksheets = worksheetServiceFacade.listWorksheets(projectId, listReq);
+        List<WorksheetMetaResp> worksheets = worksheetServiceFacade.listWorksheets(projectId, workspaceId, listReq);
         assertEquals(expectPaths,
                 worksheets.stream().map(WorksheetMetaResp::getPath).collect(Collectors.toList()));
     }
@@ -276,7 +289,7 @@ public class WorksheetServiceFacadeImplTest {
     @Test
     public void editWorksheet() {
         String path = "/Worksheets/a.sql";
-        WorksheetMetaResp worksheet = worksheetServiceFacade.createWorksheet(projectId, path,
+        WorksheetMetaResp worksheet = worksheetServiceFacade.createWorksheet(projectId, workspaceId, path,
                 UUID.randomUUID().toString(), 1L);
         assertEquals(worksheet.getPath(), path);
 
@@ -284,7 +297,7 @@ public class WorksheetServiceFacadeImplTest {
         req.setObjectId(UUID.randomUUID().toString());
         req.setSize(1L);
         req.setPreviousVersion(0L);
-        List<WorksheetMetaResp> response = worksheetServiceFacade.editWorksheet(projectId, path, req);
+        List<WorksheetMetaResp> response = worksheetServiceFacade.editWorksheet(projectId, workspaceId, path, req);
         assertEquals(Collections.singletonList(path),
                 response.stream().map(WorksheetMetaResp::getPath).collect(Collectors.toList()));
     }
@@ -295,7 +308,7 @@ public class WorksheetServiceFacadeImplTest {
                 "/Worksheets/user_analysis/",
                 "/Worksheets/user_analysis/c/");
         for (String path : addDirectoryPaths) {
-            worksheetServiceFacade.createWorksheet(projectId, path, null, null);
+            worksheetServiceFacade.createWorksheet(projectId, workspaceId, path, null, null);
         }
         Set<String> addFilePaths = new HashSet<>(Arrays.asList(
                 "/Worksheets/user_analysis/ods_user.sql",
@@ -303,15 +316,16 @@ public class WorksheetServiceFacadeImplTest {
         for (String path : addFilePaths) {
             GenerateWorksheetUploadUrlReq req = new GenerateWorksheetUploadUrlReq();
             req.setPath(path);
-            GenerateWorksheetUploadUrlResp resp = worksheetServiceFacade.generateUploadUrl(projectId, req);
+            GenerateWorksheetUploadUrlResp resp = worksheetServiceFacade.generateUploadUrl(projectId, workspaceId, req);
             assertNotNull(resp.getUploadUrl());
             objectNames.add(resp.getObjectId());
             File uploadFile = new File(TEST_FILE_PATH2);
             uploadByPreSignedUrl(resp.getUploadUrl(), uploadFile);
-            worksheetServiceFacade.createWorksheet(projectId, path, resp.getObjectId(), uploadFile.length());
+            worksheetServiceFacade.createWorksheet(projectId, workspaceId, path, resp.getObjectId(),
+                    uploadFile.length());
         }
 
-        String downloadUrl = worksheetServiceFacade.batchDownloadWorksheets(projectId, addFilePaths);
+        String downloadUrl = worksheetServiceFacade.batchDownloadWorksheets(projectId, workspaceId, addFilePaths);
         assertNotNull(downloadUrl);
         System.out.println(downloadUrl);
     }
@@ -403,7 +417,8 @@ public class WorksheetServiceFacadeImplTest {
                 objectId = UUID.randomUUID().toString();
                 size = 1L;
             }
-            WorksheetMetaResp worksheet = worksheetServiceFacade.createWorksheet(projectId, path, objectId, size);
+            WorksheetMetaResp worksheet =
+                    worksheetServiceFacade.createWorksheet(projectId, workspaceId, path, objectId, size);
             assertNotNull(worksheet);
         }
         return addPaths;

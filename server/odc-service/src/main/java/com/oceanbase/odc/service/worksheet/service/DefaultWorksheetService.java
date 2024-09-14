@@ -94,20 +94,24 @@ public class DefaultWorksheetService implements WorksheetService {
     }
 
     @Override
-    public GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, Path path) {
+    public GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, Long workspaceId, Path path) {
         String objectId = WorksheetUtil.getObjectIdOfWorksheets(path);
         String uploadUrl = objectStorageClient.generateUploadUrl(objectId).toString();
         return GenerateWorksheetUploadUrlResp.builder().uploadUrl(uploadUrl).objectId(objectId).build();
     }
 
     @Override
-    public WorksheetMetaResp createWorksheet(Long projectId, Path createPath, String objectId, Long size) {
+    public WorksheetMetaResp createWorksheet(Long projectId, Long workspaceId, Path createPath, String objectId,
+            Long size) {
+        Long organizationId = currentOrganizationId();
         BatchCreateWorksheetsPreProcessor batchCreateWorksheetsPreProcessor =
                 new BatchCreateWorksheetsPreProcessor(createPath, objectId, size);
-        createCheck(projectId, batchCreateWorksheetsPreProcessor);
+        createCheck(organizationId, projectId, workspaceId, batchCreateWorksheetsPreProcessor);
 
         CollaborationWorksheetEntity entity = CollaborationWorksheetEntity.builder()
+                .organizationId(organizationId)
                 .projectId(projectId)
+                .workspaceId(workspaceId)
                 .creatorId(currentUserId())
                 .path(createPath.getStandardPath())
                 .pathLevel(createPath.getLevelNum())
@@ -121,9 +125,11 @@ public class DefaultWorksheetService implements WorksheetService {
     }
 
     @Override
-    public WorksheetResp getWorksheetDetails(Long projectId, Path path) {
+    public WorksheetResp getWorksheetDetails(Long projectId, Long workspaceId, Path path) {
         Optional<CollaborationWorksheetEntity> worksheetOptional =
-                worksheetRepository.findByProjectIdAndPath(projectId, path.getStandardPath());
+                worksheetRepository.findByOrganizationIdAndProjectIdAndWorkspaceIdAndPath(currentOrganizationId(),
+                        projectId,
+                        workspaceId, path.getStandardPath());
         CollaborationWorksheetEntity worksheet = getWithCheckNotFound(projectId, path, worksheetOptional);
 
         String contentDownloadUrl = null;
@@ -149,21 +155,23 @@ public class DefaultWorksheetService implements WorksheetService {
     }
 
     @Override
-    public List<WorksheetMetaResp> listWorksheets(Long projectId, Path path, Integer depth, String nameLike) {
+    public List<WorksheetMetaResp> listWorksheets(Long projectId, Long workspaceId, Path path, Integer depth,
+            String nameLike) {
         Integer minLevelNumberFilter = depth == null || depth <= 0 ? null : path.getLevelNum() + 1;
         Integer maxLevelNumberFilter = depth == null || depth <= 0 ? null : path.getLevelNum() + depth;;
         List<CollaborationWorksheetEntity> entities = worksheetRepository.findByPathLikeWithFilter(
-                projectId, path.getStandardPath(),
+                currentOrganizationId(), projectId, workspaceId, path.getStandardPath(),
                 minLevelNumberFilter, maxLevelNumberFilter, nameLike);
         return entities.stream().map(WorksheetConverter::convertEntityToMetaResp).collect(Collectors.toList());
     }
 
-    public Page<WorksheetMetaResp> flatListWorksheets(Long projectId, Pageable pageable) {
+    public Page<WorksheetMetaResp> flatListWorksheets(Long projectId, Long workspaceId, Pageable pageable) {
         PreConditions.notNull(projectId, "projectId");
         long organizationId = authenticationFacade.currentOrganizationId();
         long userId = authenticationFacade.currentUserId();
         Page<CollaborationWorksheetEntity> entities =
-                worksheetRepository.leftJoinResourceLastAccess(organizationId, projectId, userId, pageable);
+                worksheetRepository.leftJoinResourceLastAccess(organizationId, projectId, workspaceId, userId,
+                        pageable);
         return new PageImpl<>(entities.stream().map(WorksheetConverter::convertEntityToMetaResp)
                 .collect(Collectors.toList()),
                 pageable, entities.getTotalElements());
@@ -171,14 +179,17 @@ public class DefaultWorksheetService implements WorksheetService {
 
     @Override
     public BatchOperateWorksheetsResp batchUploadWorksheets(Long projectId,
-            BatchCreateWorksheetsPreProcessor batchCreateWorksheetsPreProcessor) {
-        createCheck(projectId, batchCreateWorksheetsPreProcessor);
+            Long workspaceId, BatchCreateWorksheetsPreProcessor batchCreateWorksheetsPreProcessor) {
+        Long organizationId = currentOrganizationId();
+        createCheck(currentOrganizationId(), projectId, workspaceId, batchCreateWorksheetsPreProcessor);
         long userId = currentUserId();
         List<CollaborationWorksheetEntity> entities =
                 batchCreateWorksheetsPreProcessor.getCreatePathToObjectIdMap().entrySet()
                         .stream()
                         .map(item -> CollaborationWorksheetEntity.builder()
+                                .organizationId(organizationId)
                                 .projectId(projectId)
+                                .workspaceId(workspaceId)
                                 .creatorId(userId)
                                 .path(item.getKey().getStandardPath())
                                 .pathLevel(item.getKey().getLevelNum())
@@ -197,8 +208,10 @@ public class DefaultWorksheetService implements WorksheetService {
     }
 
     @Override
-    public BatchOperateWorksheetsResp batchDeleteWorksheets(Long projectId, List<Path> paths) {
-        List<CollaborationWorksheetEntity> deleteWorksheets = listWithSubListByProjectIdAndPaths(projectId, paths);
+    public BatchOperateWorksheetsResp batchDeleteWorksheets(Long projectId, Long workspaceId, List<Path> paths) {
+        Long organizationId = currentOrganizationId();
+        List<CollaborationWorksheetEntity> deleteWorksheets =
+                listWithSubListByProjectIdAndPaths(organizationId, projectId, workspaceId, paths);
         if (deleteWorksheets.size() > CHANGE_WORKSHEET_NUM_LIMIT) {
             throw new OverLimitException(LimitMetric.WORKSHEET_CHANGE_COUNT,
                     (double) CHANGE_WORKSHEET_NUM_LIMIT, "delete number is over limit " + CHANGE_WORKSHEET_NUM_LIMIT);
@@ -229,12 +242,13 @@ public class DefaultWorksheetService implements WorksheetService {
     }
 
     @Override
-    public List<WorksheetMetaResp> renameWorksheet(Long projectId, Path path, Path destinationPath) {
-        return moveWorksheet(projectId, path, destinationPath, true);
+    public List<WorksheetMetaResp> renameWorksheet(Long projectId, Long workspaceId, Path path,
+            Path destinationPath) {
+        return moveWorksheet(currentOrganizationId(), projectId, workspaceId, path, destinationPath, true);
     }
 
     @Override
-    public List<WorksheetMetaResp> editWorksheet(Long projectId, Path path,
+    public List<WorksheetMetaResp> editWorksheet(Long projectId, Long workspaceId, Path path,
             String objectId, Long size, Long readVersion) {
         PreConditions.notNull(objectId, "objectId");
         PreConditions.notNull(size, "size");
@@ -242,8 +256,9 @@ public class DefaultWorksheetService implements WorksheetService {
         PreConditions.validArgumentState(path.isFile(), ErrorCodes.Unsupported, null,
                 "Unsupported edit path: " + path);
 
-        Optional<CollaborationWorksheetEntity> worksheetOptional = worksheetRepository.findByProjectIdAndPath(
-                projectId, path.getStandardPath());
+        Optional<CollaborationWorksheetEntity> worksheetOptional =
+                worksheetRepository.findByOrganizationIdAndProjectIdAndWorkspaceIdAndPath(
+                        currentOrganizationId(), projectId, workspaceId, path.getStandardPath());
         CollaborationWorksheetEntity worksheet = getWithCheckNotFound(projectId, path, worksheetOptional);
         checkVersionConflict(projectId, path, readVersion, worksheet.getVersion());
         doEdit(worksheet, path, size, objectId);
@@ -252,10 +267,12 @@ public class DefaultWorksheetService implements WorksheetService {
     }
 
     @Override
-    public String generateDownloadUrl(Long projectId, Path path) {
+    public String generateDownloadUrl(Long projectId, Long workspaceId, Path path) {
         path.canGetDownloadUrlCheck();
         Optional<CollaborationWorksheetEntity> worksheetOptional =
-                worksheetRepository.findByProjectIdAndPath(projectId, path.getStandardPath());
+                worksheetRepository.findByOrganizationIdAndProjectIdAndWorkspaceIdAndPath(currentOrganizationId(),
+                        projectId,
+                        workspaceId, path.getStandardPath());
         CollaborationWorksheetEntity worksheet = getWithCheckNotFound(projectId, path, worksheetOptional);
         PreConditions.notBlank(worksheet.getObjectId(), "objectId");
         if (StringUtils.isEmpty(worksheet.getObjectId())) {
@@ -269,14 +286,16 @@ public class DefaultWorksheetService implements WorksheetService {
     }
 
     @Override
-    public void downloadPathsToDirectory(Long projectId, List<Path> paths, Path commParentPath,
+    public void downloadPathsToDirectory(Long projectId, Long workspaceId, List<Path> paths, Path commParentPath,
             File destinationDirectory) {
         PreConditions.notEmpty(paths, "paths");
         PreConditions.notNull(destinationDirectory, "destinationDirectory");
         PreConditions.notNull(commParentPath, "commParentPath");
         PreConditions.validArgumentState(destinationDirectory.isDirectory(), ErrorCodes.IllegalArgument, null,
                 "destinationDirectory is not directory");
-        List<CollaborationWorksheetEntity> downloadWorksheets = listWithSubListByProjectIdAndPaths(projectId, paths);
+        Long organizationId = currentOrganizationId();
+        List<CollaborationWorksheetEntity> downloadWorksheets =
+                listWithSubListByProjectIdAndPaths(organizationId, projectId, workspaceId, paths);
         if (CollectionUtils.isEmpty(downloadWorksheets)) {
             return;
         }
@@ -302,8 +321,9 @@ public class DefaultWorksheetService implements WorksheetService {
         });
     }
 
-    private void checkProjectWorksheetNumberLimit(Long projectId, BatchCreateWorksheetsPreProcessor createWorksheets) {
-        long count = worksheetRepository.countByProjectId(projectId);
+    private void checkProjectWorksheetNumberLimit(Long organizationId, Long projectId,
+            BatchCreateWorksheetsPreProcessor createWorksheets) {
+        long count = worksheetRepository.countByOrganizationIdAndProjectId(organizationId, projectId);
         if (count + createWorksheets.size() > PROJECT_WORKSHEET_NUM_LIMIT) {
             throw new OverLimitException(LimitMetric.WORKSHEET_COUNT_IN_PROJECT,
                     (double) PROJECT_WORKSHEET_NUM_LIMIT,
@@ -313,13 +333,14 @@ public class DefaultWorksheetService implements WorksheetService {
         }
     }
 
-    private void createCheck(Long projectId, BatchCreateWorksheetsPreProcessor createWorksheets) {
+    private void createCheck(Long organizationId, Long projectId, Long workspaceId,
+            BatchCreateWorksheetsPreProcessor createWorksheets) {
         checkPathOrNameLength(createWorksheets.getCreatePathToObjectIdMap().keySet());
-        checkProjectWorksheetNumberLimit(projectId, createWorksheets);
+        checkProjectWorksheetNumberLimit(organizationId, projectId, createWorksheets);
 
         // the exist worksheets number + to create worksheets number can't exceed limit
         Integer levelNumOfToCreatePath = createWorksheets.getParentPath().getLevelNum() + 1;
-        long existNum = worksheetRepository.countByPathLikeWithFilter(projectId,
+        long existNum = worksheetRepository.countByPathLikeWithFilter(organizationId, projectId, workspaceId,
                 createWorksheets.getParentPath().getStandardPath(), levelNumOfToCreatePath, levelNumOfToCreatePath,
                 null);
         int toCreateNum = createWorksheets.getCreatePathToObjectIdMap().size();
@@ -334,8 +355,9 @@ public class DefaultWorksheetService implements WorksheetService {
         List<String> queryPaths = createWorksheets.getCreatePathToObjectIdMap().keySet().stream()
                 .map(Path::getStandardPath).collect(Collectors.toList());
         queryPaths.add(createWorksheets.getParentPath().getStandardPath());
-        List<CollaborationWorksheetEntity> worksheets = worksheetRepository.findByProjectIdAndInPaths(
-                projectId, queryPaths);
+        List<CollaborationWorksheetEntity> worksheets =
+                worksheetRepository.findByOrganizationIdAndProjectIdAndWorkspaceIdAndInPaths(
+                        organizationId, projectId, workspaceId, queryPaths);
         boolean hasParent = false;
         for (CollaborationWorksheetEntity worksheet : worksheets) {
             Path path = new Path(worksheet.getPath());
@@ -416,18 +438,21 @@ public class DefaultWorksheetService implements WorksheetService {
      * @param destinationPath
      * @return
      */
-    public List<WorksheetMetaResp> moveWorksheet(Long projectId, Path movePath, Path destinationPath,
-            boolean isRename) {
+    public List<WorksheetMetaResp> moveWorksheet(Long organizationId, Long projectId, Long workspaceId,
+            Path movePath, Path destinationPath, boolean isRename) {
         checkPathOrNameLength(Collections.singleton(destinationPath));
         WorksheetPathUtil.checkMoveValid(movePath, destinationPath);
         if (isRename) {
             WorksheetPathUtil.checkRenameValid(movePath, destinationPath);
-            checkDuplicatedName(projectId, movePath, destinationPath);
+            checkDuplicatedName(organizationId, projectId, workspaceId, movePath, destinationPath);
         }
         boolean isDestinationExist = destinationPath.isSystemDefine();
         if (!isDestinationExist) {
             isDestinationExist =
-                    worksheetRepository.findByProjectIdAndPath(projectId, destinationPath.getStandardPath())
+                    worksheetRepository
+                            .findByOrganizationIdAndProjectIdAndWorkspaceIdAndPath(organizationId, projectId,
+                                    workspaceId,
+                                    destinationPath.getStandardPath())
                             .isPresent();
         }
         Optional<Path> movedPathOptional = Optional.empty();
@@ -441,9 +466,9 @@ public class DefaultWorksheetService implements WorksheetService {
         PreConditions.validArgumentState(movedPathOptional.isPresent(),
                 ErrorCodes.BadArgument, null,
                 "movePath:" + movePath + " move to destinationPath:" + destinationPath + " failed");
-        checkDuplicatedName(projectId, movePath, movedPathOptional.get());
+        checkDuplicatedName(organizationId, projectId, workspaceId, movePath, movedPathOptional.get());
         List<CollaborationWorksheetEntity> currentAndSubEntities =
-                worksheetRepository.findByPathLikeWithFilter(projectId,
+                worksheetRepository.findByPathLikeWithFilter(organizationId, projectId, workspaceId,
                         movePath.getStandardPath(), null, null, null);
         checkPathNotFound(projectId, movePath, currentAndSubEntities);
 
@@ -503,9 +528,11 @@ public class DefaultWorksheetService implements WorksheetService {
         return changedWorksheets;
     }
 
-    private void checkDuplicatedName(Long projectId, Path path, Path destinationPath) {
-        Optional<CollaborationWorksheetEntity> existWorksheets = worksheetRepository.findByProjectIdAndPath(
-                projectId, destinationPath.getStandardPath());
+    private void checkDuplicatedName(Long organizationId, Long projectId, Long workspaceId, Path path,
+            Path destinationPath) {
+        Optional<CollaborationWorksheetEntity> existWorksheets =
+                worksheetRepository.findByOrganizationIdAndProjectIdAndWorkspaceIdAndPath(
+                        organizationId, projectId, workspaceId, destinationPath.getStandardPath());
         if (existWorksheets.isPresent()) {
             throw new BadRequestException(ErrorCodes.DuplicatedExists,
                     new Object[] {ResourceType.ODC_WORKSHEET.getLocalizedMessage(), "destinationPath", destinationPath},
@@ -576,7 +603,8 @@ public class DefaultWorksheetService implements WorksheetService {
         }
     }
 
-    private List<CollaborationWorksheetEntity> listWithSubListByProjectIdAndPaths(Long projectId, List<Path> paths) {
+    private List<CollaborationWorksheetEntity> listWithSubListByProjectIdAndPaths(Long organizationId, Long projectId,
+            Long workspaceId, List<Path> paths) {
         List<CollaborationWorksheetEntity> resultWorksheets = new ArrayList<>();
         Set<Path> deleteDirectoryPaths = new HashSet<>();
         List<String> deleteFilePaths = new ArrayList<>();
@@ -589,8 +617,10 @@ public class DefaultWorksheetService implements WorksheetService {
             }
         }
         if (!deleteFilePaths.isEmpty()) {
-            List<CollaborationWorksheetEntity> worksheets = worksheetRepository.findByProjectIdAndInPaths(projectId,
-                    deleteFilePaths);
+            List<CollaborationWorksheetEntity> worksheets =
+                    worksheetRepository.findByOrganizationIdAndProjectIdAndWorkspaceIdAndInPaths(organizationId,
+                            projectId,
+                            workspaceId, deleteFilePaths);
             if (CollectionUtils.isNotEmpty(worksheets)) {
                 resultWorksheets.addAll(worksheets);
             }
@@ -598,8 +628,9 @@ public class DefaultWorksheetService implements WorksheetService {
         }
         if (!deleteDirectoryPaths.isEmpty()) {
             Path commonParentPath = WorksheetPathUtil.findCommonPath(deleteDirectoryPaths);
-            List<CollaborationWorksheetEntity> worksheets = worksheetRepository.findByPathLikeWithFilter(projectId,
-                    commonParentPath.getStandardPath(), null, null, null);
+            List<CollaborationWorksheetEntity> worksheets =
+                    worksheetRepository.findByPathLikeWithFilter(organizationId, projectId, workspaceId,
+                            commonParentPath.getStandardPath(), null, null, null);
             if (CollectionUtils.isNotEmpty(worksheets)) {
                 Path[] deleteDirectoryArr = deleteDirectoryPaths.toArray(new Path[0]);
                 for (CollaborationWorksheetEntity worksheet : worksheets) {
