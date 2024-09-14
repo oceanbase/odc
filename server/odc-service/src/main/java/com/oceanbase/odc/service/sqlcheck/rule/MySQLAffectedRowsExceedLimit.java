@@ -88,7 +88,7 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
                     switch (dialectType) {
                         case MYSQL:
                             affectedRows = (statement instanceof Insert)
-                                    ? getMySqlAffectedRowsByCount((Insert)statement)
+                                    ? getMySqlAffectedRowsByCount((Insert) statement)
                                     : getMySqlAffectedRowsByExplain(explainSql, jdbcOperations);
                             break;
                         case OB_MYSQL:
@@ -134,9 +134,9 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
     private long getMySqlAffectedRowsByCount(Insert insertStatement) {
 
         List<Expression> insertClass = insertStatement.getTableInsert().get(0)
-            .getValues().get(0);
+                .getValues().get(0);
         String expressionType = insertClass.get(0)
-            .getClass().getSimpleName();
+                .getClass().getSimpleName();
         // case1: For INSERT INTO ... VALUES(...)
         if ("ConstExpression".equals(expressionType)) {
             return insertClass.size();
