@@ -47,6 +47,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Database_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Dot_relation_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Normal_relation_factorContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factor_with_starContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_nameContext;
@@ -202,7 +203,11 @@ public class DBSchemaExtractor {
         @Override
         public RelationFactor visitCreate_table_stmt(Create_table_stmtContext ctx) {
             if (ctx.partition_option() != null) {
-                addRelationFactor(MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor()));
+                for (int i = 0; i < ctx.getChildCount(); i++) {
+                    if (!(ctx.getChild(i) instanceof Partition_optionContext)) {
+                        ctx.getChild(i).accept(this);
+                    }
+                }
                 return null;
             }
             return this.visitChildren(ctx);
@@ -353,7 +358,11 @@ public class DBSchemaExtractor {
         @Override
         public RelationFactor visitCreate_table_stmt(OBParser.Create_table_stmtContext ctx) {
             if (ctx.partition_option() != null) {
-                addRelationFactor(OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor()));
+                for (int i = 0; i < ctx.getChildCount(); i++) {
+                    if (!(ctx.getChild(i) instanceof OBParser.Partition_optionContext)) {
+                        ctx.getChild(i).accept(this);
+                    }
+                }
                 return null;
             }
             return this.visitChildren(ctx);
