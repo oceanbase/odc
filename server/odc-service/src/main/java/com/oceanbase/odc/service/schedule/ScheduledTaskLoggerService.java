@@ -20,6 +20,7 @@ import java.io.FileInputStream;
 import java.util.Optional;
 
 import org.apache.commons.io.FileUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -61,36 +62,32 @@ public class ScheduledTaskLoggerService {
     private static final String LOG_PATH_PATTERN = "%s/scheduleTask/%s-%s/%s/log.%s";
     private static final String DOWNLOAD_LOG_URL_PATTERN = "/api/v2/schedule/schedules/%s/tasks/%s/log/download";
 
-    private final ScheduleTaskService scheduleTaskService;
-    private final TaskFrameworkEnabledProperties taskFrameworkEnabledProperties;
-    private final RequestDispatcher requestDispatcher;
-    private final TaskDispatchChecker dispatchChecker;
-    private final TaskFrameworkService taskFrameworkService;
-    private final JobDispatchChecker jobDispatchChecker;
-    private final TaskExecutorClient taskExecutorClient;
+    @Autowired
+    private ScheduleTaskService scheduleTaskService;
 
-    private final ScheduleLogProperties loggerProperty;
-    private final CloudObjectStorageService cloudObjectStorageService;
+    @Autowired
+    private TaskFrameworkEnabledProperties taskFrameworkEnabledProperties;
 
-    public ScheduledTaskLoggerService(ScheduleTaskService scheduleTaskService,
-            TaskFrameworkEnabledProperties taskFrameworkEnabledProperties,
-            RequestDispatcher requestDispatcher,
-            TaskDispatchChecker dispatchChecker,
-            TaskFrameworkService taskFrameworkService,
-            JobDispatchChecker jobDispatchChecker,
-            TaskExecutorClient taskExecutorClient,
-            ScheduleLogProperties loggerProperty,
-            CloudObjectStorageService cloudObjectStorageService) {
-        this.scheduleTaskService = scheduleTaskService;
-        this.taskFrameworkEnabledProperties = taskFrameworkEnabledProperties;
-        this.requestDispatcher = requestDispatcher;
-        this.dispatchChecker = dispatchChecker;
-        this.taskFrameworkService = taskFrameworkService;
-        this.jobDispatchChecker = jobDispatchChecker;
-        this.taskExecutorClient = taskExecutorClient;
-        this.loggerProperty = loggerProperty;
-        this.cloudObjectStorageService = cloudObjectStorageService;
-    }
+    @Autowired
+    private RequestDispatcher requestDispatcher;
+
+    @Autowired
+    private TaskDispatchChecker dispatchChecker;
+
+    @Autowired
+    private TaskFrameworkService taskFrameworkService;
+
+    @Autowired
+    private JobDispatchChecker jobDispatchChecker;
+
+    @Autowired
+    private TaskExecutorClient taskExecutorClient;
+
+    @Autowired
+    private ScheduleLogProperties loggerProperty;
+
+    @Autowired
+    private CloudObjectStorageService cloudObjectStorageService;
 
     public String getLogContent(Long scheduleTaskId, OdcTaskLogLevel level) {
         try {

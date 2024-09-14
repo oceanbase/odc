@@ -18,10 +18,12 @@ package com.oceanbase.odc.service.flow;
 import java.io.File;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -47,23 +49,20 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FlowTaskInstanceLoggerService {
 
-    private final FlowTaskInstanceService flowTaskInstanceService;
-    private final RequestDispatcher requestDispatcher;
-    private final TaskDispatchChecker dispatchChecker;
-    private final TaskService taskService;
-    private final ScheduleLogProperties loggerProperty;
+    @Autowired
+    private FlowTaskInstanceService flowTaskInstanceService;
 
-    public FlowTaskInstanceLoggerService(FlowTaskInstanceService flowTaskInstanceService,
-            RequestDispatcher requestDispatcher,
-            TaskDispatchChecker dispatchChecker,
-            TaskService taskService,
-            ScheduleLogProperties loggerProperty) {
-        this.flowTaskInstanceService = flowTaskInstanceService;
-        this.requestDispatcher = requestDispatcher;
-        this.dispatchChecker = dispatchChecker;
-        this.taskService = taskService;
-        this.loggerProperty = loggerProperty;
-    }
+    @Autowired
+    private RequestDispatcher requestDispatcher;
+
+    @Autowired
+    private TaskDispatchChecker dispatchChecker;
+
+    @Autowired
+    private TaskService taskService;
+
+    @Autowired
+    private ScheduleLogProperties loggerProperty;
 
     @SneakyThrows
     public String getLogContent(OdcTaskLogLevel level, Long flowInstanceId) {
@@ -73,6 +72,7 @@ public class FlowTaskInstanceLoggerService {
     }
 
     @SneakyThrows
+    @SkipAuthorize("odc internal usage")
     public String getLogContentWithoutPermission(OdcTaskLogLevel level, Long flowInstanceId) {
         Optional<TaskEntity> taskEntityOptional =
                 flowTaskInstanceService.getLogDownloadableTaskEntity(flowInstanceId, true);
@@ -115,7 +115,7 @@ public class FlowTaskInstanceLoggerService {
         try {
             return taskService.getLogFile(logFilePath);
         } catch (NotFoundException ex) {
-            log.warn(ErrorCodes.TaskLogNotFound.getEnglishMessage(new Object[] {"Id", flowInstanceId}));
+            log.warn("Task log file not found, flowInstanceId={}, logFilePath={}", flowInstanceId, logFilePath);
             return FileUtil.writeUtf8String(LogUtils.DEFAULT_LOG_CONTENT, logFilePath);
         }
     }
