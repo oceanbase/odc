@@ -75,29 +75,10 @@ public class CollaborationWorksheetRepositoryTest {
 
     final long organizationId = 1L;
     final long projectId = 1L;
+    final long workspaceId = 1L;
     long incrId = 0;
     long creatorId = 0;
     Long defaultVersion = 1L;
-
-    private CollaborationWorksheetEntity newWorksheet(String path) {
-        return newWorksheet(null, projectId, new Path(path), incrId++ + "", creatorId, defaultVersion);
-    }
-
-    private CollaborationWorksheetEntity newWorksheet(Long id, Long projectId, Path path, String objectId,
-            Long creatorId, Long version) {
-        return CollaborationWorksheetEntity.builder()
-                .id(id)
-                .projectId(projectId)
-                .creatorId(creatorId)
-                .path(path.getStandardPath())
-                .pathLevel(path.getLevelNum())
-                .objectId(objectId)
-                .extension(path.getExtension())
-                .size(0L)
-                .version(version)
-                .build();
-
-    }
 
     @Before
     public void setup() {
@@ -106,12 +87,12 @@ public class CollaborationWorksheetRepositoryTest {
 
     @After
     public void clear() {
-        collaborationWorksheetRepository.deleteByProjectId(projectId);
+        collaborationWorksheetRepository.deleteByOrganizationIdAndProjectId(organizationId, projectId);
         resourceLastAccessRepository.delete(ResourceLastAccessEntity.builder().organizationId(organizationId).build());
     }
 
     @Test
-    public void findByProjectIdAndPath() {
+    public void findByOrganizationIdAndProjectIdAndWorkspaceIdAndPath() {
         CollaborationWorksheetEntity w1 = newWorksheet("/Worksheets/folder1/");
         CollaborationWorksheetEntity w2 = newWorksheet("/Worksheets/folder1/file2.sql");
         CollaborationWorksheetEntity w3 = newWorksheet("/Worksheets/folder1/folder4/");
@@ -121,19 +102,21 @@ public class CollaborationWorksheetRepositoryTest {
         Set<CollaborationWorksheetEntity> worksheets = new HashSet<>(Arrays.asList(w1, w2, w3, w4, w5, w6));
         collaborationWorksheetRepository.saveAllAndFlush(worksheets);
         Optional<CollaborationWorksheetEntity> worksheet =
-                collaborationWorksheetRepository.findByProjectIdAndPath(projectId,
+                collaborationWorksheetRepository.findByOrganizationIdAndProjectIdAndWorkspaceIdAndPath(organizationId,
+                        projectId, workspaceId,
                         "/Worksheets/folder1/folder4/");
         assertTrue(worksheet.isPresent());
         assertNotNull(worksheet.get().getId());
 
         worksheet =
-                collaborationWorksheetRepository.findByProjectIdAndPath(projectId,
+                collaborationWorksheetRepository.findByOrganizationIdAndProjectIdAndWorkspaceIdAndPath(organizationId,
+                        projectId, workspaceId,
                         "/Worksheets/folder1/folder3");
         assertFalse(worksheet.isPresent());
     }
 
     @Test
-    public void findByProjectIdAndInPaths() {
+    public void findByOrganizationIdAndProjectIdAndWorkspaceIdAndInPaths() {
         CollaborationWorksheetEntity w1 = newWorksheet("/Worksheets/folder1/");
         CollaborationWorksheetEntity w2 = newWorksheet("/Worksheets/folder1/file2.sql");
         CollaborationWorksheetEntity w3 = newWorksheet("/Worksheets/folder1/folder4/");
@@ -143,7 +126,9 @@ public class CollaborationWorksheetRepositoryTest {
         Set<CollaborationWorksheetEntity> addWorksheets = new HashSet<>(Arrays.asList(w1, w2, w3, w4, w5, w6));
         collaborationWorksheetRepository.saveAllAndFlush(addWorksheets);
         List<CollaborationWorksheetEntity> worksheets =
-                collaborationWorksheetRepository.findByProjectIdAndInPaths(projectId,
+                collaborationWorksheetRepository.findByOrganizationIdAndProjectIdAndWorkspaceIdAndInPaths(
+                        organizationId,
+                        projectId, workspaceId,
                         Arrays.asList("/Worksheets/folder1/folder4/", "/Worksheets/folder1/folder3",
                                 "/Worksheets/file1.sql"));
         assertPathEquals(worksheets, Arrays.asList(w3, w6));
@@ -160,13 +145,14 @@ public class CollaborationWorksheetRepositoryTest {
         Set<CollaborationWorksheetEntity> addWorksheets = new HashSet<>(Arrays.asList(w1, w2, w3, w4, w5, w6));
         collaborationWorksheetRepository.saveAllAndFlush(addWorksheets);
         List<CollaborationWorksheetEntity> worksheets =
-                collaborationWorksheetRepository.findByPathLikeWithFilter(projectId,
+                collaborationWorksheetRepository.findByPathLikeWithFilter(organizationId, projectId, workspaceId,
                         "/Worksheets/folder1/", null,
                         null, null);
         assertPathEquals(worksheets, Arrays.asList(w1, w2, w3, w4));
-        assertEquals(worksheets.size(), collaborationWorksheetRepository.countByPathLikeWithFilter(projectId,
-                "/Worksheets/folder1/", null,
-                null, null));
+        assertEquals(worksheets.size(),
+                collaborationWorksheetRepository.countByPathLikeWithFilter(organizationId, projectId, workspaceId,
+                        "/Worksheets/folder1/", null,
+                        null, null));
     }
 
     @Test
@@ -180,29 +166,32 @@ public class CollaborationWorksheetRepositoryTest {
         Set<CollaborationWorksheetEntity> addWorksheets = new HashSet<>(Arrays.asList(w1, w2, w3, w4, w5, w6));
         collaborationWorksheetRepository.saveAllAndFlush(addWorksheets);
         List<CollaborationWorksheetEntity> worksheets =
-                collaborationWorksheetRepository.findByPathLikeWithFilter(projectId,
+                collaborationWorksheetRepository.findByPathLikeWithFilter(organizationId, projectId, workspaceId,
                         "/Worksheets/folder1/",
                         3, 3, null);
         assertPathEquals(worksheets, Arrays.asList(w2, w3));
-        assertEquals(worksheets.size(), collaborationWorksheetRepository.countByPathLikeWithFilter(projectId,
-                "/Worksheets/folder1/", 3, 3, null));
+        assertEquals(worksheets.size(),
+                collaborationWorksheetRepository.countByPathLikeWithFilter(organizationId, projectId, workspaceId,
+                        "/Worksheets/folder1/", 3, 3, null));
 
         worksheets =
-                collaborationWorksheetRepository.findByPathLikeWithFilter(projectId,
+                collaborationWorksheetRepository.findByPathLikeWithFilter(organizationId, projectId, workspaceId,
                         "/Worksheets/folder1/",
                         1, 4, null);
         assertPathEquals(worksheets, Arrays.asList(w1, w2, w3, w4));
-        assertEquals(worksheets.size(), collaborationWorksheetRepository.countByPathLikeWithFilter(projectId,
-                "/Worksheets/folder1/", 1, 4, null));
+        assertEquals(worksheets.size(),
+                collaborationWorksheetRepository.countByPathLikeWithFilter(organizationId, projectId, workspaceId,
+                        "/Worksheets/folder1/", 1, 4, null));
 
 
         worksheets =
-                collaborationWorksheetRepository.findByPathLikeWithFilter(projectId,
+                collaborationWorksheetRepository.findByPathLikeWithFilter(organizationId, projectId, workspaceId,
                         "/Worksheets/folder1/",
                         4, 2, null);
         assertPathEquals(worksheets, Arrays.asList(w1, w2, w3, w4));
-        assertEquals(worksheets.size(), collaborationWorksheetRepository.countByPathLikeWithFilter(projectId,
-                "/Worksheets/folder1/", 4, 2, null));
+        assertEquals(worksheets.size(),
+                collaborationWorksheetRepository.countByPathLikeWithFilter(organizationId, projectId, workspaceId,
+                        "/Worksheets/folder1/", 4, 2, null));
     }
 
     @Test
@@ -216,12 +205,13 @@ public class CollaborationWorksheetRepositoryTest {
         Set<CollaborationWorksheetEntity> addWorksheets = new HashSet<>(Arrays.asList(w1, w2, w3, w4, w5, w6));
         collaborationWorksheetRepository.saveAllAndFlush(addWorksheets);
         List<CollaborationWorksheetEntity> worksheets =
-                collaborationWorksheetRepository.findByPathLikeWithFilter(projectId,
+                collaborationWorksheetRepository.findByPathLikeWithFilter(organizationId, projectId, workspaceId,
                         "/Worksheets/folder1/",
                         1, 4, "le2");
         assertPathEquals(worksheets, Collections.singletonList(w2));
-        assertEquals(worksheets.size(), collaborationWorksheetRepository.countByPathLikeWithFilter(projectId,
-                "/Worksheets/folder1/", 1, 4, "le2"));
+        assertEquals(worksheets.size(),
+                collaborationWorksheetRepository.countByPathLikeWithFilter(organizationId, projectId, workspaceId,
+                        "/Worksheets/folder1/", 1, 4, "le2"));
     }
 
     @Test
@@ -236,7 +226,7 @@ public class CollaborationWorksheetRepositoryTest {
                 tuple.<List<Long>>get(0).subList((int) pageRequest.getOffset(), pageSize);
 
         Page<CollaborationWorksheetEntity> result = collaborationWorksheetRepository
-                .leftJoinResourceLastAccess(organizationId, projectId, creatorId, pageRequest);
+                .leftJoinResourceLastAccess(organizationId, projectId, workspaceId, creatorId, pageRequest);
 
         assertEquals(exceptFirstPageListIdsOrderByUpdateTimeDesc,
                 result.getContent().stream().map(CollaborationWorksheetEntity::getId)
@@ -255,7 +245,7 @@ public class CollaborationWorksheetRepositoryTest {
                 tuple.<List<Long>>get(0).subList((int) pageRequest.getOffset(), totalSize);
 
         Page<CollaborationWorksheetEntity> result = collaborationWorksheetRepository
-                .leftJoinResourceLastAccess(organizationId, projectId, creatorId, pageRequest);
+                .leftJoinResourceLastAccess(organizationId, projectId, workspaceId, creatorId, pageRequest);
 
         assertEquals(exceptFirstPageListIdsOrderByUpdateTimeDesc,
                 result.getContent().stream().map(CollaborationWorksheetEntity::getId).collect(
@@ -274,7 +264,7 @@ public class CollaborationWorksheetRepositoryTest {
                 tuple.<List<Long>>get(1).subList((int) pageRequest.getOffset(), pageSize);
 
         Page<CollaborationWorksheetEntity> result = collaborationWorksheetRepository
-                .leftJoinResourceLastAccess(organizationId, projectId, creatorId, pageRequest);
+                .leftJoinResourceLastAccess(organizationId, projectId, workspaceId, creatorId, pageRequest);
 
         assertEquals(exceptFirstPageListIdsOrderByLastAccessTimeDesc,
                 result.getContent().stream().map(CollaborationWorksheetEntity::getId)
@@ -293,7 +283,7 @@ public class CollaborationWorksheetRepositoryTest {
                 tuple.<List<Long>>get(1).subList((int) pageRequest.getOffset(), totalSize);
 
         Page<CollaborationWorksheetEntity> result = collaborationWorksheetRepository
-                .leftJoinResourceLastAccess(organizationId, projectId, creatorId, pageRequest);
+                .leftJoinResourceLastAccess(organizationId, projectId, workspaceId, creatorId, pageRequest);
 
         assertEquals(exceptFirstPageListIdsOrderByLastAccessTimeDesc,
                 result.getContent().stream().map(CollaborationWorksheetEntity::getId)
@@ -365,7 +355,8 @@ public class CollaborationWorksheetRepositoryTest {
         Set<CollaborationWorksheetEntity> worksheets = new HashSet<>(Arrays.asList(w1, w2, w3, w4, w5, w6));
         collaborationWorksheetRepository.saveAllAndFlush(worksheets);
 
-        int count = collaborationWorksheetRepository.batchDeleteByPathLike(projectId, "/Worksheets/folder1/");
+        int count = collaborationWorksheetRepository.batchDeleteByPathLike(organizationId, projectId, workspaceId,
+                "/Worksheets/folder1/");
         assertEquals(count, 4);
 
         for (CollaborationWorksheetEntity worksheet : Arrays.asList(w1, w2, w3, w4)) {
@@ -476,5 +467,27 @@ public class CollaborationWorksheetRepositoryTest {
                 .sorted(Comparator.reverseOrder()).collect(Collectors.toList()));
 
         return new Tuple(listIdsOrderByUpdateTimeDesc, listIdsOrderByLastAccessDesc);
+    }
+
+    private CollaborationWorksheetEntity newWorksheet(String path) {
+        return newWorksheet(null, projectId, new Path(path), incrId++ + "", creatorId, defaultVersion);
+    }
+
+    private CollaborationWorksheetEntity newWorksheet(Long id, Long projectId, Path path, String objectId,
+            Long creatorId, Long version) {
+        return CollaborationWorksheetEntity.builder()
+                .id(id)
+                .organizationId(organizationId)
+                .projectId(projectId)
+                .workspaceId(workspaceId)
+                .creatorId(creatorId)
+                .path(path.getStandardPath())
+                .pathLevel(path.getLevelNum())
+                .objectId(objectId)
+                .extension(path.getExtension())
+                .size(0L)
+                .version(version)
+                .build();
+
     }
 }

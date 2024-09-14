@@ -47,7 +47,8 @@ public interface WorksheetServiceFacade {
      * @param req request
      * @return temp object storage upload url
      */
-    GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, GenerateWorksheetUploadUrlReq req);
+    GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, Long workspaceId,
+            GenerateWorksheetUploadUrlReq req);
 
     /**
      * create worksheet. the content of worksheet is already uploaded to object storage in frontend, and
@@ -59,7 +60,7 @@ public interface WorksheetServiceFacade {
      * @param size The total size of the file, measured in bytes
      * @return mete info of created worksheet
      */
-    WorksheetMetaResp createWorksheet(Long projectId, String pathStr, String objectId, Long size);
+    WorksheetMetaResp createWorksheet(Long projectId, Long workspaceId, String pathStr, String objectId, Long size);
 
     /**
      * get worksheet detail info
@@ -68,7 +69,7 @@ public interface WorksheetServiceFacade {
      * @param pathStr worksheet path
      * @return detail worksheet info
      */
-    WorksheetResp getWorksheetDetail(Long projectId, String pathStr);
+    WorksheetResp getWorksheetDetail(Long projectId, Long workspaceId, String pathStr);
 
     /**
      * list next level worksheets of pathStr
@@ -78,7 +79,7 @@ public interface WorksheetServiceFacade {
      * @param req request
      * @return the next level worksheet meta list.If the worksheet path is worksheet,return empty.
      */
-    List<WorksheetMetaResp> listWorksheets(Long projectId, ListWorksheetsReq req);
+    List<WorksheetMetaResp> listWorksheets(Long projectId, Long workspaceId, ListWorksheetsReq req);
 
     /**
      * batch upload worksheets in a directory.
@@ -87,7 +88,7 @@ public interface WorksheetServiceFacade {
      * @param req request
      * @return It could be a partial success and partial failure
      */
-    BatchOperateWorksheetsResp batchUploadWorksheets(Long projectId, BatchUploadWorksheetsReq req);
+    BatchOperateWorksheetsResp batchUploadWorksheets(Long projectId, Long workspaceId, BatchUploadWorksheetsReq req);
 
     /**
      * batch delete worksheets
@@ -96,7 +97,7 @@ public interface WorksheetServiceFacade {
      * @param paths path list to delete
      * @return It could be a partial success and partial failure
      */
-    BatchOperateWorksheetsResp batchDeleteWorksheets(Long projectId, List<String> paths);
+    BatchOperateWorksheetsResp batchDeleteWorksheets(Long projectId, Long workspaceId, List<String> paths);
 
     /**
      * rename worksheet
@@ -107,7 +108,7 @@ public interface WorksheetServiceFacade {
      *        will throw exception.
      * @return the update worksheet meta list after rename
      */
-    List<WorksheetMetaResp> renameWorksheet(Long projectId, String pathStr, String destinationPath);
+    List<WorksheetMetaResp> renameWorksheet(Long projectId, Long workspaceId, String pathStr, String destinationPath);
 
     /**
      * edit worksheet
@@ -117,7 +118,7 @@ public interface WorksheetServiceFacade {
      * @param req edit request
      * @return the update worksheet meta list after edit
      */
-    List<WorksheetMetaResp> editWorksheet(Long projectId, String pathStr, UpdateWorksheetReq req);
+    List<WorksheetMetaResp> editWorksheet(Long projectId, Long workspaceId, String pathStr, UpdateWorksheetReq req);
 
     /**
      * batch download worksheets
@@ -126,5 +127,5 @@ public interface WorksheetServiceFacade {
      * @param paths worksheet path list to download
      * @return the object storage url to download need worksheets
      */
-    String batchDownloadWorksheets(Long projectId, Set<String> paths);
+    String batchDownloadWorksheets(Long projectId, Long workspaceId, Set<String> paths);
 }

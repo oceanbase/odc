@@ -45,58 +45,62 @@ public class RepoWorksheetService implements WorksheetService {
     private ObjectStorageClient objectStorageClient;
 
     @Override
-    public GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, Path path) {
+    public GenerateWorksheetUploadUrlResp generateUploadUrl(Long projectId, Long workspaceId, Path path) {
         String objectId = WorksheetUtil.getObjectIdOfRepos(path);
         String uploadUrl = objectStorageClient.generateUploadUrl(objectId).toString();
         return GenerateWorksheetUploadUrlResp.builder().uploadUrl(uploadUrl).objectId(objectId).build();
     }
 
     @Override
-    public WorksheetMetaResp createWorksheet(Long projectId, Path createPath, String objectId, Long size) {
+    public WorksheetMetaResp createWorksheet(Long projectId, Long workspaceId, Path createPath, String objectId,
+            Long size) {
         return null;
     }
 
     @Override
-    public WorksheetResp getWorksheetDetails(Long projectId, Path path) {
+    public WorksheetResp getWorksheetDetails(Long projectId, Long workspaceId, Path path) {
 
         return null;
     }
 
     @Override
-    public List<WorksheetMetaResp> listWorksheets(Long projectId, Path path, Integer depth, String nameLike) {
+    public List<WorksheetMetaResp> listWorksheets(Long projectId, Long workspaceId, Path path, Integer depth,
+            String nameLike) {
 
         return new ArrayList<>();
     }
 
     @Override
     public BatchOperateWorksheetsResp batchUploadWorksheets(Long projectId,
-            BatchCreateWorksheetsPreProcessor batchCreateWorksheetsPreProcessor) {
+            Long workspaceId, BatchCreateWorksheetsPreProcessor batchCreateWorksheetsPreProcessor) {
         return null;
     }
 
     @Override
-    public BatchOperateWorksheetsResp batchDeleteWorksheets(Long projectId, List<Path> paths) {
+    public BatchOperateWorksheetsResp batchDeleteWorksheets(Long projectId, Long workspaceId, List<Path> paths) {
         return new BatchOperateWorksheetsResp();
     }
 
     @Override
-    public List<WorksheetMetaResp> renameWorksheet(Long projectId, Path path, Path destinationPath) {
+    public List<WorksheetMetaResp> renameWorksheet(Long projectId, Long workspaceId, Path path,
+            Path destinationPath) {
         return Collections.emptyList();
     }
 
     @Override
-    public List<WorksheetMetaResp> editWorksheet(Long projectId, Path path, String objectId, Long size,
+    public List<WorksheetMetaResp> editWorksheet(Long projectId, Long workspaceId, Path path, String objectId,
+            Long size,
             Long readVersion) {
         return Collections.emptyList();
     }
 
     @Override
-    public String generateDownloadUrl(Long projectId, Path path) {
+    public String generateDownloadUrl(Long projectId, Long workspaceId, Path path) {
         return "";
     }
 
     @Override
-    public void downloadPathsToDirectory(Long projectId, List<Path> paths, Path commParentPath,
+    public void downloadPathsToDirectory(Long projectId, Long workspaceId, List<Path> paths, Path commParentPath,
             File destinationDirectory) {
 
     }
