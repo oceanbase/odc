@@ -71,8 +71,9 @@ public abstract class ActionFsm<Context extends ActionContext, ActionResult> {
      * main loop trigger action execute and state change
      * 
      * @param context context of FSM
+     * @return true if schedule success. false if exception found
      */
-    public void schedule(Context context) {
+    public boolean schedule(Context context) {
         String state = resolveState(context);
         Preconditions.checkArgument(null != state, "state require not null");
         FSMNode<Context, ActionResult> fsmNode = eventMap.get(state);
@@ -86,7 +87,7 @@ public abstract class ActionFsm<Context extends ActionContext, ActionResult> {
             log.warn("Action state change meet exception, current {}, expected {}, exception {}", state,
                     fsmNode.expectTranslateStates, e);
             handleException(context, e);
-            return;
+            return false;
         }
         // translate state
         String nextState = fsmNode.stateTransfer.translateToNewState(state, result, context);
@@ -96,6 +97,7 @@ public abstract class ActionFsm<Context extends ActionContext, ActionResult> {
         }
         // notify state change
         onActionComplete(state, nextState, JsonUtils.toJson(result), context);
+        return true;
     }
 
     protected Logger getLogger() {

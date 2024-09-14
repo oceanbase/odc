@@ -57,6 +57,10 @@ public enum FlowStatus {
     /**
      * {@code FlowInstance} is failed
      */
+    EXECUTION_ABNORMAL,
+    /**
+     * {@code FlowInstance} is failed
+     */
     EXECUTION_FAILED,
     /**
      * {@code FlowInstance} is expired, cause service task is expired

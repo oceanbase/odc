@@ -41,7 +41,9 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.flow.BeanInjectedClassDelegate;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
+import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeFlowableTask;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.fsm.ActionFsm;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
@@ -122,33 +124,92 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
     public void schedule(Long schedulerID, Long schedulerTaskID) {
         OscActionContext oscActionContext = getOSCContext(schedulerID, schedulerTaskID);
         String state = resolveState(oscActionContext);
-        // CLEAN_RESOURCE should always schedule
-        if (!StringUtils.equals(OscStates.CLEAN_RESOURCE.getState(), state) &&
-                (isTaskExpired(oscActionContext) || isFlowInstanceFailed(state, oscActionContext))) {
-            // transfer from current state to clean resources
-            transferTaskStatesWithStates(state, OscStates.CLEAN_RESOURCE.getState(), null,
-                    oscActionContext.getScheduleTask(), TaskStatus.CANCELED);
+        // try process task may in expired or canceled state or abnormal state
+        if (handleAbnormalTask(state, oscActionContext)) {
             return;
         }
         // do schedule
-        schedule(oscActionContext);
+        boolean scheduleFailed = schedule(oscActionContext);
+        // if schedule failed, transfer to abnormal state
+        syncFlowInstanceState(oscActionContext, !scheduleFailed);
     }
 
-    public boolean isFlowInstanceFailed(String state, OscActionContext oscActionContext) {
-        // only check in monitor data task state
-        if (!StringUtils.equals(state, OscStates.MONITOR_DATA_TASK.getState())) {
+    /**
+     * process task with expired or canceled
+     * 
+     * @param state current state
+     * @param oscActionContext osc context
+     * @return true if task in expired or canceled state
+     */
+    protected boolean handleAbnormalTask(String state, OscActionContext oscActionContext) {
+        // state should not in CLEAN_RESOURCE state
+        if (StringUtils.equals(OscStates.CLEAN_RESOURCE.getState(), state)) {
             return false;
         }
+        // task has expired
+        if (isTaskExpired(oscActionContext)) {
+            transferTaskStatesWithStates(state, OscStates.CLEAN_RESOURCE.getState(), null,
+                    oscActionContext.getScheduleTask(), TaskStatus.CANCELED);
+            return true;
+        }
+        // handle flow status with failed or canceled
+        FlowStatus flowStatus = getFlowInstanceStatus(oscActionContext);
+        if (isFlowStatusInvalid(flowStatus)) {
+            transferTaskStatesWithStates(state, OscStates.CLEAN_RESOURCE.getState(), null,
+                    oscActionContext.getScheduleTask(), TaskStatus.CANCELED);
+            log.info("OSC: flow task has failed, transfer state to clean resources, flow task id={}, status={}",
+                    oscActionContext.getParameter().getFlowInstanceId(), flowStatus);
+            return true;
+        }
+        // handle flow status with abnormal
+        // this state should not handle in this code
+        if (FlowStatus.EXECUTION_ABNORMAL == flowStatus) {
+            // try cancel scheduler
+            log.info("OSC: flow task in abnormal state, clear scheduler = {}, flow task id={}, status={}",
+                    oscActionContext.getParameter().getFlowInstanceId(), oscActionContext.getSchedule().getId(),
+                    flowStatus);
+            actionScheduler.cancelScheduler(oscActionContext.getSchedule().getId());
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * sync task status with flow instance
+     */
+    public void syncFlowInstanceState(OscActionContext context, boolean inAbnormalState) {
+        try {
+            OnlineSchemaChangeFlowableTask schemaChangeFlowableTask =
+                    BeanInjectedClassDelegate
+                            .instantiateDelegateWithoutPostConstructInvoke(OnlineSchemaChangeFlowableTask.class);
+            schemaChangeFlowableTask.setFailedAsAbnormalState(inAbnormalState);
+            OnlineSchemaChangeParameters parameters = context.getParameter();
+            schemaChangeFlowableTask.tryCompleteTask(
+                    parameters.getFlowInstanceId(), parameters.getFlowTaskID(),
+                    context.getSchedule().getId(), parameters.isContinueOnError());
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * flow state in failed or canceled or abnormal
+     * 
+     * @param oscActionContext
+     * @return
+     */
+    public FlowStatus getFlowInstanceStatus(OscActionContext oscActionContext) {
         Long flowInstanceID = oscActionContext.getParameter().getFlowInstanceId();
         Map<Long, FlowStatus> statusMap = flowInstanceService.getStatus(Collections.singleton(flowInstanceID));
-        FlowStatus taskStatus = statusMap.get(flowInstanceID);
-        // not found or failed
-        boolean ret = (null == taskStatus || taskStatus == FlowStatus.EXECUTION_FAILED);
-        if (ret) {
-            log.info("OSC: flow task has failed, transfer state to clean resources, flow task id {}, status {}",
-                    flowInstanceID, taskStatus);
+        return statusMap.get(flowInstanceID);
+    }
+
+    // not found or failed
+    private boolean isFlowStatusInvalid(FlowStatus flowStatus) {
+        if (null == flowStatus) {
+            return true;
         }
-        return ret;
+        return flowStatus == FlowStatus.EXECUTION_FAILED || flowStatus == FlowStatus.CANCELLED;
     }
 
     /**
@@ -200,12 +261,12 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
         Long scheduleId = context.getSchedule().getId();
         Long scheduleTaskId = scheduleTask.getId();
         Duration between = Duration.between(scheduleTask.getCreateTime().toInstant(), Instant.now());
-        log.info("Schedule id {} to check schedule task status with schedule task id {}", scheduleId, scheduleTaskId);
+        log.info("Schedule id={} to check schedule task status with schedule task id={}", scheduleId, scheduleTaskId);
 
         if (between.toMillis() / 1000 > oscTaskExpiredAfterSeconds) {
             // schedule to clean resource
             // has canceled
-            log.info("Schedule task id {} is  expired after {} seconds, so cancel the scheduleTaskId ",
+            log.info("Schedule task id={} is  expired after {} seconds, so cancel the scheduleTaskId ",
                     scheduleTaskId, oscTaskExpiredAfterSeconds);
             return true;
         }
@@ -219,7 +280,7 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
     @Override
     public void onActionComplete(String currentState, String nextState, String extraInfo, OscActionContext context) {
         if (StringUtils.equals(nextState, OscStates.COMPLETE.getState())) {
-            log.info("OCS: complete state reached, delete scheduler, prev state {}, schedule id {}", currentState,
+            log.info("OCS: complete state reached, delete scheduler, prev state={}, schedule id={}", currentState,
                     context.getSchedule().getId());
             actionScheduler.cancelScheduler(context.getSchedule().getId());
         }
@@ -269,12 +330,11 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
         }
         scheduleTaskEntity.setParametersJson(JsonUtils.toJson(parameters));
         scheduleTaskEntity.setStatus(taskStatus);
-        if (TaskStatus.DONE == taskStatus || TaskStatus.FAILED == taskStatus || TaskStatus.CANCELED == taskStatus) {
+        if (TaskStatus.DONE == taskStatus || TaskStatus.CANCELED == taskStatus) {
             scheduleTaskEntity.setProgressPercentage(100.0);
         }
-        log.info("Successfully update schedule task id {} set status {}", scheduleTaskEntity.getId(), taskStatus);
+        log.info("Successfully update schedule task id={} set status={}", scheduleTaskEntity.getId(), taskStatus);
         scheduleTaskRepository.update(scheduleTaskEntity);
-
     }
 
     @Override
