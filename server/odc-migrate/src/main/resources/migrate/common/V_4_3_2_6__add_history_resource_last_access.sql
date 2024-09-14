@@ -7,6 +7,6 @@ CREATE TABLE IF NOT EXISTS `history_resource_last_access` (
   `resource_id` bigint NOT NULL COMMENT 'resource id',
   `last_access_time` datetime  NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'last access time',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_history_resource_latest_access_organization_project_user_resource` (`organization_id`,`project_id`,`user_id`,`resource_type`, `resource_id`),
-  KEY `index_history_resource_latest_access_organization_project_user_resource_type_last_access_time` (`organization_id`,`project_id`,`user_id`, `resource_type`, `last_access_time`)
+  UNIQUE KEY `uk_history_resource_latest_access_org_proj_user_resource` (`organization_id`,`project_id`,`user_id`,`resource_type`, `resource_id`),
+  KEY `index_history_resource_latest_access_org_proj_user_rt_lat` (`organization_id`,`project_id`,`user_id`, `resource_type`, `last_access_time`)
 ) COMMENT = 'user last access resource time table';
