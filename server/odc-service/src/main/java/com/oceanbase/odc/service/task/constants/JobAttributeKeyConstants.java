@@ -24,8 +24,6 @@ package com.oceanbase.odc.service.task.constants;
  */
 public class JobAttributeKeyConstants {
 
-    public static final String UPLOAD_LOG_STATUS = "UPLOAD_LOG_STATUS";
-
     public static final String LOG_STORAGE_ALL_OBJECT_ID = "LOG_STORAGE_ALL_OBJECT_ID";
 
     public static final String LOG_STORAGE_WARN_OBJECT_ID = "LOG_STORAGE_WARN_OBJECT_ID";
