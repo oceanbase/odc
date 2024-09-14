@@ -54,6 +54,7 @@ import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -72,6 +73,8 @@ import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
+import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
+import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.util.DescriptionGenerator;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
@@ -85,9 +88,12 @@ import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.schedule.factory.ScheduleResponseMapperFactory;
+import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
+import com.oceanbase.odc.service.schedule.flowtask.ApprovalFlowClient;
 import com.oceanbase.odc.service.schedule.model.ChangeQuartJobParam;
 import com.oceanbase.odc.service.schedule.model.ChangeScheduleResp;
 import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
+import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
@@ -110,7 +116,9 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
+import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.schedule.processor.ScheduleChangePreprocessor;
+import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -187,7 +195,49 @@ public class ScheduleService {
     @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
 
+    @Autowired
+    private ApprovalFlowClient approvalFlowService;
+
     private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
+
+    public List<FlowInstanceDetailResp> dispatchCreateSchedule(CreateFlowInstanceReq createReq) {
+        AlterScheduleParameters parameters = (AlterScheduleParameters) createReq.getParameters();
+        // adapt history parameters
+        if ((parameters.getOperationType() == OperationType.CREATE
+                || parameters.getOperationType() == OperationType.UPDATE)
+                && parameters.getType() == ScheduleType.SQL_PLAN) {
+            SqlPlanParameters sqlPlanParameters = (SqlPlanParameters) parameters.getScheduleTaskParameters();
+            sqlPlanParameters.setDatabaseId(createReq.getDatabaseId());
+        }
+        ScheduleChangeParams scheduleChangeParams;
+        switch (parameters.getOperationType()) {
+            case CREATE: {
+                CreateScheduleReq createScheduleReq = new CreateScheduleReq();
+                createScheduleReq.setParameters(parameters.getScheduleTaskParameters());
+                createScheduleReq.setTriggerConfig(parameters.getTriggerConfig());
+                createScheduleReq.setType(parameters.getType());
+                createScheduleReq.setDescription(parameters.getDescription());
+                scheduleChangeParams = ScheduleChangeParams.with(createScheduleReq);
+                break;
+            }
+            case UPDATE: {
+                UpdateScheduleReq updateScheduleReq = new UpdateScheduleReq();
+                updateScheduleReq.setParameters(parameters.getScheduleTaskParameters());
+                updateScheduleReq.setTriggerConfig(parameters.getTriggerConfig());
+                updateScheduleReq.setType(parameters.getType());
+                updateScheduleReq.setDescription(parameters.getDescription());
+                scheduleChangeParams = ScheduleChangeParams.with(parameters.getTaskId(), updateScheduleReq);
+                break;
+            }
+            default: {
+                scheduleChangeParams =
+                        ScheduleChangeParams.with(parameters.getTaskId(), parameters.getOperationType());
+            }
+        }
+        changeSchedule(scheduleChangeParams);
+        return Collections.singletonList(FlowInstanceDetailResp.withIdAndType(-1L, TaskType.ALTER_SCHEDULE));
+    }
+
 
 
     @Transactional(rollbackFor = Exception.class)
@@ -254,26 +304,59 @@ public class ScheduleService {
             }
         }
 
-        Long approvalFlowInstanceId = createApprovalFlow();
+        ScheduleChangeLog scheduleChangelog;
+        try {
+            scheduleChangelog = createScheduleChangelog(req, targetSchedule);
+        } catch (InterruptedException e) {
+            log.error("Create change log failed", e);
+            throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
+        }
 
-        if (approvalFlowInstanceId == null) {
+        if (scheduleChangelog.getFlowInstanceId() == null) {
+            log.info("No need to create approval flow,changelogId={}", scheduleChangelog.getId());
             executeChangeSchedule(req);
         }
 
-        // create change log for this request
-        ScheduleChangeLog changeLog = scheduleChangeLogService.createChangeLog(
-                ScheduleChangeLog.build(targetSchedule.getId(), req.getOperationType(),
-                        JsonUtils.toJson(targetSchedule.getParameters()),
-                        req.getOperationType() == OperationType.UPDATE
-                                ? JsonUtils.toJson(req.getUpdateScheduleReq().getParameters())
-                                : null,
-                        approvalFlowInstanceId, approvalFlowInstanceId == null ? ScheduleChangeStatus.SUCCESS
-                                : ScheduleChangeStatus.APPROVING));
-        log.info("Create change log success,changLog={}", changeLog);
         ChangeScheduleResp returnVal = new ChangeScheduleResp();
         BeanUtils.copyProperties(targetSchedule, returnVal);
-        returnVal.setChangeLog(changeLog);
+        returnVal.setChangeLog(scheduleChangelog);
         return returnVal;
+    }
+
+    private ScheduleChangeLog createScheduleChangelog(ScheduleChangeParams req, Schedule targetSchedule)
+            throws InterruptedException {
+        Lock lock = jdbcLockRegistry.obtain(getScheduleChangeLockKey(req.getScheduleId()));
+        // create change log for this request
+        if (!lock.tryLock(10, TimeUnit.SECONDS)) {
+            throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
+        }
+        try {
+            if (scheduleChangeLogService.hasApprovingChangeLog(targetSchedule.getId())) {
+                log.warn("Concurrent change schedule request is not allowed,scheduleId={}", targetSchedule.getId());
+                throw new ConflictException(ErrorCodes.ResourceModifying,
+                        "Concurrent change schedule request is not allowed");
+            }
+
+            ScheduleChangeLog changeLog = scheduleChangeLogService.createChangeLog(
+                    ScheduleChangeLog.build(targetSchedule.getId(), req.getOperationType(),
+                            JsonUtils.toJson(targetSchedule.getParameters()),
+                            req.getOperationType() == OperationType.UPDATE
+                                    ? JsonUtils.toJson(req.getUpdateScheduleReq().getParameters())
+                                    : null,
+                            ScheduleChangeStatus.APPROVING));
+            log.info("Create change log success,changLog={}", changeLog);
+            req.setScheduleChangeLogId(changeLog.getId());
+            Long approvalFlowInstanceId = approvalFlowService.create(req);
+            if (approvalFlowInstanceId != null) {
+                changeLog.setFlowInstanceId(approvalFlowInstanceId);
+                scheduleChangeLogService.updateFlowInstanceIdById(changeLog.getId(), approvalFlowInstanceId);
+                log.info("Create approval flow success,changelogId={},flowInstanceId", approvalFlowInstanceId);
+            }
+            return changeLog;
+        } finally {
+            lock.unlock();
+        }
+
     }
 
     private void validateTriggerConfig(TriggerConfig triggerConfig) {
@@ -291,6 +374,7 @@ public class ScheduleService {
         }
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public void executeChangeSchedule(ScheduleChangeParams req) {
         Schedule targetSchedule = nullSafeGetModelById(req.getScheduleId());
         // start to change schedule
@@ -346,11 +430,10 @@ public class ScheduleService {
         quartzJobReq.setTriggerConfig(targetSchedule.getTriggerConfig());
         quartzJobService.changeQuartzJob(quartzJobReq);
 
-    }
+        scheduleChangeLogService.updateStatusById(req.getScheduleChangeLogId(), ScheduleChangeStatus.SUCCESS);
+        log.info("Change schedule success,scheduleId={},operationType={},changelogId={}", targetSchedule.getId(),
+                req.getOperationType(), req.getScheduleChangeLogId());
 
-    // return null if approval is not necessary
-    private Long createApprovalFlow() {
-        return null;
     }
 
     public ScheduleEntity create(ScheduleEntity scheduleConfig) {
@@ -883,5 +966,9 @@ public class ScheduleService {
 
     private String getLogicalDatabaseChangeActionLockKey(@NonNull String executionId) {
         return "logical-database-change-action-execution-" + executionId;
+    }
+
+    private String getScheduleChangeLockKey(@NonNull Long scheduleId) {
+        return "schedule-change-" + scheduleId;
     }
 }

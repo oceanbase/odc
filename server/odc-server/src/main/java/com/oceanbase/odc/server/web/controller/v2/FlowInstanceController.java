@@ -59,6 +59,7 @@ import com.oceanbase.odc.service.flow.util.TaskLogFilenameGenerator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
+import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
@@ -84,10 +85,15 @@ public class FlowInstanceController {
     private AuthenticationFacade authenticationFacade;
     @Autowired
     private PartitionPlanScheduleService partitionPlanScheduleService;
+    @Autowired
+    private ScheduleService scheduleService;
 
     @ApiOperation(value = "createFlowInstance", notes = "创建流程实例，返回流程实例")
     @RequestMapping(value = "/", method = RequestMethod.POST)
     public ListResponse<FlowInstanceDetailResp> createFlowInstance(@RequestBody CreateFlowInstanceReq flowInstanceReq) {
+        if (flowInstanceReq.getTaskType() == TaskType.ALTER_SCHEDULE) {
+            return Responses.list(scheduleService.dispatchCreateSchedule(flowInstanceReq));
+        }
         flowInstanceReq.validate();
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             return Responses.list(flowInstanceService.createIndividualFlowInstance(flowInstanceReq));
