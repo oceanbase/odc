@@ -1,4 +1,5 @@
 --
--- Alter column `value_json` size from varchar(2048) to varchar(10240) in `regulation_riskdetect_rule` table
+-- Alter column `value_json` size from varchar(2048) to MEDIUMTEXT in `regulation_riskdetect_rule` table
 --
-alter table `regulation_riskdetect_rule` modify column `value_json` mediumtext default null COMMENT 'json of rule value';
+ALTER TABLE `regulation_riskdetect_rule` CHANGE COLUMN `value_json` `value_json_old` VARCHAR(2048);
+ALTER TABLE `regulation_riskdetect_rule` ADD COLUMN `value_json` MEDIUMTEXT;
