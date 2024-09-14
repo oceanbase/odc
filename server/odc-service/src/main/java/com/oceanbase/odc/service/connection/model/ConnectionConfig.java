@@ -54,6 +54,7 @@ import com.oceanbase.odc.service.connection.ConnectionStatusManager.CheckState;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.ToString;
 
 /**
@@ -311,7 +312,7 @@ public class ConnectionConfig
     @JsonIgnore
     private OBInstanceRoleType instanceRoleType;
 
-    // @JsonIgnore
+    @Getter
     private transient Map<String, Object> attributes;
 
     /**

@@ -54,6 +54,7 @@ import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -72,6 +73,8 @@ import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
+import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
+import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.util.DescriptionGenerator;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
@@ -85,10 +88,12 @@ import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.schedule.factory.ScheduleResponseMapperFactory;
+import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.flowtask.ApprovalFlowClient;
 import com.oceanbase.odc.service.schedule.model.ChangeQuartJobParam;
 import com.oceanbase.odc.service.schedule.model.ChangeScheduleResp;
 import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
+import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
@@ -111,7 +116,9 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
+import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.schedule.processor.ScheduleChangePreprocessor;
+import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -192,6 +199,45 @@ public class ScheduleService {
     private ApprovalFlowClient approvalFlowService;
 
     private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
+
+    public List<FlowInstanceDetailResp> dispatchCreateSchedule(CreateFlowInstanceReq createReq) {
+        AlterScheduleParameters parameters = (AlterScheduleParameters) createReq.getParameters();
+        // adapt history parameters
+        if ((parameters.getOperationType() == OperationType.CREATE
+                || parameters.getOperationType() == OperationType.UPDATE)
+                && parameters.getType() == ScheduleType.SQL_PLAN) {
+            SqlPlanParameters sqlPlanParameters = (SqlPlanParameters) parameters.getScheduleTaskParameters();
+            sqlPlanParameters.setDatabaseId(createReq.getDatabaseId());
+        }
+        ScheduleChangeParams scheduleChangeParams;
+        switch (parameters.getOperationType()) {
+            case CREATE: {
+                CreateScheduleReq createScheduleReq = new CreateScheduleReq();
+                createScheduleReq.setParameters(parameters.getScheduleTaskParameters());
+                createScheduleReq.setTriggerConfig(parameters.getTriggerConfig());
+                createScheduleReq.setType(parameters.getType());
+                createScheduleReq.setDescription(parameters.getDescription());
+                scheduleChangeParams = ScheduleChangeParams.with(createScheduleReq);
+                break;
+            }
+            case UPDATE: {
+                UpdateScheduleReq updateScheduleReq = new UpdateScheduleReq();
+                updateScheduleReq.setParameters(parameters.getScheduleTaskParameters());
+                updateScheduleReq.setTriggerConfig(parameters.getTriggerConfig());
+                updateScheduleReq.setType(parameters.getType());
+                updateScheduleReq.setDescription(parameters.getDescription());
+                scheduleChangeParams = ScheduleChangeParams.with(parameters.getTaskId(), updateScheduleReq);
+                break;
+            }
+            default: {
+                scheduleChangeParams =
+                        ScheduleChangeParams.with(parameters.getTaskId(), parameters.getOperationType());
+            }
+        }
+        changeSchedule(scheduleChangeParams);
+        return Collections.singletonList(FlowInstanceDetailResp.withIdAndType(-1L, TaskType.ALTER_SCHEDULE));
+    }
+
 
 
     @Transactional(rollbackFor = Exception.class)
