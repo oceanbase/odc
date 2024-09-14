@@ -199,11 +199,7 @@ public class DBSchemaExtractor {
 
         @Override
         public RelationFactor visitCreate_index_stmt(Create_index_stmtContext ctx) {
-            for (int i = 0; i < ctx.getChildCount(); i++) {
-                if (i != 2) {
-                    ctx.getChild(i).accept(this);
-                }
-            }
+            addRelationFactor(MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor()));
             return null;
         }
 
@@ -334,11 +330,7 @@ public class DBSchemaExtractor {
 
         @Override
         public RelationFactor visitCreate_index_stmt(OBParser.Create_index_stmtContext ctx) {
-            for (int i = 0; i < ctx.getChildCount(); i++) {
-                if (i != 2) {
-                    ctx.getChild(i).accept(this);
-                }
-            }
+            addRelationFactor(OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor()));
             return null;
         }
 
