@@ -108,7 +108,7 @@ public class ScheduleTaskRepositoryTest extends ServiceTestEnv {
     }
 
     @Test
-    public void testFindByJobNames() {
+    public void findByJobNames() {
         taskRepository.deleteAll();
         createScheduleTask();
         List<ScheduleTaskEntity> tasks = taskRepository.findByJobNames(Collections.singleton("1"));
