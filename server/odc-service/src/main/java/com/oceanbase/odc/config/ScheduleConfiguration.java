@@ -317,6 +317,22 @@ public class ScheduleConfiguration {
         return executor;
     }
 
+    @Bean(name = "copilotQueryExecutor")
+    public ThreadPoolTaskExecutor copilotQueryExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(CORE_NUMBER * 2);
+        executor.setMaxPoolSize(CORE_NUMBER * 8);
+        executor.setQueueCapacity(128);
+        executor.setThreadNamePrefix("ai-copilot-query-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(5);
+        executor.setTaskDecorator(new TraceDecorator<>());
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
+        executor.initialize();
+        log.info("copilotQueryExecutor initialized");
+        return executor;
+    }
+
     @Scheduled(fixedDelay = REFRESH_CONFIG_RATE_MILLIS)
     public void refreshSysConfig() {
         systemConfigService.refresh();
