@@ -98,24 +98,6 @@ public class K8sDeploymentMatcher implements K8sResourceMatcher<K8sDeployment> {
         return matches;
     }
 
-    private boolean ifReachesMinMatchesCountInHasPodStatuses(List<K8sPod> k8sPodList) {
-        int matchesCount = matchesCountInHasPodStatuses(k8sPodList);
-        if (minMatchesCountInHasPodStatuses == null || minMatchesCountInHasPodStatuses <= 0) {
-            return matchesCount >= hasPodStatuses.size();
-        }
-        return matchesCount >= minMatchesCountInHasPodStatuses;
-    }
-
-    private int matchesCountInHasPodStatuses(List<K8sPod> k8sPodList) {
-        int matchesCount = 0;
-        for (ResourceState item : this.hasPodStatuses) {
-            if (k8sPodList.stream().map(this::getPodStatus).collect(Collectors.toList()).contains(item)) {
-                matchesCount++;
-            }
-        }
-        return matchesCount;
-    }
-
     private ResourceState getPodStatus(K8sPod target) {
         try {
             return K8sPodStatusDfa.buildInstance().next(target, currentState);
@@ -135,6 +117,24 @@ public class K8sDeploymentMatcher implements K8sResourceMatcher<K8sDeployment> {
             return CollectionUtils.containsAny(this.podStatusIn, targetState);
         }
         return false;
+    }
+
+    private int matchesCountInHasPodStatuses(List<K8sPod> k8sPodList) {
+        int matchesCount = 0;
+        for (ResourceState item : this.hasPodStatuses) {
+            if (k8sPodList.stream().map(this::getPodStatus).collect(Collectors.toList()).contains(item)) {
+                matchesCount++;
+            }
+        }
+        return matchesCount;
+    }
+
+    private boolean ifReachesMinMatchesCountInHasPodStatuses(List<K8sPod> k8sPodList) {
+        int matchesCount = matchesCountInHasPodStatuses(k8sPodList);
+        if (minMatchesCountInHasPodStatuses == null || minMatchesCountInHasPodStatuses <= 0) {
+            return matchesCount >= hasPodStatuses.size();
+        }
+        return matchesCount >= minMatchesCountInHasPodStatuses;
     }
 
 }

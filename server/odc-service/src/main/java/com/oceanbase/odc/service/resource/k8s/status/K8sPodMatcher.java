@@ -96,12 +96,16 @@ public class K8sPodMatcher implements K8sResourceMatcher<K8sPod> {
         return containersMatches && podMatches;
     }
 
-    private boolean ifReachesMinMatchesCountInHasContainerStatuses(List<V1ContainerStatus> cs) {
-        int matchesCount = matchesCountInHasContainerStatuses(cs);
-        if (this.minMatchesCountInHasContainerStatuses == null || this.minMatchesCountInHasContainerStatuses <= 0) {
-            return matchesCount >= this.hasContainerStatuses.size();
+    private boolean matchesPodContainerStatus(K8sPodContainerStatus target) {
+        if (this.matchesAllContainerStatus) {
+            if (CollectionUtils.isNotEmpty(this.containerStatusNotIn)) {
+                return !CollectionUtils.containsAny(this.containerStatusNotIn, target);
+            }
+            return true;
+        } else if (CollectionUtils.isNotEmpty(this.containerStatusIn)) {
+            return CollectionUtils.containsAny(this.containerStatusIn, target);
         }
-        return matchesCount >= this.minMatchesCountInHasContainerStatuses;
+        return false;
     }
 
     private int matchesCountInHasContainerStatuses(List<V1ContainerStatus> cs) {
@@ -114,16 +118,13 @@ public class K8sPodMatcher implements K8sResourceMatcher<K8sPod> {
         return matchesCount;
     }
 
-    private boolean matchesPodContainerStatus(K8sPodContainerStatus target) {
-        if (this.matchesAllContainerStatus) {
-            if (CollectionUtils.isNotEmpty(this.containerStatusNotIn)) {
-                return !CollectionUtils.containsAny(this.containerStatusNotIn, target);
-            }
-            return true;
-        } else if (CollectionUtils.isNotEmpty(this.containerStatusIn)) {
-            return CollectionUtils.containsAny(this.containerStatusIn, target);
+    private boolean ifReachesMinMatchesCountInHasContainerStatuses(List<V1ContainerStatus> cs) {
+        int matchesCount = matchesCountInHasContainerStatuses(cs);
+        if (this.minMatchesCountInHasContainerStatuses == null || this.minMatchesCountInHasContainerStatuses <= 0) {
+            return matchesCount >= this.hasContainerStatuses.size();
         }
-        return false;
+        return matchesCount >= this.minMatchesCountInHasContainerStatuses;
     }
+
 
 }
