@@ -41,8 +41,8 @@ import lombok.Setter;
 @Setter
 public class K8sDeploymentMatcher implements K8sResourceMatcher<K8sDeployment> {
 
+    private boolean ignoreReplicasCount;
     private boolean replicasEnough;
-    private boolean replicasNonEnough;
     private boolean forAllPods;
     private Set<ResourceState> podStatusIn = new HashSet<>();
     private Integer minMatchesCountInHasPodStatuses = null;
@@ -59,12 +59,15 @@ public class K8sDeploymentMatcher implements K8sResourceMatcher<K8sDeployment> {
         this.forAllPods = !forAnyPods;
     }
 
+    public void setReplicasNonEnough(boolean replicasNonEnough) {
+        this.replicasEnough = !replicasNonEnough;
+    }
+
     @Override
     public boolean matches(K8sDeployment k8sResource) {
         if (k8sResource == null) {
             return false;
         }
-        boolean matches = true;
         V1DeploymentSpec spec = k8sResource.getSpec();
         Validate.notNull(spec);
         Validate.notNull(spec.getReplicas());
@@ -77,31 +80,40 @@ public class K8sDeploymentMatcher implements K8sResourceMatcher<K8sDeployment> {
         if (CollectionUtils.isEmpty(k8sPodList)) {
             return false;
         }
+        boolean matches = true;
         int replicas = spec.getReplicas();
         if (this.replicasEnough) {
             matches &= (k8sPodList.size() >= replicas);
-        } else if (this.replicasNonEnough) {
+        } else if (!this.ignoreReplicasCount) {
             matches &= (k8sPodList.size() < replicas);
         }
         if (this.forAllPods) {
             matches &= k8sPodList.stream().allMatch(this::matchesPodStatus);
             if (CollectionUtils.isNotEmpty(this.hasPodStatuses)) {
-                int matchesCount = 0;
-                for (ResourceState item : this.hasPodStatuses) {
-                    if (k8sPodList.stream().map(this::getPodStatus).collect(Collectors.toList()).contains(item)) {
-                        matchesCount++;
-                    }
-                }
-                if (minMatchesCountInHasPodStatuses == null || minMatchesCountInHasPodStatuses <= 0) {
-                    matches &= (matchesCount >= hasPodStatuses.size());
-                } else {
-                    matches &= (matchesCount >= minMatchesCountInHasPodStatuses);
-                }
+                matches &= ifReachesMinMatchesCountInHasPodStatuses(k8sPodList);
             }
         } else {
             matches &= k8sPodList.stream().anyMatch(this::matchesPodStatus);
         }
         return matches;
+    }
+
+    private boolean ifReachesMinMatchesCountInHasPodStatuses(List<K8sPod> k8sPodList) {
+        int matchesCount = matchesCountInHasPodStatuses(k8sPodList);
+        if (minMatchesCountInHasPodStatuses == null || minMatchesCountInHasPodStatuses <= 0) {
+            return matchesCount >= hasPodStatuses.size();
+        }
+        return matchesCount >= minMatchesCountInHasPodStatuses;
+    }
+
+    private int matchesCountInHasPodStatuses(List<K8sPod> k8sPodList) {
+        int matchesCount = 0;
+        for (ResourceState item : this.hasPodStatuses) {
+            if (k8sPodList.stream().map(this::getPodStatus).collect(Collectors.toList()).contains(item)) {
+                matchesCount++;
+            }
+        }
+        return matchesCount;
     }
 
     private ResourceState getPodStatus(K8sPod target) {

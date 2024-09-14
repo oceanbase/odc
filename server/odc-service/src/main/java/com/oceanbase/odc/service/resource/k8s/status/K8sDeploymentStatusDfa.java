@@ -62,6 +62,7 @@ public class K8sDeploymentStatusDfa extends AbstractDfa<ResourceState, K8sDeploy
 
     private static List<K8sDeploymentMatcher> getAvailableDeploymentMatchers(ResourceState resourceState) {
         K8sDeploymentMatcher m1 = new K8sDeploymentMatcher(resourceState);
+        m1.setIgnoreReplicasCount(false);
         m1.setReplicasEnough(true);
         m1.setForAllPods(true);
         m1.setPodStatusIn(new HashSet<>(Collections.singletonList(ResourceState.AVAILABLE)));
@@ -70,11 +71,13 @@ public class K8sDeploymentStatusDfa extends AbstractDfa<ResourceState, K8sDeploy
 
     private static List<K8sDeploymentMatcher> getCreatingDeploymentMatchers(ResourceState resourceState) {
         K8sDeploymentMatcher m1 = new K8sDeploymentMatcher(resourceState);
+        m1.setIgnoreReplicasCount(false);
         m1.setReplicasNonEnough(true);
         m1.setForAllPods(true);
         m1.setPodStatusIn(new HashSet<>(Arrays.asList(ResourceState.CREATING, ResourceState.AVAILABLE)));
 
         K8sDeploymentMatcher m2 = new K8sDeploymentMatcher(resourceState);
+        m2.setIgnoreReplicasCount(true);
         m2.setForAllPods(true);
         m2.setPodStatusIn(new HashSet<>(Arrays.asList(ResourceState.CREATING, ResourceState.AVAILABLE)));
         m2.setMinMatchesCountInHasPodStatuses(1);
@@ -84,6 +87,7 @@ public class K8sDeploymentStatusDfa extends AbstractDfa<ResourceState, K8sDeploy
 
     private static List<K8sDeploymentMatcher> getErrorDeploymentMatchers(ResourceState resourceState) {
         K8sDeploymentMatcher m1 = new K8sDeploymentMatcher(resourceState);
+        m1.setIgnoreReplicasCount(true);
         m1.setForAnyPods(true);
         m1.setPodStatusIn(Collections.singleton(ResourceState.ERROR_STATE));
         return Collections.singletonList(m1);
