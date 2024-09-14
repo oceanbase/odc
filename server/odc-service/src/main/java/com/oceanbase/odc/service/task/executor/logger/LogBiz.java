@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.task.executor.logger;
 
-import java.io.IOException;
 import java.util.Map;
 
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
