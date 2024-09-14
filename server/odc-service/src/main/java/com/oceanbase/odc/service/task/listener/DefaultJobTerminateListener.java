@@ -26,11 +26,13 @@ import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseService;
 import com.oceanbase.odc.service.dlm.DLMService;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.alarm.ScheduleAlarmUtils;
 import com.oceanbase.odc.service.schedule.job.DLMJobReq;
+import com.oceanbase.odc.service.schedule.model.PublishLogicalDatabaseChangeReq;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.tools.migrator.common.enums.JobType;
@@ -54,6 +56,8 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
     private ScheduleService scheduleService;
     @Autowired
     private DLMService dlmService;
+    @Autowired
+    private LogicalDatabaseService logicalDatabaseService;
 
     @Override
     public void onEvent(JobTerminateEvent event) {
@@ -84,6 +88,21 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
                     scheduleTaskService.triggerDataArchiveDelete(o.getId());
                     log.info("Trigger delete job succeed.");
                 }
+            } else if ("LOGICAL_DATABASE_CHANGE".equals(jobEntity.getJobType())) {
+                try {
+                    PublishLogicalDatabaseChangeReq req = JsonUtils.fromJson(
+                            JsonUtils
+                                    .fromJson(jobEntity.getJobParametersJson(),
+                                            new TypeReference<Map<String, String>>() {})
+                                    .get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
+                            PublishLogicalDatabaseChangeReq.class);
+                    if (req != null && req.getLogicalDatabaseResp() != null) {
+                        logicalDatabaseService.extractLogicalTablesSkipAuth(req.getLogicalDatabaseResp().getId());
+                    }
+                } catch (Exception ex) {
+                    log.warn("Failed to submit the extract logical tables task, ex=", ex);
+                }
+
             }
         });
     }

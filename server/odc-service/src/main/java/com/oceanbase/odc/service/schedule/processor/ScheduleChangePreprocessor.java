@@ -61,6 +61,7 @@ public class ScheduleChangePreprocessor implements InitializingBean {
 
     public void process(ScheduleChangeParams params) {
 
+        log.info("Process schedule change params, params={}", params);
         ScheduleType type;
         if (params.getOperationType() == OperationType.CREATE) {
             type = params.getCreateScheduleReq().getType();
@@ -71,6 +72,7 @@ public class ScheduleChangePreprocessor implements InitializingBean {
         if (type2Processor.containsKey(type)) {
             type2Processor.get(type).process(params);
         }
+        log.info("Process schedule change params successfully, params={}", params);
     }
 
     @Override

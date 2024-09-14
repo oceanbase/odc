@@ -27,6 +27,7 @@ import com.oceanbase.odc.metadb.schedule.ScheduleChangeLogEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleChangeLogRepository;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeLog;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeLogMapper;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeStatus;
 
 /**
  * @Author：tinker
@@ -55,5 +56,18 @@ public class ScheduleChangeLogService {
     public List<ScheduleChangeLog> listByScheduleId(Long scheduleId) {
         return scheduleChangeLogRepository.findByScheduleId(scheduleId).stream().map(mapper::entityToModel).collect(
                 Collectors.toList());
+    }
+
+    public void updateStatusById(Long id, ScheduleChangeStatus status) {
+        scheduleChangeLogRepository.updateStatusById(id, status);
+    }
+
+    public void updateFlowInstanceIdById(Long id, Long flowInstanceId) {
+        scheduleChangeLogRepository.updateFlowInstanceIdById(id, flowInstanceId);
+    }
+
+    public boolean hasApprovingChangeLog(Long scheduleId) {
+        return listByScheduleId(scheduleId).stream().map(ScheduleChangeLog::getStatus)
+                .anyMatch(ScheduleChangeStatus.APPROVING::equals);
     }
 }
