@@ -46,6 +46,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_database_stmtContex
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Database_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Dot_relation_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Normal_relation_factorContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factor_with_starContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_nameContext;
@@ -199,8 +200,16 @@ public class DBSchemaExtractor {
         private final Set<DBSchemaIdentity> identities = new HashSet<>();
 
         @Override
+        public RelationFactor visitPartition_option(Partition_optionContext ctx) {
+            return null;
+        }
+
+        @Override
         public RelationFactor visitAlter_table_action(Alter_table_actionContext ctx) {
             if (ctx.RENAME() != null) {
+                return null;
+            }
+            if (ctx.alter_partition_option() != null) {
                 return null;
             }
             return this.visitChildren(ctx);
@@ -338,8 +347,16 @@ public class DBSchemaExtractor {
         private final Set<DBSchemaIdentity> identities = new HashSet<>();
 
         @Override
+        public RelationFactor visitPartition_option(OBParser.Partition_optionContext ctx) {
+            return null;
+        }
+
+        @Override
         public RelationFactor visitAlter_table_action(OBParser.Alter_table_actionContext ctx) {
             if (ctx.RENAME() != null) {
+                return null;
+            }
+            if (ctx.alter_partition_option() != null) {
                 return null;
             }
             return this.visitChildren(ctx);
