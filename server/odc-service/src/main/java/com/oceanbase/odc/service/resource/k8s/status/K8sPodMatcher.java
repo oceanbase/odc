@@ -45,12 +45,15 @@ public class K8sPodMatcher implements K8sResourceMatcher<K8sPod> {
     private boolean ignoreContainerStatus;
     private boolean noContainerStatus;
     private boolean forAllContainers;
-    private boolean forAnyContainers;
     private Set<K8sPodContainerStatus> containerStatusIn = new HashSet<>();
     private Integer minMatchesCountInHasContainerStatuses = null;
     private Set<K8sPodContainerStatus> hasContainerStatuses = new HashSet<>();
     private boolean matchesAllContainerStatus;
     private Set<K8sPodContainerStatus> containerStatusNotIn = new HashSet<>();
+
+    public void setForAnyContainers(boolean forAnyContainers) {
+        this.forAllContainers = !forAnyContainers;
+    }
 
     @Override
     public boolean matches(K8sPod k8sPod) {
@@ -80,32 +83,35 @@ public class K8sPodMatcher implements K8sResourceMatcher<K8sPod> {
         } else if (CollectionUtils.isEmpty(k8sPod.getStatus().getContainerStatuses())) {
             containersMatches = this.noContainerStatus;
         } else {
-            List<V1ContainerStatus> containerStatuses = k8sPod.getStatus().getContainerStatuses();
+            List<V1ContainerStatus> cs = k8sPod.getStatus().getContainerStatuses();
             if (this.forAllContainers) {
-                containersMatches = containerStatuses.stream()
-                        .allMatch(s -> matchesPodContainerStatus(new K8sPodContainerStatus(s)));
+                containersMatches = cs.stream().allMatch(s -> matchesPodContainerStatus(new K8sPodContainerStatus(s)));
                 if (CollectionUtils.isNotEmpty(this.hasContainerStatuses)) {
-                    int matchesCount = 0;
-                    for (K8sPodContainerStatus item : this.hasContainerStatuses) {
-                        if (containerStatuses.stream()
-                                .map(K8sPodContainerStatus::new).collect(Collectors.toList()).contains(item)) {
-                            matchesCount++;
-                        }
-                    }
-                    if (minMatchesCountInHasContainerStatuses == null || minMatchesCountInHasContainerStatuses <= 0) {
-                        containersMatches &= (matchesCount >= hasContainerStatuses.size());
-                    } else {
-                        containersMatches &= (matchesCount >= minMatchesCountInHasContainerStatuses);
-                    }
+                    containersMatches &= ifReachesMinMatchesCountInHasContainerStatuses(cs);
                 }
-            } else if (this.forAnyContainers) {
-                containersMatches = containerStatuses.stream()
-                        .anyMatch(s -> matchesPodContainerStatus(new K8sPodContainerStatus(s)));
             } else {
-                return false;
+                containersMatches = cs.stream().anyMatch(s -> matchesPodContainerStatus(new K8sPodContainerStatus(s)));
             }
         }
         return containersMatches && podMatches;
+    }
+
+    private boolean ifReachesMinMatchesCountInHasContainerStatuses(List<V1ContainerStatus> cs) {
+        int matchesCount = matchesCountInHasContainerStatuses(cs);
+        if (this.minMatchesCountInHasContainerStatuses == null || this.minMatchesCountInHasContainerStatuses <= 0) {
+            return matchesCount >= this.hasContainerStatuses.size();
+        }
+        return matchesCount >= this.minMatchesCountInHasContainerStatuses;
+    }
+
+    private int matchesCountInHasContainerStatuses(List<V1ContainerStatus> cs) {
+        int matchesCount = 0;
+        for (K8sPodContainerStatus item : this.hasContainerStatuses) {
+            if (cs.stream().map(K8sPodContainerStatus::new).collect(Collectors.toList()).contains(item)) {
+                matchesCount++;
+            }
+        }
+        return matchesCount;
     }
 
     private boolean matchesPodContainerStatus(K8sPodContainerStatus target) {

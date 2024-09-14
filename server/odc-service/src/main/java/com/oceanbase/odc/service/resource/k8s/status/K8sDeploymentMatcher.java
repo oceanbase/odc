@@ -44,7 +44,6 @@ public class K8sDeploymentMatcher implements K8sResourceMatcher<K8sDeployment> {
     private boolean replicasEnough;
     private boolean replicasNonEnough;
     private boolean forAllPods;
-    private boolean forAnyPods;
     private Set<ResourceState> podStatusIn = new HashSet<>();
     private Integer minMatchesCountInHasPodStatuses = null;
     private Set<ResourceState> hasPodStatuses = new HashSet<>();
@@ -54,6 +53,10 @@ public class K8sDeploymentMatcher implements K8sResourceMatcher<K8sDeployment> {
 
     public K8sDeploymentMatcher(@NonNull ResourceState currentState) {
         this.currentState = currentState;
+    }
+
+    public void setForAnyPods(boolean forAnyPods) {
+        this.forAllPods = !forAnyPods;
     }
 
     @Override
@@ -95,10 +98,8 @@ public class K8sDeploymentMatcher implements K8sResourceMatcher<K8sDeployment> {
                     matches &= (matchesCount >= minMatchesCountInHasPodStatuses);
                 }
             }
-        } else if (this.forAnyPods) {
-            matches &= k8sPodList.stream().anyMatch(this::matchesPodStatus);
         } else {
-            return false;
+            matches &= k8sPodList.stream().anyMatch(this::matchesPodStatus);
         }
         return matches;
     }
