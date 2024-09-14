@@ -40,7 +40,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class K8sPodStatusDfa extends AbstractDfa<ResourceState, K8sPod> {
 
-    public static K8sPodStatusDfa getInstance() {
+    public static K8sPodStatusDfa buildInstance() {
         List<DfaStateTransfer<ResourceState, K8sPod>> transfers = new ArrayList<>();
         ResourceState[] fromState = new ResourceState[] {
                 ResourceState.CREATING, ResourceState.AVAILABLE, ResourceState.ERROR_STATE

@@ -63,9 +63,8 @@ public class NativeK8sServiceOperatorBuilder extends BaseNativeK8sResourceOperat
     public K8sService toResource(ResourceEntity e, Optional<K8sService> runtimeResource) {
         ResourceState nextState = e.getStatus();
         try {
-            K8sServiceStatusDfa dfa = K8sServiceStatusDfa.getInstance();
-            dfa.setCurrentState(e.getStatus());
-            nextState = dfa.next(runtimeResource.orElse(null)).getCurrentState();
+            K8sServiceStatusDfa dfa = K8sServiceStatusDfa.buildInstance();
+            nextState = dfa.next(runtimeResource.orElse(null), e.getStatus());
         } catch (Exception exception) {
             log.warn("Failed to get next service's status, id={}", e.getId(), exception);
         }

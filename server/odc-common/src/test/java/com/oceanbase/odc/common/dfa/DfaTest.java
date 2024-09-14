@@ -38,26 +38,22 @@ public class DfaTest {
     @Test
     public void next_stateExistsRightEvent_nextStateSucceed() throws Exception {
         AbstractDfa<String, String> fsm = buildFsm();
-        fsm.setCurrentState("Pending");
-        fsm.next(FIND_MACHINE);
-        Assert.assertEquals("Creating", fsm.getCurrentState());
+        Assert.assertEquals("Creating", fsm.next(FIND_MACHINE, "Pending"));
     }
 
     @Test(expected = IllegalStateException.class)
     public void next_illegalState_expThrown() throws Exception {
         AbstractDfa<String, String> fsm = buildFsm();
-        fsm.setCurrentState("Abc");
-        fsm.next(FIND_MACHINE);
+        fsm.next(FIND_MACHINE, "Abc");
     }
 
     @Test
     public void next_reachFinalState_expThrown() throws Exception {
         AbstractDfa<String, String> fsm = buildFsm();
-        fsm.setCurrentState("Pending");
-        fsm.next(FIND_MACHINE)
-                .next(POD_CREATED_SUCCEED)
-                .next(POD_DELETE)
-                .next(POD_DELETED);
+        String nextState = fsm.next(FIND_MACHINE, "Pending");
+        nextState = fsm.next(POD_CREATED_SUCCEED, nextState);
+        nextState = fsm.next(POD_DELETE, nextState);
+        fsm.next(POD_DELETED, nextState);
     }
 
     private AbstractDfa<String, String> buildFsm() {

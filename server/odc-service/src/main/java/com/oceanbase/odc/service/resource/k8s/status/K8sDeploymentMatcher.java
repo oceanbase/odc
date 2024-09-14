@@ -105,9 +105,7 @@ public class K8sDeploymentMatcher implements K8sResourceMatcher<K8sDeployment> {
 
     private ResourceState getPodStatus(K8sPod target) {
         try {
-            K8sPodStatusDfa dfa = K8sPodStatusDfa.getInstance();
-            dfa.setCurrentState(currentState);
-            return dfa.next(target).getCurrentState();
+            return K8sPodStatusDfa.buildInstance().next(target, currentState);
         } catch (Exception e) {
             return ResourceState.UNKNOWN;
         }

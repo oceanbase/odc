@@ -48,9 +48,11 @@ public class K8sDeployment extends V1Deployment implements K8sResource {
     private List<K8sPod> k8sPodList = null;
     private ResourceOperator<K8sPod, K8sPod> resourceOperator;
 
-    public K8sDeployment(@NonNull ResourceLocation resourceLocation, @NonNull ResourceState resourceState) {
+    public K8sDeployment(@NonNull ResourceLocation resourceLocation,
+            @NonNull ResourceState resourceState, ResourceOperator<K8sPod, K8sPod> resourceOperator) {
         this.resourceState = resourceState;
         this.resourceLocation = resourceLocation;
+        this.resourceOperator = resourceOperator;
     }
 
     @Override

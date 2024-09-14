@@ -19,8 +19,10 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
+import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -59,12 +61,8 @@ public class K8sPodContainerStatus {
         this.ready = status.getReady();
         this.running = status.getState().getRunning() != null;
         this.waiting = status.getState().getWaiting() != null;
-        if (status.getState().getWaiting() == null
-                || status.getState().getWaiting().getReason() == null) {
-            this.waitingReason = null;
-        } else {
-            this.waitingReason = status.getState().getWaiting().getReason().toUpperCase();
-        }
+        V1ContainerStateWaiting w = status.getState().getWaiting();
+        this.waitingReason = w == null ? null : StringUtils.toRootUpperCase(w.getReason());
         this.terminated = status.getState().getTerminated() != null;
     }
 

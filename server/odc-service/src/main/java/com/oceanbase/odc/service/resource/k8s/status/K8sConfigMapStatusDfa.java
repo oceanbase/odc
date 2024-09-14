@@ -38,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class K8sConfigMapStatusDfa extends AbstractDfa<ResourceState, K8sConfigMap> {
 
-    public static K8sConfigMapStatusDfa getInstance() {
+    public static K8sConfigMapStatusDfa buildInstance() {
         List<DfaStateTransfer<ResourceState, K8sConfigMap>> transfers = new ArrayList<>();
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sConfigMap>()
                 .from(ResourceState.CREATING, ResourceState.AVAILABLE, ResourceState.ERROR_STATE)

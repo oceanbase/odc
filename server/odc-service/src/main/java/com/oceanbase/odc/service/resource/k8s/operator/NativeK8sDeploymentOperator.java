@@ -79,13 +79,13 @@ public class NativeK8sDeploymentOperator extends BaseNativeK8sResourceOperator<K
         List<V1Deployment> deployments = new AppsV1Api().listNamespacedDeployment(this.defaultNamespace,
                 null, null, null, null, null, null, null, null, null, null, null).getItems();
         return deployments.stream().map(item -> {
-            K8sDeployment deployment = new K8sDeployment(this.resourceLocation, ResourceState.UNKNOWN);
+            K8sDeployment deployment = new K8sDeployment(
+                    this.resourceLocation, ResourceState.UNKNOWN, this.resourceOperator);
             deployment.setStatus(item.getStatus());
             deployment.setKind(item.getKind());
             deployment.setMetadata(item.getMetadata());
             deployment.setApiVersion(item.getApiVersion());
             deployment.setSpec(item.getSpec());
-            deployment.setResourceOperator(this.resourceOperator);
             return deployment;
         }).collect(Collectors.toList());
     }

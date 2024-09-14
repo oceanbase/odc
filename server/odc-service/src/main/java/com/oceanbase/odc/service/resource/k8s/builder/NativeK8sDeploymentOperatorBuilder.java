@@ -66,18 +66,18 @@ public class NativeK8sDeploymentOperatorBuilder extends BaseNativeK8sResourceOpe
     public K8sDeployment toResource(ResourceEntity e, Optional<K8sDeployment> runtimeResource) {
         ResourceState nextState = e.getStatus();
         try {
-            K8sDeploymentStatusDfa dfa = K8sDeploymentStatusDfa.getInstance(e.getStatus());
-            dfa.setCurrentState(e.getStatus());
-            nextState = dfa.next(runtimeResource.orElse(null)).getCurrentState();
+            K8sDeploymentStatusDfa dfa = K8sDeploymentStatusDfa.buildInstance(e.getStatus());
+            nextState = dfa.next(runtimeResource.orElse(null), e.getStatus());
         } catch (Exception exception) {
             log.warn("Failed to get next deployment's status, id={}", e.getId(), exception);
         }
-        K8sDeployment k8sDeployment = new K8sDeployment(new ResourceLocation(e), nextState);
+        K8sDeployment k8sDeployment = new K8sDeployment(new ResourceLocation(e), nextState, null);
         V1ObjectMeta meta = new V1ObjectMeta();
         meta.setName(e.getResourceName());
         meta.setNamespace(e.getNamespace());
         k8sDeployment.setMetadata(meta);
         if (runtimeResource.isPresent()) {
+            k8sDeployment.setResourceOperator(runtimeResource.get().getResourceOperator());
             k8sDeployment.setKind(runtimeResource.get().getKind());
             k8sDeployment.setSpec(runtimeResource.get().getSpec());
             k8sDeployment.setStatus(runtimeResource.get().getStatus());
