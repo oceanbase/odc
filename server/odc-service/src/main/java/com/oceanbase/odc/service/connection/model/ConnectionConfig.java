@@ -54,7 +54,6 @@ import com.oceanbase.odc.service.connection.ConnectionStatusManager.CheckState;
 
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
 import lombok.ToString;
 
 /**
@@ -536,11 +535,17 @@ public class ConnectionConfig
     }
 
     public String getCloudProvider() {
+        if (this.attributes == null) {
+            return null;
+        }
         Object o = attributes.get(CLOUD_PROVIDER);
         return o == null ? null : o.toString();
     }
 
     public String getRegion() {
+        if (this.attributes == null) {
+            return null;
+        }
         Object o = attributes.get(REGION);
         return o == null ? null : o.toString();
     }
