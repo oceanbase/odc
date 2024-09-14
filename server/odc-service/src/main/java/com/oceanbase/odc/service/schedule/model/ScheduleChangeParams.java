@@ -26,6 +26,8 @@ import lombok.Data;
 @Data
 public class ScheduleChangeParams {
 
+    private Long scheduleChangeLogId;
+
     private Long scheduleId;
 
     private OperationType operationType;

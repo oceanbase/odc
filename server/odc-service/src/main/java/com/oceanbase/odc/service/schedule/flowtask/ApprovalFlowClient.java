@@ -13,41 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.core.shared.constant;
+package com.oceanbase.odc.service.schedule.flowtask;
 
-import org.springframework.context.i18n.LocaleContextHolder;
-
-import com.oceanbase.odc.common.i18n.Translatable;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 
 /**
- * {@link Symbols}
- *
- * @author yh263208
- * @date 2024-05-09 21:54
- * @since ODC_release_4.2.4
+ * @Author：tinker
+ * @Date: 2024/9/10 17:09
+ * @Descripition:
  */
-public enum Symbols implements Translatable {
+public interface ApprovalFlowClient {
 
-    /**
-     * [
-     */
-    LEFT_BRACKET,
-    /**
-     * ]
-     */
-    RIGHT_BRACKET,
-    /**
-     * ,
-     */
-    COMMA;
-
-    @Override
-    public String code() {
-        return name();
-    }
-
-    public String getLocalizedMessage() {
-        return translate(null, LocaleContextHolder.getLocale());
-    }
+    Long create(ScheduleChangeParams params);
 
 }

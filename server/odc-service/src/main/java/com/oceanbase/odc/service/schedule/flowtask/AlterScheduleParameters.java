@@ -24,13 +24,14 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
-import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.schedule.model.LogicalDatabaseChangeParameters;
 import com.oceanbase.odc.service.schedule.model.OperationType;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
+import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 
 import lombok.Data;
 
@@ -52,7 +53,7 @@ public class AlterScheduleParameters implements Serializable, TaskParameters {
 
     @JsonTypeInfo(use = Id.NAME, include = As.EXTERNAL_PROPERTY, property = "type")
     @JsonSubTypes(value = {
-            @JsonSubTypes.Type(value = DatabaseChangeParameters.class, name = "SQL_PLAN"),
+            @JsonSubTypes.Type(value = SqlPlanParameters.class, name = "SQL_PLAN"),
             @JsonSubTypes.Type(value = DataArchiveParameters.class, name = "DATA_ARCHIVE"),
             @JsonSubTypes.Type(value = DataDeleteParameters.class, name = "DATA_DELETE"),
             @JsonSubTypes.Type(value = LogicalDatabaseChangeParameters.class, name = "LOGICAL_DATABASE_CHANGE")
@@ -66,6 +67,8 @@ public class AlterScheduleParameters implements Serializable, TaskParameters {
     private MisfireStrategy misfireStrategy = MisfireStrategy.MISFIRE_INSTRUCTION_DO_NOTHING;
 
     private String description;
+
+    private ScheduleChangeParams scheduleChangeParams;
 }
 
 

@@ -25,7 +25,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -388,36 +387,24 @@ public class ScheduleResponseMapperFactory {
         switch (schedule.getType()) {
             case DATA_ARCHIVE: {
                 DataArchiveParameters parameters = (DataArchiveParameters) schedule.getParameters();
-                Map<Long, Database> id2Database = getDatabaseByIds(
-                        Stream.of(parameters.getSourceDatabaseId(), parameters.getTargetDataBaseId()).collect(
-                                Collectors.toSet())).stream().collect(Collectors.toMap(Database::getId, o -> o));
-                parameters.setSourceDatabase(id2Database.get(parameters.getSourceDatabaseId()));
-                parameters.setTargetDatabase(id2Database.get(parameters.getTargetDataBaseId()));
+                parameters.setSourceDatabase(databaseService.detail(parameters.getSourceDatabaseId()));
+                parameters.setTargetDatabase(databaseService.detail(parameters.getTargetDataBaseId()));
                 limiterService.findByScheduleId(schedule.getId()).ifPresent(parameters::setRateLimit);
                 return parameters;
             }
             case DATA_DELETE: {
                 DataDeleteParameters parameters = (DataDeleteParameters) schedule.getParameters();
-                Set<Long> databaseIds = new HashSet<>();
-                databaseIds.add(parameters.getDatabaseId());
                 if (parameters.getTargetDatabaseId() != null) {
-                    databaseIds.add(parameters.getTargetDatabaseId());
+                    parameters.setTargetDatabase(databaseService.detail(parameters.getTargetDatabaseId()));
                 }
-                Map<Long, Database> id2Database = getDatabaseByIds(databaseIds)
-                        .stream().collect(Collectors.toMap(Database::getId, o -> o));
-                parameters.setDatabase(id2Database.get(parameters.getDatabaseId()));
-                parameters.setTargetDatabase(id2Database.get(parameters.getTargetDatabaseId()));
+                parameters.setDatabase(databaseService.detail(parameters.getDatabaseId()));
                 limiterService.findByScheduleId(schedule.getId()).ifPresent(parameters::setRateLimit);
                 return parameters;
             }
             case SQL_PLAN: {
                 SqlPlanParameters parameters = (SqlPlanParameters) schedule.getParameters();
-                if (parameters.getDatabaseId() == null) {
-                    return parameters;
-                }
-                List<Database> databases = getDatabaseByIds(Collections.singleton(parameters.getDatabaseId()));
-                if (!databases.isEmpty()) {
-                    parameters.setDatabaseInfo(databases.get(0));
+                if (parameters.getDatabaseId() != null) {
+                    parameters.setDatabaseInfo(databaseService.detail(parameters.getDatabaseId()));
                 }
                 return parameters;
             }
