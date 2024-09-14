@@ -47,6 +47,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Service
 @Slf4j
+@SkipAuthorize("odc internal usage")
 public class FlowTaskInstanceLoggerService {
 
     @Autowired
@@ -72,7 +73,6 @@ public class FlowTaskInstanceLoggerService {
     }
 
     @SneakyThrows
-    @SkipAuthorize("odc internal usage")
     public String getLogContentWithoutPermission(OdcTaskLogLevel level, Long flowInstanceId) {
         Optional<TaskEntity> taskEntityOptional =
                 flowTaskInstanceService.getLogDownloadableTaskEntity(flowInstanceId, true);

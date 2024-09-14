@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
@@ -57,6 +58,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Service
 @Slf4j
+@SkipAuthorize("odc internal usage")
 public class ScheduledTaskLoggerService {
 
     private static final String LOG_PATH_PATTERN = "%s/scheduleTask/%s-%s/%s/log.%s";
