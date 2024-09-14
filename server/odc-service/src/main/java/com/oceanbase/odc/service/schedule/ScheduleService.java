@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
@@ -34,10 +36,12 @@ import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanMap;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,11 +49,13 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
+import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
@@ -80,6 +86,7 @@ import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.schedule.factory.ScheduleResponseMapperFactory;
 import com.oceanbase.odc.service.schedule.model.ChangeQuartJobParam;
+import com.oceanbase.odc.service.schedule.model.ChangeScheduleResp;
 import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
@@ -109,6 +116,7 @@ import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -176,11 +184,14 @@ public class ScheduleService {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private JdbcLockRegistry jdbcLockRegistry;
+
     private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
 
 
     @Transactional(rollbackFor = Exception.class)
-    public Schedule changeSchedule(ScheduleChangeParams req) {
+    public ChangeScheduleResp changeSchedule(ScheduleChangeParams req) {
 
         preprocessor.process(req);
         Schedule targetSchedule;
@@ -259,7 +270,10 @@ public class ScheduleService {
                         approvalFlowInstanceId, approvalFlowInstanceId == null ? ScheduleChangeStatus.SUCCESS
                                 : ScheduleChangeStatus.APPROVING));
         log.info("Create change log success,changLog={}", changeLog);
-        return targetSchedule;
+        ChangeScheduleResp returnVal = new ChangeScheduleResp();
+        BeanUtils.copyProperties(targetSchedule, returnVal);
+        returnVal.setChangeLog(changeLog);
+        return returnVal;
     }
 
     private void validateTriggerConfig(TriggerConfig triggerConfig) {
@@ -623,6 +637,12 @@ public class ScheduleService {
         return returnValue.map(o -> id2Overview.get(o.getId()));
     }
 
+    public Page<Schedule> listScheduleWithParameterSkipPermissionCheck(@NotNull Pageable pageable,
+            @NotNull QueryScheduleParams params) {
+        params.setOrganizationId(authenticationFacade.currentOrganizationId());
+        return scheduleRepository.find(pageable, params).map(scheduleMapper::entityToModel);
+    }
+
     public Page<ScheduleTaskOverview> listScheduleTaskOverview(@NotNull Pageable pageable, @NotNull Long scheduleId) {
         nullSafeGetByIdWithCheckPermission(scheduleId, false);
         return scheduleTaskService.getScheduleTaskListResp(pageable, scheduleId);
@@ -824,6 +844,28 @@ public class ScheduleService {
         return rateLimitConfiguration;
     }
 
+    public void syncActionsToLogicalDatabaseTask(@NonNull Long scheduleTaskId, @NonNull String action,
+            @NonNull String executionUnitId)
+            throws InterruptedException, JobException {
+        Lock lock = jdbcLockRegistry.obtain(getLogicalDatabaseChangeActionLockKey(executionUnitId));
+        if (!lock.tryLock(5, TimeUnit.SECONDS)) {
+            throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
+        }
+        try {
+            Optional<ScheduleTask> taskOpt = scheduleTaskService.findById(scheduleTaskId);
+            if (taskOpt.isPresent() && taskOpt.get().getStatus() == TaskStatus.RUNNING
+                    && taskOpt.get().getJobId() != null) {
+                ScheduleTask task = taskOpt.get();
+                Map<String, String> map = new HashMap<>();
+                map.put(action, executionUnitId);
+                SpringContextUtil.getBean(JobScheduler.class).modifyJobParameters(task.getJobId(), map);
+                log.info("Sync actions to executor success:{}", map);
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
     private void syncRateLimitToRunningTask(Long scheduleId, RateLimitConfiguration rateLimit) {
         Optional<ScheduleTask> latestTask = getLatestTask(scheduleId);
         if (latestTask.isPresent() && latestTask.get().getStatus() == TaskStatus.RUNNING
@@ -837,7 +879,9 @@ public class ScheduleService {
                 log.warn("Sync limit config failed,jobId={}", latestTask.get().getJobId(), e);
             }
         }
-
     }
 
+    private String getLogicalDatabaseChangeActionLockKey(@NonNull String executionId) {
+        return "logical-database-change-action-execution-" + executionId;
+    }
 }

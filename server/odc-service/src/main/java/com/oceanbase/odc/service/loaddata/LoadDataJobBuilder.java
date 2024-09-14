@@ -13,41 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.core.shared.constant;
+package com.oceanbase.odc.service.loaddata;
 
-import org.springframework.context.i18n.LocaleContextHolder;
+import org.quartz.JobExecutionContext;
 
-import com.oceanbase.odc.common.i18n.Translatable;
+import com.oceanbase.odc.service.task.schedule.JobDefinition;
 
 /**
- * {@link Symbols}
- *
- * @author yh263208
- * @date 2024-05-09 21:54
- * @since ODC_release_4.2.4
+ * @author: liuyizhuo.lyz
+ * @date: 2024/9/2
  */
-public enum Symbols implements Translatable {
+public interface LoadDataJobBuilder {
 
-    /**
-     * [
-     */
-    LEFT_BRACKET,
-    /**
-     * ]
-     */
-    RIGHT_BRACKET,
-    /**
-     * ,
-     */
-    COMMA;
-
-    @Override
-    public String code() {
-        return name();
-    }
-
-    public String getLocalizedMessage() {
-        return translate(null, LocaleContextHolder.getLocale());
-    }
+    JobDefinition build(JobExecutionContext jobExecutionContext);
 
 }

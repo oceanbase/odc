@@ -34,5 +34,6 @@ public class DateBasedPartitionNameGeneratorConfig {
     private String namingPrefix;
     private String namingSuffixExpression;
     private String refPartitionKey;
+    private NamingSuffixStrategy namingSuffixStrategy = NamingSuffixStrategy.PARTITION_UPPER_BOUND;
 
 }

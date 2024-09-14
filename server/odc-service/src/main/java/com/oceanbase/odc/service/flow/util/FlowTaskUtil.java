@@ -425,6 +425,7 @@ public class FlowTaskUtil {
         dbConfig.setTenant(config.getTenantName());
         Map<String, String> connectParam = new HashMap<>();
         connectParam.put("compatibleOjdbcVersion", "8");
+        connectParam.put("useSSL", "false");
         dbConfig.setConnectParam(connectParam);
         if (DialectType.OB_ORACLE.equals(config.getDialectType())) {
             String uname = ConnectionSessionUtil.getUserOrSchemaString(

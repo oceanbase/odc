@@ -412,10 +412,13 @@ public class ScheduleResponseMapperFactory {
             }
             case SQL_PLAN: {
                 SqlPlanParameters parameters = (SqlPlanParameters) schedule.getParameters();
-                Map<Long, Database> id2Database = getDatabaseByIds(
-                        Stream.of(parameters.getDatabaseId()).collect(
-                                Collectors.toSet())).stream().collect(Collectors.toMap(Database::getId, o -> o));
-                parameters.setDatabaseInfo(id2Database.get(parameters.getDatabaseId()));
+                if (parameters.getDatabaseId() == null) {
+                    return parameters;
+                }
+                List<Database> databases = getDatabaseByIds(Collections.singleton(parameters.getDatabaseId()));
+                if (!databases.isEmpty()) {
+                    parameters.setDatabaseInfo(databases.get(0));
+                }
                 return parameters;
             }
             default:
