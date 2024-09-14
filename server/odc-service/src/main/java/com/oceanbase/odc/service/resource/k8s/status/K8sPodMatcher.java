@@ -126,5 +126,4 @@ public class K8sPodMatcher implements K8sResourceMatcher<K8sPod> {
         return matchesCount >= this.minMatchesCountInHasContainerStatuses;
     }
 
-
 }
