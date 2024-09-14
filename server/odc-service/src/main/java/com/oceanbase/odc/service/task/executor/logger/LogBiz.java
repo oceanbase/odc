@@ -30,7 +30,7 @@ public interface LogBiz {
 
     String getLog(Long jobId, String logType, Long fetchMaxLine, Long fetchMaxByteSize);
 
-    Map<String, String> uploadLogFileToCloudStorage(JobIdentity ji, CloudObjectStorageService cloudObjectStorageService)
-            throws IOException;
+    Map<String, String> uploadLogFileToCloudStorage(JobIdentity ji,
+            CloudObjectStorageService cloudObjectStorageService);
 
 }

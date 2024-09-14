@@ -215,16 +215,8 @@ public class TaskMonitor {
     private void uploadLogFileToCloudStorage(DefaultTaskResult finalResult) {
         if (cloudObjectStorageService != null && cloudObjectStorageService.supported()
                 && JobUtils.isK8sRunModeOfEnv()) {
-            LogBiz biz = new LogBizImpl();
-            Map<String, String> logMap = new HashMap<>();
-            try {
-                logMap = biz.uploadLogFileToCloudStorage(finalResult.getJobIdentity(), cloudObjectStorageService);
-            } catch (Throwable e) {
-                log.warn("Upload job log file to cloud storage occur error, jobId={}", getJobId(), e);
-                // putAll will throw NPE if it returns null.
-
-            }
-            finalResult.setLogMetadata(logMap);
+            finalResult.setLogMetadata(new LogBizImpl().uploadLogFileToCloudStorage(finalResult.getJobIdentity(),
+                    cloudObjectStorageService));
         }
     }
 
