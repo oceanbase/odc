@@ -43,7 +43,6 @@ import com.oceanbase.tools.sqlparser.adapter.oracle.OracleExpressionFactory;
 import com.oceanbase.tools.sqlparser.adapter.oracle.OracleFromReferenceFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_table_actionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_database_stmtContext;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Database_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Dot_relation_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Normal_relation_factorContext;
@@ -201,16 +200,8 @@ public class DBSchemaExtractor {
         private final Set<DBSchemaIdentity> identities = new HashSet<>();
 
         @Override
-        public RelationFactor visitCreate_table_stmt(Create_table_stmtContext ctx) {
-            if (ctx.partition_option() != null) {
-                for (int i = 0; i < ctx.getChildCount(); i++) {
-                    if (!(ctx.getChild(i) instanceof Partition_optionContext)) {
-                        ctx.getChild(i).accept(this);
-                    }
-                }
-                return null;
-            }
-            return this.visitChildren(ctx);
+        public RelationFactor visitPartition_option(Partition_optionContext ctx) {
+            return null;
         }
 
         @Override
@@ -356,18 +347,9 @@ public class DBSchemaExtractor {
         private final Set<DBSchemaIdentity> identities = new HashSet<>();
 
         @Override
-        public RelationFactor visitCreate_table_stmt(OBParser.Create_table_stmtContext ctx) {
-            if (ctx.partition_option() != null) {
-                for (int i = 0; i < ctx.getChildCount(); i++) {
-                    if (!(ctx.getChild(i) instanceof OBParser.Partition_optionContext)) {
-                        ctx.getChild(i).accept(this);
-                    }
-                }
-                return null;
-            }
-            return this.visitChildren(ctx);
+        public RelationFactor visitPartition_option(OBParser.Partition_optionContext ctx) {
+            return null;
         }
-
 
         @Override
         public RelationFactor visitAlter_table_action(OBParser.Alter_table_actionContext ctx) {
