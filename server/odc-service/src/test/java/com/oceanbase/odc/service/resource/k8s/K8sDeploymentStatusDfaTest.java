@@ -41,48 +41,42 @@ public class K8sDeploymentStatusDfaTest {
     @Test
     public void next_currentStateIsCreatingPodIsCreatingWithEnoughRep_nextStateCreating() throws Exception {
         K8sDeploymentStatusDfa dfa = K8sDeploymentStatusDfa.buildInstance(ResourceState.CREATING);
-        dfa.setCurrentState(ResourceState.CREATING);
-        ResourceState actual = dfa.next(getCreatingDeploymentWithNonEnoughReplicas()).getCurrentState();
+        ResourceState actual = dfa.next(getCreatingDeploymentWithNonEnoughReplicas(), ResourceState.CREATING);
         Assert.assertEquals(ResourceState.CREATING, actual);
     }
 
     @Test
     public void next_currentStateIsCreatingPodIsCreatingWithNonEnoughRep_nextStateCreating() throws Exception {
         K8sDeploymentStatusDfa dfa = K8sDeploymentStatusDfa.buildInstance(ResourceState.CREATING);
-        dfa.setCurrentState(ResourceState.CREATING);
-        ResourceState actual = dfa.next(getCreatingDeploymentWithEnoughReplicas()).getCurrentState();
+        ResourceState actual = dfa.next(getCreatingDeploymentWithEnoughReplicas(), ResourceState.CREATING);
         Assert.assertEquals(ResourceState.CREATING, actual);
     }
 
     @Test
     public void next_currentStateIsCreatingPodIsAllAvailable_nextStateAvailable() throws Exception {
         K8sDeploymentStatusDfa dfa = K8sDeploymentStatusDfa.buildInstance(ResourceState.CREATING);
-        dfa.setCurrentState(ResourceState.CREATING);
-        ResourceState actual = dfa.next(getAvailableDeployment()).getCurrentState();
+        ResourceState actual = dfa.next(getAvailableDeployment(), ResourceState.CREATING);
         Assert.assertEquals(ResourceState.AVAILABLE, actual);
     }
 
     @Test
     public void next_currentStateIsCreatingPodIsFailed_nextStateError() throws Exception {
         K8sDeploymentStatusDfa dfa = K8sDeploymentStatusDfa.buildInstance(ResourceState.CREATING);
-        dfa.setCurrentState(ResourceState.CREATING);
-        ResourceState actual = dfa.next(getErrorDeployment()).getCurrentState();
+        ResourceState actual = dfa.next(getErrorDeployment(), ResourceState.CREATING);
         Assert.assertEquals(ResourceState.ERROR_STATE, actual);
     }
 
     @Test
     public void next_currentStateIsCreatingDeploymentIsAbsent_nextStateUnknown() throws Exception {
         K8sDeploymentStatusDfa dfa = K8sDeploymentStatusDfa.buildInstance(ResourceState.CREATING);
-        dfa.setCurrentState(ResourceState.CREATING);
-        ResourceState actual = dfa.next(null).getCurrentState();
+        ResourceState actual = dfa.next(null, ResourceState.CREATING);
         Assert.assertEquals(ResourceState.UNKNOWN, actual);
     }
 
     @Test
     public void next_currentStateIsDestroyingDeploymentIsAbsent_nextStateDestroyed() throws Exception {
         K8sDeploymentStatusDfa dfa = K8sDeploymentStatusDfa.buildInstance(ResourceState.DESTROYING);
-        dfa.setCurrentState(ResourceState.DESTROYING);
-        ResourceState actual = dfa.next(null).getCurrentState();
+        ResourceState actual = dfa.next(null, ResourceState.DESTROYING);
         Assert.assertEquals(ResourceState.DESTROYED, actual);
     }
 

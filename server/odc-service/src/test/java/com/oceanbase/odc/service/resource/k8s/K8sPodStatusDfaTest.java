@@ -46,64 +46,56 @@ public class K8sPodStatusDfaTest {
     @Test
     public void next_currentStateIsCreatingPodIsCreating_nextStateCreating() throws Exception {
         K8sPodStatusDfa dfa = K8sPodStatusDfa.buildInstance();
-        dfa.setCurrentState(ResourceState.CREATING);
-        ResourceState actual = dfa.next(getRunningCreatingPod()).getCurrentState();
+        ResourceState actual = dfa.next(getRunningCreatingPod(), ResourceState.CREATING);
         Assert.assertEquals(ResourceState.CREATING, actual);
     }
 
     @Test
     public void next_currentStateIsPending_nextStateCreating() throws Exception {
         K8sPodStatusDfa dfa = K8sPodStatusDfa.buildInstance();
-        dfa.setCurrentState(ResourceState.CREATING);
-        ResourceState actual = dfa.next(getPendingCreatingPod()).getCurrentState();
+        ResourceState actual = dfa.next(getPendingCreatingPod(), ResourceState.CREATING);
         Assert.assertEquals(ResourceState.CREATING, actual);
     }
 
     @Test
     public void next_currentStateIsAvailable_nextStateAvailable() throws Exception {
         K8sPodStatusDfa dfa = K8sPodStatusDfa.buildInstance();
-        dfa.setCurrentState(ResourceState.CREATING);
-        ResourceState actual = dfa.next(getAvailablePod()).getCurrentState();
+        ResourceState actual = dfa.next(getAvailablePod(), ResourceState.CREATING);
         Assert.assertEquals(ResourceState.AVAILABLE, actual);
     }
 
     @Test
     public void next_currentStateIsFailedError_nextStateErrorState() throws Exception {
         K8sPodStatusDfa dfa = K8sPodStatusDfa.buildInstance();
-        dfa.setCurrentState(ResourceState.CREATING);
-        ResourceState actual = dfa.next(getFailedErrorPod()).getCurrentState();
+        ResourceState actual = dfa.next(getFailedErrorPod(), ResourceState.CREATING);
         Assert.assertEquals(ResourceState.ERROR_STATE, actual);
     }
 
     @Test
     public void next_currentStateIsUnknownError_nextStateErrorState() throws Exception {
         K8sPodStatusDfa dfa = K8sPodStatusDfa.buildInstance();
-        dfa.setCurrentState(ResourceState.CREATING);
-        ResourceState actual = dfa.next(getUnknownErrorPod()).getCurrentState();
+        ResourceState actual = dfa.next(getUnknownErrorPod(), ResourceState.CREATING);
         Assert.assertEquals(ResourceState.ERROR_STATE, actual);
     }
 
     @Test
     public void next_currentStateIsRunningError_nextStateErrorState() throws Exception {
         K8sPodStatusDfa dfa = K8sPodStatusDfa.buildInstance();
-        dfa.setCurrentState(ResourceState.CREATING);
-        ResourceState actual = dfa.next(getRunningErrorPod()).getCurrentState();
+        ResourceState actual = dfa.next(getRunningErrorPod(), ResourceState.CREATING);
         Assert.assertEquals(ResourceState.ERROR_STATE, actual);
     }
 
     @Test
     public void next_currentStateIsPendingError_nextStateErrorState() throws Exception {
         K8sPodStatusDfa dfa = K8sPodStatusDfa.buildInstance();
-        dfa.setCurrentState(ResourceState.CREATING);
-        ResourceState actual = dfa.next(getPendingErrorPod()).getCurrentState();
+        ResourceState actual = dfa.next(getPendingErrorPod(), ResourceState.CREATING);
         Assert.assertEquals(ResourceState.ERROR_STATE, actual);
     }
 
     @Test
     public void next_podIsNull_nextStateUnknown() throws Exception {
         K8sPodStatusDfa dfa = K8sPodStatusDfa.buildInstance();
-        dfa.setCurrentState(ResourceState.CREATING);
-        ResourceState actual = dfa.next(null).getCurrentState();
+        ResourceState actual = dfa.next(null, ResourceState.CREATING);
         Assert.assertEquals(ResourceState.UNKNOWN, actual);
     }
 
