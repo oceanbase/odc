@@ -20,9 +20,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 
-import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 
 /**
  * {@link AbstractDfa}
@@ -33,35 +31,28 @@ import lombok.Setter;
  */
 public abstract class AbstractDfa<STATE, INPUT> {
 
-    @Setter
-    @Getter
-    private STATE currentState;
     private final List<DfaStateTransfer<STATE, INPUT>> dfaStateTransfers;
 
     public AbstractDfa(@NonNull List<DfaStateTransfer<STATE, INPUT>> dfaStateTransfers) {
         this.dfaStateTransfers = dfaStateTransfers;
     }
 
-    public AbstractDfa<STATE, INPUT> next(INPUT input) throws Exception {
-        if (this.currentState == null) {
-            throw new IllegalStateException("Current state is not set");
-        }
+    public STATE next(INPUT input, STATE currentState) throws Exception {
         List<DfaStateTransfer<STATE, INPUT>> transfers = this.dfaStateTransfers.stream()
-                .filter(t -> t.matchesState(this.currentState)).collect(Collectors.toList());
+                .filter(t -> t.matchesState(currentState)).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(transfers)) {
-            throw new IllegalStateException("State " + this.currentState + " is the final state");
+            throw new IllegalStateException("State " + currentState + " is the final state");
         }
         transfers = transfers.stream().filter(t -> t.matchesInput(input)).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(transfers)) {
-            throw new IllegalStateException("Unknown input " + input + " for state " + this.currentState);
+            throw new IllegalStateException("Unknown input " + input + " for state " + currentState);
         } else if (transfers.size() != 1) {
             throw new IllegalStateException("More than one routes for state "
-                    + this.currentState + " and input " + input);
+                    + currentState + " and input " + input);
         }
         STATE nextState = transfers.get(0).next();
         onStateTransfer(currentState, nextState, input);
-        this.currentState = nextState;
-        return this;
+        return nextState;
     }
 
     protected abstract void onStateTransfer(STATE currentState, STATE nextState, INPUT input) throws Exception;

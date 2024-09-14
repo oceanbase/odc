@@ -25,9 +25,9 @@ import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceOperator;
 import com.oceanbase.odc.service.resource.ResourceState;
-import com.oceanbase.odc.service.resource.k8s.model.K8sConfigMap;
-import com.oceanbase.odc.service.resource.k8s.operator.NativeK8sConfigMapOperator;
-import com.oceanbase.odc.service.resource.k8s.status.K8sConfigMapStatusDfa;
+import com.oceanbase.odc.service.resource.k8s.model.K8sService;
+import com.oceanbase.odc.service.resource.k8s.operator.NativeK8sServiceOperator;
+import com.oceanbase.odc.service.resource.k8s.status.K8sServiceStatusDfa;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -35,54 +35,51 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link NativeK8sConfigMapOperatorBuilder}
+ * {@link NativeK8sServiceOperatorBuilder}
  *
  * @author yh263208
- * @date 2024-09-07 18:55
+ * @date 2024-09-10 11:38
  * @since ODC_release_4.3.2
  */
 @Slf4j
 @Component
-public class NativeK8sConfigMapOperatorBuilder extends BaseNativeK8sResourceOperatorBuilder<K8sConfigMap> {
+public class NativeK8sServiceOperatorBuilder extends BaseNativeK8sResourceOperatorBuilder<K8sService> {
 
-    public NativeK8sConfigMapOperatorBuilder(
-            @Autowired TaskFrameworkProperties frameworkProperties) throws IOException {
+    public NativeK8sServiceOperatorBuilder(@Autowired TaskFrameworkProperties frameworkProperties) throws IOException {
         super(frameworkProperties);
     }
 
     @Override
     protected boolean doMatch(String type) {
-        return K8sConfigMap.TYPE.equals(type);
+        return K8sService.TYPE.equals(type);
     }
 
     @Override
-    public K8sConfigMap toResource(ResourceEntity e, Optional<K8sConfigMap> runtimeResource) {
+    public ResourceOperator<K8sService, K8sService> build(@NonNull ResourceLocation resourceLocation) {
+        return new NativeK8sServiceOperator(this.defaultNamespace, resourceLocation);
+    }
+
+    @Override
+    public K8sService toResource(ResourceEntity e, Optional<K8sService> runtimeResource) {
         ResourceState nextState = e.getStatus();
         try {
-            K8sConfigMapStatusDfa dfa = K8sConfigMapStatusDfa.buildInstance();
+            K8sServiceStatusDfa dfa = K8sServiceStatusDfa.buildInstance();
             nextState = dfa.next(runtimeResource.orElse(null), e.getStatus());
         } catch (Exception exception) {
-            log.warn("Failed to get next configmap's status, id={}", e.getId(), exception);
+            log.warn("Failed to get next service's status, id={}", e.getId(), exception);
         }
-        K8sConfigMap k8sConfigMap = new K8sConfigMap(new ResourceLocation(e), nextState);
+        K8sService k8sService = new K8sService(new ResourceLocation(e), nextState);
         V1ObjectMeta meta = new V1ObjectMeta();
         meta.setName(e.getResourceName());
         meta.setNamespace(e.getNamespace());
-        k8sConfigMap.setMetadata(meta);
+        k8sService.setMetadata(meta);
         if (runtimeResource.isPresent()) {
-            k8sConfigMap.setData(runtimeResource.get().getData());
-            k8sConfigMap.setKind(runtimeResource.get().getKind());
-            k8sConfigMap.setImmutable(runtimeResource.get().getImmutable());
-            k8sConfigMap.setApiVersion(runtimeResource.get().getApiVersion());
-            k8sConfigMap.setBinaryData(runtimeResource.get().getBinaryData());
+            k8sService.setKind(runtimeResource.get().getKind());
+            k8sService.setSpec(runtimeResource.get().getSpec());
+            k8sService.setStatus(runtimeResource.get().getStatus());
+            k8sService.setApiVersion(runtimeResource.get().getApiVersion());
         }
-        return k8sConfigMap;
-    }
-
-
-    @Override
-    public ResourceOperator<K8sConfigMap, K8sConfigMap> build(@NonNull ResourceLocation resourceLocation) {
-        return new NativeK8sConfigMapOperator(this.defaultNamespace, resourceLocation);
+        return k8sService;
     }
 
 }

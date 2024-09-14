@@ -25,9 +25,10 @@ import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceOperator;
 import com.oceanbase.odc.service.resource.ResourceState;
-import com.oceanbase.odc.service.resource.k8s.model.K8sConfigMap;
-import com.oceanbase.odc.service.resource.k8s.operator.NativeK8sConfigMapOperator;
-import com.oceanbase.odc.service.resource.k8s.status.K8sConfigMapStatusDfa;
+import com.oceanbase.odc.service.resource.k8s.model.K8sDeployment;
+import com.oceanbase.odc.service.resource.k8s.operator.NativeK8sDeploymentOperator;
+import com.oceanbase.odc.service.resource.k8s.operator.NativeK8sPodOperator;
+import com.oceanbase.odc.service.resource.k8s.status.K8sDeploymentStatusDfa;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -35,54 +36,54 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link NativeK8sConfigMapOperatorBuilder}
+ * {@link NativeK8sDeploymentOperatorBuilder}
  *
  * @author yh263208
- * @date 2024-09-07 18:55
+ * @date 2024-09-10 11:28
  * @since ODC_release_4.3.2
  */
 @Slf4j
 @Component
-public class NativeK8sConfigMapOperatorBuilder extends BaseNativeK8sResourceOperatorBuilder<K8sConfigMap> {
+public class NativeK8sDeploymentOperatorBuilder extends BaseNativeK8sResourceOperatorBuilder<K8sDeployment> {
 
-    public NativeK8sConfigMapOperatorBuilder(
+    public NativeK8sDeploymentOperatorBuilder(
             @Autowired TaskFrameworkProperties frameworkProperties) throws IOException {
         super(frameworkProperties);
     }
 
     @Override
     protected boolean doMatch(String type) {
-        return K8sConfigMap.TYPE.equals(type);
+        return K8sDeployment.TYPE.equals(type);
     }
 
     @Override
-    public K8sConfigMap toResource(ResourceEntity e, Optional<K8sConfigMap> runtimeResource) {
+    public ResourceOperator<K8sDeployment, K8sDeployment> build(@NonNull ResourceLocation resourceLocation) {
+        return new NativeK8sDeploymentOperator(this.defaultNamespace,
+                resourceLocation, new NativeK8sPodOperator(this.defaultNamespace, resourceLocation));
+    }
+
+    @Override
+    public K8sDeployment toResource(ResourceEntity e, Optional<K8sDeployment> runtimeResource) {
         ResourceState nextState = e.getStatus();
         try {
-            K8sConfigMapStatusDfa dfa = K8sConfigMapStatusDfa.buildInstance();
+            K8sDeploymentStatusDfa dfa = K8sDeploymentStatusDfa.buildInstance(e.getStatus());
             nextState = dfa.next(runtimeResource.orElse(null), e.getStatus());
         } catch (Exception exception) {
-            log.warn("Failed to get next configmap's status, id={}", e.getId(), exception);
+            log.warn("Failed to get next deployment's status, id={}", e.getId(), exception);
         }
-        K8sConfigMap k8sConfigMap = new K8sConfigMap(new ResourceLocation(e), nextState);
+        K8sDeployment k8sDeployment = new K8sDeployment(new ResourceLocation(e), nextState, null);
         V1ObjectMeta meta = new V1ObjectMeta();
         meta.setName(e.getResourceName());
         meta.setNamespace(e.getNamespace());
-        k8sConfigMap.setMetadata(meta);
+        k8sDeployment.setMetadata(meta);
         if (runtimeResource.isPresent()) {
-            k8sConfigMap.setData(runtimeResource.get().getData());
-            k8sConfigMap.setKind(runtimeResource.get().getKind());
-            k8sConfigMap.setImmutable(runtimeResource.get().getImmutable());
-            k8sConfigMap.setApiVersion(runtimeResource.get().getApiVersion());
-            k8sConfigMap.setBinaryData(runtimeResource.get().getBinaryData());
+            k8sDeployment.setResourceOperator(runtimeResource.get().getResourceOperator());
+            k8sDeployment.setKind(runtimeResource.get().getKind());
+            k8sDeployment.setSpec(runtimeResource.get().getSpec());
+            k8sDeployment.setStatus(runtimeResource.get().getStatus());
+            k8sDeployment.setApiVersion(runtimeResource.get().getApiVersion());
         }
-        return k8sConfigMap;
-    }
-
-
-    @Override
-    public ResourceOperator<K8sConfigMap, K8sConfigMap> build(@NonNull ResourceLocation resourceLocation) {
-        return new NativeK8sConfigMapOperator(this.defaultNamespace, resourceLocation);
+        return k8sDeployment;
     }
 
 }

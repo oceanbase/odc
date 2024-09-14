@@ -24,12 +24,15 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceOperator;
+import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.resource.k8s.model.K8sPod;
 import com.oceanbase.odc.service.resource.k8s.operator.NativeK8sPodOperator;
+import com.oceanbase.odc.service.resource.k8s.status.K8sPodStatusDfa;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * {@link NativeK8sPodOperatorBuilder}
@@ -38,6 +41,7 @@ import lombok.NonNull;
  * @date 2024-09-06 20:51
  * @since ODC_release_4.3.2
  */
+@Slf4j
 @Component
 public class NativeK8sPodOperatorBuilder extends BaseNativeK8sResourceOperatorBuilder<K8sPod> {
 
@@ -52,7 +56,14 @@ public class NativeK8sPodOperatorBuilder extends BaseNativeK8sResourceOperatorBu
 
     @Override
     public K8sPod toResource(ResourceEntity e, Optional<K8sPod> runtimeResource) {
-        K8sPod k8sPod = new K8sPod(new ResourceLocation(e), e.getStatus());
+        ResourceState nextState = e.getStatus();
+        try {
+            K8sPodStatusDfa dfa = K8sPodStatusDfa.buildInstance();
+            nextState = dfa.next(runtimeResource.orElse(null), e.getStatus());
+        } catch (Exception exception) {
+            log.warn("Failed to get next pod's status, id={}", e.getId(), exception);
+        }
+        K8sPod k8sPod = new K8sPod(new ResourceLocation(e), nextState);
         V1ObjectMeta meta = new V1ObjectMeta();
         meta.setName(e.getResourceName());
         meta.setNamespace(e.getNamespace());
