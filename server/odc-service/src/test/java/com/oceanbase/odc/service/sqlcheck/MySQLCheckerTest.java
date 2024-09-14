@@ -1498,7 +1498,6 @@ public class MySQLCheckerTest {
                 Collections.singletonList(
                         new MySQLAffectedRowsExceedLimit(2L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
-
         Assert.assertEquals(0, actualInsert.size());
     }
 
@@ -1518,7 +1517,6 @@ public class MySQLCheckerTest {
                 Collections.singletonList(
                         new MySQLAffectedRowsExceedLimit(3L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
-
         Assert.assertEquals(1, actualInsert.size());
     }
 
@@ -1538,7 +1536,6 @@ public class MySQLCheckerTest {
                 Collections.singletonList(
                         new MySQLAffectedRowsExceedLimit(2L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
-        System.out.println(actualInsert);
         Assert.assertEquals(1, actualInsert.size());
     }
 
@@ -1556,7 +1553,6 @@ public class MySQLCheckerTest {
                 Collections.singletonList(
                         new MySQLAffectedRowsExceedLimit(2L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
-        System.out.println(actualInsert);
         Assert.assertEquals(0, actualInsert.size());
     }
 

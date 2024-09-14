@@ -133,13 +133,13 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
      */
     private long getMySqlAffectedRowsByCount(Insert insertStatement) {
 
-        List<Expression> insertClass = insertStatement.getTableInsert().get(0)
-                .getValues().get(0);
-        String expressionType = insertClass.get(0)
+        List<List<Expression>> insertList = insertStatement.getTableInsert().get(0)
+                .getValues();
+        String expressionType = insertList.get(0).get(0)
                 .getClass().getSimpleName();
         // case1: For INSERT INTO ... VALUES(...)
         if ("ConstExpression".equals(expressionType)) {
-            return insertClass.size();
+            return insertList.size();
         }
         // case2: For INSERT INTO ... SELECT ...
         if ("Select".equals(expressionType)) {
