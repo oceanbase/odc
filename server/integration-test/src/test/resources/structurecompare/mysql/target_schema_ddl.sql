@@ -1,0 +1,1 @@
+create table `tinyint_test`(`c1` tinyint(4) UNSIGNED ZEROFILL NOT NULL, `c2` int(10));

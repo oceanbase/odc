@@ -110,6 +110,18 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
 
     protected JdbcOperations jdbcOperations;
     protected DBSchemaAccessorSqlMapper sqlMapper;
+    private static final Set<String> SPECIAL_TYPE_NAME = new HashSet<>();
+
+    static {
+        SPECIAL_TYPE_NAME.add("bit");
+        SPECIAL_TYPE_NAME.add("int");
+        SPECIAL_TYPE_NAME.add("tinyint");
+        SPECIAL_TYPE_NAME.add("smallint");
+        SPECIAL_TYPE_NAME.add("mediumint");
+        SPECIAL_TYPE_NAME.add("bigint");
+        SPECIAL_TYPE_NAME.add("float");
+        SPECIAL_TYPE_NAME.add("double");
+    }
 
     public MySQLNoLessThan5700SchemaAccessor(@NonNull JdbcOperations jdbcOperations) {
         this.jdbcOperations = jdbcOperations;
@@ -417,7 +429,14 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
                     String querySql = filterByValues(getListTableColumnsSql(schemaName), "TABLE_NAME", names);
                     return jdbcOperations.query(querySql, listTableRowMapper());
                 });
+        correctColumnPrecisionIfNeed(tableColumns);
         return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
+    }
+
+    protected void correctColumnPrecisionIfNeed(List<DBTableColumn> tableColumns) {
+        if (CollectionUtils.isNotEmpty(tableColumns)) {
+            tableColumns.forEach(this::fillPrecisionAndScale);
+        }
     }
 
     @Override
@@ -546,6 +565,31 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
             }
             return tableColumn;
         };
+    }
+
+    protected void fillPrecisionAndScale(DBTableColumn column) {
+        if (SPECIAL_TYPE_NAME.contains(column.getTypeName())) {
+            String precisionAndScale = DBSchemaAccessorUtil.parsePrecisionAndScale(column.getFullTypeName());
+            if (StringUtils.isBlank(precisionAndScale)) {
+                return;
+            }
+            DBColumnTypeDisplay display = DBColumnTypeDisplay.fromName(column.getTypeName());
+            if (precisionAndScale.contains(",")) {
+                String[] seg = precisionAndScale.split(",");
+                if (seg.length == 2) {
+                    if (display.displayPrecision()) {
+                        column.setPrecision(Long.parseLong(seg[0]));
+                    }
+                    if (display.displayScale()) {
+                        column.setScale(Integer.parseInt(seg[1]));
+                    }
+                }
+            } else {
+                if (display.displayPrecision()) {
+                    column.setPrecision(Long.parseLong(precisionAndScale));
+                }
+            }
+        }
     }
 
     protected boolean supportGeneratedColumn() {
@@ -772,7 +816,10 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
     @Override
     public List<DBTableColumn> listTableColumns(String schemaName, String tableName) {
         String sql = this.sqlMapper.getSql(Statements.LIST_TABLE_COLUMNS);
-        return jdbcOperations.query(sql, new Object[] {schemaName, tableName}, listTableRowMapper());
+        List<DBTableColumn> tableColumns =
+                jdbcOperations.query(sql, new Object[] {schemaName, tableName}, listTableRowMapper());
+        correctColumnPrecisionIfNeed(tableColumns);
+        return tableColumns;
     }
 
     @Override
