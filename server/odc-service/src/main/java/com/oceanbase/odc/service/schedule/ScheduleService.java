@@ -73,7 +73,9 @@ import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
+import com.oceanbase.odc.service.flow.model.BinaryDataResult;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
+import com.oceanbase.odc.service.flow.model.FileBasedDataResult;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.util.DescriptionGenerator;
 import com.oceanbase.odc.service.iam.OrganizationService;
@@ -191,6 +193,9 @@ public class ScheduleService {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private ScheduledTaskLoggerService scheduledTaskLoggerService;
 
     @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
@@ -789,9 +794,28 @@ public class ScheduleService {
         return downloadUrls;
     }
 
-    public String getLog(Long scheduleId, Long taskId, OdcTaskLogLevel logLevel) {
+    public String getFullLogDownloadUrl(Long scheduleId, Long scheduleTaskId) {
+        nullSafeGetByIdWithCheckPermission(scheduleId, false);
+        return scheduledTaskLoggerService.getFullLogDownloadUrl(scheduleId, scheduleTaskId, OdcTaskLogLevel.ALL);
+    }
+
+    public String getFullLogDownloadUrlWithoutPermission(Long scheduleId, Long scheduleTaskId) {
+        return scheduledTaskLoggerService.getFullLogDownloadUrl(scheduleId, scheduleTaskId, OdcTaskLogLevel.ALL);
+    }
+
+    public String getLog(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel logLevel) {
+        nullSafeGetByIdWithCheckPermission(scheduleId, false);
+        return scheduledTaskLoggerService.getLogContent(scheduleTaskId, logLevel);
+    }
+
+    public String getLogWithoutPermission(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel logLevel) {
+        return scheduledTaskLoggerService.getLogContent(scheduleTaskId, logLevel);
+    }
+
+    public List<BinaryDataResult> downloadLog(Long scheduleId, Long scheduleTaskId) {
         nullSafeGetByIdWithCheckPermission(scheduleId);
-        return scheduleTaskService.getLogWithoutPermission(taskId, logLevel);
+        File logFile = scheduledTaskLoggerService.downloadLog(scheduleTaskId, OdcTaskLogLevel.ALL);
+        return Collections.singletonList(new FileBasedDataResult(logFile));
     }
 
     public Schedule nullSafeGetByIdWithCheckPermission(Long id) {

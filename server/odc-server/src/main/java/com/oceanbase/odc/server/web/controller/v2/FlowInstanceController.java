@@ -179,7 +179,7 @@ public class FlowInstanceController {
     @RequestMapping(value = "/{id:[\\d]+}/tasks/log", method = RequestMethod.GET)
     public SuccessResponse<String> getLog(@PathVariable Long id, @RequestParam OdcTaskLogLevel logType)
             throws IOException {
-        return Responses.single(flowTaskInstanceService.getLog(id, logType, false));
+        return Responses.single(flowTaskInstanceService.getLog(id, logType));
     }
 
     @ApiOperation(value = "downloadLog", notes = "下载任务完整日志")

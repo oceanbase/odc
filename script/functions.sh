@@ -299,6 +299,19 @@ function maven_build_jar() {
     popd
     return 0
 }
+function build_module() {
+    local module=$1
+    local maven_extra_args=$@
+    pushd "$module" || return 2
+    func_echo "start install lib $module"
+    if ! mvn clean install -Dmaven.test.skip=true ${maven_extra_args[@]}; then
+        func_echo "maven install lib $module with args ${maven_extra_args[@]} failed"
+        return 1
+    else
+        func_echo "maven install lib $module with args ${maven_extra_args[@]} succeed"
+    fi
+    popd
+}
 
 # local install libs
 function maven_install_libs() {
@@ -307,25 +320,16 @@ function maven_install_libs() {
 
     func_echo "maven install libs ..."
 
-    for module_name in *; do
-        if [ -d "$module_name" ]; then
-            pushd "$module_name" || return 2
-            func_echo "start install lib $module_name"
-            if ! mvn clean install -Dmaven.test.skip=true ${maven_extra_args[@]}; then
-                func_echo "maven install lib $module_name with args ${maven_extra_args[@]} failed"
-            else
-                func_echo "maven install lib $module_name with args ${maven_extra_args[@]} succeed"
-            fi
-            popd
-        fi
-    done
+# need to build ob-sql-parser firstly
+    build_module "ob-sql-parser" "${maven_extra_args[@]}" || return 2
+    build_module "db-browser" "${maven_extra_args[@]}" || return 2
 
     popd
     pushd "${ODC_DIR}/import" || return 1
 
     func_echo "start install lib pty4j-0.11.4.jar"
 
-    if ! mvn install:install-file -Dfile=./pty4j-0.11.4.jar -DgroupId=org.jetbrains.pty4j -DartifactId=pty4j -Dversion=0.11.4 -Dpackaging=jar; then
+    if ! mvn install:install-file -Dfile=./pty4j-0.11.4.jar -DgroupId=org.jetbrains.pty4j -DartifactId=pty4j -Dversion=0.11.4 -Dpackaging=jar ${maven_extra_args[@]}; then
         func_echo "maven install lib pty4j-0.11.4.jar failed"
     else
         func_echo "maven install lib pty4j-0.11.4.jar succeed"
@@ -333,7 +337,7 @@ function maven_install_libs() {
 
     func_echo "start install lib purejavacomm-0.0.11.1.jar"
 
-    if ! mvn install:install-file -Dfile=./purejavacomm-0.0.11.1.jar -DgroupId=org.jetbrains.pty4j -DartifactId=purejavacomm -Dversion=0.0.11.1 -Dpackaging=jar; then
+    if ! mvn install:install-file -Dfile=./purejavacomm-0.0.11.1.jar -DgroupId=org.jetbrains.pty4j -DartifactId=purejavacomm -Dversion=0.0.11.1 -Dpackaging=jar ${maven_extra_args[@]}; then
         func_echo "maven install lib purejavacomm-0.0.11.1.jar failed"
     else
         func_echo "maven install lib purejavacomm-0.0.11.1.jar succeed"
