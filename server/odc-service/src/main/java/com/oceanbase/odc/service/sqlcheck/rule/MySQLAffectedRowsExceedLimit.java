@@ -22,8 +22,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.springframework.jdbc.core.JdbcOperations;
 
@@ -33,6 +31,7 @@ import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
+import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.delete.Delete;
 import com.oceanbase.tools.sqlparser.statement.insert.Insert;
@@ -89,7 +88,7 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
                     switch (dialectType) {
                         case MYSQL:
                             affectedRows = (statement instanceof Insert)
-                                    ? getMySqlAffectedRowsByCount(statement.getText())
+                                    ? getMySqlAffectedRowsByCount((Insert)statement)
                                     : getMySqlAffectedRowsByExplain(explainSql, jdbcOperations);
                             break;
                         case OB_MYSQL:
@@ -129,35 +128,28 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
      * statements, ODC checks the count of value list. case2: For INSERT INTO ... SELECT ... statements,
      * ODC runs EXPLAIN statements to get affected rows.
      *
-     * @param sql target sql
+     * @param insertStatement target sql
      * @return affected rows
      */
-    private long getMySqlAffectedRowsByCount(String sql) {
+    private long getMySqlAffectedRowsByCount(Insert insertStatement) {
 
-        sql = sql.trim().replace("\n", "").toUpperCase();
-        String valuesRegex = "\\)\\s*VALUES?\\s*\\(";
-        String selectRegex = "\\)\\s*SELECT";
-
-        Pattern valuesPattern = Pattern.compile(valuesRegex);
-        Pattern selectPattern = Pattern.compile(selectRegex);
-        Matcher valuesMatcher = valuesPattern.matcher(sql);
-        Matcher selectMatcher = selectPattern.matcher(sql);
-
-        if (valuesMatcher.find()) {
-            String[] valueList = sql.split(valuesRegex);
-            Pattern pattern = Pattern.compile("\\(.*?\\)");
-            Matcher matcher = pattern.matcher("(" + valueList[1]);
-            int count = 0;
-            while (matcher.find()) {
-                count++;
+        List<Expression> insertClass = insertStatement.getTableInsert().get(0)
+            .getValues().get(0);
+        String expressionType = insertClass.get(0)
+            .getClass().getSimpleName();
+        // case1: For INSERT INTO ... VALUES(...)
+        if ("ConstExpression".equals(expressionType)) {
+            return insertClass.size();
+        }
+        // case2: For INSERT INTO ... SELECT ...
+        if ("Select".equals(expressionType)) {
+            try {
+                return getMySqlAffectedRowsByExplain(insertStatement.getText(), jdbcOperations);
+            } catch (Exception e) {
+                throw new RuntimeException("error: " + e.getMessage() + ", SQL: " + insertStatement.getText());
             }
-            return count;
         }
-
-        if (selectMatcher.find()) {
-            return getMySqlAffectedRowsByExplain("EXPLAIN " + sql, jdbcOperations);
-        }
-        log.warn("Unsupported insert sql syntax: " + sql);
+        log.warn("Unsupported insert sql syntax: " + insertStatement.getText());
         return -1;
     }
 
