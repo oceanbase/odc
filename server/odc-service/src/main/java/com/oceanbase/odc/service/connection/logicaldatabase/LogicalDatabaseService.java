@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.connection.logicaldatabase;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -148,6 +149,8 @@ public class LogicalDatabaseService {
         logicalDatabase.setConnectType(baseConnection.getType());
         logicalDatabase.setSyncStatus(DatabaseSyncStatus.INITIALIZED);
         logicalDatabase.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
+        logicalDatabase.setLastSyncTime(new Date());
+        logicalDatabase.setObjectLastSyncTime(new Date());
         logicalDatabase.setExisted(true);
         logicalDatabase.setOrganizationId(organizationId);
         DatabaseEntity savedLogicalDatabase = databaseRepository.saveAndFlush(logicalDatabase);
