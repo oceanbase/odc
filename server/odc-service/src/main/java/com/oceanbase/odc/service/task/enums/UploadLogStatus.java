@@ -13,24 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.task.constants;
-
+package com.oceanbase.odc.service.task.enums;
 
 /**
- * @author yaobin
- * @date 2023-12-25
- * @since 4.2.4
+ * @Author：tinker
+ * @Date: 2024/9/14 16:52
+ * @Descripition:
  */
-public class JobAttributeKeyConstants {
+public class UploadLogStatus {
 
-    public static final String UPLOAD_LOG_STATUS = "UPLOAD_LOG_STATUS";
+    public static final String SUCCESS = "SUCCESS";
 
-    public static final String LOG_STORAGE_ALL_OBJECT_ID = "LOG_STORAGE_ALL_OBJECT_ID";
-
-    public static final String LOG_STORAGE_WARN_OBJECT_ID = "LOG_STORAGE_WARN_OBJECT_ID";
-
-    public static final String LOG_STORAGE_BUCKET_NAME = "LOG_STORAGE_BUCKET_NAME";
-
-    public static final String LOG_STORAGE_FAILED_REASON = "LOG_STORAGE_FAILED_REASON";
+    public static final String FAILED = "FAILED";
 }

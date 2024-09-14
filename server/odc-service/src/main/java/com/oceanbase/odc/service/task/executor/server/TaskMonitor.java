@@ -29,10 +29,12 @@ import org.apache.commons.lang3.StringUtils;
 import com.oceanbase.odc.common.util.ObjectUtil;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobServerUrls;
 import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.enums.UploadLogStatus;
 import com.oceanbase.odc.service.task.executor.logger.LogBiz;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
 import com.oceanbase.odc.service.task.executor.task.BaseTask;
@@ -216,13 +218,14 @@ public class TaskMonitor {
         if (cloudObjectStorageService != null && cloudObjectStorageService.supported()
                 && JobUtils.isK8sRunModeOfEnv()) {
             LogBiz biz = new LogBizImpl();
-            Map<String, String> logMap = null;
+            Map<String, String> logMap = new HashMap<>();
             try {
                 logMap = biz.uploadLogFileToCloudStorage(finalResult.getJobIdentity(), cloudObjectStorageService);
+                logMap.put(JobAttributeKeyConstants.UPLOAD_LOG_STATUS, UploadLogStatus.SUCCESS);
             } catch (Throwable e) {
                 log.warn("Upload job log file to cloud storage occur error, jobId={}", getJobId(), e);
                 // putAll will throw NPE if it returns null.
-                logMap = new HashMap<>();
+                logMap.put(JobAttributeKeyConstants.UPLOAD_LOG_STATUS, UploadLogStatus.FAILED);
             }
             finalResult.setLogMetadata(logMap);
         }
