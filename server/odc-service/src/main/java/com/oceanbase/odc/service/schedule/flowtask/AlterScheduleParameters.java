@@ -25,6 +25,7 @@ import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
+import com.oceanbase.odc.service.loaddata.model.LoadDataParameters;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.schedule.model.LogicalDatabaseChangeParameters;
 import com.oceanbase.odc.service.schedule.model.OperationType;
@@ -55,7 +56,8 @@ public class AlterScheduleParameters implements Serializable, TaskParameters {
             @JsonSubTypes.Type(value = DatabaseChangeParameters.class, name = "SQL_PLAN"),
             @JsonSubTypes.Type(value = DataArchiveParameters.class, name = "DATA_ARCHIVE"),
             @JsonSubTypes.Type(value = DataDeleteParameters.class, name = "DATA_DELETE"),
-            @JsonSubTypes.Type(value = LogicalDatabaseChangeParameters.class, name = "LOGICAL_DATABASE_CHANGE")
+            @JsonSubTypes.Type(value = LogicalDatabaseChangeParameters.class, name = "LOGICAL_DATABASE_CHANGE"),
+            @JsonSubTypes.Type(value = LoadDataParameters.class, name = "LOAD_DATA")
     })
     private ScheduleTaskParameters scheduleTaskParameters;
 
