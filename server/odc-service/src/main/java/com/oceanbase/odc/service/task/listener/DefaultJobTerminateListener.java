@@ -26,8 +26,6 @@ import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.metadb.task.TaskEntity;
-import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseService;
 import com.oceanbase.odc.service.dlm.DLMService;
 import com.oceanbase.odc.service.schedule.ScheduleService;
@@ -93,10 +91,11 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
             } else if ("LOGICAL_DATABASE_CHANGE".equals(jobEntity.getJobType())) {
                 try {
                     PublishLogicalDatabaseChangeReq req = JsonUtils.fromJson(
-                        JsonUtils
-                            .fromJson(jobEntity.getJobParametersJson(), new TypeReference<Map<String, String>>() {})
-                            .get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
-                        PublishLogicalDatabaseChangeReq.class);
+                            JsonUtils
+                                    .fromJson(jobEntity.getJobParametersJson(),
+                                            new TypeReference<Map<String, String>>() {})
+                                    .get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
+                            PublishLogicalDatabaseChangeReq.class);
                     if (req != null && req.getLogicalDatabaseResp() != null) {
                         logicalDatabaseService.extractLogicalTablesSkipAuth(req.getLogicalDatabaseResp().getId());
                     }
