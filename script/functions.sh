@@ -301,11 +301,13 @@ function maven_build_jar() {
 }
 function build_module() {
     local module=$1
+    shift
     local maven_extra_args=$@
     pushd "$module" || return 2
     func_echo "start install lib $module"
     if ! mvn clean install -Dmaven.test.skip=true ${maven_extra_args[@]}; then
         func_echo "maven install lib $module with args ${maven_extra_args[@]} failed"
+        popd
         return 1
     else
         func_echo "maven install lib $module with args ${maven_extra_args[@]} succeed"
