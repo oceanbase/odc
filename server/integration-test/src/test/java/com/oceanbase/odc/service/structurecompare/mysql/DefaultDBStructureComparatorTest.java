@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.structurecompare.mysql;
 
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -58,8 +57,6 @@ public class DefaultDBStructureComparatorTest extends PluginTestEnv {
     private final static String targetSchemaName = generateSchemaName() + "_target";
     private static TestDBConfiguration srcConfiguration = new TestDBConfiguration();
     private static TestDBConfiguration tgtConfiguration = new TestDBConfiguration();
-    private static DefaultDBStructureComparator comparator = new DefaultDBStructureComparator();
-    private static List<DBObjectComparisonResult> results;
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
@@ -83,9 +80,6 @@ public class DefaultDBStructureComparatorTest extends PluginTestEnv {
         jdbcTemplate.execute(targetDrop);
         jdbcTemplate.execute(targetSchemaDdl);
         jdbcTemplate.execute("use `" + configuration.getDefaultDBName() + "`");
-
-        results = comparator.compare(getSourceConfig(srcConfiguration),
-                getTargetConfig(tgtConfiguration));
     }
 
     @AfterClass
@@ -117,9 +111,9 @@ public class DefaultDBStructureComparatorTest extends PluginTestEnv {
     }
 
     @Test
-    public void test_updateTableColumn_tinyint() {
-        DBObjectComparisonResult result = results.stream().filter(
-                item -> item.getDbObjectName().equals("tinyint_test")).collect(Collectors.toList()).get(0);
+    public void test_updateTableColumn_tinyint() throws SQLException {
+        DBObjectComparisonResult result = getCompareResult("tinyint_test");
+
         Assert.assertEquals(result.getComparisonResult(), ComparisonResult.INCONSISTENT);
         DBObjectComparisonResult actual = result.getSubDBObjectComparisonResult()
                 .stream().filter(item -> item.getComparisonResult() == ComparisonResult.INCONSISTENT).collect(
@@ -132,5 +126,14 @@ public class DefaultDBStructureComparatorTest extends PluginTestEnv {
                 + "`.`tinyint_test` MODIFY COLUMN `c1` tinyint(1) UNSIGNED  ZEROFILL  DEFAULT '0' NOT NULL;\n");
         expect.setDbObjectName("c1");
         Assert.assertEquals(expect, actual);
+    }
+
+    private DBObjectComparisonResult getCompareResult(String compareTableName) throws SQLException {
+        DBStructureComparisonConfig srcConfig = getSourceConfig(srcConfiguration);
+        srcConfig
+                .setBlackListMap(Collections.singletonMap(DBObjectType.TABLE, Collections.singleton(compareTableName)));
+        DBStructureComparisonConfig tgtConfig = getTargetConfig(tgtConfiguration);
+        DefaultDBStructureComparator comparator = new DefaultDBStructureComparator();
+        return comparator.compare(srcConfig, tgtConfig).get(0);
     }
 }
