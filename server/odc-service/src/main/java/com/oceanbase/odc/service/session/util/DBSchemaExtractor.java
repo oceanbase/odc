@@ -43,6 +43,7 @@ import com.oceanbase.tools.sqlparser.adapter.oracle.OracleExpressionFactory;
 import com.oceanbase.tools.sqlparser.adapter.oracle.OracleFromReferenceFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_table_actionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_database_stmtContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_index_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Database_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Dot_relation_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Normal_relation_factorContext;
@@ -223,6 +224,12 @@ public class DBSchemaExtractor {
         }
 
         @Override
+        public RelationFactor visitCreate_index_stmt(Create_index_stmtContext ctx) {
+            addRelationFactor(MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor()));
+            return null;
+        }
+
+        @Override
         public RelationFactor visitRelation_factor(Relation_factorContext ctx) {
             addRelationFactor(MySQLFromReferenceFactory.getRelationFactor(ctx));
             return null;
@@ -366,6 +373,17 @@ public class DBSchemaExtractor {
         public RelationFactor visitRename_table_stmt(OBParser.Rename_table_stmtContext ctx) {
             addRelationFactor(OracleFromReferenceFactory.getRelationFactor(
                     ctx.rename_table_actions().rename_table_action().relation_factor(0)));
+            return null;
+        }
+
+        @Override
+        public RelationFactor visitCreate_index_stmt(OBParser.Create_index_stmtContext ctx) {
+            addRelationFactor(OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor()));
+            return null;
+        }
+
+        @Override
+        public RelationFactor visitAlter_index_stmt(OBParser.Alter_index_stmtContext ctx) {
             return null;
         }
 
