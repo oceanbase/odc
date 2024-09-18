@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.task.executor.logger;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -54,7 +53,7 @@ public class LogBizImpl implements LogBiz {
 
     @Override
     public Map<String, String> uploadLogFileToCloudStorage(JobIdentity ji,
-            CloudObjectStorageService storageService) throws IOException {
+            CloudObjectStorageService storageService) {
         log.info("upload log files to cloud storage starting, jobId={}", ji.getId());
 
         Map<String, String> logMap = new HashMap<>();
@@ -77,15 +76,21 @@ public class LogBizImpl implements LogBiz {
      * TODO: should not upload as temp file
      */
     private Optional<String> uploadTempFile(Long jobId, OdcTaskLogLevel logType,
-            CloudObjectStorageService storageService) throws IOException {
+            CloudObjectStorageService storageService) {
         String logFileStr = LogUtils.getTaskLogFileWithPath(jobId, logType);
         String fileId = StringUtils.uuid();
         File jobLogFile = new File(logFileStr);
         if (jobLogFile.exists() && jobLogFile.length() > 0) {
-            String ossName = storageService.upload(fileId, jobLogFile);
-            log.info("upload job {} log to OSS successfully, file name={}, oss object name {}.",
-                    logType.getName(), fileId, ossName);
-            return Optional.of(ossName);
+            try {
+                String ossName = storageService.upload(fileId, jobLogFile);
+                log.info("upload job {} log to OSS successfully, file name={}, oss object name {}.",
+                        logType.getName(), fileId, ossName);
+                return Optional.of(ossName);
+            } catch (Exception e) {
+                log.error("upload job {} log to OSS failed, file name={}, error {}.",
+                        logType.getName(), fileId, e.getMessage());
+                return Optional.empty();
+            }
         }
         return Optional.empty();
 
