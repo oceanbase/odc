@@ -29,7 +29,7 @@ import lombok.Data;
 public class BatchOperationResult {
     private int total;
     private int successCount;
-    private int                           failedCount;
+    private int failedCount;
     private List<ResourceOperationResult> details;
 
     public BatchOperationResult() {
