@@ -41,7 +41,6 @@ import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLExpressionFactory;
 import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLFromReferenceFactory;
 import com.oceanbase.tools.sqlparser.adapter.oracle.OracleExpressionFactory;
 import com.oceanbase.tools.sqlparser.adapter.oracle.OracleFromReferenceFactory;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_index_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_table_actionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_database_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_index_stmtContext;
@@ -218,11 +217,6 @@ public class DBSchemaExtractor {
         @Override
         public RelationFactor visitCreate_index_stmt(Create_index_stmtContext ctx) {
             addRelationFactor(MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor()));
-            return null;
-        }
-
-        @Override
-        public RelationFactor visitAlter_index_option(Alter_index_optionContext ctx) {
             return null;
         }
 
