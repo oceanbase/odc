@@ -19,6 +19,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.service.common.response.batch.BatchOperationResponse;
+import com.oceanbase.odc.service.common.response.batch.BatchOperationResponseData;
 
 /**
  * factory for create response
@@ -95,6 +97,10 @@ public class Responses {
         PaginatedData<T> data = new PaginatedData<>(pageAndStats.getPage().getContent(), customPage);
         data.setStats(pageAndStats.getStats());
         return new PaginatedResponse<T>(data);
+    }
+
+    public static BatchOperationResponse batchOperation(BatchOperationResponseData data) {
+        return new BatchOperationResponse(data);
     }
 
     /**
