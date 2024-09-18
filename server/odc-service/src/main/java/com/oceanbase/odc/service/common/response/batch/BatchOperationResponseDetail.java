@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.common.response.batch;
 
-import com.oceanbase.odc.core.shared.constant.OperateType;
+import com.oceanbase.odc.core.shared.constant.OperationType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 
 import lombok.AllArgsConstructor;
@@ -32,11 +32,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class BatchOperateResponseDetail {
+public class BatchOperationResponseDetail {
     private ResourceType resourceType;
     private String resourceId;
-    private String resourceName;
-    private OperateType operation;
-    private Boolean success;
+    private String        resourceName;
+    private OperationType operation;
+    private Boolean       success;
     private Error error;
 }

@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.core.shared.constant;
 
-public enum OperateType {
+public enum OperationType {
     CREATE,
     UPDATE,
     RENAME,

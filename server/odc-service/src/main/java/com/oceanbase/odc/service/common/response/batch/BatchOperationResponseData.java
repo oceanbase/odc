@@ -26,25 +26,25 @@ import lombok.Data;
  * @since 4.3.2
  */
 @Data
-public class BatchOperateResponseData {
+public class BatchOperationResponseData {
     private int total;
     private int successCount;
-    private int                              failedCount;
-    private List<BatchOperateResponseDetail> details;
+    private int                                failedCount;
+    private List<BatchOperationResponseDetail> details;
 
-    public BatchOperateResponseData() {
+    public BatchOperationResponseData() {
         this.total = 0;
         this.successCount = 0;
         this.failedCount = 0;
     }
 
-    public void addSuccess(Collection<BatchOperateResponseDetail> details) {
+    public void addSuccess(Collection<BatchOperationResponseDetail> details) {
         this.successCount += details.size();
         this.total += details.size();
         this.details.addAll(details);
     }
 
-    public void addFailed(Collection<BatchOperateResponseDetail> details) {
+    public void addFailed(Collection<BatchOperationResponseDetail> details) {
         this.failedCount += details.size();
         this.total += details.size();
         this.details.addAll(details);
