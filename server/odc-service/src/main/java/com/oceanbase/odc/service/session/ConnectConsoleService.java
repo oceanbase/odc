@@ -385,6 +385,9 @@ public class ConnectConsoleService {
             log.warn("Failed to read binary data", npe);
             return BinaryContent.ofNull(format);
         }
+        if (inputStream == null) {
+            return BinaryContent.ofNull(format);
+        }
         int size = inputStream.available();
         Validate.isTrue(len >= 0, "Length can not be negative");
         Validate.inclusiveBetween(0, size, skip, "Skip index is out of range");
@@ -404,6 +407,11 @@ public class ConnectConsoleService {
             @NotNull Long rowNum, @NotNull Integer colNum) {
         try {
             InputStream inputStream = readBinaryData(sessionId, sqlId, rowNum, colNum);
+            if (inputStream == null) {
+                return WebResponseUtils.getFileAttachmentResponseEntity(null,
+                        String.format("%s_%s-%d_%d"
+                                + ".data", sessionId, sqlId, rowNum, colNum));
+            }
             return WebResponseUtils.getFileAttachmentResponseEntity(new InputStreamResource(inputStream),
                     String.format("%s_%s-%d_%d"
                             + ".data", sessionId, sqlId, rowNum, colNum));
@@ -418,8 +426,7 @@ public class ConnectConsoleService {
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId);
         VirtualTable virtualTable = ConnectionSessionUtil.getQueryCache(connectionSession, sqlId);
         if (virtualTable == null) {
-            log.warn("VirtualTable is not found, sqlId={}, session={}", sqlId, connectionSession);
-            throw new NotFoundException(ResourceType.ODC_ASYNC_SQL_RESULT, "SqlId", sqlId);
+            return null;
         }
         if (virtualTable instanceof ResultSetVirtualTable) {
             ResultSetVirtualTable tmpTable = (ResultSetVirtualTable) virtualTable;
