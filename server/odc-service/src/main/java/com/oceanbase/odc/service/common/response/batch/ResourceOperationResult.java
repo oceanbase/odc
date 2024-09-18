@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.common.response.batch;
 
 import com.oceanbase.odc.core.shared.constant.OperationType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.service.common.response.Error;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

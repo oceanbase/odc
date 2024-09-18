@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.common.response.batch;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -36,6 +37,14 @@ public class BatchOperationResult {
         this.total = 0;
         this.successCount = 0;
         this.failedCount = 0;
+        this.details = new ArrayList<>();
+    }
+
+    public void add(BatchOperationResult result) {
+        this.successCount += result.getSuccessCount();
+        this.total += result.getTotal();
+        this.failedCount += result.getFailedCount();
+        this.details.addAll(result.getDetails());
     }
 
     public void addSuccess(Collection<ResourceOperationResult> details) {
