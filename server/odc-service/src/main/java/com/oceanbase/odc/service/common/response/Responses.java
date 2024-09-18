@@ -20,7 +20,7 @@ import org.springframework.http.HttpStatus;
 
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.common.response.batch.BatchOperationResponse;
-import com.oceanbase.odc.service.common.response.batch.BatchOperationResponseData;
+import com.oceanbase.odc.service.common.response.batch.BatchOperationResult;
 
 /**
  * factory for create response
@@ -99,7 +99,7 @@ public class Responses {
         return new PaginatedResponse<T>(data);
     }
 
-    public static BatchOperationResponse batchOperation(BatchOperationResponseData data) {
+    public static BatchOperationResponse batchOperation(BatchOperationResult data) {
         return new BatchOperationResponse(data);
     }
 
