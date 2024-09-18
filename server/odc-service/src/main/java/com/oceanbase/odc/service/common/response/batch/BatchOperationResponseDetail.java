@@ -35,8 +35,8 @@ import lombok.NoArgsConstructor;
 public class BatchOperationResponseDetail {
     private ResourceType resourceType;
     private String resourceId;
-    private String        resourceName;
+    private String resourceName;
     private OperationType operation;
-    private Boolean       success;
+    private Boolean success;
     private Error error;
 }
