@@ -110,17 +110,17 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
 
     protected JdbcOperations jdbcOperations;
     protected DBSchemaAccessorSqlMapper sqlMapper;
-    private static final Set<String> SPECIAL_TYPE_NAME = new HashSet<>();
+    private static final Set<String> SPECIAL_TYPE_NAMES = new HashSet<>();
 
     static {
-        SPECIAL_TYPE_NAME.add("bit");
-        SPECIAL_TYPE_NAME.add("int");
-        SPECIAL_TYPE_NAME.add("tinyint");
-        SPECIAL_TYPE_NAME.add("smallint");
-        SPECIAL_TYPE_NAME.add("mediumint");
-        SPECIAL_TYPE_NAME.add("bigint");
-        SPECIAL_TYPE_NAME.add("float");
-        SPECIAL_TYPE_NAME.add("double");
+        SPECIAL_TYPE_NAMES.add("bit");
+        SPECIAL_TYPE_NAMES.add("int");
+        SPECIAL_TYPE_NAMES.add("tinyint");
+        SPECIAL_TYPE_NAMES.add("smallint");
+        SPECIAL_TYPE_NAMES.add("mediumint");
+        SPECIAL_TYPE_NAMES.add("bigint");
+        SPECIAL_TYPE_NAMES.add("float");
+        SPECIAL_TYPE_NAMES.add("double");
     }
 
     public MySQLNoLessThan5700SchemaAccessor(@NonNull JdbcOperations jdbcOperations) {
@@ -568,12 +568,13 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
     }
 
     protected void fillPrecisionAndScale(DBTableColumn column) {
-        if (SPECIAL_TYPE_NAME.contains(column.getTypeName())) {
+        String typeName = column.getTypeName();
+        if (SPECIAL_TYPE_NAMES.contains(Objects.isNull(typeName) ? null : typeName.toLowerCase())) {
             String precisionAndScale = DBSchemaAccessorUtil.parsePrecisionAndScale(column.getFullTypeName());
             if (StringUtils.isBlank(precisionAndScale)) {
                 return;
             }
-            DBColumnTypeDisplay display = DBColumnTypeDisplay.fromName(column.getTypeName());
+            DBColumnTypeDisplay display = DBColumnTypeDisplay.fromName(typeName);
             if (precisionAndScale.contains(",")) {
                 String[] seg = precisionAndScale.split(",");
                 if (seg.length == 2) {
