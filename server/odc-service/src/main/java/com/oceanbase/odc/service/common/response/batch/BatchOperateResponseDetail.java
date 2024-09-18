@@ -32,7 +32,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class BatchOperateDetail {
+public class BatchOperateResponseDetail {
     private ResourceType resourceType;
     private String resourceId;
     private String resourceName;

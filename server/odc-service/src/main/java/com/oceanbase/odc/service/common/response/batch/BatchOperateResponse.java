@@ -22,11 +22,11 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
  * @date 2024/09/18
  * @since 4.3.2
  */
-public class BatchOperateResponse extends SuccessResponse<BatchOperateData> {
+public class BatchOperateResponse extends SuccessResponse<BatchOperateResponseData> {
 
     public BatchOperateResponse() {}
 
-    public BatchOperateResponse(BatchOperateData value) {
+    public BatchOperateResponse(BatchOperateResponseData value) {
         super(value);
     }
 }
