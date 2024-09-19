@@ -27,12 +27,16 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mockito;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.common.util.YamlUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.LogicalTableFinder;
@@ -47,16 +51,18 @@ import lombok.SneakyThrows;
  * @Date: 2024/4/7 16:06
  * @Description: []
  */
-public class LogicalTableFinderTest {
+public class LogicalTableFinderTest extends ServiceTestEnv {
     private static final String OBMYSQL_BASE_PATH = "src/test/resources/connection/obmysql/";
     private static final JdbcTemplate OBMYSQL_JDBC_TEMPLATE =
             new JdbcTemplate(TestDBConfigurations.getInstance().getTestOBMysqlConfiguration().getDataSource());
+
+    @MockBean
+    private DBObjectRepository dbObjectRepository;
 
     @BeforeClass
     public static void setUp() throws IOException {
         String dropTables = loadAsString(OBMYSQL_BASE_PATH + "drop.sql");
         OBMYSQL_JDBC_TEMPLATE.execute(dropTables);
-
         String createTables = loadAsString(OBMYSQL_BASE_PATH + "create.sql");
         List<String> sqls = SqlUtils.split(DialectType.OB_MYSQL, createTables, ";");
         sqls.forEach(sql -> OBMYSQL_JDBC_TEMPLATE.execute(sql));
@@ -74,7 +80,9 @@ public class LogicalTableFinderTest {
         List<LogicalTable> expected =
                 YamlUtils.fromYamlList("connection/obmysql/verify.yml", LogicalTable.class);
         Collections.sort(expected, Comparator.comparing(LogicalTable::getTableNamePattern));
-        List<LogicalTable> actual = new LogicalTableFinder(obtainOBMySQLDatabases()).find();
+        Mockito.when(dbObjectRepository.findByDatabaseIdAndType(Mockito.anyLong(), Mockito.any()))
+                .thenReturn(new ArrayList<>());
+        List<LogicalTable> actual = new LogicalTableFinder(obtainOBMySQLDatabases(), dbObjectRepository).find();
 
         Assert.assertEquals(expected.size(), actual.size());
 
@@ -117,6 +125,7 @@ public class LogicalTableFinderTest {
         List<Database> databases = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
             Database database = new Database();
+            database.setId((long) i + 1);
             database.setDataSource(TestConnectionUtil.getTestConnectionConfig(ConnectType.OB_MYSQL));
             database.setName("db_0" + i);
             databases.add(database);
@@ -124,6 +133,7 @@ public class LogicalTableFinderTest {
         Database database = new Database();
         database.setDataSource(TestConnectionUtil.getTestConnectionConfig(ConnectType.OB_MYSQL));
         database.setName("db_empty");
+        database.setId(5L);
         databases.add(database);
         return databases;
     }

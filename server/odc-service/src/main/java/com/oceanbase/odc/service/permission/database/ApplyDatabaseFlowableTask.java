@@ -23,7 +23,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.logging.log4j.core.config.AppendersPlugin;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -109,19 +108,23 @@ public class ApplyDatabaseFlowableTask extends BaseODCFlowTaskDelegate<ApplyData
                     checkResourceAndPermission(parameter);
                     List<PermissionEntity> permissionEntities = new ArrayList<>();
                     Long organizationId = FlowTaskUtil.getOrganizationId(execution);
-                    Set<Long> logicalDatabaseIds = parameter.getDatabases().stream().filter(d -> d.getType() == DatabaseType.LOGICAL)
-                            .map(ApplyDatabase::getId).collect(Collectors.toSet());
+                    Set<Long> logicalDatabaseIds =
+                            parameter.getDatabases().stream().filter(d -> d.getType() == DatabaseType.LOGICAL)
+                                    .map(ApplyDatabase::getId).collect(Collectors.toSet());
                     Set<ApplyDatabase> mappingPhysicalDatabases = new HashSet<>();
                     if (CollectionUtils.isNotEmpty(logicalDatabaseIds)) {
-                        Set<Long> mappingPhysicalDatabaseIds = databaseMappingRepository.findByLogicalDatabaseIdIn(logicalDatabaseIds).stream().map(e -> e.getPhysicalDatabaseId()).collect(
-                            Collectors.toSet());
-                        mappingPhysicalDatabases.addAll(databaseRepository.findAllById(mappingPhysicalDatabaseIds).stream().map(e -> {
-                            ApplyDatabase applyDatabase = new ApplyDatabase();
-                            applyDatabase.setId(e.getId());
-                            applyDatabase.setName(e.getName());
-                            applyDatabase.setType(e.getType());
-                            return applyDatabase;
-                        }).collect(Collectors.toSet()));
+                        Set<Long> mappingPhysicalDatabaseIds =
+                                databaseMappingRepository.findByLogicalDatabaseIdIn(logicalDatabaseIds).stream()
+                                        .map(e -> e.getPhysicalDatabaseId()).collect(
+                                                Collectors.toSet());
+                        mappingPhysicalDatabases
+                                .addAll(databaseRepository.findAllById(mappingPhysicalDatabaseIds).stream().map(e -> {
+                                    ApplyDatabase applyDatabase = new ApplyDatabase();
+                                    applyDatabase.setId(e.getId());
+                                    applyDatabase.setName(e.getName());
+                                    applyDatabase.setType(e.getType());
+                                    return applyDatabase;
+                                }).collect(Collectors.toSet()));
                     }
                     mappingPhysicalDatabases.addAll(parameter.getDatabases().stream().collect(Collectors.toSet()));
 

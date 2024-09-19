@@ -115,17 +115,20 @@ public class ApplyTableFlowableTask extends BaseODCFlowTaskDelegate<ApplyTableRe
                     checkResourceAndPermission(parameter);
                     List<PermissionEntity> permissionEntities = new ArrayList<>();
                     Long organizationId = FlowTaskUtil.getOrganizationId(execution);
-                    Set<Long> logicalTableIds = parameter.getTables().stream().filter(t -> t.getType() == DBObjectType.LOGICAL_TABLE).map(ApplyTable::getTableId)
+                    Set<Long> logicalTableIds = parameter.getTables().stream()
+                            .filter(t -> t.getType() == DBObjectType.LOGICAL_TABLE).map(ApplyTable::getTableId)
                             .collect(Collectors.toSet());
                     Set<ApplyTable> mappingPhysicalTables = new HashSet<>();
                     if (CollectionUtils.isNotEmpty(logicalTableIds)) {
-                        mappingPhysicalTables.addAll(tableMappingRepository.findByLogicalTableIdIn(logicalTableIds).stream().map(t -> {
-                            ApplyTable table = new ApplyTable();
-                            // TODO
-                            table.setTableId(1L);
-                            table.setDatabaseId(t.getPhysicalDatabaseId());
-                            return table;
-                        }).collect(Collectors.toSet()));
+                        tableMappingRepository.findByLogicalTableIdIn(logicalTableIds);
+                        mappingPhysicalTables.addAll(
+                                tableMappingRepository.findByLogicalTableIdIn(logicalTableIds).stream().map(t -> {
+                                    ApplyTable table = new ApplyTable();
+                                    table.setTableId(t.getPhysicalTableId());
+                                    table.setDatabaseId(t.getPhysicalDatabaseId());
+                                    return table;
+                                }).collect(Collectors.toSet()));
+
                     }
                     mappingPhysicalTables.addAll(parameter.getTables());
                     for (ApplyTable table : mappingPhysicalTables) {
