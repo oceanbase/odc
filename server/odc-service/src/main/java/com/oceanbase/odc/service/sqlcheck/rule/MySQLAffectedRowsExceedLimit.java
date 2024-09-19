@@ -35,6 +35,9 @@ import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.delete.Delete;
 import com.oceanbase.tools.sqlparser.statement.insert.Insert;
+import com.oceanbase.tools.sqlparser.statement.insert.InsertTable;
+import com.oceanbase.tools.sqlparser.statement.select.Select;
+import com.oceanbase.tools.sqlparser.statement.select.SelectBody;
 import com.oceanbase.tools.sqlparser.statement.update.Update;
 
 import lombok.NonNull;
@@ -133,24 +136,28 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
      */
     private long getMySqlAffectedRowsByCount(Insert insertStatement) {
 
-        List<List<Expression>> insertList = insertStatement.getTableInsert().get(0)
-                .getValues();
-        String expressionType = insertList.get(0).get(0)
-                .getClass().getSimpleName();
-        // case1: For INSERT INTO ... VALUES(...)
-        if ("ConstExpression".equals(expressionType)) {
-            return insertList.size();
+        List<InsertTable> insertTableList = insertStatement.getTableInsert();
+        if (insertTableList.isEmpty()) {
+            return -1;
         }
-        // case2: For INSERT INTO ... SELECT ...
-        if ("Select".equals(expressionType)) {
-            try {
+        InsertTable insertTable = insertTableList.get(0);
+        if (insertTable == null || insertTable.getValues() == null) {
+            return -1;
+        }
+        List<List<Expression>> values = insertTable.getValues();
+        if (values.isEmpty()) {
+            return -1;
+        }
+        if (values.size() == 1 && values.get(0).size() == 1) {
+            Expression value = values.get(0).get(0);
+            if ((value instanceof Select) || (value instanceof SelectBody)) {
                 return getMySqlAffectedRowsByExplain(insertStatement.getText(), jdbcOperations);
-            } catch (Exception e) {
-                throw new RuntimeException("error: " + e.getMessage() + ", SQL: " + insertStatement.getText());
+            } else {
+                return 1;
             }
+        } else {
+            return values.size();
         }
-        log.warn("Unsupported insert sql syntax: " + insertStatement.getText());
-        return -1;
     }
 
     /**
