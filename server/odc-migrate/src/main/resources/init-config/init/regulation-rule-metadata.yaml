@@ -1441,10 +1441,3 @@
       value: OB_MYSQL
     - label: SUPPORTED_DIALECT_TYPE
       value: MYSQL
-  propertyMetadatas:
-    - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.estimate-sql-affected-rows-failed.unable-to-estimate-sql-affected-count}
-      description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.estimate-sql-affected-rows-failed.unable-to-estimate-sql-affected-count.description}
-      type: INTEGER
-      componentType: INPUT_NUMBER
-      defaultValues:
-        - !!int -1
