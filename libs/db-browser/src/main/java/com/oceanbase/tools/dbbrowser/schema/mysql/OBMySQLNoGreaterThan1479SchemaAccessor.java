@@ -19,17 +19,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.JdbcOperations;
 
-import com.oceanbase.tools.dbbrowser.model.DBColumnTypeDisplay;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
@@ -65,19 +62,6 @@ public class OBMySQLNoGreaterThan1479SchemaAccessor extends BaseOBMySQLLessThan2
         super(jdbcOperations, DBSchemaAccessorSqlMappers.get(StatementsFiles.OBMYSQL_1479));
         this.tenantName = tenantName;
         this.sysJdbcOperations = sysJdbcOperations;
-    }
-
-    private static final Set<String> SPECIAL_TYPE_NAME = new HashSet<>();
-
-    static {
-        SPECIAL_TYPE_NAME.add("bit");
-        SPECIAL_TYPE_NAME.add("int");
-        SPECIAL_TYPE_NAME.add("tinyint");
-        SPECIAL_TYPE_NAME.add("smallint");
-        SPECIAL_TYPE_NAME.add("mediumint");
-        SPECIAL_TYPE_NAME.add("bigint");
-        SPECIAL_TYPE_NAME.add("float");
-        SPECIAL_TYPE_NAME.add("double");
     }
 
     @Override
@@ -241,31 +225,6 @@ public class OBMySQLNoGreaterThan1479SchemaAccessor extends BaseOBMySQLLessThan2
          * OBMySQL 1479 不支持 GLOBAL 索引，这里把所有 range 设置为 LOCAL
          */
         indexList.forEach(index -> index.setGlobal(false));
-    }
-
-    private void fillPrecisionAndScale(DBTableColumn column) {
-        if (SPECIAL_TYPE_NAME.contains(column.getTypeName())) {
-            String precisionAndScale = DBSchemaAccessorUtil.parsePrecisionAndScale(column.getFullTypeName());
-            if (StringUtils.isBlank(precisionAndScale)) {
-                return;
-            }
-            DBColumnTypeDisplay display = DBColumnTypeDisplay.fromName(column.getTypeName());
-            if (precisionAndScale.contains(",")) {
-                String[] seg = precisionAndScale.split(",");
-                if (seg.length == 2) {
-                    if (display.displayPrecision()) {
-                        column.setPrecision(Long.parseLong(seg[0]));
-                    }
-                    if (display.displayScale()) {
-                        column.setScale(Integer.parseInt(seg[1]));
-                    }
-                }
-            } else {
-                if (display.displayPrecision()) {
-                    column.setPrecision(Long.parseLong(precisionAndScale));
-                }
-            }
-        }
     }
 
     @Override

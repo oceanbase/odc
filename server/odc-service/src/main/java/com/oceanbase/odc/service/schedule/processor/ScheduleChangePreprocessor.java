@@ -29,6 +29,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
+import com.oceanbase.odc.service.loaddata.model.LoadDataParameters;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 import com.oceanbase.odc.service.schedule.model.LogicalDatabaseChangeParameters;
@@ -60,6 +61,7 @@ public class ScheduleChangePreprocessor implements InitializingBean {
 
     public void process(ScheduleChangeParams params) {
 
+        log.info("Process schedule change params, params={}", params);
         ScheduleType type;
         if (params.getOperationType() == OperationType.CREATE) {
             type = params.getCreateScheduleReq().getType();
@@ -70,6 +72,7 @@ public class ScheduleChangePreprocessor implements InitializingBean {
         if (type2Processor.containsKey(type)) {
             type2Processor.get(type).process(params);
         }
+        log.info("Process schedule change params successfully, params={}", params);
     }
 
     @Override
@@ -120,6 +123,9 @@ public class ScheduleChangePreprocessor implements InitializingBean {
                 LogicalDatabaseChangeParameters parameters = (LogicalDatabaseChangeParameters) req.getParameters();
                 return parameters.getDatabaseId();
             }
+            case LOAD_DATA:
+                LoadDataParameters parameters = (LoadDataParameters) req.getParameters();
+                return parameters.getDatabaseId();
             default:
                 throw new UnsupportedException();
         }

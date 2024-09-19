@@ -42,17 +42,20 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.LogicalTableFin
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalTable;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @Author: Lebie
  * @Date: 2024/5/10 14:01
  * @Description: []
  */
+@Slf4j
 public class LogicalTableExtractTask implements Runnable {
     private final Database logicalDatabase;
     private final DatabaseService databaseService;
@@ -81,6 +84,7 @@ public class LogicalTableExtractTask implements Runnable {
     @Override
     public void run() {
         SecurityContextUtils.setCurrentUser(creator);
+        databaseService.updateObjectLastSyncTimeAndStatus(logicalDatabase.getId(), DBObjectSyncStatus.SYNCING);
         List<DatabaseMappingEntity> relations =
                 dbRelationRepository.findByLogicalDatabaseId(logicalDatabase.getId());
         List<Database> physicalDatabases = databaseService.listDatabasesDetailsByIds(
@@ -93,6 +97,7 @@ public class LogicalTableExtractTask implements Runnable {
                 .forEach(database -> database.setDataSource(id2DataSources.get(database.getDataSource().getId())));
         List<LogicalTable> logicalTables = new LogicalTableFinder(physicalDatabases).find();
         if (CollectionUtils.isEmpty(logicalTables)) {
+            databaseService.updateObjectLastSyncTimeAndStatus(logicalDatabase.getId(), DBObjectSyncStatus.SYNCED);
             return;
         }
 
@@ -103,6 +108,7 @@ public class LogicalTableExtractTask implements Runnable {
                 throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
             }
         } catch (InterruptedException e) {
+            databaseService.updateObjectLastSyncTimeAndStatus(logicalDatabase.getId(), DBObjectSyncStatus.FAILED);
             throw new RuntimeException(e);
         }
 
@@ -132,7 +138,11 @@ public class LogicalTableExtractTask implements Runnable {
                     physicalTableEntities.add(physicalTableEntity);
                 });
                 tableRelationRepository.batchCreate(physicalTableEntities);
+                databaseService.updateObjectLastSyncTimeAndStatus(logicalDatabase.getId(), DBObjectSyncStatus.SYNCED);
             });
+        } catch (Exception ex) {
+            log.warn("Failed to extract logical tables for database id={}", logicalDatabase.getId(), ex);
+            databaseService.updateObjectLastSyncTimeAndStatus(logicalDatabase.getId(), DBObjectSyncStatus.FAILED);
         } finally {
             if (lock != null) {
                 lock.unlock();

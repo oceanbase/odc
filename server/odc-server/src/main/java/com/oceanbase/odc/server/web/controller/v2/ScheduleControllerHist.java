@@ -128,7 +128,6 @@ public class ScheduleControllerHist {
 
     }
 
-
     @ApiOperation(value = "GetScheduleTaskLog", notes = "获取计划任务日志")
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/log", method = RequestMethod.GET)
     public SuccessResponse<String> getScheduleTaskLog(@PathVariable Long scheduleId, @PathVariable Long taskId,

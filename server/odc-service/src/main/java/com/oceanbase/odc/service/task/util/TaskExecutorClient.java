@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.task.util;
 
 import java.io.IOException;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -24,6 +25,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.schedule.ScheduleLogProperties;
 import com.oceanbase.odc.service.task.constants.JobExecutorUrls;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.executor.server.ExecutorRequestHandler;
@@ -42,9 +44,15 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class TaskExecutorClient {
 
+    @Autowired
+    private ScheduleLogProperties loggerProperty;
+
     public String getLogContent(@NonNull String executorEndpoint, @NonNull Long jobId, @NonNull OdcTaskLogLevel level) {
-        String url = executorEndpoint + String.format(JobExecutorUrls.QUERY_LOG, jobId) + "?logType=" + level.getName();
-        log.info("Try query log from executor, jobId={}, url={}", jobId, url);
+        String url = new StringBuilder(executorEndpoint)
+                .append(String.format(JobExecutorUrls.QUERY_LOG, jobId))
+                .append("?logType=" + level.getName())
+                .append("&fetchMaxLine=" + loggerProperty.getMaxLines())
+                .append("&fetchMaxByteSize=" + loggerProperty.getMaxSize()).toString();
         try {
             SuccessResponse<String> response =
                     HttpClientUtils.request("GET", url,
