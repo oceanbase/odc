@@ -22,6 +22,10 @@ import org.quartz.JobKey;
 import org.quartz.UnableToInterruptJobException;
 
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
+import com.oceanbase.odc.service.monitor.MonitorEvent;
+import com.oceanbase.odc.service.monitor.task.schdule.ScheduleMonitorEvent;
+import com.oceanbase.odc.service.monitor.task.schdule.ScheduleMonitorEvent.Action;
 import com.oceanbase.odc.service.schedule.job.DataArchiveDeleteJob;
 import com.oceanbase.odc.service.schedule.job.DataArchiveJob;
 import com.oceanbase.odc.service.schedule.job.DataArchiveRollbackJob;
@@ -46,15 +50,21 @@ public abstract class AbstractQuartzJob implements InterruptableJob {
 
     private OdcJob odcJob;
 
+    private JobKey jobKey;
+
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
 
         log.info("Start to run new job,jobKey={}", context.getJobDetail().getKey());
         try {
+            this.jobKey = context.getJobDetail().getKey();
             odcJob = getOdcJob(context);
             odcJob.before(context);
+            publishMonitorEvent(Action.SCHEDULE_TASK_START);
             run(context);
+            publishMonitorEvent(Action.SCHEDULE_TASK_END);
         } catch (Exception e) {
+            publishMonitorEvent(Action.SCHEDULE_TASK_FAILED);
             log.warn("Job execute failed,job key={},fire time={}.",
                     context.getJobDetail().getKey(), context.getFireTime(), e);
         } finally {
@@ -96,8 +106,16 @@ public abstract class AbstractQuartzJob implements InterruptableJob {
         }
     }
 
+
     @Override
     public void interrupt() throws UnableToInterruptJobException {
         odcJob.interrupt();
+        publishMonitorEvent(Action.SCHEDULE_TASK_INTERRUPT);
+    }
+
+    private void publishMonitorEvent(Action action) {
+        MonitorEvent<ScheduleMonitorEvent> scheduleMonitorEvent = MonitorEvent.createScheduleMonitorEvent(
+                action, ScheduleTaskType.valueOf(this.jobKey.getGroup()), this.jobKey.getName());
+        SpringContextUtil.publishEvent(scheduleMonitorEvent);
     }
 }

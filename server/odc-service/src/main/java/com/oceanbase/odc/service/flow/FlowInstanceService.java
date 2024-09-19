@@ -154,6 +154,9 @@ import com.oceanbase.odc.service.integration.model.ApprovalProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
+import com.oceanbase.odc.service.monitor.MonitorEvent;
+import com.oceanbase.odc.service.monitor.task.flow.FlowMonitorEvent;
+import com.oceanbase.odc.service.monitor.task.flow.FlowMonitorEvent.Action;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
@@ -191,6 +194,11 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize("flow instance use internal check")
 public class FlowInstanceService {
 
+    private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
+    private static final String ODC_SITE_URL = "odc.site.url";
+    private static final int MAX_APPLY_DATABASE_SIZE = 10;
+    private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
+    private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
     @Autowired
     private FlowInstanceRepository flowInstanceRepository;
     @Autowired
@@ -257,12 +265,6 @@ public class FlowInstanceService {
     private EnvironmentRepository environmentRepository;
     @Autowired
     private EnvironmentService environmentService;
-
-    private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
-    private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
-    private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
-    private static final String ODC_SITE_URL = "odc.site.url";
-    private static final int MAX_APPLY_DATABASE_SIZE = 10;
 
     @PostConstruct
     public void init() {
@@ -934,6 +936,9 @@ public class FlowInstanceService {
         }
         log.info("New flow instance succeeded, instanceId={}, flowInstanceReq={}",
                 flowInstance.getId(), flowInstanceReq);
+        MonitorEvent<FlowMonitorEvent> flowMonitor = MonitorEvent.createFlowMonitor(Action.FLOW_CREATED,
+                flowInstance.getOrganizationId(), null, null);
+        SpringContextUtil.publishEvent(flowMonitor);
         return FlowInstanceDetailResp.withIdAndType(flowInstance.getId(), flowInstanceReq.getTaskType());
     }
 

@@ -26,7 +26,7 @@ import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.event.LocalEventPublisher;
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.datasource.ConnectionResetEvent;
+import com.oceanbase.odc.core.datasource.event.ConnectionResetEvent;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
@@ -81,6 +81,31 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
 
     public DefaultConnectSessionFactory(@NonNull ConnectionConfig connectionConfig) {
         this(connectionConfig, null, null);
+    }
+
+    private static void setNlsFormat(ConnectionSession session) {
+        if (!session.getDialectType().isOracle()) {
+            return;
+        }
+        log.info("Begin to set nls format.");
+        String nlsDateFormat = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
+                (ConnectionCallback<String>) con -> ConnectionPluginUtil
+                        .getSessionExtension(session.getDialectType()).getVariable(con, "nls_date_format"));
+        ConnectionSessionUtil.setNlsDateFormat(session, Objects.isNull(nlsDateFormat) ? "DD-MON-RR" : nlsDateFormat);
+
+        String nlsTimestampFormat = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
+                (ConnectionCallback<String>) con -> ConnectionPluginUtil
+                        .getSessionExtension(session.getDialectType()).getVariable(con, "nls_timestamp_format"));
+        ConnectionSessionUtil.setNlsTimestampFormat(session,
+                Objects.isNull(nlsTimestampFormat) ? "DD-MON-RR" : nlsTimestampFormat);
+
+        String nlsTimestampTZFormat = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
+                (ConnectionCallback<String>) con -> ConnectionPluginUtil
+                        .getSessionExtension(session.getDialectType()).getVariable(con, "nls_timestamp_tz_format"));
+        ConnectionSessionUtil.setNlsTimestampTZFormat(session,
+                Objects.isNull(nlsTimestampTZFormat) ? "DD-MON-RR" : nlsTimestampTZFormat);
+
+        log.info("Set nls format completed.");
     }
 
     @Override
@@ -155,31 +180,6 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
             ConnectionSessionUtil.setClusterName(session, connectionConfig.getClusterName());
         }
         setNlsFormat(session);
-    }
-
-    private static void setNlsFormat(ConnectionSession session) {
-        if (!session.getDialectType().isOracle()) {
-            return;
-        }
-        log.info("Begin to set nls format.");
-        String nlsDateFormat = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
-                (ConnectionCallback<String>) con -> ConnectionPluginUtil
-                        .getSessionExtension(session.getDialectType()).getVariable(con, "nls_date_format"));
-        ConnectionSessionUtil.setNlsDateFormat(session, Objects.isNull(nlsDateFormat) ? "DD-MON-RR" : nlsDateFormat);
-
-        String nlsTimestampFormat = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
-                (ConnectionCallback<String>) con -> ConnectionPluginUtil
-                        .getSessionExtension(session.getDialectType()).getVariable(con, "nls_timestamp_format"));
-        ConnectionSessionUtil.setNlsTimestampFormat(session,
-                Objects.isNull(nlsTimestampFormat) ? "DD-MON-RR" : nlsTimestampFormat);
-
-        String nlsTimestampTZFormat = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
-                (ConnectionCallback<String>) con -> ConnectionPluginUtil
-                        .getSessionExtension(session.getDialectType()).getVariable(con, "nls_timestamp_tz_format"));
-        ConnectionSessionUtil.setNlsTimestampTZFormat(session,
-                Objects.isNull(nlsTimestampTZFormat) ? "DD-MON-RR" : nlsTimestampTZFormat);
-
-        log.info("Set nls format completed.");
     }
 
     /**

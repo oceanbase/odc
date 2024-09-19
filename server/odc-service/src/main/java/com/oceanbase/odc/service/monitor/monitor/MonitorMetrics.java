@@ -13,35 +13,46 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.monitor.task;
+package com.oceanbase.odc.service.monitor.monitor;
 
-import static com.oceanbase.odc.service.monitor.MeterName.SCHEDULE_ENABLED_COUNT;
+import static com.oceanbase.odc.service.monitor.MeterName.METER_COUNTER_HOLDER_COUNT;
+import static com.oceanbase.odc.service.monitor.MeterName.METER_GAUGE_HOLDER_COUNT;
+import static com.oceanbase.odc.service.monitor.MeterName.METER_TIMER_HOLDER_COUNT;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
+import com.oceanbase.odc.service.monitor.MeterHolder;
 import com.oceanbase.odc.service.monitor.MonitorAutoConfiguration.BusinessMeterRegistry;
-import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 
 import io.micrometer.core.instrument.Gauge;
 
 @Component
 @ConditionalOnProperty(value = "odc.system.monitor.actuator.enabled", havingValue = "true")
-public class TaskMetrics implements InitializingBean {
-    @Autowired
-    BusinessMeterRegistry meterRegistry;
+public class MonitorMetrics implements InitializingBean {
 
     @Autowired
-    ScheduleRepository scheduleRepository;
+    MeterHolder meterHolder;
+    @Autowired
+    private BusinessMeterRegistry meterRegistry;
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        Gauge.builder(SCHEDULE_ENABLED_COUNT.getMeterName(),
-                () -> scheduleRepository.countByStatus(ScheduleStatus.ENABLED))
-                .description(SCHEDULE_ENABLED_COUNT.getDescription())
+        Gauge.builder(METER_COUNTER_HOLDER_COUNT.getMeterName(),
+                () -> meterHolder.getCounterHolder().getSize())
+                .description(METER_COUNTER_HOLDER_COUNT.getDescription())
+                .register(meterRegistry);
+
+        Gauge.builder(METER_GAUGE_HOLDER_COUNT.getMeterName(),
+                () -> meterHolder.getGaugeHolder().getSize())
+                .description(METER_GAUGE_HOLDER_COUNT.getDescription())
+                .register(meterRegistry);
+
+        Gauge.builder(METER_TIMER_HOLDER_COUNT.getMeterName(),
+                () -> meterHolder.getTimerHolder().getSize())
+                .description(METER_TIMER_HOLDER_COUNT.getDescription())
                 .register(meterRegistry);
     }
 }

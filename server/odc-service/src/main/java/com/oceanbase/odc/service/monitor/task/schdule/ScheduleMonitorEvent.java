@@ -13,10 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.monitor.task.MeterHandler;
+package com.oceanbase.odc.service.monitor.task.schdule;
 
-import com.oceanbase.odc.service.monitor.task.TaskMonitorEvent;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
-public interface TaskLifecycleHandler {
-    void handler(TaskMonitorEvent event);
+@Data
+@AllArgsConstructor
+public class ScheduleMonitorEvent {
+
+    private Action action;
+
+    private String scheduleId;
+    private String TaskType;
+
+    public enum Action {
+        SCHEDULE_TASK_START,
+        SCHEDULE_TASK_END,
+        SCHEDULE_TASK_INTERRUPT,
+        SCHEDULE_TASK_FAILED,
+    }
+
 }

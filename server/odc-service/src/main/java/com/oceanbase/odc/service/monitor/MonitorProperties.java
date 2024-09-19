@@ -35,17 +35,17 @@ public class MonitorProperties {
     private ActuatorProperties actuator = new ActuatorProperties();
 
     @NestedConfigurationProperty
-    private TaskProperties task = new TaskProperties();
+    private MeterProperties meter = new MeterProperties();
 
     @Data
     public static class ActuatorProperties {
 
-        private List<String> endpointPath = Collections.singletonList("/actuator/prometheus");
+        private List<String> endpointPath = Collections.singletonList("/actuator/business");
 
     }
 
     @Data
-    public static class TaskProperties {
+    public static class MeterProperties {
         private Integer maxTimerMeterNumber = 500;
         private Integer maxGaugeMeterNumber = 100;
         private Integer maxCounterMeterNumber = 100;

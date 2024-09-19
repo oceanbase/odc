@@ -15,9 +15,23 @@
  */
 package com.oceanbase.odc.service.monitor;
 
+import static com.oceanbase.odc.service.monitor.MonitorEvent.MonitorModule.DATASOURCE_MODULE;
+import static com.oceanbase.odc.service.monitor.MonitorEvent.MonitorModule.JOB;
+import static com.oceanbase.odc.service.monitor.MonitorEvent.MonitorModule.SCHEDULE_MODULE;
+
 import org.springframework.context.ApplicationEvent;
 
-import com.oceanbase.odc.service.monitor.task.TaskMonitorEventHandler;
+import com.oceanbase.odc.service.monitor.datasource.DataSourseMonitorEventHandler;
+import com.oceanbase.odc.service.monitor.datasource.DatasourceMonitorEventContext;
+import com.oceanbase.odc.service.monitor.session.SessionMonitorContext;
+import com.oceanbase.odc.service.monitor.session.SessionMonitorEventHandler;
+import com.oceanbase.odc.service.monitor.task.flow.FlowMonitorEvent;
+import com.oceanbase.odc.service.monitor.task.flow.FlowMonitorEventHandler;
+import com.oceanbase.odc.service.monitor.task.job.TaskJobMonitorEvent;
+import com.oceanbase.odc.service.monitor.task.job.TaskJobMonitorHandler;
+import com.oceanbase.odc.service.monitor.task.schdule.ScheduleMonitorEvent;
+import com.oceanbase.odc.service.monitor.task.schdule.ScheduleMonitorHandler;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskType;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -36,16 +50,50 @@ public class MonitorEvent<T> extends ApplicationEvent {
      * @param module
      * @throws IllegalArgumentException if source is null.
      */
-    public MonitorEvent(@NonNull MonitorModule module, T context) {
+    private MonitorEvent(@NonNull MonitorModule module, T context) {
         super(context);
         this.module = module;
         this.context = context;
     }
 
-    @Getter
-    public enum MonitorModule {
-        TASK_MODULE(TaskMonitorEventHandler.class);
+    public static MonitorEvent<SessionMonitorContext> createSessionMonitor(
+            SessionMonitorContext context) {
+        return new MonitorEvent<SessionMonitorContext>(MonitorModule.SESSION_MODULE, context);
+    }
 
+
+    public static MonitorEvent<DatasourceMonitorEventContext> createDatasourceMonitor(
+            DatasourceMonitorEventContext context) {
+        return new MonitorEvent<DatasourceMonitorEventContext>(DATASOURCE_MODULE, context);
+    }
+
+    public static MonitorEvent<FlowMonitorEvent> createFlowMonitor(FlowMonitorEvent.Action action, Long organizationId,
+            String taskType, String taskId) {
+        FlowMonitorEvent flowMonitorEvent = new FlowMonitorEvent(action, organizationId, taskId, taskType);
+        return new MonitorEvent<>(MonitorModule.FLOW, flowMonitorEvent);
+    }
+
+    public static MonitorEvent<ScheduleMonitorEvent> createScheduleMonitorEvent(ScheduleMonitorEvent.Action action,
+            ScheduleTaskType taskType, String scheduleId) {
+        ScheduleMonitorEvent scheduleMonitorEvent = new ScheduleMonitorEvent(action, scheduleId, taskType.name());
+        return new MonitorEvent<>(SCHEDULE_MODULE, scheduleMonitorEvent);
+    }
+
+    public static MonitorEvent<TaskJobMonitorEvent> createJobMonitorEvent(TaskJobMonitorEvent.Action action) {
+        TaskJobMonitorEvent scheduleMonitorEvent = new TaskJobMonitorEvent(action);
+        return new MonitorEvent<>(JOB, scheduleMonitorEvent);
+    }
+
+
+    public enum MonitorModule {
+        FLOW(FlowMonitorEventHandler.class),
+        JOB(TaskJobMonitorHandler.class),
+        SCHEDULE_MODULE(ScheduleMonitorHandler.class),
+        SESSION_MODULE(SessionMonitorEventHandler.class),
+        DATASOURCE_MODULE(DataSourseMonitorEventHandler.class),
+        ;
+
+        @Getter
         private final Class<? extends MonitorEventHandler<?>> handler;
 
         MonitorModule(Class<? extends MonitorEventHandler<?>> handler) {

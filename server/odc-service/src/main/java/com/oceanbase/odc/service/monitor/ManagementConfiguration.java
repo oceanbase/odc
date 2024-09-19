@@ -19,10 +19,17 @@ import java.util.List;
 
 import javax.servlet.Filter;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration;
 import org.springframework.boot.actuate.autoconfigure.web.ManagementContextType;
+import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
+import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
+
+import com.oceanbase.odc.service.monitor.MonitorAutoConfiguration.ApplicationMeterRegistry;
+
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 
 /**
  * configuration bean in management tomcat
@@ -34,5 +41,46 @@ public class ManagementConfiguration {
     @Bean
     public Filter actuatorEndpointFilter(MonitorProperties properties, List<MeterClear> meterClears) {
         return new ActuatorEndpointFilter(properties, meterClears);
+    }
+
+    @Bean
+    public CustomEndpoint customEndpoint(
+            @Qualifier(value = "businessMeterRegistry") PrometheusMeterRegistry businessMeterRegistry) {
+        return new CustomEndpoint(businessMeterRegistry);
+    }
+
+    @Bean
+    public ApplicationEndpoint applicationEndpoint(ApplicationMeterRegistry applicationMeterRegistry) {
+        return new ApplicationEndpoint(applicationMeterRegistry);
+    }
+
+    @Endpoint(id = "business")
+    public static class CustomEndpoint {
+
+        final PrometheusMeterRegistry meterRegistry;
+
+        public CustomEndpoint(PrometheusMeterRegistry businessMeterRegistry) {
+            this.meterRegistry = businessMeterRegistry;
+        }
+
+        @ReadOperation
+        public String customEndpointMethod() {
+            return meterRegistry.scrape();
+        }
+    }
+
+    @Endpoint(id = "application")
+    public static class ApplicationEndpoint {
+
+        final PrometheusMeterRegistry businessMeterRegistry;
+
+        public ApplicationEndpoint(PrometheusMeterRegistry businessMeterRegistry) {
+            this.businessMeterRegistry = businessMeterRegistry;
+        }
+
+        @ReadOperation
+        public String customEndpointMethod() {
+            return businessMeterRegistry.scrape();
+        }
     }
 }

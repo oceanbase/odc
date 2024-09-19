@@ -13,35 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.monitor.task;
+package com.oceanbase.odc.service.monitor.datasource;
 
-import static com.oceanbase.odc.service.monitor.MeterName.SCHEDULE_ENABLED_COUNT;
+import static com.oceanbase.odc.service.monitor.MeterName.DATASOURCE_GET_CONNECTION_FAILED_COUNT;
 
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
-import com.oceanbase.odc.service.monitor.MonitorAutoConfiguration.BusinessMeterRegistry;
-import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
-
-import io.micrometer.core.instrument.Gauge;
+import com.oceanbase.odc.service.monitor.MeterHolder;
+import com.oceanbase.odc.service.monitor.MeterHolder.MeterKey;
+import com.oceanbase.odc.service.monitor.MonitorEventHandler;
+import com.oceanbase.odc.service.monitor.datasource.DatasourceMonitorEventContext.Action;
 
 @Component
 @ConditionalOnProperty(value = "odc.system.monitor.actuator.enabled", havingValue = "true")
-public class TaskMetrics implements InitializingBean {
-    @Autowired
-    BusinessMeterRegistry meterRegistry;
+public class DataSourseMonitorEventHandler implements MonitorEventHandler<DatasourceMonitorEventContext> {
 
     @Autowired
-    ScheduleRepository scheduleRepository;
+    private MeterHolder meterHolder;
 
     @Override
-    public void afterPropertiesSet() throws Exception {
-        Gauge.builder(SCHEDULE_ENABLED_COUNT.getMeterName(),
-                () -> scheduleRepository.countByStatus(ScheduleStatus.ENABLED))
-                .description(SCHEDULE_ENABLED_COUNT.getDescription())
-                .register(meterRegistry);
+    public void handle(DatasourceMonitorEventContext source) {
+        if (source.getAction().equals(Action.GET_CONNECTION_FAILED)) {
+            meterHolder.getCounterHolder().increment(MeterKey.ofMeter(DATASOURCE_GET_CONNECTION_FAILED_COUNT));
+        }
     }
 }

@@ -44,10 +44,10 @@ public abstract class AbstractConnectionSession implements ConnectionSession {
     protected final ConnectType connectType;
     protected final long sessionTimeoutMillis;
     protected final Date startTime;
+    protected final Map<Object, Object> attributes;
     protected boolean expired = false;
     protected Date expiredTime;
     protected Date lastAccessTime;
-    protected final Map<Object, Object> attributes;
 
     public AbstractConnectionSession(@NonNull String id, @NonNull ConnectType connectType, long sessionTimeoutMillis)
             throws IOException {

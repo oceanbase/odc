@@ -27,6 +27,7 @@ public final class AlarmEventNames {
     public static final String REST_API_CALL_FAILED = "REST_API_CALL_FAILED";
     public static final String STATEFUL_ROUTE_NOT_HEALTHY = "STATEFUL_ROUTE_NOT_HEALTHY";
     public static final String SERVER_RESTART = "SERVER_RESTART";
+    public static final String MONITOR_EVENT_HANDLER_FAILED = "MONITOR_EVENT_HANDLER_FAILED";
 
     /**
      * warn
@@ -67,5 +68,4 @@ public final class AlarmEventNames {
     public static final String TASK_START_FAILED = "TASK_START_FAILED";
     public static final String TASK_EXECUTION_FAILED = "TASK_EXECUTION_FAILED";
     public static final String TASK_EXECUTOR_DESTROY_FAILED = "TASK_EXECUTOR_DESTROY_FAILED";
-
 }

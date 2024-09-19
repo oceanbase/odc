@@ -13,35 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.monitor.task;
+package com.oceanbase.odc.service.monitor.session;
 
-import static com.oceanbase.odc.service.monitor.MeterName.SCHEDULE_ENABLED_COUNT;
+import static com.oceanbase.odc.service.monitor.MeterName.CONNECT_SESSION_ACTIVE_COUNT;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
-import com.oceanbase.odc.service.monitor.MonitorAutoConfiguration.BusinessMeterRegistry;
-import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.session.ConnectSessionService;
 
 import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 
 @Component
 @ConditionalOnProperty(value = "odc.system.monitor.actuator.enabled", havingValue = "true")
-public class TaskMetrics implements InitializingBean {
-    @Autowired
-    BusinessMeterRegistry meterRegistry;
+public class SessionMetrics implements InitializingBean {
 
     @Autowired
-    ScheduleRepository scheduleRepository;
+    @Qualifier(value = "businessMeterRegistry")
+    private MeterRegistry meterRegistry;
+
+    @Autowired
+    private ConnectSessionService connectSessionService;
+
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        Gauge.builder(SCHEDULE_ENABLED_COUNT.getMeterName(),
-                () -> scheduleRepository.countByStatus(ScheduleStatus.ENABLED))
-                .description(SCHEDULE_ENABLED_COUNT.getDescription())
+        init();
+    }
+
+    public void init() {
+        Gauge.builder(CONNECT_SESSION_ACTIVE_COUNT.getMeterName(),
+                () -> connectSessionService.getActiveSession())
+                .description(CONNECT_SESSION_ACTIVE_COUNT.getDescription())
                 .register(meterRegistry);
     }
 }

@@ -13,15 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.monitor.task;
+package com.oceanbase.odc.core.datasource.event;
 
-import lombok.Value;
+import java.sql.Connection;
 
-@Value
-public class TaskMetricsContext {
-    String taskId;
-    String scheduleId;
-    String taskType;
-    String organizationId;
-    String executorType;
+import com.oceanbase.odc.common.event.AbstractEvent;
+
+public class GetConnectionFailedEvent extends AbstractEvent {
+    public static final String EVENT_NAME = "getConnectionFailed";
+
+    /**
+     * Constructs a prototypical Event.
+     *
+     * @param source The object on which the Event initially occurred.
+     * @throws IllegalArgumentException if source is null.
+     */
+    public GetConnectionFailedEvent(Connection source) {
+        super(source, EVENT_NAME);
+    }
+
 }

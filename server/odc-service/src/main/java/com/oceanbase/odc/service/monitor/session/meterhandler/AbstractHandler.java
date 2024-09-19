@@ -13,29 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.monitor.task;
-
-import java.util.List;
+package com.oceanbase.odc.service.monitor.session.meterhandler;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.service.monitor.MonitorEventHandler;
-import com.oceanbase.odc.service.monitor.task.MeterHandler.TaskLifecycleHandler;
+import com.oceanbase.odc.service.monitor.MeterHolder;
+import com.oceanbase.odc.service.monitor.session.SessionMonitorContext;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @ConditionalOnProperty(value = "odc.system.monitor.actuator.enabled", havingValue = "true")
-public class TaskMonitorEventHandler implements MonitorEventHandler<TaskMonitorEvent> {
+@Slf4j
+abstract class AbstractHandler implements SessionMeterHandler {
 
     @Autowired
-    private List<TaskLifecycleHandler> taskLifecycleHandlers;
+    protected MeterHolder meterHolder;
 
-    @Override
-    public void handle(TaskMonitorEvent context) {
-        for (TaskLifecycleHandler taskLifecycleHandler : taskLifecycleHandlers) {
-            taskLifecycleHandler.handler(context);
+    public void handle(SessionMonitorContext source) {
+        try {
+            doHandle(source);
+        } catch (Exception e) {
+            log.error("doHandler error, className={}", this.getClass().getName(), e);
         }
     }
+
+    abstract void doHandle(SessionMonitorContext source);
 
 }

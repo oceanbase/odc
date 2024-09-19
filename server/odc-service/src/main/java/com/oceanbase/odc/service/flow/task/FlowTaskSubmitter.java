@@ -37,12 +37,16 @@ import com.oceanbase.odc.core.flow.util.FlowableBoundaryEvent;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.flow.BeanInjectedClassDelegate;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.task.mapper.OdcRuntimeDelegateMapper;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
+import com.oceanbase.odc.service.monitor.MonitorEvent;
+import com.oceanbase.odc.service.monitor.task.flow.FlowMonitorEvent;
+import com.oceanbase.odc.service.monitor.task.flow.FlowMonitorEvent.Action;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -80,10 +84,12 @@ public class FlowTaskSubmitter implements JavaDelegate {
                 BaseRuntimeFlowableDelegate<?> delegate = getDelegateInstance(flowTaskInstance);
                 delegate.updateHeartbeatTime();
                 List<Class<? extends ExecutionListener>> list = delegate.getExecutionListenerClasses();
+                sendMonitor(Action.FLOW_TASK_STARTED, flowTaskInstance);
                 if (CollectionUtils.isNotEmpty(list)) {
                     list.forEach(c -> doCallListener(FlowConstants.EXECUTION_START_EVENT_NAME, executionFacade, c));
                 }
                 delegate.execute(executionFacade);
+                sendMonitor(Action.FLOW_TASK_END, flowTaskInstance);
                 if (CollectionUtils.isNotEmpty(list)) {
                     list.forEach(c -> doCallListener(FlowConstants.EXECUTION_END_EVENT_NAME, executionFacade, c));
                 }
@@ -93,6 +99,7 @@ public class FlowTaskSubmitter implements JavaDelegate {
                 log.warn("Delegate task instance execute occur error: ", e);
                 updateFlowTaskInstance(flowTaskInstance.getId(), FlowNodeStatus.FAILED);
                 Exception rootCause = (Exception) e.getCause();
+                sendMonitor(Action.FLOW_TASK_FAILED, flowTaskInstance);
                 handleException(executionFacade, flowTaskInstance, rootCause, defs);
             } finally {
                 if (flowTaskInstance != null) {
@@ -186,4 +193,10 @@ public class FlowTaskSubmitter implements JavaDelegate {
                 () -> new NotFoundException(ResourceType.ODC_FLOW_TASK_INSTANCE, "activityId", activityId));
     }
 
+    private void sendMonitor(FlowMonitorEvent.Action action, FlowTaskInstance flowTaskInstance) {
+        MonitorEvent<FlowMonitorEvent> flowMonitor = MonitorEvent.createFlowMonitor(action,
+                flowTaskInstance.getOrganizationId(), flowTaskInstance.getTaskType().name(),
+                flowTaskInstance.getTargetTaskId().toString());
+        SpringContextUtil.publishEvent(flowMonitor);
+    }
 }

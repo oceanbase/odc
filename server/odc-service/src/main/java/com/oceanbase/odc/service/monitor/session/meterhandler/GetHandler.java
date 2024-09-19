@@ -13,27 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.monitor.task.MeterHandler;
-
-import static com.oceanbase.odc.service.monitor.task.TaskMeters.TASK_EXECUTE_COUNT;
+package com.oceanbase.odc.service.monitor.session.meterhandler;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.service.monitor.task.TaskMetrics.TaskMeterKey;
-import com.oceanbase.odc.service.monitor.task.TaskMonitorEvent;
-import com.oceanbase.odc.service.monitor.task.TaskMonitorEvent.TaskLifecycle;
+import com.oceanbase.odc.service.monitor.MeterHolder.MeterKey;
+import com.oceanbase.odc.service.monitor.MeterName;
+import com.oceanbase.odc.service.monitor.session.SessionMonitorContext;
+import com.oceanbase.odc.service.monitor.session.SessionMonitorContext.SessionAction;
 
 @Component
 @ConditionalOnProperty(value = "odc.system.monitor.actuator.enabled", havingValue = "true")
-public class TaskExecuteCountHandlerTask extends AbstractTaskExecuteCountHandlerTask {
-
+class GetHandler extends AbstractHandler {
     @Override
-    public void doHandler(TaskMonitorEvent event) {
-        String taskType = event.getContext().getTaskType();
-        if (TaskLifecycle.TASK_STARTED.equals(event.getTaskLifecycle())) {
-            taskMetrics.getTaskCounterHolder().increment(TaskMeterKey.ofTaskType(TASK_EXECUTE_COUNT, taskType));
+    void doHandle(SessionMonitorContext source) {
+        if (source.getAction().equals(SessionAction.GET)) {
+            meterHolder.getCounterHolder().increment(MeterKey.ofMeter(MeterName.CONNECT_SESSION_GET_COUNT));
+        }
+        if (source.getAction().equals(SessionAction.GET_FAILED)) {
+            meterHolder.getCounterHolder().increment(MeterKey.ofMeter(MeterName.CONNECT_SESSION_GET_FAILED_COUNT));
         }
     }
-
 }

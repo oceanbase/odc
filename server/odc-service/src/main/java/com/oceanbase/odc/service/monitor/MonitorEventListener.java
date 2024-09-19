@@ -24,6 +24,8 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.core.alarm.AlarmEventNames;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.service.monitor.MonitorEvent.MonitorModule;
 
 @Component
@@ -34,12 +36,17 @@ public class MonitorEventListener implements ApplicationListener<MonitorEvent<?>
 
     @Override
     public void onApplicationEvent(MonitorEvent event) {
-        MonitorModule module = event.getModule();
-        Map<String, ? extends MonitorEventHandler<?>> beansOfType = this.applicationContext.getBeansOfType(
-                module.getHandler());
-        for (MonitorEventHandler handler : beansOfType.values()) {
-            handler.handle(event.getContext());
+        try {
+            MonitorModule module = event.getModule();
+            Map<String, ? extends MonitorEventHandler<?>> beansOfType = this.applicationContext.getBeansOfType(
+                    module.getHandler());
+            for (MonitorEventHandler handler : beansOfType.values()) {
+                handler.handle(event.getContext());
+            }
+        } catch (Exception e) {
+            AlarmUtils.alarm(AlarmEventNames.MONITOR_EVENT_HANDLER_FAILED, e);
         }
+
     }
 
     @Override

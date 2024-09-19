@@ -13,34 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.monitor.task;
+package com.oceanbase.odc.service.monitor.session;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
-public final class TaskMonitorEvent {
-
-    private final TaskLifecycle taskLifecycle;
-    private final TaskMetricsContext context;
-
-    public TaskMonitorEvent(TaskLifecycle taskLifecycle, TaskMetricsContext context) {
-        this.taskLifecycle = taskLifecycle;
-        this.context = context;
-    }
+@AllArgsConstructor
+public class SessionMonitorContext {
+    SessionAction action;
+    String sessionId;
 
 
-
-    // todo
-    public enum TaskLifecycle {
-        TASK_CREATED,
-        TASK_STARTED,
-        TASK_COMPLETED,
-        TASK_FAILED,
-        TASK_CANCELLED,
-
-        POD_CREATED_FAILED,
-        POD_CREATED_SUCCESS,
-        POD_DESTROY_FAILED,
-        POD_DESTROY_SUCCESS,
+    public enum SessionAction {
+        CREATED_SUCCESS,
+        CREATED_FAILED,
+        DELETE_SUCCESS,
+        DELETED_FAILED,
+        GET,
+        GET_FAILED,
+        EXPIRED_SUCCESS,
+        EXPIRED_FAILED,
     }
 }
