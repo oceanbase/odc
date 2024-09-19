@@ -57,7 +57,7 @@ public class DescriptionGenerator {
             String connectionName = req.getConnectionName();
             String databaseName = req.getDatabaseName();
             String description =
-                    StringUtils.isEmpty(environmentName) ? String.format("[%s]%s", environmentName, databaseName)
+                    StringUtils.isEmpty(connectionName) ? String.format("[%s]%s", environmentName, databaseName)
                             : String.format("[%s]%s.%s", environmentName, connectionName, databaseName);
             req.setDescription(description);
         }
