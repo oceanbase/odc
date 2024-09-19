@@ -453,6 +453,14 @@
 - enabled: 1
   level: 0
   rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
+  ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.estimate-sql-affected-rows-failed.name}
+  appliedDialectTypes:
+    - 'OB_MYSQL'
+    - 'MYSQL'
+  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.estimate-sql-affected-rows-failed.unable-to-estimate-sql-affected-count}":-1}'
+- enabled: 1
+  level: 0
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-table-join.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -946,6 +954,14 @@
 - enabled: 1
   level: 0
   rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
+  ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.estimate-sql-affected-rows-failed.name}
+  appliedDialectTypes:
+    - 'OB_MYSQL'
+    - 'MYSQL'
+  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.estimate-sql-affected-rows-failed.unable-to-estimate-sql-affected-count}":-1}'
+- enabled: 1
+  level: 0
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-table-join.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1439,6 +1455,14 @@
 - enabled: 1
   level: 1
   rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
+  ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.estimate-sql-affected-rows-failed.name}
+  appliedDialectTypes:
+    - 'OB_MYSQL'
+    - 'MYSQL'
+  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.estimate-sql-affected-rows-failed.unable-to-estimate-sql-affected-count}":-1}'
+- enabled: 1
+  level: 1
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-table-join.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1919,6 +1943,14 @@
     - 'OB_MYSQL'
     - 'MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.allowed-max-sql-affected-count}":1000}'
+- enabled: 1
+  level: 1
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
+  ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.estimate-sql-affected-rows-failed.name}
+  appliedDialectTypes:
+    - 'OB_MYSQL'
+    - 'MYSQL'
+  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.estimate-sql-affected-rows-failed.unable-to-estimate-sql-affected-count}":-1}'
 - enabled: 1
   level: 1
   rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
