@@ -102,7 +102,10 @@ public class ApplyDatabasePermissionPreprocessor implements Preprocessor {
             }
             database.setName(d.getName());
             database.setDataSourceId(d.getDataSource().getId());
-            database.setDataSourceName(id2ConnectionEntity.get(d.getDataSource().getId()).getName());
+            ConnectionConfig dataSource = id2ConnectionEntity.get(d.getDataSource().getId());
+            if (dataSource != null) {
+                database.setDataSourceName(dataSource.getName());
+            }
         }
         // Fill in other parameters
         req.setProjectId(projectId);
