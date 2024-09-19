@@ -147,7 +147,6 @@ public class LogicalTableFinder {
         return finalLogicalTables;
     }
 
-    @VisibleForTesting
     public Map<String, List<DBObjectEntity>> getSchemaName2TableNames(List<Database> groupedDatabases) {
         if (CollectionUtils.isEmpty(groupedDatabases)) {
             return Collections.emptyMap();

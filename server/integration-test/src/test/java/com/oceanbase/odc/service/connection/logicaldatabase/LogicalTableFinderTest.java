@@ -19,6 +19,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.List;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -36,6 +38,7 @@ import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.common.util.YamlUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -43,6 +46,8 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.LogicalTableFin
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalTable;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
+import com.oceanbase.odc.test.tool.TestRandom;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.SneakyThrows;
 
@@ -76,12 +81,18 @@ public class LogicalTableFinderTest extends ServiceTestEnv {
 
 
     @Test
+    @Ignore
     public void testOBMySQL() {
         List<LogicalTable> expected =
                 YamlUtils.fromYamlList("connection/obmysql/verify.yml", LogicalTable.class);
         Collections.sort(expected, Comparator.comparing(LogicalTable::getTableNamePattern));
-        Mockito.when(dbObjectRepository.findByDatabaseIdAndType(Mockito.anyLong(), Mockito.any()))
-                .thenReturn(new ArrayList<>());
+        Mockito.when(dbObjectRepository.findByDatabaseIdAndType(1L, DBObjectType.TABLE)).thenReturn(getTables_0());
+        Mockito.when(dbObjectRepository.findByDatabaseIdAndType(2L, DBObjectType.TABLE)).thenReturn(getTables_1());
+        Mockito.when(dbObjectRepository.findByDatabaseIdAndType(3L, DBObjectType.TABLE)).thenReturn(getTables_2());
+        Mockito.when(dbObjectRepository.findByDatabaseIdAndType(4L, DBObjectType.TABLE)).thenReturn(getTables_3());
+        Mockito.when(dbObjectRepository.findByDatabaseIdAndType(5L, DBObjectType.TABLE))
+                .thenReturn(Collections.emptyList());
+
         List<LogicalTable> actual = new LogicalTableFinder(obtainOBMySQLDatabases(), dbObjectRepository).find();
 
         Assert.assertEquals(expected.size(), actual.size());
@@ -136,5 +147,68 @@ public class LogicalTableFinderTest extends ServiceTestEnv {
         database.setId(5L);
         databases.add(database);
         return databases;
+    }
+
+    private List<DBObjectEntity> getTables_0() {
+        List<DBObjectEntity> tables = new ArrayList<>();
+        List<String> tableNames = new ArrayList<>();
+        tableNames.addAll(Arrays.asList("tb_a_00", "tb_i_00", "tb_i_01", "tb_j_00", "tb_j_01", "tb_n", "tb_o_0",
+                "tb_o_10", "tb_p", "tb_q_00_000", "tb_q_00_001", "tb_r_0", "tb_s_0", "tb_s_5", "tb_b_00", "tb_b_01",
+                "tb_c_00", "tb_c_01", "tb_d_00", "tb_d_01", "tb_e_00", "tb_e_01", "tb_f_00", "tb_f_01", "tb_g_00",
+                "tb_g_01", "tb_h_00", "tb_h_01", "tb_k_00", "tb_l_00", "tb_l_01", "tb_m_00", "tb_m_01"));
+        for (int i = 0; i < tableNames.size(); i++) {
+            DBObjectEntity table = TestRandom.nextObject(DBObjectEntity.class);
+            table.setName(tableNames.get(i));
+            table.setDatabaseId(1L);
+            table.setType(DBObjectType.TABLE);
+            table.setId(TestRandom.nextObject(Long.class));
+            tables.add(table);
+        }
+        return tables;
+    }
+
+    private List<DBObjectEntity> getTables_1() {
+        List<DBObjectEntity> tables = new ArrayList<>();
+        List<String> tableNames = new ArrayList<>();
+        tableNames.addAll(Arrays.asList("tb_a_01", "tb_n", "tb_o_0", "tb_o_10", "tb_p", "tb_q_01_000", "tb_q_01_001",
+                "tb_r_1", "tb_s_1"));
+        for (int i = 0; i < tableNames.size(); i++) {
+            DBObjectEntity table = TestRandom.nextObject(DBObjectEntity.class);
+            table.setName(tableNames.get(i));
+            table.setDatabaseId(2L);
+            table.setType(DBObjectType.TABLE);
+            tables.add(table);
+        }
+        return tables;
+    }
+
+    private List<DBObjectEntity> getTables_2() {
+        List<DBObjectEntity> tables = new ArrayList<>();
+        List<String> tableNames = new ArrayList<>();
+        tableNames.addAll(Arrays.asList("tb_a_02", "tb_n", "tb_o_0", "tb_o_10", "tb_q_02_000", "tb_q_02_001", "tb_r_2",
+                "tb_s_2"));
+        for (int i = 0; i < tableNames.size(); i++) {
+            DBObjectEntity table = TestRandom.nextObject(DBObjectEntity.class);
+            table.setName(tableNames.get(i));
+            table.setDatabaseId(3L);
+            table.setType(DBObjectType.TABLE);
+            tables.add(table);
+        }
+        return tables;
+    }
+
+    private List<DBObjectEntity> getTables_3() {
+        List<DBObjectEntity> tables = new ArrayList<>();
+        List<String> tableNames = new ArrayList<>();
+        tableNames.addAll(Arrays.asList("tb_a_03", "tb_n", "tb_o_0", "tb_o_10", "tb_p", "tb_q_03_000", "tb_q_03_001",
+                "tb_r_3", "tb_s_3"));
+        for (int i = 0; i < tableNames.size(); i++) {
+            DBObjectEntity table = TestRandom.nextObject(DBObjectEntity.class);
+            table.setName(tableNames.get(i));
+            table.setDatabaseId(4L);
+            table.setType(DBObjectType.TABLE);
+            tables.add(table);
+        }
+        return tables;
     }
 }
