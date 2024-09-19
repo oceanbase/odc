@@ -53,9 +53,13 @@ public class DescriptionGenerator {
 
     public static void generateScheduleDescription(CreateScheduleReq req) {
         if (StringUtils.isEmpty(req.getDescription())) {
-            String descFormat = "[%s]%s.%s";
-            req.setDescription(String.format(descFormat,
-                    req.getEnvironmentName(), req.getConnectionName(), req.getDatabaseName()));
+            String environmentName = req.getEnvironmentName();
+            String connectionName = req.getConnectionName();
+            String databaseName = req.getDatabaseName();
+            String description =
+                    StringUtils.isEmpty(connectionName) ? String.format("[%s]%s", environmentName, databaseName)
+                            : String.format("[%s]%s.%s", environmentName, connectionName, databaseName);
+            req.setDescription(description);
         }
     }
 
