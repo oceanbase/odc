@@ -248,6 +248,21 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public List<String> showExternalTablesLike(String schemaName, String tableNameLike) {
+        throw new UnsupportedOperationException("Not support yet");
+    }
+
+    @Override
+    public List<DBObjectIdentity> listExternalTables(String schemaName, String tableNameLike) {
+        throw new UnsupportedOperationException("Not support yet");
+    }
+
+    @Override
+    public boolean isExternalTable(String schemaName, String tableName) {
+        return false;
+    }
+
+    @Override
     public List<DBObjectIdentity> listViews(String schemaName) {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("select OWNER as schema_name, 'VIEW' as type, view_name as name from ");
@@ -1835,5 +1850,4 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             throw new UnsupportedOperationException("Not supported Synonym type");
         }
     }
-
 }

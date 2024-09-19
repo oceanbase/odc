@@ -35,11 +35,13 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import lombok.NonNull;
 
 /**
- * @author gaoda.xy
- * @date 2024/4/9 17:18
+ * @description:
+ * @author: zijia.cj
+ * @date: 2024/8/23 14:33
+ * @since: 4.3.3
  */
 @Component
-public class DBTableSyncer extends AbstractDBObjectSyncer<TableExtensionPoint> {
+public class DBExternalTableSyncer extends AbstractDBObjectSyncer<TableExtensionPoint> {
 
     @Autowired
     private PermissionRepository permissionRepository;
@@ -57,21 +59,19 @@ public class DBTableSyncer extends AbstractDBObjectSyncer<TableExtensionPoint> {
     }
 
     @Override
-    protected Set<String> getLatestObjectNames(@NonNull TableExtensionPoint extensionPoint,
+    public DBObjectType getObjectType() {
+        return DBObjectType.EXTERNAL_TABLE;
+    }
+
+    @Override
+    Set<String> getLatestObjectNames(@NonNull TableExtensionPoint extensionPoint,
             @NonNull Connection connection, @NonNull Database database) {
-        return extensionPoint.list(connection, database.getName(), DBObjectType.TABLE).stream()
-                .map(DBObjectIdentity::getName)
-                .collect(Collectors.toSet());
+        return extensionPoint.list(connection, database.getName(), DBObjectType.EXTERNAL_TABLE).stream()
+                .map(DBObjectIdentity::getName).collect(Collectors.toSet());
     }
 
     @Override
     Class<TableExtensionPoint> getExtensionPointClass() {
         return TableExtensionPoint.class;
     }
-
-    @Override
-    public DBObjectType getObjectType() {
-        return DBObjectType.TABLE;
-    }
-
 }

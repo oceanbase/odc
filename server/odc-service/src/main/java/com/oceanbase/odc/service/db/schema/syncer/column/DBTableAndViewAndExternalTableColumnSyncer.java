@@ -36,7 +36,7 @@ import lombok.NonNull;
  * @date 2024/4/10 20:13
  */
 @Component
-public class DBTableAndViewColumnSyncer extends AbstractDBColumnSyncer<ColumnExtensionPoint> {
+public class DBTableAndViewAndExternalTableColumnSyncer extends AbstractDBColumnSyncer<ColumnExtensionPoint> {
 
     @Override
     Map<String, Set<String>> getLatestObjectToColumns(@NonNull ColumnExtensionPoint extensionPoint,
@@ -48,7 +48,7 @@ public class DBTableAndViewColumnSyncer extends AbstractDBColumnSyncer<ColumnExt
 
     @Override
     public Collection<DBObjectType> getColumnRelatedObjectTypes() {
-        return Arrays.asList(DBObjectType.TABLE, DBObjectType.VIEW);
+        return Arrays.asList(DBObjectType.TABLE, DBObjectType.VIEW, DBObjectType.EXTERNAL_TABLE);
     }
 
     @Override

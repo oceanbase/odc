@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.connection;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -45,6 +46,8 @@ public class ConnectionConfigRepositoryTest extends ServiceTestEnv {
     private static final String CLUSTER_NAME = "C1";
     private static final String TENANT_NAME = "T1";
     private static final String USERNAME = "odcTest";
+    private static final List<String> INSERT_ORDER_NAME_LIST = Arrays.asList("C", "B", "A");
+    private static final List<String> LEXICAL_ORDER_NAME_LIST = Arrays.asList("A", "B", "C");
 
     @Autowired
     private ConnectionConfigRepository repository;
@@ -277,6 +280,41 @@ public class ConnectionConfigRepositoryTest extends ServiceTestEnv {
         int affectRows =
                 repository.deleteByIds(entities.stream().map(ConnectionEntity::getId).collect(Collectors.toSet()));
         Assert.assertEquals(entities.size(), affectRows);
+    }
+
+    @Test
+    public void findByOrganizationId_getListBySpecificOrganization_success() {
+        List<ConnectionEntity> entities = new ArrayList<>();
+        for (String name : INSERT_ORDER_NAME_LIST) {
+            ConnectionEntity entity = createEntity(ConnectionVisibleScope.ORGANIZATION);
+            entity.setName(name);
+            entities.add(entity);
+        }
+        List<ConnectionEntity> savedEntities = repository.saveAll(entities);
+        List<ConnectionEntity> list = repository.findByOrganizationId(
+                ORGANIZATION_ID);
+        Assert.assertEquals(savedEntities.size(), list.size());
+        for (int i = 0; i < list.size(); i++) {
+            Assert.assertEquals(list.get(i).getOrganizationId(), ORGANIZATION_ID);
+        }
+    }
+
+    @Test
+    public void findByOrganizationIdOrderByNameAsc_getSortedListByNameAsc_success() {
+        List<ConnectionEntity> entities = new ArrayList<>();
+        for (String name : INSERT_ORDER_NAME_LIST) {
+            ConnectionEntity entity = createEntity(ConnectionVisibleScope.ORGANIZATION);
+            entity.setName(name);
+            entities.add(entity);
+        }
+        List<ConnectionEntity> savedEntities = repository.saveAll(entities);
+        List<ConnectionEntity> list = repository.findByOrganizationIdOrderByNameAsc(
+                ORGANIZATION_ID);
+        Assert.assertEquals(savedEntities.size(), list.size());
+        for (int i = 0; i < list.size(); i++) {
+            Assert.assertEquals(list.get(i).getOrganizationId(), ORGANIZATION_ID);
+            Assert.assertEquals(list.get(i).getName(), LEXICAL_ORDER_NAME_LIST.get(i));
+        }
     }
 
     private ConnectionEntity createEntity(ConnectionVisibleScope visibleScope) {

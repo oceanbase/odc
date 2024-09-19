@@ -274,8 +274,8 @@ public class LogicalTableService {
         TableExtensionPoint tableExtensionPoint =
                 SchemaPluginUtil.getTableExtension(logicalDatabase.getConnectType().getDialectType());
         if (tableExtensionPoint == null) {
-            throw new UnsupportedOperationException(
-                    "Unsupported dialect " + logicalDatabase.getConnectType().getDialectType());
+            throw new UnsupportedOperationException("the dialect " + logicalDatabase.getConnectType().getDialectType()
+                    + " doesn't support the database object type " + DBObjectType.TABLE);
         }
         try (Connection connection = new DruidDataSourceFactory(
                 connectionService.getForConnectionSkipPermissionCheck(physicalDatabase.getConnectionId()))

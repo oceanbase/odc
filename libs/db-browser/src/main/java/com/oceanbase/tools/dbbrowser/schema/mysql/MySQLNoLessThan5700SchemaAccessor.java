@@ -233,6 +233,27 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
         return listBaseTables(schemaName, tableNameLike);
     }
 
+    @Override
+    public List<String> showExternalTables(String schemaName) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+
+    @Override
+    public List<String> showExternalTablesLike(String schemaName, String tableNameLike) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public List<DBObjectIdentity> listExternalTables(String schemaName, String tableNameLike) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public boolean isExternalTable(String schemaName, String tableName) {
+        return false;
+    }
+
     protected List<DBObjectIdentity> listBaseTables(String schemaName, String tableNameLike)
             throws DataAccessException {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
