@@ -33,8 +33,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.task.TaskRejectedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.common.util.MapUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.Verify;
@@ -193,7 +195,7 @@ public class LogicalDatabaseService {
         Set<Long> physicalDBIds =
                 databaseMappingRepository.findByLogicalDatabaseId(logicalDatabaseId).stream()
                         .map(DatabaseMappingEntity::getPhysicalDatabaseId).collect(Collectors.toSet());
-        return databaseService.listDatabasesByIds(physicalDBIds);
+        return databaseService.listDatabasesDetailsByIds(physicalDBIds);
     }
 
     public Set<Long> listDataSourceIds(@NotNull Long logicalDatabaseId) {
@@ -291,6 +293,9 @@ public class LogicalDatabaseService {
                 dataNodesToExecute = LogicalDatabaseUtils.getDataNodesFromNotCreateTable(sql,
                         logicalDatabase.getDialectType(), logicalDatabase);
             }
+            if (CollectionUtils.isEmpty(dataNodesToExecute)) {
+                continue;
+            }
             RewriteResult rewriteResult = sqlRewriter.rewrite(
                     new RewriteContext(statement, logicalDatabase.getDialectType(), dataNodesToExecute));
             for (Map.Entry<DataNode, String> result : rewriteResult.getSqls().entrySet()) {
@@ -298,7 +303,10 @@ public class LogicalDatabaseService {
                 databaseId2Sqls.computeIfAbsent(databaseId, k -> new ArrayList<>()).add(result.getValue());
             }
         }
-        Map<Long, Database> id2Database = databaseService.listDatabasesByIds(databaseId2Sqls.keySet()).stream()
+        if (MapUtils.isEmpty(databaseId2Sqls)) {
+            return Collections.emptyList();
+        }
+        Map<Long, Database> id2Database = databaseService.listDatabasesDetailsByIds(databaseId2Sqls.keySet()).stream()
                 .collect(Collectors.toMap(Database::getId, db -> db));
         return databaseId2Sqls.entrySet().stream()
                 .map(entry -> PreviewSqlResp.builder().database(id2Database.getOrDefault(entry.getKey(), null))

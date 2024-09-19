@@ -105,8 +105,16 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
                     dataNodesToExecute = LogicalDatabaseUtils.getDataNodesFromNotCreateTable(sql, dialectType,
                             taskParameters.getLogicalDatabaseResp());
                 }
+                if (CollectionUtils.isEmpty(dataNodesToExecute)) {
+                    log.warn("There is no physical database to operate on, sql={}", sql);
+                    continue;
+                }
                 RewriteResult rewriteResult = sqlRewriter.rewrite(
                         new RewriteContext(statement, dialectType, dataNodesToExecute));
+                if (rewriteResult == null || MapUtils.isEmpty(rewriteResult.getSqls())) {
+                    log.warn("Cannot rewrite the sql, sql={}", sql);
+                    continue;
+                }
                 Map<Long, List<String>> databaseId2RewrittenSqls = rewriteResult.getSqls().entrySet().stream()
                         .collect(Collectors.groupingBy(
                                 entry -> entry.getKey().getDatabaseId(),
