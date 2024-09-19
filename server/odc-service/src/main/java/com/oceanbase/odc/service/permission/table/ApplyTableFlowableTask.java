@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.permission.table;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,6 +37,7 @@ import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
+import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingRepository;
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.metadb.iam.PermissionEntity;
@@ -52,6 +54,8 @@ import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter.ApplyTable;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableResult;
 import com.oceanbase.odc.service.task.TaskService;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.loaddump.utils.CollectionUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -88,6 +92,9 @@ public class ApplyTableFlowableTask extends BaseODCFlowTaskDelegate<ApplyTableRe
     @Autowired
     private DBObjectRepository dbObjectRepository;
 
+    @Autowired
+    private TableMappingRepository tableMappingRepository;
+
     private volatile boolean success = false;
     private volatile boolean failure = false;
     private Long creatorId;
@@ -108,7 +115,20 @@ public class ApplyTableFlowableTask extends BaseODCFlowTaskDelegate<ApplyTableRe
                     checkResourceAndPermission(parameter);
                     List<PermissionEntity> permissionEntities = new ArrayList<>();
                     Long organizationId = FlowTaskUtil.getOrganizationId(execution);
-                    for (ApplyTable table : parameter.getTables()) {
+                    Set<Long> logicalTableIds = parameter.getTables().stream().filter(t -> t.getType() == DBObjectType.LOGICAL_TABLE).map(ApplyTable::getTableId)
+                            .collect(Collectors.toSet());
+                    Set<ApplyTable> mappingPhysicalTables = new HashSet<>();
+                    if (CollectionUtils.isNotEmpty(logicalTableIds)) {
+                        mappingPhysicalTables.addAll(tableMappingRepository.findByLogicalTableIdIn(logicalTableIds).stream().map(t -> {
+                            ApplyTable table = new ApplyTable();
+                            // TODO
+                            table.setTableId(1L);
+                            table.setDatabaseId(t.getPhysicalDatabaseId());
+                            return table;
+                        }).collect(Collectors.toSet()));
+                    }
+                    mappingPhysicalTables.addAll(parameter.getTables());
+                    for (ApplyTable table : mappingPhysicalTables) {
                         for (DatabasePermissionType permissionType : parameter.getTypes()) {
                             PermissionEntity permissionEntity = new PermissionEntity();
                             permissionEntity.setAction(permissionType.getAction());

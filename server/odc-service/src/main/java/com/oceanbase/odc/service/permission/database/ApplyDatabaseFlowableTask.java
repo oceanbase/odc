@@ -16,11 +16,14 @@
 package com.oceanbase.odc.service.permission.database;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.logging.log4j.core.config.AppendersPlugin;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -36,6 +39,7 @@ import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
+import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingRepository;
 import com.oceanbase.odc.metadb.iam.PermissionEntity;
 import com.oceanbase.odc.metadb.iam.PermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserPermissionEntity;
@@ -43,6 +47,7 @@ import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
+import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.flow.task.BaseODCFlowTaskDelegate;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
@@ -81,6 +86,9 @@ public class ApplyDatabaseFlowableTask extends BaseODCFlowTaskDelegate<ApplyData
     @Autowired
     private UserPermissionRepository userPermissionRepository;
 
+    @Autowired
+    private DatabaseMappingRepository databaseMappingRepository;
+
     private volatile boolean success = false;
     private volatile boolean failure = false;
     private Long creatorId;
@@ -101,7 +109,23 @@ public class ApplyDatabaseFlowableTask extends BaseODCFlowTaskDelegate<ApplyData
                     checkResourceAndPermission(parameter);
                     List<PermissionEntity> permissionEntities = new ArrayList<>();
                     Long organizationId = FlowTaskUtil.getOrganizationId(execution);
-                    for (ApplyDatabase database : parameter.getDatabases()) {
+                    Set<Long> logicalDatabaseIds = parameter.getDatabases().stream().filter(d -> d.getType() == DatabaseType.LOGICAL)
+                            .map(ApplyDatabase::getId).collect(Collectors.toSet());
+                    Set<ApplyDatabase> mappingPhysicalDatabases = new HashSet<>();
+                    if (CollectionUtils.isNotEmpty(logicalDatabaseIds)) {
+                        Set<Long> mappingPhysicalDatabaseIds = databaseMappingRepository.findByLogicalDatabaseIdIn(logicalDatabaseIds).stream().map(e -> e.getPhysicalDatabaseId()).collect(
+                            Collectors.toSet());
+                        mappingPhysicalDatabases.addAll(databaseRepository.findAllById(mappingPhysicalDatabaseIds).stream().map(e -> {
+                            ApplyDatabase applyDatabase = new ApplyDatabase();
+                            applyDatabase.setId(e.getId());
+                            applyDatabase.setName(e.getName());
+                            applyDatabase.setType(e.getType());
+                            return applyDatabase;
+                        }).collect(Collectors.toSet()));
+                    }
+                    mappingPhysicalDatabases.addAll(parameter.getDatabases().stream().collect(Collectors.toSet()));
+
+                    for (ApplyDatabase database : mappingPhysicalDatabases) {
                         for (DatabasePermissionType permissionType : parameter.getTypes()) {
                             PermissionEntity permissionEntity = new PermissionEntity();
                             permissionEntity.setAction(permissionType.getAction());
