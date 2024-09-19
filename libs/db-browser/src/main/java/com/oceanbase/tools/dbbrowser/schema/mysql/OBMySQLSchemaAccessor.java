@@ -423,4 +423,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             return Boolean.FALSE;
         }
     }
+
+    @Override
+    protected void correctColumnPrecisionIfNeed(List<DBTableColumn> tableColumns) {}
 }

@@ -26,5 +26,7 @@ import lombok.Data;
 @Data
 @Builder
 public class QueryEnvironmentParam {
+
     private Boolean enabled;
+
 }

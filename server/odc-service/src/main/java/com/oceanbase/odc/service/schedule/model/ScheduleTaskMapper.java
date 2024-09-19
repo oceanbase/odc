@@ -25,6 +25,7 @@ import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
+import com.oceanbase.odc.service.loaddata.model.LoadDataParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 
@@ -59,6 +60,10 @@ public interface ScheduleTaskMapper {
                 return JsonUtils.fromJson(entity.getParametersJson(), OnlineSchemaChangeParameters.class);
             case SQL_PLAN:
                 return JsonUtils.fromJson(entity.getParametersJson(), SqlPlanParameters.class);
+            case LOGICAL_DATABASE_CHANGE:
+                return JsonUtils.fromJson(entity.getParametersJson(), LogicalDatabaseChangeParameters.class);
+            case LOAD_DATA:
+                return JsonUtils.fromJson(entity.getParametersJson(), LoadDataParameters.class);
             default:
                 throw new UnsupportedException();
         }

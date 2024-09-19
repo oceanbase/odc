@@ -169,7 +169,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     @Override
     protected void onProgressUpdate(Long taskId, TaskService taskService) {
         try {
-            Page<ScheduleTask> tasks = scheduleTaskService.list(Pageable.unpaged(), scheduleId);
+            Page<ScheduleTaskEntity> tasks = scheduleTaskService.listEntity(Pageable.unpaged(), scheduleId);
             if (tasks.getSize() == 0) {
                 log.info("List schedule task size is 0 by scheduleId {}.", scheduleId);
                 return;
@@ -183,7 +183,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
             TaskStatus dbStatus = flowTask.getStatus();
 
             Set<Long> currentManualSwapTableEnableTasks = new HashSet<>();
-            for (ScheduleTask task : tasks) {
+            for (ScheduleTaskEntity task : tasks) {
                 OnlineSchemaChangeScheduleTaskResult result = JsonUtils.fromJson(task.getResultJson(),
                         OnlineSchemaChangeScheduleTaskResult.class);
                 if (result.isManualSwapTableEnabled()) {
@@ -210,12 +210,12 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
 
     }
 
-    private void progressStatusUpdate(Page<ScheduleTask> tasks) {
+    private void progressStatusUpdate(Page<ScheduleTaskEntity> tasks) {
         int successfulTask = 0;
         int failedTask = 0;
         boolean canceled = false;
 
-        for (ScheduleTask task : tasks) {
+        for (ScheduleTaskEntity task : tasks) {
             TaskStatus taskStatus = task.getStatus();
             if (taskStatus == TaskStatus.DONE) {
                 successfulTask++;
@@ -235,7 +235,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         }
     }
 
-    private double singleTaskPercentage(ScheduleTask scheduleTask) {
+    private double singleTaskPercentage(ScheduleTaskEntity scheduleTask) {
         double percentage;
         switch (scheduleTask.getStatus()) {
             case PREPARING:

@@ -74,6 +74,9 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
                 if (parameters.isFullDatabase()) {
                     parameters.setTables(getAllTables(sourceSession, sourceDb.getName()));
                 }
+                if (parameters.getTables().isEmpty()) {
+                    throw new IllegalArgumentException("The table list is empty.");
+                }
                 DialectType sourceDbType = sourceSession.getDialectType();
                 DialectType targetDbType = targetSession.getDialectType();
                 InformationExtensionPoint sourceInformation =

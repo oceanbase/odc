@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.collaboration.environment;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -134,6 +135,19 @@ public class EnvironmentService {
                 .and(EnvironmentSpecs.enabledEquals(param.getEnabled()));
         return environmentRepository.findAll(specs)
                 .stream().map(this::entityToModel).collect(Collectors.toList());
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("odc internal usage")
+    public List<Environment> getByIdIn(@NotNull Collection<Long> ids) {
+        List<EnvironmentEntity> entity = environmentRepository.findByIdIn(ids);
+        return entity.stream().map(e -> {
+            Environment environment = new Environment();
+            environment.setId(e.getId());
+            environment.setName(e.getName());
+            environment.setStyle(e.getStyle());
+            return environment;
+        }).collect(Collectors.toList());
     }
 
     @SkipAuthorize("Internal usage")

@@ -67,6 +67,7 @@ import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import cn.hutool.core.collection.CollectionUtil;
+import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -489,12 +490,13 @@ public class SqlExecuteResult {
                 + getOriginSql() + "\nTotal: " + total + "\nTrack: " + track;
     }
 
-    @Getter
-    static class ExecutionTimer {
-        private final String name;
-        private final long startTimeMillis;
-        private final long totalDurationMicroseconds;
-        private final List<ExecutionStage> stages = new LinkedList<>();
+    @Data
+    @NoArgsConstructor
+    public static class ExecutionTimer {
+        private String name;
+        private long startTimeMillis;
+        private long totalDurationMicroseconds;
+        private List<ExecutionStage> stages = new LinkedList<>();
 
         public ExecutionTimer(@NonNull TraceWatch traceWatch) {
             List<TraceStage> subStages = traceWatch.getStageList();
@@ -509,12 +511,13 @@ public class SqlExecuteResult {
         }
     }
 
-    @Getter
-    static class ExecutionStage {
-        private final String stageName;
-        private final long startTimeMillis;
-        private final long totalDurationMicroseconds;
-        private final List<ExecutionStage> subStages = new LinkedList<>();
+    @Data
+    @NoArgsConstructor
+    public static class ExecutionStage {
+        private String stageName;
+        private long startTimeMillis;
+        private long totalDurationMicroseconds;
+        private List<ExecutionStage> subStages = new LinkedList<>();
 
         public ExecutionStage(@NonNull TraceStage traceStage) {
             List<TraceStage> stages = traceStage.getSubStageList();

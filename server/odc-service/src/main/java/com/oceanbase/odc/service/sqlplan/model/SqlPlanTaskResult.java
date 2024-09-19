@@ -15,18 +15,59 @@
  */
 package com.oceanbase.odc.service.sqlplan.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import lombok.Data;
 
 @Data
 public class SqlPlanTaskResult {
 
-    private Long totalStatements;
+    private long totalStatements = 0;
 
-    private Long finishedStatements;
+    private long finishedStatements = 0;
 
-    private Long successStatements;
+    private long succeedStatements = 0;
 
-    private Long failedStatements;
+    private long failedStatements = 0;
 
-    private String failedRecords;
+    private List<String> failedRecord;
+
+    /**
+     * sql execution json file download url
+     */
+    private String sqlExecuteJsonFileDownloadUrl;
+
+    /**
+     * DQL result set download url
+     */
+    private String csvResultSetZipDownloadUrl;
+
+    /**
+     * error record download url
+     */
+    private String errorRecordsFileDownloadUrl = null;
+
+
+    private void incrementFinishedStatements() {
+        this.finishedStatements++;
+    }
+
+    public void incrementSucceedStatements() {
+        this.succeedStatements++;
+        incrementFinishedStatements();
+    }
+
+    public void incrementFailedStatements() {
+        this.failedStatements++;
+        incrementFinishedStatements();
+    }
+
+    public void addFailedRecord(String record) {
+        if (this.failedRecord == null) {
+            this.failedRecord = new ArrayList<>();
+        }
+        this.failedRecord.add(record);
+    }
+
 }

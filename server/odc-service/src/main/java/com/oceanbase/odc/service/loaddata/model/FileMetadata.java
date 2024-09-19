@@ -13,41 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.core.shared.constant;
+package com.oceanbase.odc.service.loaddata.model;
 
-import org.springframework.context.i18n.LocaleContextHolder;
-
-import com.oceanbase.odc.common.i18n.Translatable;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
- * {@link Symbols}
- *
- * @author yh263208
- * @date 2024-05-09 21:54
- * @since ODC_release_4.2.4
+ * @author: liuyizhuo.lyz
+ * @date: 2024/8/29
  */
-public enum Symbols implements Translatable {
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class FileMetadata {
+
+    private String fileName;
 
     /**
-     * [
+     * 可读的文件大小。非必填
      */
-    LEFT_BRACKET,
-    /**
-     * ]
-     */
-    RIGHT_BRACKET,
-    /**
-     * ,
-     */
-    COMMA;
+    private String fileSize;
 
-    @Override
-    public String code() {
-        return name();
-    }
-
-    public String getLocalizedMessage() {
-        return translate(null, LocaleContextHolder.getLocale());
-    }
+    /**
+     * 文件大小(size of bytes)。非必填
+     */
+    private Long dataSize;
 
 }
