@@ -67,8 +67,7 @@ public class DBExternalTableSyncer extends AbstractDBObjectSyncer<TableExtension
     Set<String> getLatestObjectNames(@NonNull TableExtensionPoint extensionPoint,
             @NonNull Connection connection, @NonNull Database database) {
         return extensionPoint.list(connection, database.getName(), DBObjectType.EXTERNAL_TABLE).stream()
-                .map(DBObjectIdentity::getName)
-                .collect(Collectors.toSet());
+                .map(DBObjectIdentity::getName).collect(Collectors.toSet());
     }
 
     @Override

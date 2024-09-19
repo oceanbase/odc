@@ -102,11 +102,10 @@ public class DBTableService {
                             .collect(Collectors.toList()).size() > 0);
         }
         try {
-            DBTable table = connectionSession.getSyncJdbcExecutor(
+            return connectionSession.getSyncJdbcExecutor(
                     ConnectionSessionConstants.BACKEND_DS_KEY)
                     .execute((ConnectionCallback<DBTable>) con -> getTableExtensionPoint(connectionSession)
                             .getDetail(con, schemaName, tableName));
-            return table;
         } catch (Exception e) {
             log.warn("Query table information failed, table name=%s.", e);
             throw new UnexpectedException(String
