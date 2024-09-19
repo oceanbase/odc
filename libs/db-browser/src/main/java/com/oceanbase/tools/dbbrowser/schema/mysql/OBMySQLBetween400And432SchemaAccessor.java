@@ -53,7 +53,7 @@ public class OBMySQLBetween400And432SchemaAccessor extends OBMySQLSchemaAccessor
     }
 
     @Override
-    public Boolean isExternalTable(String schemaName, String tableName) {
-        return null;
+    public boolean isExternalTable(String schemaName, String tableName) {
+        return false;
     }
 }

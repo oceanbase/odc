@@ -67,7 +67,7 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
         table.setOwner(schemaName);
         table.setName(tableName);
         table.setColumns(columns);
-        if (!Boolean.TRUE.equals(accessor.isExternalTable(schemaName, tableName))) {
+        if (!accessor.isExternalTable(schemaName, tableName)) {
             /**
              * If the constraint name cannot be obtained through ddl of the table, then the constraint
              * information will still be obtained through DBSchemaAccessor

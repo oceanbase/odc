@@ -402,7 +402,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
-    public Boolean isExternalTable(String schemaName, String tableName) {
+    public boolean isExternalTable(String schemaName, String tableName) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append("SELECT table_type FROM information_schema.tables");
         if (StringUtils.isNotBlank(schemaName)) {
@@ -418,9 +418,9 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             throw new IllegalArgumentException("table name: " + tableName + " is not exist");
         }
         if (StringUtils.equalsIgnoreCase(tableType, "EXTERNAL TABLE")) {
-            return Boolean.TRUE;
+            return true;
         } else {
-            return Boolean.FALSE;
+            return false;
         }
     }
 

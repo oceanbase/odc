@@ -258,8 +258,8 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Boolean isExternalTable(String schemaName, String tableName) {
-        return null;
+    public boolean isExternalTable(String schemaName, String tableName) {
+        return false;
     }
 
     @Override

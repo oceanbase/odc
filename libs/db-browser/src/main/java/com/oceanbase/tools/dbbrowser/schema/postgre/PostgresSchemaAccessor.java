@@ -148,8 +148,8 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Boolean isExternalTable(String schemaName, String tableName) {
-        return null;
+    public boolean isExternalTable(String schemaName, String tableName) {
+        return false;
     }
 
     @Override

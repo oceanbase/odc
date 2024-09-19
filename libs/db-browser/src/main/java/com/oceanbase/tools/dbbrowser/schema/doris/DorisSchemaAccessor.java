@@ -236,8 +236,8 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Boolean isExternalTable(String schemaName, String tableName) {
-        return null;
+    public boolean isExternalTable(String schemaName, String tableName) {
+        return false;
     }
 
     protected List<DBObjectIdentity> listBaseTables(String schemaName, String tableNameLike)

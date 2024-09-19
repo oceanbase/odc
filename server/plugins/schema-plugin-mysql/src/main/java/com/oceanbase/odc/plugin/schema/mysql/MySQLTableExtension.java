@@ -46,7 +46,7 @@ public class MySQLTableExtension extends OBMySQLTableExtension {
         table.setName(tableName);
         table.setColumns(schemaAccessor.listTableColumns(schemaName, tableName));
         table.setPartition(schemaAccessor.getPartition(schemaName, tableName));
-        if (!Boolean.TRUE.equals(schemaAccessor.isExternalTable(schemaName, tableName))) {
+        if (!schemaAccessor.isExternalTable(schemaName, tableName)) {
             table.setConstraints(schemaAccessor.listTableConstraints(schemaName, tableName));
             table.setIndexes(schemaAccessor.listTableIndexes(schemaName, tableName));
             table.setType(DBObjectType.TABLE);

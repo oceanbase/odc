@@ -96,9 +96,10 @@ public interface DBSchemaAccessor {
     List<DBObjectIdentity> listExternalTables(String schemaName, String tableNameLike);
 
     /**
-     * If the current version of the data source does not support external table, null is returned
+     * Judge whether the table is an external table. If the current data source does not support
+     * external table feature,return false
      */
-    Boolean isExternalTable(String schemaName, String tableName);
+    boolean isExternalTable(String schemaName, String tableName);
 
     /**
      * Show all view names list in the specified schema
