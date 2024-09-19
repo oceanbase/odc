@@ -316,6 +316,12 @@ public class ScheduleTaskService {
         });
     }
 
+    public List<ScheduleTask> listByJobNames(Set<String> jobNames) {
+        return scheduleTaskRepository.findByJobNames(jobNames).stream()
+                .map(scheduleTaskMapper::entityToModel)
+                .collect(Collectors.toList());
+    }
+
     public List<ScheduleTaskEntity> listTaskByJobNameAndStatus(String jobName, List<TaskStatus> statuses) {
         return scheduleTaskRepository.findByJobNameAndStatusIn(jobName, statuses);
     }
