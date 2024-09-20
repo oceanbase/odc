@@ -30,6 +30,8 @@ public interface DatabaseMappingRepository extends OdcJpaRepository<DatabaseMapp
 
     List<DatabaseMappingEntity> findByLogicalDatabaseIdIn(Collection<Long> logicalDatabaseId);
 
+    List<DatabaseMappingEntity> findByPhysicalDatabaseIdIn(Collection<Long> physicalDatabaseId);
+
     @Transactional
     int deleteByLogicalDatabaseId(Long logicalDatabaseId);
 
