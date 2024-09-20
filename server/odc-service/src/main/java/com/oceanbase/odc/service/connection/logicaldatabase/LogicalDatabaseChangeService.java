@@ -40,7 +40,6 @@ import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDBChangeExecut
 import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDBExecutionRepository;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionStatus;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionResultWrapper;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalDBChangeExecutionUnit;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.SqlExecutionUnitResp;
@@ -117,15 +116,9 @@ public class LogicalDatabaseChangeService {
             if (!unitOpt.isPresent()) {
                 return false;
             }
-            LogicalDBChangeExecutionUnitEntity unit = unitOpt.get();
-            if (unit.getStatus() != ExecutionStatus.FAILED && unit.getStatus() != ExecutionStatus.TERMINATED) {
-                return false;
-            }
-            unit.setStatus(ExecutionStatus.SKIPPED);
-            executionRepository.save(unit);
             scheduleService.syncActionsToLogicalDatabaseTask(scheduleTaskId,
                     JobParametersKeyConstants.LOGICAL_DATABASE_CHANGE_SKIP_UNIT,
-                    unit.getExecutionId());
+                    unitOpt.get().getExecutionId());
         } finally {
             lock.unlock();
         }
@@ -145,15 +138,9 @@ public class LogicalDatabaseChangeService {
             if (!unitOpt.isPresent()) {
                 return false;
             }
-            LogicalDBChangeExecutionUnitEntity unit = unitOpt.get();
-            if (unit.getStatus() != ExecutionStatus.RUNNING) {
-                return false;
-            }
-            unit.setStatus(ExecutionStatus.TERMINATED);
-            executionRepository.save(unit);
             scheduleService.syncActionsToLogicalDatabaseTask(scheduleTaskId,
                     JobParametersKeyConstants.LOGICAL_DATABASE_CHANGE_TERMINATE_UNIT,
-                    unit.getExecutionId());
+                    unitOpt.get().getExecutionId());
 
         } finally {
             lock.unlock();
@@ -215,8 +202,7 @@ public class LogicalDatabaseChangeService {
             return 0;
         }
         Optional<LogicalDBChangeExecutionUnitEntity> last = executionUnits.stream().filter(
-                unit -> unit.getStatus() != ExecutionStatus.SUCCESS && unit.getStatus() != ExecutionStatus.SKIPPED)
-                .findFirst();
+                unit -> !unit.getStatus().isCompleted()).findFirst();
         if (last.isPresent()) {
             return Math.toIntExact(last.get().getExecutionOrder());
         } else {
