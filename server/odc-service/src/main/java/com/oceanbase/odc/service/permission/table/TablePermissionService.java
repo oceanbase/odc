@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.permission.table;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,6 +40,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import com.nimbusds.oauth2.sdk.util.MapUtils;
 import com.oceanbase.odc.common.util.TimeUtils;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
@@ -49,6 +51,8 @@ import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingEntity;
+import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingRepository;
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.metadb.iam.PermissionEntity;
@@ -70,6 +74,7 @@ import com.oceanbase.odc.service.permission.database.model.ExpirationStatusFilte
 import com.oceanbase.odc.service.permission.table.model.CreateTablePermissionReq;
 import com.oceanbase.odc.service.permission.table.model.QueryTablePermissionParams;
 import com.oceanbase.odc.service.permission.table.model.UserTablePermission;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -112,6 +117,9 @@ public class TablePermissionService {
 
     @Autowired
     private DBObjectRepository dbObjectRepository;
+
+    @Autowired
+    private TableMappingRepository tableMappingRepository;
 
     @Value("${odc.iam.permission.expired-retention-time-seconds:7776000}")
     private long expiredRetentionTimeSeconds;
@@ -166,9 +174,23 @@ public class TablePermissionService {
         if (!projectIds.contains(projectId)) {
             throw new AccessDeniedException();
         }
+        Set<Long> tableIds = new HashSet<>();
+        tableIds.addAll(req.getTableIds());
         List<DBObjectEntity> tables = dbObjectRepository.findByIdIn(req.getTableIds());
         Map<Long, DBObjectEntity> id2TableEntity = tables.stream()
                 .collect(Collectors.toMap(DBObjectEntity::getId, t -> t, (t1, t2) -> t1));
+        Map<Long, DBObjectEntity> id2LogicalTables = id2TableEntity.entrySet().stream()
+                .filter(entry -> entry.getValue().getType() == DBObjectType.LOGICAL_TABLE)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        if (MapUtils.isNotEmpty(id2LogicalTables)) {
+            tableIds.addAll(tableMappingRepository.findByLogicalTableIdIn(id2LogicalTables.keySet()).stream()
+                    .map(TableMappingEntity::getPhysicalTableId).collect(
+                            Collectors.toSet()));
+            tables = dbObjectRepository.findByIdIn(tableIds);
+            id2TableEntity = tables.stream().collect(Collectors.toMap(DBObjectEntity::getId, t -> t, (t1, t2) -> t1));
+        }
+
         Map<Long, Database> id2Database = databaseService
                 .listDatabasesByIds(tables.stream().map(DBObjectEntity::getDatabaseId).collect(Collectors.toList()))
                 .stream().collect(Collectors.toMap(Database::getId, d -> d, (d1, d2) -> d1));
@@ -187,7 +209,7 @@ public class TablePermissionService {
         Long creatorId = authenticationFacade.currentUserId();
         Date expireTime = req.getExpireTime() == null ? TimeUtils.getMySQLMaxDatetime()
                 : TimeUtils.getEndOfDay(req.getExpireTime());
-        for (Long tableId : req.getTableIds()) {
+        for (Long tableId : tableIds) {
             DBObjectEntity table = id2TableEntity.get(tableId);
             for (DatabasePermissionType permissionType : req.getTypes()) {
                 PermissionEntity entity = new PermissionEntity();

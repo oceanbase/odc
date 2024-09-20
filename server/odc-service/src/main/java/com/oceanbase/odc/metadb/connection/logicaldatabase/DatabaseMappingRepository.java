@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.connection.logicaldatabase;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
@@ -26,6 +27,8 @@ import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 public interface DatabaseMappingRepository extends OdcJpaRepository<DatabaseMappingEntity, Long> {
 
     List<DatabaseMappingEntity> findByLogicalDatabaseId(Long logicalDatabaseId);
+
+    List<DatabaseMappingEntity> findByLogicalDatabaseIdIn(Collection<Long> logicalDatabaseId);
 
     @Transactional
     int deleteByLogicalDatabaseId(Long logicalDatabaseId);
