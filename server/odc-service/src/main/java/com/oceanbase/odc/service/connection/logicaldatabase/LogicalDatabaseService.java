@@ -250,6 +250,8 @@ public class LogicalDatabaseService {
                 Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER));
         List<DatabaseEntity> databases = databaseRepository.findByIdIn(req.getPhysicalDatabaseIds());
         Verify.equals(databases.size(), req.getPhysicalDatabaseIds().size(), "physical database");
+        Verify.verify(databases.stream().allMatch(database -> DatabaseType.PHYSICAL == database.getType()),
+                "databases should all be the physical databases");
 
         if (!databases.stream().allMatch(database -> Objects.equals(req.getProjectId(), database.getProjectId()))) {
             throw new BadRequestException(
@@ -270,6 +272,18 @@ public class LogicalDatabaseService {
                 .map(DatabaseEntity::getAlias).collect(Collectors.toSet());
         if (aliasNames.contains(req.getAlias())) {
             throw new BadRequestException("alias name already exists, alias=" + req.getAlias());
+        }
+
+        List<DatabaseMappingEntity> mappings = databaseMappingRepository
+                .findByPhysicalDatabaseIdIn(databases.stream().map(DatabaseEntity::getId).collect(Collectors.toSet()));
+        if (!mappings.isEmpty()) {
+            Map<Long, Database> id2PhysicalDatabases = databases.stream().map(databaseMapper::entityToModel)
+                    .collect(Collectors.toMap(Database::getId, db -> db));
+            throw new BadRequestException(
+                    "physical databases already mapped to a logical database, physical database names: "
+                            + mappings.stream()
+                                    .map(mapping -> id2PhysicalDatabases.get(mapping.getPhysicalDatabaseId()).getName())
+                                    .collect(Collectors.joining(", ")));
         }
     }
 
