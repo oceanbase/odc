@@ -24,9 +24,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.i18n.LocaleContextHolder;
 
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskType;
-import com.oceanbase.odc.core.shared.exception.BadArgumentException;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -70,18 +69,17 @@ public class MultipleDatabaseChangePreprocessor implements Preprocessor {
         templateService.validateSizeAndNotDuplicated(ids);
         List<Database> databases = databaseService.listDatabasesDetailsByIds(ids);
         if (databases.size() < ids.size()) {
-            throw new BadArgumentException(ErrorCodes.BadArgument, "some of these databases do not exist");
+            throw new BadRequestException("some of these databases do not exist");
         }
         // All databases must belong to the project
         if (!databases.stream()
                 .allMatch(databaseEntity -> databaseEntity.getProject() != null && Objects.equals(
                         databaseEntity.getProject().getId(), parameters.getProjectId()))) {
-            throw new BadArgumentException(ErrorCodes.BadArgument,
+            throw new BadRequestException(
                     String.format("All databases must belong to the same project: %s", project.getName()));
         }
         if (databases.stream().map(x -> x.getDataSource().getType()).distinct().count() != 1) {
-            throw new BadArgumentException(ErrorCodes.BadArgument,
-                    "all databases must belong to the same data source type");
+            throw new BadRequestException("all databases must belong to the same data source type");
         }
         PreConditions.maxLength(parameters.getSqlContent(), "sql content",
                 flowTaskProperties.getSqlContentMaxLength());
