@@ -19,6 +19,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.oceanbase.odc.service.cloud.model.CloudProvider;
 
 import lombok.Data;
 
@@ -48,6 +49,10 @@ public class OBInstance {
      */
     @JsonAlias("status")
     private OBInstanceStatus state;
+
+    private CloudProvider cloudProvider;
+    private String region;
+    private OBInstanceRoleType clusterRole;
 
     /**
      * 当 type 为 CLUSTER 时表示该集群实例下的所有租户，如果集群下没有租户，则返回空 List；否则为 @code{NULL}

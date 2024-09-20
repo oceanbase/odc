@@ -35,12 +35,17 @@ public enum OBInstanceType implements Translatable {
     ORACLE_SERVERLESS("otenant_serverless"),
     DEDICATED("DEDICATED"),
     SHARED("SHARED"),
+    // 备份实例
+    BACKUP("backup"),
+    // 备集群实例
+    PRIMARY_STANDBY_CLUSTER("primary_standby_cluster"),
     // K8s独占集群模式
     K8s_DEDICATED("K8s_DEDICATED"),
     // K8s共享集群模式
     K8s_SHARED("K8s_SHARED"),
     ANALYTICAL_CLUSTER("ANALYTICAL_CLUSTER"),
-    KV_CLUSTER("KV_CLUSTER");
+    KV_CLUSTER("KV_CLUSTER"),
+    UNKNOWN("UNKNOWN");
 
     @Getter
     private String value;
@@ -67,6 +72,15 @@ public enum OBInstanceType implements Translatable {
     @Override
     public String code() {
         return name();
+    }
+
+    public boolean isCluster() {
+        return this == CLUSTER || this == DEDICATED || this == SHARED || this == BACKUP
+                || this == PRIMARY_STANDBY_CLUSTER || this == K8s_DEDICATED || this == UNKNOWN;
+    }
+
+    public boolean isTenantInstance() {
+        return this == MYSQL_TENANT || this == ORACLE_TENANT;
     }
 
 }

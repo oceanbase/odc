@@ -46,6 +46,8 @@ public class OBTenant {
      */
     private OBTenantMode tenantMode;
 
+    private OBTenantStatus status;
+
     /**
      * 集群 ID
      */
