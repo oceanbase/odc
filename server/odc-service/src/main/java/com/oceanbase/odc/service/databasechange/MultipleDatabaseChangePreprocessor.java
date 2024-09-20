@@ -69,7 +69,7 @@ public class MultipleDatabaseChangePreprocessor implements Preprocessor {
         templateService.validateSizeAndNotDuplicated(ids);
         List<Database> databases = databaseService.listDatabasesDetailsByIds(ids);
         if (databases.size() < ids.size()) {
-            throw new BadRequestException("some of these databases do not exist");
+            throw new BadRequestException("Some of these databases do not exist");
         }
         // All databases must belong to the project
         if (!databases.stream()
@@ -79,7 +79,7 @@ public class MultipleDatabaseChangePreprocessor implements Preprocessor {
                     String.format("All databases must belong to the same project: %s", project.getName()));
         }
         if (databases.stream().map(x -> x.getDataSource().getType()).distinct().count() != 1) {
-            throw new BadRequestException("all databases must belong to the same data source type");
+            throw new BadRequestException("All databases must belong to the same data source type");
         }
         PreConditions.maxLength(parameters.getSqlContent(), "sql content",
                 flowTaskProperties.getSqlContentMaxLength());
