@@ -18,9 +18,9 @@ grammar LogicalTableExpression;
 @header {
 package com.oceanbase.odc.service.connection.logicaldatabase;
 }
-logicalTableExpressionList: logicalTableExpression (COMMA logicalTableExpression)* ;
+logicalTableExpressionList: logicalTableExpression (COMMA logicalTableExpression)* EOF;
 
-logicalTableExpression: schemaExpression DOT tableExpression ;
+logicalTableExpression: schemaExpression DOT tableExpression;
 
 schemaExpression: (schemaSliceRangeWithBracket IDENTIFIER?)* IDENTIFIER (schemaSliceRangeWithBracket IDENTIFIER?)* ;
 
