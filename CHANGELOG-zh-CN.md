@@ -9,11 +9,9 @@
 - 新增逻辑库表功能，支持逻辑库表的自动识别、结构一致性检查、DDL 变更 等
 - SQL 检查规则新增 SQL 影响行数检查，支持 OceanBase MySQL 和 MySQL 数据源
 
-
 数据生命周期管理
 
 - 新增 Oracle --> OceanBase Oracle 以及 PostgreSQL --> OceanBase MySQL 的数据归档链路
-
 
 导入导出
 
@@ -26,6 +24,7 @@
 外部集成
 
 - SSO 集成支持 Azure OAuth 2.0
+
 
 ### 易用性改进
 
@@ -43,6 +42,7 @@
 - 更新用户登录密码的强度要求为：长度 8~32 位, 包含以下四种类型字符至少三种及以上：数字（0~9）、大写字母（A~Z）、小写字母(a~z)、特殊符号：全部的英文特殊字符
 
 ### 缺陷修复
+
 - 结构对比任务生成的变更 SQL 里，`tinyint` 列类型（MySQL 数据源）的精度不正确
 - 分区名被误识别为表名，导致报没有对应表权限
 - `rename table old_table to new_table` 中的 new_table 被误判断为需要 new_table 的表权限
