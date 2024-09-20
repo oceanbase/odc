@@ -277,8 +277,8 @@ public class LogicalDatabaseService {
         List<DatabaseMappingEntity> mappings = databaseMappingRepository
                 .findByPhysicalDatabaseIdIn(databases.stream().map(DatabaseEntity::getId).collect(Collectors.toSet()));
         if (!mappings.isEmpty()) {
-            Map<Long, Database> id2PhysicalDatabases = databases.stream().map(databaseMapper::entityToModel)
-                    .collect(Collectors.toMap(Database::getId, db -> db));
+            Map<Long, DatabaseEntity> id2PhysicalDatabases =
+                    databases.stream().collect(Collectors.toMap(DatabaseEntity::getId, db -> db));
             throw new BadRequestException(
                     "physical databases already mapped to a logical database, physical database names: "
                             + mappings.stream()
