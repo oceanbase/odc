@@ -79,6 +79,10 @@ public class MultipleDatabaseChangePreprocessor implements Preprocessor {
             throw new BadArgumentException(ErrorCodes.BadArgument,
                     String.format("All databases must belong to the same project: %s", project.getName()));
         }
+        if (databases.stream().map(x -> x.getDataSource().getType()).distinct().count() != 1) {
+            throw new BadArgumentException(ErrorCodes.BadArgument,
+                    "all databases must belong to the same data source type");
+        }
         PreConditions.maxLength(parameters.getSqlContent(), "sql content",
                 flowTaskProperties.getSqlContentMaxLength());
         // must reset the batchId when initiating a multiple database flow again
