@@ -227,14 +227,20 @@ public class SqlExecuteResult {
         // first get all table column comments and then get editable table column info
         // cared tables
         Set<TableIdentity> caredTables = new TreeSet<>();
+        // 获取结果集元数据中的字段元数据列表
         List<JdbcColumnMetaData> fields = this.resultSetMetaData.getFieldMetaDataList();
+        // 遍历字段元数据列表
         for (JdbcColumnMetaData field : fields) {
+            // 如果字段的模式名称和表名称都不为空，则将其添加到关心的表列表中
             if (Objects.nonNull(field.schemaName()) && Objects.nonNull(field.getTableName())) {
                 caredTables.add(TableIdentity.of(field.schemaName(), field.getTableName()));
             }
+            // 创建一个新的ODCTable对象
             OdcTable currentTableOrView = new OdcTable();
+            // 设置数据库名称和表名称
             currentTableOrView.setDatabaseName(field.schemaName());
             currentTableOrView.setTableName(field.getTableName());
+            // 如果字段类型为ROWID，则创建一个新的DBTableColumn对象，并将其添加到结果列列表中
             if (Types.ROWID == field.getColumnType()) {
                 DBTableColumn column = new DBTableColumn();
                 column.setTableName(field.getTableName());
@@ -242,32 +248,44 @@ public class SqlExecuteResult {
                 column.setTypeName(OdcConstants.ROWID);
                 resultColumnList.add(column);
             } else {
+                // 否则，将字段名称添加到当前表或视图的列名列表中
                 table2ColumnNames
-                        .computeIfAbsent(currentTableOrView, names -> new ArrayList<>()).add(field.getColumnName());
+                    .computeIfAbsent(currentTableOrView, names -> new ArrayList<>()).add(field.getColumnName());
             }
         }
         // collect all cared column meta
+        // 创建一个Map对象，用于存储列标识和数据库表列的对应关系
         Map<ColumnIdentity, DBTableColumn> columnMap = new HashMap<>();
+        // 遍历关心的表
         for (TableIdentity table : caredTables) {
             try {
+                // 获取表中的所有列
                 List<DBTableColumn> columns =
-                        schemaAccessor.listTableColumns(table.getSchemaName(), table.getTableName());
+                    schemaAccessor.listTableColumns(table.getSchemaName(), table.getTableName());
+                // 将表中的每一列及其对应的表标识作为键，将列对象作为值，存入Map中
                 for (DBTableColumn column : columns) {
                     columnMap.put(ColumnIdentity.of(table, column.getName()), column);
                 }
             } catch (Exception e) {
+                // 如果获取列列表失败，则记录日志
                 log.warn("get column list failed, table={}, reason={}",
-                        table, ExceptionUtils.getSimpleReason(e));
+                    table, ExceptionUtils.getSimpleReason(e));
             }
         }
         // attach column comment into field metadata
+        // 获取结果集元数据中的字段元数据列表
         fields = this.resultSetMetaData.getFieldMetaDataList();
+        // 遍历字段元数据列表
         for (JdbcColumnMetaData field : fields) {
+            // 判断字段的模式名称、表名和列名是否为空
             if (Objects.nonNull(field.schemaName()) && Objects.nonNull(field.getTableName())
-                    && Objects.nonNull(field.getColumnName())) {
+                && Objects.nonNull(field.getColumnName())) {
+                // 根据字段的模式名称、表名和列名获取对应的DBTableColumn对象
                 DBTableColumn column = columnMap
-                        .get(ColumnIdentity.of(field.schemaName(), field.getTableName(), field.getColumnName()));
+                    .get(ColumnIdentity.of(field.schemaName(), field.getTableName(), field.getColumnName()));
+                // 如果获取到了DBTableColumn对象
                 if (Objects.nonNull(column)) {
+                    // 设置字段的注释为DBTableColumn对象的注释
                     field.setColumnComment(column.getComment());
                 }
             }
@@ -279,27 +297,36 @@ public class SqlExecuteResult {
         // first assume a table related query, then assume a view related query
         // if neither, then not editable
         List<DBTableColumn> dbTableColumns =
-                schemaAccessor.listTableColumns(resultTable.getDatabaseName(), resultTable.getTableName());
+            schemaAccessor.listTableColumns(resultTable.getDatabaseName(), resultTable.getTableName());
 
         if (!CollectionUtils.isEmpty(dbTableColumns)) {
+            // 遍历表的列信息
             for (DBTableColumn column : dbTableColumns) {
+                // 如果视图的列名包含在指定的列名列表中，则将该列信息添加到结果列表中
                 if (table2ColumnNames.get(resultTable).contains(column.getName())) {
                     // columns order by table definitions
+                    // 按照表定义的顺序添加列信息
                     resultColumnList.add(column);
                 }
             }
         } else if (AllFeatures.getByConnectType(connectionSession.getConnectType()).supportsViewObject()) {
+            // 获取视图的信息
             DBView dbView = schemaAccessor.getView(resultTable.getDatabaseName(), resultTable.getTableName());
             if (!CollectionUtils.isEmpty(dbView.getColumns())) {
+                // 遍历视图的列信息
                 for (DBTableColumn column : dbView.getColumns()) {
+                    // 如果视图的列名包含在指定的列名列表中，则将该列信息添加到结果列表中
                     if (table2ColumnNames.get(resultTable).contains(column.getName())) {
+                        // 按照表定义的顺序添加列信息
                         resultColumnList.add(column);
                     }
                 }
             } else {
+                // 无法获取表或视图的信息
                 log.info("Cannot retrieve neither table nor view info");
             }
         }
+        // 设置结果集的列信息
         resultSetMetaData.setColumnList(resultColumnList);
     }
 

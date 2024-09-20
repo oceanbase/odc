@@ -59,8 +59,8 @@ public abstract class AbstractDBColumnSyncer<T extends ExtensionPoint> implement
     /**
      * 同步数据库表结构
      *
-     * @param connection 数据库连接
-     * @param database 数据库对象
+     * @param connection  数据库连接
+     * @param database    数据库对象
      * @param dialectType 方言类型
      */
     @Override
@@ -70,41 +70,37 @@ public abstract class AbstractDBColumnSyncer<T extends ExtensionPoint> implement
         if (extensionPoint == null) {
             return;
         }
-        // 获取最新的表结构信息
+        // 去业务库中获取最新的map数据库对象2字段对象
         Map<String, Set<String>> latestObject2Columns = getLatestObjectToColumns(extensionPoint, connection, database);
-        // 从元数据库中获取map：表名2表对象
+        // 获取odc元数据中已存在的table，view和external table类型的map数据库对象名称2数据库对象
         Map<String, DBObjectEntity> existingObject2Entity =
-                dbObjectRepository.findByDatabaseIdAndTypeIn(database.getId(), getColumnRelatedObjectTypes()).stream()
-                        .collect(Collectors.toMap(DBObjectEntity::getName, e -> e, (e1, e2) -> e1));
+            dbObjectRepository.findByDatabaseIdAndTypeIn(database.getId(), getColumnRelatedObjectTypes()).stream()
+                .collect(Collectors.toMap(DBObjectEntity::getName, e -> e, (e1, e2) -> e1));
         if (CollectionUtils.isEmpty(existingObject2Entity.entrySet())) {
             return;
         }
-        // 获取元数据库中已存在的表对象的ID列表
+        // 获取元数据库中已存在的数据库对象的ID列表
         Set<Long> existingObjectIds =
-                existingObject2Entity.values().stream().map(DBObjectEntity::getId).collect(Collectors.toSet());
-        // 获取元数据库中已存在的map：列对象ID2列对象
+            existingObject2Entity.values().stream().map(DBObjectEntity::getId).collect(Collectors.toSet());
+        // 根据existingObjectIds获取元数据库中已存在的map数据库对象2列对象
         Map<Long, List<DBColumnEntity>> existingObjectId2ColumnEntities =
-                dbColumnRepository.findByDatabaseIdAndObjectIdIn(database.getId(), existingObjectIds).stream()
-                        .collect(Collectors.groupingBy(DBColumnEntity::getObjectId));
+            dbColumnRepository.findByDatabaseIdAndObjectIdIn(database.getId(), existingObjectIds).stream()
+                .collect(Collectors.groupingBy(DBColumnEntity::getObjectId));
         // Insert columns that are not in the existing column list
-        // 插入不在已存在列表中的列
+        // 插入不存在的列
         List<DBColumnEntity> toBeInserted = new ArrayList<>();
+        // 删除已经不存在的列
         List<DBColumnEntity> toBeDeleted = new ArrayList<>();
-        // 遍历现有对象和实体
+        // 遍历元数据库中已存在的map数据库对象2列对象，判断是否需要插入和删除列信息
         for (Entry<String, DBObjectEntity> entry : existingObject2Entity.entrySet()) {
             String objectName = entry.getKey();
             DBObjectEntity objectEntity = entry.getValue();
-            // 获取最新对象的列
             Set<String> latestColumns = latestObject2Columns.getOrDefault(objectName, new HashSet<>());
-            // 获取现有对象的列实体
             List<DBColumnEntity> existingColumns =
                 existingObjectId2ColumnEntities.getOrDefault(objectEntity.getId(), new ArrayList<>());
-            // 获取现有对象的列名
             Set<String> existingColumnNames =
                 existingColumns.stream().map(DBColumnEntity::getName).collect(Collectors.toSet());
-            // 遍历最新对象的列
             for (String latestColumn : latestColumns) {
-                // 如果现有对象中不存在该列，则添加到待插入列表中
                 if (!existingColumnNames.contains(latestColumn)) {
                     DBColumnEntity columnEntity = new DBColumnEntity();
                     columnEntity.setName(latestColumn);
@@ -114,21 +110,20 @@ public abstract class AbstractDBColumnSyncer<T extends ExtensionPoint> implement
                     toBeInserted.add(columnEntity);
                 }
             }
-            // 删除不在最新列表中的列
-            // 遍历现有对象的列
             for (DBColumnEntity existingColumn : existingColumns) {
-                // 如果最新对象中不存在该列，则添加到待删除列表中
                 if (!latestColumns.contains(existingColumn.getName())) {
                     toBeDeleted.add(existingColumn);
                 }
             }
         }
+        // 批量插入列信息
         if (CollectionUtils.isNotEmpty(toBeInserted)) {
             dbColumnRepository.batchCreate(toBeInserted, BATCH_SIZE);
         }
+        // 批量删除列信息
         if (CollectionUtils.isNotEmpty(toBeDeleted)) {
             dbColumnRepository
-                    .deleteByIds(toBeDeleted.stream().map(DBColumnEntity::getId).collect(Collectors.toList()));
+                .deleteByIds(toBeDeleted.stream().map(DBColumnEntity::getId).collect(Collectors.toList()));
         }
     }
 
