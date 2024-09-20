@@ -20,10 +20,11 @@ import java.util.List;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,16 +32,14 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.common.util.WebResponseUtils;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
-import com.oceanbase.odc.service.flow.model.BinaryDataResult;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.ChangeScheduleResp;
 import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
@@ -58,9 +57,9 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskListOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
-import cn.hutool.core.collection.CollUtil;
 import io.swagger.annotations.ApiOperation;
 
 /**
@@ -139,11 +138,11 @@ public class ScheduleController {
     @ApiOperation(value = "DownloadScheduleTaskLog", notes = "download full log")
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/log/download",
             method = RequestMethod.GET)
-    public SuccessResponse<InputStreamResource> downloadScheduleTaskLog(@PathVariable Long scheduleId,
+    public ResponseEntity<Resource> downloadScheduleTaskLog(@PathVariable Long scheduleId,
             @PathVariable Long taskId) {
-        List<BinaryDataResult> results = scheduleService.downloadLog(scheduleId, taskId);
-        PreConditions.validExists(ResourceType.ODC_FILE, "id", taskId, () -> CollUtil.isNotEmpty(results));
-        return Responses.single(new InputStreamResource(results.get(0).getInputStream()));
+        return WebResponseUtils.getFileAttachmentResponseEntity(
+                scheduleService.downloadLog(scheduleId, taskId),
+                LogUtils.generateScheduleTaskLogFileName(scheduleId, taskId));
     }
 
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}", method = RequestMethod.GET)

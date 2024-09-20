@@ -19,6 +19,7 @@ import java.io.File;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -38,7 +39,6 @@ import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
-import cn.hutool.core.io.FileUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -80,7 +80,8 @@ public class FlowTaskInstanceLoggerService {
     }
 
     @SneakyThrows
-    private String getLogContent(Optional<TaskEntity> taskEntityOptional, OdcTaskLogLevel level, Long flowInstanceId) {
+    private String getLogContent(Optional<TaskEntity> taskEntityOptional, OdcTaskLogLevel level,
+            Long flowInstanceId) {
         if (!taskEntityOptional.isPresent()) {
             log.warn("get log failed, flowInstanceId={}", flowInstanceId);
             return LogUtils.DEFAULT_LOG_CONTENT;
@@ -95,7 +96,7 @@ public class FlowTaskInstanceLoggerService {
     }
 
     @SneakyThrows
-    public File downloadLog(Long flowInstanceId) {
+    public Resource downloadLog(Long flowInstanceId) {
         Optional<TaskEntity> taskEntityOptional =
                 flowTaskInstanceService.getLogDownloadableTaskEntity(flowInstanceId, false);
         TaskEntity taskEntity = taskEntityOptional
@@ -104,25 +105,25 @@ public class FlowTaskInstanceLoggerService {
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
             ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
             DispatchResponse response = requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
-            return response.getContentByType(new TypeReference<SuccessResponse<File>>() {}).getData();
+            return response.getContentByType(new TypeReference<SuccessResponse<Resource>>() {}).getData();
         }
-        return getLogFile(taskEntity.getCreatorId(), taskEntity.getId() + "", taskEntity.getTaskType(),
-                OdcTaskLogLevel.ALL);
+        return getLogDataWithResponseClass(taskEntity.getCreatorId(), taskEntity.getId() + "", taskEntity.getTaskType(),
+                OdcTaskLogLevel.ALL, Resource.class);
     }
 
-    public File getLogFile(Long userId, String flowInstanceId, TaskType type, OdcTaskLogLevel logLevel) {
+    public <T> T getLogDataWithResponseClass(Long userId, String flowInstanceId, TaskType type,
+            OdcTaskLogLevel logLevel, Class<T> responseClass) {
         String logFilePath = taskService.getLogFilePath(userId, flowInstanceId, type, logLevel);
         try {
-            return taskService.getLogFile(logFilePath);
+            File logFile = taskService.getLogFile(logFilePath);
+            return LogUtils.getLogDataWithResponseClass(logFile, responseClass, loggerProperty);
         } catch (NotFoundException ex) {
             log.warn("Task log file not found, flowInstanceId={}, logFilePath={}", flowInstanceId, logFilePath);
-            return FileUtil.writeUtf8String(LogUtils.DEFAULT_LOG_CONTENT, logFilePath);
+            return LogUtils.getLogDataWithResponseClass(LogUtils.DEFAULT_LOG_CONTENT, responseClass);
         }
     }
 
     private String getLog(Long userId, String jobId, TaskType type, OdcTaskLogLevel logLevel) {
-        return LogUtils.getLatestLogContent(getLogFile(userId, jobId, type, logLevel),
-                loggerProperty.getMaxLines(),
-                loggerProperty.getMaxSize());
+        return getLogDataWithResponseClass(userId, jobId, type, logLevel, String.class);
     }
 }
