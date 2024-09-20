@@ -185,7 +185,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         jdbcUrlParams.put("allowUrlInLocalInfile", "false");
         jdbcUrlParams.put("allowLoadLocalInfileInPath", "");
         jdbcUrlParams.put("autoDeserialize", "false");
-        // 走代理服务时，需要添加该参数，防止走本地 DNS 解析
+        // prevent local DNS resolution when using a proxy service
         if (jdbcUrlParams.containsKey("socksProxyHost")) {
             jdbcUrlParams.put("socksProxyRemoteDns", "true");
         }
