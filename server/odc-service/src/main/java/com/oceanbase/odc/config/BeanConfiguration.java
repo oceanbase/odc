@@ -19,6 +19,7 @@ import static com.oceanbase.odc.core.shared.constant.OdcConstants.DEFAULT_MASK_V
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.annotation.PostConstruct;
@@ -192,6 +193,17 @@ public class BeanConfiguration {
         @Override
         public boolean supportsCloudParentUid() {
             return false;
+        }
+
+        @Override
+        public OBDatabaseUser createDatabaseUser(String instanceId, String tenantId, OBDatabaseUser user,
+                Map<String, String> roles) {
+            throw new UnsupportedException("CloudMetadata not supported");
+        }
+
+        @Override
+        public void deleteDatabaseUsers(String instanceId, String tenantId, List<String> users) {
+            throw new UnsupportedException("CloudMetadata not supported");
         }
     }
 
