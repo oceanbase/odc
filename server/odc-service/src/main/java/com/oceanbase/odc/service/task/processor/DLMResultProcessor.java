@@ -60,8 +60,10 @@ public class DLMResultProcessor implements ResultProcessor {
             log.info("Create or update dlm tableUnits success,jobIdentity={},scheduleTaskId={}",
                     result.getJobIdentity(),
                     dlmTableUnits.get(0).getScheduleTaskId());
-            TaskStatus taskStatus = dlmService.getTaskStatus(dlmTableUnits);
-            taskService.updateStatusById(dlmTableUnits.get(0).getScheduleTaskId(), taskStatus);
+            TaskStatus taskStatus = taskService.nullSafeGetById(dlmTableUnits.get(0).getScheduleTaskId()).getStatus();
+            if(taskStatus != TaskStatus.RUNNING){
+                taskService.updateStatusById(dlmTableUnits.get(0).getScheduleTaskId(), TaskStatus.RUNNING);
+            }
             log.info("Update schedule task status to {} success", taskStatus);
         } catch (Exception e) {
             log.warn("Refresh result failed.", e);
