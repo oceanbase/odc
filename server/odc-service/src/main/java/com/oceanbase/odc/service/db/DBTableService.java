@@ -151,8 +151,6 @@ public class DBTableService {
             @NotNull GenerateUpdateTableDDLReq req) {
         String ddl;
         if (ConnectionSessionUtil.isLogicalSession(session)) {
-            preHandleLogicalTable(req.getPrevious());
-            preHandleLogicalTable(req.getCurrent());
             ddl = DBBrowser.objectEditor().tableEditor()
                     .setDbVersion("4.0.0")
                     .setType(session.getDialectType().getDBBrowserDialectTypeName()).create()

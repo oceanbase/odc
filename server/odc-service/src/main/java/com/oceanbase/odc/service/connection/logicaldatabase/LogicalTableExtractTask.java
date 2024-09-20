@@ -143,7 +143,6 @@ public class LogicalTableExtractTask implements Runnable {
                     physicalTableEntity.setOrganizationId(logicalDatabase.getOrganizationId());
                     physicalTableEntity.setPhysicalDatabaseId(dataNode.getDatabaseId());
                     physicalTableEntity.setPhysicalDatabaseName(dataNode.getSchemaName());
-                    physicalTableEntity.setLogicalTableId(dataNode.getTableId());
                     physicalTableEntity.setPhysicalTableId(dataNode.getTableId());
                     physicalTableEntity.setPhysicalTableName(dataNode.getTableName());
                     physicalTableEntity.setExpression(table.getFullNameExpression());
