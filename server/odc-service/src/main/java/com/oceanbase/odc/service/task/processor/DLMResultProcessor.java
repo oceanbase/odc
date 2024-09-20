@@ -61,7 +61,7 @@ public class DLMResultProcessor implements ResultProcessor {
                     result.getJobIdentity(),
                     dlmTableUnits.get(0).getScheduleTaskId());
             TaskStatus taskStatus = taskService.nullSafeGetById(dlmTableUnits.get(0).getScheduleTaskId()).getStatus();
-            if(taskStatus != TaskStatus.RUNNING){
+            if (taskStatus != TaskStatus.RUNNING) {
                 taskService.updateStatusById(dlmTableUnits.get(0).getScheduleTaskId(), TaskStatus.RUNNING);
             }
             log.info("Update schedule task status to {} success", taskStatus);
