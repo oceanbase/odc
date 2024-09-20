@@ -61,7 +61,7 @@ public class ExecutionSubGroupUnit<Input, Result> {
             try {
                 if (v.getStatus() == ExecutionStatus.RUNNING) {
                     ExecutionResult<Result> result = callback.execute(context);
-                    log.info("ExecutionUnit execute success, executionId={}", id);
+                    log.info("ExecutionUnit execute done, executionId={}", id);
                     return result;
                 }
                 log.warn("Abort to execute, as the ExecutionUnit({}) is not in RUNNING status, executionId={}",
@@ -78,11 +78,20 @@ public class ExecutionSubGroupUnit<Input, Result> {
     public void terminate(ExecutionGroupContext<Input, Result> context) {
         context.setExecutionResult(id, (k, v) -> {
             if (v.getStatus() == ExecutionStatus.RUNNING) {
+                log.info("ExecutionUnit starts to terminate, executionId={}", id);
+                v.setStatus(ExecutionStatus.TERMINATING);
+            }
+            return v;
+        });
+        context.setExecutionResult(id, (k, v) -> {
+            if (v.getStatus() == ExecutionStatus.TERMINATING) {
                 try {
                     callback.terminate(context);
                     v.setStatus(ExecutionStatus.TERMINATED);
+                    log.info("ExecutionUnit terminated, executionId={}", id);
                 } catch (Exception e) {
                     log.warn("ExecutionUnit terminate failed, executionId={}", id, e);
+                    v.setStatus(ExecutionStatus.TERMINATE_FAILED);
                 }
             }
             return v;
@@ -91,7 +100,16 @@ public class ExecutionSubGroupUnit<Input, Result> {
 
     public void skip(ExecutionGroupContext<Input, Result> context) {
         context.setExecutionResult(id, (k, v) -> {
-            if (v.getStatus() == ExecutionStatus.FAILED || v.getStatus() == ExecutionStatus.TERMINATED) {
+            if (v.getStatus() == ExecutionStatus.FAILED || v.getStatus() == ExecutionStatus.TERMINATED
+                    || v.getStatus() == ExecutionStatus.TERMINATE_FAILED) {
+                log.info("ExecutionUnit starts to skip, executionId={}", id);
+                v.setStatus(ExecutionStatus.SKIPPING);
+            }
+            return v;
+        });
+        context.setExecutionResult(id, (k, v) -> {
+            if (v.getStatus() == ExecutionStatus.SKIPPING) {
+                log.info("ExecutionUnit skip done, executionId={}", id);
                 v.setStatus(ExecutionStatus.SKIPPED);
             }
             return v;
