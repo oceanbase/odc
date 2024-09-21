@@ -141,9 +141,8 @@ public class ScheduleController {
     public ResponseEntity<InputStreamResource> downloadScheduleTaskLog(@PathVariable Long scheduleId,
             @PathVariable Long taskId) {
         return WebResponseUtils.getFileAttachmentResponseEntity(
-            scheduleService.downloadLog(scheduleId, taskId),
-            LogUtils.generateScheduleTaskLogFileName(scheduleId, taskId)
-        );
+                scheduleService.downloadLog(scheduleId, taskId),
+                LogUtils.generateScheduleTaskLogFileName(scheduleId, taskId));
     }
 
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}", method = RequestMethod.GET)

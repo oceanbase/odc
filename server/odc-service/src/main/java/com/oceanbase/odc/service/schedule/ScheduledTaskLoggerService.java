@@ -130,11 +130,11 @@ public class ScheduledTaskLoggerService {
             PreConditions.notNull(jobEntity, "job not found by id " + jobId);
             if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
                 String attributeKey =
-                    OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
-                        : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
+                        OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
+                                : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
                 Optional<String> objId = taskFrameworkService.findByJobIdAndAttributeKey(jobId, attributeKey);
                 Optional<String> bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobId,
-                    JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
+                        JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
                 if (objId.isPresent() && bucketName.isPresent()) {
                     return cloudObjectStorageService.generateDownloadUrl(objId.get()).toString();
                 }
@@ -146,9 +146,9 @@ public class ScheduledTaskLoggerService {
 
     @SneakyThrows
     private void consumeLogFromTaskFramework(Long jobId, OdcTaskLogLevel level,
-        Consumer<File> logFileConsumer,
-        Consumer<String> logContentConsumer,
-        Consumer<ExecutorIdentifier> jobDispatcherConsumer) {
+            Consumer<File> logFileConsumer,
+            Consumer<String> logContentConsumer,
+            Consumer<ExecutorIdentifier> jobDispatcherConsumer) {
         JobEntity jobEntity = taskFrameworkService.find(jobId);
         PreConditions.notNull(jobEntity, "job not found by id " + jobId);
         if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
@@ -157,10 +157,10 @@ public class ScheduledTaskLoggerService {
             }
 
             String attributeKey = OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
-                : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
+                    : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
             Optional<String> objId = taskFrameworkService.findByJobIdAndAttributeKey(jobId, attributeKey);
             Optional<String> bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobId,
-                JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
+                    JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
             String logFilePath = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
             if (objId.isPresent() && bucketName.isPresent()) {
                 if (log.isDebugEnabled()) {
@@ -197,7 +197,7 @@ public class ScheduledTaskLoggerService {
                 jobDispatcherConsumer.accept(ei);
             } catch (Exception ex) {
                 log.warn("Forward to remote odc occur error, jobId={}, executorIdentifier={}",
-                    jobEntity.getId(), jobEntity.getExecutorIdentifier(), ex);
+                        jobEntity.getId(), jobEntity.getExecutorIdentifier(), ex);
             }
         }
         File file = new File(LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level));
@@ -206,8 +206,8 @@ public class ScheduledTaskLoggerService {
 
     private File getLogFileFromCurrentMachine(ScheduleTaskEntity scheduleTask, OdcTaskLogLevel level) {
         String filePath = String.format(LOG_PATH_PATTERN, loggerProperty.getDirectory(),
-            scheduleTask.getJobName(), scheduleTask.getJobGroup(), scheduleTask.getId(),
-            level.name().toLowerCase());
+                scheduleTask.getJobName(), scheduleTask.getJobGroup(), scheduleTask.getId(),
+                level.name().toLowerCase());
         return new File(filePath);
     }
 
@@ -217,17 +217,17 @@ public class ScheduledTaskLoggerService {
             try {
                 final String[] logContents = new String[1];
                 consumeLogFromTaskFramework(taskEntity.getJobId(), level,
-                    logFile -> logContents[0] = LogUtils.getLatestLogContent(logFile, loggerProperty.getMaxLines(),
-                        loggerProperty.getMaxSize()),
-                    logContent -> logContents[0] = logContent,
-                    executorIdentifier -> {
-                        try {
-                            logContents[0] = forwardToGetLogContent(executorIdentifier.getHost(),
-                                executorIdentifier.getPort());
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
+                        logFile -> logContents[0] = LogUtils.getLatestLogContent(logFile, loggerProperty.getMaxLines(),
+                                loggerProperty.getMaxSize()),
+                        logContent -> logContents[0] = logContent,
+                        executorIdentifier -> {
+                            try {
+                                logContents[0] = forwardToGetLogContent(executorIdentifier.getHost(),
+                                        executorIdentifier.getPort());
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
                 return logContents[0];
             } catch (Exception e) {
                 log.warn("Copy input stream to file failed.", e);
@@ -253,16 +253,16 @@ public class ScheduledTaskLoggerService {
             try {
                 final InputStream[] logStreams = new InputStream[1];
                 consumeLogFromTaskFramework(taskEntity.getJobId(), level,
-                    logFile -> logStreams[0] = IoUtil.toStream(logFile),
-                    logContent -> logStreams[0] = IoUtil.toUtf8Stream(logContent),
-                    executorIdentifier -> {
-                        try {
-                            logStreams[0] = forwardToGetLogStream(executorIdentifier.getHost(),
-                                executorIdentifier.getPort());
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
+                        logFile -> logStreams[0] = IoUtil.toStream(logFile),
+                        logContent -> logStreams[0] = IoUtil.toUtf8Stream(logContent),
+                        executorIdentifier -> {
+                            try {
+                                logStreams[0] = forwardToGetLogStream(executorIdentifier.getHost(),
+                                        executorIdentifier.getPort());
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
                 return logStreams[0];
             } catch (Exception e) {
                 log.warn("Copy input stream to file failed.", e);
@@ -288,6 +288,6 @@ public class ScheduledTaskLoggerService {
 
     private InputStream forwardToGetLogStream(@NonNull String host, @NonNull Integer port) throws Exception {
         return requestDispatcher.forwardGetResource(host, port)
-            .getBody().getInputStream();
+                .getBody().getInputStream();
     }
 }

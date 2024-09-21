@@ -15,15 +15,10 @@
  */
 package com.oceanbase.odc.service.schedule;
 
-import java.io.File;
-
-import javax.annotation.PostConstruct;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Component;
 
-import cn.hutool.core.io.FileUtil;
 import lombok.Data;
 
 @ConfigurationProperties(prefix = "odc.schedule.log")

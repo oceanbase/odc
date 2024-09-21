@@ -132,7 +132,7 @@ public class RequestDispatcher {
         String realUri = generateRealUri(getHostUrl(ip, port), getRequestUrlByRequest(request));
         log.info("Request dispatch starts, uri={}", realUri);
         return dispatchRestTemplate().exchange(URI.create(realUri), HttpMethod.valueOf(request.getMethod()),
-            new HttpEntity<>(requestBody, headers), Resource.class);
+                new HttpEntity<>(requestBody, headers), Resource.class);
     }
 
     public DispatchResponse forward(@NonNull String hostUrl, @NonNull HttpMethod method,

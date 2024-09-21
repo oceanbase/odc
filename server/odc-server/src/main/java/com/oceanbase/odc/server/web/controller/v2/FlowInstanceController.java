@@ -186,8 +186,8 @@ public class FlowInstanceController {
     @RequestMapping(value = "/{id:[\\d]+}/tasks/log/download", method = RequestMethod.GET)
     public ResponseEntity<InputStreamResource> downloadLog(@PathVariable Long id) throws IOException {
         return WebResponseUtils.getFileAttachmentResponseEntity(
-            flowTaskInstanceService.downloadLog(id),
-            TaskLogFilenameGenerator.generate(id));
+                flowTaskInstanceService.downloadLog(id),
+                TaskLogFilenameGenerator.generate(id));
     }
 
     @ApiOperation(value = "getMetaInfo", notes = "获取流程相关的一些元数据信息，包括待审批数量等")
