@@ -93,6 +93,8 @@ import lombok.extern.slf4j.Slf4j;
 public class LogicalDatabaseService {
     private final DatabaseMapper databaseMapper = DatabaseMapper.INSTANCE;
 
+    private final int MAX_PHYSICAL_DATABASE_COUNT = 1000;
+
     @Autowired
     private ProjectPermissionValidator projectPermissionValidator;
 
@@ -248,6 +250,8 @@ public class LogicalDatabaseService {
     protected void preCheck(CreateLogicalDatabaseReq req) {
         projectPermissionValidator.checkProjectRole(req.getProjectId(),
                 Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER));
+        Verify.notGreaterThan(req.getPhysicalDatabaseIds().size(), MAX_PHYSICAL_DATABASE_COUNT,
+                "physical database count");
         List<DatabaseEntity> databases = databaseRepository.findByIdIn(req.getPhysicalDatabaseIds());
         Verify.equals(databases.size(), req.getPhysicalDatabaseIds().size(), "physical database");
         Verify.verify(databases.stream().allMatch(database -> DatabaseType.PHYSICAL == database.getType()),
