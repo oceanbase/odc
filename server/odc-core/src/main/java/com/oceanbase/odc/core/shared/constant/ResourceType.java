@@ -127,6 +127,11 @@ public enum ResourceType implements Translatable {
     ALIYUN_ACCOUNT,
     ALIYUN_SUB_ACCOUNT,
 
+    /**
+     * Object storage resources
+     */
+    CLOUD_OBJECT_STORAGE_RESOURCE,
+
     ODC_JOB,
     ODC_TABLE;
 

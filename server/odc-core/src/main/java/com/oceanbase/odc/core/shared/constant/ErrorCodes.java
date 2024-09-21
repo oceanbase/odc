@@ -298,8 +298,12 @@ public enum ErrorCodes implements ErrorCode {
     /**
      * Permission management
      */
-    GrantPermissionFailed;
+    GrantPermissionFailed,
 
+    /**
+     * Object storage
+     */
+    InvalidObjectStorageCredential;
 
     @Override
     public String code() {
