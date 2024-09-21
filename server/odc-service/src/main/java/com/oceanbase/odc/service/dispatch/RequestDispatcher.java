@@ -36,9 +36,12 @@ import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -49,6 +52,7 @@ import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -113,6 +117,22 @@ public class RequestDispatcher {
             uriBuilder.append(String.join("&", parameters));
         }
         return uriBuilder.toString();
+    }
+
+    @SneakyThrows
+    public ResponseEntity<Resource> forwardGetResource(@NonNull String ip, @NonNull Integer port) {
+        HttpServletRequest request = requestProvider.getRequest();
+        Verify.notNull(request, "HttpServletRequest");
+        ByteArrayOutputStream requestBody = requestProvider.getRequestBody();
+
+        HttpHeaders headers = getRequestHeaders(request);
+        headers.add("Accept", "application/octet-stream");
+        verifyAndReduceTtl(headers);
+
+        String realUri = generateRealUri(getHostUrl(ip, port), getRequestUrlByRequest(request));
+        log.info("Request dispatch starts, uri={}", realUri);
+        return dispatchRestTemplate().exchange(URI.create(realUri), HttpMethod.valueOf(request.getMethod()),
+            new HttpEntity<>(requestBody, headers), Resource.class);
     }
 
     public DispatchResponse forward(@NonNull String hostUrl, @NonNull HttpMethod method,
