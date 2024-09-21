@@ -343,6 +343,12 @@ public class ScheduleTaskService {
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE_TASK, "id", id));
     }
 
+    public List<ScheduleTask> listByJobNames(Set<String> jobNames) {
+        return scheduleTaskRepository.findByJobNames(jobNames).stream()
+                .map(scheduleTaskMapper::entityToModel)
+                .collect(Collectors.toList());
+    }
+
     public ScheduleTask nullSafeGetByIdAndScheduleId(Long id, Long scheduleId) {
         Optional<ScheduleTaskEntity> scheduleEntityOptional =
                 scheduleTaskRepository.findByIdAndJobName(id, scheduleId.toString());
