@@ -122,7 +122,7 @@ public class FlowTaskInstanceLoggerService {
     }
 
     @SneakyThrows
-    public InputStream downloadLog(Long flowInstanceId) {
+    private InputStream downloadLog(Long flowInstanceId) {
         Optional<TaskEntity> taskEntityOptional =
             flowTaskInstanceService.getLogDownloadableTaskEntity(flowInstanceId, false);
         TaskEntity taskEntity = taskEntityOptional

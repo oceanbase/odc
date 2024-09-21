@@ -185,10 +185,9 @@ public class FlowInstanceController {
     @ApiOperation(value = "downloadLog", notes = "下载任务完整日志")
     @RequestMapping(value = "/{id:[\\d]+}/tasks/log/download", method = RequestMethod.GET)
     public ResponseEntity<InputStreamResource> downloadLog(@PathVariable Long id) throws IOException {
-        List<BinaryDataResult> results = flowTaskInstanceService.downloadLog(id);
-        PreConditions.validExists(ResourceType.ODC_FILE, "id", id, () -> CollectionUtils.isNotEmpty(results));
         return WebResponseUtils.getFileAttachmentResponseEntity(
-                new InputStreamResource(results.get(0).getInputStream()), TaskLogFilenameGenerator.generate(id));
+            flowTaskInstanceService.downloadLog(id),
+            TaskLogFilenameGenerator.generate(id));
     }
 
     @ApiOperation(value = "getMetaInfo", notes = "获取流程相关的一些元数据信息，包括待审批数量等")
