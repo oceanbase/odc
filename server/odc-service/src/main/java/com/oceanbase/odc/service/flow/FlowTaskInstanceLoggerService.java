@@ -113,8 +113,14 @@ public class FlowTaskInstanceLoggerService {
         TaskEntity taskEntity = taskEntityOptional.get();
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
             ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
-            DispatchResponse response = requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
-            return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
+            try {
+                DispatchResponse response = requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
+                return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
+            } catch (Exception e) {
+                log.warn("forward request to get flow task log failed, host={}, port={}, flowInstanceId={}",
+                        executorInfo.getHost(), executorInfo.getPort(), flowInstanceId, e);
+                throw e;
+            }
         }
         File logFile = getLogFile(taskEntity.getCreatorId(), taskEntity.getId() + "",
                 taskEntity.getTaskType(), level);
@@ -130,9 +136,15 @@ public class FlowTaskInstanceLoggerService {
                         ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", flowInstanceId})));
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
             ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
-            ResponseEntity<Resource> responseEntity = requestDispatcher.forwardGetResource(
-                    executorInfo.getHost(), executorInfo.getPort());
-            return responseEntity.getBody().getInputStream();
+            try {
+                ResponseEntity<Resource> responseEntity = requestDispatcher.forwardGetResource(
+                        executorInfo.getHost(), executorInfo.getPort());
+                return responseEntity.getBody().getInputStream();
+            } catch (Exception e) {
+                log.warn("forward request to download flow task log failed, host={}, port={}, flowInstanceId={}",
+                        executorInfo.getHost(), executorInfo.getPort(), flowInstanceId, e);
+                throw e;
+            }
         }
         File logFile = getLogFile(taskEntity.getCreatorId(), taskEntity.getId() + "",
                 taskEntity.getTaskType(), OdcTaskLogLevel.ALL);
@@ -142,7 +154,7 @@ public class FlowTaskInstanceLoggerService {
     private File getLogFile(Long userId, String flowTaskInstanceId, TaskType type, OdcTaskLogLevel logLevel) {
         String logFilePath = taskService.getLogFilePath(userId, flowTaskInstanceId, type, logLevel);
         File file = new File(logFilePath);
-        log.info("get flow task log file path={}，exist={}", logFilePath, file.exists());
+        log.info("get flow task log file, path={}，exist={}", logFilePath, file.exists());
         return file;
     }
 }

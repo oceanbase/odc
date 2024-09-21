@@ -169,6 +169,7 @@ public class ScheduledTaskLoggerService {
                 File localFile = new File(logFilePath);
                 if (localFile.exists()) {
                     logFileConsumer.accept(localFile);
+                    return;
                 }
 
                 File tempFile = cloudObjectStorageService.downloadToTempFile(objId.get());
@@ -178,6 +179,7 @@ public class ScheduledTaskLoggerService {
                     FileUtils.deleteQuietly(tempFile);
                 }
                 logFileConsumer.accept(localFile);
+                return;
             }
             if (jobEntity.getExecutorDestroyedTime() == null && jobEntity.getExecutorEndpoint() != null) {
                 if (log.isDebugEnabled()) {
@@ -187,6 +189,7 @@ public class ScheduledTaskLoggerService {
                 // ensure that the logs obtained when the final task is completed are up-to-date
                 FileUtil.del(new File(logFilePath));
                 logContentConsumer.accept(logContent);
+                return;
             }
         }
 
@@ -195,6 +198,7 @@ public class ScheduledTaskLoggerService {
             ExecutorIdentifier ei = ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier());
             try {
                 jobDispatcherConsumer.accept(ei);
+                return;
             } catch (Exception ex) {
                 log.warn("Forward to remote odc occur error, jobId={}, executorIdentifier={}",
                         jobEntity.getId(), jobEntity.getExecutorIdentifier(), ex);
@@ -220,14 +224,8 @@ public class ScheduledTaskLoggerService {
                         logFile -> logContents[0] = LogUtils.getLatestLogContent(logFile, loggerProperty.getMaxLines(),
                                 loggerProperty.getMaxSize()),
                         logContent -> logContents[0] = logContent,
-                        executorIdentifier -> {
-                            try {
-                                logContents[0] = forwardToGetLogContent(executorIdentifier.getHost(),
-                                        executorIdentifier.getPort());
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
-                        });
+                        executorIdentifier -> logContents[0] = forwardToGetLogContent(executorIdentifier.getHost(),
+                                executorIdentifier.getPort()));
                 return logContents[0];
             } catch (Exception e) {
                 log.warn("Copy input stream to file failed.", e);
@@ -239,8 +237,9 @@ public class ScheduledTaskLoggerService {
             try {
                 return forwardToGetLogContent(executorInfo.getHost(), executorInfo.getPort());
             } catch (Exception e) {
-                log.warn("Remote get task log failed, jobId={}", scheduleTaskId, e);
-                throw new UnexpectedException(String.format("Remote interrupt task failed, jobId=%s", scheduleTaskId));
+                log.warn("Remote get task log failed, scheduleTaskId={}", scheduleTaskId, e);
+                throw new UnexpectedException(
+                        String.format("Remote interrupt task failed, scheduleTaskId=%s", scheduleTaskId));
             }
         }
         File logFile = getLogFileFromCurrentMachine(taskEntity, level);
@@ -255,14 +254,8 @@ public class ScheduledTaskLoggerService {
                 consumeLogFromTaskFramework(taskEntity.getJobId(), level,
                         logFile -> logStreams[0] = IoUtil.toStream(logFile),
                         logContent -> logStreams[0] = IoUtil.toUtf8Stream(logContent),
-                        executorIdentifier -> {
-                            try {
-                                logStreams[0] = forwardToGetLogStream(executorIdentifier.getHost(),
-                                        executorIdentifier.getPort());
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
-                        });
+                        executorIdentifier -> logStreams[0] = forwardToDownloadLog(executorIdentifier.getHost(),
+                                executorIdentifier.getPort()));
                 return logStreams[0];
             } catch (Exception e) {
                 log.warn("Copy input stream to file failed.", e);
@@ -272,22 +265,35 @@ public class ScheduledTaskLoggerService {
         ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
         if (!dispatchChecker.isThisMachine(executorInfo)) {
             try {
-                return forwardToGetLogStream(executorInfo.getHost(), executorInfo.getPort());
+                return forwardToDownloadLog(executorInfo.getHost(), executorInfo.getPort());
             } catch (Exception e) {
-                log.warn("Remote download task log failed, jobId={}", scheduleTaskId, e);
-                throw new UnexpectedException(String.format("Remote interrupt task failed, jobId=%s", scheduleTaskId));
+                log.warn("Remote download task log failed, scheduleTaskId={}", scheduleTaskId, e);
+                throw new UnexpectedException(
+                        String.format("Remote interrupt task failed, scheduleTaskId=%s", scheduleTaskId));
             }
         }
         return IoUtil.toStream(getLogFileFromCurrentMachine(taskEntity, level));
     }
 
-    private String forwardToGetLogContent(@NonNull String host, @NonNull Integer port) throws Exception {
-        DispatchResponse response = requestDispatcher.forward(host, port);
-        return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
+    @SneakyThrows
+    private String forwardToGetLogContent(@NonNull String host, @NonNull Integer port) {
+        try {
+            DispatchResponse response = requestDispatcher.forward(host, port);
+            return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
+        } catch (Exception e) {
+            log.warn("forward request to get scheduled task log failed, host={}, port={}", host, port, e);
+            throw e;
+        }
     }
 
-    private InputStream forwardToGetLogStream(@NonNull String host, @NonNull Integer port) throws Exception {
-        return requestDispatcher.forwardGetResource(host, port)
-                .getBody().getInputStream();
+    @SneakyThrows
+    private InputStream forwardToDownloadLog(@NonNull String host, @NonNull Integer port) {
+        try {
+            return requestDispatcher.forwardGetResource(host, port)
+                    .getBody().getInputStream();
+        } catch (Exception e) {
+            log.warn("forward request to download scheduled task log failed, host={}, port={}", host, port, e);
+            throw e;
+        }
     }
 }
