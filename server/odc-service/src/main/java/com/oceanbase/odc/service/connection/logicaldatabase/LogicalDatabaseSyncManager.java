@@ -34,6 +34,7 @@ import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.table.TableService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
 import lombok.extern.slf4j.Slf4j;
@@ -66,12 +67,14 @@ public class LogicalDatabaseSyncManager {
     private ConnectionService connectionService;
     @Autowired
     private AuthenticationFacade authenticationFacade;
+    @Autowired
+    private TableService tableService;
 
     public void submitExtractLogicalTablesTask(@NotNull Database logicalDatabase) {
         doExecute(() -> executor
                 .submit(new LogicalTableExtractTask(logicalDatabase, databaseRepository, dbRelationRepository,
                         databaseService, dbObjectRepository, tableRelationRepository, connectionService,
-                        jdbcLockRegistry, authenticationFacade.currentUser())));
+                        jdbcLockRegistry, authenticationFacade.currentUser(), tableService)));
     }
 
     public void submitCheckConsistencyTask(@NotNull Long logicalTableId) {

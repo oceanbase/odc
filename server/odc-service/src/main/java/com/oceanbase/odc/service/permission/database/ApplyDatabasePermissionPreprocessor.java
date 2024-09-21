@@ -37,6 +37,7 @@ import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.FlowTaskPreprocessor;
@@ -101,8 +102,14 @@ public class ApplyDatabasePermissionPreprocessor implements Preprocessor {
                 throw new AccessDeniedException();
             }
             database.setName(d.getName());
-            database.setDataSourceId(d.getDataSource().getId());
-            database.setDataSourceName(id2ConnectionEntity.get(d.getDataSource().getId()).getName());
+            database.setType(d.getType());
+            if (database.getType() == DatabaseType.PHYSICAL) {
+                database.setDataSourceId(d.getDataSource().getId());
+                ConnectionConfig dataSource = id2ConnectionEntity.get(d.getDataSource().getId());
+                if (dataSource != null) {
+                    database.setDataSourceName(dataSource.getName());
+                }
+            }
         }
         // Fill in other parameters
         req.setProjectId(projectId);

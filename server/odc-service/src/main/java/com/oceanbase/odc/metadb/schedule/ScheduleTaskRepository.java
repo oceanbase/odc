@@ -89,7 +89,7 @@ public interface ScheduleTaskRepository extends JpaRepository<ScheduleTaskEntity
 
     List<ScheduleTaskEntity> findByJobId(Long jobId);
 
-    @Query(value = "select st.* from  ScheduleTaskEntity st where st.jobName in (:jobNames)", nativeQuery = true)
+    @Query(value = "select st.* from schedule_task st where st.job_name in (:jobNames)", nativeQuery = true)
     List<ScheduleTaskEntity> findByJobNames(@Param("jobNames") Set<String> jobNames);
 
 

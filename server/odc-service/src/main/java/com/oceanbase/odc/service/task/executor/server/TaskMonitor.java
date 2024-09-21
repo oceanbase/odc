@@ -33,7 +33,6 @@ import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobServerUrls;
 import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.executor.logger.LogBiz;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
 import com.oceanbase.odc.service.task.executor.task.BaseTask;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
@@ -215,16 +214,8 @@ public class TaskMonitor {
     private void uploadLogFileToCloudStorage(DefaultTaskResult finalResult) {
         if (cloudObjectStorageService != null && cloudObjectStorageService.supported()
                 && JobUtils.isK8sRunModeOfEnv()) {
-            LogBiz biz = new LogBizImpl();
-            Map<String, String> logMap = null;
-            try {
-                logMap = biz.uploadLogFileToCloudStorage(finalResult.getJobIdentity(), cloudObjectStorageService);
-            } catch (Throwable e) {
-                log.warn("Upload job log file to cloud storage occur error, jobId={}", getJobId(), e);
-                // putAll will throw NPE if it returns null.
-                logMap = new HashMap<>();
-            }
-            finalResult.setLogMetadata(logMap);
+            finalResult.setLogMetadata(new LogBizImpl().uploadLogFileToCloudStorage(finalResult.getJobIdentity(),
+                    cloudObjectStorageService));
         }
     }
 

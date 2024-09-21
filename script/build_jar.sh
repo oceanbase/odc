@@ -7,7 +7,7 @@ if ! source $(dirname "$0")/functions.sh; then
     exit 1
 fi
 
-if ! maven_build_jar; then
+if ! maven_build_jar "${mvn_extra_args[@]}"; then
     echo "maven build jar failed"
     exit 3
 fi

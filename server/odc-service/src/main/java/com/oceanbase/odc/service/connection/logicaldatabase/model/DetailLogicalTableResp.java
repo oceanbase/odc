@@ -39,6 +39,8 @@ public class DetailLogicalTableResp {
 
     private Integer physicalTableCount;
 
+    private List<DataNode> allPhysicalTables;
+
     private List<DataNode> inconsistentPhysicalTables;
 
     private List<LogicalTableTopologyResp> topologies;

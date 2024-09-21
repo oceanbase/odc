@@ -36,6 +36,8 @@ public enum ScheduleTaskType {
 
     ONLINE_SCHEMA_CHANGE_COMPLETE,
 
+    LOGICAL_DATABASE_CHANGE,
+
     LOAD_DATA
 
 }

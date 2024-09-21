@@ -232,7 +232,7 @@ public class JsonUtils {
         try {
             return objectMapper.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
-            log.error("failed to convert to json string, reason:{}", e.getMessage());
+            log.error("failed to convert to json string, reason:{} \n", e.getMessage());
             return null;
         }
     }

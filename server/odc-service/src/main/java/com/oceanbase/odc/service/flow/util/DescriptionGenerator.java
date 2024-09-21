@@ -16,18 +16,13 @@
 package com.oceanbase.odc.service.flow.util;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.stream.Collectors;
 
-import org.springframework.context.i18n.LocaleContextHolder;
-
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.shared.constant.Symbols;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
-import com.oceanbase.odc.service.notification.helper.MessageTemplateProcessor;
 import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 
 /**
@@ -39,34 +34,33 @@ public class DescriptionGenerator {
 
     public static void generateDescription(CreateFlowInstanceReq req) {
         if (StringUtils.isEmpty(req.getDescription())) {
-            Locale locale = LocaleContextHolder.getLocale();
             // descriptions is recommended for localization.Facilitate fuzzy query
-            String descFormat = Symbols.LEFT_BRACKET.getLocalizedMessage() + "%s"
-                    + Symbols.RIGHT_BRACKET.getLocalizedMessage() + "%s.%s";
+            String descFormat = "[%s]%s.%s";
             if (req.getTaskType() == TaskType.MULTIPLE_ASYNC) {
                 MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
                 List<DatabaseChangeDatabase> databases = parameters.getDatabases();
                 String description = databases.stream()
                         .map(db -> String.format(descFormat, db.getEnvironment().getName(),
                                 db.getDataSource().getName(), db.getName()))
-                        .collect(Collectors.joining(Symbols.COMMA.getLocalizedMessage()));
-                req.setDescription(MessageTemplateProcessor.getLocalMessage(locale, description));
+                        .collect(Collectors.joining(","));
+                req.setDescription(description);
             } else {
-                req.setDescription(MessageTemplateProcessor.getLocalMessage(locale, String.format(descFormat,
-                        req.getEnvironmentName(), req.getConnectionName(),
-                        req.getDatabaseName())));
+                req.setDescription(String.format(descFormat,
+                        req.getEnvironmentName(), req.getConnectionName(), req.getDatabaseName()));
             }
         }
     }
 
     public static void generateScheduleDescription(CreateScheduleReq req) {
         if (StringUtils.isEmpty(req.getDescription())) {
-            Locale locale = LocaleContextHolder.getLocale();
-            String descFormat = Symbols.LEFT_BRACKET.getLocalizedMessage() + "%s"
-                    + Symbols.RIGHT_BRACKET.getLocalizedMessage() + "%s.%s";
-            req.setDescription(MessageTemplateProcessor.getLocalMessage(locale, String.format(descFormat,
-                    req.getEnvironmentName(), req.getConnectionName(),
-                    req.getDatabaseName())));
+            String environmentName = req.getEnvironmentName();
+            String connectionName = req.getConnectionName();
+            String databaseName = req.getDatabaseName();
+            String description =
+                    StringUtils.isEmpty(connectionName) ? String.format("[%s]%s", environmentName, databaseName)
+                            : String.format("[%s]%s.%s", environmentName, connectionName, databaseName);
+            req.setDescription(description);
         }
     }
+
 }

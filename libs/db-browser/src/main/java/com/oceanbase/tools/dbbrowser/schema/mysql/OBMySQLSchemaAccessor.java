@@ -360,4 +360,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         }
         return returnVal;
     }
+
+    @Override
+    protected void correctColumnPrecisionIfNeed(List<DBTableColumn> tableColumns) {}
 }

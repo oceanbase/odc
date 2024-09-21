@@ -33,7 +33,6 @@ import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -44,18 +43,18 @@ import lombok.NoArgsConstructor;
  * @Description: []
  */
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(of = {"databaseId", "schemaName", "tableName"})
 public class DataNode {
     private static final String DELIMITER = ".";
 
-    @JsonIgnore
     private ConnectionConfig dataSourceConfig;
 
     private Long databaseId;
 
     private String schemaName;
+
+    private Long tableId;
 
     private String tableName;
 
@@ -64,9 +63,17 @@ public class DataNode {
         this.tableName = tableName;
     }
 
-    public DataNode(Long databaseId, String schemaName, String tableName) {
+    public DataNode(ConnectionConfig connectionConfig, Long databaseId, String schemaName) {
+        this.dataSourceConfig = connectionConfig;
         this.databaseId = databaseId;
         this.schemaName = schemaName;
+    }
+
+    public DataNode(ConnectionConfig dataSource, Long databaseId, String databaseName, Long tableId, String tableName) {
+        this.dataSourceConfig = dataSource;
+        this.databaseId = databaseId;
+        this.schemaName = databaseName;
+        this.tableId = tableId;
         this.tableName = tableName;
     }
 
