@@ -24,8 +24,6 @@ import java.util.function.Consumer;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -56,6 +54,7 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -146,7 +145,7 @@ public class ScheduledTaskLoggerService {
     }
 
     @SneakyThrows
-    private void consumerLogFromTaskFramework(Long jobId, OdcTaskLogLevel level,
+    private void consumeLogFromTaskFramework(Long jobId, OdcTaskLogLevel level,
             Consumer<File> logFileConsumer,
             Consumer<String> logContentConsumer,
             Consumer<ExecutorIdentifier> jobDispatcherConsumer) {
@@ -217,16 +216,14 @@ public class ScheduledTaskLoggerService {
         if (taskFrameworkEnabledProperties.isEnabled() && taskEntity.getJobId() != null) {
             try {
                 final String[] logContents = new String[1];
-                consumerLogFromTaskFramework(taskEntity.getJobId(), level,
+                consumeLogFromTaskFramework(taskEntity.getJobId(), level,
                         logFile -> logContents[0] = LogUtils.getLatestLogContent(logFile, loggerProperty.getMaxLines(),
                                 loggerProperty.getMaxSize()),
                         logContent -> logContents[0] = logContent,
                         executorIdentifier -> {
                             try {
-                                DispatchResponse response = requestDispatcher.forward(executorIdentifier.getHost(),
+                                logContents[0] = forwardToGetLogContent(executorIdentifier.getHost(),
                                         executorIdentifier.getPort());
-                                logContents[0] = response
-                                        .getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
                             } catch (Exception e) {
                                 throw new RuntimeException(e);
                             }
@@ -240,10 +237,7 @@ public class ScheduledTaskLoggerService {
         ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
         if (!dispatchChecker.isThisMachine(executorInfo)) {
             try {
-                DispatchResponse response =
-                        requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
-                return response.getContentByType(
-                        new TypeReference<SuccessResponse<String>>() {}).getData();
+                return forwardToGetLogContent(executorInfo.getHost(), executorInfo.getPort());
             } catch (Exception e) {
                 log.warn("Remote get task log failed, jobId={}", scheduleTaskId, e);
                 throw new UnexpectedException(String.format("Remote interrupt task failed, jobId=%s", scheduleTaskId));
@@ -258,14 +252,13 @@ public class ScheduledTaskLoggerService {
         if (taskFrameworkEnabledProperties.isEnabled() && taskEntity.getJobId() != null) {
             try {
                 final InputStream[] logStreams = new InputStream[1];
-                consumerLogFromTaskFramework(taskEntity.getJobId(), level,
+                consumeLogFromTaskFramework(taskEntity.getJobId(), level,
                         logFile -> logStreams[0] = IoUtil.toStream(logFile),
                         logContent -> logStreams[0] = IoUtil.toUtf8Stream(logContent),
                         executorIdentifier -> {
                             try {
-                                ResponseEntity<Resource> responseEntity = requestDispatcher.forwardGetResource(
-                                        executorIdentifier.getHost(), executorIdentifier.getPort());
-                                logStreams[0] = responseEntity.getBody().getInputStream();
+                                logStreams[0] = forwardToGetLogStream(executorIdentifier.getHost(),
+                                        executorIdentifier.getPort());
                             } catch (Exception e) {
                                 throw new RuntimeException(e);
                             }
@@ -279,14 +272,22 @@ public class ScheduledTaskLoggerService {
         ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
         if (!dispatchChecker.isThisMachine(executorInfo)) {
             try {
-                ResponseEntity<Resource> responseEntity = requestDispatcher.forwardGetResource(
-                        executorInfo.getHost(), executorInfo.getPort());
-                return responseEntity.getBody().getInputStream();
+                return forwardToGetLogStream(executorInfo.getHost(), executorInfo.getPort());
             } catch (Exception e) {
                 log.warn("Remote download task log failed, jobId={}", scheduleTaskId, e);
                 throw new UnexpectedException(String.format("Remote interrupt task failed, jobId=%s", scheduleTaskId));
             }
         }
         return IoUtil.toStream(getLogFileFromCurrentMachine(taskEntity, level));
+    }
+
+    private String forwardToGetLogContent(@NonNull String host, @NonNull Integer port) throws Exception {
+        DispatchResponse response = requestDispatcher.forward(host, port);
+        return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
+    }
+
+    private InputStream forwardToGetLogStream(@NonNull String host, @NonNull Integer port) throws Exception {
+        return requestDispatcher.forwardGetResource(host, port)
+                .getBody().getInputStream();
     }
 }
