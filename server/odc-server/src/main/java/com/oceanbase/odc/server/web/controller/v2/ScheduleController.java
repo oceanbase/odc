@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
@@ -138,7 +138,7 @@ public class ScheduleController {
     @ApiOperation(value = "DownloadScheduleTaskLog", notes = "download full log")
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/log/download",
             method = RequestMethod.GET)
-    public ResponseEntity<Resource> downloadScheduleTaskLog(@PathVariable Long scheduleId,
+    public ResponseEntity<InputStreamResource> downloadScheduleTaskLog(@PathVariable Long scheduleId,
             @PathVariable Long taskId) {
         return WebResponseUtils.getFileAttachmentResponseEntity(
                 scheduleService.downloadLog(scheduleId, taskId),

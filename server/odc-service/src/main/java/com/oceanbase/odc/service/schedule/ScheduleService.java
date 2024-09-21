@@ -39,7 +39,7 @@ import org.quartz.Trigger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanMap;
-import org.springframework.core.io.Resource;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
@@ -811,7 +811,7 @@ public class ScheduleService {
         return scheduledTaskLoggerService.getLogContent(scheduleTaskId, logLevel);
     }
 
-    public Resource downloadLog(Long scheduleId, Long scheduleTaskId) {
+    public InputStreamResource downloadLog(Long scheduleId, Long scheduleTaskId) {
         nullSafeGetByIdWithCheckPermission(scheduleId);
         return scheduledTaskLoggerService.downloadLog(scheduleTaskId, OdcTaskLogLevel.ALL);
     }

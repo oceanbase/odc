@@ -18,26 +18,18 @@ package com.oceanbase.odc.service.task.executor.logger;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 
 import org.apache.commons.io.input.ReversedLinesFileReader;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.core.io.Resource;
 
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.service.schedule.ScheduleLogProperties;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.io.IoUtil;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -54,13 +46,6 @@ public class LogUtils {
     public final static String SCHEDULE_LOG_FILE_NAME_PATTERN = "odc_schedule_%d_task_%d.log";
     public final static long CONTENT_MAX_LINES = 10000L;
     public final static long CONTENT_MAX_SIZE = 1024L * 1024;
-
-    private static final Map<Class<?>, Function<String, Object>> responseHandlers = new HashMap<>();
-
-    static {
-        responseHandlers.put(String.class, fileContent -> fileContent);
-        responseHandlers.put(Resource.class, fileContent -> new InputStreamResource(IoUtil.toUtf8Stream(fileContent)));
-    }
 
     public static String getLatestLogContent(String file, Long fetchMaxLine, Long fetchMaxByteSize) {
         File logFile = new File(file);
@@ -106,25 +91,6 @@ public class LogUtils {
 
     public static String getBaseLogPath() {
         return Optional.ofNullable(System.getProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY)).orElse("./log");
-    }
-
-    public static <T> T getLogDataWithResponseClass(String fileContent, Class<T> responseClass) {
-        Function<String, Object> handler = responseHandlers.get(responseClass);
-        if (handler != null) {
-            return responseClass.cast(handler.apply(fileContent));
-        }
-        throw new UnsupportedException("unsupported response class: " + responseClass);
-    }
-
-    public static <T> T getLogDataWithResponseClass(File file, Class<T> responseClass,
-            ScheduleLogProperties logProperties) {
-        if (responseClass == String.class) {
-            return responseClass
-                    .cast(LogUtils.getLatestLogContent(file, logProperties.getMaxLines(), logProperties.getMaxSize()));
-        } else if (responseClass == Resource.class) {
-            return responseClass.cast(new InputStreamResource(IoUtil.toStream(file)));
-        }
-        throw new UnsupportedException("unsupported response class: " + responseClass);
     }
 
     public static String generateScheduleTaskLogFileName(@NonNull Long scheduleId, Long scheduleTaskId) {

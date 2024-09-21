@@ -41,7 +41,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -201,8 +201,8 @@ public class FlowTaskInstanceService {
         return flowTaskInstanceLoggerService.getLogContentWithoutPermission(level, flowInstanceId);
     }
 
-    public Resource downloadLog(@NotNull Long flowInstanceId) {
-        return flowTaskInstanceLoggerService.downloadLog(flowInstanceId);
+    public InputStreamResource downloadLog(@NotNull Long flowInstanceId) {
+        return flowTaskInstanceLoggerService.downloadLogFile(flowInstanceId);
     }
 
     public List<? extends FlowTaskResult> getResult(@NotNull Long id, boolean skipAuth) throws IOException {

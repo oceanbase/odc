@@ -15,15 +15,10 @@
  */
 package com.oceanbase.odc.service.schedule;
 
-import java.io.File;
-
-import javax.annotation.PostConstruct;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Component;
 
-import cn.hutool.core.io.FileUtil;
 import lombok.Data;
 
 @ConfigurationProperties(prefix = "odc.schedule.log")
@@ -35,7 +30,7 @@ public class ScheduleLogProperties {
     /**
      * This is the directory path where temporary log files from running tasks inside the pod are stored
      */
-    private String tempLogDir;
+    private String tempLogDir = "./log/running-job-temp-logs";
 
     /**
      * This is a root path that stores all flow task instance log file and schedule task log file
@@ -51,12 +46,4 @@ public class ScheduleLogProperties {
      * unit：B
      */
     private Long maxSize = 1024L * 1024;
-
-    @PostConstruct
-    public void init() {
-        if (this.tempLogDir == null) {
-            this.tempLogDir =
-                    FileUtil.normalize(System.getProperty("user.dir") + File.separator + "log/running-job-temp-logs");
-        }
-    }
 }

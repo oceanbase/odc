@@ -24,7 +24,6 @@ import java.util.Set;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
@@ -185,7 +184,7 @@ public class FlowInstanceController {
 
     @ApiOperation(value = "downloadLog", notes = "下载任务完整日志")
     @RequestMapping(value = "/{id:[\\d]+}/tasks/log/download", method = RequestMethod.GET)
-    public ResponseEntity<Resource> downloadLog(@PathVariable Long id) throws IOException {
+    public ResponseEntity<InputStreamResource> downloadLog(@PathVariable Long id) throws IOException {
         return WebResponseUtils.getFileAttachmentResponseEntity(
                 flowTaskInstanceService.downloadLog(id), TaskLogFilenameGenerator.generate(id));
     }
