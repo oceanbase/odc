@@ -46,12 +46,4 @@ public class ScheduleLogProperties {
      * unit：B
      */
     private Long maxSize = 1024L * 1024;
-
-    @PostConstruct
-    public void init() {
-        if (this.tempLogDir == null) {
-            this.tempLogDir =
-                    FileUtil.normalize(System.getProperty("user.dir") + File.separator + "log/running-job-temp-logs");
-        }
-    }
 }
