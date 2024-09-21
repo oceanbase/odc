@@ -28,11 +28,6 @@ import lombok.Data;
 public class ScheduleLogProperties {
 
     /**
-     * This is the directory path where temporary log files from running tasks inside the pod are stored
-     */
-    private String tempLogDir = "./log/running-job-temp-logs";
-
-    /**
      * This is a root path that stores all flow task instance log file and schedule task log file
      */
     private String directory = "./log";
