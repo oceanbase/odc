@@ -20,7 +20,6 @@ import java.util.Date;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 
 import lombok.Data;
-import lombok.experimental.Accessors;
 
 /**
  * @Author：tinker
@@ -30,7 +29,6 @@ import lombok.experimental.Accessors;
 
 
 @Data
-@Accessors(chain = true)
 public class ScheduleTaskOverview {
 
     private Long id;
