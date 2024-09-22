@@ -53,11 +53,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
 
-    private final Long maxSqlAffectedRows;
+    protected final Long maxSqlAffectedRows;
 
-    private final JdbcOperations jdbcOperations;
+    protected final JdbcOperations jdbcOperations;
 
-    private final DialectType dialectType;
+    protected final DialectType dialectType;
 
     public MySQLAffectedRowsExceedLimit(@NonNull Long maxSqlAffectedRows, DialectType dialectType,
             JdbcOperations jdbcOperations) {
@@ -80,33 +80,8 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
 
-        if (statement instanceof Update || statement instanceof Delete || statement instanceof Insert) {
-            long affectedRows = 0;
-            String explainSql = "EXPLAIN " + statement.getText();
-            try {
-                if (jdbcOperations == null) {
-                    log.warn("jdbcOperations is null, please check your connection");
-                    return Collections.emptyList();
-                } else {
-                    switch (dialectType) {
-                        case MYSQL:
-                            affectedRows = (statement instanceof Insert)
-                                    ? getMySqlAffectedRowsByCount((Insert) statement)
-                                    : getMySqlAffectedRowsByExplain(explainSql, jdbcOperations);
-                            break;
-                        case OB_MYSQL:
-                            affectedRows = getOBMySqlAffectedRows(explainSql, jdbcOperations);
-                            break;
-                        default:
-                            log.warn("Unsupported dialect type: {}", dialectType);
-                            break;
-                    }
-                }
-            } catch (Exception e) {
-                log.warn("Error in calling getAffectedRows method", e);
-                affectedRows = -1;
-            }
-
+        long affectedRows = getAffectedRows(statement);
+        if (affectedRows >= 0) {
             if (affectedRows > maxSqlAffectedRows) {
                 return Collections.singletonList(SqlCheckUtil
                         .buildViolation(statement.getText(), statement, getType(),
@@ -126,6 +101,38 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
         return Arrays.asList(DialectType.MYSQL, DialectType.OB_MYSQL);
     }
 
+    protected long getAffectedRows(@NonNull Statement statement) {
+
+        long affectedRows = 0;
+        if (statement instanceof Update || statement instanceof Delete || statement instanceof Insert) {
+            String explainSql = "EXPLAIN " + statement.getText();
+            try {
+                if (jdbcOperations == null) {
+                    log.warn("jdbcOperations is null, please check your connection");
+                    return -1;
+                } else {
+                    switch (dialectType) {
+                        case MYSQL:
+                            affectedRows = (statement instanceof Insert)
+                                    ? getMySqlAffectedRowsByCount((Insert) statement)
+                                    : getMySqlAffectedRowsByExplain(explainSql, jdbcOperations);
+                            break;
+                        case OB_MYSQL:
+                            affectedRows = getOBMySqlAffectedRows(explainSql, jdbcOperations);
+                            break;
+                        default:
+                            log.warn("Unsupported dialect type: {}", dialectType);
+                            break;
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Error in calling getAffectedRows method", e);
+                affectedRows = -1;
+            }
+        }
+        return affectedRows;
+    }
+
     /**
      * MySQL checks the count of value list. Process mode: case1: For INSERT INTO ... VALUES(...)
      * statements, ODC checks the count of value list. case2: For INSERT INTO ... SELECT ... statements,
@@ -134,25 +141,25 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
      * @param insertStatement target sql
      * @return affected rows
      */
-    private long getMySqlAffectedRowsByCount(Insert insertStatement) {
+    protected long getMySqlAffectedRowsByCount(Insert insertStatement) {
 
         List<InsertTable> insertTableList = insertStatement.getTableInsert();
         if (insertTableList.isEmpty()) {
+            log.warn("insertTableList is empty, please check your sql");
             return -1;
         }
         InsertTable insertTable = insertTableList.get(0);
         if (insertTable == null || insertTable.getValues() == null) {
+            log.warn("insertTable is null or values is null, please check your sql");
             return -1;
         }
         List<List<Expression>> values = insertTable.getValues();
-        if (values.isEmpty()) {
-            return -1;
-        }
         if (values.size() == 1 && values.get(0).size() == 1) {
             Expression value = values.get(0).get(0);
             if ((value instanceof Select) || (value instanceof SelectBody)) {
                 return getMySqlAffectedRowsByExplain(insertStatement.getText(), jdbcOperations);
             } else {
+                log.warn("value type is not Select or SelectBody, please check your sql");
                 return 1;
             }
         } else {
@@ -167,7 +174,7 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
      * @param jdbc jdbc Object
      * @return affected rows
      */
-    private long getMySqlAffectedRowsByExplain(String explainSql, JdbcOperations jdbc) {
+    protected long getMySqlAffectedRowsByExplain(String explainSql, JdbcOperations jdbc) {
 
         try {
             List<Long> resultSet = jdbc.query(explainSql,
@@ -181,7 +188,8 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
             return firstNonNullResult != null ? firstNonNullResult : 0;
 
         } catch (Exception e) {
-            throw new RuntimeException("error: " + e.getMessage() + ", SQL: " + explainSql);
+            log.warn("MySQL mode: Error in execute " + explainSql + " failed. ", e);
+            return -1;
         }
     }
 
@@ -192,7 +200,7 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
      * @param jdbc jdbc Object
      * @return affected rows
      */
-    private long getOBMySqlAffectedRows(String explainSql, JdbcOperations jdbc) {
+    protected long getOBMySqlAffectedRows(String explainSql, JdbcOperations jdbc) {
 
         /**
          * <pre>
@@ -233,7 +241,8 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
             return firstNonNullResult != null ? firstNonNullResult : 0;
 
         } catch (Exception e) {
-            throw new RuntimeException("error: " + e.getMessage() + ", SQL: " + explainSql);
+            log.warn("OBMySQL mode: Error in execute " + explainSql + " failed. ", e);
+            return -1;
         }
     }
 
@@ -243,7 +252,7 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
      * @param singleRow row
      * @return affected rows
      */
-    private long getEstRowsValue(String singleRow) {
+    protected long getEstRowsValue(String singleRow) {
         String[] parts = singleRow.split("\\|");
         if (parts.length > 4) {
             String value = parts[4].trim();
