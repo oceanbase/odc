@@ -63,7 +63,7 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
     public void onEvent(JobTerminateEvent event) {
         JobEntity jobEntity = taskFrameworkService.find(event.getJi().getId());
         scheduleTaskService.findByJobId(jobEntity.getId()).ifPresent(o -> {
-            TaskStatus taskStatus = "DLM".equals(jobEntity.getJobType()) ? dlmService.getTaskStatus(o.getId())
+            TaskStatus taskStatus = "DLM".equals(jobEntity.getJobType()) ? dlmService.getFinalTaskStatus(o.getId())
                     : event.getStatus().convertTaskStatus();
             scheduleTaskService.updateStatusById(o.getId(), taskStatus);
             log.info("Update schedule task status to {} succeed,scheduleTaskId={}", taskStatus, o.getId());
