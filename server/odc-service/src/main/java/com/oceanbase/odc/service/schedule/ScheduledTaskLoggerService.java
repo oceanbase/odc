@@ -188,8 +188,6 @@ public class ScheduledTaskLoggerService {
                     log.debug("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
                 }
                 String logContent = taskExecutorClient.getLogContent(jobEntity.getExecutorEndpoint(), jobId, level);
-                // ensure that the logs obtained when the final task is completed are up-to-date
-                FileUtil.del(new File(logFilePath));
                 logContentConsumer.accept(logContent);
                 return;
             }
