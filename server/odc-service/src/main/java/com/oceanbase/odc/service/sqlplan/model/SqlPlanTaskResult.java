@@ -33,6 +33,10 @@ public class SqlPlanTaskResult {
 
     private List<String> failedRecord;
 
+    private String region;
+
+    private String cloudProvider;
+
     /**
      * sql execution json file download url
      */

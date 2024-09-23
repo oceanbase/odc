@@ -15,21 +15,25 @@
  */
 package com.oceanbase.odc.service.task.executor.task;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.SequenceInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.StatementCallback;
 
-import com.amazonaws.util.CollectionUtils;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.CSVUtils;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -49,11 +53,12 @@ import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
-import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
+import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
+import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.schedule.job.PublishSqlPlanJobReq;
@@ -75,6 +80,8 @@ import lombok.extern.slf4j.Slf4j;
 public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
 
     private PublishSqlPlanJobReq parameters;
+
+    private SqlStatementIterator sqlIterator;
 
     private ConnectionSession connectionSession;
 
@@ -99,7 +106,12 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         this.result = new SqlPlanTaskResult();
         this.parameters = JobUtils.fromJson(getJobParameters().get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
                 PublishSqlPlanJobReq.class);
+        JobContext jobContext = getJobContext();
+        Map<String, String> jobProperties = jobContext.getJobProperties();
+        this.result.setRegion(jobProperties.get("region"));
+        this.result.setCloudProvider(jobProperties.get("cloudProvider"));
         this.connectionSession = generateSession();
+        initSqlIterator();
         this.executor = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
         long timeoutUs = TimeUnit.MILLISECONDS.toMicros(parameters.getTimeoutMillis());
         PreConditions.notNull(timeoutUs, "timeoutUs");
@@ -118,36 +130,30 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
 
     @Override
     protected boolean doStart(JobContext context) throws Exception {
+        int index = 0;
 
-        if (CollectionUtils.isNullOrEmpty(parameters.getSqlObjectIds())
-                && StringUtils.isBlank(parameters.getSqlContent())) {
-            log.warn("Sql content and sql object id can not be null at the same time.");
-            return false;
-        }
-        List<OffsetString> offsetStringList = getSplitSql();
-
-        for (int i = 0; i <= offsetStringList.size() - 1; i++) {
-            OffsetString offsetString = offsetStringList.get(i);
+        while (sqlIterator.hasNext()) {
+            String sql = sqlIterator.next().getStr();
+            index++;
             // The retry statement will write the result into the buffer, while executing a new SQL command will
             // clear the buffer.
             queryResultSetBuffer.clear();
-            String sql = offsetString.getStr();
             try {
                 boolean success = executeSqlWithRetries(sql);
                 // write all result into json file
-                appendResultToJsonFile(i == 0, i == offsetStringList.size() - 1);
+                appendResultToJsonFile(index == 1, !sqlIterator.hasNext());
                 // write result rows into csv file
-                writeCsvFiles(i + 1);
+                writeCsvFiles(index);
                 if (success) {
                     result.incrementSucceedStatements();
                 } else {
                     result.incrementFailedStatements();
                     // only write failed record into error records file
-                    addErrorRecordsToFile(i + 1, sql);
+                    addErrorRecordsToFile(index, sql);
                 }
             } catch (Exception e) {
                 result.incrementFailedStatements();
-                addErrorRecordsToFile(i + 1, sql);
+                addErrorRecordsToFile(index, sql);
                 if (parameters.getErrorStrategy() == TaskErrorStrategy.ABORT) {
                     canceled = true;
                     break;
@@ -155,6 +161,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                 log.warn("Sql task execution failed, will continue to execute next statement.", e);
             }
         }
+        result.setTotalStatements(index);
         log.info("The sql plan task execute finished,result={}", result);
 
         // all sql execute csv file list write to zip file
@@ -164,46 +171,45 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         return true;
     }
 
-    private List<OffsetString> getSplitSql() {
-        SqlCommentProcessor processor = ConnectionSessionUtil.getSqlCommentProcessor(connectionSession);
-        StringBuffer buffer = new StringBuffer();
-        List<OffsetString> splitSqlList = new ArrayList<>();
-
-        if (CollectionUtils.isNullOrEmpty(parameters.getSqlObjectIds())) {
-            String sqlContent = parameters.getSqlContent();
-            log.info("SQL content={}", sqlContent);
-
-            List<OffsetString> offsetStringList = processor.split(buffer, sqlContent);
-            result.setTotalStatements(offsetStringList.size());
-
-            return offsetStringList;
+    private void initSqlIterator() {
+        if (CollectionUtils.isEmpty(parameters.getSqlObjectIds()) && StringUtils.isBlank(parameters.getSqlContent())) {
+            throw new UnexpectedException("Sql content and sql object id can not be null at the same time.");
+        }
+        InputStream sqlInputStream = new ByteArrayInputStream(new byte[0]);
+        if (StringUtils.isNotBlank(parameters.getSqlContent())) {
+            byte[] bytes = parameters.getSqlContent().getBytes();
+            sqlInputStream = new ByteArrayInputStream(bytes);
+            this.sqlIterator = SqlUtils.iterator(connectionSession, sqlInputStream, StandardCharsets.UTF_8);
+            return;
         }
 
         CloudObjectStorageService cloudObjectStorageService = getCloudObjectStorageService();
-
         if (Objects.isNull(cloudObjectStorageService) || !cloudObjectStorageService.supported()) {
             log.warn("Cloud object storage service not supported.");
             throw new UnexpectedException("Cloud object storage service not supported");
         }
 
-        for (String objectId : parameters.getSqlObjectIds()) {
+        for (String sqlObjectId : parameters.getSqlObjectIds()) {
             try {
-                byte[] bytes = cloudObjectStorageService.readContent(objectId);
-                if (Objects.isNull(bytes)) {
-                    log.warn("Read content from cloud storage returned null, objectId={}", objectId);
-                    continue;
+                byte[] bytes = cloudObjectStorageService.readContent(sqlObjectId);
+                InputStream current = new ByteArrayInputStream(bytes);
+                // remove UTF-8 BOM if exists
+                current.mark(3);
+                byte[] byteSql = new byte[3];
+                if (current.read(byteSql) >= 3 && byteSql[0] == (byte) 0xef && byteSql[1] == (byte) 0xbb
+                        && byteSql[2] == (byte) 0xbf) {
+                    current.reset();
+                    current.skip(3);
+                } else {
+                    current.reset();
                 }
-                log.info("successfully read content from cloud storage, objectId={}", objectId);
-                String sqlContent = new String(bytes, StandardCharsets.UTF_8);
-                List<OffsetString> offsetStringList = processor.split(buffer, sqlContent);
-                splitSqlList.addAll(offsetStringList);
+                sqlInputStream = new SequenceInputStream(sqlInputStream, current);
             } catch (IOException e) {
-                log.warn("Read content from cloud storage failed, objectId={}", objectId, e);
+                log.warn("Read content from cloud object storage failed, sqlObjectId={}", sqlObjectId);
+                throw new InternalServerError("load database change task file failed", e);
             }
         }
-
-        this.result.setTotalStatements(splitSqlList.size());
-        return splitSqlList;
+        this.sqlIterator = SqlUtils.iterator(connectionSession, sqlInputStream, StandardCharsets.UTF_8);
     }
 
 
