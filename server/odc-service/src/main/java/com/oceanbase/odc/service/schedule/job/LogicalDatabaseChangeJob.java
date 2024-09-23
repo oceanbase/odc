@@ -81,7 +81,7 @@ public class LogicalDatabaseChangeJob implements OdcJob {
         req.setSqlContent(parameters.getSqlContent());
         DetailLogicalDatabaseResp logicalDatabaseResp = logicalDatabaseService.detail(parameters.getDatabaseId());
         logicalDatabaseResp.getPhysicalDatabases().stream().forEach(
-                database -> database.setDataSource(connectionService.getForConnect(database.getDataSource().getId())));
+                database -> database.setDataSource(connectionService.getForConnectionSkipPermissionCheck(database.getDataSource().getId())));
         req.setLogicalDatabaseResp(logicalDatabaseResp);
         req.setDelimiter(parameters.getDelimiter());
         req.setTimeoutMillis(parameters.getTimeoutMillis());
