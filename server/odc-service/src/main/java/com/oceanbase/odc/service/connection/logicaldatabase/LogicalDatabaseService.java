@@ -293,9 +293,15 @@ public class LogicalDatabaseService {
 
     public List<PreviewSqlResp> preview(@NonNull Long logicalDatabaseId, @NonNull PreviewSqlReq req) {
         DetailLogicalDatabaseResp logicalDatabase = detail(logicalDatabaseId);
-        Set<DataNode> allDataNodes = logicalDatabase.getLogicalTables().stream()
-                .map(DetailLogicalTableResp::getAllPhysicalTables).flatMap(List::stream)
-                .collect(Collectors.toSet());
+        Set<DataNode> physicalDatabases = logicalDatabase.getPhysicalDatabases().stream()
+                .map(database -> new DataNode(database.getId(), database.getName())).collect(
+                        Collectors.toSet());
+        Map<String, DataNode> databaseName2DataNodes = physicalDatabases.stream()
+                .collect(Collectors.toMap(dataNode -> dataNode.getSchemaName(), dataNode -> dataNode,
+                        (value1, value2) -> value1));
+        Map<String, Set<DataNode>> logicalTableName2DataNodes = logicalDatabase.getLogicalTables().stream()
+                .collect(Collectors.toMap(DetailLogicalTableResp::getName,
+                        resp -> resp.getAllPhysicalTables().stream().collect(Collectors.toSet())));
         Map<Long, List<String>> databaseId2Sqls = new HashMap<>();
         String delimiter = StringUtils.isEmpty(req.getDelimiter()) ? ";" : req.getDelimiter();
         List<String> sqls =
@@ -306,10 +312,10 @@ public class LogicalDatabaseService {
             Set<DataNode> dataNodesToExecute;
             if (statement instanceof CreateTable) {
                 dataNodesToExecute = LogicalDatabaseUtils.getDataNodesFromCreateTable(sql,
-                        logicalDatabase.getDialectType(), allDataNodes);
+                        logicalDatabase.getDialectType(), databaseName2DataNodes);
             } else {
                 dataNodesToExecute = LogicalDatabaseUtils.getDataNodesFromNotCreateTable(sql,
-                        logicalDatabase.getDialectType(), logicalDatabase);
+                        logicalDatabase.getDialectType(), logicalTableName2DataNodes, logicalDatabase.getName());
             }
             if (CollectionUtils.isEmpty(dataNodesToExecute)) {
                 continue;

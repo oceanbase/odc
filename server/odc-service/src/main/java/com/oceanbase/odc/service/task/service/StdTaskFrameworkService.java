@@ -374,7 +374,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
             if ("DLM".equals(je.getJobType())) {
                 dlmResultProcessor.process(result);
-            } else if ("LogicalDatabaseChange".equals(je.getJobType())) {
+            } else if ("LOGICAL_DATABASE_CHANGE".equalsIgnoreCase(je.getJobType())) {
                 logicalDBChangeResultProcessor.process(result);
             }
             return true;

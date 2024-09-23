@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.connection.logicaldatabase;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -27,8 +26,6 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.LogicalTableExpressionParseUtils;
-import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
-import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalTableResp;
 import com.oceanbase.odc.service.session.util.DBSchemaExtractor;
 import com.oceanbase.odc.service.session.util.DBSchemaExtractor.DBSchemaIdentity;
 import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
@@ -40,10 +37,7 @@ import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
  */
 public class LogicalDatabaseUtils {
     public static Set<DataNode> getDataNodesFromCreateTable(String sql, DialectType dialectType,
-            Set<DataNode> allDataNodes) {
-        Map<String, DataNode> databaseName2DataNodes = allDataNodes.stream()
-                .collect(Collectors.toMap(dataNode -> dataNode.getSchemaName(), dataNode -> dataNode,
-                        (value1, value2) -> value1));
+            Map<String, DataNode> databaseName2DataNodes) {
         Map<DBSchemaIdentity, Set<SqlType>> identity2SqlTypes = DBSchemaExtractor.listDBSchemasWithSqlTypes(
                 Arrays.asList(SqlTuple.newTuple(sql)), dialectType, null);
         DBSchemaIdentity identity = identity2SqlTypes.keySet().iterator().next();
@@ -61,13 +55,9 @@ public class LogicalDatabaseUtils {
     }
 
     public static Set<DataNode> getDataNodesFromNotCreateTable(String sql, DialectType dialectType,
-            DetailLogicalDatabaseResp detailLogicalDatabaseResp) {
-        List<DetailLogicalTableResp> logicalTables = detailLogicalDatabaseResp.getLogicalTables();
-        Map<String, Set<DataNode>> logicalTableName2DataNodes = logicalTables.stream()
-                .collect(Collectors.toMap(DetailLogicalTableResp::getName,
-                        resp -> resp.getAllPhysicalTables().stream().collect(Collectors.toSet())));
+            Map<String, Set<DataNode>> logicalTableName2DataNodes, String logicalDatabaseName) {
         Map<DBSchemaIdentity, Set<SqlType>> identity2SqlTypes = DBSchemaExtractor.listDBSchemasWithSqlTypes(
-                Arrays.asList(SqlTuple.newTuple(sql)), dialectType, detailLogicalDatabaseResp.getName());
+                Arrays.asList(SqlTuple.newTuple(sql)), dialectType, logicalDatabaseName);
         DBSchemaIdentity identity = identity2SqlTypes.keySet().iterator().next();
         return logicalTableName2DataNodes.getOrDefault(identity.getTable(), Collections.emptySet());
     }

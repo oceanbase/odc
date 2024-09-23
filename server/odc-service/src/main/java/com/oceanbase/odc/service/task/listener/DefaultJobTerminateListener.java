@@ -88,7 +88,7 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
                     scheduleTaskService.triggerDataArchiveDelete(o.getId());
                     log.info("Trigger delete job succeed.");
                 }
-            } else if ("LOGICAL_DATABASE_CHANGE".equals(jobEntity.getJobType())) {
+            } else if ("LOGICAL_DATABASE_CHANGE".equalsIgnoreCase(jobEntity.getJobType())) {
                 try {
                     PublishLogicalDatabaseChangeReq req = JsonUtils.fromJson(
                             JsonUtils
