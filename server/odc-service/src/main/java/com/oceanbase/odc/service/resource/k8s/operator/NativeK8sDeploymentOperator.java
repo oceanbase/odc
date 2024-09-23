@@ -107,8 +107,8 @@ public class NativeK8sDeploymentOperator extends BaseNativeK8sResourceOperator<K
             deployment.setStatus(item.getStatus());
             deployment.setKind(item.getKind());
             deployment.setMetadata(item.getMetadata());
-            deployment.setApiVersion(item.getApiVersion());
             deployment.setSpec(item.getSpec());
+            deployment.setApiVersion(item.getApiVersion());
             return deployment;
         }).collect(Collectors.toList());
     }
