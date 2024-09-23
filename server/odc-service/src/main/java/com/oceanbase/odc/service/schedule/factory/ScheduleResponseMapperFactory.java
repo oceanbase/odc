@@ -34,6 +34,7 @@ import com.alibaba.fastjson.JSON;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceEntity;
@@ -195,11 +196,7 @@ public class ScheduleResponseMapperFactory {
         resp.setUpdateTime(schedule.getUpdateTime());
         resp.setDescription(schedule.getDescription());
         resp.setJobParameters(detailParameters(schedule));
-
-        List<Database> databaseByIds = getDatabaseByIds(Collections.singleton(schedule.getDatabaseId()));
-        if (!databaseByIds.isEmpty()) {
-            resp.setDatabase(databaseByIds.get(0));
-        }
+        resp.setDatabase(detailDatabaseOrNull(schedule.getDatabaseId()));
 
         Set<Long> approvableFlowInstanceIds = approvalPermissionService.getApprovableApprovalInstances()
                 .stream()
@@ -387,29 +384,37 @@ public class ScheduleResponseMapperFactory {
         switch (schedule.getType()) {
             case DATA_ARCHIVE: {
                 DataArchiveParameters parameters = (DataArchiveParameters) schedule.getParameters();
-                parameters.setSourceDatabase(databaseService.detail(parameters.getSourceDatabaseId()));
-                parameters.setTargetDatabase(databaseService.detail(parameters.getTargetDataBaseId()));
+                parameters.setSourceDatabase(detailDatabaseOrNull(parameters.getSourceDatabaseId()));
+                parameters.setTargetDatabase(detailDatabaseOrNull(parameters.getTargetDataBaseId()));
                 limiterService.findByScheduleId(schedule.getId()).ifPresent(parameters::setRateLimit);
                 return parameters;
             }
             case DATA_DELETE: {
                 DataDeleteParameters parameters = (DataDeleteParameters) schedule.getParameters();
                 if (parameters.getTargetDatabaseId() != null) {
-                    parameters.setTargetDatabase(databaseService.detail(parameters.getTargetDatabaseId()));
+                    parameters.setTargetDatabase(detailDatabaseOrNull(parameters.getTargetDatabaseId()));
                 }
-                parameters.setDatabase(databaseService.detail(parameters.getDatabaseId()));
+                parameters.setDatabase(detailDatabaseOrNull(parameters.getDatabaseId()));
                 limiterService.findByScheduleId(schedule.getId()).ifPresent(parameters::setRateLimit);
                 return parameters;
             }
             case SQL_PLAN: {
                 SqlPlanParameters parameters = (SqlPlanParameters) schedule.getParameters();
                 if (parameters.getDatabaseId() != null) {
-                    parameters.setDatabaseInfo(databaseService.detail(parameters.getDatabaseId()));
+                    parameters.setDatabaseInfo(detailDatabaseOrNull(parameters.getDatabaseId()));
                 }
                 return parameters;
             }
             default:
                 return schedule.getParameters();
+        }
+    }
+
+    private Database detailDatabaseOrNull(Long databaseId) {
+        try {
+            return databaseService.detail(databaseId);
+        } catch (NotFoundException e) {
+            return null;
         }
     }
 }
