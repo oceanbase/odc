@@ -52,7 +52,6 @@ import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
-import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
