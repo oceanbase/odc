@@ -73,7 +73,7 @@ public class K8sDeploymentMatcher implements K8sResourceMatcher<K8sDeployment> {
         Validate.notNull(spec.getReplicas());
         List<K8sPod> k8sPodList;
         try {
-            k8sPodList = k8sResource.getK8sPods();
+            k8sPodList = k8sResource.getK8sPodList();
         } catch (Exception e) {
             return false;
         }
