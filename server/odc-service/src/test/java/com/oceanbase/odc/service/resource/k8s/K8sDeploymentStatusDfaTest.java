@@ -16,18 +16,15 @@
 package com.oceanbase.odc.service.resource.k8s;
 
 import java.util.Arrays;
-import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Test;
 
 import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.resource.k8s.model.K8sDeployment;
-import com.oceanbase.odc.service.resource.k8s.model.K8sPod;
 import com.oceanbase.odc.service.resource.k8s.status.K8sDeploymentStatusDfa;
 
 import io.kubernetes.client.openapi.models.V1DeploymentSpec;
-import lombok.Setter;
 
 /**
  * Test cases for {@link K8sDeploymentStatusDfa}
@@ -81,7 +78,7 @@ public class K8sDeploymentStatusDfaTest {
     }
 
     public static K8sDeployment getCreatingDeploymentWithNonEnoughReplicas() {
-        MyK8sDeployment deployment = new MyK8sDeployment();
+        K8sDeployment deployment = new K8sDeployment();
         V1DeploymentSpec spec = new V1DeploymentSpec();
         spec.setReplicas(3);
         deployment.setSpec(spec);
@@ -92,7 +89,7 @@ public class K8sDeploymentStatusDfaTest {
     }
 
     public static K8sDeployment getCreatingDeploymentWithEnoughReplicas() {
-        MyK8sDeployment deployment = new MyK8sDeployment();
+        K8sDeployment deployment = new K8sDeployment();
         V1DeploymentSpec spec = new V1DeploymentSpec();
         spec.setReplicas(3);
         deployment.setSpec(spec);
@@ -104,7 +101,7 @@ public class K8sDeploymentStatusDfaTest {
     }
 
     public static K8sDeployment getAvailableDeployment() {
-        MyK8sDeployment deployment = new MyK8sDeployment();
+        K8sDeployment deployment = new K8sDeployment();
         V1DeploymentSpec spec = new V1DeploymentSpec();
         spec.setReplicas(3);
         deployment.setSpec(spec);
@@ -116,7 +113,7 @@ public class K8sDeploymentStatusDfaTest {
     }
 
     public static K8sDeployment getErrorDeployment() {
-        MyK8sDeployment deployment = new MyK8sDeployment();
+        K8sDeployment deployment = new K8sDeployment();
         V1DeploymentSpec spec = new V1DeploymentSpec();
         spec.setReplicas(3);
         deployment.setSpec(spec);
@@ -125,16 +122,6 @@ public class K8sDeploymentStatusDfaTest {
                 K8sPodStatusDfaTest.getFailedErrorPod(),
                 K8sPodStatusDfaTest.getAvailablePod()));
         return deployment;
-    }
-
-    @Setter
-    private static class MyK8sDeployment extends K8sDeployment {
-
-        private List<K8sPod> k8sPodList;
-
-        public List<K8sPod> getK8sPods() {
-            return this.k8sPodList;
-        }
     }
 
 }
