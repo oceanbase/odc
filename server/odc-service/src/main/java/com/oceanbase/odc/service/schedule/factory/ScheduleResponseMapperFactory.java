@@ -196,11 +196,7 @@ public class ScheduleResponseMapperFactory {
         resp.setUpdateTime(schedule.getUpdateTime());
         resp.setDescription(schedule.getDescription());
         resp.setJobParameters(detailParameters(schedule));
-
-        List<Database> databaseByIds = getDatabaseByIds(Collections.singleton(schedule.getDatabaseId()));
-        if (!databaseByIds.isEmpty()) {
-            resp.setDatabase(databaseByIds.get(0));
-        }
+        resp.setDatabase(detailDatabaseOrNull(schedule.getDatabaseId()));
 
         Set<Long> approvableFlowInstanceIds = approvalPermissionService.getApprovableApprovalInstances()
                 .stream()
