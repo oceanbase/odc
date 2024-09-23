@@ -258,7 +258,7 @@ public class ScheduleService {
             ScheduleEntity entity = new ScheduleEntity();
 
             entity.setName(req.getCreateScheduleReq().getName());
-            entity.setProjectId(req.getCreateScheduleReq().getProjectId());
+            entity.setProjectId(req.getProjectId());
             DescriptionGenerator.generateScheduleDescription(req.getCreateScheduleReq());
             entity.setDescription(req.getCreateScheduleReq().getDescription());
             entity.setJobParametersJson(JsonUtils.toJson(req.getCreateScheduleReq().getParameters()));
@@ -271,9 +271,9 @@ public class ScheduleService {
             entity.setOrganizationId(authenticationFacade.currentOrganizationId());
             entity.setCreatorId(authenticationFacade.currentUserId());
             entity.setModifierId(authenticationFacade.currentUserId());
-            entity.setDatabaseId(req.getCreateScheduleReq().getDatabaseId());
-            entity.setDatabaseName(req.getCreateScheduleReq().getDatabaseName());
-            entity.setDataSourceId(req.getCreateScheduleReq().getConnectionId());
+            entity.setDatabaseId(req.getDatabaseId());
+            entity.setDatabaseName(req.getDatabaseName());
+            entity.setDataSourceId(req.getConnectionId());
 
             targetSchedule = scheduleMapper.entityToModel(scheduleRepository.save(entity));
             req.setScheduleId(targetSchedule.getId());
