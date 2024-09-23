@@ -845,3 +845,27 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
  '1440', 'The longest time ODC can cache repository copies') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.integration.git.repository-max-cached-size',
  '1000', 'The maximum number of repository copies cached in ODC') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+---
+--- copilot
+---
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.copilot.llm.api-key',
+'sk-abbf9ebddcda49df9a2a7b07869e6997', 'tong yi llm api-key') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.copilot.enable',
+'true', 'enable copilot') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.copilot.llm.text2sql',
+'qwen-turbo', 'text2sql llm') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.copilot.llm.sql-complete',
+'qwen-turbo', 'sql-complete llm') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('spring.datasource.druid.copilot.url',
+'jdbc:mysql://11.161.204.209:3886/yiqiao_test', 'copilot db url') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('spring.datasource.druid.copilot.username',
+'root@mysql', 'copilot db username') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('spring.datasource.druid.copilot.password',
+'', 'copilot db password') ON DUPLICATE KEY UPDATE `id`=`id`;
