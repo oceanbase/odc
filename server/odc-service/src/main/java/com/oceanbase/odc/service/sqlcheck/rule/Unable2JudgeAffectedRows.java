@@ -56,14 +56,15 @@ public class Unable2JudgeAffectedRows extends MySQLAffectedRowsExceedLimit {
             long affectedRows = super.getAffectedRows(statement);
             if (affectedRows < 0) {
                 return Collections.singletonList(SqlCheckUtil
-                    .buildViolation(statement.getText(), statement, getType(),
-                        new Object[] {maxSqlAffectedRows, affectedRows}));
+                        .buildViolation(statement.getText(), statement, getType(),
+                                new Object[] {maxSqlAffectedRows, affectedRows}));
             }
         } catch (Exception e) {
             log.warn("Unable to get affected rows, sql={}", statement.getText(), e);
             return Collections.singletonList(SqlCheckUtil
-                .buildViolation(statement.getText(), statement, getType(),
-                    new Object[] {maxSqlAffectedRows, "Unable to get affected rows caused by: " + e.getMessage()}));
+                    .buildViolation(statement.getText(), statement, getType(),
+                            new Object[] {maxSqlAffectedRows,
+                                    "Unable to get affected rows caused by: " + e.getMessage()}));
         }
 
         return Collections.emptyList();
