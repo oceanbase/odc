@@ -27,7 +27,7 @@
 
 外部集成
 
-- SSO 集成支持 Azure OAuth 2.0
+- SSO 集成支持 Azure AD
 
 
 ### 易用性改进
