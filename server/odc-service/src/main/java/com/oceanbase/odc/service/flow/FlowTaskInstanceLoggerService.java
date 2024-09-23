@@ -15,14 +15,13 @@
  */
 package com.oceanbase.odc.service.flow;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -137,9 +136,8 @@ public class FlowTaskInstanceLoggerService {
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
             ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
             try {
-                ResponseEntity<Resource> responseEntity = requestDispatcher.forwardGetResource(
-                        executorInfo.getHost(), executorInfo.getPort());
-                return responseEntity.getBody().getInputStream();
+                DispatchResponse response = requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
+                return new ByteArrayInputStream(response.getContent());
             } catch (Exception e) {
                 log.warn("forward request to download flow task log failed, host={}, port={}, flowInstanceId={}",
                         executorInfo.getHost(), executorInfo.getPort(), flowInstanceId, e);

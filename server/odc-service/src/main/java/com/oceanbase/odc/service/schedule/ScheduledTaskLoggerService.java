@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.schedule;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -28,6 +29,7 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
@@ -219,14 +221,16 @@ public class ScheduledTaskLoggerService {
         ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(scheduleTaskId);
         if (taskFrameworkEnabledProperties.isEnabled() && taskEntity.getJobId() != null) {
             try {
-                final String[] logContents = new String[1];
+                final Holder<String> logContentHolder = new Holder<>();
                 consumeLogFromTaskFramework(taskEntity.getJobId(), level,
-                        logFile -> logContents[0] = LogUtils.getLatestLogContent(logFile, loggerProperty.getMaxLines(),
-                                loggerProperty.getMaxSize()),
-                        logContent -> logContents[0] = logContent,
-                        executorIdentifier -> logContents[0] = forwardToGetLogContent(executorIdentifier.getHost(),
-                                executorIdentifier.getPort()));
-                return logContents[0];
+                        logFile -> logContentHolder
+                                .setValue(LogUtils.getLatestLogContent(logFile, loggerProperty.getMaxLines(),
+                                        loggerProperty.getMaxSize())),
+                        logContentHolder::setValue,
+                        executorIdentifier -> logContentHolder
+                                .setValue((forwardToGetLogContent(executorIdentifier.getHost(),
+                                        executorIdentifier.getPort()))));
+                return logContentHolder.getValue();
             } catch (Exception e) {
                 log.warn("Copy input stream to file failed.", e);
                 throw new UnexpectedException("Copy input stream to file failed.");
@@ -250,13 +254,14 @@ public class ScheduledTaskLoggerService {
         ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(scheduleTaskId);
         if (taskFrameworkEnabledProperties.isEnabled() && taskEntity.getJobId() != null) {
             try {
-                final InputStream[] logStreams = new InputStream[1];
+                final Holder<InputStream> logStreamHolder = new Holder<>();
                 consumeLogFromTaskFramework(taskEntity.getJobId(), level,
-                        logFile -> logStreams[0] = IoUtil.toStream(logFile),
-                        logContent -> logStreams[0] = IoUtil.toUtf8Stream(logContent),
-                        executorIdentifier -> logStreams[0] = forwardToDownloadLog(executorIdentifier.getHost(),
-                                executorIdentifier.getPort()));
-                return logStreams[0];
+                        logFile -> logStreamHolder.setValue(IoUtil.toStream(logFile)),
+                        logContent -> logStreamHolder.setValue(IoUtil.toUtf8Stream(logContent)),
+                        executorIdentifier -> logStreamHolder
+                                .setValue(forwardToDownloadLog(executorIdentifier.getHost(),
+                                        executorIdentifier.getPort())));
+                return logStreamHolder.getValue();
             } catch (Exception e) {
                 log.warn("Copy input stream to file failed.", e);
                 throw new UnexpectedException("Copy input stream to file failed.");
@@ -289,8 +294,8 @@ public class ScheduledTaskLoggerService {
     @SneakyThrows
     private InputStream forwardToDownloadLog(@NonNull String host, @NonNull Integer port) {
         try {
-            return requestDispatcher.forwardGetResource(host, port)
-                    .getBody().getInputStream();
+            DispatchResponse response = requestDispatcher.forward(host, port);
+            return new ByteArrayInputStream(response.getContent());
         } catch (Exception e) {
             log.warn("forward request to download scheduled task log failed, host={}, port={}", host, port, e);
             throw e;
