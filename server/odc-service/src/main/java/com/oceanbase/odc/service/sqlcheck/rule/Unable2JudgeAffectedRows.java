@@ -28,7 +28,9 @@ import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class Unable2JudgeAffectedRows extends MySQLAffectedRowsExceedLimit {
 
     public Unable2JudgeAffectedRows(@NonNull Long maxSqlAffectedRows,
@@ -50,12 +52,20 @@ public class Unable2JudgeAffectedRows extends MySQLAffectedRowsExceedLimit {
      */
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
-        long affectedRows = super.getAffectedRows(statement);
-        if (affectedRows < 0) {
-            return Collections.singletonList(SqlCheckUtil
+        try {
+            long affectedRows = super.getAffectedRows(statement);
+            if (affectedRows < 0) {
+                return Collections.singletonList(SqlCheckUtil
                     .buildViolation(statement.getText(), statement, getType(),
-                            new Object[] {maxSqlAffectedRows, affectedRows}));
+                        new Object[] {maxSqlAffectedRows, affectedRows}));
+            }
+        } catch (Exception e) {
+            log.warn("Unable to get affected rows, sql={}", statement.getText(), e);
+            return Collections.singletonList(SqlCheckUtil
+                .buildViolation(statement.getText(), statement, getType(),
+                    new Object[] {maxSqlAffectedRows, "Unable to get affected rows caused by: " + e.getMessage()}));
         }
+
         return Collections.emptyList();
     }
 }
