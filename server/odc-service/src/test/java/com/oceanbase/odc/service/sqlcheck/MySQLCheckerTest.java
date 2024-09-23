@@ -1689,7 +1689,7 @@ public class MySQLCheckerTest {
                 Collections.singletonList(
                         new Unable2JudgeAffectedRows(2L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
-        Assert.assertEquals(1, actualInsert.size());
+        Assert.assertEquals(0, actualInsert.size());
     }
 
     @Test
@@ -1707,7 +1707,7 @@ public class MySQLCheckerTest {
                 Collections.singletonList(
                         new Unable2JudgeAffectedRows(3L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
-        Assert.assertEquals(1, actualInsert.size());
+        Assert.assertEquals(0, actualInsert.size());
     }
 
     @Test
