@@ -52,7 +52,6 @@ import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 
 import lombok.NonNull;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -119,7 +118,6 @@ public class RequestDispatcher {
         return uriBuilder.toString();
     }
 
-    @SneakyThrows
     public ResponseEntity<Resource> forwardGetResource(@NonNull String ip, @NonNull Integer port) {
         HttpServletRequest request = requestProvider.getRequest();
         Verify.notNull(request, "HttpServletRequest");
