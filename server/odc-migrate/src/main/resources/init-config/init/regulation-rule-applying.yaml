@@ -958,7 +958,7 @@
   appliedDialectTypes:
     - 'OB_MYSQL'
     - 'MYSQL'
-  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.estimate-sql-affected-rows-failed.unable-to-estimate-sql-affected-count}":-1}'
+  propertiesJson: '{}'
 - enabled: 1
   level: 0
   rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
