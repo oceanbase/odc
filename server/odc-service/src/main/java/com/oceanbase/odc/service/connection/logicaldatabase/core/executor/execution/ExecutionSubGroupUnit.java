@@ -78,14 +78,9 @@ public class ExecutionSubGroupUnit<Input, Result> {
     public void terminate(ExecutionGroupContext<Input, Result> context) {
         context.setExecutionResult(id, (k, v) -> {
             if (v.getStatus() == ExecutionStatus.RUNNING) {
-                log.info("ExecutionUnit starts to terminate, executionId={}", id);
-                v.setStatus(ExecutionStatus.TERMINATING);
-            }
-            return v;
-        });
-        context.setExecutionResult(id, (k, v) -> {
-            if (v.getStatus() == ExecutionStatus.TERMINATING) {
                 try {
+                    log.info("ExecutionUnit starts to terminate, executionId={}", id);
+                    v.setStatus(ExecutionStatus.TERMINATING);
                     callback.terminate(context);
                     v.setStatus(ExecutionStatus.TERMINATED);
                     log.info("ExecutionUnit terminated, executionId={}", id);
@@ -104,11 +99,6 @@ public class ExecutionSubGroupUnit<Input, Result> {
                     || v.getStatus() == ExecutionStatus.TERMINATE_FAILED) {
                 log.info("ExecutionUnit starts to skip, executionId={}", id);
                 v.setStatus(ExecutionStatus.SKIPPING);
-            }
-            return v;
-        });
-        context.setExecutionResult(id, (k, v) -> {
-            if (v.getStatus() == ExecutionStatus.SKIPPING) {
                 log.info("ExecutionUnit skip done, executionId={}", id);
                 v.setStatus(ExecutionStatus.SKIPPED);
             }
