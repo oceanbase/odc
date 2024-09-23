@@ -657,14 +657,23 @@ public class FlowInstanceService {
             }
         }
         if (CollectionUtils.isEmpty(approvalInstances) && CollectionUtils.isEmpty(taskInstances)) {
+            // throw new UnsupportedException(ErrorCodes.FinishedTaskNotTerminable, null,
+            // "The current task has been completed and cannot be terminated");
+            log.warn("The current task has been completed, flowInstance = {}", flowInstance);
+        }
+        // check state before do update
+        if (FlowStatus.CANCELLED != flowInstance.getStatus() && FlowStatus.COMPLETED != flowInstance.getStatus()) {
+            log.info("Flow status error, cancellation conditions are not met, forced cancellation, flowInstanceId={}, "
+                    + "nodes={}", id,
+                    instances.stream().map(t -> t.getId() + "," + t.getNodeType() + "," + t.getStatus())
+                            .collect(Collectors.toList()));
+            flowInstanceRepository.updateStatusById(id, FlowStatus.CANCELLED);
+        } else {
+            log.warn("Flow status error, unexpected flow stats for cancellation, flowInstanceId={}, current status={}",
+                    id, flowInstance.getId());
             throw new UnsupportedException(ErrorCodes.FinishedTaskNotTerminable, null,
                     "The current task has been completed and cannot be terminated");
         }
-        log.info("Flow status error, cancellation conditions are not met, forced cancellation, flowInstanceId={}, "
-                + "nodes={}", id,
-                instances.stream().map(t -> t.getId() + "," + t.getNodeType() + "," + t.getStatus())
-                        .collect(Collectors.toList()));
-        flowInstanceRepository.updateStatusById(id, FlowStatus.CANCELLED);
         return FlowInstanceDetailResp.withIdAndType(id, taskTypeHolder.getValue());
     }
 

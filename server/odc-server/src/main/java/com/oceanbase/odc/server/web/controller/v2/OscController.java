@@ -63,4 +63,11 @@ public class OscController {
         return Responses.success(oscService.updateRateLimiterConfig(updateRateLimiterConfig));
     }
 
+    @ApiOperation(value = "oscResume", notes = "resume failed osc task")
+    @RequestMapping(value = "/{flowInstanceID:[\\d]+}/resume", method = RequestMethod.POST)
+    public SuccessResponse<Boolean> resumeOSCTask(
+            @PathVariable Long flowInstanceID) {
+        return Responses.success(oscService.resumeOscTask(flowInstanceID));
+    }
+
 }

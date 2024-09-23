@@ -71,6 +71,7 @@ public abstract class ActionFsm<Context extends ActionContext, ActionResult> {
      * main loop trigger action execute and state change
      * 
      * @param context context of FSM
+     * @return true if schedule success. false if exception found
      */
     public void schedule(Context context) {
         String state = resolveState(context);

@@ -67,7 +67,7 @@ public class OmsMonitorDataTaskAction implements Action<OscActionContext, OscAct
     @Override
     public OscActionResult execute(OscActionContext context) throws Exception {
         ScheduleTaskEntity scheduleTask = context.getScheduleTask();
-        log.debug("Start execute {}, schedule task id {}", getClass().getSimpleName(), scheduleTask.getId());
+        log.debug("Start execute {}, schedule task id={}", getClass().getSimpleName(), scheduleTask.getId());
 
         OnlineSchemaChangeScheduleTaskParameters taskParameter = context.getTaskParameter();
         OnlineSchemaChangeParameters inputParameters = context.getParameter();
@@ -137,7 +137,7 @@ public class OmsMonitorDataTaskAction implements Action<OscActionContext, OscAct
                             result.setManualSwapTableEnabled(true);
                             scheduleTask.setResultJson(JsonUtils.toJson(result));
                         }
-                        log.info("OSC: oms project ready, wait manual swap table triggered, task id {}",
+                        log.info("OSC: oms project ready, wait manual swap table triggered, task id={}",
                                 scheduleTask.getId());
                         // manual swap table not set, keep waiting
                         return new OscActionResult(OscStates.MONITOR_DATA_TASK.getState(), null,
