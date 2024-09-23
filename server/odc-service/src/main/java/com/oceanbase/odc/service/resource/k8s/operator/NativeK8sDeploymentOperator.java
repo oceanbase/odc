@@ -90,8 +90,8 @@ public class NativeK8sDeploymentOperator extends BaseNativeK8sResourceOperator<K
                 Map<String, String> selector = item.getSpec().getSelector().getMatchLabels();
                 k8sPodList.addAll(pods.stream().filter(v1Pod -> {
                     if (selector == null
-                            || v1Pod.getMetadata() != null
-                            || v1Pod.getMetadata().getLabels() != null) {
+                            || v1Pod.getMetadata() == null
+                            || v1Pod.getMetadata().getLabels() == null) {
                         return false;
                     }
                     Map<String, String> labels = v1Pod.getMetadata().getLabels();
