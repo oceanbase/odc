@@ -72,6 +72,7 @@ import com.oceanbase.odc.service.connection.logicaldatabase.model.PreviewSqlReq;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.PreviewSqlResp;
 import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
+import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
@@ -130,6 +131,9 @@ public class LogicalDatabaseService {
 
     @Autowired
     private DBResourcePermissionHelper permissionHelper;
+
+    @Autowired
+    private UserService userService;
 
 
     @Transactional(rollbackFor = Exception.class)
@@ -240,6 +244,20 @@ public class LogicalDatabaseService {
         Verify.equals(logicalDatabase.getType(), DatabaseType.LOGICAL, "database type");
         try {
             syncManager.submitExtractLogicalTablesTask(logicalDatabase);
+        } catch (TaskRejectedException ex) {
+            log.warn("submit extract logical tables task rejected, logical database id={}", logicalDatabaseId);
+            return false;
+        }
+        return true;
+    }
+
+    public boolean extractLogicalTablesSkipAuth(@NotNull Long logicalDatabaseId, @NotNull Long creatorId) {
+        Database logicalDatabase =
+                databaseService.getBasicSkipPermissionCheck(logicalDatabaseId);
+        Verify.equals(logicalDatabase.getType(), DatabaseType.LOGICAL, "database type");
+        try {
+            syncManager.submitExtractLogicalTablesTask(logicalDatabase,
+                    userService.detailWithoutPermissionCheck(creatorId));
         } catch (TaskRejectedException ex) {
             log.warn("submit extract logical tables task rejected, logical database id={}", logicalDatabaseId);
             return false;

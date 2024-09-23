@@ -97,7 +97,10 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
                                     .get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
                             PublishLogicalDatabaseChangeReq.class);
                     if (req != null && req.getLogicalDatabaseResp() != null) {
-                        logicalDatabaseService.extractLogicalTablesSkipAuth(req.getLogicalDatabaseResp().getId());
+                        logicalDatabaseService.extractLogicalTablesSkipAuth(req.getLogicalDatabaseResp().getId(),
+                                req.getCreatorId());
+                        log.info("Submit the extract logical tables task succeed, logicalDatabaseId={}, jobId={}",
+                                req.getLogicalDatabaseResp().getId(), jobEntity.getId());
                     }
                 } catch (Exception ex) {
                     log.warn("Failed to submit the extract logical tables task, ex=", ex);
