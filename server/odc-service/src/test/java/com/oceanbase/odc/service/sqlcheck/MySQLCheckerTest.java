@@ -81,6 +81,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.TooManyColumnRefInPrimaryKey;
 import com.oceanbase.odc.service.sqlcheck.rule.TooManyInExpression;
 import com.oceanbase.odc.service.sqlcheck.rule.TooManyOutOfLineIndex;
 import com.oceanbase.odc.service.sqlcheck.rule.TooManyTableJoin;
+import com.oceanbase.odc.service.sqlcheck.rule.Unable2JudgeAffectedRows;
 
 /**
  * {@link MySQLCheckerTest}
@@ -1542,18 +1543,35 @@ public class MySQLCheckerTest {
     @Test
     public void check_restrictSqlAffectedRows4Insert_unsupported() {
         String insert =
-                "insert into users (id, name, age, email) \n"
-                        + "set \n"
-                        + "column1 = 'value1' \n"
-                        + "column2 = 'value2'";
+            "insert into users (id, name, age, email) \n"
+            + "set \n"
+            + "column1 = 'value1' \n"
+            + "column2 = 'value2'";
+
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+
+        DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
+            Collections.singletonList(
+                new MySQLAffectedRowsExceedLimit(0L, DialectType.MYSQL, jdbcTemplate)));
+        List<CheckViolation> actualInsert = insertChecker.check(insert);
+        Assert.assertEquals(0, actualInsert.size());
+    }
+
+    @Test
+    public void check_restrictSqlAffectedRows4Insert_setValue() {
+        String insert =
+                "insert into users \n"
+                + "set \n"
+                + "column1 = 'value1', \n"
+                + "column2 = 'value2'";
 
         JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
 
         DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
                 Collections.singletonList(
-                        new MySQLAffectedRowsExceedLimit(2L, DialectType.MYSQL, jdbcTemplate)));
+                        new MySQLAffectedRowsExceedLimit(0L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
-        Assert.assertEquals(0, actualInsert.size());
+        Assert.assertEquals(1, actualInsert.size());
     }
 
     @Test
@@ -1620,6 +1638,110 @@ public class MySQLCheckerTest {
                         new MySQLAffectedRowsExceedLimit(2L, DialectType.OB_MYSQL, jdbcTemplate)));
         List<CheckViolation> actualError = errorChecker.check(update);
         Assert.assertEquals(0, actualError.size());
+    }
+
+    @Test
+    public void check_unable2JudgeAffectedRows_values() {
+        String insert =
+            "insert into users (id, name, age, email) \n"
+            + "values \n"
+            + "('2', 'b-bot', 3, 'o'), \n"
+            + "('3', 'c-bot', 3, 'o'), \n"
+            + "('4', 'd-bot', 3, '(o)')";
+
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+
+        DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
+            Collections.singletonList(
+                new Unable2JudgeAffectedRows(3L, DialectType.MYSQL, jdbcTemplate)));
+        List<CheckViolation> actualInsert = insertChecker.check(insert);
+        Assert.assertEquals(0, actualInsert.size());
+    }
+
+    @Test
+    public void check_unable2JudgeAffectedRows_valuesExceed() {
+        String insert =
+            "insert into users (id, name, age, email) \n"
+            + "values \n"
+            + "('2', 'b-bot', 3, 'o'), \n"
+            + "('3', 'c-bot', 3, 'o'), \n"
+            + "('4', 'd-bot', 3, '(o)'), \n"
+            + "('5', 'e-bot', 3, 'o')";
+
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+
+        DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
+            Collections.singletonList(
+                new Unable2JudgeAffectedRows(3L, DialectType.MYSQL, jdbcTemplate)));
+        List<CheckViolation> actualInsert = insertChecker.check(insert);
+        Assert.assertEquals(0, actualInsert.size());
+    }
+
+    @Test
+    public void check_unable2JudgeAffectedRows_valueIsNull() {
+        String insert =
+            "insert into users (id, name, age, email) \n"
+            + "value ()";
+
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+
+        DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
+            Collections.singletonList(
+                new Unable2JudgeAffectedRows(2L, DialectType.MYSQL, jdbcTemplate)));
+        List<CheckViolation> actualInsert = insertChecker.check(insert);
+        Assert.assertEquals(1, actualInsert.size());
+    }
+
+    @Test
+    public void check_unable2JudgeAffectedRows_valuesIsNull() {
+        String insert =
+            "insert into users (id, name, age, email) \n"
+            + "values \n"
+            + "('2', 'b-bot', 3, 'o'), \n"
+            + "('3', 'c-bot', 3, 'o'), \n"
+            + "()";
+
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+
+        DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
+            Collections.singletonList(
+                new Unable2JudgeAffectedRows(3L, DialectType.MYSQL, jdbcTemplate)));
+        List<CheckViolation> actualInsert = insertChecker.check(insert);
+        Assert.assertEquals(1, actualInsert.size());
+    }
+
+    @Test
+    public void check_unable2JudgeAffectedRows_setValue() {
+        String insert =
+            "insert into users (id, name, age, email) \n"
+            + "set \n"
+            + "column1 = 'value1' \n"
+            + "column2 = 'value2'";
+
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+
+        DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
+            Collections.singletonList(
+                new Unable2JudgeAffectedRows(2L, DialectType.MYSQL, jdbcTemplate)));
+        List<CheckViolation> actualInsert = insertChecker.check(insert);
+        Assert.assertEquals(0, actualInsert.size());
+    }
+
+    @Test
+    public void check_unable2JudgeAffectedRows_setValueFailed() {
+        String insert =
+            "insert into users \n"
+            + "set \n"
+            + "column1 = 'value1', \n"
+            + "column2 = 'value2'";
+
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+
+        DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
+            Collections.singletonList(
+                new Unable2JudgeAffectedRows(0L, DialectType.MYSQL, jdbcTemplate)));
+        List<CheckViolation> actualInsert = insertChecker.check(insert);
+        Assert.assertEquals(0, actualInsert.size());
     }
 
     private String joinAndAppend(String[] sqls, String delimiter) {

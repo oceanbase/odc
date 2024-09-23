@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -108,7 +109,7 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
             String explainSql = "EXPLAIN " + statement.getText();
             try {
                 if (jdbcOperations == null) {
-                    log.warn("jdbcOperations is null, please check your connection");
+                    log.warn("JdbcOperations is null, please check your connection");
                     return -1;
                 } else {
                     switch (dialectType) {
@@ -145,26 +146,30 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
 
         List<InsertTable> insertTableList = insertStatement.getTableInsert();
         if (insertTableList.isEmpty()) {
-            log.warn("insertTableList is empty, please check your sql");
+            log.warn("InsertTableList is empty, please check your sql");
             return -1;
         }
         InsertTable insertTable = insertTableList.get(0);
         if (insertTable == null || insertTable.getValues() == null) {
-            log.warn("insertTable is null or values is null, please check your sql");
+            log.warn("InsertTable is null or values is null, please check your sql");
             return -1;
         }
         List<List<Expression>> values = insertTable.getValues();
-        if (values.size() == 1 && values.get(0).size() == 1) {
-            Expression value = values.get(0).get(0);
-            if ((value instanceof Select) || (value instanceof SelectBody)) {
-                return getMySqlAffectedRowsByExplain(insertStatement.getText(), jdbcOperations);
+        if (CollectionUtils.isNotEmpty(values)) {
+            if (values.size() == 1 && values.get(0).size() == 1) {
+                Expression value = values.get(0).get(0);
+                if ((value instanceof Select) || (value instanceof SelectBody)) {
+                    return getMySqlAffectedRowsByExplain(insertStatement.getText(), jdbcOperations);
+                } else {
+                    return 1;
+                }
             } else {
-                log.warn("value type is not Select or SelectBody, please check your sql");
-                return 1;
+                return values.size();
             }
-        } else {
-            return values.size();
+        } else if (CollectionUtils.isNotEmpty(insertTable.getSetColumns())) {
+            return 1;
         }
+        return -1;
     }
 
     /**
