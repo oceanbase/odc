@@ -1543,16 +1543,16 @@ public class MySQLCheckerTest {
     @Test
     public void check_restrictSqlAffectedRows4Insert_unsupported() {
         String insert =
-            "insert into users (id, name, age, email) \n"
-            + "set \n"
-            + "column1 = 'value1' \n"
-            + "column2 = 'value2'";
+                "insert into users (id, name, age, email) \n"
+                        + "set \n"
+                        + "column1 = 'value1' \n"
+                        + "column2 = 'value2'";
 
         JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
 
         DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
-            Collections.singletonList(
-                new MySQLAffectedRowsExceedLimit(0L, DialectType.MYSQL, jdbcTemplate)));
+                Collections.singletonList(
+                        new MySQLAffectedRowsExceedLimit(0L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
         Assert.assertEquals(0, actualInsert.size());
     }
@@ -1561,9 +1561,9 @@ public class MySQLCheckerTest {
     public void check_restrictSqlAffectedRows4Insert_setValue() {
         String insert =
                 "insert into users \n"
-                + "set \n"
-                + "column1 = 'value1', \n"
-                + "column2 = 'value2'";
+                        + "set \n"
+                        + "column1 = 'value1', \n"
+                        + "column2 = 'value2'";
 
         JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
 
@@ -1643,17 +1643,17 @@ public class MySQLCheckerTest {
     @Test
     public void check_unable2JudgeAffectedRows_values() {
         String insert =
-            "insert into users (id, name, age, email) \n"
-            + "values \n"
-            + "('2', 'b-bot', 3, 'o'), \n"
-            + "('3', 'c-bot', 3, 'o'), \n"
-            + "('4', 'd-bot', 3, '(o)')";
+                "insert into users (id, name, age, email) \n"
+                        + "values \n"
+                        + "('2', 'b-bot', 3, 'o'), \n"
+                        + "('3', 'c-bot', 3, 'o'), \n"
+                        + "('4', 'd-bot', 3, '(o)')";
 
         JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
 
         DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
-            Collections.singletonList(
-                new Unable2JudgeAffectedRows(3L, DialectType.MYSQL, jdbcTemplate)));
+                Collections.singletonList(
+                        new Unable2JudgeAffectedRows(3L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
         Assert.assertEquals(0, actualInsert.size());
     }
@@ -1661,18 +1661,18 @@ public class MySQLCheckerTest {
     @Test
     public void check_unable2JudgeAffectedRows_valuesExceed() {
         String insert =
-            "insert into users (id, name, age, email) \n"
-            + "values \n"
-            + "('2', 'b-bot', 3, 'o'), \n"
-            + "('3', 'c-bot', 3, 'o'), \n"
-            + "('4', 'd-bot', 3, '(o)'), \n"
-            + "('5', 'e-bot', 3, 'o')";
+                "insert into users (id, name, age, email) \n"
+                        + "values \n"
+                        + "('2', 'b-bot', 3, 'o'), \n"
+                        + "('3', 'c-bot', 3, 'o'), \n"
+                        + "('4', 'd-bot', 3, '(o)'), \n"
+                        + "('5', 'e-bot', 3, 'o')";
 
         JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
 
         DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
-            Collections.singletonList(
-                new Unable2JudgeAffectedRows(3L, DialectType.MYSQL, jdbcTemplate)));
+                Collections.singletonList(
+                        new Unable2JudgeAffectedRows(3L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
         Assert.assertEquals(0, actualInsert.size());
     }
@@ -1680,14 +1680,14 @@ public class MySQLCheckerTest {
     @Test
     public void check_unable2JudgeAffectedRows_valueIsNull() {
         String insert =
-            "insert into users (id, name, age, email) \n"
-            + "value ()";
+                "insert into users (id, name, age, email) \n"
+                        + "value ()";
 
         JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
 
         DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
-            Collections.singletonList(
-                new Unable2JudgeAffectedRows(2L, DialectType.MYSQL, jdbcTemplate)));
+                Collections.singletonList(
+                        new Unable2JudgeAffectedRows(2L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
         Assert.assertEquals(1, actualInsert.size());
     }
@@ -1695,17 +1695,17 @@ public class MySQLCheckerTest {
     @Test
     public void check_unable2JudgeAffectedRows_valuesIsNull() {
         String insert =
-            "insert into users (id, name, age, email) \n"
-            + "values \n"
-            + "('2', 'b-bot', 3, 'o'), \n"
-            + "('3', 'c-bot', 3, 'o'), \n"
-            + "()";
+                "insert into users (id, name, age, email) \n"
+                        + "values \n"
+                        + "('2', 'b-bot', 3, 'o'), \n"
+                        + "('3', 'c-bot', 3, 'o'), \n"
+                        + "()";
 
         JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
 
         DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
-            Collections.singletonList(
-                new Unable2JudgeAffectedRows(3L, DialectType.MYSQL, jdbcTemplate)));
+                Collections.singletonList(
+                        new Unable2JudgeAffectedRows(3L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
         Assert.assertEquals(1, actualInsert.size());
     }
@@ -1713,16 +1713,16 @@ public class MySQLCheckerTest {
     @Test
     public void check_unable2JudgeAffectedRows_setValue() {
         String insert =
-            "insert into users (id, name, age, email) \n"
-            + "set \n"
-            + "column1 = 'value1' \n"
-            + "column2 = 'value2'";
+                "insert into users (id, name, age, email) \n"
+                        + "set \n"
+                        + "column1 = 'value1' \n"
+                        + "column2 = 'value2'";
 
         JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
 
         DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
-            Collections.singletonList(
-                new Unable2JudgeAffectedRows(2L, DialectType.MYSQL, jdbcTemplate)));
+                Collections.singletonList(
+                        new Unable2JudgeAffectedRows(2L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
         Assert.assertEquals(0, actualInsert.size());
     }
@@ -1730,16 +1730,16 @@ public class MySQLCheckerTest {
     @Test
     public void check_unable2JudgeAffectedRows_setValueFailed() {
         String insert =
-            "insert into users \n"
-            + "set \n"
-            + "column1 = 'value1', \n"
-            + "column2 = 'value2'";
+                "insert into users \n"
+                        + "set \n"
+                        + "column1 = 'value1', \n"
+                        + "column2 = 'value2'";
 
         JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
 
         DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
-            Collections.singletonList(
-                new Unable2JudgeAffectedRows(0L, DialectType.MYSQL, jdbcTemplate)));
+                Collections.singletonList(
+                        new Unable2JudgeAffectedRows(0L, DialectType.MYSQL, jdbcTemplate)));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
         Assert.assertEquals(0, actualInsert.size());
     }
