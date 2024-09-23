@@ -221,7 +221,7 @@ public class ScheduleService {
                 createScheduleReq.setParameters(parameters.getScheduleTaskParameters());
                 createScheduleReq.setTriggerConfig(parameters.getTriggerConfig());
                 createScheduleReq.setType(parameters.getType());
-                createScheduleReq.setDescription(parameters.getDescription());
+                createScheduleReq.setDescription(createReq.getDescription());
                 scheduleChangeParams = ScheduleChangeParams.with(createScheduleReq);
                 break;
             }
