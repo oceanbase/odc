@@ -77,7 +77,7 @@ public class NativeK8sDeploymentOperatorBuilder extends BaseNativeK8sResourceOpe
         meta.setNamespace(e.getNamespace());
         k8sDeployment.setMetadata(meta);
         if (runtimeResource.isPresent()) {
-            k8sDeployment.setResourceOperator(runtimeResource.get().getResourceOperator());
+            k8sDeployment.setK8sPodList(runtimeResource.get().getK8sPodList());
             k8sDeployment.setKind(runtimeResource.get().getKind());
             k8sDeployment.setSpec(runtimeResource.get().getSpec());
             k8sDeployment.setStatus(runtimeResource.get().getStatus());

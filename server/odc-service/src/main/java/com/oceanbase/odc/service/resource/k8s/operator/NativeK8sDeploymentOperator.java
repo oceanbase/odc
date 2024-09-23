@@ -15,7 +15,12 @@
  */
 package com.oceanbase.odc.service.resource.k8s.operator;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.service.resource.ResourceID;
@@ -54,8 +59,8 @@ public class NativeK8sDeploymentOperator extends BaseNativeK8sResourceOperator<K
                 this.defaultNamespace, resourceContext, null, null, null, null);
         resourceContext.setStatus(deployment.getStatus());
         resourceContext.setResourceState(ResourceState.CREATING);
+        resourceContext.setK8sPodList(Collections.emptyList());
         resourceContext.setResourceLocation(this.resourceLocation);
-        resourceContext.setResourceOperator(this.resourceOperator);
         return resourceContext;
     }
 
@@ -78,14 +83,32 @@ public class NativeK8sDeploymentOperator extends BaseNativeK8sResourceOperator<K
     public List<K8sDeployment> list() throws Exception {
         List<V1Deployment> deployments = new AppsV1Api().listNamespacedDeployment(this.defaultNamespace,
                 null, null, null, null, null, null, null, null, null, null, null).getItems();
+        List<K8sPod> pods = this.resourceOperator.list();
         return deployments.stream().map(item -> {
-            K8sDeployment deployment = new K8sDeployment(
-                    this.resourceLocation, ResourceState.UNKNOWN, this.resourceOperator);
+            List<K8sPod> k8sPodList = new ArrayList<>();
+            if (item.getSpec() != null && item.getSpec().getSelector() != null) {
+                Map<String, String> selector = item.getSpec().getSelector().getMatchLabels();
+                k8sPodList.addAll(pods.stream().filter(v1Pod -> {
+                    if (selector == null
+                            || v1Pod.getMetadata() == null
+                            || v1Pod.getMetadata().getLabels() == null) {
+                        return false;
+                    }
+                    Map<String, String> labels = v1Pod.getMetadata().getLabels();
+                    for (Entry<String, String> entry : selector.entrySet()) {
+                        if (!Objects.equals(entry.getValue(), labels.get(entry.getKey()))) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }).collect(Collectors.toList()));
+            }
+            K8sDeployment deployment = new K8sDeployment(this.resourceLocation, ResourceState.UNKNOWN, k8sPodList);
             deployment.setStatus(item.getStatus());
             deployment.setKind(item.getKind());
             deployment.setMetadata(item.getMetadata());
-            deployment.setApiVersion(item.getApiVersion());
             deployment.setSpec(item.getSpec());
+            deployment.setApiVersion(item.getApiVersion());
             return deployment;
         }).collect(Collectors.toList());
     }

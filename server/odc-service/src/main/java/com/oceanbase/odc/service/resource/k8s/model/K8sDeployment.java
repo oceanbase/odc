@@ -16,15 +16,11 @@
 package com.oceanbase.odc.service.resource.k8s.model;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
-import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceLocation;
-import com.oceanbase.odc.service.resource.ResourceOperator;
 import com.oceanbase.odc.service.resource.ResourceState;
 
 import io.kubernetes.client.openapi.models.V1Deployment;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -46,13 +42,12 @@ public class K8sDeployment extends V1Deployment implements K8sResource {
     private ResourceState resourceState;
     private ResourceLocation resourceLocation;
     private List<K8sPod> k8sPodList = null;
-    private ResourceOperator<K8sPod, K8sPod> resourceOperator;
 
     public K8sDeployment(@NonNull ResourceLocation resourceLocation,
-            @NonNull ResourceState resourceState, ResourceOperator<K8sPod, K8sPod> resourceOperator) {
+            @NonNull ResourceState resourceState, List<K8sPod> k8sPodList) {
         this.resourceState = resourceState;
+        this.k8sPodList = k8sPodList;
         this.resourceLocation = resourceLocation;
-        this.resourceOperator = resourceOperator;
     }
 
     @Override
@@ -68,25 +63,6 @@ public class K8sDeployment extends V1Deployment implements K8sResource {
     @Override
     public ResourceLocation resourceLocation() {
         return this.resourceLocation;
-    }
-
-    public synchronized List<K8sPod> getK8sPods() throws Exception {
-        if (this.k8sPodList != null) {
-            return this.k8sPodList;
-        }
-        if (this.resourceOperator == null) {
-            throw new IllegalStateException("K8s Pod operator is null");
-        }
-        this.k8sPodList = this.resourceOperator.list().stream().filter(pod -> {
-            if (!pod.resourceName().startsWith(resourceName())
-                    || pod.getMetadata() == null) {
-                return false;
-            }
-            V1ObjectMeta meta = pod.getMetadata();
-            return pod.resourceID().equals(
-                    new ResourceID(resourceLocation(), K8sPod.TYPE, meta.getNamespace(), meta.getName()));
-        }).collect(Collectors.toList());
-        return this.k8sPodList;
     }
 
 }
