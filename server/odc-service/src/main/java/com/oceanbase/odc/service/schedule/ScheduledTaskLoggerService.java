@@ -15,16 +15,21 @@
  */
 package com.oceanbase.odc.service.schedule;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
@@ -47,9 +52,10 @@ import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
-import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -93,16 +99,20 @@ public class ScheduledTaskLoggerService {
 
     public String getLogContent(Long scheduleTaskId, OdcTaskLogLevel level) {
         try {
-            return LogUtils.getLatestLogContent(getLogFile(scheduleTaskId, level), loggerProperty.getMaxLines(),
-                    loggerProperty.getMaxSize());
+            return getLog(scheduleTaskId, level);
         } catch (Exception e) {
             log.warn("get log failed, scheduleTaskId={}", scheduleTaskId);
             return LogUtils.DEFAULT_LOG_CONTENT;
         }
     }
 
-    public File downloadLog(Long scheduleTaskId, OdcTaskLogLevel level) {
-        return getLogFile(scheduleTaskId, level);
+    public InputStreamResource downloadLog(Long scheduleTaskId, OdcTaskLogLevel level) {
+        try {
+            return new InputStreamResource(downloadLogFile(scheduleTaskId, level));
+        } catch (Exception e) {
+            log.warn("download log failed, scheduleTaskId={}", scheduleTaskId);
+            return new InputStreamResource(IoUtil.toUtf8Stream(LogUtils.DEFAULT_LOG_CONTENT));
+        }
     }
 
     @SneakyThrows
@@ -136,7 +146,10 @@ public class ScheduledTaskLoggerService {
     }
 
     @SneakyThrows
-    private File getLogFileFromTaskFramework(Long jobId, OdcTaskLogLevel level) {
+    private void consumeLogFromTaskFramework(Long jobId, OdcTaskLogLevel level,
+            Consumer<File> logFileConsumer,
+            Consumer<String> logContentConsumer,
+            Consumer<ExecutorIdentifier> jobDispatcherConsumer) {
         JobEntity jobEntity = taskFrameworkService.find(jobId);
         PreConditions.notNull(jobEntity, "job not found by id " + jobId);
         if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
@@ -144,22 +157,20 @@ public class ScheduledTaskLoggerService {
                 throw new RuntimeException("CloudObjectStorageService is not supported.");
             }
 
-            String tempFilePath =
-                    FileUtil.normalize(loggerProperty.getTempLogDir() + File.separator
-                            + String.format("tmp-task-%s.log", jobId));
             String attributeKey = OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
                     : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
             Optional<String> objId = taskFrameworkService.findByJobIdAndAttributeKey(jobId, attributeKey);
             Optional<String> bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobId,
                     JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
+            String logFilePath = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
             if (objId.isPresent() && bucketName.isPresent()) {
                 if (log.isDebugEnabled()) {
                     log.debug("job: {} is finished, try to get log from local or oss.", jobEntity.getId());
                 }
-                FileUtil.del(tempFilePath);
-                File localFile = new File(LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level));
+                File localFile = new File(logFilePath);
                 if (localFile.exists()) {
-                    return localFile;
+                    logFileConsumer.accept(localFile);
+                    return;
                 }
 
                 File tempFile = cloudObjectStorageService.downloadToTempFile(objId.get());
@@ -168,14 +179,16 @@ public class ScheduledTaskLoggerService {
                 } finally {
                     FileUtils.deleteQuietly(tempFile);
                 }
-                return localFile;
+                logFileConsumer.accept(localFile);
+                return;
             }
             if (jobEntity.getExecutorDestroyedTime() == null && jobEntity.getExecutorEndpoint() != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
                 }
                 String logContent = taskExecutorClient.getLogContent(jobEntity.getExecutorEndpoint(), jobId, level);
-                return FileUtil.writeUtf8String(logContent, tempFilePath);
+                logContentConsumer.accept(logContent);
+                return;
             }
         }
 
@@ -183,14 +196,15 @@ public class ScheduledTaskLoggerService {
             log.info("job: {} is not current machine, try to forward.", jobEntity.getId());
             ExecutorIdentifier ei = ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier());
             try {
-                DispatchResponse response = requestDispatcher.forward(ei.getHost(), ei.getPort());
-                return response.getContentByType(new TypeReference<SuccessResponse<File>>() {}).getData();
+                jobDispatcherConsumer.accept(ei);
+                return;
             } catch (Exception ex) {
                 log.warn("Forward to remote odc occur error, jobId={}, executorIdentifier={}",
                         jobEntity.getId(), jobEntity.getExecutorIdentifier(), ex);
             }
         }
-        return new File(LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level));
+        File file = new File(LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level));
+        logFileConsumer.accept(file);
     }
 
     private File getLogFileFromCurrentMachine(ScheduleTaskEntity scheduleTask, OdcTaskLogLevel level) {
@@ -200,11 +214,20 @@ public class ScheduledTaskLoggerService {
         return new File(filePath);
     }
 
-    private File getLogFile(Long scheduleTaskId, OdcTaskLogLevel level) {
+    private String getLog(Long scheduleTaskId, OdcTaskLogLevel level) {
         ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(scheduleTaskId);
         if (taskFrameworkEnabledProperties.isEnabled() && taskEntity.getJobId() != null) {
             try {
-                return getLogFileFromTaskFramework(taskEntity.getJobId(), level);
+                final Holder<String> logContentHolder = new Holder<>();
+                consumeLogFromTaskFramework(taskEntity.getJobId(), level,
+                        logFile -> logContentHolder
+                                .setValue(LogUtils.getLatestLogContent(logFile, loggerProperty.getMaxLines(),
+                                        loggerProperty.getMaxSize())),
+                        logContentHolder::setValue,
+                        executorIdentifier -> logContentHolder
+                                .setValue((forwardToGetLogContent(executorIdentifier.getHost(),
+                                        executorIdentifier.getPort()))));
+                return logContentHolder.getValue();
             } catch (Exception e) {
                 log.warn("Copy input stream to file failed.", e);
                 throw new UnexpectedException("Copy input stream to file failed.");
@@ -213,15 +236,66 @@ public class ScheduledTaskLoggerService {
         ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
         if (!dispatchChecker.isThisMachine(executorInfo)) {
             try {
-                DispatchResponse response =
-                        requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
-                return response.getContentByType(
-                        new TypeReference<SuccessResponse<File>>() {}).getData();
+                return forwardToGetLogContent(executorInfo.getHost(), executorInfo.getPort());
             } catch (Exception e) {
-                log.warn("Remote get task log failed, jobId={}", scheduleTaskId, e);
-                throw new UnexpectedException(String.format("Remote interrupt task failed, jobId=%s", scheduleTaskId));
+                log.warn("Remote get task log failed, scheduleTaskId={}", scheduleTaskId, e);
+                throw new UnexpectedException(
+                        String.format("Remote interrupt task failed, scheduleTaskId=%s", scheduleTaskId));
             }
         }
-        return getLogFileFromCurrentMachine(taskEntity, level);
+        File logFile = getLogFileFromCurrentMachine(taskEntity, level);
+        return LogUtils.getLatestLogContent(logFile, loggerProperty.getMaxLines(), loggerProperty.getMaxSize());
+    }
+
+    private InputStream downloadLogFile(Long scheduleTaskId, OdcTaskLogLevel level) {
+        ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(scheduleTaskId);
+        if (taskFrameworkEnabledProperties.isEnabled() && taskEntity.getJobId() != null) {
+            try {
+                final Holder<InputStream> logStreamHolder = new Holder<>();
+                consumeLogFromTaskFramework(taskEntity.getJobId(), level,
+                        logFile -> logStreamHolder.setValue(IoUtil.toStream(logFile)),
+                        logContent -> logStreamHolder.setValue(IoUtil.toUtf8Stream(logContent)),
+                        executorIdentifier -> logStreamHolder
+                                .setValue(forwardToDownloadLog(executorIdentifier.getHost(),
+                                        executorIdentifier.getPort())));
+                return logStreamHolder.getValue();
+            } catch (Exception e) {
+                log.warn("Copy input stream to file failed.", e);
+                throw new UnexpectedException("Copy input stream to file failed.");
+            }
+        }
+        ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
+        if (!dispatchChecker.isThisMachine(executorInfo)) {
+            try {
+                return forwardToDownloadLog(executorInfo.getHost(), executorInfo.getPort());
+            } catch (Exception e) {
+                log.warn("Remote download task log failed, scheduleTaskId={}", scheduleTaskId, e);
+                throw new UnexpectedException(
+                        String.format("Remote interrupt task failed, scheduleTaskId=%s", scheduleTaskId));
+            }
+        }
+        return IoUtil.toStream(getLogFileFromCurrentMachine(taskEntity, level));
+    }
+
+    @SneakyThrows
+    private String forwardToGetLogContent(@NonNull String host, @NonNull Integer port) {
+        try {
+            DispatchResponse response = requestDispatcher.forward(host, port);
+            return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
+        } catch (Exception e) {
+            log.warn("forward request to get scheduled task log failed, host={}, port={}", host, port, e);
+            throw e;
+        }
+    }
+
+    @SneakyThrows
+    private InputStream forwardToDownloadLog(@NonNull String host, @NonNull Integer port) {
+        try {
+            DispatchResponse response = requestDispatcher.forward(host, port);
+            return new ByteArrayInputStream(response.getContent());
+        } catch (Exception e) {
+            log.warn("forward request to download scheduled task log failed, host={}, port={}", host, port, e);
+            throw e;
+        }
     }
 }
