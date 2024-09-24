@@ -23,8 +23,8 @@
 - 新增 Oracle 到 Oracle 的归档链路
 - 新增 OceanBase Oracle 到 Oracle 的归档链路
 - 新增 PostgreSQL 到 OceanBase MySQL 的归档链路
-- 新增 Oracle 数据库数据清理
-- 新增 PostgreSQL 数据库清理
+- 新增 Oracle 数据清理
+- 新增 PostgreSQL 清理
 
 导入导出
 
