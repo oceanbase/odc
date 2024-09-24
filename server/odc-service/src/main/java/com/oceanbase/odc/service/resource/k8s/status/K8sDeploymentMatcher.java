@@ -43,6 +43,7 @@ public class K8sDeploymentMatcher implements K8sResourceMatcher<K8sDeployment> {
 
     private boolean ignoreReplicasCount;
     private boolean replicasEnough;
+    private boolean replicasEmpty;
     private boolean forAllPods;
     private Set<ResourceState> podStatusIn = new HashSet<>();
     private Integer minMatchesCountInHasPodStatuses = null;
@@ -73,7 +74,7 @@ public class K8sDeploymentMatcher implements K8sResourceMatcher<K8sDeployment> {
         Validate.notNull(spec.getReplicas());
         List<K8sPod> k8sPodList = k8sResource.getK8sPodList();
         if (CollectionUtils.isEmpty(k8sPodList)) {
-            return false;
+            return this.replicasEmpty;
         }
         boolean matches = true;
         int replicas = spec.getReplicas();

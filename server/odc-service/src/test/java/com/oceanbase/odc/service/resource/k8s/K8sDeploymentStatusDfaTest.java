@@ -57,6 +57,18 @@ public class K8sDeploymentStatusDfaTest {
     }
 
     @Test
+    public void next_k8sPodIsEmpty_nextStateCreating() throws Exception {
+        K8sDeploymentStatusDfa dfa = K8sDeploymentStatusDfa.buildInstance(ResourceState.CREATING);
+        K8sDeployment deployment = new K8sDeployment();
+        V1DeploymentSpec spec = new V1DeploymentSpec();
+        spec.setReplicas(3);
+        deployment.setSpec(spec);
+        deployment.setK8sPodList(null);
+        ResourceState actual = dfa.next(deployment, ResourceState.CREATING);
+        Assert.assertEquals(ResourceState.CREATING, actual);
+    }
+
+    @Test
     public void next_currentStateIsCreatingPodIsFailed_nextStateError() throws Exception {
         K8sDeploymentStatusDfa dfa = K8sDeploymentStatusDfa.buildInstance(ResourceState.CREATING);
         ResourceState actual = dfa.next(getErrorDeployment(), ResourceState.CREATING);
