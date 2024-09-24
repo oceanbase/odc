@@ -58,7 +58,7 @@ server:
   tomcat:
     threads:
       max: 500
-      min-spare: 1
+      min-spare: 18
     keep-alive-timeout: 70000
     mbeanregistry:
       enabled: true
