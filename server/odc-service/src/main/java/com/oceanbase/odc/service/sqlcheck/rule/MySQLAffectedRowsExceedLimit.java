@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.sqlcheck.rule;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -27,11 +26,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
-import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
-import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
-import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
-import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.delete.Delete;
@@ -41,7 +35,6 @@ import com.oceanbase.tools.sqlparser.statement.select.Select;
 import com.oceanbase.tools.sqlparser.statement.select.SelectBody;
 import com.oceanbase.tools.sqlparser.statement.update.Update;
 
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,44 +46,11 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2024-08-01 18:18
  */
 @Slf4j
-public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
-
-    @Getter
-    private final Long maxSqlAffectedRows;
-    private final JdbcOperations jdbcOperations;
-    private final DialectType dialectType;
+public class MySQLAffectedRowsExceedLimit extends BaseAffectedRowsExceedLimit {
 
     public MySQLAffectedRowsExceedLimit(@NonNull Long maxSqlAffectedRows, DialectType dialectType,
             JdbcOperations jdbcOperations) {
-        this.maxSqlAffectedRows = maxSqlAffectedRows <= 0 ? 0 : maxSqlAffectedRows;
-        this.jdbcOperations = jdbcOperations;
-        this.dialectType = dialectType;
-    }
-
-    /**
-     * Get the rule type
-     */
-    @Override
-    public SqlCheckRuleType getType() {
-        return SqlCheckRuleType.RESTRICT_SQL_AFFECTED_ROWS;
-    }
-
-    /**
-     * Execution rule check
-     */
-    @Override
-    public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
-        long affectedRows = getAffectedRows(statement);
-        if (affectedRows >= 0) {
-            if (affectedRows > maxSqlAffectedRows) {
-                return Collections.singletonList(SqlCheckUtil
-                        .buildViolation(statement.getText(), statement, getType(),
-                                new Object[] {maxSqlAffectedRows, affectedRows}));
-            } else {
-                return Collections.emptyList();
-            }
-        }
-        return Collections.emptyList();
+        super(maxSqlAffectedRows, dialectType, jdbcOperations);
     }
 
     /**
@@ -101,7 +61,11 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
         return Arrays.asList(DialectType.MYSQL, DialectType.OB_MYSQL);
     }
 
-    protected long getAffectedRows(@NonNull Statement statement) {
+    /**
+     * Base method implemented by MySQL types
+     */
+    @Override
+    public long getStatementAffectedRows(Statement statement, JdbcOperations jdbcOperations, Long maxSqlAffectedRows) {
         long affectedRows = 0;
         if (statement instanceof Update || statement instanceof Delete || statement instanceof Insert) {
             String explainSql = "EXPLAIN " + statement.getText();
@@ -110,7 +74,7 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
                     log.warn("JdbcOperations is null, please check your connection");
                     return -1;
                 } else {
-                    switch (dialectType) {
+                    switch (super.getDialectType()) {
                         case MYSQL:
                             affectedRows = (statement instanceof Insert)
                                     ? getMySqlAffectedRowsByCount((Insert) statement)
@@ -120,7 +84,7 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
                             affectedRows = getOBMySqlAffectedRows(explainSql, jdbcOperations);
                             break;
                         default:
-                            log.warn("Unsupported dialect type: {}", dialectType);
+                            log.warn("Unsupported dialect type: {}", super.getDialectType());
                             break;
                     }
                 }
@@ -156,7 +120,7 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
             if (values.size() == 1 && values.get(0).size() == 1) {
                 Expression value = values.get(0).get(0);
                 if ((value instanceof Select) || (value instanceof SelectBody)) {
-                    return getMySqlAffectedRowsByExplain(insertStatement.getText(), jdbcOperations);
+                    return getMySqlAffectedRowsByExplain(insertStatement.getText(), super.getJdbcOperations());
                 } else {
                     return 1;
                 }

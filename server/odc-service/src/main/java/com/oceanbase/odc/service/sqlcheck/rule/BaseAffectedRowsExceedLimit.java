@@ -28,20 +28,21 @@ import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 
+import lombok.Getter;
 import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
-public class Unable2JudgeAffectedRows implements SqlCheckRule {
+@Getter
+public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
 
-    private final BaseAffectedRowsExceedLimit targetRule;
-    private final JdbcOperations jdbcOperations;
     private final Long maxSqlAffectedRows;
+    private final JdbcOperations jdbcOperations;
+    private final DialectType dialectType;
 
-    public Unable2JudgeAffectedRows(@NonNull BaseAffectedRowsExceedLimit targetRule) {
-        this.jdbcOperations = targetRule.getJdbcOperations();
-        this.maxSqlAffectedRows = targetRule.getMaxSqlAffectedRows();
-        this.targetRule = targetRule;
+    public BaseAffectedRowsExceedLimit(@NonNull Long maxSqlAffectedRows, DialectType dialectType,
+            JdbcOperations jdbcOperations) {
+        this.dialectType = dialectType;
+        this.jdbcOperations = jdbcOperations;
+        this.maxSqlAffectedRows = maxSqlAffectedRows < 0 ? Long.MAX_VALUE : maxSqlAffectedRows;
     }
 
     /**
@@ -49,12 +50,7 @@ public class Unable2JudgeAffectedRows implements SqlCheckRule {
      */
     @Override
     public SqlCheckRuleType getType() {
-        return SqlCheckRuleType.ESTIMATE_SQL_AFFECTED_ROWS_FAILED;
-    }
-
-    @Override
-    public List<DialectType> getSupportsDialectTypes() {
-        return this.targetRule.getSupportsDialectTypes();
+        return SqlCheckRuleType.RESTRICT_SQL_AFFECTED_ROWS;
     }
 
     /**
@@ -63,16 +59,21 @@ public class Unable2JudgeAffectedRows implements SqlCheckRule {
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
         try {
-            long affectedRows = this.targetRule.getStatementAffectedRows(statement, jdbcOperations, maxSqlAffectedRows);
-            if (affectedRows < 0) {
-                return Collections.singletonList(SqlCheckUtil
-                        .buildViolation(statement.getText(), statement, getType(), new Object[] {}));
+            long affectedRows = getStatementAffectedRows(statement, this.jdbcOperations, this.maxSqlAffectedRows);
+            if (affectedRows >= 0) {
+                if (affectedRows > maxSqlAffectedRows) {
+                    return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
+                            statement, getType(), new Object[] {maxSqlAffectedRows, affectedRows}));
+                }
+                return Collections.emptyList();
             }
         } catch (Exception e) {
-            log.warn("Unable to get affected rows, sql={}", statement.getText(), e);
-            return Collections.singletonList(SqlCheckUtil
-                    .buildViolation(statement.getText(), statement, getType(), new Object[] {}));
+            // eat the exception
         }
         return Collections.emptyList();
     }
+
+    public abstract long getStatementAffectedRows(Statement statement,
+            JdbcOperations jdbcOperations, Long maxSqlAffectedRows) throws Exception;
+
 }
