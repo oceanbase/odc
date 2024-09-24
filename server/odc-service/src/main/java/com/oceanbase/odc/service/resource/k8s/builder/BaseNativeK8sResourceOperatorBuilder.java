@@ -57,11 +57,11 @@ public abstract class BaseNativeK8sResourceOperatorBuilder<T extends K8sResource
         }
     }
 
-    protected abstract boolean doMatch(String type);
+    protected abstract boolean doMatches(String type);
 
     @Override
-    public boolean match(@NonNull String type) {
-        return this.apiClientSet && doMatch(type);
+    public boolean matches(@NonNull String type) {
+        return this.apiClientSet && doMatches(type);
     }
 
     @Override

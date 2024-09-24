@@ -47,11 +47,14 @@ public class K8sPodStatusDfa extends AbstractDfa<ResourceState, K8sPod> {
         };
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(fromState)
                 .matchesK8sResource(getCreatingPodMatchers()).to(ResourceState.CREATING).build());
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(ResourceState.CREATING)
+                .matchesK8sResource(Collections.singletonList(Objects::isNull)).to(ResourceState.CREATING).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(fromState)
                 .matchesK8sResource(getErrorPodMatchers()).to(ResourceState.ERROR_STATE).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(fromState)
                 .matchesK8sResource(getAvailablePodMatchers()).to(ResourceState.AVAILABLE).build());
-        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(fromState)
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>()
+                .from(ResourceState.AVAILABLE, ResourceState.ERROR_STATE)
                 .matchesK8sResource(Collections.singletonList(Objects::isNull)).to(ResourceState.UNKNOWN).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(ResourceState.DESTROYING)
                 .matchesK8sResource(Collections.singletonList(Objects::isNull)).to(ResourceState.DESTROYED).build());

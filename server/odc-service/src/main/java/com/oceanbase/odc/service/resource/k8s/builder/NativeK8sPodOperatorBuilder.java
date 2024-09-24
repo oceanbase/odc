@@ -50,7 +50,7 @@ public class NativeK8sPodOperatorBuilder extends BaseNativeK8sResourceOperatorBu
     }
 
     @Override
-    protected boolean doMatch(String type) {
+    protected boolean doMatches(String type) {
         return K8sPod.TYPE.equals(type);
     }
 

@@ -41,12 +41,23 @@ public class K8sServiceStatusDfa extends AbstractDfa<ResourceState, K8sService> 
     public static K8sServiceStatusDfa buildInstance() {
         List<DfaStateTransfer<ResourceState, K8sService>> transfers = new ArrayList<>();
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sService>()
-                .from(ResourceState.CREATING, ResourceState.AVAILABLE, ResourceState.ERROR_STATE)
+                .from(ResourceState.CREATING)
+                .matchesK8sResource(getNullMatchers()).to(ResourceState.CREATING).build());
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sService>()
+                .from(ResourceState.AVAILABLE)
                 .matchesK8sResource(getNullMatchers()).to(ResourceState.UNKNOWN).build());
-        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sService>().from(ResourceState.CREATING)
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sService>()
+                .from(ResourceState.CREATING)
                 .matchesK8sResource(getNonNullMatchers()).to(ResourceState.AVAILABLE).build());
-        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sService>().from(ResourceState.DESTROYING)
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sService>()
+                .from(ResourceState.AVAILABLE)
+                .matchesK8sResource(getNonNullMatchers()).to(ResourceState.AVAILABLE).build());
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sService>()
+                .from(ResourceState.DESTROYING)
                 .matchesK8sResource(getNullMatchers()).to(ResourceState.DESTROYED).build());
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sService>()
+                .from(ResourceState.DESTROYING)
+                .matchesK8sResource(getNonNullMatchers()).to(ResourceState.DESTROYING).build());
         return new K8sServiceStatusDfa(transfers);
     }
 

@@ -93,9 +93,16 @@ public class K8sPodStatusDfaTest {
     }
 
     @Test
-    public void next_podIsNull_nextStateUnknown() throws Exception {
+    public void next_podIsNull_nextStateCreating() throws Exception {
         K8sPodStatusDfa dfa = K8sPodStatusDfa.buildInstance();
         ResourceState actual = dfa.next(null, ResourceState.CREATING);
+        Assert.assertEquals(ResourceState.CREATING, actual);
+    }
+
+    @Test
+    public void next_podIsNullAndStatusIsAvailable_nextStateCreating() throws Exception {
+        K8sPodStatusDfa dfa = K8sPodStatusDfa.buildInstance();
+        ResourceState actual = dfa.next(null, ResourceState.AVAILABLE);
         Assert.assertEquals(ResourceState.UNKNOWN, actual);
     }
 
