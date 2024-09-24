@@ -74,6 +74,7 @@ import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.sqlparser.statement.Statement;
@@ -256,8 +257,7 @@ public class LogicalDatabaseService {
                 databaseService.getBasicSkipPermissionCheck(logicalDatabaseId);
         Verify.equals(logicalDatabase.getType(), DatabaseType.LOGICAL, "database type");
         try {
-            syncManager.submitExtractLogicalTablesTask(logicalDatabase,
-                    userService.detailWithoutPermissionCheck(creatorId));
+            syncManager.submitExtractLogicalTablesTask(logicalDatabase, new User(userService.nullSafeGet(creatorId)));
         } catch (TaskRejectedException ex) {
             log.warn("submit extract logical tables task rejected, logical database id={}", logicalDatabaseId);
             return false;

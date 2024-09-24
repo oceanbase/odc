@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.listener;
 
 import java.util.Map;
 
+import org.eclipse.jgit.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -88,13 +89,12 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
                     scheduleTaskService.triggerDataArchiveDelete(o.getId());
                     log.info("Trigger delete job succeed.");
                 }
-            } else if ("LOGICAL_DATABASE_CHANGE".equalsIgnoreCase(jobEntity.getJobType())) {
+            } else if (StringUtils.equalsIgnoreCase("LogicalDatabaseChange", jobEntity.getJobType())) {
                 try {
-                    PublishLogicalDatabaseChangeReq req = JsonUtils.fromJson(
-                            JsonUtils
-                                    .fromJson(jobEntity.getJobParametersJson(),
-                                            new TypeReference<Map<String, String>>() {})
-                                    .get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
+                    PublishLogicalDatabaseChangeReq req = JsonUtils.fromJson(JsonUtils
+                            .fromJson(jobEntity.getJobParametersJson(),
+                                    new TypeReference<Map<String, String>>() {})
+                            .get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
                             PublishLogicalDatabaseChangeReq.class);
                     if (req != null && req.getLogicalDatabaseResp() != null) {
                         logicalDatabaseService.extractLogicalTablesSkipAuth(req.getLogicalDatabaseResp().getId(),
