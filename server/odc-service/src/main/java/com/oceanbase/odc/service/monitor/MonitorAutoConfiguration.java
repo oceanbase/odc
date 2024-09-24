@@ -49,8 +49,7 @@ public class MonitorAutoConfiguration {
     }
 
     @Bean(value = "businessMeterRegistry")
-    BusinessMeterRegistry businessMeterRegistry(PrometheusConfig prometheusConfig,
-            CollectorRegistry collectorRegistry, Clock clock, ObjectProvider<ExemplarSampler> exemplarSamplerProvider) {
+    BusinessMeterRegistry businessMeterRegistry(PrometheusConfig prometheusConfig) {
         return new BusinessMeterRegistry(prometheusConfig);
     }
 
