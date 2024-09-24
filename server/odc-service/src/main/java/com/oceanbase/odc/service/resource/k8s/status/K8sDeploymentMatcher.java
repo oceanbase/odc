@@ -75,6 +75,8 @@ public class K8sDeploymentMatcher implements K8sResourceMatcher<K8sDeployment> {
         List<K8sPod> k8sPodList = k8sResource.getK8sPodList();
         if (CollectionUtils.isEmpty(k8sPodList)) {
             return this.replicasEmpty;
+        } else if (this.replicasEmpty) {
+            return false;
         }
         boolean matches = true;
         int replicas = spec.getReplicas();
