@@ -35,8 +35,6 @@ public class JobEnvKeyConstants {
 
     public static final String ODC_LOG_DIRECTORY = "odc.log.directory";
 
-    public static final String ODC_DATA_DIRECTORY = "file.storage.dir";
-
     public static final String ODC_EXECUTOR_PORT = "ODC_EXECUTOR_PORT";
 
     public static final String ODC_SERVICE_HOST = "ODC_SERVICE_HOST";
