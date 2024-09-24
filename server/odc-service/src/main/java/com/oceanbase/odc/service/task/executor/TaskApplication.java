@@ -24,10 +24,10 @@ import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
-import org.eclipse.jgit.util.StringUtils;
 
 import com.oceanbase.odc.common.trace.TaskContextHolder;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.task.caller.JobContext;

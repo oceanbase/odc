@@ -48,7 +48,8 @@ public class JobCallerBuilder {
         String jobContextFilePath = JobUtils.getExecutorDataPath() + "/" + StringUtils.uuid() + ".enc";
         try {
             FileUtils.writeStringToFile(new File(jobContextFilePath),
-                    environments.get(JobEnvKeyConstants.ODC_JOB_CONTEXT),
+                    JobUtils.encrypt(environments.get(JobEnvKeyConstants.ENCRYPT_KEY),
+                            environments.get(JobEnvKeyConstants.ENCRYPT_SALT), JobUtils.toJson(context)),
                     Charset.defaultCharset());
         } catch (Exception ex) {
             FileUtils.deleteQuietly(new File(jobContextFilePath));
@@ -57,8 +58,6 @@ public class JobCallerBuilder {
         environments.put(JobEnvKeyConstants.ODC_JOB_CONTEXT_FILE_PATH,
                 JobUtils.encrypt(environments.get(JobEnvKeyConstants.ENCRYPT_KEY),
                         environments.get(JobEnvKeyConstants.ENCRYPT_SALT), jobContextFilePath));
-        // remove JobContext from environments
-        environments.remove(JobEnvKeyConstants.ODC_JOB_CONTEXT);
         ProcessConfig config = new ProcessConfig();
         config.setEnvironments(environments);
 
