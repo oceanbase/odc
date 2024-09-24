@@ -50,7 +50,7 @@ public class NativeK8sServiceOperatorBuilder extends BaseNativeK8sResourceOperat
     }
 
     @Override
-    protected boolean doMatch(String type) {
+    protected boolean doMatches(String type) {
         return K8sService.TYPE.equals(type);
     }
 

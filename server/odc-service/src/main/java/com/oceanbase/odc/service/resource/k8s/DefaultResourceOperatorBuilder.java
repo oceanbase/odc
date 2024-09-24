@@ -99,7 +99,7 @@ public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K
      * @return
      */
     @Override
-    public boolean match(String type) {
+    public boolean matches(String type) {
         return StringUtils.equalsIgnoreCase(type, CLOUD_K8S_POD_TYPE);
     }
 }

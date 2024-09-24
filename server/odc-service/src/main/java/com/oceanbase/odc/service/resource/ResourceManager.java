@@ -270,7 +270,7 @@ public class ResourceManager {
      */
     private ResourceOperatorBuilder<?, ?> getOperatorBuilder(String type) {
         for (ResourceOperatorBuilder<?, ?> candidate : resourceOperatorBuilders) {
-            if (candidate.match(type)) {
+            if (candidate.matches(type)) {
                 return candidate;
             }
         }

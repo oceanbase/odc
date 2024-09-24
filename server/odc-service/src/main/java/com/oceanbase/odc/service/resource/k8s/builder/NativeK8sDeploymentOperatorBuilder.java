@@ -53,7 +53,7 @@ public class NativeK8sDeploymentOperatorBuilder extends BaseNativeK8sResourceOpe
     }
 
     @Override
-    protected boolean doMatch(String type) {
+    protected boolean doMatches(String type) {
         return K8sDeployment.TYPE.equals(type);
     }
 

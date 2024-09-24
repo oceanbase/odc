@@ -37,7 +37,7 @@ public interface ResourceOperatorBuilder<RC extends ResourceContext, R extends R
      * 
      * @param type \ * @return
      */
-    boolean match(@NonNull String type);
+    boolean matches(@NonNull String type);
 
 }
 
