@@ -29,6 +29,7 @@ import com.oceanbase.odc.common.util.MapUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionGroup;
@@ -124,6 +125,12 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
                     log.warn("Cannot rewrite the sql, sql={}", sql);
                     continue;
                 }
+                rewriteResult.getSqls().entrySet().stream().forEach(entry -> {
+                    if (entry.getKey().getDatabaseId() == null) {
+                        throw new BadRequestException(
+                                "physical database not found, database name=" + entry.getKey().getSchemaName());
+                    }
+                });
                 Map<Long, List<String>> databaseId2RewrittenSqls = rewriteResult.getSqls().entrySet().stream()
                         .collect(Collectors.groupingBy(
                                 entry -> entry.getKey().getDatabaseId(),

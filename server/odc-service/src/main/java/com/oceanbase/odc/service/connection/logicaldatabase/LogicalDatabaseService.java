@@ -341,12 +341,8 @@ public class LogicalDatabaseService {
             RewriteResult rewriteResult = sqlRewriter.rewrite(
                     new RewriteContext(statement, logicalDatabase.getDialectType(), dataNodesToExecute));
             for (Map.Entry<DataNode, String> result : rewriteResult.getSqls().entrySet()) {
-                Long databaseId = result.getKey().getDatabaseId();
-                if (databaseId == null) {
-                    throw new BadRequestException(
-                            "physical database not found, database name=" + result.getKey().getSchemaName());
-                }
-                databaseId2Sqls.computeIfAbsent(databaseId, k -> new ArrayList<>()).add(result.getValue());
+                databaseId2Sqls.computeIfAbsent(result.getKey().getDatabaseId(), k -> new ArrayList<>())
+                        .add(result.getValue());
             }
         }
         if (MapUtils.isEmpty(databaseId2Sqls)) {
