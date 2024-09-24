@@ -45,6 +45,13 @@ public class DefaultApprovalFlowClient implements ApprovalFlowClient {
                             : params.getUpdateScheduleReq().getTriggerConfig());
         }
         req.setParameters(alterScheduleParameters);
+        req.setProjectId(params.getProjectId());
+        req.setProjectName(params.getProjectName());
+        req.setDatabaseName(params.getDatabaseName());
+        req.setConnectionId(params.getConnectionId());
+        req.setConnectionName(params.getConnectionName());
+        req.setEnvironmentId(params.getEnvironmentId());
+        req.setEnvironmentName(params.getEnvironmentName());
         return SpringContextUtil.getBean(FlowInstanceService.class).createAlterSchedule(req);
     }
 }

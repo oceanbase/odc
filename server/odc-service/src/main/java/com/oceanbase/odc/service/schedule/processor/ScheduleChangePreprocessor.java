@@ -65,7 +65,7 @@ public class ScheduleChangePreprocessor implements InitializingBean {
         ScheduleType type;
         if (params.getOperationType() == OperationType.CREATE) {
             type = params.getCreateScheduleReq().getType();
-            adaptCreateScheduleReq(params.getCreateScheduleReq());
+            adaptScheduleChangeParams(params);
         } else {
             type = scheduleService.nullSafeGetModelById(params.getScheduleId()).getType();
         }
@@ -93,7 +93,7 @@ public class ScheduleChangePreprocessor implements InitializingBean {
         });
     }
 
-    private void adaptCreateScheduleReq(CreateScheduleReq req) {
+    private void adaptScheduleChangeParams(ScheduleChangeParams req) {
         Database srcDb = databaseService.detail(getTargetDatabaseId(req));
         req.setProjectId(srcDb.getProject().getId());
         req.setProjectName(srcDb.getProject().getName());
@@ -105,7 +105,11 @@ public class ScheduleChangePreprocessor implements InitializingBean {
         req.setDatabaseId(srcDb.getId());
     }
 
-    private Long getTargetDatabaseId(CreateScheduleReq req) {
+    private Long getTargetDatabaseId(ScheduleChangeParams params) {
+        if (params.getOperationType() != OperationType.CREATE) {
+            return scheduleService.nullSafeGetById(params.getScheduleId()).getDatabaseId();
+        }
+        CreateScheduleReq req = params.getCreateScheduleReq();
         switch (req.getType()) {
             case DATA_ARCHIVE: {
                 DataArchiveParameters parameters = (DataArchiveParameters) req.getParameters();

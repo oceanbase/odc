@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
+
 import lombok.Data;
 
 /**
@@ -35,6 +38,23 @@ public class ScheduleChangeParams {
     private CreateScheduleReq createScheduleReq;
 
     private UpdateScheduleReq updateScheduleReq;
+
+    @JsonProperty(access = Access.READ_ONLY)
+    private Long projectId;
+    @JsonProperty(access = Access.READ_ONLY)
+    private String projectName;
+    @JsonProperty(access = Access.READ_ONLY)
+    private Long databaseId;
+    @JsonProperty(access = Access.READ_ONLY)
+    private String databaseName;
+    @JsonProperty(access = Access.READ_ONLY)
+    private Long connectionId;
+    @JsonProperty(access = Access.READ_ONLY)
+    private String connectionName;
+    @JsonProperty(access = Access.READ_ONLY)
+    private Long environmentId;
+    @JsonProperty(access = Access.READ_ONLY)
+    private String environmentName;
 
     public static ScheduleChangeParams with(Long id, OperationType type) {
         ScheduleChangeParams req = new ScheduleChangeParams();
