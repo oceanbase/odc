@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.objectstorage.client;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -99,13 +98,7 @@ public class LocalObjectStorageClient implements ObjectStorageClient {
 
     @Override
     public InputStream getObject(String objectName) throws IOException {
-        ObjectBlockIterator blockIterator = blockOperator.getBlockIterator(objectName);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        while (blockIterator.hasNext()) {
-            outputStream.write(blockIterator.next());
-        }
-        byte[] bytes = outputStream.toByteArray();
-        return new ByteArrayInputStream(bytes);
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
 }
