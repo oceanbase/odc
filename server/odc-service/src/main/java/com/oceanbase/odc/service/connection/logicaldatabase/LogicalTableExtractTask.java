@@ -91,6 +91,7 @@ public class LogicalTableExtractTask implements Runnable {
     @Override
     public void run() {
         SecurityContextUtils.setCurrentUser(creator);
+        log.info("Start to extract logical tables for database id={}", logicalDatabase.getId());
         databaseService.updateObjectLastSyncTimeAndStatus(logicalDatabase.getId(), DBObjectSyncStatus.SYNCING);
         List<DatabaseMappingEntity> relations =
                 dbRelationRepository.findByLogicalDatabaseId(logicalDatabase.getId());

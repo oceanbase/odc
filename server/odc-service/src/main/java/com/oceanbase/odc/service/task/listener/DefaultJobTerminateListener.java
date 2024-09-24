@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.listener;
 
 import java.util.Map;
 
+import org.eclipse.jgit.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -63,7 +64,7 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
     public void onEvent(JobTerminateEvent event) {
         JobEntity jobEntity = taskFrameworkService.find(event.getJi().getId());
         scheduleTaskService.findByJobId(jobEntity.getId()).ifPresent(o -> {
-            TaskStatus taskStatus = "DLM".equals(jobEntity.getJobType()) ? dlmService.getTaskStatus(o.getId())
+            TaskStatus taskStatus = "DLM".equals(jobEntity.getJobType()) ? dlmService.getFinalTaskStatus(o.getId())
                     : event.getStatus().convertTaskStatus();
             scheduleTaskService.updateStatusById(o.getId(), taskStatus);
             log.info("Update schedule task status to {} succeed,scheduleTaskId={}", taskStatus, o.getId());
@@ -88,16 +89,18 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
                     scheduleTaskService.triggerDataArchiveDelete(o.getId());
                     log.info("Trigger delete job succeed.");
                 }
-            } else if ("LOGICAL_DATABASE_CHANGE".equals(jobEntity.getJobType())) {
+            } else if (StringUtils.equalsIgnoreCase("LogicalDatabaseChange", jobEntity.getJobType())) {
                 try {
-                    PublishLogicalDatabaseChangeReq req = JsonUtils.fromJson(
-                            JsonUtils
-                                    .fromJson(jobEntity.getJobParametersJson(),
-                                            new TypeReference<Map<String, String>>() {})
-                                    .get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
+                    PublishLogicalDatabaseChangeReq req = JsonUtils.fromJson(JsonUtils
+                            .fromJson(jobEntity.getJobParametersJson(),
+                                    new TypeReference<Map<String, String>>() {})
+                            .get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
                             PublishLogicalDatabaseChangeReq.class);
                     if (req != null && req.getLogicalDatabaseResp() != null) {
-                        logicalDatabaseService.extractLogicalTablesSkipAuth(req.getLogicalDatabaseResp().getId());
+                        logicalDatabaseService.extractLogicalTablesSkipAuth(req.getLogicalDatabaseResp().getId(),
+                                req.getCreatorId());
+                        log.info("Submit the extract logical tables task succeed, logicalDatabaseId={}, jobId={}",
+                                req.getLogicalDatabaseResp().getId(), jobEntity.getId());
                     }
                 } catch (Exception ex) {
                     log.warn("Failed to submit the extract logical tables task, ex=", ex);

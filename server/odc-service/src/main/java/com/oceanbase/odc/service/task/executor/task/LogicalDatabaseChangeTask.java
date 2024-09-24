@@ -29,6 +29,7 @@ import com.oceanbase.odc.common.util.MapUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionGroup;
@@ -47,6 +48,8 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.Relatio
 import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.RewriteContext;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.RewriteResult;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.SqlRewriter;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalTableResp;
 import com.oceanbase.odc.service.schedule.model.PublishLogicalDatabaseChangeReq;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.caller.JobContext;
@@ -84,26 +87,33 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
     protected boolean doStart(JobContext context) throws Exception {
         try {
             DialectType dialectType = taskParameters.getLogicalDatabaseResp().getDialectType();
+            DetailLogicalDatabaseResp detailLogicalDatabaseResp = taskParameters.getLogicalDatabaseResp();
+            Set<DataNode> physicalDatabases = taskParameters.getLogicalDatabaseResp().getPhysicalDatabases().stream()
+                    .map(database -> new DataNode(database.getDataSource(), database.getId(), database.getName()))
+                    .collect(Collectors.toSet());
+            Map<String, DataNode> databaseName2DataNodes = physicalDatabases.stream()
+                    .collect(Collectors.toMap(dataNode -> dataNode.getSchemaName(), dataNode -> dataNode,
+                            (value1, value2) -> value1));
+            Map<String, Set<DataNode>> logicalTableName2DataNodes =
+                    detailLogicalDatabaseResp.getLogicalTables().stream()
+                            .collect(Collectors.toMap(DetailLogicalTableResp::getName,
+                                    resp -> resp.getAllPhysicalTables().stream().collect(Collectors.toSet())));
+            Map<Long, DataNode> databaseId2DataNodes = physicalDatabases.stream()
+                    .collect(Collectors.toMap(dataNode -> dataNode.getDatabaseId(), dataNode -> dataNode,
+                            (value1, value2) -> value1));
+            long order = 0;
             List<String> sqls =
                     SqlUtils.split(dialectType, taskParameters.getSqlContent(),
                             StringUtils.isEmpty(taskParameters.getDelimiter()) ? ";" : taskParameters.getDelimiter());
-            Set<DataNode> allDataNodes = taskParameters.getLogicalDatabaseResp().getPhysicalDatabases().stream()
-                    .map(database -> new DataNode(database.getDataSource(), database.getId(), database.getName()))
-                    .collect(Collectors.toSet());
-            Map<Long, DataNode> databaseId2DataNodes = allDataNodes.stream()
-                    .collect(Collectors.toMap(dataNode -> dataNode.getDatabaseId(), dataNode -> dataNode,
-                            (value1, value2) -> value1));
-
-            long order = 0;
             for (String sql : sqls) {
                 Statement statement = SqlParser.parseMysqlStatement(sql);
                 Set<DataNode> dataNodesToExecute;
                 if (statement instanceof CreateTable) {
                     dataNodesToExecute =
-                            LogicalDatabaseUtils.getDataNodesFromCreateTable(sql, dialectType, allDataNodes);
+                            LogicalDatabaseUtils.getDataNodesFromCreateTable(sql, dialectType, databaseName2DataNodes);
                 } else {
                     dataNodesToExecute = LogicalDatabaseUtils.getDataNodesFromNotCreateTable(sql, dialectType,
-                            taskParameters.getLogicalDatabaseResp());
+                            logicalTableName2DataNodes, detailLogicalDatabaseResp.getName());
                 }
                 if (CollectionUtils.isEmpty(dataNodesToExecute)) {
                     log.warn("There is no physical database to operate on, sql={}", sql);
@@ -115,6 +125,12 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
                     log.warn("Cannot rewrite the sql, sql={}", sql);
                     continue;
                 }
+                rewriteResult.getSqls().entrySet().stream().forEach(entry -> {
+                    if (entry.getKey().getDatabaseId() == null) {
+                        throw new BadRequestException(
+                                "physical database not found, database name=" + entry.getKey().getSchemaName());
+                    }
+                });
                 Map<Long, List<String>> databaseId2RewrittenSqls = rewriteResult.getSqls().entrySet().stream()
                         .collect(Collectors.groupingBy(
                                 entry -> entry.getKey().getDatabaseId(),
@@ -219,7 +235,9 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
         if (currentJobParameters.containsKey(JobParametersKeyConstants.LOGICAL_DATABASE_CHANGE_TERMINATE_UNIT)) {
             String executionUnitId =
                     currentJobParameters.get(JobParametersKeyConstants.LOGICAL_DATABASE_CHANGE_TERMINATE_UNIT);
+            log.info("start to terminate");
             if (StringUtils.isNotEmpty(executionUnitId)) {
+                log.info("start to terminate executionUnitId={}", executionUnitId);
                 this.executorEngine.terminate(executionUnitId);
             }
         }

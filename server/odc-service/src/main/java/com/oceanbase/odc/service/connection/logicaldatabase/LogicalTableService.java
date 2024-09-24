@@ -58,7 +58,6 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalTa
 import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.LogicalTableExpressionParseUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalTableResp;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTableTopologyResp;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
@@ -117,16 +116,6 @@ public class LogicalTableService {
 
         List<DBObjectEntity> logicalTables =
                 dbObjectRepository.findByDatabaseIdAndType(logicalDatabaseId, DBObjectType.LOGICAL_TABLE);
-        Set<Long> physicalDBIds =
-                databaseMappingRepository.findByLogicalDatabaseId(logicalDatabaseId).stream()
-                        .map(DatabaseMappingEntity::getPhysicalDatabaseId).collect(Collectors.toSet());
-        List<Database> physicalDatabases = databaseService.listDatabasesDetailsByIds(physicalDBIds);
-        Map<Long, Database> id2Database =
-                physicalDatabases.stream().collect(Collectors.toMap(Database::getId, db -> db));
-        Map<Long, ConnectionConfig> id2Connections = connectionService.listForConnectionSkipPermissionCheck(
-                physicalDatabases.stream().map(db -> db.getDataSource().getId()).collect(Collectors.toList())).stream()
-                .collect(Collectors.toMap(ConnectionConfig::getId, c -> c));
-
         Set<Long> logicalTableIds = logicalTables.stream().map(DBObjectEntity::getId).collect(Collectors.toSet());
         if (CollectionUtils.isEmpty(logicalTableIds)) {
             return Collections.emptyList();
@@ -149,8 +138,6 @@ public class LogicalTableService {
                 dataNode.setDatabaseId(relation.getPhysicalDatabaseId());
                 dataNode.setSchemaName(relation.getPhysicalDatabaseName());
                 dataNode.setTableName(relation.getPhysicalTableName());
-                dataNode.setDataSourceConfig(
-                        id2Connections.get(id2Database.get(relation.getPhysicalDatabaseId()).getDataSource().getId()));
                 inconsistentPhysicalTables.add(dataNode);
             });
             resp.setInconsistentPhysicalTables(inconsistentPhysicalTables);
@@ -159,8 +146,6 @@ public class LogicalTableService {
                 dataNode.setDatabaseId(relation.getPhysicalDatabaseId());
                 dataNode.setSchemaName(relation.getPhysicalDatabaseName());
                 dataNode.setTableName(relation.getPhysicalTableName());
-                dataNode.setDataSourceConfig(
-                        id2Connections.get(id2Database.get(relation.getPhysicalDatabaseId()).getDataSource().getId()));
                 return dataNode;
             }).collect(Collectors.toList()));
             return resp;
