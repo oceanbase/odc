@@ -108,7 +108,6 @@ public class SqlExecutionHandler implements ExecutionHandler<SqlExecuteReq, SqlE
     @Override
     public void terminate(ExecutionGroupContext<SqlExecuteReq, SqlExecutionResultWrapper> context)
             throws Exception {
-        log.info("terminating...");
         if (this.connectionSession == null || this.connectionSession.isExpired()) {
             log.warn("ConnectionSession is null or expired, skip terminate");
             return;

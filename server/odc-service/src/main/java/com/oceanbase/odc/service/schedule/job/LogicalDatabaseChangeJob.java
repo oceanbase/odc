@@ -42,7 +42,6 @@ import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
 import com.oceanbase.odc.service.task.util.JobUtils;
-import com.oceanbase.tools.loaddump.utils.CollectionUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -91,12 +90,6 @@ public class LogicalDatabaseChangeJob implements OdcJob {
         req.setSqlContent(parameters.getSqlContent());
         req.setCreatorId(scheduleEntity.getCreatorId());
         DetailLogicalDatabaseResp logicalDatabaseResp = logicalDatabaseService.detail(parameters.getDatabaseId());
-        if (CollectionUtils.isNotEmpty(logicalDatabaseResp.getLogicalTables())) {
-            logicalDatabaseResp.getLogicalTables().forEach(table -> {
-                table.setTopologies(null);
-                table.setInconsistentPhysicalTables(null);
-            });
-        }
         logicalDatabaseResp.getPhysicalDatabases().stream().forEach(
                 database -> database.setDataSource(
                         connectionService.getForConnectionSkipPermissionCheck(database.getDataSource().getId())));
