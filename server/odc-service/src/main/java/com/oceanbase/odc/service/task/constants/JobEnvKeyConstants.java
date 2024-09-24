@@ -27,11 +27,15 @@ public class JobEnvKeyConstants {
 
     public static final String ODC_JOB_CONTEXT = "ODC_JOB_CONTEXT";
 
+    public static final String ODC_JOB_CONTEXT_FILE_PATH = "ODC_JOB_CONTEXT_FILE_PATH";
+
     public static final String ODC_TASK_RUN_MODE = "ODC_TASK_RUN_MODE";
 
     public static final String ODC_BOOT_MODE = "ODC_BOOT_MODE";
 
     public static final String ODC_LOG_DIRECTORY = "odc.log.directory";
+
+    public static final String ODC_DATA_DIRECTORY = "file.storage.dir";
 
     public static final String ODC_EXECUTOR_PORT = "ODC_EXECUTOR_PORT";
 
