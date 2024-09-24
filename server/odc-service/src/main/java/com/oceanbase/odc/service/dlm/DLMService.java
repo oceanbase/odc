@@ -116,21 +116,28 @@ public class DLMService {
                         Collectors.toList());
     }
 
+    /**
+     * generate final task status by scheduleTaskId when the task is finished
+     */
     @SkipAuthorize("odc internal usage")
-    public TaskStatus getTaskStatus(Long scheduleTaskId) {
-        return getTaskStatus(findByScheduleTaskId(scheduleTaskId));
-    }
-
-    public TaskStatus getTaskStatus(List<DlmTableUnit> dlmTableUnits) {
+    public TaskStatus getFinalTaskStatus(Long scheduleTaskId) {
+        List<DlmTableUnit> dlmTableUnits = findByScheduleTaskId(scheduleTaskId);
         Set<TaskStatus> collect = dlmTableUnits.stream().map(DlmTableUnit::getStatus).collect(
                 Collectors.toSet());
+        // If any table fails, the task is considered a failure.
         if (collect.contains(TaskStatus.FAILED)) {
             return TaskStatus.FAILED;
         }
-        if (collect.contains(TaskStatus.DONE) && collect.size() == 1) {
-            return TaskStatus.DONE;
+        // If any table is canceled, the task is considered canceled.
+        if (collect.contains(TaskStatus.CANCELED)) {
+            return TaskStatus.CANCELED;
         }
-        return TaskStatus.CANCELED;
+        // The task is considered failed if any table is still preparing or running when the task is
+        // finished.
+        if (collect.contains(TaskStatus.PREPARING) || collect.contains(TaskStatus.RUNNING)) {
+            return TaskStatus.FAILED;
+        }
+        return TaskStatus.DONE;
     }
 
 }
