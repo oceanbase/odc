@@ -41,6 +41,7 @@ import com.oceanbase.tools.sqlparser.statement.select.Select;
 import com.oceanbase.tools.sqlparser.statement.select.SelectBody;
 import com.oceanbase.tools.sqlparser.statement.update.Update;
 
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,11 +54,9 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
-
+    @Getter
     protected final Long maxSqlAffectedRows;
-
     protected final JdbcOperations jdbcOperations;
-
     protected final DialectType dialectType;
 
     public MySQLAffectedRowsExceedLimit(@NonNull Long maxSqlAffectedRows, DialectType dialectType,
@@ -80,7 +79,6 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
      */
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
-
         long affectedRows = getAffectedRows(statement);
         if (affectedRows >= 0) {
             if (affectedRows > maxSqlAffectedRows) {
@@ -103,7 +101,6 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
     }
 
     protected long getAffectedRows(@NonNull Statement statement) {
-
         long affectedRows = 0;
         if (statement instanceof Update || statement instanceof Delete || statement instanceof Insert) {
             String explainSql = "EXPLAIN " + statement.getText();
@@ -142,8 +139,7 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
      * @param insertStatement target sql
      * @return affected rows
      */
-    protected long getMySqlAffectedRowsByCount(Insert insertStatement) {
-
+    private long getMySqlAffectedRowsByCount(Insert insertStatement) {
         List<InsertTable> insertTableList = insertStatement.getTableInsert();
         if (insertTableList.isEmpty()) {
             log.warn("InsertTableList is empty, please check your sql");
@@ -179,8 +175,7 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
      * @param jdbc jdbc Object
      * @return affected rows
      */
-    protected long getMySqlAffectedRowsByExplain(String explainSql, JdbcOperations jdbc) {
-
+    private long getMySqlAffectedRowsByExplain(String explainSql, JdbcOperations jdbc) {
         try {
             List<Long> resultSet = jdbc.query(explainSql,
                     (rs, rowNum) -> rs.getLong("rows"));
@@ -205,8 +200,7 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
      * @param jdbc jdbc Object
      * @return affected rows
      */
-    protected long getOBMySqlAffectedRows(String explainSql, JdbcOperations jdbc) {
-
+    private long getOBMySqlAffectedRows(String explainSql, JdbcOperations jdbc) {
         /**
          * <pre>
          *
@@ -257,7 +251,7 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
      * @param singleRow row
      * @return affected rows
      */
-    protected long getEstRowsValue(String singleRow) {
+    private long getEstRowsValue(String singleRow) {
         String[] parts = singleRow.split("\\|");
         if (parts.length > 4) {
             String value = parts[4].trim();

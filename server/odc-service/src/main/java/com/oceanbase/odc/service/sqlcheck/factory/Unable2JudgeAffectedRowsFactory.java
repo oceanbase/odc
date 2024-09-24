@@ -23,6 +23,7 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
+import com.oceanbase.odc.service.sqlcheck.rule.MySQLAffectedRowsExceedLimit;
 import com.oceanbase.odc.service.sqlcheck.rule.Unable2JudgeAffectedRows;
 
 import lombok.NonNull;
@@ -37,15 +38,14 @@ public class Unable2JudgeAffectedRowsFactory implements SqlCheckRuleFactory {
 
     @Override
     public SqlCheckRuleType getSupportsType() {
-        return SqlCheckRuleType.ESTIMATE_SQL_AFFECTED_ROWS;
+        return SqlCheckRuleType.ESTIMATE_SQL_AFFECTED_ROWS_FAILED;
     }
 
     @Override
     public SqlCheckRule generate(@NonNull DialectType dialectType, Map<String, Object> parameters) {
-        String key = getParameterNameKey("allowed-max-sql-affected-count");
-        if (parameters == null || parameters.isEmpty() || parameters.get(key) == null) {
-            return new Unable2JudgeAffectedRows(1000L, dialectType, jdbc);
-        }
-        return new Unable2JudgeAffectedRows(Long.valueOf(parameters.get(key).toString()), dialectType, jdbc);
+        SqlAffectedRowsFactory sqlAffectedRowsFactory = new SqlAffectedRowsFactory(this.jdbc);
+        MySQLAffectedRowsExceedLimit targetRule = (MySQLAffectedRowsExceedLimit) sqlAffectedRowsFactory
+                .generate(dialectType, parameters);
+        return new Unable2JudgeAffectedRows(targetRule);
     }
 }

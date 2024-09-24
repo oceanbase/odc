@@ -1653,7 +1653,8 @@ public class MySQLCheckerTest {
 
         DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
                 Collections.singletonList(
-                        new Unable2JudgeAffectedRows(3L, DialectType.MYSQL, jdbcTemplate)));
+                        new Unable2JudgeAffectedRows(
+                                new MySQLAffectedRowsExceedLimit(3L, DialectType.MYSQL, jdbcTemplate))));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
         Assert.assertEquals(0, actualInsert.size());
     }
@@ -1672,7 +1673,8 @@ public class MySQLCheckerTest {
 
         DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
                 Collections.singletonList(
-                        new Unable2JudgeAffectedRows(3L, DialectType.MYSQL, jdbcTemplate)));
+                        new Unable2JudgeAffectedRows(
+                                new MySQLAffectedRowsExceedLimit(3L, DialectType.MYSQL, jdbcTemplate))));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
         Assert.assertEquals(0, actualInsert.size());
     }
@@ -1687,7 +1689,8 @@ public class MySQLCheckerTest {
 
         DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
                 Collections.singletonList(
-                        new Unable2JudgeAffectedRows(2L, DialectType.MYSQL, jdbcTemplate)));
+                        new Unable2JudgeAffectedRows(
+                                new MySQLAffectedRowsExceedLimit(2L, DialectType.MYSQL, jdbcTemplate))));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
         Assert.assertEquals(0, actualInsert.size());
     }
@@ -1705,7 +1708,8 @@ public class MySQLCheckerTest {
 
         DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
                 Collections.singletonList(
-                        new Unable2JudgeAffectedRows(3L, DialectType.MYSQL, jdbcTemplate)));
+                        new Unable2JudgeAffectedRows(
+                                new MySQLAffectedRowsExceedLimit(3L, DialectType.MYSQL, jdbcTemplate))));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
         Assert.assertEquals(0, actualInsert.size());
     }
@@ -1722,7 +1726,8 @@ public class MySQLCheckerTest {
 
         DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
                 Collections.singletonList(
-                        new Unable2JudgeAffectedRows(2L, DialectType.MYSQL, jdbcTemplate)));
+                        new Unable2JudgeAffectedRows(
+                                new MySQLAffectedRowsExceedLimit(2L, DialectType.MYSQL, jdbcTemplate))));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
         Assert.assertEquals(0, actualInsert.size());
     }
@@ -1739,7 +1744,8 @@ public class MySQLCheckerTest {
 
         DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.MYSQL, "$$",
                 Collections.singletonList(
-                        new Unable2JudgeAffectedRows(0L, DialectType.MYSQL, jdbcTemplate)));
+                        new Unable2JudgeAffectedRows(
+                                new MySQLAffectedRowsExceedLimit(0L, DialectType.MYSQL, jdbcTemplate))));
         List<CheckViolation> actualInsert = insertChecker.check(insert);
         Assert.assertEquals(0, actualInsert.size());
     }

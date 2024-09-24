@@ -18,10 +18,9 @@ package com.oceanbase.odc.service.sqlcheck.rule;
 import java.util.Collections;
 import java.util.List;
 
-import org.springframework.jdbc.core.JdbcOperations;
-
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
+import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
@@ -31,12 +30,12 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class Unable2JudgeAffectedRows extends MySQLAffectedRowsExceedLimit {
+public class Unable2JudgeAffectedRows implements SqlCheckRule {
 
-    public Unable2JudgeAffectedRows(@NonNull Long maxSqlAffectedRows,
-            DialectType dialectType,
-            JdbcOperations jdbcOperations) {
-        super(maxSqlAffectedRows, dialectType, jdbcOperations);
+    private final MySQLAffectedRowsExceedLimit targetRule;
+
+    public Unable2JudgeAffectedRows(@NonNull MySQLAffectedRowsExceedLimit targetRule) {
+        this.targetRule = targetRule;
     }
 
     /**
@@ -44,7 +43,12 @@ public class Unable2JudgeAffectedRows extends MySQLAffectedRowsExceedLimit {
      */
     @Override
     public SqlCheckRuleType getType() {
-        return SqlCheckRuleType.ESTIMATE_SQL_AFFECTED_ROWS;
+        return SqlCheckRuleType.ESTIMATE_SQL_AFFECTED_ROWS_FAILED;
+    }
+
+    @Override
+    public List<DialectType> getSupportsDialectTypes() {
+        return this.targetRule.getSupportsDialectTypes();
     }
 
     /**
@@ -53,20 +57,16 @@ public class Unable2JudgeAffectedRows extends MySQLAffectedRowsExceedLimit {
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
         try {
-            long affectedRows = super.getAffectedRows(statement);
+            long affectedRows = this.targetRule.getAffectedRows(statement);
             if (affectedRows < 0) {
                 return Collections.singletonList(SqlCheckUtil
-                        .buildViolation(statement.getText(), statement, getType(),
-                                new Object[] {maxSqlAffectedRows, affectedRows}));
+                        .buildViolation(statement.getText(), statement, getType(), new Object[] {}));
             }
         } catch (Exception e) {
             log.warn("Unable to get affected rows, sql={}", statement.getText(), e);
             return Collections.singletonList(SqlCheckUtil
-                    .buildViolation(statement.getText(), statement, getType(),
-                            new Object[] {maxSqlAffectedRows,
-                                    "Unable to get affected rows caused by: " + e.getMessage()}));
+                    .buildViolation(statement.getText(), statement, getType(), new Object[] {}));
         }
-
         return Collections.emptyList();
     }
 }
