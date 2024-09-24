@@ -259,7 +259,7 @@ public class ScheduleService {
 
             entity.setName(req.getCreateScheduleReq().getName());
             entity.setProjectId(req.getProjectId());
-            DescriptionGenerator.generateScheduleDescription(req.getCreateScheduleReq());
+            DescriptionGenerator.generateScheduleDescription(req);
             entity.setDescription(req.getCreateScheduleReq().getDescription());
             entity.setJobParametersJson(JsonUtils.toJson(req.getCreateScheduleReq().getParameters()));
             entity.setTriggerConfigJson(JsonUtils.toJson(req.getCreateScheduleReq().getTriggerConfig()));
