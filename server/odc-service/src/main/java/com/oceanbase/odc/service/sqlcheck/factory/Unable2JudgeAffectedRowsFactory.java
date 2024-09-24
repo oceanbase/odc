@@ -24,7 +24,7 @@ import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLAffectedRowsExceedLimit;
-import com.oceanbase.odc.service.sqlcheck.rule.Unable2JudgeAffectedRows;
+import com.oceanbase.odc.service.sqlcheck.rule.MySQLUnable2JudgeAffectedRows;
 
 import lombok.NonNull;
 
@@ -46,6 +46,6 @@ public class Unable2JudgeAffectedRowsFactory implements SqlCheckRuleFactory {
         SqlAffectedRowsFactory sqlAffectedRowsFactory = new SqlAffectedRowsFactory(this.jdbc);
         MySQLAffectedRowsExceedLimit targetRule = (MySQLAffectedRowsExceedLimit) sqlAffectedRowsFactory
                 .generate(dialectType, parameters);
-        return new Unable2JudgeAffectedRows(targetRule);
+        return new MySQLUnable2JudgeAffectedRows(targetRule);
     }
 }

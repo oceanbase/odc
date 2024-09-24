@@ -30,11 +30,11 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class Unable2JudgeAffectedRows implements SqlCheckRule {
+public class MySQLUnable2JudgeAffectedRows implements SqlCheckRule {
 
     private final MySQLAffectedRowsExceedLimit targetRule;
 
-    public Unable2JudgeAffectedRows(@NonNull MySQLAffectedRowsExceedLimit targetRule) {
+    public MySQLUnable2JudgeAffectedRows(@NonNull MySQLAffectedRowsExceedLimit targetRule) {
         this.targetRule = targetRule;
     }
 
