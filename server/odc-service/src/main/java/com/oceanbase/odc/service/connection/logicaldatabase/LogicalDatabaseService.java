@@ -72,7 +72,9 @@ import com.oceanbase.odc.service.connection.logicaldatabase.model.PreviewSqlReq;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.PreviewSqlResp;
 import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
+import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.sqlparser.statement.Statement;
@@ -130,6 +132,9 @@ public class LogicalDatabaseService {
 
     @Autowired
     private DBResourcePermissionHelper permissionHelper;
+
+    @Autowired
+    private UserService userService;
 
 
     @Transactional(rollbackFor = Exception.class)
@@ -247,6 +252,19 @@ public class LogicalDatabaseService {
         return true;
     }
 
+    public boolean extractLogicalTablesSkipAuth(@NotNull Long logicalDatabaseId, @NotNull Long creatorId) {
+        Database logicalDatabase =
+                databaseService.getBasicSkipPermissionCheck(logicalDatabaseId);
+        Verify.equals(logicalDatabase.getType(), DatabaseType.LOGICAL, "database type");
+        try {
+            syncManager.submitExtractLogicalTablesTask(logicalDatabase, new User(userService.nullSafeGet(creatorId)));
+        } catch (TaskRejectedException ex) {
+            log.warn("submit extract logical tables task rejected, logical database id={}", logicalDatabaseId);
+            return false;
+        }
+        return true;
+    }
+
     protected void preCheck(CreateLogicalDatabaseReq req) {
         projectPermissionValidator.checkProjectRole(req.getProjectId(),
                 Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER));
@@ -293,9 +311,15 @@ public class LogicalDatabaseService {
 
     public List<PreviewSqlResp> preview(@NonNull Long logicalDatabaseId, @NonNull PreviewSqlReq req) {
         DetailLogicalDatabaseResp logicalDatabase = detail(logicalDatabaseId);
-        Set<DataNode> allDataNodes = logicalDatabase.getLogicalTables().stream()
-                .map(DetailLogicalTableResp::getAllPhysicalTables).flatMap(List::stream)
-                .collect(Collectors.toSet());
+        Set<DataNode> physicalDatabases = logicalDatabase.getPhysicalDatabases().stream()
+                .map(database -> new DataNode(database.getId(), database.getName())).collect(
+                        Collectors.toSet());
+        Map<String, DataNode> databaseName2DataNodes = physicalDatabases.stream()
+                .collect(Collectors.toMap(dataNode -> dataNode.getSchemaName(), dataNode -> dataNode,
+                        (value1, value2) -> value1));
+        Map<String, Set<DataNode>> logicalTableName2DataNodes = logicalDatabase.getLogicalTables().stream()
+                .collect(Collectors.toMap(DetailLogicalTableResp::getName,
+                        resp -> resp.getAllPhysicalTables().stream().collect(Collectors.toSet())));
         Map<Long, List<String>> databaseId2Sqls = new HashMap<>();
         String delimiter = StringUtils.isEmpty(req.getDelimiter()) ? ";" : req.getDelimiter();
         List<String> sqls =
@@ -306,10 +330,10 @@ public class LogicalDatabaseService {
             Set<DataNode> dataNodesToExecute;
             if (statement instanceof CreateTable) {
                 dataNodesToExecute = LogicalDatabaseUtils.getDataNodesFromCreateTable(sql,
-                        logicalDatabase.getDialectType(), allDataNodes);
+                        logicalDatabase.getDialectType(), databaseName2DataNodes);
             } else {
                 dataNodesToExecute = LogicalDatabaseUtils.getDataNodesFromNotCreateTable(sql,
-                        logicalDatabase.getDialectType(), logicalDatabase);
+                        logicalDatabase.getDialectType(), logicalTableName2DataNodes, logicalDatabase.getName());
             }
             if (CollectionUtils.isEmpty(dataNodesToExecute)) {
                 continue;
@@ -317,12 +341,8 @@ public class LogicalDatabaseService {
             RewriteResult rewriteResult = sqlRewriter.rewrite(
                     new RewriteContext(statement, logicalDatabase.getDialectType(), dataNodesToExecute));
             for (Map.Entry<DataNode, String> result : rewriteResult.getSqls().entrySet()) {
-                Long databaseId = result.getKey().getDatabaseId();
-                if (databaseId == null) {
-                    throw new BadRequestException(
-                            "physical database not found, database name=" + result.getKey().getSchemaName());
-                }
-                databaseId2Sqls.computeIfAbsent(databaseId, k -> new ArrayList<>()).add(result.getValue());
+                databaseId2Sqls.computeIfAbsent(result.getKey().getDatabaseId(), k -> new ArrayList<>())
+                        .add(result.getValue());
             }
         }
         if (MapUtils.isEmpty(databaseId2Sqls)) {
