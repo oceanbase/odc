@@ -64,9 +64,16 @@ public class K8sDeploymentStatusDfaTest {
     }
 
     @Test
-    public void next_currentStateIsCreatingDeploymentIsAbsent_nextStateUnknown() throws Exception {
+    public void next_currentStateIsCreatingDeploymentIsAbsent_nextStateCreating() throws Exception {
         K8sDeploymentStatusDfa dfa = K8sDeploymentStatusDfa.buildInstance(ResourceState.CREATING);
         ResourceState actual = dfa.next(null, ResourceState.CREATING);
+        Assert.assertEquals(ResourceState.CREATING, actual);
+    }
+
+    @Test
+    public void next_currentStateIsAvailableDeploymentIsAbsent_nextStateCreating() throws Exception {
+        K8sDeploymentStatusDfa dfa = K8sDeploymentStatusDfa.buildInstance(ResourceState.AVAILABLE);
+        ResourceState actual = dfa.next(null, ResourceState.AVAILABLE);
         Assert.assertEquals(ResourceState.UNKNOWN, actual);
     }
 

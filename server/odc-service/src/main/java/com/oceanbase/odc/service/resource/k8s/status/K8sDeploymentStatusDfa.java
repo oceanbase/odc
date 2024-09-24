@@ -47,11 +47,14 @@ public class K8sDeploymentStatusDfa extends AbstractDfa<ResourceState, K8sDeploy
         };
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>().from(fromState)
                 .matchesK8sResource(getCreatingDeploymentMatchers(current)).to(ResourceState.CREATING).build());
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>().from(ResourceState.CREATING)
+                .matchesK8sResource(Collections.singletonList(Objects::isNull)).to(ResourceState.CREATING).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>().from(fromState)
                 .matchesK8sResource(getErrorDeploymentMatchers(current)).to(ResourceState.ERROR_STATE).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>().from(fromState)
                 .matchesK8sResource(getAvailableDeploymentMatchers(current)).to(ResourceState.AVAILABLE).build());
-        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>().from(fromState)
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>()
+                .from(ResourceState.AVAILABLE, ResourceState.ERROR_STATE)
                 .matchesK8sResource(Collections.singletonList(Objects::isNull)).to(ResourceState.UNKNOWN).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>().from(ResourceState.DESTROYING)
                 .matchesK8sResource(Collections.singletonList(Objects::isNull)).to(ResourceState.DESTROYED).build());
