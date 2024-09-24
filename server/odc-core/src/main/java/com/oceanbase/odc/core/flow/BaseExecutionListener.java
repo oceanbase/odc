@@ -54,10 +54,6 @@ public abstract class BaseExecutionListener implements ExecutionListener {
      */
     protected abstract void onExecutionTaken(DelegateExecution execution);
 
-    protected void onExecutionException(DelegateExecution execution, Exception exception) {
-
-    }
-
     @Override
     public void notify(DelegateExecution execution) {
         String eventName = execution.getEventName();
