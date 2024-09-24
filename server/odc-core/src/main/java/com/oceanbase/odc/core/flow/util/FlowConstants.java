@@ -45,10 +45,6 @@ public class FlowConstants {
     public static final String EXECUTION_START_EVENT_NAME = "start";
 
     /**
-     * Event name for execution start
-     */
-    public static final String EXECUTION_FAILED_EVENT_NAME = "failed";
-    /**
      * Event name for execution end
      */
     public static final String EXECUTION_END_EVENT_NAME = "end";
