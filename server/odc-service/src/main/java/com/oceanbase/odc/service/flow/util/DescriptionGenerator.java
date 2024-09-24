@@ -23,7 +23,7 @@ import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
-import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 
 /**
  * @Author：tinker
@@ -51,10 +51,10 @@ public class DescriptionGenerator {
         }
     }
 
-    public static void generateScheduleDescription(CreateScheduleReq req) {
-        if (StringUtils.isEmpty(req.getDescription())) {
+    public static void generateScheduleDescription(ScheduleChangeParams req) {
+        if (StringUtils.isEmpty(req.getCreateScheduleReq().getDescription())) {
             String descFormat = "[%s]%s.%s";
-            req.setDescription(String.format(descFormat,
+            req.getCreateScheduleReq().setDescription(String.format(descFormat,
                     req.getEnvironmentName(), req.getConnectionName(), req.getDatabaseName()));
         }
     }
