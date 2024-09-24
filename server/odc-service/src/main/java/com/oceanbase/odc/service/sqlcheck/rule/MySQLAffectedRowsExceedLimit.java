@@ -54,10 +54,11 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
+
     @Getter
-    protected final Long maxSqlAffectedRows;
-    protected final JdbcOperations jdbcOperations;
-    protected final DialectType dialectType;
+    private final Long maxSqlAffectedRows;
+    private final JdbcOperations jdbcOperations;
+    private final DialectType dialectType;
 
     public MySQLAffectedRowsExceedLimit(@NonNull Long maxSqlAffectedRows, DialectType dialectType,
             JdbcOperations jdbcOperations) {
