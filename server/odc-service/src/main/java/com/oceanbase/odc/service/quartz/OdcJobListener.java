@@ -17,12 +17,14 @@ package com.oceanbase.odc.service.quartz;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.JobKey;
 import org.quartz.JobListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
@@ -69,6 +71,8 @@ public class OdcJobListener implements JobListener {
     private HostProperties hostProperties;
     @Autowired
     private LatestTaskMappingRepository latestTaskMappingRepository;
+    @Value("${odc.iam.auth.type}")
+    protected Set<String> authType;
 
     private static final String ODC_JOB_LISTENER = "ODC_JOB_LISTENER";
 
@@ -101,7 +105,11 @@ public class OdcJobListener implements JobListener {
         userEntity.setOrganizationId(scheduleEntity.getOrganizationId());
         User taskCreator = new User(userEntity);
         SecurityContextUtils.setCurrentUser(taskCreator);
-
+        if (scheduleEntity.getType() == ScheduleType.PARTITION_PLAN
+                || (!authType.contains("obcloud") && scheduleEntity.getType() == ScheduleType.SQL_PLAN)) {
+            log.info("Skip preparing tasks for partition plan or sql plan,and create flow task later.");
+            return;
+        }
         // Create or load task.
         Long targetTaskId = ScheduleTaskUtils.getTargetTaskId(context);
         ScheduleTaskEntity entity;
