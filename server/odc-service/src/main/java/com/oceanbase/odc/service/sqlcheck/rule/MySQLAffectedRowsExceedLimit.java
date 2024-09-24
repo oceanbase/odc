@@ -48,9 +48,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MySQLAffectedRowsExceedLimit extends BaseAffectedRowsExceedLimit {
 
+    private final JdbcOperations jdbcOperations;
+    private final DialectType dialectType;
+
     public MySQLAffectedRowsExceedLimit(@NonNull Long maxSqlAffectedRows, DialectType dialectType,
             JdbcOperations jdbcOperations) {
-        super(maxSqlAffectedRows, dialectType, jdbcOperations);
+        super(maxSqlAffectedRows);
+        this.jdbcOperations = jdbcOperations;
+        this.dialectType = dialectType;
     }
 
     /**
@@ -65,26 +70,26 @@ public class MySQLAffectedRowsExceedLimit extends BaseAffectedRowsExceedLimit {
      * Base method implemented by MySQL types
      */
     @Override
-    public long getStatementAffectedRows(Statement statement, JdbcOperations jdbcOperations, Long maxSqlAffectedRows) {
+    public long getStatementAffectedRows(Statement statement) {
         long affectedRows = 0;
         if (statement instanceof Update || statement instanceof Delete || statement instanceof Insert) {
             String explainSql = "EXPLAIN " + statement.getText();
             try {
-                if (jdbcOperations == null) {
+                if (this.jdbcOperations == null) {
                     log.warn("JdbcOperations is null, please check your connection");
                     return -1;
                 } else {
-                    switch (super.getDialectType()) {
+                    switch (this.dialectType) {
                         case MYSQL:
                             affectedRows = (statement instanceof Insert)
                                     ? getMySqlAffectedRowsByCount((Insert) statement)
-                                    : getMySqlAffectedRowsByExplain(explainSql, jdbcOperations);
+                                    : getMySqlAffectedRowsByExplain(explainSql, this.jdbcOperations);
                             break;
                         case OB_MYSQL:
-                            affectedRows = getOBMySqlAffectedRows(explainSql, jdbcOperations);
+                            affectedRows = getOBMySqlAffectedRows(explainSql, this.jdbcOperations);
                             break;
                         default:
-                            log.warn("Unsupported dialect type: {}", super.getDialectType());
+                            log.warn("Unsupported dialect type: {}", this.dialectType);
                             break;
                     }
                 }
@@ -120,7 +125,7 @@ public class MySQLAffectedRowsExceedLimit extends BaseAffectedRowsExceedLimit {
             if (values.size() == 1 && values.get(0).size() == 1) {
                 Expression value = values.get(0).get(0);
                 if ((value instanceof Select) || (value instanceof SelectBody)) {
-                    return getMySqlAffectedRowsByExplain(insertStatement.getText(), super.getJdbcOperations());
+                    return getMySqlAffectedRowsByExplain(insertStatement.getText(), this.jdbcOperations);
                 } else {
                     return 1;
                 }

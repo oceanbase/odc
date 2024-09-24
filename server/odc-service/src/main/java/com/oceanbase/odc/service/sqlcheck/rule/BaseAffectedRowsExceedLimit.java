@@ -18,9 +18,6 @@ package com.oceanbase.odc.service.sqlcheck.rule;
 import java.util.Collections;
 import java.util.List;
 
-import org.springframework.jdbc.core.JdbcOperations;
-
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
@@ -28,20 +25,13 @@ import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 
-import lombok.Getter;
 import lombok.NonNull;
 
-@Getter
 public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
 
     private final Long maxSqlAffectedRows;
-    private final JdbcOperations jdbcOperations;
-    private final DialectType dialectType;
 
-    public BaseAffectedRowsExceedLimit(@NonNull Long maxSqlAffectedRows, DialectType dialectType,
-            JdbcOperations jdbcOperations) {
-        this.dialectType = dialectType;
-        this.jdbcOperations = jdbcOperations;
+    public BaseAffectedRowsExceedLimit(@NonNull Long maxSqlAffectedRows) {
         this.maxSqlAffectedRows = maxSqlAffectedRows < 0 ? Long.MAX_VALUE : maxSqlAffectedRows;
     }
 
@@ -59,7 +49,7 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
         try {
-            long affectedRows = getStatementAffectedRows(statement, this.jdbcOperations, this.maxSqlAffectedRows);
+            long affectedRows = getStatementAffectedRows(statement);
             if (affectedRows >= 0) {
                 if (affectedRows > maxSqlAffectedRows) {
                     return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
@@ -73,7 +63,6 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
         return Collections.emptyList();
     }
 
-    public abstract long getStatementAffectedRows(Statement statement,
-            JdbcOperations jdbcOperations, Long maxSqlAffectedRows) throws Exception;
+    public abstract long getStatementAffectedRows(Statement statement) throws Exception;
 
 }

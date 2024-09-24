@@ -18,8 +18,6 @@ package com.oceanbase.odc.service.sqlcheck.rule;
 import java.util.Collections;
 import java.util.List;
 
-import org.springframework.jdbc.core.JdbcOperations;
-
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
@@ -35,12 +33,8 @@ import lombok.extern.slf4j.Slf4j;
 public class Unable2JudgeAffectedRows implements SqlCheckRule {
 
     private final BaseAffectedRowsExceedLimit targetRule;
-    private final JdbcOperations jdbcOperations;
-    private final Long maxSqlAffectedRows;
 
     public Unable2JudgeAffectedRows(@NonNull BaseAffectedRowsExceedLimit targetRule) {
-        this.jdbcOperations = targetRule.getJdbcOperations();
-        this.maxSqlAffectedRows = targetRule.getMaxSqlAffectedRows();
         this.targetRule = targetRule;
     }
 
@@ -63,7 +57,7 @@ public class Unable2JudgeAffectedRows implements SqlCheckRule {
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
         try {
-            long affectedRows = this.targetRule.getStatementAffectedRows(statement, jdbcOperations, maxSqlAffectedRows);
+            long affectedRows = this.targetRule.getStatementAffectedRows(statement);
             if (affectedRows < 0) {
                 return Collections.singletonList(SqlCheckUtil
                         .buildViolation(statement.getText(), statement, getType(), new Object[] {}));
