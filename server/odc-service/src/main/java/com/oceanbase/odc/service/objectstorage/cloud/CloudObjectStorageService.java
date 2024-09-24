@@ -196,6 +196,16 @@ public class CloudObjectStorageService {
         }
     }
 
+    /**
+     * get object inputStream by objectName
+     * 
+     * @param objectName objectName
+     * @return inputStream of object
+     */
+    public InputStream getObject(@NotBlank String objectName) throws IOException {
+        return cloudObjectStorageClient.getObject(objectName);
+    }
+
     ObjectStorageConfiguration getObjectStorageConfiguration() {
         return cloudObjectStorageClient.getObjectStorageConfiguration();
     }

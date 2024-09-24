@@ -191,8 +191,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
 
         for (String sqlObjectId : parameters.getSqlObjectIds()) {
             try {
-                byte[] bytes = cloudObjectStorageService.readContent(sqlObjectId);
-                InputStream current = new ByteArrayInputStream(bytes);
+                InputStream current = cloudObjectStorageService.getObject(sqlObjectId);
                 // remove UTF-8 BOM if exists
                 current.mark(3);
                 byte[] byteSql = new byte[3];

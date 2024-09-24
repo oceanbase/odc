@@ -15,10 +15,12 @@
  */
 package com.oceanbase.odc.service.objectstorage.client;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -94,4 +96,16 @@ public class LocalObjectStorageClient implements ObjectStorageClient {
         blockOperator.batchDelete(objectNameSet);
         return new ArrayList<>();
     }
+
+    @Override
+    public InputStream getObject(String objectName) throws IOException {
+        ObjectBlockIterator blockIterator = blockOperator.getBlockIterator(objectName);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        while (blockIterator.hasNext()) {
+            outputStream.write(blockIterator.next());
+        }
+        byte[] bytes = outputStream.toByteArray();
+        return new ByteArrayInputStream(bytes);
+    }
+
 }
