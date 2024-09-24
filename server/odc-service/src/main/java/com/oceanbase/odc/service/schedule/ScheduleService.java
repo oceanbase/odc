@@ -564,7 +564,18 @@ public class ScheduleService {
 
     public void stopTask(Long scheduleId, Long scheduleTaskId) {
         nullSafeGetByIdWithCheckPermission(scheduleId, true);
-        scheduleTaskService.stop(scheduleTaskId);
+        Lock lock = jdbcLockRegistry.obtain(getScheduleTaskLockKey(scheduleTaskId));
+        try {
+            if (!lock.tryLock(10, TimeUnit.SECONDS)) {
+                throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
+            }
+            scheduleTaskService.stop(scheduleTaskId);
+        } catch (InterruptedException e) {
+            log.error("Stop task failed", e);
+            throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -573,7 +584,18 @@ public class ScheduleService {
      */
     public void startTask(Long scheduleId, Long scheduleTaskId) {
         nullSafeGetByIdWithCheckPermission(scheduleId, true);
-        scheduleTaskService.start(scheduleTaskId);
+        Lock lock = jdbcLockRegistry.obtain(getScheduleTaskLockKey(scheduleTaskId));
+        try {
+            if (!lock.tryLock(10, TimeUnit.SECONDS)) {
+                throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
+            }
+            scheduleTaskService.start(scheduleTaskId);
+        } catch (InterruptedException e) {
+            log.error("Start task failed", e);
+            throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
+        } finally {
+            lock.unlock();
+        }
     }
 
     public void rollbackTask(Long scheduleId, Long scheduleTaskId) {
@@ -993,5 +1015,9 @@ public class ScheduleService {
 
     private String getScheduleChangeLockKey(@NonNull Long scheduleId) {
         return "schedule-change-" + scheduleId;
+    }
+
+    private String getScheduleTaskLockKey(@NonNull Long scheduleTaskId) {
+        return "schedule-task-" + scheduleTaskId;
     }
 }
