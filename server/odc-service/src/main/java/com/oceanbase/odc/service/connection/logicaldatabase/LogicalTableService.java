@@ -116,11 +116,6 @@ public class LogicalTableService {
 
         List<DBObjectEntity> logicalTables =
                 dbObjectRepository.findByDatabaseIdAndType(logicalDatabaseId, DBObjectType.LOGICAL_TABLE);
-        Set<Long> physicalDBIds =
-                databaseMappingRepository.findByLogicalDatabaseId(logicalDatabaseId).stream()
-                        .map(DatabaseMappingEntity::getPhysicalDatabaseId).collect(Collectors.toSet());
-        List<Database> physicalDatabases = databaseService.listDatabasesDetailsByIds(physicalDBIds);
-
         Set<Long> logicalTableIds = logicalTables.stream().map(DBObjectEntity::getId).collect(Collectors.toSet());
         if (CollectionUtils.isEmpty(logicalTableIds)) {
             return Collections.emptyList();

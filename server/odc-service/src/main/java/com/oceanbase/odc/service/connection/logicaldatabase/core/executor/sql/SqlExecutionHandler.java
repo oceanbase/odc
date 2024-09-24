@@ -96,7 +96,6 @@ public class SqlExecutionHandler implements ExecutionHandler<SqlExecuteReq, SqlE
                         return statementCallBack.doInStatement(stmt);
                     });
             JdbcGeneralResult result = results.get(0);
-            log.info("SqlExecutionCallback execute result, connectionReset={}", result.isConnectionReset());
             return new ExecutionResult<>(
                     new SqlExecutionResultWrapper(req.getLogicalDatabaseId(), req.getPhysicalDatabaseId(),
                             req.getScheduleTaskId(), new SqlExecuteResult(result)),
@@ -109,6 +108,7 @@ public class SqlExecutionHandler implements ExecutionHandler<SqlExecuteReq, SqlE
     @Override
     public void terminate(ExecutionGroupContext<SqlExecuteReq, SqlExecutionResultWrapper> context)
             throws Exception {
+        log.info("terminating...");
         if (this.connectionSession == null || this.connectionSession.isExpired()) {
             log.warn("ConnectionSession is null or expired, skip terminate");
             return;

@@ -235,7 +235,9 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
         if (currentJobParameters.containsKey(JobParametersKeyConstants.LOGICAL_DATABASE_CHANGE_TERMINATE_UNIT)) {
             String executionUnitId =
                     currentJobParameters.get(JobParametersKeyConstants.LOGICAL_DATABASE_CHANGE_TERMINATE_UNIT);
+            log.info("start to terminate");
             if (StringUtils.isNotEmpty(executionUnitId)) {
+                log.info("start to terminate executionUnitId={}", executionUnitId);
                 this.executorEngine.terminate(executionUnitId);
             }
         }

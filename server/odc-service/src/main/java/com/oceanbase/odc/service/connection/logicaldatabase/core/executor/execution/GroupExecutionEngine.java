@@ -79,6 +79,7 @@ public final class GroupExecutionEngine<Input, Result> implements AutoCloseable 
 
     public void terminate(String executionUnitId) {
         try {
+            log.info("Terminate executionUnit, executionId={}", executionUnitId);
             ExecutionSubGroupUnit<Input, Result> executionUnit = executionContext.getExecutionUnit(executionUnitId);
             executionUnit.terminate(executionContext);
         } catch (Exception ex) {

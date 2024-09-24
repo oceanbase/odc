@@ -55,6 +55,8 @@ public class ProcessJobCaller extends BaseJobCaller {
     protected ExecutorIdentifier doStart(JobContext context) throws JobException {
 
         String executorName = JobUtils.generateExecutorName(context.getJobIdentity());
+        log.info("Start process, job id={}, executorName={}, env={}", context.getJobIdentity().getId(), executorName,
+                processConfig.getEnvironments());
         ProcessBuilder pb = new ExecutorProcessBuilderFactory().getProcessBuilder(
                 processConfig, context.getJobIdentity().getId(), executorName);
         Process process;
