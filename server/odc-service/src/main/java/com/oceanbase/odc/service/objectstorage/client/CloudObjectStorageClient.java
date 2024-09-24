@@ -164,6 +164,21 @@ public class CloudObjectStorageClient implements ObjectStorageClient {
         return deletedObjects;
     }
 
+    @Override
+    public InputStream getObject(String objectName) throws IOException {
+        verifySupported();
+        boolean exist = internalEndpointCloudObjectStorage.doesObjectExist(getBucketName(), objectName);
+        if (!exist) {
+            throw new FileNotFoundException("File dose not exist, object name " + objectName);
+        }
+        try (InputStream inputStream =
+                internalEndpointCloudObjectStorage.getObject(getBucketName(), objectName).getObjectContent()) {
+            return inputStream;
+        } catch (Exception exception) {
+            log.warn("get object failed, objectName={}", objectName, exception);
+            throw new IOException(exception);
+        }
+    }
 
     /**
      * 文件上传方法，为了保证性能，如果文件大小小于10MB使用简单上传，如果文件大小大于10MB则使用分片上传功能
