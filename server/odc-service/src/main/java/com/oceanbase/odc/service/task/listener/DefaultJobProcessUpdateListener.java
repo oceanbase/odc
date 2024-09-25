@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.event.AbstractEventListener;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.model.ScheduleTask;
@@ -52,11 +53,11 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
         JobIdentity identity = taskResult.getJobIdentity();
         JobEntity jobEntity = stdTaskFrameworkService.find(identity.getId());
         scheduleTaskService.findByJobId(jobEntity.getId())
-                .ifPresent(taskEntity -> updateScheduleTask(taskEntity));
+                .ifPresent(taskEntity -> updateScheduleTaskStatus(taskEntity.getId(), taskResult.getStatus().convertTaskStatus()));
     }
 
-    private void updateScheduleTask(ScheduleTask taskEntity) {
-        scheduleTaskService.updateStatusById(taskEntity.getId(), taskEntity.getStatus());
-        log.debug("Update scheduleTask successfully, scheduleTaskId={}.", taskEntity.getId());
+    private void updateScheduleTaskStatus(Long id, TaskStatus status) {
+        scheduleTaskService.updateStatusById(id, status);
+        log.debug("Update scheduleTask status to {} successfully, scheduleTaskId={}", status, id);
     }
 }
