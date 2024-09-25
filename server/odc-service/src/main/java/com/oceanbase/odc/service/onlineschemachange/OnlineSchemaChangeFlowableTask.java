@@ -154,7 +154,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     }
 
     /**
-     * refresh task's state and try compete task
+     * refresh task's state and try complete task
      * 
      * @param flowInstanceID instance id of flow_instance
      * @param taskID task id of task_task

@@ -112,7 +112,7 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
     public void schedule(Long schedulerID, Long schedulerTaskID) {
         OscActionContext oscActionContext = getOSCContext(schedulerID, schedulerTaskID);
         String state = resolveState(oscActionContext);
-        // try process task may in expired or canceled state or abnormal state
+        // try process task may in expired or canceled or abnormal state
         // state should not in CLEAN_RESOURCE state
         if (!StringUtils.equals(OscStates.CLEAN_RESOURCE.getState(), state)
                 && tryHandleInvalidTask(state, oscActionContext)) {
@@ -168,7 +168,7 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
                     parameters.getFlowInstanceId(), parameters.getFlowTaskID(),
                     context.getSchedule().getId());
         } catch (Throwable e) {
-            log.warn("meet unhandled exception: cancel scheduler");
+            log.warn("meet unhandled exception: cancel scheduler", e);
             actionScheduler.cancelScheduler(context.getSchedule().getId());
             throw new RuntimeException(e);
         }

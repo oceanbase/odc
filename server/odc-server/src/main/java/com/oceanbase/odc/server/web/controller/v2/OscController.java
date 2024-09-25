@@ -64,10 +64,10 @@ public class OscController {
     }
 
     @ApiOperation(value = "oscResume", notes = "resume failed osc task")
-    @RequestMapping(value = "/{flowInstanceID:[\\d]+}/resume", method = RequestMethod.POST)
+    @RequestMapping(value = "/{flowInstanceId:[\\d]+}/resume", method = RequestMethod.POST)
     public SuccessResponse<Boolean> resumeOSCTask(
-            @PathVariable Long flowInstanceID) {
-        return Responses.success(oscService.resumeOscTask(flowInstanceID));
+            @PathVariable Long flowInstanceId) {
+        return Responses.success(oscService.resumeOscTask(flowInstanceId));
     }
 
 }
