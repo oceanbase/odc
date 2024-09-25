@@ -146,7 +146,8 @@ public class StateRouteAspect {
     }
 
     private void sendUnhealthyMetric(RouteInfo routeInfo) {
-        MeterKey meterKey = Builder.ofMeter(STATEFUL_ROUTE_UNHEALTHY_COUNT).addTag("host", routeInfo.getHostName()).build();
+        MeterKey meterKey =
+                Builder.ofMeter(STATEFUL_ROUTE_UNHEALTHY_COUNT).addTag("host", routeInfo.getHostName()).build();
         metricManager.incrementCounter(meterKey);
     }
 
