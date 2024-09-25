@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.schedule.processor;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
@@ -64,6 +65,7 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
             // permission to access it.
             Database sourceDb = databaseService.detail(parameters.getSourceDatabaseId());
             Database targetDb = databaseService.detail(parameters.getTargetDataBaseId());
+            supportDataArchivingLink(sourceDb.getDataSource(), targetDb.getDataSource());
             ConnectionConfig sourceDs = sourceDb.getDataSource();
             sourceDs.setDefaultSchema(sourceDb.getName());
             ConnectionSessionFactory sourceSessionFactory = new DefaultConnectSessionFactory(sourceDs);
@@ -89,7 +91,6 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
                 String targetDbVersion =
                         targetSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
                                 targetInformation::getDBVersion);
-                supportDataArchivingLink(sourceDbType, sourceDbVersion, targetDbType, targetDbVersion);
                 if (!parameters.getSyncTableStructure().isEmpty()) {
                     boolean supportedSyncTableStructure = DLMTableStructureSynchronizer.isSupportedSyncTableStructure(
                             sourceDbType, sourceDbVersion, targetDbType, targetDbVersion);
@@ -113,25 +114,30 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
         }
     }
 
-    private void supportDataArchivingLink(DialectType sourceDbType, String sourceDbVersion, DialectType targetDbType,
-            String targetDbVersion) {
-        if (sourceDbType == DialectType.OB_MYSQL) {
-            if (targetDbType != DialectType.OB_MYSQL && targetDbType != DialectType.MYSQL) {
+    private void supportDataArchivingLink(ConnectionConfig sourceDs, ConnectionConfig targetDs) {
+        if (StringUtils.isNotEmpty(sourceDs.getCloudProvider())
+                && !sourceDs.getCloudProvider().equals(targetDs.getCloudProvider())) {
+            throw new UnsupportedException(
+                    String.format("Unsupported data archiving link from %s to %s.", sourceDs.getCloudProvider(),
+                            targetDs.getCloudProvider()));
+        }
+        if (StringUtils.isNotEmpty(sourceDs.getRegion()) && !sourceDs.getCloudProvider().equals(targetDs.getRegion())) {
+            throw new UnsupportedException(
+                    String.format("Unsupported data archiving link from %s to %s.", sourceDs.getRegion(),
+                            targetDs.getRegion()));
+        }
+        if (sourceDs.getDialectType().isMysql()) {
+            if (!targetDs.getDialectType().isMysql()) {
                 throw new UnsupportedException(
-                        String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
+                        String.format("Unsupported data archiving link from %s to %s.", sourceDs.getDialectType(),
+                                targetDs.getDialectType()));
             }
         }
-        // Cannot supports archive from mysql to ob.
-        if (sourceDbType == DialectType.MYSQL) {
-            if (targetDbType != DialectType.OB_MYSQL && targetDbType != DialectType.MYSQL) {
+        if (sourceDs.getDialectType().isOracle()) {
+            if (!targetDs.getDialectType().isOracle()) {
                 throw new UnsupportedException(
-                        String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
-            }
-        }
-        if (sourceDbType.isOracle()) {
-            if (!targetDbType.isOracle()) {
-                throw new UnsupportedException(
-                        String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
+                        String.format("Unsupported data archiving link from %s to %s.", sourceDs.getDialectType(),
+                                targetDs.getDialectType()));
             }
         }
     }
