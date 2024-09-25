@@ -112,6 +112,9 @@ public class LogicalTableExtractTask implements Runnable {
             databaseService.updateObjectLastSyncTimeAndStatus(logicalDatabase.getId(), DBObjectSyncStatus.SYNCED);
             return;
         }
+        // remove logical tables that have the same name
+        logicalTables = logicalTables.stream().collect(Collectors.toMap(LogicalTable::getName, table -> table,
+                (table1, table2) -> table1)).values().stream().collect(Collectors.toList());
 
         Lock lock = jdbcLockRegistry.obtain("logicaltable-extract-database-id-" + logicalDatabase.getId());
 
