@@ -206,8 +206,8 @@ public class DBSchemaIndexService {
             try {
                 databaseService.internalSyncDataSourceSchemas(req.getResourceId());
             } catch (InterruptedException ex) {
-                log.warn("sync all data bases of data base source: " + req.getResourceId() + " failed, errorMessage={}",
-                        ex.getLocalizedMessage());
+                log.warn("sync data sources failed, datasourceId={}, errorMessage={}", req.getResourceId(),
+                        ex.getMessage());
             }
             Set<Database> dbs = new HashSet<>(databaseService.listExistDatabasesByConnectionId(req.getResourceId()));
             if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
