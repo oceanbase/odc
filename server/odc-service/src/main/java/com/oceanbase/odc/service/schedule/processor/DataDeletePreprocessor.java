@@ -58,13 +58,14 @@ public class DataDeletePreprocessor extends AbstractDlmPreprocessor {
             // Throw exception when the specified database does not exist or the current user does not have
             // permission to access it.
             // if check before delete, need verify target database.
+            Database sourceDb = databaseService.detail(parameters.getDatabaseId());
             if (parameters.getNeedCheckBeforeDelete()) {
                 if (Objects.isNull(parameters.getTargetDatabaseId())) {
                     throw new IllegalArgumentException("target database id can not be null");
                 }
                 Database targetDb = databaseService.detail(parameters.getTargetDatabaseId());
+                supportDataArchivingLink(sourceDb.getDataSource(), targetDb.getDataSource());
             }
-            Database sourceDb = databaseService.detail(parameters.getDatabaseId());
             ConnectionConfig dataSource = sourceDb.getDataSource();
             dataSource.setDefaultSchema(sourceDb.getName());
             ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);

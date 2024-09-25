@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.schedule.processor;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
@@ -111,34 +110,6 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
                 targetSession.expire();
             }
             log.info("Data archive preprocessing has been completed.");
-        }
-    }
-
-    private void supportDataArchivingLink(ConnectionConfig sourceDs, ConnectionConfig targetDs) {
-        if (StringUtils.isNotEmpty(sourceDs.getCloudProvider())
-                && !sourceDs.getCloudProvider().equals(targetDs.getCloudProvider())) {
-            throw new UnsupportedException(
-                    String.format("Unsupported data archiving link from %s to %s.", sourceDs.getCloudProvider(),
-                            targetDs.getCloudProvider()));
-        }
-        if (StringUtils.isNotEmpty(sourceDs.getRegion()) && !sourceDs.getCloudProvider().equals(targetDs.getRegion())) {
-            throw new UnsupportedException(
-                    String.format("Unsupported data archiving link from %s to %s.", sourceDs.getRegion(),
-                            targetDs.getRegion()));
-        }
-        if (sourceDs.getDialectType().isMysql()) {
-            if (!targetDs.getDialectType().isMysql()) {
-                throw new UnsupportedException(
-                        String.format("Unsupported data archiving link from %s to %s.", sourceDs.getDialectType(),
-                                targetDs.getDialectType()));
-            }
-        }
-        if (sourceDs.getDialectType().isOracle()) {
-            if (!targetDs.getDialectType().isOracle()) {
-                throw new UnsupportedException(
-                        String.format("Unsupported data archiving link from %s to %s.", sourceDs.getDialectType(),
-                                targetDs.getDialectType()));
-            }
         }
     }
 

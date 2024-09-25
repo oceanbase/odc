@@ -32,6 +32,7 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.OffsetConfig;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
@@ -158,5 +159,34 @@ public class AbstractDlmPreprocessor implements Preprocessor {
             throw new IllegalArgumentException(String.format("Parse condition error,message=%s", e.getMessage()));
         }
     }
+
+    public void supportDataArchivingLink(ConnectionConfig sourceDs, ConnectionConfig targetDs) {
+        if (StringUtils.isNotEmpty(sourceDs.getCloudProvider())
+                && !sourceDs.getCloudProvider().equals(targetDs.getCloudProvider())) {
+            throw new UnsupportedException(
+                    String.format("Unsupported data link from %s to %s.", sourceDs.getCloudProvider(),
+                            targetDs.getCloudProvider()));
+        }
+        if (StringUtils.isNotEmpty(sourceDs.getRegion()) && !sourceDs.getCloudProvider().equals(targetDs.getRegion())) {
+            throw new UnsupportedException(
+                    String.format("Unsupported data link from %s to %s.", sourceDs.getRegion(),
+                            targetDs.getRegion()));
+        }
+        if (sourceDs.getDialectType().isMysql()) {
+            if (!targetDs.getDialectType().isMysql()) {
+                throw new UnsupportedException(
+                        String.format("Unsupported data link from %s to %s.", sourceDs.getDialectType(),
+                                targetDs.getDialectType()));
+            }
+        }
+        if (sourceDs.getDialectType().isOracle()) {
+            if (!targetDs.getDialectType().isOracle()) {
+                throw new UnsupportedException(
+                        String.format("Unsupported data link from %s to %s.", sourceDs.getDialectType(),
+                                targetDs.getDialectType()));
+            }
+        }
+    }
+
 
 }
