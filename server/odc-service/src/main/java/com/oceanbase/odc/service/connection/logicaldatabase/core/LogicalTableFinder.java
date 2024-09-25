@@ -42,7 +42,6 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalTa
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
@@ -153,7 +152,7 @@ public class LogicalTableFinder {
         }
         return groupedDatabases.stream().collect(Collectors.toMap(Database::getName, database -> {
             try {
-                return dbObjectRepository.findByDatabaseIdAndType(database.getId(), DBObjectType.TABLE);
+                return dbObjectRepository.listPhysicalTablesThatNotBelongsToLogicalTables(database.getId());
             } catch (Exception e) {
                 log.error("Failed to get table names from schema: {}", database.getName(), e);
                 return Collections.emptyList();
