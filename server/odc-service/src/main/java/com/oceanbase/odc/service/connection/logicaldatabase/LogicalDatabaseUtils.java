@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
@@ -41,16 +40,9 @@ public class LogicalDatabaseUtils {
         Map<DBSchemaIdentity, Set<SqlType>> identity2SqlTypes = DBSchemaExtractor.listDBSchemasWithSqlTypes(
                 Arrays.asList(SqlTuple.newTuple(sql)), dialectType, null);
         DBSchemaIdentity identity = identity2SqlTypes.keySet().iterator().next();
-        String logicalTableExpression = "";
-        if (StringUtils.isNotEmpty(identity.getSchema())) {
-            logicalTableExpression = identity.getSchema() + ".";
-        }
-        logicalTableExpression += identity.getTable();
         Set<DataNode> dataNodesToExecute =
-                LogicalTableExpressionParseUtils.resolve(logicalTableExpression).stream().collect(
+                LogicalTableExpressionParseUtils.resolve(identity.getTable()).stream().collect(
                         Collectors.toSet());
-        dataNodesToExecute.forEach(dataNode -> dataNode.setDatabaseId(
-                databaseName2DataNodes.getOrDefault(dataNode.getSchemaName(), dataNode).getDatabaseId()));
         dataNodesToExecute.forEach(dataNode -> {
             if (!databaseName2DataNodes.containsKey(dataNode.getSchemaName())) {
                 throw new BadRequestException("physical database not found, database name=" + dataNode.getSchemaName());

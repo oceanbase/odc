@@ -49,7 +49,6 @@ import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
-import com.oceanbase.tools.dbbrowser.model.DBSchema;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.sqlparser.statement.Statement;
@@ -128,8 +127,15 @@ public class DBTableService {
 
     public GenerateTableDDLResp generateCreateDDL(@NotNull ConnectionSession session, @NotNull DBTable table) {
         String ddl;
+        String schemaName = table.getSchemaName();
+        String tableName = table.getName();
         if (ConnectionSessionUtil.isLogicalSession(session)) {
-            preHandleLogicalTable(table);
+            /**
+             * when creating a logical table, we assume that the table expression is the table name, and the
+             * schema will be ignored.
+             */
+            table.setSchema(null);
+            table.setSchemaName(null);
             ddl = DBBrowser.objectEditor().tableEditor()
                     .setDbVersion("4.0.0")
                     .setType(session.getDialectType().getDBBrowserDialectTypeName()).create()
@@ -142,8 +148,8 @@ public class DBTableService {
         }
         return GenerateTableDDLResp.builder()
                 .sql(ddl)
-                .currentIdentity(TableIdentity.of(table.getSchemaName(), table.getName()))
-                .previousIdentity(TableIdentity.of(table.getSchemaName(), table.getName()))
+                .currentIdentity(TableIdentity.of(schemaName, tableName))
+                .previousIdentity(TableIdentity.of(schemaName, tableName))
                 .build();
     }
 
@@ -209,19 +215,4 @@ public class DBTableService {
     private TableExtensionPoint getTableExtensionPoint(@NotNull ConnectionSession connectionSession) {
         return SchemaPluginUtil.getTableExtension(connectionSession.getDialectType());
     }
-
-    private void preHandleLogicalTable(DBTable table) {
-        String relation = table.getName();
-        if (StringUtils.isEmpty(relation)) {
-            throw new IllegalArgumentException("logical table expression should not be empty");
-        }
-        String[] segments = StringUtils.split(relation, ".");
-        if (segments.length != 2) {
-            throw new IllegalArgumentException("logical table expression should be in format of like schema.table");
-        }
-        table.setSchema(DBSchema.of(segments[0]));
-        table.setSchemaName(segments[0]);
-        table.setName(segments[1]);
-    }
-
 }
