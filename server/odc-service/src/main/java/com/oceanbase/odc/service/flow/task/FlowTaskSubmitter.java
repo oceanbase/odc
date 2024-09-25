@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.flow.task;
 
-import static com.oceanbase.odc.service.monitor.MeterName.FLOW_TASK_DURATION;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -201,19 +199,19 @@ public class FlowTaskSubmitter implements JavaDelegate {
     }
 
     private void sendStartMetric(String taskId, String taskType, String organizationId) {
-        metricManager.startTimer(getUniqueTaskMeterKey(FLOW_TASK_DURATION, taskId, taskType, organizationId));
+        metricManager.startTimer(getUniqueTaskMeterKey(MeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
         metricManager.incrementCounter(getTaskMeterKey(MeterName.FLOW_TASK_START_COUNT, taskType, organizationId));
 
     }
 
     private void sendEndMetric(String taskId, String taskType, String organizationId) {
         metricManager.incrementCounter(getTaskMeterKey(MeterName.FLOW_TASK_START_COUNT, taskType, organizationId));
-        metricManager.recordTimer(getUniqueTaskMeterKey(FLOW_TASK_DURATION, taskId, taskType, organizationId));
+        metricManager.recordTimer(getUniqueTaskMeterKey(MeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
     }
 
     private void sendFailedMetric(String taskId, String taskType, String organizationId) {
         metricManager.incrementCounter(getTaskMeterKey(MeterName.FLOW_TASK_START_COUNT, taskType, organizationId));
-        metricManager.recordTimer(getUniqueTaskMeterKey(FLOW_TASK_DURATION, taskId, taskType, organizationId));
+        metricManager.recordTimer(getUniqueTaskMeterKey(MeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
     }
 
     public MeterKey getTaskMeterKey(MeterName meterName, String taskType, String organizationId) {

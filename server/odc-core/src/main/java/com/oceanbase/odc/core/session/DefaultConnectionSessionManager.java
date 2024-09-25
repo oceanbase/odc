@@ -47,6 +47,37 @@ public class DefaultConnectionSessionManager extends BaseValidatedConnectionSess
     private final DelayQueue<DelayDeleteTaskAction> delayDeleteQueue = new DelayQueue<>();
     private final Map<String, ConnectionSession> delayDeleteSessionId2Session = new ConcurrentHashMap<>();
 
+    /**
+     * Default session event listener, Usedd to monitor the occurrence of session events
+     *
+     * @author yh263208
+     * @date 2021-07-15 15:37
+     * @since ODC_release_3.2.2
+     * @see DefaultSessionEventListener
+     */
+    static class InnerSessionEventListener extends DefaultSessionEventListener {
+        private final DefaultConnectionSessionManager sessionManager;
+
+        public InnerSessionEventListener(@NonNull DefaultConnectionSessionManager sessionManager) {
+            this.sessionManager = sessionManager;
+        }
+
+        @Override
+        public void onExpireSucceed(ConnectionSession session) {
+            try {
+                this.sessionManager.removeSession(session);
+            } catch (Throwable e) {
+                log.warn("Fail to delete an expired session, sessionId={}", session.getId(), e);
+            }
+        }
+
+        @Override
+        public void onExpireFailed(ConnectionSession session, Throwable e) {
+            log.warn("Failed to expire a session, sessionId={}", session.getId(), e);
+        }
+
+    }
+
     public DefaultConnectionSessionManager(@NonNull TaskManager taskManager,
             @NonNull ConnectionSessionRepository repository) {
         super(taskManager);
@@ -101,36 +132,6 @@ public class DefaultConnectionSessionManager extends BaseValidatedConnectionSess
         return repository.listAllSessions().size();
     }
 
-    /**
-     * Default session event listener, Usedd to monitor the occurrence of session events
-     *
-     * @author yh263208
-     * @date 2021-07-15 15:37
-     * @since ODC_release_3.2.2
-     * @see DefaultSessionEventListener
-     */
-    static class InnerSessionEventListener extends DefaultSessionEventListener {
-        private final DefaultConnectionSessionManager sessionManager;
-
-        public InnerSessionEventListener(@NonNull DefaultConnectionSessionManager sessionManager) {
-            this.sessionManager = sessionManager;
-        }
-
-        @Override
-        public void onExpireSucceed(ConnectionSession session) {
-            try {
-                this.sessionManager.removeSession(session);
-            } catch (Throwable e) {
-                log.warn("Fail to delete an expired session, sessionId={}", session.getId(), e);
-            }
-        }
-
-        @Override
-        public void onExpireFailed(ConnectionSession session, Throwable e) {
-            log.warn("Failed to expire a session, sessionId={}", session.getId(), e);
-        }
-
-    }
 
     /**
      * {@link DelayDeleteTask}

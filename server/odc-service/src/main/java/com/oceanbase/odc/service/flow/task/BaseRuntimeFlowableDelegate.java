@@ -66,12 +66,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegate implements Future<T> {
 
-    private final CountDownLatch latch;
-    private final RetryExecutor retryExecutor;
-    private final TaskInstanceCreatedListener taskInstanceCreatedlistener;
-    private final ActiveTaskStatisticsListener activeTaskStatisticsListener;
-    @Autowired
-    protected TaskService taskService;
     @Getter
     private String activityId;
     @Getter
@@ -91,10 +85,16 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
     @Autowired
     private EventPublisher eventPublisher;
     @Autowired
+    protected TaskService taskService;
+    @Autowired
     private FlowInstanceRepository flowInstanceRepository;
     private volatile T returnObject = null;
     private volatile Exception thrown = null;
     private volatile boolean done = false;
+    private final CountDownLatch latch;
+    private final RetryExecutor retryExecutor;
+    private final TaskInstanceCreatedListener taskInstanceCreatedlistener;
+    private final ActiveTaskStatisticsListener activeTaskStatisticsListener;
 
     public BaseRuntimeFlowableDelegate() {
         this.retryExecutor = RetryExecutor.builder().retryIntervalMillis(1000).retryTimes(3).build();

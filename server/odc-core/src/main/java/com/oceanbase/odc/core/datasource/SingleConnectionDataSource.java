@@ -54,15 +54,15 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class SingleConnectionDataSource extends BaseClassBasedDataSource implements AutoCloseable {
-    @Getter
-    private final boolean autoReconnect;
-    private final List<ConnectionInitializer> initializerList = new LinkedList<>();
-    protected volatile Connection connection;
     @Setter
     @Getter
     private Boolean autoCommit;
+    @Getter
+    private final boolean autoReconnect;
     @Setter
     private EventPublisher eventPublisher;
+    protected volatile Connection connection;
+    private final List<ConnectionInitializer> initializerList = new LinkedList<>();
     private volatile Lock lock;
     @Setter
     private long timeOutMillis = 10 * 1000;

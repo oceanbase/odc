@@ -194,11 +194,6 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize("flow instance use internal check")
 public class FlowInstanceService {
 
-    private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
-    private static final String ODC_SITE_URL = "odc.site.url";
-    private static final int MAX_APPLY_DATABASE_SIZE = 10;
-    private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
-    private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
     @Autowired
     private FlowInstanceRepository flowInstanceRepository;
     @Autowired
@@ -267,6 +262,12 @@ public class FlowInstanceService {
     private EnvironmentService environmentService;
     @Autowired
     private MetricManager metricManager;
+
+    private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
+    private static final String ODC_SITE_URL = "odc.site.url";
+    private static final int MAX_APPLY_DATABASE_SIZE = 10;
+    private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
+    private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
 
     @PostConstruct
     public void init() {

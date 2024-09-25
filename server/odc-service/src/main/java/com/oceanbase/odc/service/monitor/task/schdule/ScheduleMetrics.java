@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.monitor.task;
+package com.oceanbase.odc.service.monitor.task.schdule;
 
-import static com.oceanbase.odc.service.monitor.MeterName.SCHEDULE_ENABLED_COUNT;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,25 +22,23 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
-import com.oceanbase.odc.service.monitor.MonitorAutoConfiguration.BusinessMeterRegistry;
+import com.oceanbase.odc.service.monitor.MeterKey;
+import com.oceanbase.odc.service.monitor.MeterName;
+import com.oceanbase.odc.service.monitor.MetricManager;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
-
-import io.micrometer.core.instrument.Gauge;
 
 @Component
 @ConditionalOnProperty(value = "odc.system.monitor.actuator.enabled", havingValue = "true")
-public class TaskMetrics implements InitializingBean {
+public class ScheduleMetrics implements InitializingBean {
     @Autowired
-    BusinessMeterRegistry meterRegistry;
+    MetricManager metricManager;
 
     @Autowired
     ScheduleRepository scheduleRepository;
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        Gauge.builder(SCHEDULE_ENABLED_COUNT.getMeterName(),
-                () -> scheduleRepository.countByStatus(ScheduleStatus.ENABLED))
-                .description(SCHEDULE_ENABLED_COUNT.getDescription())
-                .register(meterRegistry);
+        metricManager.registerGauge(MeterKey.ofMeter(MeterName.SCHEDULE_ENABLED_COUNT),
+                () -> scheduleRepository.countByStatus(ScheduleStatus.ENABLED));
     }
 }
