@@ -20,6 +20,9 @@ import lombok.Getter;
 @Getter
 public enum MeterName {
 
+    // stateful route
+    STATEFUL_ROUTE_COUNT("stateful.route.count","stateful route count"),
+    STATEFUL_ROUTE_UNHEALTHY_COUNT("stateful.route.unhealthy.count","stateful route unhealthy count"),
     // flow module
     FLOW_CREATED_COUNT("flow.created.count", "flow created count"),
     FLOW_TASK_START_COUNT("flow.task.start.count", "flow task start count"),
