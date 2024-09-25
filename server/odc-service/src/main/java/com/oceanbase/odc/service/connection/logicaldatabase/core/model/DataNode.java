@@ -63,6 +63,12 @@ public class DataNode {
         this.tableName = tableName;
     }
 
+    public DataNode(String schemaName, String tableName, Long databaseId) {
+        this.schemaName = schemaName;
+        this.tableName = tableName;
+        this.databaseId = databaseId;
+    }
+
     public DataNode(Long databaseId, String schemaName) {
         this.databaseId = databaseId;
         this.schemaName = schemaName;
