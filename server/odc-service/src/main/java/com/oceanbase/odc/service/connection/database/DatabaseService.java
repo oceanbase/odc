@@ -265,13 +265,25 @@ public class DatabaseService {
         return connectionService.getDecryptedConfig(database.getConnectionId());
     }
 
+    /**
+     * 根据数据源ID和数据库名称列表分页查询数据库列表
+     *
+     * @param id 数据源ID
+     * @param name 数据库名称
+     * @param pageable 分页信息
+     * @return 符合条件的数据库列表
+     */
     @PreAuthenticate(actions = "read", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public Page<Database> listDatabasesByDataSource(@NonNull Long id, String name, @NonNull Pageable pageable) {
+        // 构建数据库实体的查询规范
         Specification<DatabaseEntity> specs = DatabaseSpecs
                 .connectionIdEquals(id)
                 .and(DatabaseSpecs.nameLike(name));
+        // 根据查询规范和分页信息查询数据库实体列表
         Page<DatabaseEntity> entities = databaseRepository.findAll(specs, pageable);
+        // 将数据库实体列表转换为数据库模型列表
         Page<Database> databases = entitiesToModels(entities, false);
+        // 检查当前组织是否有权限访问这些数据库
         horizontalDataPermissionValidator.checkCurrentOrganization(databases.getContent());
         return databases;
     }
@@ -856,12 +868,18 @@ public class DatabaseService {
         databaseRepository.setObjectLastSyncTimeAndStatusById(databaseId, new Date(), status);
     }
 
+    /**
+     * 刷新过期的待处理数据库对象状态 可以被ODC内部调用
+     */
     @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
     public void refreshExpiredPendingDBObjectStatus() {
+        // 计算同步日期
         Date syncDate = new Date(System.currentTimeMillis() - this.globalSearchProperties.getMaxPendingMillis());
+        // 根据同步状态和最后同步时间设置对象同步状态
         int affectRows = this.databaseRepository.setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeBefore(
                 DBObjectSyncStatus.INITIALIZED, DBObjectSyncStatus.PENDING, syncDate);
+        // 记录日志
         log.info("Refresh outdated pending objects status, syncDate={}, affectRows={}", syncDate, affectRows);
     }
 
@@ -923,21 +941,36 @@ public class DatabaseService {
         });
     }
 
+    /**
+     * 将实体列表转换为模型列表
+     *
+     * @param entities 实体列表
+     * @param includesPermittedAction 是否包含允许的操作
+     * @return 模型列表
+     */
     private Page<Database> entitiesToModels(Page<DatabaseEntity> entities, boolean includesPermittedAction) {
+        // 如果实体列表为空，则返回一个空的页面
         if (CollectionUtils.isEmpty(entities.getContent())) {
             return Page.empty();
         }
+        // 获取项目ID和项目列表的映射关系
         Map<Long, List<Project>> projectId2Projects = projectService.mapByIdIn(entities.stream()
                 .map(DatabaseEntity::getProjectId).collect(Collectors.toSet()));
+        // 获取连接配置ID和连接配置列表的映射关系
         Map<Long, List<ConnectionConfig>> connectionId2Connections = connectionService.mapByIdIn(entities.stream()
                 .map(DatabaseEntity::getConnectionId).collect(Collectors.toSet()));
+        // 获取数据库ID和允许的操作类型的映射关系
         Map<Long, Set<DatabasePermissionType>> databaseId2PermittedActions = new HashMap<>();
         Set<Long> databaseIds = entities.stream().map(DatabaseEntity::getId).collect(Collectors.toSet());
+        // 设置允许的操作类型
         if (includesPermittedAction) {
             databaseId2PermittedActions = permissionHelper.getDBPermissions(databaseIds);
         }
+        // 将最终的数据库ID和允许的操作类型的映射关系存储到一个变量中
         Map<Long, Set<DatabasePermissionType>> finalId2PermittedActions = databaseId2PermittedActions;
+        // 获取数据库ID和用户资源角色列表的映射关系
         Map<Long, List<UserResourceRole>> databaseId2UserResourceRole = new HashMap<>();
+        // 获取用户ID和用户的映射关系
         Map<Long, User> userId2User = new HashMap<>();
         List<UserResourceRole> userResourceRoles =
                 resourceRoleService.listByResourceTypeAndIdIn(ResourceType.ODC_DATABASE, databaseIds);
@@ -949,23 +982,31 @@ public class DatabaseService {
                             userResourceRoles.stream().map(UserResourceRole::getUserId).collect(Collectors.toSet()))
                     .stream().collect(Collectors.toMap(User::getId, v -> v, (v1, v2) -> v2));
         }
+        // 将最终的数据库ID和用户资源角色列表的映射关系存储到一个变量中
         Map<Long, List<UserResourceRole>> finalDatabaseId2UserResourceRole = databaseId2UserResourceRole;
+        // 将最终的用户ID和用户的映射关系存储到一个变量中
         Map<Long, User> finalUserId2User = userId2User;
+        // 将实体列表转换为模型列表
         return entities.map(entity -> {
             Database database = databaseMapper.entityToModel(entity);
+            // 获取项目列表
             List<Project> projects = projectId2Projects.getOrDefault(entity.getProjectId(), new ArrayList<>());
+            // 获取连接配置列表
             List<ConnectionConfig> connections =
                     connectionId2Connections.getOrDefault(entity.getConnectionId(), new ArrayList<>());
+            // 设置项目、环境和数据源
             database.setProject(CollectionUtils.isEmpty(projects) ? null : projects.get(0));
             database.setEnvironment(CollectionUtils.isEmpty(connections) ? null
                     : new Environment(connections.get(0).getEnvironmentId(), connections.get(0).getEnvironmentName(),
                             connections.get(0).getEnvironmentStyle()));
             database.setDataSource(CollectionUtils.isEmpty(connections) ? null : connections.get(0));
+            // 设置允许的操作类型
             if (includesPermittedAction) {
                 database.setAuthorizedPermissionTypes(finalId2PermittedActions.get(entity.getId()));
             }
 
             // Set the owner of the database
+            // 设置数据库的所有者
             List<UserResourceRole> resourceRoles = finalDatabaseId2UserResourceRole.get(entity.getId());
             if (CollectionUtils.isNotEmpty(resourceRoles)) {
                 Set<Long> ownerIds =

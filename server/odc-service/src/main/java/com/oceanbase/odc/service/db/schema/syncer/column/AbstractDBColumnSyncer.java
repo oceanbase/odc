@@ -59,8 +59,8 @@ public abstract class AbstractDBColumnSyncer<T extends ExtensionPoint> implement
     /**
      * 同步数据库表结构
      *
-     * @param connection  数据库连接
-     * @param database    数据库对象
+     * @param connection 数据库连接
+     * @param database 数据库对象
      * @param dialectType 方言类型
      */
     @Override
@@ -74,18 +74,18 @@ public abstract class AbstractDBColumnSyncer<T extends ExtensionPoint> implement
         Map<String, Set<String>> latestObject2Columns = getLatestObjectToColumns(extensionPoint, connection, database);
         // 获取odc元数据中已存在的table，view和external table类型的map数据库对象名称2数据库对象
         Map<String, DBObjectEntity> existingObject2Entity =
-            dbObjectRepository.findByDatabaseIdAndTypeIn(database.getId(), getColumnRelatedObjectTypes()).stream()
-                .collect(Collectors.toMap(DBObjectEntity::getName, e -> e, (e1, e2) -> e1));
+                dbObjectRepository.findByDatabaseIdAndTypeIn(database.getId(), getColumnRelatedObjectTypes()).stream()
+                        .collect(Collectors.toMap(DBObjectEntity::getName, e -> e, (e1, e2) -> e1));
         if (CollectionUtils.isEmpty(existingObject2Entity.entrySet())) {
             return;
         }
         // 获取元数据库中已存在的数据库对象的ID列表
         Set<Long> existingObjectIds =
-            existingObject2Entity.values().stream().map(DBObjectEntity::getId).collect(Collectors.toSet());
+                existingObject2Entity.values().stream().map(DBObjectEntity::getId).collect(Collectors.toSet());
         // 根据existingObjectIds获取元数据库中已存在的map数据库对象2列对象
         Map<Long, List<DBColumnEntity>> existingObjectId2ColumnEntities =
-            dbColumnRepository.findByDatabaseIdAndObjectIdIn(database.getId(), existingObjectIds).stream()
-                .collect(Collectors.groupingBy(DBColumnEntity::getObjectId));
+                dbColumnRepository.findByDatabaseIdAndObjectIdIn(database.getId(), existingObjectIds).stream()
+                        .collect(Collectors.groupingBy(DBColumnEntity::getObjectId));
         // Insert columns that are not in the existing column list
         // 插入不存在的列
         List<DBColumnEntity> toBeInserted = new ArrayList<>();
@@ -97,9 +97,9 @@ public abstract class AbstractDBColumnSyncer<T extends ExtensionPoint> implement
             DBObjectEntity objectEntity = entry.getValue();
             Set<String> latestColumns = latestObject2Columns.getOrDefault(objectName, new HashSet<>());
             List<DBColumnEntity> existingColumns =
-                existingObjectId2ColumnEntities.getOrDefault(objectEntity.getId(), new ArrayList<>());
+                    existingObjectId2ColumnEntities.getOrDefault(objectEntity.getId(), new ArrayList<>());
             Set<String> existingColumnNames =
-                existingColumns.stream().map(DBColumnEntity::getName).collect(Collectors.toSet());
+                    existingColumns.stream().map(DBColumnEntity::getName).collect(Collectors.toSet());
             for (String latestColumn : latestColumns) {
                 if (!existingColumnNames.contains(latestColumn)) {
                     DBColumnEntity columnEntity = new DBColumnEntity();
@@ -123,7 +123,7 @@ public abstract class AbstractDBColumnSyncer<T extends ExtensionPoint> implement
         // 批量删除列信息
         if (CollectionUtils.isNotEmpty(toBeDeleted)) {
             dbColumnRepository
-                .deleteByIds(toBeDeleted.stream().map(DBColumnEntity::getId).collect(Collectors.toList()));
+                    .deleteByIds(toBeDeleted.stream().map(DBColumnEntity::getId).collect(Collectors.toList()));
         }
     }
 

@@ -276,37 +276,59 @@ public class DatabaseChangeThread extends Thread {
         retryResult.success = success;
     }
 
+    /**
+     * 初始化方法，用于读取SQL内容和相关参数
+     *
+     * @param userId 用户ID
+     */
     private void init(Long userId) {
+        // 打印日志，表示开始读取SQL内容
         log.info("Start read sql content, taskId={}", this.getTaskId());
+        // 获取SQL对象ID列表
         List<String> objectIds = parameters.getSqlObjectIds();
         if (StringUtils.isNotEmpty(parameters.getSqlContent())) {
+            // 如果SQL内容不为空，则将其转换为字节数组，并创建一个ByteArrayInputStream对象
             byte[] sqlBytes = parameters.getSqlContent().getBytes(StandardCharsets.UTF_8);
             sqlInputStream = new ByteArrayInputStream(sqlBytes);
             sqlTotalBytes = sqlBytes.length;
         } else {
             try {
+                // 如果SQL内容为空，则从对象存储中读取SQL文件流，并创建一个SizeAwareInputStream对象
                 SizeAwareInputStream sizeAwareInputStream =
-                        DatabaseChangeFileReader.readSqlFilesStream(objectStorageFacade,
-                                "async".concat(File.separator).concat(String.valueOf(userId)), objectIds, null);
+                    DatabaseChangeFileReader.readSqlFilesStream(objectStorageFacade,
+                        "async".concat(File.separator).concat(String.valueOf(userId)), objectIds, null);
                 sqlInputStream = sizeAwareInputStream.getInputStream();
                 sqlTotalBytes = sizeAwareInputStream.getTotalBytes();
             } catch (IOException exception) {
+                // 如果读取失败，则抛出InternalServerError异常
                 throw new InternalServerError("load database change task file failed", exception);
             }
         }
+        // 获取分隔符，如果为空，则默认为";"
         String delimiter = Objects.isNull(parameters.getDelimiter()) ? ";" : parameters.getDelimiter();
+        // 设置SQL注释处理器的分隔符
         ConnectionSessionUtil.getSqlCommentProcessor(connectionSession).setDelimiter(delimiter);
+        // 创建一个SQL迭代器
         this.sqlIterator = SqlUtils.iterator(connectionSession, sqlInputStream, StandardCharsets.UTF_8);
+        // 打印日志，表示SQL内容读取成功
         log.info("Read sql content successfully, taskId={}", this.getTaskId());
         try {
+            // 生成文件根目录
             fileRootDir = FileManager.generateDir(FileBucket.ASYNC);
+            // 生成JSON文件名
             jsonFileName = StringUtils.uuid();
+            // 生成JSON文件路径
             jsonFilePath = String.format("%s/%s.json", fileRootDir, jsonFileName);
+            // 创建JSON文件对象
             jsonFile = new File(jsonFilePath);
+            // 生成ZIP文件ID
             zipFileId = StringUtils.uuid();
+            // 生成ZIP文件根路径
             zipFileRootPath = String.format("%s/%s", fileRootDir, zipFileId);
+            // 生成ZIP文件下载URL
             zipFileDownloadUrl = String.format("/api/v2/flow/flowInstances/%s/tasks/download", flowInstanceId);
         } catch (Exception exception) {
+            // 如果生成失败，则抛出InternalServerError异常
             throw new InternalServerError("create database change task file dir failed", exception);
         }
     }

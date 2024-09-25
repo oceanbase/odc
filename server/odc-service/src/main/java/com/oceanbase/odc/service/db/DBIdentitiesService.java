@@ -39,7 +39,7 @@ public class DBIdentitiesService {
      * 根据给定的连接会话和对象类型列表，获取对象标识列表
      *
      * @param session 连接会话
-     * @param types   对象类型列表
+     * @param types 对象类型列表
      * @return 对象标识列表
      */
     public List<SchemaIdentities> list(ConnectionSession session, List<DBObjectType> types) {
@@ -70,15 +70,15 @@ public class DBIdentitiesService {
      * 将数据库中的所有视图添加到给定的Map中
      *
      * @param schemaAccessor 数据库模式访问器
-     * @param all            存储所有视图的Map，key为schema名称，value为对应的SchemaIdentities对象
+     * @param all 存储所有视图的Map，key为schema名称，value为对应的SchemaIdentities对象
      */
     void listViews(DBSchemaAccessor schemaAccessor, Map<String, SchemaIdentities> all) {
         // 获取所有用户视图并添加到all中
         schemaAccessor.listAllUserViews()
-            .forEach(i -> all.computeIfAbsent(i.getSchemaName(), SchemaIdentities::of).add(i));
+                .forEach(i -> all.computeIfAbsent(i.getSchemaName(), SchemaIdentities::of).add(i));
         // 获取所有系统视图并添加到all中
         schemaAccessor.listAllSystemViews()
-            .forEach(i -> all.computeIfAbsent(i.getSchemaName(), SchemaIdentities::of).add(i));
+                .forEach(i -> all.computeIfAbsent(i.getSchemaName(), SchemaIdentities::of).add(i));
     }
 
 }

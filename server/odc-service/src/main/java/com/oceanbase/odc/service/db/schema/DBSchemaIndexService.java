@@ -211,26 +211,34 @@ public class DBSchemaIndexService {
     public Boolean syncDatabaseObjects(@NonNull @Valid SyncDBObjectReq req) {
         this.databaseService.refreshExpiredPendingDBObjectStatus();
         Set<Database> databases = new HashSet<>();
+        // 根据资源类型获取数据库列表
         if (req.getResourceType() == ResourceType.ODC_CONNECTION) {
+            // 获取连接下的所有数据库
             Set<Database> dbs = new HashSet<>(databaseService.listExistDatabasesByConnectionId(req.getResourceId()));
             if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
+                // 个人组织类型下，判断当前用户是否为连接创建者，若不是则抛出异常
                 ConnectionConfig config = connectionService.getBasicWithoutPermissionCheck(req.getResourceId());
                 if (!Objects.equals(authenticationFacade.currentUserId(), config.getCreatorId())) {
                     throw new NotFoundException(ResourceType.ODC_CONNECTION, "id", req.getResourceId());
                 }
                 databases.addAll(dbs);
             } else {
+                // 企业组织类型下，获取当前用户为成员的项目ID列表，然后判断数据库所属项目是否为这些项目之一，若不是则抛出异常
                 Set<Long> projectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
                 databases.addAll(dbs.stream()
                         .filter(e -> e.getProject() != null && projectIds.contains(e.getProject().getId()))
                         .collect(Collectors.toSet()));
             }
         } else if (req.getResourceType() == ResourceType.ODC_PROJECT) {
+            // 根据项目ID获取项目角色，判断当前用户是否为项目成员
             projectPermissionValidator.checkProjectRole(req.getResourceId(), ResourceRoleName.all());
+            // 获取项目下的所有数据库
             databases.addAll(databaseService.listExistDatabasesByProjectId(req.getResourceId()));
         } else if (req.getResourceType() == ResourceType.ODC_DATABASE) {
+            // 根据数据库ID获取数据库信息
             List<Database> dbs = databaseService.listDatabasesByIds(Collections.singleton(req.getResourceId()));
             if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
+                // 个人组织类型下，判断当前用户是否为数据源创建者，若不是则抛出异常
                 ConnectionConfig config =
                         connectionService.getBasicWithoutPermissionCheck(dbs.get(0).getDataSource().getId());
                 if (!Objects.equals(authenticationFacade.currentUserId(), config.getCreatorId())) {
@@ -238,6 +246,7 @@ public class DBSchemaIndexService {
                 }
                 databases.addAll(dbs);
             } else {
+                // 企业组织类型下，获取当前用户为成员的项目ID列表，然后判断数据库所属项目是否为这些项目之一，若不是则抛出异常
                 Set<Long> projectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
                 if (CollectionUtils.isEmpty(dbs) || dbs.get(0).getProject() == null
                         || !projectIds.contains(dbs.get(0).getProject().getId())) {
@@ -246,6 +255,7 @@ public class DBSchemaIndexService {
                 databases.addAll(dbs);
             }
         } else {
+            // 不支持的资源类型，抛出异常
             throw new IllegalArgumentException("Unsupported resource type: " + req.getResourceType());
         }
         databases.removeIf(e -> Boolean.FALSE.equals(e.getExisted())

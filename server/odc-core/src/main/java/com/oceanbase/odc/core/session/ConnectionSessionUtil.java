@@ -383,14 +383,14 @@ public class ConnectionSessionUtil {
      * 获取查询缓存的虚拟表
      *
      * @param connectionSession 数据库连接会话
-     * @param sqlId             SQL语句ID
+     * @param sqlId SQL语句ID
      * @return 查询缓存的虚拟表，如果不存在则返回null
      */
     @SuppressWarnings("all")
     public static VirtualTable getQueryCache(@NonNull ConnectionSession connectionSession, @NonNull String sqlId) {
         // 从连接会话中获取查询缓存
         Map<String, VirtualTable> queryCache =
-            (Map<String, VirtualTable>) connectionSession.getAttribute(ConnectionSessionConstants.QUERY_CACHE_KEY);
+                (Map<String, VirtualTable>) connectionSession.getAttribute(ConnectionSessionConstants.QUERY_CACHE_KEY);
         // 如果查询缓存不存在，则返回null
         if (queryCache == null) {
             return null;

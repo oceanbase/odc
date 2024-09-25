@@ -41,7 +41,7 @@ public class TestProperties {
             URL location = TestProperties.class.getProtectionDomain().getCodeSource().getLocation();
             // 获取代码源的URI，并将其转换为路径
             Path filepath = Paths.get(location.toURI()).getParent().getParent().getParent().getParent()
-                .resolve("local-unit-test.properties");
+                    .resolve("local-unit-test.properties");
             // 如果指定的属性文件存在，则加载其中的配置项
             if (Files.exists(filepath)) {
                 properties = EncryptableConfigurations.loadProperties(filepath.toString());

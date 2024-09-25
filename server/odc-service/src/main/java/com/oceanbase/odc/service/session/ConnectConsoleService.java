@@ -472,9 +472,9 @@ public class ConnectConsoleService {
      * 读取二进制数据
      *
      * @param sessionId 会话ID
-     * @param sqlId     SQL ID
-     * @param rowNum    行号
-     * @param colNum    列号
+     * @param sqlId SQL ID
+     * @param rowNum 行号
+     * @param colNum 列号
      * @return InputStream 输入流
      * @throws IOException IO异常
      */
@@ -497,18 +497,18 @@ public class ConnectConsoleService {
             if (rowNum > maxCachedRowId) {
                 BinarySize size = BinarySizeUnit.B.of(totalCachedSize);
                 log.warn(
-                    "Failed to request binary data, rowNum={}, maxCachedRowId={}, totalCachedLines={}, "
-                    + "totalCachedSize={}",
-                    rowNum, maxCachedRowId, tmpTable.getTotalCachedLines(), size);
+                        "Failed to request binary data, rowNum={}, maxCachedRowId={}, totalCachedLines={}, "
+                                + "totalCachedSize={}",
+                        rowNum, maxCachedRowId, tmpTable.getTotalCachedLines(), size);
                 size = BinarySizeUnit.B.of(sessionProperties.getResultSetMaxCachedSize());
                 throw new NotFoundException(ErrorCodes.TooManyResultSetsToBeCached,
-                    new Object[] {sessionProperties.getResultSetMaxCachedLines(), size},
-                    "Too many resultsets to be cached");
+                        new Object[] {sessionProperties.getResultSetMaxCachedLines(), size},
+                        "Too many resultsets to be cached");
             }
         }
         // 选择指定行并投影指定列
         virtualTable = virtualTable.select(virtualLine -> Objects.equals(virtualLine.rowId(), rowNum))
-            .project(Collections.singletonList(colNum), virtualColumn -> virtualColumn);
+                .project(Collections.singletonList(colNum), virtualColumn -> virtualColumn);
         // 如果虚拟表大小不为1，则抛出InternalServerError异常
         if (virtualTable.count() != 1) {
             log.warn("Virtual table size error, virtualTableCount={}", virtualTable.count());
@@ -520,7 +520,7 @@ public class ConnectConsoleService {
         // 如果虚拟元素为空，则抛出NotFoundException异常
         if (elementHolder.getValue() == null) {
             log.warn("Could not find indexed data in the virtual table, sqlId={}, rowNum={}, colNum={}", sqlId, rowNum,
-                colNum);
+                    colNum);
             throw new NotFoundException(ResourceType.ODC_ASYNC_SQL_RESULT, "SqlId", sqlId);
         }
         // 获取内容
@@ -529,7 +529,7 @@ public class ConnectConsoleService {
         if (!(content instanceof BinaryContentMetaData)) {
             log.warn("Wrong data type, content={}", content);
             throw new BadRequestException(ErrorCodes.BadRequest, new Object[] {"Only binary type cached"},
-                "Only binary type cached");
+                    "Only binary type cached");
         }
         // 获取二进制数据管理器
         BinaryDataManager dataManager = ConnectionSessionUtil.getBinaryDataManager(connectionSession);

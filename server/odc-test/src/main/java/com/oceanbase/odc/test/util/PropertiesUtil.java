@@ -75,8 +75,8 @@ public class PropertiesUtil {
             URL location = TestProperties.class.getProtectionDomain().getCodeSource().getLocation();
             // 获取location对应的文件路径的父级父级父级父级目录下的.env文件
             file = Paths.get(location.toURI())
-                .getParent().getParent().getParent().getParent()
-                .resolve(".env").toFile();
+                    .getParent().getParent().getParent().getParent()
+                    .resolve(".env").toFile();
         } catch (URISyntaxException e) {
             throw new IllegalStateException(e);
         }

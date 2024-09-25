@@ -228,7 +228,7 @@ public class DBResourcePermissionHelper {
         Map<Long, List<UserTablePermissionEntity>> tbId2Permissions = userTablePermissionRepository
                 .findNotExpiredByUserIdAndTableIdIn(authenticationFacade.currentUserId(), tableIds)
                 .stream().collect(Collectors.groupingBy(UserTablePermissionEntity::getTableId));
-        //遍历表对象
+        // 遍历表对象
         for (DBObjectEntity e : tbEntities) {
             // 如果表所属数据库不存在或未被分配到项目，则将表的权限设置为空集合
             if (!dbId2Entity.containsKey(e.getDatabaseId())
@@ -246,13 +246,13 @@ public class DBResourcePermissionHelper {
                 // 如果权限列表不为空，则将权限转换为DatabasePermissionType并添加到authorized集合中
                 if (CollectionUtils.isNotEmpty(dbPermissions)) {
                     authorized.addAll(dbPermissions.stream().map(p -> DatabasePermissionType.from(p.getAction()))
-                        .collect(Collectors.toSet()));
+                            .collect(Collectors.toSet()));
                 }
                 // 获取表ID对应的权限列表
                 List<UserTablePermissionEntity> permissions = tbId2Permissions.get(e.getId());
                 if (CollectionUtils.isNotEmpty(permissions)) {
                     authorized.addAll(permissions.stream().map(p -> DatabasePermissionType.from(p.getAction()))
-                        .collect(Collectors.toSet()));
+                            .collect(Collectors.toSet()));
                 }
                 // 将authorized集合作为值，将表ID作为键，存入retmap中
                 ret.put(e.getId(), authorized);

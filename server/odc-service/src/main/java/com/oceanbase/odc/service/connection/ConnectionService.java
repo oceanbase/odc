@@ -934,9 +934,9 @@ public class ConnectionService {
     /**
      * 该方法用于获取连接配置信息，不需要进行用户权限校验
      *
-     * @param id              连接配置ID
+     * @param id 连接配置ID
      * @param withEnvironment 是否包含环境信息
-     * @param withProject     是否包含项目信息
+     * @param withProject 是否包含项目信息
      * @return 连接配置对象
      */
     @SkipAuthorize("odc internal usage")

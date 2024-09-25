@@ -108,37 +108,52 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
         DatabaseChangeResult result;
         try {
             log.info("Async task starts, taskId={}, activityId={}", taskId, execution.getCurrentActivityId());
+            // 生成ODC异步任务线程
             asyncTaskThread = generateOdcAsyncTaskThread(taskId, execution);
+            // 只修改task_task表
             taskService.start(taskId);
+            // 获取任务实体
             TaskEntity taskEntity = taskService.detail(taskId);
+            // 将任务结果JSON转换为DatabaseChangeResult对象
             result = JsonUtils.fromJson(taskEntity.getResultJson(), DatabaseChangeResult.class);
+            // 运行ODC异步任务线程
             asyncTaskThread.run();
             RollbackPlanTaskResult rollbackPlanTaskResult = null;
             if (result != null) {
                 rollbackPlanTaskResult = result.getRollbackPlanResult();
             }
+            // 获取ODCI异步任务线程的结果
             result = asyncTaskThread.getResult();
+            // 设置回滚计划任务结果
             result.setRollbackPlanResult(rollbackPlanTaskResult);
+            // 设置自动修改超时时间
             result.setAutoModifyTimeout(this.autoModifyTimeout);
             if (asyncTaskThread.isAbort()) {
+                // 如果ODCI异步任务线程被停止，则标记任务失败，并调用taskService的fail方法
                 isFailure = true;
                 taskService.fail(taskId, asyncTaskThread.getProgressPercentage(), result);
             } else if (asyncTaskThread.getStop()) {
+                // 如果ODCI异步任务线程被停止，则标记任务失败，并调用taskService的fail方法
                 isFailure = true;
                 taskService.fail(taskId, asyncTaskThread.getProgressPercentage(), result);
                 if (isTimeout()) {
+                    // 如果任务超时，则抛出ServiceTaskExpiredException异常
                     throw new ServiceTaskExpiredException();
                 } else {
+                    // 否则抛出ServiceTaskCancelledException异常
                     throw new ServiceTaskCancelledException();
                 }
             } else {
+                // 如果ODCI异步任务线程正常完成，则标记任务成功，并调用taskService的succeed方法
                 isSuccessful = true;
                 taskService.succeed(taskId, result);
             }
+            // 打印日志，记录异步任务结束的任务ID、当前活动ID、返回值和耗时
             log.info("Async task ends, taskId={}, activityId={}, returnVal={}, timeCost={}", taskId,
                     execution.getCurrentActivityId(),
                     result, System.currentTimeMillis() - getStartTimeMilliSeconds());
         } catch (Exception e) {
+            // 如果异步任务执行过程中发生异常，则打印错误日志，并根据异常类型抛出相应的异常
             log.error("Error occurs while async task executing", e);
             if (e instanceof BaseFlowException) {
                 throw e;
@@ -186,24 +201,46 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
         }
     }
 
+    /**
+     * 生成一个用于异步执行数据库变更任务的线程
+     *
+     * @param taskId    任务ID
+     * @param execution 流程执行上下文
+     * @return 返回一个DatabaseChangeThread对象，用于异步执行数据库变更任务
+     */
     private DatabaseChangeThread generateOdcAsyncTaskThread(Long taskId, DelegateExecution execution) {
+        // 获取任务创建人ID
         Long creatorId = FlowTaskUtil.getTaskCreator(execution).getId();
+        // 获取异步执行参数
         DatabaseChangeParameters parameters = FlowTaskUtil.getAsyncParameter(execution);
+        // 获取数据库连接配置
         ConnectionConfig connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
+        // 如果存在耗时SQL，则修改超时时间
         modifyTimeoutIfTimeConsumingSqlExists(execution, parameters, connectionConfig.getDialectType(), creatorId);
+        // 设置查询超时时间
         connectionConfig.setQueryTimeoutSeconds((int) TimeUnit.MILLISECONDS.toSeconds(parameters.getTimeoutMillis()));
+        // 创建连接会话工厂
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(connectionConfig);
+        // 设置连接会话超时时间
         sessionFactory.setSessionTimeoutMillis(parameters.getTimeoutMillis());
+        // 生成连接会话
         ConnectionSession connectionSession = sessionFactory.generateSession();
+        // 如果是Oracle数据库，则初始化控制台会话时区
         if (connectionSession.getDialectType().isOracle()) {
             ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession, connectProperties.getDefaultTimeZone());
         }
+        // 创建SQL注释处理器
         SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(), true, true);
+        // 设置连接会话的SQL注释处理器
         ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
+        // 设置连接会话的当前模式
         ConnectionSessionUtil.setCurrentSchema(connectionSession, FlowTaskUtil.getSchemaName(execution));
+        // 设置连接会话的列访问器
         ConnectionSessionUtil.setColumnAccessor(connectionSession, new DatasourceColumnAccessor(connectionSession));
+        // 创建DatabaseChangeThread对象
         DatabaseChangeThread returnVal = new DatabaseChangeThread(connectionSession, parameters,
-                cloudObjectStorageService, objectStorageFacade, maskingService);
+            cloudObjectStorageService, objectStorageFacade, maskingService);
+        // 设置任务ID、流程实例ID和用户ID
         returnVal.setTaskId(taskId);
         returnVal.setFlowInstanceId(this.getFlowInstanceId());
         returnVal.setUserId(creatorId);

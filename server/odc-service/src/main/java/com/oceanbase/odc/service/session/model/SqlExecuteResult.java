@@ -191,7 +191,7 @@ public class SqlExecuteResult {
         // 如果有多个表并且没有RowId，则结果不可编辑
         // If there are multiple tables and no RowId, the result cannot be edited
         if (CollectionUtils.isEmpty(relatedTablesOrViews)
-            || (Objects.isNull(resultTable) && relatedTablesOrViews.size() > 1)) {
+                || (Objects.isNull(resultTable) && relatedTablesOrViews.size() > 1)) {
             editable = false;
         }
 
@@ -210,9 +210,9 @@ public class SqlExecuteResult {
         // Set the rows of the table with RowId to be editable
         for (JdbcColumnMetaData odcFieldMetaData : resultSetMetaData.getFieldMetaDataList()) {
             odcFieldMetaData.setEditable(
-                odcFieldMetaData.schemaName().equals(resultTable.getDatabaseName())
-                && odcFieldMetaData.getTableName().equals(resultTable.getTableName())
-                && Types.ROWID != odcFieldMetaData.getColumnType());
+                    odcFieldMetaData.schemaName().equals(resultTable.getDatabaseName())
+                            && odcFieldMetaData.getTableName().equals(resultTable.getTableName())
+                            && Types.ROWID != odcFieldMetaData.getColumnType());
         }
         return resultTable;
     }
@@ -250,7 +250,7 @@ public class SqlExecuteResult {
             } else {
                 // 否则，将字段名称添加到当前表或视图的列名列表中
                 table2ColumnNames
-                    .computeIfAbsent(currentTableOrView, names -> new ArrayList<>()).add(field.getColumnName());
+                        .computeIfAbsent(currentTableOrView, names -> new ArrayList<>()).add(field.getColumnName());
             }
         }
         // collect all cared column meta
@@ -261,7 +261,7 @@ public class SqlExecuteResult {
             try {
                 // 获取表中的所有列
                 List<DBTableColumn> columns =
-                    schemaAccessor.listTableColumns(table.getSchemaName(), table.getTableName());
+                        schemaAccessor.listTableColumns(table.getSchemaName(), table.getTableName());
                 // 将表中的每一列及其对应的表标识作为键，将列对象作为值，存入Map中
                 for (DBTableColumn column : columns) {
                     columnMap.put(ColumnIdentity.of(table, column.getName()), column);
@@ -269,7 +269,7 @@ public class SqlExecuteResult {
             } catch (Exception e) {
                 // 如果获取列列表失败，则记录日志
                 log.warn("get column list failed, table={}, reason={}",
-                    table, ExceptionUtils.getSimpleReason(e));
+                        table, ExceptionUtils.getSimpleReason(e));
             }
         }
         // attach column comment into field metadata
@@ -279,10 +279,10 @@ public class SqlExecuteResult {
         for (JdbcColumnMetaData field : fields) {
             // 判断字段的模式名称、表名和列名是否为空
             if (Objects.nonNull(field.schemaName()) && Objects.nonNull(field.getTableName())
-                && Objects.nonNull(field.getColumnName())) {
+                    && Objects.nonNull(field.getColumnName())) {
                 // 根据字段的模式名称、表名和列名获取对应的DBTableColumn对象
                 DBTableColumn column = columnMap
-                    .get(ColumnIdentity.of(field.schemaName(), field.getTableName(), field.getColumnName()));
+                        .get(ColumnIdentity.of(field.schemaName(), field.getTableName(), field.getColumnName()));
                 // 如果获取到了DBTableColumn对象
                 if (Objects.nonNull(column)) {
                     // 设置字段的注释为DBTableColumn对象的注释
@@ -297,7 +297,7 @@ public class SqlExecuteResult {
         // first assume a table related query, then assume a view related query
         // if neither, then not editable
         List<DBTableColumn> dbTableColumns =
-            schemaAccessor.listTableColumns(resultTable.getDatabaseName(), resultTable.getTableName());
+                schemaAccessor.listTableColumns(resultTable.getDatabaseName(), resultTable.getTableName());
 
         if (!CollectionUtils.isEmpty(dbTableColumns)) {
             // 遍历表的列信息

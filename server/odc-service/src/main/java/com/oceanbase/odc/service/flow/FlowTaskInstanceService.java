@@ -180,10 +180,10 @@ public class FlowTaskInstanceService {
     public FlowInstanceDetailResp executeTask(@NotNull Long id) throws IOException {
         // 获取状态为PENDING的任务实例列表
         List<FlowTaskInstance> instances =
-            filterTaskInstance(id, instance -> instance.getStatus() == FlowNodeStatus.PENDING, false);
+                filterTaskInstance(id, instance -> instance.getStatus() == FlowNodeStatus.PENDING, false);
         // 判断任务实例列表是否为空
         PreConditions.validExists(ResourceType.ODC_FLOW_TASK_INSTANCE, "flowInstanceId", id,
-            () -> instances.size() > 0);
+                () -> instances.size() > 0);
         // 判断任务实例列表是否只有一个元素
         Verify.singleton(instances, "FlowTaskInstance");
 

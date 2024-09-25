@@ -369,14 +369,26 @@ public class TaskService {
         log.info("Task has been canceled: taskId={}", id);
     }
 
+    /**
+     * 内部启动方法，用于启动任务
+     *
+     * @param id         任务ID
+     * @param taskResult 任务结果
+     */
     private void innerStart(@NonNull Long id, Object taskResult) {
+        // 通过ID查找任务实体
         TaskEntity taskEntity = nullSafeFindById(id);
+        // 设置任务状态为运行中
         taskEntity.setStatus(TaskStatus.RUNNING);
+        // 设置任务进度为0%
         taskEntity.setProgressPercentage(0.0);
+        // 如果任务结果不为空，则将其转换为JSON字符串并保存到任务实体中
         if (taskResult != null) {
             taskEntity.setResultJson(JsonUtils.toJson(taskResult));
         }
+        // 保存任务实体到数据库
         taskRepository.save(taskEntity);
+        // 记录日志，输出任务ID
         log.info("Task started: taskId={}", id);
     }
 
