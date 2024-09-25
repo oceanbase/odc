@@ -298,8 +298,14 @@ public enum ErrorCodes implements ErrorCode {
     /**
      * Permission management
      */
-    GrantPermissionFailed;
+    GrantPermissionFailed,
 
+
+    /**
+     * version conflict
+     */
+    WorksheetEditVersionConflict,
+    ;
 
     @Override
     public String code() {

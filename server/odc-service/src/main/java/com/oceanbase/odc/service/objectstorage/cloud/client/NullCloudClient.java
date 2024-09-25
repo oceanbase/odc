@@ -23,6 +23,7 @@ import java.util.List;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadResult;
+import com.oceanbase.odc.service.objectstorage.cloud.model.CopyObjectResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectsRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectsResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.GetObjectRequest;
@@ -71,6 +72,12 @@ public class NullCloudClient implements CloudClient {
 
     @Override
     public PutObjectResult putObject(String bucketName, String key, File file, ObjectMetadata metadata)
+            throws CloudException {
+        throw new UnsupportedException();
+    }
+
+    @Override
+    public CopyObjectResult copyObject(String bucketName, String from, String to)
             throws CloudException {
         throw new UnsupportedException();
     }
