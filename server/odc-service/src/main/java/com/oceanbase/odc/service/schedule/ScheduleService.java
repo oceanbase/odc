@@ -354,6 +354,7 @@ public class ScheduleService {
             if (approvalFlowInstanceId != null) {
                 changeLog.setFlowInstanceId(approvalFlowInstanceId);
                 scheduleChangeLogService.updateFlowInstanceIdById(changeLog.getId(), approvalFlowInstanceId);
+                scheduleRepository.updateStatusById(targetSchedule.getId(), ScheduleStatus.APPROVING);
                 log.info("Create approval flow success,changelogId={},flowInstanceId", approvalFlowInstanceId);
             }
             return changeLog;
