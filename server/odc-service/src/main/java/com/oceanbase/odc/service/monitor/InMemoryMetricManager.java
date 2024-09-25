@@ -15,10 +15,6 @@
  */
 package com.oceanbase.odc.service.monitor;
 
-import static com.oceanbase.odc.service.monitor.MeterName.CONNECT_SESSION_ACTIVE_COUNT;
-import static com.oceanbase.odc.service.monitor.MeterName.METER_COUNTER_HOLDER_COUNT;
-import static com.oceanbase.odc.service.monitor.MeterName.METER_TIMER_HOLDER_COUNT;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
@@ -56,8 +52,8 @@ public class InMemoryMetricManager implements MetricManager, InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        registerGauge(MeterKey.ofMeter(METER_COUNTER_HOLDER_COUNT), this.COUNTER_MAP::size);
-        registerGauge(MeterKey.ofMeter(METER_TIMER_HOLDER_COUNT), this.TIMER_MAP::size);
+        registerGauge(MeterKey.ofMeter(MeterName.METER_COUNTER_HOLDER_COUNT), this.COUNTER_MAP::size);
+        registerGauge(MeterKey.ofMeter(MeterName.METER_TIMER_HOLDER_COUNT), this.TIMER_MAP::size);
     }
 
 
@@ -65,7 +61,7 @@ public class InMemoryMetricManager implements MetricManager, InitializingBean {
         MeterName meterName = meterKey.getMeterName();
         Iterable<Tag> tags = meterKey.getTags();
         Gauge.Builder<Supplier<Number>> builder = Gauge.builder(meterName.getMeterName(), f)
-                .description(CONNECT_SESSION_ACTIVE_COUNT.getDescription());
+                .description(MeterName.CONNECT_SESSION_ACTIVE_COUNT.getDescription());
         for (Tag tag : tags) {
             builder.tag(tag.getKey(), tag.getValue());
         }
