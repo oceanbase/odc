@@ -15,8 +15,13 @@
  */
 package com.oceanbase.odc.service.task.caller;
 
+import java.io.File;
+import java.nio.charset.Charset;
 import java.util.Map;
 
+import org.apache.commons.io.FileUtils;
+
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
@@ -36,7 +41,23 @@ public class JobCallerBuilder {
     public static JobCaller buildProcessCaller(JobContext context) {
         Map<String, String> environments = new JobEnvironmentFactory().build(context, TaskRunMode.PROCESS);
         JobUtils.encryptEnvironments(environments);
-
+        /**
+         * write JobContext to file in case of exceeding the environments size limit; set the file path in
+         * the environment instead
+         */
+        String jobContextFilePath = JobUtils.getExecutorDataPath() + "/" + StringUtils.uuid() + ".enc";
+        try {
+            FileUtils.writeStringToFile(new File(jobContextFilePath),
+                    JobUtils.encrypt(environments.get(JobEnvKeyConstants.ENCRYPT_KEY),
+                            environments.get(JobEnvKeyConstants.ENCRYPT_SALT), JobUtils.toJson(context)),
+                    Charset.defaultCharset());
+        } catch (Exception ex) {
+            FileUtils.deleteQuietly(new File(jobContextFilePath));
+            throw new RuntimeException("Failed to write job context to file: " + jobContextFilePath, ex);
+        }
+        environments.put(JobEnvKeyConstants.ODC_JOB_CONTEXT_FILE_PATH,
+                JobUtils.encrypt(environments.get(JobEnvKeyConstants.ENCRYPT_KEY),
+                        environments.get(JobEnvKeyConstants.ENCRYPT_SALT), jobContextFilePath));
         ProcessConfig config = new ProcessConfig();
         config.setEnvironments(environments);
 

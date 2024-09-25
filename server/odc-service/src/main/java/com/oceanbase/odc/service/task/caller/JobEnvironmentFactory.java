@@ -44,8 +44,9 @@ public class JobEnvironmentFactory {
     public Map<String, String> build(JobContext context, TaskRunMode runMode) {
         putEnv(JobEnvKeyConstants.ODC_BOOT_MODE, () -> JobConstants.ODC_BOOT_MODE_EXECUTOR);
         putEnv(JobEnvKeyConstants.ODC_TASK_RUN_MODE, runMode::name);
-        putEnv(JobEnvKeyConstants.ODC_JOB_CONTEXT, () -> JobUtils.toJson(context));
-
+        if (runMode.isK8s()) {
+            putEnv(JobEnvKeyConstants.ODC_JOB_CONTEXT, () -> JobUtils.toJson(context));
+        }
         JobCredentialProvider jobCredentialProvider = JobConfigurationHolder.getJobConfiguration()
                 .getJobCredentialProvider();
 
