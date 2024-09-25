@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
-import org.apache.hadoop.fs.Path;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
@@ -60,7 +59,6 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
     @Override
     protected LoadParameter doGenerate(File workingDir) throws IOException {
         LoadParameter parameter = new LoadParameter();
-        setFileConfig(parameter, workingDir);
         if (transferConfig.isStopWhenError()) {
             parameter.setMaxErrors(0);
             parameter.setMaxDiscards(0);
@@ -197,7 +195,7 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
      * </pre>
      */
     private void setWhiteListForExternalCsv(LoadParameter parameter, DataTransferConfig config,
-            File workingDir) throws IOException {
+            File workingDir) {
         if (!isExternalCsv(config)) {
             return;
         }
@@ -211,10 +209,7 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
         if (!csvFile.exists()) {
             throw new IllegalStateException("Input csv file does not exist");
         }
-        Path path = new Path(csvFile.getAbsolutePath());
-        parameter.setInputFile(parameter.getStorageConfig().getFileSystem().getFileStatus(path));
-        parameter.setFilePath(path.getParent().toString());
-
+        parameter.setInputFile(csvFile);
         List<DataTransferObject> objectList = config.getExportDbObjects();
         Validate.isTrue(CollectionUtils.isNotEmpty(objectList), "Import objects is necessary");
         parameter.getWhiteListMap().putAll(
