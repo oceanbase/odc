@@ -47,11 +47,14 @@ public class K8sDeploymentStatusDfa extends AbstractDfa<ResourceState, K8sDeploy
         };
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>().from(fromState)
                 .matchesK8sResource(getCreatingDeploymentMatchers(current)).to(ResourceState.CREATING).build());
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>().from(ResourceState.CREATING)
+                .matchesK8sResource(Collections.singletonList(Objects::isNull)).to(ResourceState.CREATING).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>().from(fromState)
                 .matchesK8sResource(getErrorDeploymentMatchers(current)).to(ResourceState.ERROR_STATE).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>().from(fromState)
                 .matchesK8sResource(getAvailableDeploymentMatchers(current)).to(ResourceState.AVAILABLE).build());
-        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>().from(fromState)
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>()
+                .from(ResourceState.AVAILABLE, ResourceState.ERROR_STATE)
                 .matchesK8sResource(Collections.singletonList(Objects::isNull)).to(ResourceState.UNKNOWN).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>().from(ResourceState.DESTROYING)
                 .matchesK8sResource(Collections.singletonList(Objects::isNull)).to(ResourceState.DESTROYED).build());
@@ -82,7 +85,10 @@ public class K8sDeploymentStatusDfa extends AbstractDfa<ResourceState, K8sDeploy
         m2.setPodStatusIn(new HashSet<>(Arrays.asList(ResourceState.CREATING, ResourceState.AVAILABLE)));
         m2.setMinMatchesCountInHasPodStatuses(1);
         m2.setHasPodStatuses(Collections.singleton(ResourceState.CREATING));
-        return Arrays.asList(m1, m2);
+
+        K8sDeploymentMatcher m3 = new K8sDeploymentMatcher(resourceState);
+        m3.setReplicasEmpty(true);
+        return Arrays.asList(m1, m2, m3);
     }
 
     private static List<K8sDeploymentMatcher> getErrorDeploymentMatchers(ResourceState resourceState) {

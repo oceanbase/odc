@@ -41,12 +41,23 @@ public class K8sConfigMapStatusDfa extends AbstractDfa<ResourceState, K8sConfigM
     public static K8sConfigMapStatusDfa buildInstance() {
         List<DfaStateTransfer<ResourceState, K8sConfigMap>> transfers = new ArrayList<>();
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sConfigMap>()
-                .from(ResourceState.CREATING, ResourceState.AVAILABLE, ResourceState.ERROR_STATE)
+                .from(ResourceState.CREATING)
+                .matchesK8sResource(getNullMatchers()).to(ResourceState.CREATING).build());
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sConfigMap>()
+                .from(ResourceState.AVAILABLE)
                 .matchesK8sResource(getNullMatchers()).to(ResourceState.UNKNOWN).build());
-        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sConfigMap>().from(ResourceState.CREATING)
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sConfigMap>()
+                .from(ResourceState.CREATING)
                 .matchesK8sResource(getNonNullMatchers()).to(ResourceState.AVAILABLE).build());
-        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sConfigMap>().from(ResourceState.DESTROYING)
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sConfigMap>()
+                .from(ResourceState.AVAILABLE)
+                .matchesK8sResource(getNonNullMatchers()).to(ResourceState.AVAILABLE).build());
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sConfigMap>()
+                .from(ResourceState.DESTROYING)
                 .matchesK8sResource(getNullMatchers()).to(ResourceState.DESTROYED).build());
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sConfigMap>()
+                .from(ResourceState.DESTROYING)
+                .matchesK8sResource(getNonNullMatchers()).to(ResourceState.DESTROYING).build());
         return new K8sConfigMapStatusDfa(transfers);
     }
 

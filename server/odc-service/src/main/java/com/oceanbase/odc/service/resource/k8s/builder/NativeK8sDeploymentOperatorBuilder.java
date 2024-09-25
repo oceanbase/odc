@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.resource.k8s.builder;
 import java.io.IOException;
 import java.util.Optional;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -52,7 +53,7 @@ public class NativeK8sDeploymentOperatorBuilder extends BaseNativeK8sResourceOpe
     }
 
     @Override
-    protected boolean doMatch(String type) {
+    protected boolean doMatches(String type) {
         return K8sDeployment.TYPE.equals(type);
     }
 
@@ -68,8 +69,12 @@ public class NativeK8sDeploymentOperatorBuilder extends BaseNativeK8sResourceOpe
         try {
             K8sDeploymentStatusDfa dfa = K8sDeploymentStatusDfa.buildInstance(e.getStatus());
             nextState = dfa.next(runtimeResource.orElse(null), e.getStatus());
-        } catch (Exception exception) {
-            log.warn("Failed to get next deployment's status, id={}", e.getId(), exception);
+        } catch (Exception ex) {
+            int k8sPodCount = 0;
+            if (runtimeResource.isPresent() && CollectionUtils.isNotEmpty(runtimeResource.get().getK8sPodList())) {
+                k8sPodCount = runtimeResource.get().getK8sPodList().size();
+            }
+            log.warn("Failed to get next deployment's status, id={}, k8sPodCount={}", e.getId(), k8sPodCount, ex);
         }
         K8sDeployment k8sDeployment = new K8sDeployment(new ResourceLocation(e), nextState, null);
         V1ObjectMeta meta = new V1ObjectMeta();

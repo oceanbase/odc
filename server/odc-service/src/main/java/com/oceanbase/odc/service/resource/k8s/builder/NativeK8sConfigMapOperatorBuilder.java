@@ -51,7 +51,7 @@ public class NativeK8sConfigMapOperatorBuilder extends BaseNativeK8sResourceOper
     }
 
     @Override
-    protected boolean doMatch(String type) {
+    protected boolean doMatches(String type) {
         return K8sConfigMap.TYPE.equals(type);
     }
 
