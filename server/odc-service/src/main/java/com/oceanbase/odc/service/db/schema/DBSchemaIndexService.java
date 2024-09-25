@@ -64,6 +64,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author gaoda.xy
@@ -72,6 +73,7 @@ import lombok.NonNull;
 @Service
 @Validated
 @SkipAuthorize("permission check inside")
+@Slf4j
 public class DBSchemaIndexService {
 
     @Autowired
@@ -201,6 +203,12 @@ public class DBSchemaIndexService {
         this.databaseService.refreshExpiredPendingDBObjectStatus();
         Set<Database> databases = new HashSet<>();
         if (req.getResourceType() == ResourceType.ODC_CONNECTION) {
+            try {
+                databaseService.internalSyncDataSourceSchemas(req.getResourceId());
+            } catch (InterruptedException ex) {
+                log.warn("sync all data bases of data base source: " + req.getResourceId() + " failed, errorMessage={}",
+                        ex.getLocalizedMessage());
+            }
             Set<Database> dbs = new HashSet<>(databaseService.listExistDatabasesByConnectionId(req.getResourceId()));
             if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
                 ConnectionConfig config = connectionService.getBasicWithoutPermissionCheck(req.getResourceId());
