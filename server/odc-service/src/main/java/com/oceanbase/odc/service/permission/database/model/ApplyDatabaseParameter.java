@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.oceanbase.odc.core.flow.model.TaskParameters;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter.ApplyProject;
 
@@ -65,6 +66,7 @@ public class ApplyDatabaseParameter implements Serializable, TaskParameters {
         private String name;
         private Long dataSourceId;
         private String dataSourceName;
+        private DialectType dialectType;
 
     }
 

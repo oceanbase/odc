@@ -108,6 +108,7 @@ public class ApplyDatabasePermissionPreprocessor implements Preprocessor {
                 ConnectionConfig dataSource = id2ConnectionEntity.get(d.getDataSource().getId());
                 if (dataSource != null) {
                     database.setDataSourceName(dataSource.getName());
+                    database.setDialectType(dataSource.getDialectType());
                 }
             }
         }

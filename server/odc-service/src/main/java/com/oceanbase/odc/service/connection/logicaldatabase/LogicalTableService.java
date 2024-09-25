@@ -120,6 +120,12 @@ public class LogicalTableService {
         if (CollectionUtils.isEmpty(logicalTableIds)) {
             return Collections.emptyList();
         }
+        Set<Long> physicalDBIds =
+                databaseMappingRepository.findByLogicalDatabaseId(logicalDatabaseId).stream()
+                        .map(DatabaseMappingEntity::getPhysicalDatabaseId).collect(Collectors.toSet());
+        List<Database> physicalDatabases = databaseService.listDatabasesDetailsByIds(physicalDBIds);
+        Map<Long, Database> id2Database =
+                physicalDatabases.stream().collect(Collectors.toMap(Database::getId, db -> db));
         Map<Long, List<TableMappingEntity>> logicalTbId2Mappings =
                 mappingRepository.findByLogicalTableIdIn(logicalTableIds).stream()
                         .collect(Collectors.groupingBy(TableMappingEntity::getLogicalTableId));
@@ -138,6 +144,7 @@ public class LogicalTableService {
                 dataNode.setDatabaseId(relation.getPhysicalDatabaseId());
                 dataNode.setSchemaName(relation.getPhysicalDatabaseName());
                 dataNode.setTableName(relation.getPhysicalTableName());
+                dataNode.setDataSourceConfig(id2Database.get(relation.getPhysicalDatabaseId()).getDataSource());
                 inconsistentPhysicalTables.add(dataNode);
             });
             resp.setInconsistentPhysicalTables(inconsistentPhysicalTables);
@@ -192,8 +199,9 @@ public class LogicalTableService {
         Map<Long, List<TableMappingEntity>> physicalDBId2Tables = mappingRepository.findByLogicalTableId(logicalTableId)
                 .stream().collect(Collectors.groupingBy(TableMappingEntity::getPhysicalDatabaseId));
         Map<Long, List<Database>> id2Databases =
-                databaseService.listDatabasesByIds(physicalDBId2Tables.keySet()).stream().collect(Collectors.groupingBy(
-                        Database::getId));
+                databaseService.listDatabasesDetailsByIds(physicalDBId2Tables.keySet()).stream()
+                        .collect(Collectors.groupingBy(
+                                Database::getId));
         return physicalDBId2Tables.entrySet().stream().map(entry -> {
             List<TableMappingEntity> tables = entry.getValue();
             LogicalTableTopologyResp resp = new LogicalTableTopologyResp();

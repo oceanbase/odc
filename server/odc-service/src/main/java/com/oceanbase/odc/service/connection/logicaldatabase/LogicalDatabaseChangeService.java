@@ -159,8 +159,7 @@ public class LogicalDatabaseChangeService {
         resp.setDataSource(database.getDataSource());
         resp.setTotalSqlCount(entities.size());
         int currentExecutionIndex = getCurrentIndex(entities);
-        resp
-                .setCompletedSqlCount(currentExecutionIndex + 1);
+        resp.setCompletedSqlCount(currentExecutionIndex + 1);
         resp.setStatus(entities.get(currentExecutionIndex).getStatus());
         resp.setSqlExecuteResults(entities.stream()
                 .map(entity -> JsonUtils.fromJson(entity.getExecutionResultJson(), SqlExecutionResultWrapper.class))
