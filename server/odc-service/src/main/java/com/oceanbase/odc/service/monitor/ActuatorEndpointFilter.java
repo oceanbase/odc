@@ -31,11 +31,11 @@ public class ActuatorEndpointFilter extends OncePerRequestFilter implements Init
 
     private final AntPathMatcher antPathMatcher = new AntPathMatcher();
     private final MonitorProperties properties;
-    private final List<MeterClear> meterClears;
+    private final MetricManager metricManager;
 
-    public ActuatorEndpointFilter(MonitorProperties properties, List<MeterClear> meterClears) {
+    public ActuatorEndpointFilter(MonitorProperties properties, MetricManager metricManager) {
         this.properties = properties;
-        this.meterClears = meterClears;
+        this.metricManager = metricManager;
     }
 
     @Override
@@ -64,6 +64,6 @@ public class ActuatorEndpointFilter extends OncePerRequestFilter implements Init
     }
 
     private void clear() {
-        meterClears.forEach(MeterClear::clearAfterPull);
+        metricManager.evict();
     }
 }

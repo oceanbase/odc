@@ -15,65 +15,74 @@
  */
 package com.oceanbase.odc.service.monitor.session;
 
+import static com.oceanbase.odc.service.monitor.MeterName.CONNECT_SESSION_DURATION_TIME;
+import static com.oceanbase.odc.service.monitor.MeterName.CONNECT_SESSION_EXPIRED_COUNT;
+import static com.oceanbase.odc.service.monitor.MeterName.CONNECT_SESSION_EXPIRED_FAILED_COUNT;
+
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionEventListener;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
-import com.oceanbase.odc.service.monitor.MonitorEvent;
-import com.oceanbase.odc.service.monitor.session.SessionMonitorContext.SessionAction;
+import com.oceanbase.odc.service.monitor.MeterKey;
+import com.oceanbase.odc.service.monitor.MeterName;
+import com.oceanbase.odc.service.monitor.MetricManager;
 
 public class ConnectionSessionMonitorListener implements ConnectionSessionEventListener {
 
+    private final MetricManager metricManager;
+
+    public ConnectionSessionMonitorListener() {
+        this.metricManager = SpringContextUtil.getBean(MetricManager.class);
+    }
+
     @Override
     public void onCreateSucceed(ConnectionSession session) {
-        publishEvent(SessionAction.CREATED_SUCCESS, session.getId());
+        metricManager.incrementCounter(MeterKey.ofMeter(MeterName.CONNECT_SESSION_TOTAL));
+        metricManager.startTimer(MeterKey.ofMeter(CONNECT_SESSION_DURATION_TIME, session.getId()));
     }
 
     @Override
     public void onCreateFailed(ConnectionSession session, Throwable e) {
-        publishEvent(SessionAction.CREATED_FAILED, session.getId());
+        metricManager.incrementCounter(MeterKey.ofMeter(MeterName.CONNECT_SESSION_TOTAL));
+        metricManager.incrementCounter(MeterKey.ofMeter(MeterName.CONNECT_SESSION_CREATED_FAILED_COUNT));
     }
 
     @Override
     public void onDeleteSucceed(ConnectionSession session) {
-        publishEvent(SessionAction.DELETE_SUCCESS, session.getId());
+        metricManager.incrementCounter(MeterKey.ofMeter(MeterName.CONNECT_SESSION_DELETE_SUCCESS_COUNT));
 
     }
 
     @Override
     public void onDeleteFailed(String id, Throwable e) {
-        publishEvent(SessionAction.DELETED_FAILED, id);
-
+        metricManager.incrementCounter(MeterKey.ofMeter(MeterName.CONNECT_SESSION_DELETE_FAILED_COUNT));
     }
 
     @Override
     public void onGetSucceed(ConnectionSession session) {
-        publishEvent(SessionAction.GET, session.getId());
-
+        metricManager.incrementCounter(MeterKey.ofMeter(MeterName.CONNECT_SESSION_GET_COUNT));
     }
 
     @Override
     public void onGetFailed(String id, Throwable e) {
-        publishEvent(SessionAction.GET_FAILED, id);
+        metricManager.incrementCounter(MeterKey.ofMeter(MeterName.CONNECT_SESSION_GET_FAILED_COUNT));
 
     }
 
     @Override
-    public void onExpire(ConnectionSession session) {}
+    public void onExpire(ConnectionSession session) {
+        metricManager.recordTimer(MeterKey.ofMeter(CONNECT_SESSION_DURATION_TIME, session.getId()));
+
+    }
 
     @Override
     public void onExpireSucceed(ConnectionSession session) {
-        publishEvent(SessionAction.EXPIRED_SUCCESS, session.getId());
+        metricManager.incrementCounter(MeterKey.ofMeter(CONNECT_SESSION_EXPIRED_COUNT));
+
     }
 
     @Override
     public void onExpireFailed(ConnectionSession session, Throwable e) {
-        publishEvent(SessionAction.EXPIRED_FAILED, session.getId());
+        metricManager.incrementCounter(MeterKey.ofMeter(CONNECT_SESSION_EXPIRED_FAILED_COUNT));
 
-    }
-
-    public void publishEvent(SessionAction action, String sessionId) {
-        SpringContextUtil.publishEvent(
-                MonitorEvent.createSessionMonitor(
-                        new SessionMonitorContext(action, sessionId)));
     }
 }

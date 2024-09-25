@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.flow.task;
 
+import static com.oceanbase.odc.service.monitor.MeterName.FLOW_TASK_DURATION;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -37,16 +39,16 @@ import com.oceanbase.odc.core.flow.util.FlowableBoundaryEvent;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
-import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.flow.BeanInjectedClassDelegate;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.task.mapper.OdcRuntimeDelegateMapper;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
-import com.oceanbase.odc.service.monitor.MonitorEvent;
-import com.oceanbase.odc.service.monitor.task.flow.FlowMonitorEvent;
-import com.oceanbase.odc.service.monitor.task.flow.FlowMonitorEvent.Action;
+import com.oceanbase.odc.service.monitor.MeterKey;
+import com.oceanbase.odc.service.monitor.MeterKey.Builder;
+import com.oceanbase.odc.service.monitor.MeterName;
+import com.oceanbase.odc.service.monitor.MetricManager;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -67,6 +69,8 @@ public class FlowTaskSubmitter implements JavaDelegate {
     private FlowTaskCallBackApprovalService flowTaskCallBackApprovalService;
     @Autowired
     private ServiceTaskInstanceRepository serviceTaskRepository;
+    @Autowired
+    private MetricManager metricManager;
 
     @Override
     public void execute(DelegateExecution execution) {
@@ -84,12 +88,14 @@ public class FlowTaskSubmitter implements JavaDelegate {
                 BaseRuntimeFlowableDelegate<?> delegate = getDelegateInstance(flowTaskInstance);
                 delegate.updateHeartbeatTime();
                 List<Class<? extends ExecutionListener>> list = delegate.getExecutionListenerClasses();
-                sendMonitor(Action.FLOW_TASK_STARTED, flowTaskInstance);
+                sendStartMetric(String.valueOf(flowTaskInstance.getTargetTaskId()),
+                        flowTaskInstance.getTaskType().name(), String.valueOf(flowTaskInstance.getOrganizationId()));
                 if (CollectionUtils.isNotEmpty(list)) {
                     list.forEach(c -> doCallListener(FlowConstants.EXECUTION_START_EVENT_NAME, executionFacade, c));
                 }
                 delegate.execute(executionFacade);
-                sendMonitor(Action.FLOW_TASK_END, flowTaskInstance);
+                sendEndMetric(String.valueOf(flowTaskInstance.getTargetTaskId()),
+                        flowTaskInstance.getTaskType().name(), String.valueOf(flowTaskInstance.getOrganizationId()));
                 if (CollectionUtils.isNotEmpty(list)) {
                     list.forEach(c -> doCallListener(FlowConstants.EXECUTION_END_EVENT_NAME, executionFacade, c));
                 }
@@ -99,7 +105,8 @@ public class FlowTaskSubmitter implements JavaDelegate {
                 log.warn("Delegate task instance execute occur error: ", e);
                 updateFlowTaskInstance(flowTaskInstance.getId(), FlowNodeStatus.FAILED);
                 Exception rootCause = (Exception) e.getCause();
-                sendMonitor(Action.FLOW_TASK_FAILED, flowTaskInstance);
+                sendFailedMetric(String.valueOf(flowTaskInstance.getTargetTaskId()),
+                        flowTaskInstance.getTaskType().name(), String.valueOf(flowTaskInstance.getOrganizationId()));
                 handleException(executionFacade, flowTaskInstance, rootCause, defs);
             } finally {
                 if (flowTaskInstance != null) {
@@ -193,10 +200,34 @@ public class FlowTaskSubmitter implements JavaDelegate {
                 () -> new NotFoundException(ResourceType.ODC_FLOW_TASK_INSTANCE, "activityId", activityId));
     }
 
-    private void sendMonitor(FlowMonitorEvent.Action action, FlowTaskInstance flowTaskInstance) {
-        MonitorEvent<FlowMonitorEvent> flowMonitor = MonitorEvent.createFlowMonitor(action,
-                flowTaskInstance.getOrganizationId(), flowTaskInstance.getTaskType().name(),
-                flowTaskInstance.getTargetTaskId().toString());
-        SpringContextUtil.publishEvent(flowMonitor);
+    private void sendStartMetric(String taskId, String taskType, String organizationId) {
+        metricManager.startTimer(getUniqueTaskMeterKey(FLOW_TASK_DURATION, taskId, taskType, organizationId));
+        metricManager.incrementCounter(getTaskMeterKey(MeterName.FLOW_TASK_START_COUNT, taskType, organizationId));
+
+    }
+
+    private void sendEndMetric(String taskId, String taskType, String organizationId) {
+        metricManager.incrementCounter(getTaskMeterKey(MeterName.FLOW_TASK_START_COUNT, taskType, organizationId));
+        metricManager.recordTimer(getUniqueTaskMeterKey(FLOW_TASK_DURATION, taskId, taskType, organizationId));
+    }
+
+    private void sendFailedMetric(String taskId, String taskType, String organizationId) {
+        metricManager.incrementCounter(getTaskMeterKey(MeterName.FLOW_TASK_START_COUNT, taskType, organizationId));
+        metricManager.recordTimer(getUniqueTaskMeterKey(FLOW_TASK_DURATION, taskId, taskType, organizationId));
+    }
+
+    public MeterKey getTaskMeterKey(MeterName meterName, String taskType, String organizationId) {
+        return Builder.ofMeter(meterName)
+                .addTag("taskType", taskType)
+                .addTag("organizationId", organizationId).build();
+    }
+
+    public MeterKey getUniqueTaskMeterKey(MeterName meterName, String uniqueKey, String taskType,
+            String organizationId) {
+        return Builder.ofMeter(meterName)
+                .uniqueKey(uniqueKey)
+                .needRemove()
+                .addTag("taskType", taskType)
+                .addTag("organizationId", organizationId).build();
     }
 }

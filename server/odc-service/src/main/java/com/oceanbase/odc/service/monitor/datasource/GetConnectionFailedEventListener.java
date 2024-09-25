@@ -15,24 +15,27 @@
  */
 package com.oceanbase.odc.service.monitor.datasource;
 
-import java.sql.Connection;
+import static com.oceanbase.odc.service.monitor.MeterName.DATASOURCE_GET_CONNECTION_FAILED_COUNT;
 
 import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.core.datasource.event.GetConnectionFailedEvent;
-import com.oceanbase.odc.service.common.util.SpringContextUtil;
-import com.oceanbase.odc.service.monitor.MonitorEvent;
-import com.oceanbase.odc.service.monitor.datasource.DatasourceMonitorEventContext.Action;
+import com.oceanbase.odc.service.monitor.MeterKey;
+import com.oceanbase.odc.service.monitor.MetricManager;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class GetConnectionFailedEventListener extends AbstractEventListener<GetConnectionFailedEvent> {
 
+    private final MetricManager metricManager;
+
+    public GetConnectionFailedEventListener(MetricManager metricManager) {
+        this.metricManager = metricManager;
+    }
+
     @Override
     public void onEvent(GetConnectionFailedEvent event) {
-        DatasourceMonitorEventContext context = new DatasourceMonitorEventContext(
-                Action.GET_CONNECTION_FAILED, (Connection) event.getSource(), event.getTimestamp());
-        SpringContextUtil.publishEvent(MonitorEvent.createDatasourceMonitor(context));
+        metricManager.incrementCounter(MeterKey.ofMeter(DATASOURCE_GET_CONNECTION_FAILED_COUNT));
     }
 
 }

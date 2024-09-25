@@ -15,37 +15,55 @@
  */
 package com.oceanbase.odc.service.monitor.task.job;
 
+import static com.oceanbase.odc.service.monitor.MeterName.JOB_DESTROY_FAILED_COUNT;
+import static com.oceanbase.odc.service.monitor.MeterName.JOB_DESTROY_SUCCESS_COUNT;
+import static com.oceanbase.odc.service.monitor.MeterName.JOB_START_FAILED_COUNT;
+import static com.oceanbase.odc.service.monitor.MeterName.JOB_START_SUCCESS_COUNT;
+import static com.oceanbase.odc.service.monitor.MeterName.JOB_STOP_FAILED_COUNT;
+import static com.oceanbase.odc.service.monitor.MeterName.JOB_STOP_SUCCESS_COUNT;
+
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
-import com.oceanbase.odc.service.monitor.MonitorEvent;
-import com.oceanbase.odc.service.monitor.task.job.TaskJobMonitorEvent.Action;
+import com.oceanbase.odc.service.monitor.MeterKey;
+import com.oceanbase.odc.service.monitor.MetricManager;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.listener.JobCallerListener;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 public class JobMonitorListener extends JobCallerListener {
 
+    private final MetricManager metricManager;
+
+    public JobMonitorListener() {
+        this.metricManager = SpringContextUtil.getBean(MetricManager.class);
+    }
+
     public void startSucceed(JobIdentity ji, ExecutorIdentifier executorIdentifier) {
-        SpringContextUtil.publishEvent(MonitorEvent.createJobMonitorEvent(Action.START_SUCCESS));
+        metricManager.incrementCounter(MeterKey.ofMeter(JOB_START_SUCCESS_COUNT));
     }
 
     public void startFailed(JobIdentity ji, Exception ex) {
-        SpringContextUtil.publishEvent(MonitorEvent.createJobMonitorEvent(Action.START_FAILED));
+        metricManager.incrementCounter(MeterKey.ofMeter(JOB_START_FAILED_COUNT));
+
     }
 
     public void stopSucceed(JobIdentity ji) {
-        SpringContextUtil.publishEvent(MonitorEvent.createJobMonitorEvent(Action.STOP_SUCCESS));
+        metricManager.incrementCounter(MeterKey.ofMeter(JOB_STOP_SUCCESS_COUNT));
+
     }
 
     public void stopFailed(JobIdentity ji, Exception ex) {
-        SpringContextUtil.publishEvent(MonitorEvent.createJobMonitorEvent(Action.STOP_FAILED));
+        metricManager.incrementCounter(MeterKey.ofMeter(JOB_STOP_FAILED_COUNT));
+
     }
 
     public void destroySucceed(JobIdentity ji) {
-        SpringContextUtil.publishEvent(MonitorEvent.createJobMonitorEvent(Action.DESTROY_SUCCESS));
+        metricManager.incrementCounter(MeterKey.ofMeter(JOB_DESTROY_SUCCESS_COUNT));
+
     }
 
     public void destroyFailed(JobIdentity ji, Exception ex) {
-        SpringContextUtil.publishEvent(MonitorEvent.createJobMonitorEvent(Action.DESTROY_FAILED));
+        metricManager.incrementCounter(MeterKey.ofMeter(JOB_DESTROY_FAILED_COUNT));
+
     }
 
 }

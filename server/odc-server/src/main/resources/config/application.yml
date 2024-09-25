@@ -74,7 +74,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: "*"
+        include: "business,application"
   endpoint:
     prometheus:
       enabled: true

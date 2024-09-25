@@ -19,26 +19,23 @@ import static com.oceanbase.odc.service.monitor.MeterName.CONNECT_SESSION_ACTIVE
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.service.monitor.MeterKey;
+import com.oceanbase.odc.service.monitor.MetricManager;
 import com.oceanbase.odc.service.session.ConnectSessionService;
-
-import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.MeterRegistry;
 
 @Component
 @ConditionalOnProperty(value = "odc.system.monitor.actuator.enabled", havingValue = "true")
 public class SessionMetrics implements InitializingBean {
 
+
     @Autowired
-    @Qualifier(value = "businessMeterRegistry")
-    private MeterRegistry meterRegistry;
+    private MetricManager metricManager;
 
     @Autowired
     private ConnectSessionService connectSessionService;
-
 
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -46,9 +43,7 @@ public class SessionMetrics implements InitializingBean {
     }
 
     public void init() {
-        Gauge.builder(CONNECT_SESSION_ACTIVE_COUNT.getMeterName(),
-                () -> connectSessionService.getActiveSession())
-                .description(CONNECT_SESSION_ACTIVE_COUNT.getDescription())
-                .register(meterRegistry);
+        metricManager.registerGauge(MeterKey.ofMeter(CONNECT_SESSION_ACTIVE_COUNT),
+                connectSessionService::getActiveSession);
     }
 }

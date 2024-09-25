@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.monitor;
 
 import java.lang.reflect.Proxy;
+import java.util.function.Supplier;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectProvider;
@@ -23,6 +24,7 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -46,6 +48,12 @@ public class MonitorAutoConfiguration {
     @Bean
     MeterRegistryCustomizer<MeterRegistry> metricsCommonTags() {
         return registry -> registry.config().commonTags("ServerHost", SystemUtils.getHostName());
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    MetricManager defaultMetricManager() {
+        return new NonEnabledMetricManager();
     }
 
     @Bean(value = "businessMeterRegistry")
@@ -79,7 +87,7 @@ public class MonitorAutoConfiguration {
         }
     }
 
-    public static class MeterBinderProxyBeanPostProcessor implements BeanPostProcessor {
+    static class MeterBinderProxyBeanPostProcessor implements BeanPostProcessor {
 
         @Override
         public Object postProcessBeforeInitialization(@NonNull Object bean, @NonNull String beanName)
@@ -111,4 +119,32 @@ public class MonitorAutoConfiguration {
         }
     }
 
+
+    static class NonEnabledMetricManager implements MetricManager {
+
+        @Override
+        public void registerGauge(MeterKey meterKey, Supplier<Number> f) {
+
+        }
+
+        @Override
+        public void incrementCounter(MeterKey meterKey) {
+
+        }
+
+        @Override
+        public void startTimer(MeterKey meterKey) {
+
+        }
+
+        @Override
+        public void recordTimer(MeterKey meterKey) {
+
+        }
+
+        @Override
+        public void evict() {
+
+        }
+    }
 }

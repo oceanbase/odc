@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.monitor;
 
-import java.util.List;
-
 import javax.servlet.Filter;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -39,8 +37,8 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 public class ManagementConfiguration {
 
     @Bean
-    public Filter actuatorEndpointFilter(MonitorProperties properties, List<MeterClear> meterClears) {
-        return new ActuatorEndpointFilter(properties, meterClears);
+    public Filter actuatorEndpointFilter(MonitorProperties properties, MetricManager metricManager) {
+        return new ActuatorEndpointFilter(properties, metricManager);
     }
 
     @Bean

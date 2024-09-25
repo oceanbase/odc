@@ -22,8 +22,8 @@ public enum MeterName {
 
     // flow module
     FLOW_CREATED_COUNT("flow.created.count", "flow created count"),
-    FLOW_TASK_START_COUNT("flow.task.start.count", "flw task start count"),
-    FLOW_TASK_FAILED_COUNT("flow.task.failed.count", "flw task failed"),
+    FLOW_TASK_START_COUNT("flow.task.start.count", "flow task start count"),
+    FLOW_TASK_FAILED_COUNT("flow.task.failed.count", "flow task failed"),
     FLOW_TASK_SUCCESS_COUNT("flow.task.success.count", "flow task success count"),
     FLOW_TASK_DURATION("flow.task.duration", "flow task duration"),
 
@@ -60,6 +60,8 @@ public enum MeterName {
     CONNECT_SESSION_CREATED_FAILED_COUNT("connect.session.create.failed.count", "connect session created failed"),
     CONNECT_SESSION_DURATION_TIME("connect.session.duration.time", "connect session duration time"),
     CONNECT_SESSION_GET_COUNT("connect.session.get.count", "connect session get count"),
+    CONNECT_SESSION_DELETE_SUCCESS_COUNT("connect.session.delete.success.count", "connect session get count"),
+    CONNECT_SESSION_DELETE_FAILED_COUNT("connect.session.delete.failed.count", "connect session get count"),
     CONNECT_SESSION_GET_FAILED_COUNT("connect.session.get.failed.count", "connect session get failed count"),
 
     // datasource
@@ -69,7 +71,6 @@ public enum MeterName {
     // meter holder;
 
     METER_COUNTER_HOLDER_COUNT("meter.counter.holder.count", "meter counter holder count"),
-    METER_GAUGE_HOLDER_COUNT("meter.gauge.holder.count", "meter gauge holder count"),
     METER_TIMER_HOLDER_COUNT("meter.timer.holder.count", "meter timer holder count"),
     ;
 

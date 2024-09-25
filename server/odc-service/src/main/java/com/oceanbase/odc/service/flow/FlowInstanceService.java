@@ -95,7 +95,6 @@ import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
@@ -154,9 +153,9 @@ import com.oceanbase.odc.service.integration.model.ApprovalProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
-import com.oceanbase.odc.service.monitor.MonitorEvent;
-import com.oceanbase.odc.service.monitor.task.flow.FlowMonitorEvent;
-import com.oceanbase.odc.service.monitor.task.flow.FlowMonitorEvent.Action;
+import com.oceanbase.odc.service.monitor.MeterKey;
+import com.oceanbase.odc.service.monitor.MeterName;
+import com.oceanbase.odc.service.monitor.MetricManager;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
@@ -178,6 +177,7 @@ import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
+import io.micrometer.core.instrument.Tag;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -265,6 +265,8 @@ public class FlowInstanceService {
     private EnvironmentRepository environmentRepository;
     @Autowired
     private EnvironmentService environmentService;
+    @Autowired
+    private MetricManager metricManager;
 
     @PostConstruct
     public void init() {
@@ -936,9 +938,9 @@ public class FlowInstanceService {
         }
         log.info("New flow instance succeeded, instanceId={}, flowInstanceReq={}",
                 flowInstance.getId(), flowInstanceReq);
-        MonitorEvent<FlowMonitorEvent> flowMonitor = MonitorEvent.createFlowMonitor(Action.FLOW_CREATED,
-                flowInstance.getOrganizationId(), null, null);
-        SpringContextUtil.publishEvent(flowMonitor);
+        MeterKey meterKey = MeterKey.ofMeter(MeterName.FLOW_CREATED_COUNT,
+                Tag.of("organizationId", flowInstance.getOrganizationId().toString()));
+        metricManager.incrementCounter(meterKey);
         return FlowInstanceDetailResp.withIdAndType(flowInstance.getId(), flowInstanceReq.getTaskType());
     }
 
