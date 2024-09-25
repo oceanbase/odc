@@ -412,8 +412,12 @@ public class ScheduleResponseMapperFactory {
 
     private Database detailDatabaseOrNull(Long databaseId) {
         try {
-            return databaseService.detail(databaseId);
-        } catch (NotFoundException e) {
+            Database database = databaseService.getBasicSkipPermissionCheck(databaseId);
+            ConnectionConfig datasource = dataSourceService.internalGetSkipUserCheck(
+                database.getDataSource().getId(), false, false);
+            database.setDataSource(datasource);
+            return database;
+        } catch (Exception e) {
             return null;
         }
     }
