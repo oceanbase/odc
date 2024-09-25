@@ -471,7 +471,6 @@ public class FlowInstanceService {
                     TaskType.SHADOWTABLE_SYNC,
                     TaskType.PARTITION_PLAN,
                     TaskType.ONLINE_SCHEMA_CHANGE,
-                    TaskType.ALTER_SCHEDULE,
                     TaskType.EXPORT_RESULT_SET,
                     TaskType.APPLY_PROJECT_PERMISSION,
                     TaskType.APPLY_DATABASE_PERMISSION,
