@@ -354,7 +354,10 @@ public class ScheduleService {
             if (approvalFlowInstanceId != null) {
                 changeLog.setFlowInstanceId(approvalFlowInstanceId);
                 scheduleChangeLogService.updateFlowInstanceIdById(changeLog.getId(), approvalFlowInstanceId);
-                scheduleRepository.updateStatusById(targetSchedule.getId(), ScheduleStatus.APPROVING);
+                // only update status to approving when create schedule
+                if (req.getOperationType() == OperationType.CREATE) {
+                    scheduleRepository.updateStatusById(targetSchedule.getId(), ScheduleStatus.APPROVING);
+                }
                 log.info("Create approval flow success,changelogId={},flowInstanceId", approvalFlowInstanceId);
             }
             return changeLog;
@@ -652,6 +655,14 @@ public class ScheduleService {
             if (schedule.getStatus() == ScheduleStatus.APPROVING) {
                 updateStatusById(scheduleId, status);
             }
+        }
+        try {
+            ScheduleChangeLog changeLog = scheduleChangeLogService.getByFlowInstanceId(id);
+            if (changeLog.getStatus() == ScheduleChangeStatus.APPROVING) {
+                scheduleChangeLogService.updateStatusById(changeLog.getId(), ScheduleChangeStatus.SUCCESS);
+            }
+        } catch (NotFoundException e) {
+            log.warn("Change log not found,flowInstanceId={}", id);
         }
     }
 

@@ -55,6 +55,12 @@ public class ScheduleChangeLogService {
                         ResourceType.ODC_SCHEDULE_CHANGELOG, "id", id));
     }
 
+    public ScheduleChangeLog getByFlowInstanceId(Long flowInstanceId) {
+        return scheduleChangeLogRepository.findByFlowInstanceId(flowInstanceId).map(mapper::entityToModel)
+                .orElseThrow(() -> new NotFoundException(
+                        ResourceType.ODC_SCHEDULE_CHANGELOG, "flowInstanceId", flowInstanceId));
+    }
+
     public List<ScheduleChangeLog> listByScheduleId(Long scheduleId) {
         return scheduleChangeLogRepository.findByScheduleId(scheduleId).stream().map(mapper::entityToModel).collect(
                 Collectors.toList());
