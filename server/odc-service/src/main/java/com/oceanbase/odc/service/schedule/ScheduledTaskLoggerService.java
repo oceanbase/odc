@@ -122,6 +122,7 @@ public class ScheduledTaskLoggerService {
     public String getFullLogDownloadUrl(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel level) {
         initCloudObjectStorageService();
         if (ObjectUtil.isNull(cloudObjectStorageService)) {
+            log.warn("cloud object storage service is null.");
             return String.format(DOWNLOAD_LOG_URL_PATTERN, scheduleId, scheduleTaskId);
         }
         if (cloudObjectStorageService.supported()) {
@@ -143,6 +144,8 @@ public class ScheduledTaskLoggerService {
                 if (objId.isPresent() && bucketName.isPresent()) {
                     return cloudObjectStorageService.generateDownloadUrl(objId.get()).toString();
                 }
+            }else{
+                log.warn("cloud object storage service is not support.");
             }
             return StrUtil.EMPTY;
         }
