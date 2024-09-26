@@ -593,6 +593,12 @@ public class UserService {
     }
 
     @SkipAuthorize
+    public List<User> listUserBasicsByUserIdsWithoutPermissionCheck(List<Long> userIds) {
+        return userRepository.findByUserIds(userIds).stream()
+                .map(User::new).collect(Collectors.toList());
+    }
+
+    @SkipAuthorize
     public PaginatedData<User> listUserBasicsWithoutPermissionCheck() {
         List<User> users =
                 userRepository.findByOrganizationId(authenticationFacade.currentOrganizationId()).stream()
