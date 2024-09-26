@@ -90,9 +90,9 @@ public class AbstractDlmPreprocessor implements Preprocessor {
             sqlBuilder.append("ON s.TABLE_SCHEMA = c.TABLE_SCHEMA ");
             sqlBuilder.append("AND s.TABLE_NAME = c.TABLE_NAME ");
             sqlBuilder.append("AND s.COLUMN_NAME = c.COLUMN_NAME ");
-            sqlBuilder.append("WHERE s.NON_UNIQUE = 0 AND s.TABLE_SCHEMA = ");
-            sqlBuilder.identifier(databaseName);
-            sqlBuilder.append(" GROUP BY s.TABLE_NAME, s.INDEX_NAME ");
+            sqlBuilder.append("WHERE s.NON_UNIQUE = 0 AND s.TABLE_SCHEMA = '");
+            sqlBuilder.append(databaseName);
+            sqlBuilder.append("' GROUP BY s.TABLE_NAME, s.INDEX_NAME ");
             sqlBuilder.append(" HAVING COUNT(*) = SUM(CASE WHEN c.IS_NULLABLE = 'NO' THEN 1 ELSE 0 END)");
         } else if (connectionSession.getDialectType().isPostgreSql()) {
             sqlBuilder = new MySQLSqlBuilder();
