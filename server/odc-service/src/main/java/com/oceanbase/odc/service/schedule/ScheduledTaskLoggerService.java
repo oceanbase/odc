@@ -97,7 +97,6 @@ public class ScheduledTaskLoggerService {
     @Autowired
     private ScheduleLogProperties loggerProperty;
 
-    @Autowired
     private CloudObjectStorageService cloudObjectStorageService;
 
     public String getLogContent(Long scheduleTaskId, OdcTaskLogLevel level) {
