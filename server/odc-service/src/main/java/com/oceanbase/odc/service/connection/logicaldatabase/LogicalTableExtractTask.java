@@ -112,6 +112,9 @@ public class LogicalTableExtractTask implements Runnable {
             databaseService.updateObjectLastSyncTimeAndStatus(logicalDatabase.getId(), DBObjectSyncStatus.SYNCED);
             return;
         }
+        // remove logical tables that have the same name
+        logicalTables = logicalTables.stream().collect(Collectors.toMap(LogicalTable::getName, table -> table,
+                (table1, table2) -> table1)).values().stream().collect(Collectors.toList());
 
         Lock lock = jdbcLockRegistry.obtain("logicaltable-extract-database-id-" + logicalDatabase.getId());
 
@@ -128,31 +131,34 @@ public class LogicalTableExtractTask implements Runnable {
             Set<String> existedTables = dbObjectRepository.findByDatabaseIdAndType(logicalDatabase.getId(),
                     DBObjectType.LOGICAL_TABLE).stream().map(DBObjectEntity::getName).collect(Collectors.toSet());
 
-            logicalTables.stream().filter(table -> !existedTables.contains(table.getName())).forEach(table -> {
-                DBObjectEntity tableEntity = new DBObjectEntity();
-                tableEntity.setDatabaseId(logicalDatabase.getId());
-                tableEntity.setType(DBObjectType.LOGICAL_TABLE);
-                tableEntity.setName(table.getName());
-                tableEntity.setOrganizationId(logicalDatabase.getOrganizationId());
-                DBObjectEntity savedTableEntity = dbObjectRepository.save(tableEntity);
+            logicalTables.stream()
+                    .filter(table -> !existedTables.contains(table.getName()) && table.getActualDataNodes().size() > 1)
+                    .forEach(table -> {
+                        DBObjectEntity tableEntity = new DBObjectEntity();
+                        tableEntity.setDatabaseId(logicalDatabase.getId());
+                        tableEntity.setType(DBObjectType.LOGICAL_TABLE);
+                        tableEntity.setName(table.getName());
+                        tableEntity.setOrganizationId(logicalDatabase.getOrganizationId());
+                        DBObjectEntity savedTableEntity = dbObjectRepository.save(tableEntity);
 
-                List<DataNode> dataNodes = table.getActualDataNodes();
-                List<TableMappingEntity> physicalTableEntities = new ArrayList<>();
-                dataNodes.stream().forEach(dataNode -> {
-                    TableMappingEntity physicalTableEntity = new TableMappingEntity();
-                    physicalTableEntity.setLogicalTableId(savedTableEntity.getId());
-                    physicalTableEntity.setOrganizationId(logicalDatabase.getOrganizationId());
-                    physicalTableEntity.setPhysicalDatabaseId(dataNode.getDatabaseId());
-                    physicalTableEntity.setPhysicalDatabaseName(dataNode.getSchemaName());
-                    physicalTableEntity.setPhysicalTableId(dataNode.getTableId());
-                    physicalTableEntity.setPhysicalTableName(dataNode.getTableName());
-                    physicalTableEntity.setExpression(table.getFullNameExpression());
-                    physicalTableEntity.setConsistent(true);
-                    physicalTableEntities.add(physicalTableEntity);
-                });
-                tableRelationRepository.batchCreate(physicalTableEntities);
-                databaseService.updateObjectLastSyncTimeAndStatus(logicalDatabase.getId(), DBObjectSyncStatus.SYNCED);
-            });
+                        List<DataNode> dataNodes = table.getActualDataNodes();
+                        List<TableMappingEntity> physicalTableEntities = new ArrayList<>();
+                        dataNodes.stream().forEach(dataNode -> {
+                            TableMappingEntity physicalTableEntity = new TableMappingEntity();
+                            physicalTableEntity.setLogicalTableId(savedTableEntity.getId());
+                            physicalTableEntity.setOrganizationId(logicalDatabase.getOrganizationId());
+                            physicalTableEntity.setPhysicalDatabaseId(dataNode.getDatabaseId());
+                            physicalTableEntity.setPhysicalDatabaseName(dataNode.getSchemaName());
+                            physicalTableEntity.setPhysicalTableId(dataNode.getTableId());
+                            physicalTableEntity.setPhysicalTableName(dataNode.getTableName());
+                            physicalTableEntity.setExpression(table.getFullNameExpression());
+                            physicalTableEntity.setConsistent(true);
+                            physicalTableEntities.add(physicalTableEntity);
+                        });
+                        tableRelationRepository.batchCreate(physicalTableEntities);
+                        databaseService.updateObjectLastSyncTimeAndStatus(logicalDatabase.getId(),
+                                DBObjectSyncStatus.SYNCED);
+                    });
         } catch (Exception ex) {
             log.warn("Failed to extract logical tables for database id={}", logicalDatabase.getId(), ex);
             databaseService.updateObjectLastSyncTimeAndStatus(logicalDatabase.getId(), DBObjectSyncStatus.FAILED);

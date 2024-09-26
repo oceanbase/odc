@@ -103,6 +103,7 @@ public class ApplyDatabasePermissionPreprocessor implements Preprocessor {
             }
             database.setName(d.getName());
             database.setType(d.getType());
+            database.setDialectType(d.getDialectType());
             if (database.getType() == DatabaseType.PHYSICAL) {
                 database.setDataSourceId(d.getDataSource().getId());
                 ConnectionConfig dataSource = id2ConnectionEntity.get(d.getDataSource().getId());
