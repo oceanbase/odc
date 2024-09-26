@@ -148,6 +148,8 @@ public class ScheduledTaskLoggerService {
                 log.warn("cloud object storage service is not support.");
             }
             return StrUtil.EMPTY;
+        } else {
+            log.warn("cloud object storage service is not supported.");
         }
         return String.format(DOWNLOAD_LOG_URL_PATTERN, scheduleId, scheduleTaskId);
     }
