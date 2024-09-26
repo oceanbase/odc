@@ -144,7 +144,7 @@ public class ScheduledTaskLoggerService {
                 if (objId.isPresent() && bucketName.isPresent()) {
                     return cloudObjectStorageService.generateDownloadUrl(objId.get()).toString();
                 }
-            }else{
+            } else {
                 log.warn("cloud object storage service is not support.");
             }
             return StrUtil.EMPTY;
