@@ -19,7 +19,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -60,7 +59,6 @@ import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
 import cn.hutool.core.io.IoUtil;
-import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -104,7 +102,8 @@ public class ScheduledTaskLoggerService {
     @Autowired
     private JobCredentialProvider jobCredentialProvider;
 
-    private final ConcurrentHashMap<ObjectStorageConfiguration, CloudObjectStorageService> cloudObjectServiceMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<ObjectStorageConfiguration, CloudObjectStorageService> cloudObjectServiceMap =
+            new ConcurrentHashMap<>();
 
     public String getLogContent(Long scheduleTaskId, OdcTaskLogLevel level) {
         try {
@@ -128,22 +127,22 @@ public class ScheduledTaskLoggerService {
     public String getFullLogDownloadUrl(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel level) {
         ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(scheduleTaskId);
         Long jobId = taskEntity.getJobId();
-        if(!taskFrameworkEnabledProperties.isEnabled() || jobId == null){
+        if (!taskFrameworkEnabledProperties.isEnabled() || jobId == null) {
             return String.format(DOWNLOAD_LOG_URL_PATTERN, scheduleId, scheduleTaskId);
         }
         JobEntity jobEntity = taskFrameworkService.find(jobId);
         PreConditions.notNull(jobEntity, "job not found by id " + jobId);
-        if(JobUtils.isK8sRunMode(jobEntity.getRunMode())){
+        if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
             CloudObjectStorageService cloudObjectStorageService = getCloudObjectStorageService(jobEntity);
-            if(!cloudObjectStorageService.supported()){
+            if (!cloudObjectStorageService.supported()) {
                 return StrUtil.EMPTY;
             }
             String attributeKey =
-                OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
-                    : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
+                    OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
+                            : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
             Optional<String> objId = taskFrameworkService.findByJobIdAndAttributeKey(jobId, attributeKey);
             Optional<String> bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobId,
-                JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
+                    JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
             if (objId.isPresent() && bucketName.isPresent()) {
                 return cloudObjectStorageService.generateDownloadUrl(objId.get()).toString();
             }
@@ -309,7 +308,7 @@ public class ScheduledTaskLoggerService {
     private CloudObjectStorageService getCloudObjectStorageService(JobEntity jobEntity) {
         JobContext jobContext = new DefaultJobContextBuilder().build(jobEntity);
         ObjectStorageConfiguration cos = jobCredentialProvider.getCloudObjectStorageCredential(
-            jobContext);
+                jobContext);
         return cloudObjectServiceMap.computeIfAbsent(cos, k -> CloudObjectStorageServiceBuilder.build(cos));
     }
 }
