@@ -95,6 +95,7 @@ import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
@@ -168,6 +169,8 @@ import com.oceanbase.odc.service.regulation.approval.model.ApprovalNodeConfig;
 import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
+import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
@@ -710,12 +713,12 @@ public class FlowInstanceService {
         completeApprovalInstance(id, instance -> {
             instance.disApprove(message, !skipAuth);
             flowInstanceRepository.updateStatusById(instance.getFlowInstanceId(), FlowStatus.REJECTED);
-
         }, skipAuth);
         Optional<FlowInstance> optional = flowFactory.getFlowInstance(id);
         FlowInstance flowInstance =
                 optional.orElseThrow(() -> new NotFoundException(ResourceType.ODC_FLOW_INSTANCE, "id", id));
         cancelAllRelatedExternalInstance(flowInstance);
+        SpringContextUtil.getBean(ScheduleService.class).updateStatusByFlowInstanceId(id, ScheduleStatus.REJECTED);
         return FlowInstanceDetailResp.withIdAndType(id, getTaskByFlowInstanceId(id).getTaskType());
     }
 
