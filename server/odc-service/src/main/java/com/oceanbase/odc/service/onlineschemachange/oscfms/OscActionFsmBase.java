@@ -144,7 +144,7 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
         // translate state to clean resource
         if (isTaskCanceled(oscActionContext)) {
             transferTaskStatesWithStates(state, OscStates.CLEAN_RESOURCE.getState(), null,
-                oscActionContext.getScheduleTask(), TaskStatus.CANCELED);
+                    oscActionContext.getScheduleTask(), TaskStatus.CANCELED);
             return true;
         }
         // handle flow status with failed or canceled
