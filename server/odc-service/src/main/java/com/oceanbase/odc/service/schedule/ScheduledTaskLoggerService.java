@@ -19,6 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -173,7 +174,7 @@ public class ScheduledTaskLoggerService {
                 }
 
                 initCloudObjectStorageService();
-                if (!cloudObjectStorageService.supported()) {
+                if (Objects.isNull(cloudObjectStorageService)) {
                     throw new RuntimeException("CloudObjectStorageService is null.");
                 } else if (!cloudObjectStorageService.supported()) {
                     throw new RuntimeException("CloudObjectStorageService is not supported.");
