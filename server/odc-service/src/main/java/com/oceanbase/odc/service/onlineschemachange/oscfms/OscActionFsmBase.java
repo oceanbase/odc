@@ -132,14 +132,19 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
      * @return true if task in expired or canceled state
      */
     protected boolean tryHandleInvalidTask(String state, OscActionContext oscActionContext) {
-        // 1. task has expired
-        // 2. task has been canceled
+        // task has expired
         // translate state to clean resource
         // NOTICE: expired should been checked first
-        if (isTaskExpired(oscActionContext)
-                || isTaskCanceled(oscActionContext)) {
+        if (isTaskExpired(oscActionContext)) {
             transferTaskStatesWithStates(state, OscStates.CLEAN_RESOURCE.getState(), null,
-                    oscActionContext.getScheduleTask(), TaskStatus.CANCELED);
+                    oscActionContext.getScheduleTask(), TaskStatus.FAILED);
+            return true;
+        }
+        // task has been canceled
+        // translate state to clean resource
+        if (isTaskCanceled(oscActionContext)) {
+            transferTaskStatesWithStates(state, OscStates.CLEAN_RESOURCE.getState(), null,
+                oscActionContext.getScheduleTask(), TaskStatus.CANCELED);
             return true;
         }
         // handle flow status with failed or canceled

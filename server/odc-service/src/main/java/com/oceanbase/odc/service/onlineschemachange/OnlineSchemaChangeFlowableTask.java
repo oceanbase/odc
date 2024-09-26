@@ -302,6 +302,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
                 percentage = 0;
                 break;
             case RUNNING:
+            case ABNORMAL:
                 percentage = scheduleTask.getProgressPercentage() / 100;
                 break;
             default:

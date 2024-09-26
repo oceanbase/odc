@@ -89,7 +89,7 @@ public class OscActionFsmBaseTest {
         Assert.assertTrue(handleResult);
         Mockito.verify(scheduleTaskRepository).update(argumentCaptor.capture());
         ScheduleTaskEntity toVerify = argumentCaptor.getValue();
-        Assert.assertEquals(toVerify.getStatus(), TaskStatus.CANCELED);
+        Assert.assertEquals(toVerify.getStatus(), TaskStatus.FAILED);
         checkState(toVerify, OscStates.CLEAN_RESOURCE.getState());
     }
 
