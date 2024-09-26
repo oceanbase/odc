@@ -160,6 +160,12 @@ public class ScheduledTaskLoggerService {
         JobEntity jobEntity = taskFrameworkService.find(jobId);
         PreConditions.notNull(jobEntity, "job not found by id " + jobId);
         if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
+            initCloudObjectStorageService();
+            if (Objects.isNull(cloudObjectStorageService)) {
+                throw new RuntimeException("CloudObjectStorageService is null.");
+            } else if (!cloudObjectStorageService.supported()) {
+                throw new RuntimeException("CloudObjectStorageService is not supported.");
+            }
             String attributeKey = OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
                     : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
             Optional<String> objId = taskFrameworkService.findByJobIdAndAttributeKey(jobId, attributeKey);
@@ -174,13 +180,6 @@ public class ScheduledTaskLoggerService {
                 if (localFile.exists()) {
                     logFileConsumer.accept(localFile);
                     return;
-                }
-
-                initCloudObjectStorageService();
-                if (Objects.isNull(cloudObjectStorageService)) {
-                    throw new RuntimeException("CloudObjectStorageService is null.");
-                } else if (!cloudObjectStorageService.supported()) {
-                    throw new RuntimeException("CloudObjectStorageService is not supported.");
                 }
 
                 File tempFile = cloudObjectStorageService.downloadToTempFile(objId.get());
