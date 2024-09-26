@@ -20,6 +20,7 @@ import java.util.Set;
 
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.service.worksheet.model.BatchOperateWorksheetsResp;
 import com.oceanbase.odc.service.worksheet.model.BatchUploadWorksheetsReq;
 import com.oceanbase.odc.service.worksheet.model.GenerateWorksheetUploadUrlReq;
@@ -36,6 +37,7 @@ import com.oceanbase.odc.service.worksheet.model.WorksheetResp;
  * @since 4.3.2
  */
 @Service
+@SkipAuthorize("currently not in use")
 public class WorksheetServiceFacadeImpl implements WorksheetServiceFacade {
 
 

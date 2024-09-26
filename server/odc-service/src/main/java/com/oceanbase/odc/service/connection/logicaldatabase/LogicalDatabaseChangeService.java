@@ -33,11 +33,14 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDBChangeExecutionUnitEntity;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.LogicalDBExecutionRepository;
+import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionResultWrapper;
@@ -70,7 +73,11 @@ public class LogicalDatabaseChangeService {
     @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
 
+    @Autowired
+    private ProjectService projectService;
+
     @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("internal usage")
     public boolean upsert(List<LogicalDBChangeExecutionUnit> executionUnits) throws InterruptedException {
         PreConditions.notEmpty(executionUnits, "executionUnits");
         Set<Long> scheduleTaskIds = new HashSet<>();
@@ -103,9 +110,10 @@ public class LogicalDatabaseChangeService {
         return true;
     }
 
-    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("authenticated in method")
     public boolean skipCurrent(@NonNull Long scheduleTaskId, @NonNull Long physicalDatabaseId)
             throws InterruptedException, JobException {
+        checkPermission(physicalDatabaseId);
         Lock lock = jdbcLockRegistry.obtain(getScheduleTaskIdLockKey(scheduleTaskId));
         if (!lock.tryLock(5, TimeUnit.SECONDS)) {
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
@@ -125,9 +133,10 @@ public class LogicalDatabaseChangeService {
         return true;
     }
 
-    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("authenticated in method")
     public boolean terminateCurrent(@NonNull Long scheduleTaskId, @NonNull Long physicalDatabaseId)
             throws InterruptedException, JobException {
+        checkPermission(physicalDatabaseId);
         Lock lock = jdbcLockRegistry.obtain(getScheduleTaskIdLockKey(scheduleTaskId));
         if (!lock.tryLock(5, TimeUnit.SECONDS)) {
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
@@ -148,11 +157,13 @@ public class LogicalDatabaseChangeService {
         return true;
     }
 
+    @SkipAuthorize("authenticated in method")
     public SqlExecutionUnitResp detail(@NonNull Long scheduleTaskId, @NonNull Long physicalDatabaseId) {
+        checkPermission(physicalDatabaseId);
         List<LogicalDBChangeExecutionUnitEntity> entities =
                 executionRepository.findByScheduleTaskIdAndPhysicalDatabaseIdOrderByExecutionOrderAsc(scheduleTaskId,
                         physicalDatabaseId);
-        Database database = databaseService.detail(physicalDatabaseId);
+        Database database = databaseService.detailSkipPermissionCheck(physicalDatabaseId);
         SqlExecutionUnitResp resp = new SqlExecutionUnitResp();
         resp.setId(physicalDatabaseId);
         resp.setDatabase(database);
@@ -164,11 +175,11 @@ public class LogicalDatabaseChangeService {
         resp.setStatus(entities.get(currentExecutionIndex).getStatus());
         resp.setSqlExecuteResults(entities.stream()
                 .map(entity -> JsonUtils.fromJson(entity.getExecutionResultJson(), SqlExecutionResultWrapper.class))
-                .collect(
-                        Collectors.toList()));
+                .collect(Collectors.toList()));
         return resp;
     }
 
+    @SkipAuthorize("internal usage")
     public List<SqlExecutionUnitResp> listSqlExecutionUnits(@NonNull Long scheduleTaskId) {
         // TODO: optimize the sql for performance
         List<LogicalDBChangeExecutionUnitEntity> entities =
@@ -219,5 +230,10 @@ public class LogicalDatabaseChangeService {
 
     private String getScheduleTaskIdLockKey(Long scheduleTaskId) {
         return "logical-database-change-schedule-task-" + scheduleTaskId;
+    }
+
+    private void checkPermission(@NonNull Long physicalDatabaseId) {
+        projectService.checkCurrentUserProjectRolePermissions(
+                databaseService.detailSkipPermissionCheck(physicalDatabaseId).getProject(), ResourceRoleName.all());
     }
 }
