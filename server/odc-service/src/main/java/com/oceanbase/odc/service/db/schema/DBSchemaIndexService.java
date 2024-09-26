@@ -213,7 +213,7 @@ public class DBSchemaIndexService {
         Set<Database> databases = new HashSet<>();
         // 根据资源类型获取数据库列表
         if (req.getResourceType() == ResourceType.ODC_CONNECTION) {
-            // 获取连接下的所有数据库
+            // 获取存储在元数据库中的当前连接下的已经同步了的的所有数据库
             Set<Database> dbs = new HashSet<>(databaseService.listExistDatabasesByConnectionId(req.getResourceId()));
             if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
                 // 个人组织类型下，判断当前用户是否为连接创建者，若不是则抛出异常
@@ -223,7 +223,7 @@ public class DBSchemaIndexService {
                 }
                 databases.addAll(dbs);
             } else {
-                // 企业组织类型下，获取当前用户为成员的项目ID列表，然后判断数据库所属项目是否为这些项目之一，若不是则抛出异常
+                // 团队空间下，获取当前用户为成员的项目ID列表，然后判断数据库所属项目是否为这些项目之一，若不是则抛出异常
                 Set<Long> projectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
                 databases.addAll(dbs.stream()
                         .filter(e -> e.getProject() != null && projectIds.contains(e.getProject().getId()))

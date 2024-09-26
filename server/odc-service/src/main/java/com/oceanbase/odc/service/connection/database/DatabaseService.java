@@ -288,38 +288,49 @@ public class DatabaseService {
         return databases;
     }
 
+    /**
+     * 列出数据库列表
+     *
+     * @param params   查询数据库参数
+     * @param pageable 分页信息
+     * @return 数据库列表
+     */
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public Page<Database> list(@NonNull QueryDatabaseParams params, @NotNull Pageable pageable) {
+        // 如果数据源ID不为空且当前用户所属组织类型为个人，则同步数据源模式
         if (Objects.nonNull(params.getDataSourceId())
-                && authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
+            && authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             try {
                 internalSyncDataSourceSchemas(params.getDataSourceId());
             } catch (Exception ex) {
                 log.warn("sync data sources in individual space failed when listing databases, errorMessage={}",
-                        ex.getLocalizedMessage());
+                    ex.getLocalizedMessage());
             }
             params.setContainsUnassigned(true);
         }
+        // 构建数据库实体的规约条件
         Specification<DatabaseEntity> specs = DatabaseSpecs
-                .environmentIdEquals(params.getEnvironmentId())
-                .and(DatabaseSpecs.nameLike(params.getSchemaName()))
-                .and(DatabaseSpecs.typeIn(params.getTypes()))
-                .and(DatabaseSpecs.existedEquals(params.getExisted()))
-                .and(DatabaseSpecs.organizationIdEquals(authenticationFacade.currentOrganizationId()));
+            .environmentIdEquals(params.getEnvironmentId())
+            .and(DatabaseSpecs.nameLike(params.getSchemaName()))
+            .and(DatabaseSpecs.typeIn(params.getTypes()))
+            .and(DatabaseSpecs.existedEquals(params.getExisted()))
+            .and(DatabaseSpecs.organizationIdEquals(authenticationFacade.currentOrganizationId()));
+        // 获取当前用户加入的项目ID集合
         Set<Long> joinedProjectIds =
-                projectService
-                        .list(QueryProjectParams.builder().build(), Pageable.unpaged())
-                        .getContent().stream()
-                        .filter(Objects::nonNull).map(Project::getId).collect(Collectors.toSet());
+            projectService
+                .list(QueryProjectParams.builder().build(), Pageable.unpaged())
+                .getContent().stream()
+                .filter(Objects::nonNull).map(Project::getId).collect(Collectors.toSet());
         /**
          * not joined any projects and does not show unassigned databases
          */
         if (joinedProjectIds.isEmpty()
-                && (Objects.isNull(params.getContainsUnassigned()) || !params.getContainsUnassigned())) {
+            && (Objects.isNull(params.getContainsUnassigned()) || !params.getContainsUnassigned())) {
             return Page.empty();
         }
 
+        // 如果查询参数中未指定项目ID，则根据当前用户加入的项目ID集合构建项目规约条件
         if (Objects.isNull(params.getProjectId())) {
             Specification<DatabaseEntity> projectSpecs = DatabaseSpecs.projectIdIn(joinedProjectIds);
             if (Objects.nonNull(params.getContainsUnassigned()) && params.getContainsUnassigned()) {
@@ -327,18 +338,21 @@ public class DatabaseService {
             }
             specs = specs.and(projectSpecs);
         } else {
+            // 如果查询参数中指定了项目ID，则判断该项目ID是否属于当前用户加入的项目ID集合
             if (!joinedProjectIds.contains(params.getProjectId())) {
                 throw new AccessDeniedException();
             }
             specs = specs.and(DatabaseSpecs.projectIdEquals(params.getProjectId()));
         }
 
+        // 如果查询参数中指定了数据源ID，则构建连接ID规约条件
         if (Objects.nonNull(params.getDataSourceId())) {
             specs = specs.and(DatabaseSpecs.connectionIdEquals(params.getDataSourceId()));
         }
+        // 根据规约条件和分页信息获取数据库实体列表，并转换为数据库模型列表返回
         Page<DatabaseEntity> entities = databaseRepository.findAll(specs, pageable);
         return entitiesToModels(entities,
-                Objects.nonNull(params.getIncludesPermittedAction()) && params.getIncludesPermittedAction());
+            Objects.nonNull(params.getIncludesPermittedAction()) && params.getIncludesPermittedAction());
     }
 
     @SkipAuthorize("internal authenticated")
@@ -358,20 +372,32 @@ public class DatabaseService {
                         ArrayList::new));
     }
 
+    /**
+     * 业务库创建好数据库，并在odc元数据库中同步新增的connect_database记录
+     *
+     * @param req 创建数据库请求
+     * @return 创建成功的数据库实体
+     */
     @SkipAuthorize("internal authenticated")
     public Database create(@NonNull CreateDatabaseReq req) {
+        // 获取连接配置
         ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(req.getDataSourceId());
+        // 判断连接配置的项目ID是否与请求的项目ID相同，或者请求的项目ID是否为空，或者当前用户是否有该项目的Owner或DBA角色，或者当前用户是否有该数据源的update权限
         if ((connection.getProjectId() != null && !connection.getProjectId().equals(req.getProjectId()))
-                || (Objects.nonNull(req.getProjectId())
-                        && !projectPermissionValidator.hasProjectRole(req.getProjectId(),
-                                Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA)))
-                || !connectionService.checkPermission(req.getDataSourceId(), Collections.singletonList("update"))) {
+            || (Objects.nonNull(req.getProjectId())
+                && !projectPermissionValidator.hasProjectRole(req.getProjectId(),
+            Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA)))
+            || !connectionService.checkPermission(req.getDataSourceId(), Collections.singletonList("update"))) {
             throw new AccessDeniedException();
         }
+        // 获取数据源
         DataSource dataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
         try (Connection conn = dataSource.getConnection()) {
+            // 创建数据库
             createDatabase(req, conn, connection);
+            // 获取数据库详情
             DBDatabase dbDatabase = dbSchemaService.detail(connection.getDialectType(), conn, req.getName());
+            // 构建数据库实体
             DatabaseEntity database = new DatabaseEntity();
             database.setDatabaseId(dbDatabase.getId());
             database.setExisted(Boolean.TRUE);
@@ -387,14 +413,16 @@ public class DatabaseService {
             database.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
             database.setDialectType(connection.getDialectType());
             database.setType(DatabaseType.PHYSICAL);
+            // 保存数据库实体到元数据中并返回
             DatabaseEntity saved = databaseRepository.saveAndFlush(database);
             List<UserResourceRole> userResourceRoles = buildUserResourceRoles(Collections.singleton(saved.getId()),
-                    req.getOwnerIds());
+                req.getOwnerIds());
             resourceRoleService.saveAll(userResourceRoles);
             return entityToModel(saved, false);
         } catch (Exception ex) {
             throw new BadRequestException(SqlExecuteResult.getTrackMessage(ex));
         } finally {
+            // 关闭数据源
             if (dataSource instanceof AutoCloseable) {
                 try {
                     ((AutoCloseable) dataSource).close();
@@ -496,15 +524,26 @@ public class DatabaseService {
         return true;
     }
 
+    /**
+     * 同步数据源模式
+     *
+     * @param dataSourceId 数据源ID
+     * @return 是否同步成功
+     * @throws InterruptedException 线程中断异常
+     */
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public Boolean syncDataSourceSchemas(@NonNull Long dataSourceId) throws InterruptedException {
+        // 调用内部方法同步数据源中的对象
         Boolean res = internalSyncDataSourceSchemas(dataSourceId);
         try {
+            // 刷新过期的待处理数据库对象状态
             refreshExpiredPendingDBObjectStatus();
+            // 根据数据源提交数据库模式同步任务
             dbSchemaSyncTaskManager
-                    .submitTaskByDataSource(connectionService.getBasicWithoutPermissionCheck(dataSourceId));
+                .submitTaskByDataSource(connectionService.getBasicWithoutPermissionCheck(dataSourceId));
         } catch (Exception e) {
+            // 记录日志
             log.warn("Failed to submit sync database schema task for datasource id={}", dataSourceId, e);
         }
         return res;
@@ -551,15 +590,23 @@ public class DatabaseService {
     }
 
     private void syncTeamDataSources(ConnectionConfig connection) {
+        // 获取当前项目ID
         Long currentProjectId = connection.getProjectId();
+        // 判断是否阻止同步到项目时排除架构
         boolean blockExcludeSchemas = dbSchemaSyncProperties.isBlockExclusionsWhenSyncDbToProject();
+        // 获取排除的架构列表
         List<String> excludeSchemas = dbSchemaSyncProperties.getExcludeSchemas(connection.getDialectType());
+        // 创建团队数据源
         DataSource teamDataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
+        // 创建线程池
         ExecutorService executorService = Executors.newFixedThreadPool(1);
+        // 提交任务
         Future<List<DatabaseEntity>> future = executorService.submit(() -> {
             try (Connection conn = teamDataSource.getConnection()) {
+                // 获取数据库实体列表
                 return dbSchemaService.listDatabases(connection.getDialectType(), conn).stream().map(database -> {
                     DatabaseEntity entity = new DatabaseEntity();
+                    // 生成唯一标识符
                     entity.setDatabaseId(com.oceanbase.odc.common.util.StringUtils.uuid());
                     entity.setExisted(Boolean.TRUE);
                     entity.setName(database.getName());
@@ -572,6 +619,7 @@ public class DatabaseService {
                     entity.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
                     entity.setProjectId(currentProjectId);
                     entity.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
+                    // 如果阻止同步到项目并且架构在排除列表中，则不设置项目ID
                     if (blockExcludeSchemas && excludeSchemas.contains(database.getName())) {
                         entity.setProjectId(null);
                     }
@@ -580,46 +628,54 @@ public class DatabaseService {
             }
         });
         try {
+            // 获取最新的数据库实体列表
             List<DatabaseEntity> latestDatabases = future.get(10, TimeUnit.SECONDS);
+            // 将最新的数据库实体列表按名称分组
             Map<String, List<DatabaseEntity>> latestDatabaseName2Database =
-                    latestDatabases.stream().filter(Objects::nonNull)
-                            .collect(Collectors.groupingBy(DatabaseEntity::getName));
+                latestDatabases.stream().filter(Objects::nonNull)
+                    .collect(Collectors.groupingBy(DatabaseEntity::getName));
             List<DatabaseEntity> existedDatabasesInDb =
-                    databaseRepository.findByConnectionId(connection.getId()).stream()
-                            .filter(DatabaseEntity::getExisted).collect(Collectors.toList());
+                databaseRepository.findByConnectionId(connection.getId()).stream()
+                    .filter(DatabaseEntity::getExisted).collect(Collectors.toList());
+            // 将已存在的数据库实体列表按名称分组
             Map<String, List<DatabaseEntity>> existedDatabaseName2Database =
-                    existedDatabasesInDb.stream().collect(Collectors.groupingBy(DatabaseEntity::getName));
+                existedDatabasesInDb.stream().collect(Collectors.groupingBy(DatabaseEntity::getName));
 
+            // 获取已存在的数据库名称列表和最新的数据库名称列表
             Set<String> existedDatabaseNames = existedDatabaseName2Database.keySet();
             Set<String> latestDatabaseNames = latestDatabaseName2Database.keySet();
+            // 计算需要添加、删除和更新的数据库实体列表
             List<Object[]> toAdd = latestDatabases.stream()
-                    .filter(database -> !existedDatabaseNames.contains(database.getName()))
-                    .map(database -> new Object[] {
-                            database.getDatabaseId(),
-                            database.getOrganizationId(),
-                            database.getName(),
-                            database.getProjectId(),
-                            database.getConnectionId(),
-                            database.getEnvironmentId(),
-                            database.getSyncStatus().name(),
-                            database.getCharsetName(),
-                            database.getCollationName(),
-                            database.getTableCount(),
-                            database.getExisted(),
-                            database.getObjectSyncStatus().name()
-                    }).collect(Collectors.toList());
+                .filter(database -> !existedDatabaseNames.contains(database.getName()))
+                .map(database -> new Object[] {
+                    database.getDatabaseId(),
+                    database.getOrganizationId(),
+                    database.getName(),
+                    database.getProjectId(),
+                    database.getConnectionId(),
+                    database.getEnvironmentId(),
+                    database.getSyncStatus().name(),
+                    database.getCharsetName(),
+                    database.getCollationName(),
+                    database.getTableCount(),
+                    database.getExisted(),
+                    database.getObjectSyncStatus().name()
+                }).collect(Collectors.toList());
 
+            // 批量插入数据库实体
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
             if (CollectionUtils.isNotEmpty(toAdd)) {
                 jdbcTemplate.batchUpdate(
-                        "insert into connect_database(database_id, organization_id, name, project_id, connection_id, environment_id, sync_status, charset_name, collation_name, table_count, is_existed, object_sync_status) values(?,?,?,?,?,?,?,?,?,?,?,?)",
-                        toAdd);
+                    "insert into connect_database(database_id, organization_id, name, project_id, connection_id, "
+                    + "environment_id, sync_status, charset_name, collation_name, table_count, is_existed, "
+                    + "object_sync_status) values(?,?,?,?,?,?,?,?,?,?,?,?)",
+                    toAdd);
             }
             List<Object[]> toDelete = existedDatabasesInDb.stream()
-                    .filter(database -> !latestDatabaseNames.contains(database.getName()))
-                    .map(database -> new Object[] {getProjectId(database, currentProjectId, excludeSchemas),
-                            database.getId()})
-                    .collect(Collectors.toList());
+                .filter(database -> !latestDatabaseNames.contains(database.getName()))
+                .map(database -> new Object[] {getProjectId(database, currentProjectId, excludeSchemas),
+                                               database.getId()})
+                .collect(Collectors.toList());
             /**
              * just set existed to false if the database has been dropped instead of deleting it directly
              */
@@ -628,16 +684,17 @@ public class DatabaseService {
                 jdbcTemplate.batchUpdate(deleteSql, toDelete);
             }
             List<Object[]> toUpdate = existedDatabasesInDb.stream()
-                    .filter(database -> latestDatabaseNames.contains(database.getName()))
-                    .map(database -> {
-                        DatabaseEntity latest = latestDatabaseName2Database.get(database.getName()).get(0);
-                        return new Object[] {latest.getTableCount(), latest.getCollationName(), latest.getCharsetName(),
-                                getProjectId(database, currentProjectId, excludeSchemas), database.getId()};
-                    })
-                    .collect(Collectors.toList());
+                .filter(database -> latestDatabaseNames.contains(database.getName()))
+                .map(database -> {
+                    DatabaseEntity latest = latestDatabaseName2Database.get(database.getName()).get(0);
+                    return new Object[] {latest.getTableCount(), latest.getCollationName(), latest.getCharsetName(),
+                                         getProjectId(database, currentProjectId, excludeSchemas), database.getId()};
+                })
+                .collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(toUpdate)) {
                 String update =
-                        "update connect_database set table_count=?, collation_name=?, charset_name=?, project_id=? where id = ?";
+                    "update connect_database set table_count=?, collation_name=?, charset_name=?, project_id=? where "
+                    + "id = ?";
                 jdbcTemplate.batchUpdate(update, toUpdate);
             }
         } catch (ExecutionException | InterruptedException | TimeoutException e) {
@@ -645,7 +702,7 @@ public class DatabaseService {
             Throwable rootCause = e.getCause();
             if (rootCause instanceof SQLException) {
                 deleteDatabaseIfClusterNotExists((SQLException) rootCause,
-                        connection.getId(), "update connect_database set is_existed = 0 where connection_id=?");
+                    connection.getId(), "update connect_database set is_existed = 0 where connection_id=?");
                 throw new IllegalStateException(rootCause);
             }
         } finally {
