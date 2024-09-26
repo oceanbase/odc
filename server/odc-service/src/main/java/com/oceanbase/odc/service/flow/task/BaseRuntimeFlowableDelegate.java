@@ -75,7 +75,7 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
     @Getter
     private TaskType taskType;
     @Getter
-    private Long flowInstanceId;
+    protected Long flowInstanceId;
     @Getter
     private ExecutionStrategyConfig strategyConfig;
     @Autowired

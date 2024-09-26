@@ -70,7 +70,7 @@ public class ActionScheduler {
                     JsonUtils.toJson(scheduleEntity.getJobParametersJson()));
         } catch (SchedulerException e) {
             throw new IllegalArgumentException(MessageFormat.format(
-                    "Create a quartz job check oms project occur error, jobParameters ={0}",
+                    "Create a quartz job check oms project occur error, jobParameters={0}",
                     JsonUtils.toJson(scheduleEntity.getJobParametersJson())), e);
         }
     }
@@ -79,9 +79,9 @@ public class ActionScheduler {
         JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleId, JobType.ONLINE_SCHEMA_CHANGE_COMPLETE);
         try {
             quartzJobService.deleteJob(jobKey);
-            log.info("Successfully delete job with jobKey {}", jobKey);
+            log.info("Successfully delete job with jobKey={}", jobKey);
         } catch (SchedulerException e) {
-            log.warn("Delete job occur error with jobKey =" + jobKey, e);
+            log.warn("Delete job occur error with jobKey={}", jobKey, e);
         }
     }
 
