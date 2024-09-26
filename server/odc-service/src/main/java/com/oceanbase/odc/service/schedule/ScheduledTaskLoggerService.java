@@ -41,6 +41,7 @@ import com.oceanbase.odc.service.dispatch.JobDispatchChecker;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
@@ -49,6 +50,7 @@ import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.util.CloudObjectStorageServiceBuilder;
 import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
@@ -117,6 +119,7 @@ public class ScheduledTaskLoggerService {
 
     @SneakyThrows
     public String getFullLogDownloadUrl(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel level) {
+        initCloudObjectStorageService();
         if (ObjectUtil.isNull(cloudObjectStorageService)) {
             return String.format(DOWNLOAD_LOG_URL_PATTERN, scheduleId, scheduleTaskId);
         }
@@ -153,10 +156,6 @@ public class ScheduledTaskLoggerService {
         JobEntity jobEntity = taskFrameworkService.find(jobId);
         PreConditions.notNull(jobEntity, "job not found by id " + jobId);
         if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
-            if (!cloudObjectStorageService.supported()) {
-                throw new RuntimeException("CloudObjectStorageService is not supported.");
-            }
-
             String attributeKey = OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
                     : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
             Optional<String> objId = taskFrameworkService.findByJobIdAndAttributeKey(jobId, attributeKey);
@@ -171,6 +170,13 @@ public class ScheduledTaskLoggerService {
                 if (localFile.exists()) {
                     logFileConsumer.accept(localFile);
                     return;
+                }
+
+                initCloudObjectStorageService();
+                if (!cloudObjectStorageService.supported()) {
+                    throw new RuntimeException("CloudObjectStorageService is null.");
+                } else if (!cloudObjectStorageService.supported()) {
+                    throw new RuntimeException("CloudObjectStorageService is not supported.");
                 }
 
                 File tempFile = cloudObjectStorageService.downloadToTempFile(objId.get());
@@ -297,5 +303,10 @@ public class ScheduledTaskLoggerService {
             log.warn("forward request to download scheduled task log failed, host={}, port={}", host, port, e);
             throw e;
         }
+    }
+
+    private void initCloudObjectStorageService() {
+        Optional<ObjectStorageConfiguration> storageConfig = JobUtils.getObjectStorageConfiguration();
+        this.cloudObjectStorageService = storageConfig.map(CloudObjectStorageServiceBuilder::build).orElse(null);
     }
 }
