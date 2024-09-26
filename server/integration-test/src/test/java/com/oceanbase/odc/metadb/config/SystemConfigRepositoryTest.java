@@ -18,33 +18,33 @@ package com.oceanbase.odc.metadb.config;
 import java.util.List;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.jdbc.JdbcTestUtils;
 
 import com.oceanbase.odc.ServiceTestEnv;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author liuyizhuo.lyz
  * @date 2024/3/21
  */
+@Slf4j
 public class SystemConfigRepositoryTest extends ServiceTestEnv {
 
     @Autowired
     private SystemConfigRepository systemConfigRepository;
 
-    @Before
-    public void setUp() {
-        systemConfigRepository.getJdbcTemplate().batchUpdate("delete from config_system_configuration");
-    }
-
     @Test
     public void test_Insert_NotExists() {
-        systemConfigRepository.getJdbcTemplate().batchUpdate("delete from config_system_configuration");
-        systemConfigRepository.insert(getConfigEntity());
-        Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(systemConfigRepository.getJdbcTemplate(),
+        int prevRows = JdbcTestUtils.countRowsInTable(systemConfigRepository.getJdbcTemplate(),
+                "config_system_configuration");
+        int inserted = systemConfigRepository.insert(getConfigEntity());
+        Assert.assertEquals(inserted, 1);
+        Assert.assertEquals(prevRows + 1, JdbcTestUtils.countRowsInTable(systemConfigRepository.getJdbcTemplate(),
                 "config_system_configuration"));
+        delete("dummy.key");
     }
 
     @Test
@@ -57,14 +57,18 @@ public class SystemConfigRepositoryTest extends ServiceTestEnv {
 
         SystemConfigEntity entity = systemConfigRepository.queryByKey("dummy.key");
         Assert.assertEquals("value", entity.getValue());
+        delete("dummy.key");
     }
 
     @Test
     public void test_Upsert_NotExists() {
-        systemConfigRepository.getJdbcTemplate().batchUpdate("delete from config_system_configuration");
-        systemConfigRepository.upsert(getConfigEntity());
-        Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(systemConfigRepository.getJdbcTemplate(),
+        int prevRows = JdbcTestUtils.countRowsInTable(systemConfigRepository.getJdbcTemplate(),
+                "config_system_configuration");
+        int inserted = systemConfigRepository.upsert(getConfigEntity());
+        Assert.assertEquals(inserted, 1);
+        Assert.assertEquals(prevRows + 1, JdbcTestUtils.countRowsInTable(systemConfigRepository.getJdbcTemplate(),
                 "config_system_configuration"));
+        delete("dummy.key");
     }
 
     @Test
@@ -77,6 +81,7 @@ public class SystemConfigRepositoryTest extends ServiceTestEnv {
 
         SystemConfigEntity entity = systemConfigRepository.queryByKey("dummy.key");
         Assert.assertEquals("value1", entity.getValue());
+        delete("dummy.key");
     }
 
     @Test
@@ -88,6 +93,8 @@ public class SystemConfigRepositoryTest extends ServiceTestEnv {
 
         List<SystemConfigEntity> entities = systemConfigRepository.queryByKeyPrefix("dummy");
         Assert.assertEquals(2, entities.size());
+        delete("dummy.key");
+        delete("dummy.key1");
     }
 
     @Test
@@ -95,12 +102,24 @@ public class SystemConfigRepositoryTest extends ServiceTestEnv {
         systemConfigRepository.upsert(getConfigEntity());
         SystemConfigEntity entity = systemConfigRepository.queryByKey("dummy.key");
         Assert.assertEquals("value", entity.getValue());
+        delete("dummy.key");
+    }
+
+    private void delete(String... keys) {
+        for (String key : keys) {
+            int rows = systemConfigRepository.getJdbcTemplate()
+                    .update("delete from `config_system_configuration` where `key` = '" + key + "'");
+            log.info("delete {} rows with key = {}", rows, key);
+        }
     }
 
     private SystemConfigEntity getConfigEntity() {
         SystemConfigEntity entity = new SystemConfigEntity();
         entity.setKey("dummy.key");
         entity.setValue("value");
+        entity.setLabel("master");
+        entity.setApplication("odc");
+        entity.setProfile("default");
         entity.setDescription("description");
         return entity;
     }

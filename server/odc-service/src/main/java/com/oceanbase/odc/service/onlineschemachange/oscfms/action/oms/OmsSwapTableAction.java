@@ -77,7 +77,7 @@ public class OmsSwapTableAction implements Action<OscActionContext, OscActionRes
         }
         // begin swap table
         ScheduleTaskEntity scheduleTask = context.getScheduleTask();
-        log.info("Start execute {}, schedule task id {}", getClass().getSimpleName(), scheduleTask.getId());
+        log.info("Start execute {}, schedule task id={}", getClass().getSimpleName(), scheduleTask.getId());
 
         OnlineSchemaChangeScheduleTaskParameters taskParameters = context.getTaskParameter();
         PreConditions.notNull(taskParameters, "OnlineSchemaChangeScheduleTaskParameters is null");
