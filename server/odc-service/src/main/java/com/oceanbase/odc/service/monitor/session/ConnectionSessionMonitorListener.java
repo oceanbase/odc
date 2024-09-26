@@ -37,7 +37,7 @@ public class ConnectionSessionMonitorListener implements ConnectionSessionEventL
     @Override
     public void onCreateSucceed(ConnectionSession session) {
         metricManager.incrementCounter(MeterKey.ofMeter(MeterName.CONNECT_SESSION_TOTAL));
-        metricManager.startTimer(MeterKey.ofMeter(CONNECT_SESSION_DURATION_TIME, session.getId()));
+        metricManager.startTimerSample(session.getId(), true, MeterKey.ofMeter(CONNECT_SESSION_DURATION_TIME));
     }
 
     @Override
@@ -49,12 +49,14 @@ public class ConnectionSessionMonitorListener implements ConnectionSessionEventL
     @Override
     public void onDeleteSucceed(ConnectionSession session) {
         metricManager.incrementCounter(MeterKey.ofMeter(MeterName.CONNECT_SESSION_DELETE_SUCCESS_COUNT));
+        metricManager.recordTimerSample(session.getId(), MeterKey.ofMeter(CONNECT_SESSION_DURATION_TIME));
 
     }
 
     @Override
     public void onDeleteFailed(String id, Throwable e) {
         metricManager.incrementCounter(MeterKey.ofMeter(MeterName.CONNECT_SESSION_DELETE_FAILED_COUNT));
+        metricManager.recordTimerSample(id, MeterKey.ofMeter(CONNECT_SESSION_DURATION_TIME));
     }
 
     @Override
@@ -70,8 +72,7 @@ public class ConnectionSessionMonitorListener implements ConnectionSessionEventL
 
     @Override
     public void onExpire(ConnectionSession session) {
-        metricManager.recordTimer(MeterKey.ofMeter(CONNECT_SESSION_DURATION_TIME, session.getId()));
-
+        metricManager.recordTimerSample(session.getId(), MeterKey.ofMeter(CONNECT_SESSION_DURATION_TIME));
     }
 
     @Override

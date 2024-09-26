@@ -199,7 +199,8 @@ public class FlowTaskSubmitter implements JavaDelegate {
     }
 
     private void sendStartMetric(String taskId, String taskType, String organizationId) {
-        metricManager.startTimer(getUniqueTaskMeterKey(MeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
+        metricManager.startTimerSample(taskId, true,
+                getUniqueTaskMeterKey(MeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
         metricManager.incrementCounter(getTaskMeterKey(MeterName.FLOW_TASK_START_COUNT, taskType, organizationId));
 
     }
@@ -207,13 +208,15 @@ public class FlowTaskSubmitter implements JavaDelegate {
     private void sendEndMetric(String taskId, String taskType, String organizationId) {
         metricManager.incrementCounter(getTaskMeterKey(MeterName.FLOW_TASK_START_COUNT, taskType, organizationId));
         metricManager
-                .recordTimer(getUniqueTaskMeterKey(MeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
+                .recordTimerSample(taskId,
+                        getUniqueTaskMeterKey(MeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
     }
 
     private void sendFailedMetric(String taskId, String taskType, String organizationId) {
         metricManager.incrementCounter(getTaskMeterKey(MeterName.FLOW_TASK_START_COUNT, taskType, organizationId));
         metricManager
-                .recordTimer(getUniqueTaskMeterKey(MeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
+                .recordTimerSample(taskId,
+                        getUniqueTaskMeterKey(MeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
     }
 
     public MeterKey getTaskMeterKey(MeterName meterName, String taskType, String organizationId) {
@@ -225,8 +228,6 @@ public class FlowTaskSubmitter implements JavaDelegate {
     public MeterKey getUniqueTaskMeterKey(MeterName meterName, String uniqueKey, String taskType,
             String organizationId) {
         return Builder.ofMeter(meterName)
-                .uniqueKey(uniqueKey)
-                .needRemove()
                 .addTag("taskType", taskType)
                 .addTag("organizationId", organizationId).build();
     }

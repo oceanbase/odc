@@ -28,23 +28,21 @@ import lombok.Value;
 public class MeterKey {
     MeterName meterName;
     Iterable<Tag> tags;
-    String uniqueKey;
-    Boolean needRemove;
 
     public static MeterKey ofMeter(MeterName meter) {
-        return new MeterKey(meter, Collections.emptyList(), null, false);
+        return new MeterKey(meter, Collections.emptyList());
     }
 
     public static MeterKey ofMeter(MeterName meter, Tag... tags) {
-        return new MeterKey(meter, Arrays.asList(tags), null, false);
+        return new MeterKey(meter, Arrays.asList(tags));
     }
 
     public static MeterKey ofNeedRemoveMeter(MeterName meter, Tag... tags) {
-        return new MeterKey(meter, Arrays.asList(tags), null, true);
+        return new MeterKey(meter, Arrays.asList(tags));
     }
 
     public static MeterKey ofMeter(MeterName meter, String uniqueKey, Tag... tags) {
-        return new MeterKey(meter, Arrays.asList(tags), uniqueKey, true);
+        return new MeterKey(meter, Arrays.asList(tags));
     }
 
     @Override
@@ -56,12 +54,6 @@ public class MeterKey {
         MeterKey that = (MeterKey) o;
         if (!Objects.equals(meterName, that.meterName))
             return false;
-        if (!Objects.equals(uniqueKey, that.uniqueKey)) {
-            return false;
-        }
-        if (!Objects.equals(needRemove, that.needRemove)) {
-            return false;
-        }
         // Convert tags to sets for order-insensitive comparison
         Set<Tag> thisTagSet = toTagSet(this.tags);
         Set<Tag> thatTagSet = toTagSet(that.tags);
@@ -71,7 +63,7 @@ public class MeterKey {
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(meterName, uniqueKey, needRemove);
+        int result = Objects.hash(meterName);
         Set<Tag> tagSet = toTagSet(tags);
         result = 31 * result + tagSet.hashCode();
         return result;
@@ -90,27 +82,14 @@ public class MeterKey {
     public static class Builder {
         MeterName meterName;
         Set<Tag> tags;
-        String uniqueKey;
-        Boolean needRemove;
 
         private Builder() {}
 
         public static Builder ofMeter(MeterName meter) {
             Builder builder = new Builder();
             builder.meterName = meter;
-            builder.needRemove = false;
             builder.tags = new HashSet<>();
             return builder;
-        }
-
-        public Builder uniqueKey(String uniqueKey) {
-            this.uniqueKey = uniqueKey;
-            return this;
-        }
-
-        public Builder needRemove() {
-            this.needRemove = true;
-            return this;
         }
 
         public Builder addTag(String key, String value) {
@@ -119,7 +98,7 @@ public class MeterKey {
         }
 
         public MeterKey build() {
-            return new MeterKey(meterName, tags, uniqueKey, needRemove);
+            return new MeterKey(meterName, tags);
         }
 
     }

@@ -64,6 +64,6 @@ public class ActuatorEndpointFilter extends OncePerRequestFilter implements Init
     }
 
     private void clear() {
-        metricManager.evict();
+        metricManager.unregisterMeters();
     }
 }

@@ -17,15 +17,19 @@ package com.oceanbase.odc.service.monitor;
 
 import java.util.function.Supplier;
 
+import io.micrometer.core.instrument.Counter;
+
 public interface MetricManager {
 
     void registerGauge(MeterKey meterKey, Supplier<Number> f);
 
+    Counter registerCounter(MeterKey meterKey);
+
     void incrementCounter(MeterKey meterKey);
 
-    void startTimer(MeterKey meterKey);
+    void startTimerSample(String sampleKey, boolean needUnregister, MeterKey meterKey);
 
-    void recordTimer(MeterKey meterKey);
+    void recordTimerSample(String sampleKey, MeterKey meterKey);
 
-    void evict();
+    void unregisterMeters();
 }

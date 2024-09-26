@@ -124,21 +124,25 @@ public abstract class AbstractQuartzJob implements InterruptableJob {
 
     private void sendInterruptMetric() {
         metricManager.incrementCounter(getMeterKey(SCHEDULE_INTERRUPTED_COUNT, this.jobKey.getGroup()));
-        metricManager.recordTimer(getDurationMeterKey(this.jobKey.getGroup(), this.jobKey.getName()));
+        metricManager.recordTimerSample(this.jobKey.getGroup(),
+                getDurationMeterKey(this.jobKey.getGroup(), this.jobKey.getName()));
     }
 
     private void sendStartMetric() {
         metricManager.incrementCounter(getMeterKey(SCHEDULE_START_COUNT, this.jobKey.getGroup()));
-        metricManager.startTimer(getDurationMeterKey(this.jobKey.getGroup(), this.jobKey.getName()));
+        metricManager.startTimerSample(this.jobKey.getGroup(), true,
+                getDurationMeterKey(this.jobKey.getGroup(), this.jobKey.getName()));
     }
 
     private void sendEndMetric() {
-        metricManager.recordTimer(getDurationMeterKey(this.jobKey.getGroup(), this.jobKey.getName()));
+        metricManager.recordTimerSample(this.jobKey.getGroup(),
+                getDurationMeterKey(this.jobKey.getGroup(), this.jobKey.getName()));
         metricManager.incrementCounter(getMeterKey(SCHEDULE_START_COUNT, this.jobKey.getGroup()));
     }
 
     private void sendFailedMetric() {
-        metricManager.recordTimer(getDurationMeterKey(this.jobKey.getGroup(), this.jobKey.getName()));
+        metricManager.recordTimerSample(this.jobKey.getGroup(),
+                getDurationMeterKey(this.jobKey.getGroup(), this.jobKey.getName()));
         metricManager.incrementCounter(getMeterKey(SCHEDULE_FAILED_COUNT, this.jobKey.getGroup()));
     }
 
@@ -148,7 +152,7 @@ public abstract class AbstractQuartzJob implements InterruptableJob {
     }
 
     public MeterKey getDurationMeterKey(String taskType, String scheduleId) {
-        return MeterKey.ofNeedRemoveMeter(SCHEDULE_TASK_DURATION, Tag.of("taskType", taskType),
+        return MeterKey.ofMeter(SCHEDULE_TASK_DURATION, Tag.of("taskType", taskType),
                 Tag.of("scheduleId", scheduleId));
     }
 }

@@ -32,6 +32,7 @@ import org.springframework.context.annotation.Primary;
 import com.oceanbase.odc.common.util.SystemUtils;
 
 import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
 import io.micrometer.core.lang.NonNull;
@@ -128,22 +129,27 @@ public class MonitorAutoConfiguration {
         }
 
         @Override
+        public Counter registerCounter(MeterKey meterKey) {
+            return null;
+        }
+
+        @Override
         public void incrementCounter(MeterKey meterKey) {
 
         }
 
         @Override
-        public void startTimer(MeterKey meterKey) {
+        public void startTimerSample(String sampleKey, boolean needUnregister, MeterKey meterKey) {
 
         }
 
         @Override
-        public void recordTimer(MeterKey meterKey) {
+        public void recordTimerSample(String sampleKey, MeterKey meterKey) {
 
         }
 
         @Override
-        public void evict() {
+        public void unregisterMeters() {
 
         }
     }

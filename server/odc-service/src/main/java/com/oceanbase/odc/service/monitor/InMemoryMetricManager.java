@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -43,17 +44,16 @@ import lombok.extern.slf4j.Slf4j;
 public class InMemoryMetricManager implements MetricManager, InitializingBean {
 
     private final Map<MeterKey, CounterWrapper> COUNTER_MAP = new ConcurrentHashMap<>();
-    private final Map<MeterKey, TimerSampleHolder> TIMER_MAP = new ConcurrentHashMap<>();
+    private final Map<Pair<String, MeterKey>, TimerSampleHolder> TIMER_SAMPLE_MAP = new ConcurrentHashMap<>();
     @Autowired
     private BusinessMeterRegistry businessMeterRegistry;
-
     @Autowired
     private MonitorProperties monitorProperties;
 
     @Override
     public void afterPropertiesSet() throws Exception {
         registerGauge(MeterKey.ofMeter(MeterName.METER_COUNTER_HOLDER_COUNT), this.COUNTER_MAP::size);
-        registerGauge(MeterKey.ofMeter(MeterName.METER_TIMER_HOLDER_COUNT), this.TIMER_MAP::size);
+        registerGauge(MeterKey.ofMeter(MeterName.METER_TIMER_HOLDER_COUNT), this.TIMER_SAMPLE_MAP::size);
     }
 
 
@@ -93,7 +93,7 @@ public class InMemoryMetricManager implements MetricManager, InitializingBean {
                 .orElseThrow(IllegalAccessError::new);
     }
 
-    private Counter registerCounter(MeterKey meterKey) {
+    public Counter registerCounter(MeterKey meterKey) {
         Builder builder = Counter.builder(meterKey.getMeterName().getMeterName())
                 .description(meterKey.getMeterName().getDescription());
         for (Tag tag : meterKey.getTags()) {
@@ -102,37 +102,38 @@ public class InMemoryMetricManager implements MetricManager, InitializingBean {
         return builder.register(businessMeterRegistry);
     }
 
-    public void startTimer(MeterKey meterKey) {
-        TimerSampleHolder sampleHolder = this.TIMER_MAP.get(meterKey);
+    public void startTimerSample(String sampleKey, boolean needUnregister, MeterKey meterKey) {
+        Pair<String, MeterKey> sampleMapKey = Pair.of(sampleKey, meterKey);
+        TimerSampleHolder sampleHolder = this.TIMER_SAMPLE_MAP.get(sampleMapKey);
         if (sampleHolder == null) {
-            if (this.TIMER_MAP.size() >= monitorProperties.getMeter().getMaxTimerMeterNumber()) {
+            if (this.TIMER_SAMPLE_MAP.size() >= monitorProperties.getMeter().getMaxTimerMeterNumber()) {
                 log.error("Too many Timer to register, meterKey={}", meterKey);
                 return;
             }
             // ensure lock same obj
-            this.TIMER_MAP.computeIfAbsent(meterKey,
-                    k -> new TimerSampleHolder(null));
+            this.TIMER_SAMPLE_MAP.computeIfAbsent(sampleMapKey,
+                    k -> new TimerSampleHolder(null, null));
         }
-        MeterKey lockKey = getTimerLockKey(meterKey);
+        Pair<String, MeterKey> lockKey = getTimerSampleLockKey(sampleMapKey);
         synchronized (lockKey) {
-            TimerSampleHolder placeholder = this.TIMER_MAP.get(meterKey);
+            TimerSampleHolder placeholder = this.TIMER_SAMPLE_MAP.get(lockKey);
             if (placeholder.sample != null) {
                 return;
             }
             Timer.Sample start = Timer.start(this.businessMeterRegistry);
-            this.TIMER_MAP.put(lockKey,
-                    new TimerSampleHolder(start));
+            this.TIMER_SAMPLE_MAP.put(lockKey,
+                    new TimerSampleHolder(start, needUnregister));
         }
     }
 
-
-    public void recordTimer(MeterKey meterKey) {
-        TimerSampleHolder timerSampleHolder = this.TIMER_MAP.get(meterKey);
+    public void recordTimerSample(String sampleKey, MeterKey meterKey) {
+        Pair<String, MeterKey> sampleMapKey = Pair.of(sampleKey, meterKey);
+        TimerSampleHolder timerSampleHolder = this.TIMER_SAMPLE_MAP.get(sampleMapKey);
         if (timerSampleHolder == null) {
             return;
         }
         synchronized (timerSampleHolder) {
-            timerSampleHolder = this.TIMER_MAP.get(meterKey);
+            timerSampleHolder = this.TIMER_SAMPLE_MAP.get(sampleMapKey);
             if (timerSampleHolder == null) {
                 return;
             }
@@ -147,21 +148,21 @@ public class InMemoryMetricManager implements MetricManager, InitializingBean {
     }
 
     @Override
-    public void evict() {
+    public void unregisterMeters() {
         clearNeedRemoveMeter();
     }
 
     private synchronized void clearNeedRemoveMeter() {
-        this.TIMER_MAP.entrySet().stream().filter(e -> e.getKey().getNeedRemove())
+        this.TIMER_SAMPLE_MAP.entrySet().stream()
                 .filter(e -> e.getValue().markToRemove)
                 .forEach(e -> {
-                    this.TIMER_MAP.remove(e.getKey());
+                    this.TIMER_SAMPLE_MAP.remove(e.getKey());
                     businessMeterRegistry.remove(e.getValue().getTimer());
                 });
     }
 
-    private MeterKey getTimerLockKey(MeterKey meterKey) {
-        return this.TIMER_MAP.keySet().stream().filter(meterKey::equals).findFirst()
+    private Pair<String, MeterKey> getTimerSampleLockKey(Pair<String, MeterKey> sampleMapKey) {
+        return this.TIMER_SAMPLE_MAP.keySet().stream().filter(sampleMapKey::equals).findFirst()
                 .orElseThrow(IllegalAccessError::new);
     }
 
@@ -169,16 +170,20 @@ public class InMemoryMetricManager implements MetricManager, InitializingBean {
     private static class TimerSampleHolder {
         Timer.Sample sample;
         Timer timer;
+        Boolean needUnregister;
         Boolean markToRemove = false;
 
-        protected TimerSampleHolder(Timer.Sample sample) {
+        protected TimerSampleHolder(Timer.Sample sample, Boolean needUnregister) {
             this.sample = sample;
+            this.needUnregister = needUnregister;
         }
 
         protected synchronized void stop(Timer timer) {
             this.timer = timer;
             this.sample.stop(timer);
-            this.markToRemove = true;
+            if (needUnregister) {
+                this.markToRemove = true;
+            }
         }
     }
 
