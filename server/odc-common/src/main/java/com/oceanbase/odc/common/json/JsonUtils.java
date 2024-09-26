@@ -77,6 +77,7 @@ public class JsonUtils {
         try {
             return OBJECT_MAPPER.readValue(json, classType);
         } catch (JsonProcessingException e) {
+            log.warn("deserialize str = {} failed", json, e);
             return null;
         }
     }
@@ -99,6 +100,7 @@ public class JsonUtils {
         try {
             return OBJECT_MAPPER.readValue(json, javaType);
         } catch (JsonProcessingException e) {
+            log.warn("deserialize str = {} failed", json, e);
             return null;
         }
     }
@@ -114,6 +116,7 @@ public class JsonUtils {
         try {
             return OBJECT_MAPPER.readValue(json, valueTypeRef);
         } catch (JsonProcessingException e) {
+            log.warn("deserialize str = {} failed", json, e);
             return null;
         }
     }
