@@ -32,8 +32,11 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.service.collaboration.project.ProjectService;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
@@ -73,6 +76,8 @@ import io.swagger.annotations.ApiOperation;
 public class ScheduleController {
     @Autowired
     private ScheduleService scheduleService;
+    @Autowired
+    private ProjectService projectService;
 
     // change log
 
@@ -248,8 +253,13 @@ public class ScheduleController {
             @RequestParam(required = false, name = "startTime") Date startTime,
             @RequestParam(required = false, name = "endTime") Date endTime,
             @RequestParam(required = false, name = "creator") String creator,
+            @RequestParam(required = false, name = "obProjectId") String obProjectId,
             @RequestParam(required = false, name = "projectId") Long projectId) {
 
+        if (StringUtils.isNotEmpty(obProjectId)) {
+            Project project = projectService.getByIdentifier(obProjectId);
+            projectId = project == null ? null : project.getId();
+        }
         QueryScheduleParams req = QueryScheduleParams.builder()
                 .id(id)
                 .name(name)
