@@ -19,7 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.Optional;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
@@ -59,6 +59,7 @@ import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
 import cn.hutool.core.io.IoUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -140,11 +141,11 @@ public class ScheduledTaskLoggerService {
             String attributeKey =
                     OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
                             : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
-            Optional<String> objId = taskFrameworkService.findByJobIdAndAttributeKey(jobId, attributeKey);
-            Optional<String> bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobId,
-                    JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
-            if (objId.isPresent() && bucketName.isPresent()) {
-                return cloudObjectStorageService.generateDownloadUrl(objId.get()).toString();
+            Map<String, String> jobAttributeMap = taskFrameworkService.getJobAttributes(jobId);
+            String objId = jobAttributeMap.get(attributeKey);
+            String bucketName = jobAttributeMap.get(JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
+            if (ObjectUtil.isNotNull(objId) && ObjectUtil.isNotNull(bucketName)) {
+                return cloudObjectStorageService.generateDownloadUrl(objId).toString();
             }
             return StrUtil.EMPTY;
         }
@@ -165,11 +166,11 @@ public class ScheduledTaskLoggerService {
             }
             String attributeKey = OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
                     : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
-            Optional<String> objId = taskFrameworkService.findByJobIdAndAttributeKey(jobId, attributeKey);
-            Optional<String> bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobId,
-                    JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
+            Map<String, String> jobAttributeMap = taskFrameworkService.getJobAttributes(jobId);
+            String objId = jobAttributeMap.get(attributeKey);
+            String bucketName = jobAttributeMap.get(JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
             String logFilePath = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
-            if (objId.isPresent() && bucketName.isPresent()) {
+            if (ObjectUtil.isNotNull(objId) && ObjectUtil.isNotNull(bucketName)) {
                 if (log.isDebugEnabled()) {
                     log.debug("job: {} is finished, try to get log from local or oss.", jobEntity.getId());
                 }
@@ -179,7 +180,7 @@ public class ScheduledTaskLoggerService {
                     return;
                 }
 
-                File tempFile = cloudObjectStorageService.downloadToTempFile(objId.get());
+                File tempFile = cloudObjectStorageService.downloadToTempFile(objId);
                 try (FileInputStream inputStream = new FileInputStream(tempFile)) {
                     FileUtils.copyInputStreamToFile(inputStream, localFile);
                 } finally {
@@ -307,8 +308,9 @@ public class ScheduledTaskLoggerService {
 
     private CloudObjectStorageService getCloudObjectStorageService(JobEntity jobEntity) {
         JobContext jobContext = new DefaultJobContextBuilder().build(jobEntity);
-        ObjectStorageConfiguration cos = jobCredentialProvider.getCloudObjectStorageCredential(
+        ObjectStorageConfiguration objectStorageConfiguration = jobCredentialProvider.getCloudObjectStorageCredential(
                 jobContext);
-        return cloudObjectServiceMap.computeIfAbsent(cos, k -> CloudObjectStorageServiceBuilder.build(cos));
+        return cloudObjectServiceMap.computeIfAbsent(objectStorageConfiguration,
+                k -> CloudObjectStorageServiceBuilder.build(objectStorageConfiguration));
     }
 }
