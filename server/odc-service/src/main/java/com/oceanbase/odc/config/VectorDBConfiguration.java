@@ -25,11 +25,10 @@ import javax.annotation.PreDestroy;
 import javax.sql.DataSource;
 
 import org.mybatis.spring.annotation.MapperScan;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
@@ -47,7 +46,6 @@ import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.config.jpa.EnhancedJpaRepository;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
-import com.oceanbase.odc.service.session.SessionProperties;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @Configuration
@@ -59,19 +57,10 @@ import com.oceanbase.odc.service.session.SessionProperties;
         entityManagerFactoryRef = "vectordbEntityManagerFactory")
 @EntityScan({"com.oceanbase.odc.vectordb"})
 @EnableTransactionManagement
-@ConditionalOnProperty(prefix = "odc.datasource.vectordb", name = {"url", "driver-class-name", "username", "password"})
+@ConditionalOnProperty(prefix = "odc.datasource.vectordb",
+        name = {"jdbc-url", "driver-class-name", "username", "password"})
 public class VectorDBConfiguration {
 
-    @Value("${odc.datasource.vectordb.username}")
-    private String username;
-    @Value("${odc.datasource.vectordb.password}")
-    private String password;
-    @Value("${odc.datasource.vectordb.url}")
-    private String url;
-    @Value("${odc.datasource.vectordb.driver-class-name}")
-    private String driverClassName;
-    @Autowired
-    private SessionProperties sessionProperties;
     private ThreadPoolExecutor vectorDbBootstrapExecutor;
 
     @PostConstruct
@@ -88,13 +77,9 @@ public class VectorDBConfiguration {
     }
 
     @Bean(name = "vectordbDataSource")
+    @ConfigurationProperties("odc.datasource.vectordb")
     public DataSource vectordbDataSource() {
-        return DataSourceBuilder.create()
-                .url(this.url)
-                .username(this.username)
-                .password(this.password)
-                .driverClassName(this.driverClassName)
-                .build();
+        return DataSourceBuilder.create().build();
     }
 
     @Bean(name = "vectordbEntityManagerFactory")

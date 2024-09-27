@@ -37,7 +37,8 @@ import com.oceanbase.odc.service.common.migrate.ResourceConstants;
 
 @Configuration
 @DependsOn({"vectordbLockConfiguration"})
-@ConditionalOnProperty(prefix = "odc.datasource.vectordb", name = {"url", "driver-class-name", "username", "password"})
+@ConditionalOnProperty(prefix = "odc.datasource.vectordb",
+        name = {"jdbc-url", "driver-class-name", "username", "password"})
 public class VectorDBMigrate extends AbstractMigrate {
 
     @Autowired
