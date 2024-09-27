@@ -16,6 +16,7 @@
 package com.oceanbase.odc.core.datasource.event;
 
 import java.sql.Connection;
+import java.util.Optional;
 
 import com.oceanbase.odc.common.event.AbstractEvent;
 
@@ -28,7 +29,7 @@ public class GetConnectionFailedEvent extends AbstractEvent {
      * @param source The object on which the Event initially occurred.
      * @throws IllegalArgumentException if source is null.
      */
-    public GetConnectionFailedEvent(Connection source) {
+    public GetConnectionFailedEvent(Optional<Connection> source) {
         super(source, EVENT_NAME);
     }
 

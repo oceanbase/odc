@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -216,7 +217,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
             log.info("Established shared JDBC Connection, lock={}", this.lock.hashCode());
             return getConnectionProxy(this.connection, this.lock);
         } catch (Throwable e) {
-            publishEvent(new GetConnectionFailedEvent(connection));
+            publishEvent(new GetConnectionFailedEvent(Optional.ofNullable(connection)));
             throw new SQLException(e);
         }
     }
