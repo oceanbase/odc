@@ -17,14 +17,7 @@ package com.oceanbase.odc.config;
 
 import javax.sql.DataSource;
 
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.integration.jdbc.lock.DefaultLockRepository;
-import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.integration.jdbc.lock.LockRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,14 +26,9 @@ import com.oceanbase.odc.common.util.SystemUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * @author yizhou.xw
- * @version : LockConfiguration.java, v 0.1 2021-04-02 15:36
- */
 @Slf4j
-@Order(Ordered.HIGHEST_PRECEDENCE + 1)
-@Configuration("lockConfiguration")
-public class LockConfiguration {
+public abstract class BaseLockConfiguration {
+
     private static final int LOCK_TIME_TO_LIVE_SECONDS = 60;
     private static final int CREATE_LOCK_TABLE_TIMEOUT_SECONDS = 10;
     private static final String CREATE_LOCK_TABLE_SQL = "CREATE TABLE IF NOT EXISTS DISTRIBUTED_LOCK (\n"
@@ -51,8 +39,7 @@ public class LockConfiguration {
             + "  constraint DISTRIBUTED_LOCK_PK primary key (LOCK_KEY, REGION)\n"
             + ")";
 
-    @Bean("odcLockRepository")
-    public LockRepository odcLockRepository(DataSource dataSource, @Value("${server.port:8989}") String listenPort) {
+    protected LockRepository buildLockRepository(DataSource dataSource, String listenPort) {
         String localIpAddress = SystemUtils.getLocalIpAddress();
         log.info("create odc lock repository..., localIpAddress={}, listenPort={}", localIpAddress, listenPort);
         initLockTable(dataSource);
@@ -62,11 +49,6 @@ public class LockConfiguration {
         defaultLockRepository.setTimeToLive(LOCK_TIME_TO_LIVE_SECONDS * 1000);
         log.info("odc lock repository created.");
         return defaultLockRepository;
-    }
-
-    @Bean
-    public JdbcLockRegistry jdbcLockRegistry(@Qualifier("odcLockRepository") LockRepository odcLockRepository) {
-        return new JdbcLockRegistry(odcLockRepository);
     }
 
     private void initLockTable(DataSource dataSource) {
