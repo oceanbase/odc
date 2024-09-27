@@ -20,8 +20,10 @@ import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
@@ -650,6 +652,14 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     public Optional<String> findByJobIdAndAttributeKey(Long jobId, String attributeKey) {
         JobAttributeEntity attributeEntity = jobAttributeRepository.findByJobIdAndAttributeKey(jobId, attributeKey);
         return Objects.isNull(attributeEntity) ? Optional.empty() : Optional.of(attributeEntity.getAttributeValue());
+    }
+
+    @Override
+    public Map<String, String> getJobAttributes(Long jobId) {
+        List<JobAttributeEntity> attributeEntityList = jobAttributeRepository.findByJobId(jobId);
+        return attributeEntityList.stream().collect(Collectors.toMap(
+                JobAttributeEntity::getAttributeKey,
+                JobAttributeEntity::getAttributeValue));
     }
 
 }
