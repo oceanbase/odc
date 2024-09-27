@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.quartz.executor;
 import static com.oceanbase.odc.service.monitor.MeterName.SCHEDULE_FAILED_COUNT;
 import static com.oceanbase.odc.service.monitor.MeterName.SCHEDULE_INTERRUPTED_COUNT;
 import static com.oceanbase.odc.service.monitor.MeterName.SCHEDULE_START_COUNT;
-import static com.oceanbase.odc.service.monitor.MeterName.SCHEDULE_TASK_DURATION;
 
 import org.quartz.InterruptableJob;
 import org.quartz.JobExecutionContext;
@@ -125,34 +124,29 @@ public abstract class AbstractQuartzJob implements InterruptableJob {
     private void sendInterruptMetric() {
         metricManager.incrementCounter(getMeterKey(SCHEDULE_INTERRUPTED_COUNT, this.jobKey.getGroup()));
         metricManager.recordTimerSample(this.jobKey.getGroup(),
-                getDurationMeterKey(this.jobKey.getGroup(), this.jobKey.getName()));
+                getMeterKey(SCHEDULE_INTERRUPTED_COUNT, this.jobKey.getGroup()));
     }
 
     private void sendStartMetric() {
         metricManager.incrementCounter(getMeterKey(SCHEDULE_START_COUNT, this.jobKey.getGroup()));
-        metricManager.startTimerSample(this.jobKey.getGroup(), true,
-                getDurationMeterKey(this.jobKey.getGroup(), this.jobKey.getName()));
+        metricManager.startTimerSample(this.jobKey.getGroup(),
+                getMeterKey(SCHEDULE_INTERRUPTED_COUNT, this.jobKey.getGroup()));
     }
 
     private void sendEndMetric() {
         metricManager.recordTimerSample(this.jobKey.getGroup(),
-                getDurationMeterKey(this.jobKey.getGroup(), this.jobKey.getName()));
+                getMeterKey(SCHEDULE_INTERRUPTED_COUNT, this.jobKey.getGroup()));
         metricManager.incrementCounter(getMeterKey(SCHEDULE_START_COUNT, this.jobKey.getGroup()));
     }
 
     private void sendFailedMetric() {
         metricManager.recordTimerSample(this.jobKey.getGroup(),
-                getDurationMeterKey(this.jobKey.getGroup(), this.jobKey.getName()));
+                getMeterKey(SCHEDULE_INTERRUPTED_COUNT, this.jobKey.getGroup()));
         metricManager.incrementCounter(getMeterKey(SCHEDULE_FAILED_COUNT, this.jobKey.getGroup()));
     }
 
 
     public MeterKey getMeterKey(MeterName meterName, String taskType) {
         return MeterKey.ofMeter(meterName, Tag.of("taskType", taskType));
-    }
-
-    public MeterKey getDurationMeterKey(String taskType, String scheduleId) {
-        return MeterKey.ofMeter(SCHEDULE_TASK_DURATION, Tag.of("taskType", taskType),
-                Tag.of("scheduleId", scheduleId));
     }
 }

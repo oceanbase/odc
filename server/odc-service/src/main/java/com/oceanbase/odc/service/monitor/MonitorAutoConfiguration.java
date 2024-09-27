@@ -24,7 +24,6 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -32,7 +31,6 @@ import org.springframework.context.annotation.Primary;
 import com.oceanbase.odc.common.util.SystemUtils;
 
 import io.micrometer.core.instrument.Clock;
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
 import io.micrometer.core.lang.NonNull;
@@ -51,11 +49,6 @@ public class MonitorAutoConfiguration {
         return registry -> registry.config().commonTags("ServerHost", SystemUtils.getHostName());
     }
 
-    @Bean
-    @ConditionalOnMissingBean
-    MetricManager defaultMetricManager() {
-        return new NonEnabledMetricManager();
-    }
 
     @Bean(value = "businessMeterRegistry")
     BusinessMeterRegistry businessMeterRegistry(PrometheusConfig prometheusConfig) {
@@ -129,17 +122,12 @@ public class MonitorAutoConfiguration {
         }
 
         @Override
-        public Counter registerCounter(MeterKey meterKey) {
-            return null;
-        }
-
-        @Override
         public void incrementCounter(MeterKey meterKey) {
 
         }
 
         @Override
-        public void startTimerSample(String sampleKey, boolean needUnregister, MeterKey meterKey) {
+        public void startTimerSample(String sampleKey, MeterKey meterKey) {
 
         }
 
@@ -148,9 +136,5 @@ public class MonitorAutoConfiguration {
 
         }
 
-        @Override
-        public void unregisterMeters() {
-
-        }
     }
 }

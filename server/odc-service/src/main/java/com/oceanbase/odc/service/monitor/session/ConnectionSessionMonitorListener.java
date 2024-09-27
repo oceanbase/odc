@@ -37,7 +37,7 @@ public class ConnectionSessionMonitorListener implements ConnectionSessionEventL
     @Override
     public void onCreateSucceed(ConnectionSession session) {
         metricManager.incrementCounter(MeterKey.ofMeter(MeterName.CONNECT_SESSION_TOTAL));
-        metricManager.startTimerSample(session.getId(), true, MeterKey.ofMeter(CONNECT_SESSION_DURATION_TIME));
+        metricManager.startTimerSample(session.getId(), MeterKey.ofMeter(CONNECT_SESSION_DURATION_TIME));
     }
 
     @Override

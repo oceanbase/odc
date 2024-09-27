@@ -15,15 +15,19 @@
  */
 package com.oceanbase.odc.service.monitor;
 
-import java.util.function.Supplier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-public interface MetricManager {
+import com.oceanbase.odc.service.monitor.MonitorAutoConfiguration.NonEnabledMetricManager;
 
-    void registerGauge(MeterKey meterKey, Supplier<Number> f);
+@Configuration
+public class MonitorConfig {
 
-    void incrementCounter(MeterKey meterKey);
+    @Bean
+    @ConditionalOnMissingBean
+    MetricManager defaultMetricManager() {
+        return new NonEnabledMetricManager();
+    }
 
-    void startTimerSample(String sampleKey, MeterKey meterKey);
-
-    void recordTimerSample(String sampleKey, MeterKey meterKey);
 }

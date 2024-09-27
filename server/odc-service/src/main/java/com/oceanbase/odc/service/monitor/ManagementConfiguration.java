@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.monitor;
 
-import javax.servlet.Filter;
-
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration;
 import org.springframework.boot.actuate.autoconfigure.web.ManagementContextType;
@@ -35,11 +33,6 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 @ManagementContextConfiguration(value = ManagementContextType.CHILD, proxyBeanMethods = false)
 @ConditionalOnProperty(value = "odc.system.monitor.actuator.enabled", havingValue = "true")
 public class ManagementConfiguration {
-
-    @Bean
-    public Filter actuatorEndpointFilter(MonitorProperties properties, MetricManager metricManager) {
-        return new ActuatorEndpointFilter(properties, metricManager);
-    }
 
     @Bean
     public CustomEndpoint customEndpoint(

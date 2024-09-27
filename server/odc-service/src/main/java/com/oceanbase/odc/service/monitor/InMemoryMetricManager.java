@@ -102,7 +102,7 @@ public class InMemoryMetricManager implements MetricManager, InitializingBean {
         return builder.register(businessMeterRegistry);
     }
 
-    public void startTimerSample(String sampleKey, boolean needUnregister, MeterKey meterKey) {
+    public void startTimerSample(String sampleKey, MeterKey meterKey) {
         Pair<String, MeterKey> sampleMapKey = Pair.of(sampleKey, meterKey);
         TimerSampleHolder sampleHolder = this.TIMER_SAMPLE_MAP.get(sampleMapKey);
         if (sampleHolder == null) {
@@ -112,7 +112,7 @@ public class InMemoryMetricManager implements MetricManager, InitializingBean {
             }
             // ensure lock same obj
             this.TIMER_SAMPLE_MAP.computeIfAbsent(sampleMapKey,
-                    k -> new TimerSampleHolder(null, null));
+                    k -> new TimerSampleHolder(null));
         }
         Pair<String, MeterKey> lockKey = getTimerSampleLockKey(sampleMapKey);
         synchronized (lockKey) {
@@ -122,7 +122,7 @@ public class InMemoryMetricManager implements MetricManager, InitializingBean {
             }
             Timer.Sample start = Timer.start(this.businessMeterRegistry);
             this.TIMER_SAMPLE_MAP.put(lockKey,
-                    new TimerSampleHolder(start, needUnregister));
+                    new TimerSampleHolder(start));
         }
     }
 
@@ -147,20 +147,6 @@ public class InMemoryMetricManager implements MetricManager, InitializingBean {
         }
     }
 
-    @Override
-    public void unregisterMeters() {
-        clearNeedRemoveMeter();
-    }
-
-    private synchronized void clearNeedRemoveMeter() {
-        this.TIMER_SAMPLE_MAP.entrySet().stream()
-                .filter(e -> e.getValue().markToRemove)
-                .forEach(e -> {
-                    this.TIMER_SAMPLE_MAP.remove(e.getKey());
-                    businessMeterRegistry.remove(e.getValue().getTimer());
-                });
-    }
-
     private Pair<String, MeterKey> getTimerSampleLockKey(Pair<String, MeterKey> sampleMapKey) {
         return this.TIMER_SAMPLE_MAP.keySet().stream().filter(sampleMapKey::equals).findFirst()
                 .orElseThrow(IllegalAccessError::new);
@@ -170,20 +156,14 @@ public class InMemoryMetricManager implements MetricManager, InitializingBean {
     private static class TimerSampleHolder {
         Timer.Sample sample;
         Timer timer;
-        Boolean needUnregister;
-        Boolean markToRemove = false;
 
-        protected TimerSampleHolder(Timer.Sample sample, Boolean needUnregister) {
+        protected TimerSampleHolder(Timer.Sample sample) {
             this.sample = sample;
-            this.needUnregister = needUnregister;
         }
 
         protected synchronized void stop(Timer timer) {
             this.timer = timer;
             this.sample.stop(timer);
-            if (needUnregister) {
-                this.markToRemove = true;
-            }
         }
     }
 

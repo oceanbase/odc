@@ -199,7 +199,7 @@ public class FlowTaskSubmitter implements JavaDelegate {
     }
 
     private void sendStartMetric(String taskId, String taskType, String organizationId) {
-        metricManager.startTimerSample(taskId, true,
+        metricManager.startTimerSample(taskId,
                 getUniqueTaskMeterKey(MeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
         metricManager.incrementCounter(getTaskMeterKey(MeterName.FLOW_TASK_START_COUNT, taskType, organizationId));
 
