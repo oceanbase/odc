@@ -32,8 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
 @Configuration("vectordbLockConfiguration")
-@ConditionalOnProperty(prefix = "odc.datasource.vectordb",
-        name = {"jdbc-url", "driver-class-name", "username", "password"})
+@ConditionalOnProperty(prefix = "odc.datasource.vectordb", name = {"url", "driver-class-name", "username", "password"})
 public class VectorDBLockConfiguration extends BaseLockConfiguration {
 
     @Bean("vectordbJdbcLockRepository")

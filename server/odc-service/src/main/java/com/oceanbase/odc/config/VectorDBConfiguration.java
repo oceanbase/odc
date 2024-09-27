@@ -25,11 +25,11 @@ import javax.annotation.PreDestroy;
 import javax.sql.DataSource;
 
 import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,10 +42,13 @@ import org.springframework.scheduling.concurrent.ConcurrentTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+import com.alibaba.druid.pool.DruidDataSource;
+import com.alibaba.druid.spring.boot.autoconfigure.DruidDataSourceBuilder;
 import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.config.jpa.EnhancedJpaRepository;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
+import com.oceanbase.odc.service.session.SessionProperties;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @Configuration
@@ -57,10 +60,11 @@ import com.oceanbase.odc.core.task.TaskThreadFactory;
         entityManagerFactoryRef = "vectordbEntityManagerFactory")
 @EntityScan({"com.oceanbase.odc.vectordb"})
 @EnableTransactionManagement
-@ConditionalOnProperty(prefix = "odc.datasource.vectordb",
-        name = {"jdbc-url", "driver-class-name", "username", "password"})
+@ConditionalOnProperty(prefix = "odc.datasource.vectordb", name = {"url", "driver-class-name", "username", "password"})
 public class VectorDBConfiguration {
 
+    @Autowired
+    private SessionProperties sessionProperties;
     private ThreadPoolExecutor vectorDbBootstrapExecutor;
 
     @PostConstruct
@@ -79,7 +83,10 @@ public class VectorDBConfiguration {
     @Bean(name = "vectordbDataSource")
     @ConfigurationProperties("odc.datasource.vectordb")
     public DataSource vectordbDataSource() {
-        return DataSourceBuilder.create().build();
+        DruidDataSource dataSource = DruidDataSourceBuilder.create().build();
+        dataSource.getConnectProperties().setProperty("sessionVariables", "ob_query_timeout=30000000");
+        dataSource.setSocketTimeout((int) (sessionProperties.getBackendQueryTimeoutMicros() / 1000));
+        return dataSource;
     }
 
     @Bean(name = "vectordbEntityManagerFactory")
