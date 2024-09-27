@@ -55,21 +55,34 @@ public class LoginHistoryService {
         this.maxLoginRecordTimeMinutes = Integer.valueOf(maxLoginRecordTimeMinutes);
     }
 
+    /**
+     * 记录登录历史
+     *
+     * @param loginHistory 登录历史对象
+     * @return 是否记录成功
+     */
     @Transactional(rollbackFor = Exception.class)
     public boolean record(LoginHistory loginHistory) {
         Long userId = loginHistory.getUserId();
         long current = System.currentTimeMillis();
+        // 使用锁对象进行同步，保证线程安全
         synchronized (lockObject) {
+            // 获取用户上一次登录的时间
             Date loginTime = userId2LastLoginTime.get(userId);
             if (loginTime != null) {
+                // 计算当前时间和上一次登录时间的时间差（分钟）
                 long intervalMin = TimeUnit.MINUTES.convert(current - loginTime.getTime(), TimeUnit.MILLISECONDS);
+                // 如果时间差小于最大登录记录时间（minutes），则不记录当前登录历史
                 if (intervalMin < maxLoginRecordTimeMinutes) {
                     return false;
                 }
             }
+            // 更新用户的上一次登录时间
             userId2LastLoginTime.put(userId, new Date());
         }
+        // 将登录历史对象转换为实体对象并保存到数据库中
         LoginHistoryEntity saved = loginHistoryRepository.saveAndFlush(loginHistory.toEntity());
+        // 记录日志
         log.info("Login history saved, history={}", saved);
         return true;
     }

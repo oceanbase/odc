@@ -100,19 +100,30 @@ public class DBVariablesService {
         DB_VARIABLE_VALUE_UNIT.put("ob_trx_idle_timeout", "us");
     }
 
+    /**
+     * 根据变量作用域列表数据库变量
+     *
+     * @param connectionSession 数据库连接会话
+     * @param variableScope     变量作用域（session、global、all）
+     * @return OdcDBVariable列表
+     */
     public List<OdcDBVariable> list(ConnectionSession connectionSession, String variableScope) {
         List<DBVariable> dbVariables;
         DBSchemaAccessor accessor =
-                DBSchemaAccessors.create(connectionSession, ConnectionSessionConstants.CONSOLE_DS_KEY);
+            DBSchemaAccessors.create(connectionSession, ConnectionSessionConstants.CONSOLE_DS_KEY);
         if ("session".equals(variableScope)) {
+            // 获取会话变量
             dbVariables = accessor.showSessionVariables();
         } else if ("global".equals(variableScope)) {
+            // 获取全局变量
             dbVariables = accessor.showGlobalVariables();
         } else {
+            // 获取所有变量
             dbVariables = accessor.showVariables();
         }
         List<OdcDBVariable> resultDbVirableList = new ArrayList<>();
         List<OdcDBVariable> tempResultDbVirableList = new ArrayList<>();
+        // 遍历数据库变量
         dbVariables.forEach(var -> {
             OdcDBVariable variableResponse = new OdcDBVariable();
             variableResponse.setName(var.getName());
