@@ -271,7 +271,7 @@ public class DLMJobStore implements IJobStore {
 
             log.info("Update rate limit to {}", params);
         } catch (Exception e) {
-            log.warn("Update rate limit failed,errorMsg={}", e.getMessage());
+            log.warn("Update rate limit failed,errorMsg={}", e.getMessage(),e);
             setClusterLimitConfig(jobMeta.getSourceCluster(), 1024);
             setClusterLimitConfig(jobMeta.getTargetCluster(), 1024);
             setTenantLimitConfig(jobMeta.getSourceTenant(), 1024);
