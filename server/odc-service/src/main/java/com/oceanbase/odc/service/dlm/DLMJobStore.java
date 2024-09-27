@@ -262,12 +262,16 @@ public class DLMJobStore implements IJobStore {
                         DLMJobReq.class);
                 params = dlmJobReq.getRateLimit();
             }
-            setClusterLimitConfig(jobMeta.getSourceCluster(), params.getDataSizeLimit());
-            setClusterLimitConfig(jobMeta.getTargetCluster(), params.getDataSizeLimit());
-            setTenantLimitConfig(jobMeta.getSourceTenant(), params.getDataSizeLimit());
-            setTenantLimitConfig(jobMeta.getTargetTenant(), params.getDataSizeLimit());
-            setTableLimitConfig(jobMeta.getTargetTableMeta(), params.getRowLimit());
-            setTableLimitConfig(jobMeta.getSourceTableMeta(), params.getRowLimit());
+            if (params.getDataSizeLimit() != null) {
+                setClusterLimitConfig(jobMeta.getSourceCluster(), params.getDataSizeLimit());
+                setClusterLimitConfig(jobMeta.getTargetCluster(), params.getDataSizeLimit());
+                setTenantLimitConfig(jobMeta.getSourceTenant(), params.getDataSizeLimit());
+                setTenantLimitConfig(jobMeta.getTargetTenant(), params.getDataSizeLimit());
+            }
+            if (params.getRowLimit() != null) {
+                setTableLimitConfig(jobMeta.getTargetTableMeta(), params.getRowLimit());
+                setTableLimitConfig(jobMeta.getSourceTableMeta(), params.getRowLimit());
+            }
 
             log.info("Update rate limit to {}", params);
         } catch (Exception e) {
