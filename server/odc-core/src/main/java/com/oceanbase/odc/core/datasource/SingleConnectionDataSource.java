@@ -149,14 +149,23 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         }
     }
 
+    /**
+     * 尝试获取锁
+     *
+     * @param lock 锁对象
+     * @return 是否获取到锁
+     */
     private boolean tryLock(Lock lock) {
         try {
+            // 尝试获取锁，最多等待timeOutMillis毫秒
             boolean locked = lock.tryLock(timeOutMillis, TimeUnit.MILLISECONDS);
             if (locked) {
+                // 获取到锁，记录日志
                 log.info("Get connection lock success, lock={}", lock.hashCode());
             }
             return locked;
         } catch (InterruptedException e) {
+            // 线程被中断，抛出异常
             throw new IllegalStateException(e);
         }
     }
@@ -251,31 +260,49 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
             this.lock = lock;
         }
 
+        /**
+         * 重写invoke方法，实现动态代理
+         *
+         * @param proxy  代理对象
+         * @param method 被代理的方法
+         * @param args   被代理方法的参数
+         * @return 被代理方法的返回值
+         * @throws Throwable 抛出异常
+         */
         @Override
         @SuppressWarnings("all")
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            // 判断被代理方法的名称
             if ("equals".equals(method.getName())) {
+                // 如果是equals方法，则比较代理对象和参数对象是否相等
                 return (proxy == args[0]);
             } else if ("hashCode".equals(method.getName())) {
+                // 如果是hashCode方法，则返回代理对象的哈希码
                 return System.identityHashCode(proxy);
             } else if ("unwrap".equals(method.getName())) {
+                // 如果是isWrapperFor方法，则判断参数对象是否是代理对象的子类，如果是则返回true
                 if (((Class<?>) args[0]).isInstance(proxy)) {
                     return proxy;
                 }
             } else if ("isWrapperFor".equals(method.getName())) {
+                // 如果是isWrapperFor方法，则判断参数对象是否是代理对象的子类，如果是则返回true
                 if (((Class<?>) args[0]).isInstance(proxy)) {
                     return true;
                 }
             } else if ("close".equals(method.getName())) {
+                // 如果是close方法，则打印日志并释放锁
                 log.info("Get connection unlock, lock={}", this.lock.hashCode());
                 lock.unlock();
                 return null;
             } else if ("isClosed".equals(method.getName())) {
+                // 如果是isClosed方法，则返回false
                 return false;
             }
             try {
+                // 调用被代理对象的方法
                 return method.invoke(this.target, args);
             } catch (InvocationTargetException ex) {
+                // 抛出被代理方法抛出的异常
                 throw ex.getTargetException();
             }
         }
