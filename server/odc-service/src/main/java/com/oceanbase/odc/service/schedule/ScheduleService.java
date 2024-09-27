@@ -221,7 +221,7 @@ public class ScheduleService {
                 createScheduleReq.setParameters(parameters.getScheduleTaskParameters());
                 createScheduleReq.setTriggerConfig(parameters.getTriggerConfig());
                 createScheduleReq.setType(parameters.getType());
-                createScheduleReq.setDescription(parameters.getDescription());
+                createScheduleReq.setDescription(createReq.getDescription());
                 scheduleChangeParams = ScheduleChangeParams.with(createScheduleReq);
                 break;
             }
@@ -230,7 +230,7 @@ public class ScheduleService {
                 updateScheduleReq.setParameters(parameters.getScheduleTaskParameters());
                 updateScheduleReq.setTriggerConfig(parameters.getTriggerConfig());
                 updateScheduleReq.setType(parameters.getType());
-                updateScheduleReq.setDescription(parameters.getDescription());
+                updateScheduleReq.setDescription(createReq.getDescription());
                 scheduleChangeParams = ScheduleChangeParams.with(parameters.getTaskId(), updateScheduleReq);
                 break;
             }
@@ -258,8 +258,8 @@ public class ScheduleService {
             ScheduleEntity entity = new ScheduleEntity();
 
             entity.setName(req.getCreateScheduleReq().getName());
-            entity.setProjectId(req.getCreateScheduleReq().getProjectId());
-            DescriptionGenerator.generateScheduleDescription(req.getCreateScheduleReq());
+            entity.setProjectId(req.getProjectId());
+            DescriptionGenerator.generateScheduleDescription(req);
             entity.setDescription(req.getCreateScheduleReq().getDescription());
             entity.setJobParametersJson(JsonUtils.toJson(req.getCreateScheduleReq().getParameters()));
             entity.setTriggerConfigJson(JsonUtils.toJson(req.getCreateScheduleReq().getTriggerConfig()));
@@ -271,9 +271,9 @@ public class ScheduleService {
             entity.setOrganizationId(authenticationFacade.currentOrganizationId());
             entity.setCreatorId(authenticationFacade.currentUserId());
             entity.setModifierId(authenticationFacade.currentUserId());
-            entity.setDatabaseId(req.getCreateScheduleReq().getDatabaseId());
-            entity.setDatabaseName(req.getCreateScheduleReq().getDatabaseName());
-            entity.setDataSourceId(req.getCreateScheduleReq().getConnectionId());
+            entity.setDatabaseId(req.getDatabaseId());
+            entity.setDatabaseName(req.getDatabaseName());
+            entity.setDataSourceId(req.getConnectionId());
 
             targetSchedule = scheduleMapper.entityToModel(scheduleRepository.save(entity));
             req.setScheduleId(targetSchedule.getId());
@@ -564,7 +564,18 @@ public class ScheduleService {
 
     public void stopTask(Long scheduleId, Long scheduleTaskId) {
         nullSafeGetByIdWithCheckPermission(scheduleId, true);
-        scheduleTaskService.stop(scheduleTaskId);
+        Lock lock = jdbcLockRegistry.obtain(getScheduleTaskLockKey(scheduleTaskId));
+        try {
+            if (!lock.tryLock(10, TimeUnit.SECONDS)) {
+                throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
+            }
+            scheduleTaskService.stop(scheduleTaskId);
+        } catch (InterruptedException e) {
+            log.error("Stop task failed", e);
+            throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -573,7 +584,18 @@ public class ScheduleService {
      */
     public void startTask(Long scheduleId, Long scheduleTaskId) {
         nullSafeGetByIdWithCheckPermission(scheduleId, true);
-        scheduleTaskService.start(scheduleTaskId);
+        Lock lock = jdbcLockRegistry.obtain(getScheduleTaskLockKey(scheduleTaskId));
+        try {
+            if (!lock.tryLock(10, TimeUnit.SECONDS)) {
+                throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
+            }
+            scheduleTaskService.start(scheduleTaskId);
+        } catch (InterruptedException e) {
+            log.error("Start task failed", e);
+            throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
+        } finally {
+            lock.unlock();
+        }
     }
 
     public void rollbackTask(Long scheduleId, Long scheduleTaskId) {
@@ -994,5 +1016,9 @@ public class ScheduleService {
 
     private String getScheduleChangeLockKey(@NonNull Long scheduleId) {
         return "schedule-change-" + scheduleId;
+    }
+
+    private String getScheduleTaskLockKey(@NonNull Long scheduleTaskId) {
+        return "schedule-task-" + scheduleTaskId;
     }
 }
