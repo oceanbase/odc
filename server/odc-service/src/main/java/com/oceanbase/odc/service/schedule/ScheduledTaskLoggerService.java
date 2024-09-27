@@ -19,7 +19,8 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.Optional;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 import org.apache.commons.io.FileUtils;
@@ -41,14 +42,19 @@ import com.oceanbase.odc.service.dispatch.JobDispatchChecker;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
+import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
+import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
+import com.oceanbase.odc.service.task.schedule.JobCredentialProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.util.CloudObjectStorageServiceBuilder;
 import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
@@ -95,7 +101,10 @@ public class ScheduledTaskLoggerService {
     private ScheduleLogProperties loggerProperty;
 
     @Autowired
-    private CloudObjectStorageService cloudObjectStorageService;
+    private JobCredentialProvider jobCredentialProvider;
+
+    private final ConcurrentHashMap<ObjectStorageConfiguration, CloudObjectStorageService> cloudObjectServiceMap =
+            new ConcurrentHashMap<>();
 
     public String getLogContent(Long scheduleTaskId, OdcTaskLogLevel level) {
         try {
@@ -117,31 +126,26 @@ public class ScheduledTaskLoggerService {
 
     @SneakyThrows
     public String getFullLogDownloadUrl(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel level) {
-        if (ObjectUtil.isNull(cloudObjectStorageService)) {
-            log.warn("cloud object storage service is null.");
+        ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(scheduleTaskId);
+        Long jobId = taskEntity.getJobId();
+        if (!taskFrameworkEnabledProperties.isEnabled() || jobId == null) {
             return String.format(DOWNLOAD_LOG_URL_PATTERN, scheduleId, scheduleTaskId);
         }
-        if (cloudObjectStorageService.supported()) {
-            ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(scheduleTaskId);
-            Long jobId = taskEntity.getJobId();
-            if (jobId == null) {
-                log.warn("job is not exist, may a historical schedule task, scheduleTaskId:{}", scheduleTaskId);
+        JobEntity jobEntity = taskFrameworkService.find(jobId);
+        PreConditions.notNull(jobEntity, "job not found by id " + jobId);
+        if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
+            CloudObjectStorageService cloudObjectStorageService = getCloudObjectStorageService(jobEntity);
+            if (!cloudObjectStorageService.supported()) {
                 return StrUtil.EMPTY;
             }
-            JobEntity jobEntity = taskFrameworkService.find(jobId);
-            PreConditions.notNull(jobEntity, "job not found by id " + jobId);
-            if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
-                String attributeKey =
-                        OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
-                                : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
-                Optional<String> objId = taskFrameworkService.findByJobIdAndAttributeKey(jobId, attributeKey);
-                Optional<String> bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobId,
-                        JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
-                if (objId.isPresent() && bucketName.isPresent()) {
-                    return cloudObjectStorageService.generateDownloadUrl(objId.get()).toString();
-                }
-            } else {
-                log.warn("cloud object storage service is not support.");
+            String attributeKey =
+                    OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
+                            : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
+            Map<String, String> jobAttributeMap = taskFrameworkService.getJobAttributes(jobId);
+            String objId = jobAttributeMap.get(attributeKey);
+            String bucketName = jobAttributeMap.get(JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
+            if (ObjectUtil.isNotNull(objId) && ObjectUtil.isNotNull(bucketName)) {
+                return cloudObjectStorageService.generateDownloadUrl(objId).toString();
             }
             return StrUtil.EMPTY;
         }
@@ -156,16 +160,17 @@ public class ScheduledTaskLoggerService {
         JobEntity jobEntity = taskFrameworkService.find(jobId);
         PreConditions.notNull(jobEntity, "job not found by id " + jobId);
         if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
+            CloudObjectStorageService cloudObjectStorageService = getCloudObjectStorageService(jobEntity);
             if (!cloudObjectStorageService.supported()) {
                 throw new RuntimeException("CloudObjectStorageService is not supported.");
             }
             String attributeKey = OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
                     : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
-            Optional<String> objId = taskFrameworkService.findByJobIdAndAttributeKey(jobId, attributeKey);
-            Optional<String> bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobId,
-                    JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
+            Map<String, String> jobAttributeMap = taskFrameworkService.getJobAttributes(jobId);
+            String objId = jobAttributeMap.get(attributeKey);
+            String bucketName = jobAttributeMap.get(JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
             String logFilePath = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
-            if (objId.isPresent() && bucketName.isPresent()) {
+            if (ObjectUtil.isNotNull(objId) && ObjectUtil.isNotNull(bucketName)) {
                 if (log.isDebugEnabled()) {
                     log.debug("job: {} is finished, try to get log from local or oss.", jobEntity.getId());
                 }
@@ -175,7 +180,7 @@ public class ScheduledTaskLoggerService {
                     return;
                 }
 
-                File tempFile = cloudObjectStorageService.downloadToTempFile(objId.get());
+                File tempFile = cloudObjectStorageService.downloadToTempFile(objId);
                 try (FileInputStream inputStream = new FileInputStream(tempFile)) {
                     FileUtils.copyInputStreamToFile(inputStream, localFile);
                 } finally {
@@ -299,5 +304,13 @@ public class ScheduledTaskLoggerService {
             log.warn("forward request to download scheduled task log failed, host={}, port={}", host, port, e);
             throw e;
         }
+    }
+
+    private CloudObjectStorageService getCloudObjectStorageService(JobEntity jobEntity) {
+        JobContext jobContext = new DefaultJobContextBuilder().build(jobEntity);
+        ObjectStorageConfiguration objectStorageConfiguration = jobCredentialProvider.getCloudObjectStorageCredential(
+                jobContext);
+        return cloudObjectServiceMap.computeIfAbsent(objectStorageConfiguration,
+                k -> CloudObjectStorageServiceBuilder.build(objectStorageConfiguration));
     }
 }
