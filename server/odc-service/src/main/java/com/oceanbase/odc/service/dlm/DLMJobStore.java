@@ -256,13 +256,14 @@ public class DLMJobStore implements IJobStore {
                 params = JsonUtils.fromJson(
                         jobParameters.get(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG),
                         RateLimitConfiguration.class);
+                log.info("Get rate limit config from request {}", params);
             } else {
                 DLMJobReq dlmJobReq = JsonUtils.fromJson(
                         jobParameters.get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
                         DLMJobReq.class);
                 params = dlmJobReq.getRateLimit();
+                log.info("Get rate limit config from task parameters {}", params);
             }
-            setClusterLimitConfig(jobMeta.getSourceCluster(), params.getDataSizeLimit());
             setClusterLimitConfig(jobMeta.getTargetCluster(), params.getDataSizeLimit());
             setTenantLimitConfig(jobMeta.getSourceTenant(), params.getDataSizeLimit());
             setTenantLimitConfig(jobMeta.getTargetTenant(), params.getDataSizeLimit());
