@@ -252,6 +252,7 @@ public class DLMJobStore implements IJobStore {
     public void updateLimiter(JobMeta jobMeta) {
         try {
             RateLimitConfiguration params;
+            log.info("job parameters:{}",jobParameters);
             if (jobParameters.containsKey(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG)) {
                 params = JsonUtils.fromJson(
                         jobParameters.get(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG),
