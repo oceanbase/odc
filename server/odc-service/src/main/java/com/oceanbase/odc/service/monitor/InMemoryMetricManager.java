@@ -144,6 +144,7 @@ public class InMemoryMetricManager implements MetricManager, InitializingBean {
                 builder.tag(tag.getKey(), tag.getValue());
             }
             timerSampleHolder.stop(builder.register(businessMeterRegistry));
+            this.TIMER_SAMPLE_MAP.remove(sampleMapKey);
         }
     }
 
