@@ -305,19 +305,34 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         return false;
     }
 
+    /**
+     * 前置检查方法，用于检查任务是否需要进行前置检查，以及进行 SQL 检查和资源权限检查
+     *
+     * @param taskEntity         任务实体对象
+     * @param preCheckTaskEntity 前置检查任务实体对象
+     * @param riskLevelDescriber 风险级别描述器
+     */
     private void preCheck(TaskEntity taskEntity, TaskEntity preCheckTaskEntity,
-            RiskLevelDescriber riskLevelDescriber) {
+        RiskLevelDescriber riskLevelDescriber) {
+        // 获取任务类型
         TaskType taskType = taskEntity.getTaskType();
+        // 判断任务类型是否需要进行前置检查
         if (taskType.needsPreCheck()) {
+            // 如果任务类型为 ALTER_SCHEDULE，则进行特殊处理
             if (taskType == TaskType.ALTER_SCHEDULE) {
+                // 从任务实体对象中获取 AlterScheduleParameters 对象
                 AlterScheduleParameters parameters =
-                        JsonUtils.fromJson(taskEntity.getParametersJson(), AlterScheduleParameters.class);
+                    JsonUtils.fromJson(taskEntity.getParametersJson(), AlterScheduleParameters.class);
+                // 如果 AlterScheduleParameters 对象中的 Type 不为 SQL_PLAN，则直接返回
                 if (parameters.getType() != JobType.SQL_PLAN) {
                     return;
                 }
             }
+            // 进行 SQL 检查和资源权限检查
             doSqlCheckAndResourcePermissionCheck(preCheckTaskEntity, riskLevelDescriber, taskType);
+            // 判断 SQL 检查结果和资源权限检查结果是否被拦截
             if (isIntercepted(this.sqlCheckResult, this.permissionCheckResult)) {
+                // 如果被拦截，则抛出 ServiceTaskError 异常
                 throw new ServiceTaskError(new RuntimeException());
             }
         }
@@ -374,24 +389,43 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         return false;
     }
 
+    /**
+     * 执行SQL检查和资源权限检查
+     *
+     * @param preCheckTaskEntity 预检查任务实体类
+     * @param describer          风险级别描述器
+     * @param taskType           任务类型
+     */
     private void doSqlCheckAndResourcePermissionCheck(TaskEntity preCheckTaskEntity, RiskLevelDescriber describer,
-            TaskType taskType) {
+        TaskType taskType) {
+        // 创建一个空的SQL列表
         List<OffsetString> sqls = new ArrayList<>();
+        // 获取SQL内容，直到超过最大字节数
         this.overLimit = getSqlContentUntilOverLimit(sqls, preCheckTaskProperties.getMaxSqlContentBytes());
+        // 创建一个未授权的数据库资源列表
         List<UnauthorizedDBResource> unauthorizedDBResource = new ArrayList<>();
+        // 创建一个检查违规列表
         List<CheckViolation> violations = new ArrayList<>();
+        // 如果SQL列表不为空
         if (CollectionUtils.isNotEmpty(sqls)) {
+            // 对SQL进行检查，并将结果添加到违规列表中
             violations.addAll(this.sqlCheckService.check(Long.valueOf(describer.getEnvironmentId()),
-                    describer.getDatabaseName(), sqls, connectionConfig));
+                describer.getDatabaseName(), sqls, connectionConfig));
+            // 获取未授权的数据库资源列表
             unauthorizedDBResource = getUnauthorizedDBResources(sqls, connectionConfig,
-                    preCheckTaskEntity.getDatabaseName(), taskType);
+                preCheckTaskEntity.getDatabaseName(), taskType);
         }
+        // 创建一个数据库权限检查结果对象
         this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDBResource);
+        // 创建一个SQL检查任务结果对象
         this.sqlCheckResult = SqlCheckTaskResult.success(violations);
         try {
+            // 将任务结果存储到文件中
             storeTaskResultToFile(preCheckTaskEntity.getId(), this.sqlCheckResult);
+            // 设置任务结果文件名
             sqlCheckResult.setFileName(CHECK_RESULT_FILE_NAME);
         } catch (Exception e) {
+            // 抛出服务任务错误异常
             throw new ServiceTaskError(e);
         }
     }

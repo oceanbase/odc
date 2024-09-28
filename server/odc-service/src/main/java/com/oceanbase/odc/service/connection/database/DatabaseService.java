@@ -563,7 +563,7 @@ public class DatabaseService {
         if (!lock.tryLock(3, TimeUnit.SECONDS)) {
             // 如果无法获取锁，则抛出冲突异常
             throw new ConflictException(ErrorCodes.ResourceSynchronizing,
-                    new Object[] {ResourceType.ODC_DATABASE.getLocalizedMessage()}, "Can not acquire jdbc lock");
+                new Object[] {ResourceType.ODC_DATABASE.getLocalizedMessage()}, "Can not acquire jdbc lock");
         }
         try {
             // 获取数据库连接配置
@@ -1141,18 +1141,28 @@ public class DatabaseService {
         return userResourceRoles;
     }
 
-
+    /**
+     * 如果集群不存在，则删除数据库
+     *
+     * @param e            SQLException对象
+     * @param connectionId 连接ID
+     * @param deleteSql    删除SQL语句
+     */
     private void deleteDatabaseIfClusterNotExists(SQLException e, Long connectionId, String deleteSql) {
+        // 判断异常信息中是否包含"cluster not exist"
         if (StringUtils.containsIgnoreCase(e.getMessage(), "cluster not exist")) {
+            // 如果包含，则将该数据源下所有数据库的existed属性设置为false
             log.info(
-                    "Cluster not exist, set existed to false for all databases in this data source, data source id = {}",
-                    connectionId);
+                "Cluster not exist, set existed to false for all databases in this data source, data source id = {}",
+                connectionId);
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
             try {
+                // 执行删除SQL语句
                 jdbcTemplate.update(deleteSql, new Object[] {connectionId});
             } catch (Exception ex) {
+                // 如果删除失败，则记录警告日志
                 log.warn("Failed to delete databases when cluster not exist, errorMessage={}",
-                        ex.getLocalizedMessage());
+                    ex.getLocalizedMessage());
             }
         }
     }

@@ -448,15 +448,20 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
      * dealloc resource
      */
     public void dealloc() {
+        // 遍历每个实例节点
         forEachInstanceNode(nodeInstance -> {
             try {
+                // 释放节点实例的资源
                 nodeInstance.dealloc();
             } catch (Exception exception) {
+                // 记录日志，输出节点实例的ID和类型
                 log.warn("Node instance failed to release resources, nodeId={}, nodeType={}", nodeInstance.getId(),
-                        nodeInstance.getNodeType(), exception);
+                    nodeInstance.getNodeType(), exception);
+                // 抛出异常
                 throw exception;
             }
         });
+        // 记录日志，输出流程实例的ID
         log.info("Flow instance resources are released successfully, flowInstanceId={}", getId());
     }
 

@@ -134,26 +134,50 @@ public class SqlCheckService {
         return multipleSqlCheckResults;
     }
 
+    /**
+     * 检查 SQL 违规情况
+     *
+     * @param environmentId 环境 ID
+     * @param databaseName  数据库名称
+     * @param sqls          SQL 语句列表
+     * @param config        数据库连接配置
+     * @return 违规情况列表
+     */
     public List<CheckViolation> check(@NotNull Long environmentId, @NonNull String databaseName,
-            @NotNull List<OffsetString> sqls, @NotNull ConnectionConfig config) {
+        @NotNull List<OffsetString> sqls, @NotNull ConnectionConfig config) {
+        // 如果 SQL 语句列表为空，则直接返回空列表
         if (CollectionUtils.isEmpty(sqls)) {
             return Collections.emptyList();
         }
+        // 获取环境信息
         Environment env = this.environmentService.detail(environmentId);
+        // 获取规则列表
         List<Rule> rules = this.ruleService.list(env.getRulesetId(), QueryRuleMetadataParams.builder().build());
+        // 创建 OBConsole 数据源工厂
         OBConsoleDataSourceFactory factory = new OBConsoleDataSourceFactory(config, true, false);
+        // 重置数据源的模式
         factory.resetSchema(origin -> OBConsoleDataSourceFactory.getSchema(databaseName, config.getDialectType()));
+        // 创建 SQL 检查上下文
         SqlCheckContext checkContext = new SqlCheckContext((long) sqls.size());
         try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource()) {
+            // 创建 JdbcTemplate 对象
             JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+            // 获取 SQL 检查规则列表
             List<SqlCheckRule> checkRules = getRules(rules, config.getDialectType(), jdbc);
+            // 创建默认的 SQL 检查器
             DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
+            // 记录违规情况列表
             List<CheckViolation> checkViolations = new ArrayList<>();
+            // 遍历 SQL 语句列表，进行检查
             for (OffsetString sql : sqls) {
+                // 获取 SQL 语句的违规情况列表
                 List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
+                // 填充违规情况的风险级别
                 fullFillRiskLevel(rules, violations);
+                // 将违规情况添加到列表中
                 checkViolations.addAll(violations);
             }
+            // 返回违规情况列表
             return checkViolations;
         }
     }
