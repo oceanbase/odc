@@ -102,7 +102,7 @@ public class OmsSwapTableAction implements Action<OscActionContext, OscActionRes
                                         lastResult.getCheckFailedTime(), 25000);
                             });
             defaultRenameTableInvoker.invoke(taskParameters, parameters);
-            // rename table success, jump to clean resoruce state
+            // rename table success, jump to clean resource state
             return new OscActionResult(OscStates.SWAP_TABLE.getState(), null, OscStates.CLEAN_RESOURCE.getState());
         } finally {
             if (enableUserMonitor(parameters.getLockUsers())) {
