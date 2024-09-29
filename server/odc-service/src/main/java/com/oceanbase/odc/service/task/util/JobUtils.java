@@ -32,6 +32,7 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
+import com.oceanbase.odc.service.task.caller.JobEnvironmentEncryptor;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
@@ -132,14 +133,17 @@ public class JobUtils {
     public static ConnectionConfig getMetaDBConnectionConfig() {
         ConnectionConfig config = new ConnectionConfig();
         config.setHost(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_HOST));
-        String port = System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PORT);
-        config.setPort(port != null ? Integer.parseInt(port) : 8989);
+        config.setPort(Integer.parseInt(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PORT)));
         config.setDefaultSchema(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_NAME));
         config.setUsername(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_USERNAME));
         JasyptEncryptorConfigProperties properties = new AccessEnvironmentJasyptEncryptorConfigProperties();
         config.setPassword(new DefaultJasyptEncryptor(properties)
                 .decrypt(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD)));
         config.setType(ConnectType.OB_MYSQL);
+
+        log.info("get MetaDB configuration, config={}", config);
+
+        // TODO: avoid hardcode here
         config.setId(1L);
         return config;
     }
@@ -171,5 +175,17 @@ public class JobUtils {
         if (System.getenv(environmentKey) != null) {
             System.setProperty(environmentKey, System.getenv(environmentKey));
         }
+    }
+
+    public static void encryptEnvironments(Map<String, String> environments) {
+        new JobEnvironmentEncryptor().encrypt(environments);
+    }
+
+    public static String encrypt(String key, String salt, String raw) {
+        return new JobEnvironmentEncryptor().encrypt(key, salt, raw);
+    }
+
+    public static String decrypt(String key, String salt, String encrypted) {
+        return new JobEnvironmentEncryptor().decrypt(key, salt, encrypted);
     }
 }

@@ -27,6 +27,8 @@ public class JobEnvKeyConstants {
 
     public static final String ODC_JOB_CONTEXT = "ODC_JOB_CONTEXT";
 
+    public static final String ODC_JOB_CONTEXT_FILE_PATH = "ODC_JOB_CONTEXT_FILE_PATH";
+
     public static final String ODC_TASK_RUN_MODE = "ODC_TASK_RUN_MODE";
 
     public static final String ODC_BOOT_MODE = "ODC_BOOT_MODE";
@@ -65,6 +67,9 @@ public class JobEnvKeyConstants {
 
     public static final String ODC_PROPERTY_ENCRYPTION_ALGORITHM = "ODC_PROPERTY_ENCRYPTION_ALGORITHM";
 
+    /**
+     * TODO: it is encryption password, not salt, should be renamed to ODC_PROPERTY_ENCRYPTION_PASSWORD
+     */
     public static final String ODC_PROPERTY_ENCRYPTION_SALT = "ODC_PROPERTY_ENCRYPTION_SALT";
 
     public static final String ODC_PROPERTY_ENCRYPTION_PREFIX = "ODC_PROPERTY_ENCRYPTION_PREFIX";

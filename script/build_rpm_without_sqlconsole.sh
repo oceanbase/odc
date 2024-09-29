@@ -3,7 +3,13 @@
 # Usage: build_rpm_without_sqlconsole.sh <rpm_release:1>
 
 # read parameters
-rpm_release=${1:-"1"}
+rpm_release=${1:-""}
+if [ -z "$rpm_release" ]; then
+    rpm_release="$(date +%Y%m%d)"
+    echo "rpm release number not set in command line, use current date as default, rpm_release=${rpm_release}"
+fi
+shift
+mvn_extra_args=$@
 
 # read environment variables
 fetch_from_oss_flag=${FETCH_FROM_OSS:-"0"}
@@ -15,7 +21,10 @@ fi
 
 function build_rpm_without_sqlconsole() {
     log_info "maven build jar start"
-    if ! maven_build_jar; then
+    echo "mvn_extra_args:" "${mvn_extra_args[@]}"
+
+    maven_install_libs "${mvn_extra_args[@]}"
+    if ! maven_build_jar "${mvn_extra_args[@]}"; then
         log_error "maven build jar failed"
         return 4
     fi
@@ -36,7 +45,7 @@ function build_rpm_without_sqlconsole() {
     fi
 
     log_info "maven build rpm start"
-    if ! maven_build_rpm "${rpm_release}"; then
+    if ! maven_build_rpm "${rpm_release}" "${mvn_extra_args[@]}"; then
         log_error "maven build rpm failed"
         return 5
     fi

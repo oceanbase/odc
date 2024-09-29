@@ -22,7 +22,6 @@ import java.util.Properties;
 import org.pf4j.ExtensionPoint;
 
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
-import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
 import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
 import com.oceanbase.odc.plugin.connect.model.JdbcUrlProperty;
 

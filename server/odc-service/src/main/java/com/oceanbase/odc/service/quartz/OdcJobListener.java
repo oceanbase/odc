@@ -15,23 +15,26 @@
  */
 package com.oceanbase.odc.service.quartz;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.Set;
 
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.JobKey;
 import org.quartz.JobListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.iam.UserEntity;
+import com.oceanbase.odc.metadb.schedule.LatestTaskMappingEntity;
+import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
@@ -40,13 +43,10 @@ import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
-import com.oceanbase.odc.service.notification.Broker;
-import com.oceanbase.odc.service.notification.NotificationProperties;
-import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.flowtask.ScheduleTaskContextHolder;
-import com.oceanbase.odc.service.schedule.model.JobType;
-import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskType;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 
 import lombok.extern.slf4j.Slf4j;
@@ -70,13 +70,10 @@ public class OdcJobListener implements JobListener {
     @Autowired
     private HostProperties hostProperties;
     @Autowired
-    private Broker broker;
-    @Autowired
-    private EventBuilder eventBuilder;
-    @Autowired
-    private NotificationProperties notificationProperties;
-    @Autowired
-    private TaskFrameworkEnabledProperties taskFrameworkEnabledProperties;
+    private LatestTaskMappingRepository latestTaskMappingRepository;
+    @Value("${odc.iam.auth.type}")
+    protected Set<String> authType;
+
     private static final String ODC_JOB_LISTENER = "ODC_JOB_LISTENER";
 
     @Override
@@ -90,7 +87,8 @@ public class OdcJobListener implements JobListener {
     @Override
     public void jobToBeExecuted(JobExecutionContext context) {
         // todo skip osc task
-        if (Objects.equals(context.getJobDetail().getKey().getGroup(), JobType.ONLINE_SCHEMA_CHANGE_COMPLETE.name())) {
+        if (Objects.equals(context.getJobDetail().getKey().getGroup(),
+                ScheduleType.ONLINE_SCHEMA_CHANGE_COMPLETE.name())) {
             return;
         }
         // Init user.
@@ -98,41 +96,20 @@ public class OdcJobListener implements JobListener {
         ScheduleEntity scheduleEntity =
                 scheduleRepository.findById(scheduleId)
                         .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE, "id", scheduleId));
-        ScheduleTaskContextHolder.trace(scheduleEntity.getId(), scheduleEntity.getJobType().name(), null);
+        ScheduleTaskContextHolder.trace(scheduleEntity.getId(), scheduleEntity.getType().name(), null);
         log.info("Job to be executed.OrganizationId={},ProjectId={},DatabaseId={},JobType={}",
                 scheduleEntity.getOrganizationId(), scheduleEntity.getProjectId(), scheduleEntity.getDatabaseId(),
-                scheduleEntity.getJobType());
-        // For tasks that do not allow concurrent execution, if they can be successfully scheduled, it
-        // indicates that the existing tasks have exited. If there are still tasks in the processing state,
-        // then it is necessary to correct their status.
-        if (context.getJobDetail().isConcurrentExectionDisallowed() && scheduleEntity.getJobType().isSync()) {
-            List<ScheduleTaskEntity> toBeCorrectedList = taskRepository.findByJobNameAndStatusIn(
-                    scheduleId.toString(), TaskStatus.getProcessingStatus());
-            // For the scenario where the task framework is switched from closed to open, it is necessary to
-            // correct
-            // the status of tasks that were not completed while in the closed state.
-            if (taskFrameworkEnabledProperties.isEnabled()) {
-                toBeCorrectedList =
-                        toBeCorrectedList.stream().filter(o -> o.getJobId() == null).collect(Collectors.toList());
-            }
-            toBeCorrectedList.forEach(task -> {
-                taskRepository.updateStatusById(task.getId(), TaskStatus.CANCELED);
-                log.info("Task status correction successful,scheduleTaskId={}", task.getId());
-            });
-        }
-        // Ignore this schedule if scheduler has executing job.
-        if (taskFrameworkEnabledProperties.isEnabled() && scheduleEntity.getJobType().executeInTaskFramework()
-                && !scheduleEntity.getAllowConcurrent()
-                && !taskRepository.findByJobNameAndStatusIn(scheduleId.toString(), TaskStatus.getProcessingStatus())
-                        .isEmpty()) {
-            log.warn("Concurrent is not allowed for scheduler {}.", scheduleId);
-            return;
-        }
+                scheduleEntity.getType());
+
         UserEntity userEntity = userService.nullSafeGet(scheduleEntity.getCreatorId());
         userEntity.setOrganizationId(scheduleEntity.getOrganizationId());
         User taskCreator = new User(userEntity);
         SecurityContextUtils.setCurrentUser(taskCreator);
-
+        if (scheduleEntity.getType() == ScheduleType.PARTITION_PLAN
+                || (!authType.contains("obcloud") && scheduleEntity.getType() == ScheduleType.SQL_PLAN)) {
+            log.info("Skip preparing tasks for partition plan or sql plan,and create flow task later.");
+            return;
+        }
         // Create or load task.
         Long targetTaskId = ScheduleTaskUtils.getTargetTaskId(context);
         ScheduleTaskEntity entity;
@@ -142,8 +119,8 @@ public class OdcJobListener implements JobListener {
             log.info("Create new task from job,jobKey={}", key);
             entity.setJobName(key.getName());
             entity.setJobGroup(key.getGroup());
-            if (key.getGroup().equals(JobType.DATA_ARCHIVE_DELETE.name())
-                    || key.getGroup().equals(JobType.DATA_ARCHIVE_ROLLBACK.name())) {
+            if (key.getGroup().equals(ScheduleTaskType.DATA_ARCHIVE_DELETE.name())
+                    || key.getGroup().equals(ScheduleTaskType.DATA_ARCHIVE_ROLLBACK.name())) {
                 entity.setParametersJson(JsonUtils.toJson(context.getJobDetail().getJobDataMap()));
             } else {
                 entity.setParametersJson(scheduleEntity.getJobParametersJson());
@@ -151,10 +128,17 @@ public class OdcJobListener implements JobListener {
             entity.setStatus(TaskStatus.PREPARING);
             entity.setFireTime(context.getFireTime());
             entity = taskRepository.save(entity);
+            updateLatestTaskId(scheduleId, entity.getId());
         } else {
             log.info("Load an existing task,taskId={}", targetTaskId);
             entity = taskRepository.findById(targetTaskId).orElseThrow(() -> new NotFoundException(
                     ResourceType.ODC_SCHEDULE_TASK, "id", targetTaskId));
+            int affectRows =
+                    taskRepository.updateStatusById(entity.getId(), TaskStatus.PREPARING,
+                            TaskStatus.getRetryAllowedStatus());
+            if (affectRows < 1) {
+                throw new IllegalStateException(String.format("Task is running,taskId=%s", entity.getId()));
+            }
         }
         ScheduleTaskContextHolder.trace(scheduleEntity.getId(), entity.getJobGroup(), entity.getId());
         taskRepository.updateExecutor(entity.getId(), JsonUtils.toJson(new ExecutorInfo(hostProperties)));
@@ -170,21 +154,28 @@ public class OdcJobListener implements JobListener {
     @Override
     public void jobWasExecuted(JobExecutionContext context, JobExecutionException jobException) {
         ScheduleTaskContextHolder.clear();
-        Optional<ScheduleEntity> scheduleEntityOptional =
-                scheduleRepository.findById(ScheduleTaskUtils.getScheduleId(context));
-        if (notificationProperties.isEnabled() && scheduleEntityOptional.isPresent()) {
-            try {
-                ScheduleEntity scheduleEntity = scheduleEntityOptional.get();
-                if (jobException != null) {
-                    broker.enqueueEvent(eventBuilder.ofFailedTask(scheduleEntity));
-                } else if (!taskFrameworkEnabledProperties.isEnabled()
-                        && scheduleEntity.getJobType().executeInTaskFramework()) {
-                    // only create event for DLM jobs when task framework not enabled to avoid duplicate events
-                    broker.enqueueEvent(eventBuilder.ofSucceededTask(scheduleEntity));
+    }
+
+    private void updateLatestTaskId(Long scheduleId, Long scheduleTaskId) {
+        Optional<LatestTaskMappingEntity> optional = latestTaskMappingRepository.findByScheduleId(scheduleId);
+        LatestTaskMappingEntity entity;
+        if (optional.isPresent()) {
+            entity = optional.get();
+            // double check
+            if (entity.getLatestScheduleTaskId() != null) {
+                Optional<ScheduleTaskEntity> taskOptional = taskRepository.findById(entity.getLatestScheduleTaskId());
+                log.info("Found latest task,scheduleId={},taskId={},status={}", scheduleId, scheduleTaskId,
+                        taskOptional.isPresent() ? taskOptional.get().getStatus() : null);
+                if (taskOptional.isPresent() && !taskOptional.get().getStatus().isTerminated()) {
+                    throw new UnexpectedException("Concurrent is not allowed.");
                 }
-            } catch (Exception e) {
-                log.warn("Failed to enqueue event.", e);
             }
+        } else {
+            entity = new LatestTaskMappingEntity();
+            entity.setScheduleId(scheduleId);
         }
+        log.info("Update latest task from {} to {}", entity.getLatestScheduleTaskId(), scheduleTaskId);
+        entity.setLatestScheduleTaskId(scheduleTaskId);
+        latestTaskMappingRepository.save(entity);
     }
 }

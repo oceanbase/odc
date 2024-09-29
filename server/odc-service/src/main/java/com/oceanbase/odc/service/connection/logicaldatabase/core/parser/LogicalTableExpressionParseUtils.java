@@ -17,11 +17,16 @@ package com.oceanbase.odc.service.connection.logicaldatabase.core.parser;
 
 import static com.oceanbase.odc.core.shared.constant.ErrorCodes.LogicalTableExpressionNotPositiveStep;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
+import com.oceanbase.tools.sqlparser.SyntaxErrorException;
 
 /**
  * @Author: Lebie
@@ -29,6 +34,28 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
  * @Description: []
  */
 public class LogicalTableExpressionParseUtils {
+    private static final DefaultLogicalTableExpressionParser parser = new DefaultLogicalTableExpressionParser();
+
+    public static List<DataNode> resolve(String expression) {
+        PreConditions.notEmpty(expression, "expression");
+        LogicalTableExpressions logicalTableExpression;
+        try {
+            logicalTableExpression = (LogicalTableExpressions) parser.parse(new StringReader(expression));
+        } catch (SyntaxErrorException e) {
+            throw new BadLogicalTableExpressionException(e);
+        } catch (Exception e) {
+            throw new UnexpectedException("failed to parse logical table expression", e);
+        }
+        return logicalTableExpression.evaluate().stream().map(name -> {
+            String[] parts = name.split("\\.");
+            if (parts.length != 2) {
+                throw new UnexpectedException("invalid logical table expression");
+            }
+            return new DataNode(parts[0], parts[1]);
+        }).collect(Collectors.toList());
+    }
+
+
     public static List<String> listSteppedRanges(String start, String end, String step, String text)
             throws BadLogicalTableExpressionException {
         PreConditions.notEmpty(start, "start");
@@ -58,13 +85,12 @@ public class LogicalTableExpressionParseUtils {
                             .getEnglishMessage(new Object[] {text, startInt, endInt}));
         }
 
-        boolean includeLeadingZeros = start.length() > String.valueOf(startInt).length();
-
-        int leadingZerosCount = includeLeadingZeros ? start.length() - String.valueOf(startInt).length() : 0;
+        boolean includeLeadingZeros = start.startsWith("0") && start.length() > 1;
+        int maxLength = includeLeadingZeros ? start.length() : 0;
 
         List<String> result = new ArrayList<>();
         for (int i = startInt; i <= endInt; i += stepInt) {
-            String format = includeLeadingZeros ? "%0" + (leadingZerosCount + String.valueOf(i).length()) + "d" : "%d";
+            String format = includeLeadingZeros ? "%0" + maxLength + "d" : "%d";
             result.add(String.format(format, i));
         }
 

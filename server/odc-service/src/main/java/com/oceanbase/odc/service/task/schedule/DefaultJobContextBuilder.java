@@ -40,18 +40,23 @@ public class DefaultJobContextBuilder implements JobContextBuilder {
         jobContext.setJobIdentity(ji);
         jobContext.setJobClass(jd.getJobClass().getCanonicalName());
         jobContext.setJobParameters(jd.getJobParameters());
+        jobContext.setJobProperties(jd.getJobProperties());
         jobContext.setHostUrls(configuration.getHostUrlProvider().hostUrl());
         return jobContext;
     }
 
     @Override
-    public JobContext build(JobEntity jobEntity, HostUrlProvider hostUrlProvider) {
+    public JobContext build(JobEntity jobEntity) {
         DefaultJobContext jobContext = new DefaultJobContext();
         jobContext.setJobIdentity(JobIdentity.of(jobEntity.getId()));
         jobContext.setJobClass(jobEntity.getJobClass());
         jobContext.setJobParameters(JsonUtils.fromJson(jobEntity.getJobParametersJson(),
                 new TypeReference<Map<String, String>>() {}));
+        jobContext.setJobProperties(jobEntity.getJobProperties());
+
+        HostUrlProvider hostUrlProvider = JobConfigurationHolder.getJobConfiguration().getHostUrlProvider();
         jobContext.setHostUrls(hostUrlProvider.hostUrl());
         return jobContext;
     }
+
 }

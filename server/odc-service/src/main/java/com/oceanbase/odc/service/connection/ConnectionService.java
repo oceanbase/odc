@@ -107,6 +107,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.DatabaseSyncManager;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
 import com.oceanbase.odc.service.connection.ssl.ConnectionSSLAdaptor;
 import com.oceanbase.odc.service.connection.util.ConnectionIdList;
@@ -392,7 +393,8 @@ public class ConnectionService {
 
     @SkipAuthorize("odc internal usage")
     public List<ConnectionConfig> listByOrganizationId(@NonNull Long organizationId) {
-        return entitiesToModels(repository.findByOrganizationId(organizationId), organizationId, true, true);
+        return entitiesToModels(repository.findByOrganizationIdOrderByNameAsc(organizationId), organizationId, true,
+                true);
     }
 
     @SkipAuthorize("odc internal usage")
@@ -418,12 +420,31 @@ public class ConnectionService {
             resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public PaginatedData<ConnectionConfig> listByProjectId(@NotNull Long projectId, @NotNull Boolean basic) {
         List<ConnectionConfig> connections;
+        List<ConnectionEntity> entities = repository.findByDatabaseProjectId(projectId);
+        List<Long> environmentIds = entities.stream()
+                .map(ConnectionEntity::getEnvironmentId)
+                .distinct().collect(Collectors.toList());
+        Map<Long, Environment> environmentMap = environmentService.getByIdIn(environmentIds).stream()
+                .collect(Collectors.toMap(Environment::getId, environment -> environment));
         if (basic) {
-            connections = repository.findByDatabaseProjectId(projectId).stream().map(e -> {
+            connections = entities.stream().map(e -> {
                 ConnectionConfig c = new ConnectionConfig();
+                Environment environment = environmentMap.getOrDefault(e.getEnvironmentId(), null);
+                if (Objects.isNull(environment)) {
+                    throw new UnexpectedException("environment not found, id=" + e.getEnvironmentId());
+                }
                 c.setId(e.getId());
                 c.setName(e.getName());
                 c.setType(e.getType());
+
+                c.setHost(e.getHost());
+                c.setPort(e.getPort());
+                c.setUsername(e.getUsername());
+                c.setTenantName(e.getTenantName());
+                c.setClusterName(e.getClusterName());
+                c.setEnvironmentName(environment.getName());
+                c.setEnvironmentStyle(environment.getStyle());
+
                 return c;
             }).collect(Collectors.toList());
         } else {
@@ -698,7 +719,24 @@ public class ConnectionService {
     }
 
     @SkipAuthorize("odc internal usages")
-    public List<ConnectionConfig> innerListByIds(@NotEmpty Collection<Long> ids) {
+    public List<Long> innerListIdByOrganizationIdAndClusterId(@NonNull Long organizationId, String clusterId) {
+        return repository.findByOrganizationIdAndClusterName(organizationId, clusterId).stream()
+                .map(ConnectionEntity::getId)
+                .collect(Collectors.toList());
+    }
+
+    @SkipAuthorize("odc internal usages")
+    public List<Long> innerListIdByOrganizationIdAndTenantId(@NonNull Long organizationId, String tenantId) {
+        return repository.findByOrganizationIdAndTenantName(organizationId, tenantId).stream()
+                .map(ConnectionEntity::getId)
+                .collect(Collectors.toList());
+    }
+
+    @SkipAuthorize("odc internal usages")
+    public List<ConnectionConfig> innerListByIds(Collection<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
         return repository.findByIdIn(ids).stream().map(mapper::entityToModel).collect(Collectors.toList());
     }
 
@@ -708,6 +746,14 @@ public class ConnectionService {
         adaptConnectionConfig(connection);
         return connection;
     }
+
+    @SkipAuthorize("internal usage")
+    public ConnectionConfig getDecryptedConfig(@NotNull Long id) {
+        ConnectionConfig connection = internalGetSkipUserCheck(id, false, false);
+        connectionEncryption.decryptPasswords(connection);
+        return connection;
+    }
+
 
     @SkipAuthorize("internal usage")
     public List<ConnectionConfig> listForConnectionSkipPermissionCheck(@NotNull Collection<Long> ids) {
@@ -1043,6 +1089,13 @@ public class ConnectionService {
         // Adapter should be called after decrypting passwords.
         environmentAdapter.adaptConfig(connection);
         connectionSSLAdaptor.adapt(connection);
+        OBTenantEndpoint endpoint = connection.getEndpoint();
+        if (Objects.nonNull(endpoint)) {
+            if (StringUtils.isNotBlank(endpoint.getVirtualHost()) && Objects.nonNull(endpoint.getVirtualPort())) {
+                connection.setHost(endpoint.getVirtualHost());
+                connection.setPort(endpoint.getVirtualPort());
+            }
+        }
     }
 
 }

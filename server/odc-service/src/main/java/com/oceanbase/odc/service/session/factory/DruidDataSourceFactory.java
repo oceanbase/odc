@@ -30,7 +30,7 @@ import com.alibaba.druid.pool.DruidDataSource;
 import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.datasource.DataSourceFactory;
-import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
+import com.oceanbase.odc.plugin.connect.api.JdbcUrlParser;
 import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
@@ -77,8 +77,9 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
 
     private void init(DruidDataSource dataSource) {
         String validationQuery =
-                getConnectType().getDialectType().isMysql() || getConnectType().getDialectType().isDoris() ? "select 1"
-                        : "select 1 from dual";
+                getConnectType().getDialectType().isMysql() || getConnectType().getDialectType().isDoris()
+                        || getConnectType().getDialectType().isPostgreSql() ? "select 1"
+                                : "select 1 from dual";
         dataSource.setValidationQuery(validationQuery);
         dataSource.setTestWhileIdle(true);
         dataSource.setTimeBetweenEvictionRunsMillis(30000);

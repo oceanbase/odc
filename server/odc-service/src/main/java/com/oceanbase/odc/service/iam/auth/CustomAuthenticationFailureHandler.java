@@ -43,6 +43,7 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.exception.AttemptLoginOverLimitException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
 import com.oceanbase.odc.metadb.iam.LoginHistoryEntity.FailedReason;
@@ -104,7 +105,8 @@ public class CustomAuthenticationFailureHandler implements AuthenticationFailure
             cause = cause.getCause();
         }
         if (cause instanceof TestLoginTerminateException) {
-            String redirectUrl = httpServletRequest.getParameter(ODC_BACK_URL_PARAM);
+            String redirectUrl = WebRequestUtils.getStringValueFromParameterOrAttribute(httpServletRequest,
+                    OdcConstants.ODC_BACK_URL_PARAM);
             if (redirectUrl != null) {
                 httpServletResponse.sendRedirect(redirectUrl);
             }

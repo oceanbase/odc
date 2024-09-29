@@ -34,10 +34,7 @@ import lombok.NonNull;
  * @since 4.2.4
  */
 public class JobEnvironmentEncryptor {
-
-    private final AtomicBoolean ENCRYPTED = new AtomicBoolean(false);
-
-    private final List<String> sensitiveKeys = Arrays.asList(
+    private static final List<String> sensitiveKeys = Arrays.asList(
             JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_HOST,
             JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PORT,
             JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_NAME,
@@ -45,7 +42,10 @@ public class JobEnvironmentEncryptor {
             JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD,
             JobEnvKeyConstants.ODC_OBJECT_STORAGE_CONFIGURATION,
             JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_SALT,
+            JobEnvKeyConstants.ODC_JOB_CONTEXT_FILE_PATH,
             JobEnvKeyConstants.ODC_JOB_CONTEXT);
+
+    private final AtomicBoolean encrypted = new AtomicBoolean(false);
 
 
     /**
@@ -54,7 +54,7 @@ public class JobEnvironmentEncryptor {
      * @param environments all environments be passed to task executor
      */
     public void encrypt(@NonNull Map<String, String> environments) {
-        if (ENCRYPTED.compareAndSet(false, true)) {
+        if (encrypted.compareAndSet(false, true)) {
             String key = PasswordUtils.random(32);
             String salt = PasswordUtils.random(8);
             TextEncryptor textEncryptor = Encryptors.aesBase64(key, salt);
@@ -86,5 +86,13 @@ public class JobEnvironmentEncryptor {
         });
     }
 
+    public String encrypt(String key, String salt, String raw) {
+        TextEncryptor textEncryptor = Encryptors.aesBase64(key, salt);
+        return textEncryptor.encrypt(raw);
+    }
 
+    public String decrypt(String key, String salt, String encrypted) {
+        TextEncryptor textEncryptor = Encryptors.aesBase64(key, salt);
+        return textEncryptor.decrypt(encrypted);
+    }
 }

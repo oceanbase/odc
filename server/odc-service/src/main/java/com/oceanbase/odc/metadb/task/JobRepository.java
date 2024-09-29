@@ -39,13 +39,30 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
 
     @Transactional
     @Query(value = "update job_job set "
-            + " executor_endpoint=:#{#param.executorEndpoint},status=:#{#param.status.name()},"
+            + " executor_endpoint=:executorEndpoint "
+            + " where id=:id and status =:#{#oldStatus.name()}", nativeQuery = true)
+    @Modifying
+    int updateExecutorEndpoint(@Param("id") Long id, @Param("executorEndpoint") String executorEndpoint,
+            @Param("oldStatus") JobStatus oldStatus);
+
+    @Transactional
+    @Query(value = "update job_job set "
+            + " status=:#{#param.status.name()},"
             + " progress_percentage=:#{#param.progressPercentage},result_json=:#{#param.resultJson},"
             + " finished_time=:#{#param.finishedTime},last_report_time=:#{#param.lastReportTime}"
             + " where id=:id and status =:#{#oldStatus.name()}", nativeQuery = true)
     @Modifying
     int updateReportResult(@Param("param") JobEntity entity, @Param("id") Long id,
             @Param("oldStatus") JobStatus oldStatus);
+
+    /**
+     * update lastHeartTime and lastReportTime only, for task result no progress scenario
+     */
+    @Transactional
+    @Query(value = "update job_job set last_heart_time= CURRENT_TIMESTAMP "
+            + " where id=:id and status =:#{#oldStatus.name()}", nativeQuery = true)
+    @Modifying
+    int updateHeartbeatTime(@Param("id") Long id, @Param("oldStatus") JobStatus oldStatus);
 
     @Transactional
     @Query("update JobEntity set "

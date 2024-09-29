@@ -23,6 +23,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
@@ -116,6 +117,12 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
      */
     private UserRole userRole;
 
+    /**
+     * PostgreSQL 连接方式特有的参数，该参数表示一个数据库
+     */
+    @JsonAlias({"catalogName", "databaseName"})
+    private String catalogName;
+
     @JsonIgnore
     private transient OBTenantEndpoint endpoint;
 
@@ -141,6 +148,8 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
     @JsonIgnore
     private OBInstanceRoleType instanceRoleType;
 
+    private Map<String, Object> attributes;
+
     public DialectType getDialectType() {
         if (Objects.nonNull(this.type)) {
             return this.type.getDialectType();
@@ -160,6 +169,7 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
         req.setPort(connection.getPort());
         req.setClusterName(connection.getClusterName());
         req.setDefaultSchema(connection.getDefaultSchema());
+        req.setAttributes(connection.getAttributes());
         if (accountType == ConnectionAccountType.MAIN) {
             req.setTenantName(connection.getTenantName());
             req.setUsername(connection.getUsername());
@@ -179,6 +189,7 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
         req.setSid(connection.getSid());
         req.setServiceName(connection.getServiceName());
         req.setUserRole(connection.getUserRole());
+        req.setCatalogName(connection.getCatalogName());
         req.setSessionInitScript(connection.getSessionInitScript());
         req.setJdbcUrlParameters(connection.getJdbcUrlParameters());
         return req;

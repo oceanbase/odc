@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.oceanbase</groupId>
         <artifactId>odc-parent</artifactId>
-        <version>4.3.1-SNAPSHOT</version>
+        <version>4.3.2-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <packaging>pom</packaging>
@@ -19,12 +19,14 @@
         <module>connect-plugin-mysql</module>
         <module>connect-plugin-doris</module>
         <module>connect-plugin-oracle</module>
+        <module>connect-plugin-postgres</module>
         <module>schema-plugin-api</module>
         <module>schema-plugin-ob-mysql</module>
         <module>schema-plugin-ob-oracle</module>
         <module>schema-plugin-mysql</module>
         <module>schema-plugin-doris</module>
         <module>schema-plugin-oracle</module>
+        <module>schema-plugin-postgres</module>
         <module>schema-plugin-odp-sharding-ob-mysql</module>
         <module>task-plugin-api</module>
         <module>task-plugin-mysql</module>
@@ -89,6 +91,12 @@
             </dependency>
             <dependency>
                 <groupId>com.oceanbase</groupId>
+                <artifactId>connect-plugin-postgres</artifactId>
+                <version>${project.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.oceanbase</groupId>
                 <artifactId>task-plugin-ob-mysql</artifactId>
                 <version>${project.version}</version>
                 <scope>provided</scope>
@@ -102,6 +110,12 @@
             <dependency>
                 <groupId>com.oceanbase</groupId>
                 <artifactId>task-plugin-doris</artifactId>
+                <version>${project.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.oceanbase</groupId>
+                <artifactId>task-plugin-postgres</artifactId>
                 <version>${project.version}</version>
                 <scope>provided</scope>
             </dependency>
@@ -126,6 +140,12 @@
             <dependency>
                 <groupId>com.oceanbase</groupId>
                 <artifactId>schema-plugin-oracle</artifactId>
+                <version>${project.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.oceanbase</groupId>
+                <artifactId>schema-plugin-postgres</artifactId>
                 <version>${project.version}</version>
                 <scope>provided</scope>
             </dependency>

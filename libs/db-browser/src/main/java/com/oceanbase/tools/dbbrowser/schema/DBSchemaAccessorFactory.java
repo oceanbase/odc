@@ -38,6 +38,7 @@ import com.oceanbase.tools.dbbrowser.schema.oracle.OBOracleLessThan2270SchemaAcc
 import com.oceanbase.tools.dbbrowser.schema.oracle.OBOracleLessThan400SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.oracle.OBOracleSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.oracle.OracleSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.schema.postgre.PostgresSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.util.ALLDataDictTableNames;
 import com.oceanbase.tools.dbbrowser.util.VersionUtils;
 
@@ -137,6 +138,11 @@ public class DBSchemaAccessorFactory extends AbstractDBBrowserFactory<DBSchemaAc
         } else {
             throw new UnsupportedOperationException(String.format("Doris version '%s' not supported", this.dbVersion));
         }
+    }
+
+    @Override
+    public DBSchemaAccessor buildForPostgres() {
+        return new PostgresSchemaAccessor(getJdbcOperations());
     }
 
     private JdbcOperations getJdbcOperations() {

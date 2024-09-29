@@ -45,18 +45,22 @@ public interface TableMappingRepository extends OdcJpaRepository<TableMappingEnt
         String sql = InsertSqlTemplateBuilder.from("database_table_mapping")
                 .field(TableMappingEntity_.logicalTableId)
                 .field(TableMappingEntity_.physicalDatabaseId)
+                .field(TableMappingEntity_.physicalDatabaseName)
                 .field(TableMappingEntity_.physicalTableName)
                 .field(TableMappingEntity_.expression)
-                .field(TableMappingEntity_.consistent)
+                .field("is_consistent")
                 .field(TableMappingEntity_.organizationId)
+                .field(TableMappingEntity_.physicalTableId)
                 .build();
         List<Function<TableMappingEntity, Object>> getter = valueGetterBuilder()
                 .add(TableMappingEntity::getLogicalTableId)
                 .add(TableMappingEntity::getPhysicalDatabaseId)
+                .add(TableMappingEntity::getPhysicalDatabaseName)
                 .add(TableMappingEntity::getPhysicalTableName)
                 .add(TableMappingEntity::getExpression)
                 .add(TableMappingEntity::getConsistent)
                 .add(TableMappingEntity::getOrganizationId)
+                .add(TableMappingEntity::getPhysicalTableId)
                 .build();
         return batchCreate(entities, sql, getter, TableMappingEntity::setId, 200);
     }

@@ -32,10 +32,11 @@ import lombok.Data;
 @Builder
 public class QueryScheduleParams {
 
-    private List<Long> connectionIds;
+    private Set<Long> dataSourceIds;
     private Long id;
+    private String name;
     private List<ScheduleStatus> statuses;
-    private JobType type;
+    private ScheduleType type;
     private Date startTime;
     private Date endTime;
     private String creator;
@@ -43,5 +44,8 @@ public class QueryScheduleParams {
     private Long projectId;
     private Set<Long> projectIds;
     private Long organizationId;
+    private String databaseName;
+    private String tenantId;
+    private String clusterId;
 
 }

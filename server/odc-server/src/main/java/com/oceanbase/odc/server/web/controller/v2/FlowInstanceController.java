@@ -59,6 +59,7 @@ import com.oceanbase.odc.service.flow.util.TaskLogFilenameGenerator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
+import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
@@ -84,10 +85,15 @@ public class FlowInstanceController {
     private AuthenticationFacade authenticationFacade;
     @Autowired
     private PartitionPlanScheduleService partitionPlanScheduleService;
+    @Autowired
+    private ScheduleService scheduleService;
 
     @ApiOperation(value = "createFlowInstance", notes = "创建流程实例，返回流程实例")
     @RequestMapping(value = "/", method = RequestMethod.POST)
     public ListResponse<FlowInstanceDetailResp> createFlowInstance(@RequestBody CreateFlowInstanceReq flowInstanceReq) {
+        if (flowInstanceReq.getTaskType() == TaskType.ALTER_SCHEDULE) {
+            return Responses.list(scheduleService.dispatchCreateSchedule(flowInstanceReq));
+        }
         flowInstanceReq.validate();
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             return Responses.list(flowInstanceService.createIndividualFlowInstance(flowInstanceReq));
@@ -173,16 +179,15 @@ public class FlowInstanceController {
     @RequestMapping(value = "/{id:[\\d]+}/tasks/log", method = RequestMethod.GET)
     public SuccessResponse<String> getLog(@PathVariable Long id, @RequestParam OdcTaskLogLevel logType)
             throws IOException {
-        return Responses.single(flowTaskInstanceService.getLog(id, logType, false));
+        return Responses.single(flowTaskInstanceService.getLog(id, logType));
     }
 
     @ApiOperation(value = "downloadLog", notes = "下载任务完整日志")
     @RequestMapping(value = "/{id:[\\d]+}/tasks/log/download", method = RequestMethod.GET)
     public ResponseEntity<InputStreamResource> downloadLog(@PathVariable Long id) throws IOException {
-        List<BinaryDataResult> results = flowTaskInstanceService.downloadLog(id);
-        PreConditions.validExists(ResourceType.ODC_FILE, "id", id, () -> CollectionUtils.isNotEmpty(results));
         return WebResponseUtils.getFileAttachmentResponseEntity(
-                new InputStreamResource(results.get(0).getInputStream()), TaskLogFilenameGenerator.generate(id));
+                flowTaskInstanceService.downloadLog(id),
+                TaskLogFilenameGenerator.generate(id));
     }
 
     @ApiOperation(value = "getMetaInfo", notes = "获取流程相关的一些元数据信息，包括待审批数量等")

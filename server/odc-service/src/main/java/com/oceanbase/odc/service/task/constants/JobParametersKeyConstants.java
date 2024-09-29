@@ -30,6 +30,8 @@ public class JobParametersKeyConstants {
 
     public static final String META_TASK_PARAMETER_JSON = "metaTaskParameterJson";
 
+    public static final String DLM_RATE_LIMIT_CONFIG = "dlmRateLimitConfig";
+
     public static final String FLOW_INSTANCE_ID = "flowInstanceId";
 
     public static final String CURRENT_SCHEMA = ConnectionSessionConstants.CURRENT_SCHEMA_KEY;
@@ -41,5 +43,9 @@ public class JobParametersKeyConstants {
     public static final String TASK_EXECUTION_TIMEOUT_MILLIS = RuntimeTaskConstants.TIMEOUT_MILLI_SECONDS;
 
     public static final String TASK_PARAMETER_JSON_KEY = "taskParameterJson";
+
+    public static final String LOGICAL_DATABASE_CHANGE_TERMINATE_UNIT = "logicalDatabaseChangeUnitTermination";
+
+    public static final String LOGICAL_DATABASE_CHANGE_SKIP_UNIT = "logicalDatabaseChangeUnitSkip";
 
 }

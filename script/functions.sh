@@ -287,7 +287,8 @@ function maven_build_jar() {
     pushd "${ODC_DIR}" || return 1
 
     func_echo "maven build jar package starting..."
-    mvn help:system
+    func_echo "maven_extra_args: ${maven_extra_args[@]}"
+    mvn help:system ${maven_extra_args[@]}
     if ! mvn clean install -Dmaven.test.skip=true ${maven_extra_args[@]}; then
         func_echo "maven build jar ${maven_extra_args[@]} failed"
         popd
@@ -298,6 +299,21 @@ function maven_build_jar() {
     popd
     return 0
 }
+function build_module() {
+    local module=$1
+    shift
+    local maven_extra_args=$@
+    pushd "$module" || return 2
+    func_echo "start install lib $module"
+    if ! mvn clean install -Dmaven.test.skip=true ${maven_extra_args[@]}; then
+        func_echo "maven install lib $module with args ${maven_extra_args[@]} failed"
+        popd
+        return 1
+    else
+        func_echo "maven install lib $module with args ${maven_extra_args[@]} succeed"
+    fi
+    popd
+}
 
 # local install libs
 function maven_install_libs() {
@@ -306,21 +322,32 @@ function maven_install_libs() {
 
     func_echo "maven install libs ..."
 
-    for module_name in *; do
-        if [ -d "$module_name" ]; then
-            pushd "$module_name" || return 2
-            func_echo "start install lib $module_name"
-            if ! mvn clean install -Dmaven.test.skip=true ${maven_extra_args[@]}; then
-                func_echo "maven install lib $module_name with args ${maven_extra_args[@]} failed"
-            else
-                func_echo "maven install lib $module_name with args ${maven_extra_args[@]} succeed"
-            fi
-            popd
-        fi
-    done
+# need to build ob-sql-parser firstly
+    build_module "ob-sql-parser" "${maven_extra_args[@]}" || return 2
+    build_module "db-browser" "${maven_extra_args[@]}" || return 2
 
-    func_echo "maven install libs with args ${maven_extra_args[@]} succeed"
     popd
+    pushd "${ODC_DIR}/import" || return 1
+
+    func_echo "start install lib pty4j-0.11.4.jar"
+
+    if ! mvn install:install-file -Dfile=./pty4j-0.11.4.jar -DgroupId=org.jetbrains.pty4j -DartifactId=pty4j -Dversion=0.11.4 -Dpackaging=jar ${maven_extra_args[@]}; then
+        func_echo "maven install lib pty4j-0.11.4.jar failed"
+    else
+        func_echo "maven install lib pty4j-0.11.4.jar succeed"
+    fi
+
+    func_echo "start install lib purejavacomm-0.0.11.1.jar"
+
+    if ! mvn install:install-file -Dfile=./purejavacomm-0.0.11.1.jar -DgroupId=org.jetbrains.pty4j -DartifactId=purejavacomm -Dversion=0.0.11.1 -Dpackaging=jar ${maven_extra_args[@]}; then
+        func_echo "maven install lib purejavacomm-0.0.11.1.jar failed"
+    else
+        func_echo "maven install lib purejavacomm-0.0.11.1.jar succeed"
+    fi
+
+    popd
+    func_echo "maven install libs with args ${maven_extra_args[@]} succeed"
+
     return 0
 }
 
@@ -360,6 +387,8 @@ function copy_obclient() {
 
 function maven_build_rpm() {
     local rpm_release=$1
+    shift
+    local mvn_extra_args=$@
     if [ -z "$rpm_release" ]; then
         echo "Usage: maven_build_rpm <rpm_release>"
         return 1
@@ -368,7 +397,7 @@ function maven_build_rpm() {
     pushd "${ODC_DIR}" || return 2
 
     func_echo "maven build rpm package starting..."
-    if ! mvn --file server/odc-server/pom.xml rpm:rpm \
+    if ! mvn ${mvn_extra_args[@]} --file server/odc-server/pom.xml rpm:rpm \
         -Drpm.prefix=${RPM_DEFAULT_INSTALL_PREFIX} \
         -Drpm.release=${rpm_release}; then
         func_echo "maven build rpm failed"
@@ -386,6 +415,7 @@ function copy_rpm_resources() {
     rm -vf ${ODC_DIR}/distribution/docker/resources/odc-*.rpm
     mkdir -p ${ODC_DIR}/distribution/docker/resources/
     mv --verbose ${ODC_DIR}/server/odc-server/target/rpm/odc-server/RPMS/*/odc-*.rpm ${ODC_DIR}/distribution/docker/resources/
+    func_echo "odc server rpm package(s) copied to $(pwd)"
     return $?
 }
 

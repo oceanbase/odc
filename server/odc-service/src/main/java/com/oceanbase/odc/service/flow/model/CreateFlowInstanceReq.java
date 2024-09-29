@@ -42,6 +42,7 @@ import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
+import com.oceanbase.odc.service.schedule.model.LogicalDatabaseChangeParameters;
 
 import lombok.Data;
 
@@ -102,7 +103,8 @@ public class CreateFlowInstanceReq {
             @JsonSubTypes.Type(value = ApplyProjectParameter.class, name = "APPLY_PROJECT_PERMISSION"),
             @JsonSubTypes.Type(value = ApplyDatabaseParameter.class, name = "APPLY_DATABASE_PERMISSION"),
             @JsonSubTypes.Type(value = ApplyTableParameter.class, name = "APPLY_TABLE_PERMISSION"),
-            @JsonSubTypes.Type(value = DBStructureComparisonParameter.class, name = "STRUCTURE_COMPARISON")
+            @JsonSubTypes.Type(value = DBStructureComparisonParameter.class, name = "STRUCTURE_COMPARISON"),
+            @JsonSubTypes.Type(value = LogicalDatabaseChangeParameters.class, name = "LOGICAL_DATABASE_CHANGE")
     })
     private TaskParameters parameters;
 

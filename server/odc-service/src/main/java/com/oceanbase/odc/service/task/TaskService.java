@@ -75,7 +75,7 @@ public class TaskService {
     private AuthenticationFacade authenticationFacade;
 
     @Autowired
-    private HostProperties properties;
+    private HostProperties hostProperties;
 
     private static String logFilePrefix;
     private static final String MULTIPLE_ASYNC_LOG_PATH_PATTERN = "%s/multiple-async/%s/multiple-async.%s";
@@ -118,7 +118,7 @@ public class TaskService {
         taskEntity.setDescription(req.getDescription());
         taskEntity.setParametersJson(JsonUtils.toJson(req.getParameters()));
 
-        String currentExecutor = JsonUtils.toJson(new ExecutorInfo(properties));
+        String currentExecutor = JsonUtils.toJson(new ExecutorInfo(hostProperties));
         taskEntity.setSubmitter(currentExecutor);
         taskEntity.setExecutor(currentExecutor);
         taskEntity.setStatus(TaskStatus.PREPARING);
@@ -204,8 +204,7 @@ public class TaskService {
         }
     }
 
-    public File getLogFile(Long userId, String taskId, TaskType type, OdcTaskLogLevel logLevel)
-            throws NotFoundException {
+    public String getLogFilePath(Long userId, String taskId, TaskType type, OdcTaskLogLevel logLevel) {
         String filePath;
         switch (type) {
             case MULTIPLE_ASYNC:
@@ -265,11 +264,20 @@ public class TaskService {
                 throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
                         "Unsupported task type: " + type);
         }
+        return filePath;
+    }
+
+    public File getLogFile(String filePath) throws NotFoundException {
         File logFile = new File(filePath);
         if (!logFile.exists()) {
             throw new NotFoundException(ResourceType.ODC_FILE, "Path", filePath);
         }
         return logFile;
+    }
+
+    public File getLogFile(Long userId, String taskId, TaskType type, OdcTaskLogLevel logLevel)
+            throws NotFoundException {
+        return getLogFile(getLogFilePath(userId, taskId, type, logLevel));
     }
 
     @Transactional(rollbackFor = Exception.class)

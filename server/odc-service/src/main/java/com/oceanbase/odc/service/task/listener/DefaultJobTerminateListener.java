@@ -17,8 +17,8 @@
 package com.oceanbase.odc.service.task.listener;
 
 import java.util.Map;
-import java.util.Optional;
 
+import org.eclipse.jgit.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -26,16 +26,17 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.metadb.task.TaskEntity;
-import com.oceanbase.odc.metadb.task.TaskRepository;
+import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseService;
 import com.oceanbase.odc.service.dlm.DLMService;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
+import com.oceanbase.odc.service.schedule.alarm.ScheduleAlarmUtils;
 import com.oceanbase.odc.service.schedule.job.DLMJobReq;
+import com.oceanbase.odc.service.schedule.model.PublishLogicalDatabaseChangeReq;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.tools.migrator.common.enums.JobType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,44 +56,57 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
     @Autowired
     private ScheduleService scheduleService;
     @Autowired
-    private ScheduleTaskRepository scheduleTaskRepository;
-    @Autowired
-    private TaskRepository taskRepository;
-    @Autowired
     private DLMService dlmService;
+    @Autowired
+    private LogicalDatabaseService logicalDatabaseService;
 
     @Override
     public void onEvent(JobTerminateEvent event) {
         JobEntity jobEntity = taskFrameworkService.find(event.getJi().getId());
-        if ("DLM".equals(jobEntity.getJobType())) {
-            scheduleTaskService.findByJobId(jobEntity.getId()).ifPresent(o -> {
-                TaskStatus taskStatus = dlmService.getTaskStatus(o.getId());
-                scheduleTaskRepository.updateStatusById(o.getId(), taskStatus);
-                log.info("Update schedule task status to {} succeed,scheduleTaskId={}", taskStatus, o.getId());
+        scheduleTaskService.findByJobId(jobEntity.getId()).ifPresent(o -> {
+            TaskStatus taskStatus = "DLM".equals(jobEntity.getJobType()) ? dlmService.getFinalTaskStatus(o.getId())
+                    : event.getStatus().convertTaskStatus();
+            scheduleTaskService.updateStatusById(o.getId(), taskStatus);
+            log.info("Update schedule task status to {} succeed,scheduleTaskId={}", taskStatus, o.getId());
+            // Refresh the schedule status after the task is completed.
+            scheduleService.refreshScheduleStatus(Long.parseLong(o.getJobName()));
+            // Trigger the alarm if the task is failed or canceled.
+            if (taskStatus == TaskStatus.FAILED) {
+                ScheduleAlarmUtils.fail(o.getId());
+            }
+            if (taskStatus == TaskStatus.CANCELED) {
+                ScheduleAlarmUtils.timeout(o.getId());
+            }
+            // Trigger the data-delete job if necessary after the data-archive task is completed.
+            if ("DLM".equals(jobEntity.getJobType())) {
                 DLMJobReq parameters = JsonUtils.fromJson(
                         JsonUtils
                                 .fromJson(jobEntity.getJobParametersJson(), new TypeReference<Map<String, String>>() {})
                                 .get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
                         DLMJobReq.class);
-                scheduleService.refreshScheduleStatus(Long.parseLong(o.getJobName()));
-                // Trigger the data-delete job if necessary after the data-archive task is completed.
-                if (parameters.getJobType() == com.oceanbase.tools.migrator.common.enums.JobType.MIGRATE
-                        && parameters.isDeleteAfterMigration() && taskStatus == TaskStatus.DONE) {
-                    scheduleService.dataArchiveDelete(Long.parseLong(o.getJobName()), o.getId());
+                if (parameters.getJobType() == JobType.MIGRATE && parameters.isDeleteAfterMigration()
+                        && taskStatus == TaskStatus.DONE) {
+                    scheduleTaskService.triggerDataArchiveDelete(o.getId());
                     log.info("Trigger delete job succeed.");
                 }
-            });
-            return;
-        }
-        // update status for task_task.
-        Optional<TaskEntity> taskEntity = taskRepository.findByJobId(jobEntity.getId());
-        if (taskEntity.isPresent() && !taskEntity.get().getStatus().isTerminated()) {
-            int row = taskRepository.updateStatusById(taskEntity.get().getId(),
-                    event.getStatus().convertTaskStatus());
-            if (row >= 1) {
-                log.info("Update taskTask successfully, taskId={}, status={}.", taskEntity.get().getId(),
-                        event.getStatus().convertTaskStatus());
+            } else if (StringUtils.equalsIgnoreCase("LogicalDatabaseChange", jobEntity.getJobType())) {
+                try {
+                    PublishLogicalDatabaseChangeReq req = JsonUtils.fromJson(JsonUtils
+                            .fromJson(jobEntity.getJobParametersJson(),
+                                    new TypeReference<Map<String, String>>() {})
+                            .get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
+                            PublishLogicalDatabaseChangeReq.class);
+                    if (req != null && req.getLogicalDatabaseResp() != null) {
+                        logicalDatabaseService.extractLogicalTablesSkipAuth(req.getLogicalDatabaseResp().getId(),
+                                req.getCreatorId());
+                        log.info("Submit the extract logical tables task succeed, logicalDatabaseId={}, jobId={}",
+                                req.getLogicalDatabaseResp().getId(), jobEntity.getId());
+                    }
+                } catch (Exception ex) {
+                    log.warn("Failed to submit the extract logical tables task, ex=", ex);
+                }
+
             }
-        }
+        });
     }
 }

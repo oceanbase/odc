@@ -47,6 +47,6 @@ public interface JobDefinition {
     /**
      * job properties for job scheduler
      */
-    SingleJobProperties getJobProperties();
+    Map<String, String> getJobProperties();
 
 }

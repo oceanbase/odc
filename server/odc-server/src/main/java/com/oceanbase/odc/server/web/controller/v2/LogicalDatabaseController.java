@@ -20,14 +20,21 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseService;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalTableService;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.CreateLogicalDatabaseReq;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalTableResp;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTableTopologyResp;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.PreviewSqlReq;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.PreviewSqlResp;
 
 /**
  * @Author: Lebie
@@ -43,38 +50,68 @@ public class LogicalDatabaseController {
     @Autowired
     private LogicalTableService tableService;
 
-    @RequestMapping(value = "/logicaldatabases", method = RequestMethod.POST)
-    public SuccessResponse<Boolean> create(@RequestBody CreateLogicalDatabaseReq req) {
+    @RequestMapping(value = "/logicalDatabases", method = RequestMethod.POST)
+    public SuccessResponse<Database> create(@RequestBody CreateLogicalDatabaseReq req) {
         return Responses.success(databaseService.create(req));
     }
 
-    @RequestMapping(value = "/logicaldatabases/{id:[\\d]+}", method = RequestMethod.GET)
+    @RequestMapping(value = "/logicalDatabases/{id:[\\d]+}", method = RequestMethod.GET)
     public SuccessResponse<DetailLogicalDatabaseResp> detail(@PathVariable Long id) {
         return Responses.success(databaseService.detail(id));
     }
 
-    @RequestMapping(value = "/logicaldatabases/{id:[\\d]+}", method = RequestMethod.DELETE)
+    @RequestMapping(
+            value = "/logicalDatabases/{logicalDatabaseId:[\\d]+}/logicalTables/{logicalTableId:[\\d]+}",
+            method = RequestMethod.GET)
+    public SuccessResponse<DetailLogicalTableResp> detailLogicalTable(@PathVariable Long logicalDatabaseId,
+            @PathVariable Long logicalTableId) {
+        return Responses.success(tableService.detail(logicalDatabaseId, logicalTableId));
+    }
+
+    @RequestMapping(
+            value = "/logicalDatabases/{logicalDatabaseId:[\\d]+}/previewLogicalTableTopologies",
+            method = RequestMethod.POST)
+    public ListResponse<LogicalTableTopologyResp> previewLogicalTableTopologies(@PathVariable Long logicalDatabaseId,
+            @RequestParam(name = "expression") String expression) {
+        return Responses.list(tableService.previewLogicalTableTopologies(logicalDatabaseId, expression));
+    }
+
+    @RequestMapping(
+            value = "/logicalDatabases/{logicalDatabaseId:[\\d]+}/logicalTables/{logicalTableId:[\\d]+}/topologies",
+            method = RequestMethod.GET)
+    public ListResponse<LogicalTableTopologyResp> listLogicalTablesTopologies(@PathVariable Long logicalDatabaseId,
+            @PathVariable Long logicalTableId) {
+        return Responses.list(tableService.listLogicalTableTopologies(logicalDatabaseId, logicalTableId));
+    }
+
+    @RequestMapping(value = "/logicalDatabases/{id:[\\d]+}", method = RequestMethod.DELETE)
     public SuccessResponse<Boolean> delete(@PathVariable Long id) {
         return Responses.success(databaseService.delete(id));
     }
 
-    @RequestMapping(value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/logicaltables/{logicalTableId:[\\d]+}",
+    @RequestMapping(value = "/logicalDatabases/{logicalDatabaseId:[\\d]+}/logicalTables/{logicalTableId:[\\d]+}",
             method = RequestMethod.DELETE)
     public SuccessResponse<Boolean> deleteLogicalTable(@PathVariable Long logicalDatabaseId,
             @PathVariable Long logicalTableId) {
         return Responses.success(tableService.delete(logicalDatabaseId, logicalTableId));
     }
 
-    @RequestMapping(value = "/logicaldatabases/{id:[\\d]+}/logicaltables/extract", method = RequestMethod.POST)
+    @RequestMapping(value = "/logicalDatabases/{id:[\\d]+}/logicalTables/extract", method = RequestMethod.POST)
     public SuccessResponse<Boolean> extractLogicalTables(@PathVariable Long id) {
         return Responses.success(databaseService.extractLogicalTables(id));
     }
 
     @RequestMapping(
-            value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/logicaltables/{logicalTableId:[\\d]+}/checkStructureConsistency",
+            value = "/logicalDatabases/{logicalDatabaseId:[\\d]+}/logicalTables/{logicalTableId:[\\d]+}/checkStructureConsistency",
             method = RequestMethod.POST)
     public SuccessResponse<Boolean> checkLogicalTable(@PathVariable Long logicalDatabaseId,
             @PathVariable Long logicalTableId) {
         return Responses.success(tableService.checkStructureConsistency(logicalDatabaseId, logicalTableId));
+    }
+
+    @RequestMapping(value = "/logicaldatabases/{logicalDatabaseId:[\\d]+}/previewSqls", method = RequestMethod.POST)
+    public ListResponse<PreviewSqlResp> previewSqls(@PathVariable Long logicalDatabaseId,
+            @RequestBody PreviewSqlReq req) {
+        return Responses.list(databaseService.preview(logicalDatabaseId, req));
     }
 }

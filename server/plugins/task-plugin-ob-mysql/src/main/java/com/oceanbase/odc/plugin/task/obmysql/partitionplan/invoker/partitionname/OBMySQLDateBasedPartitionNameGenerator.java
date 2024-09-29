@@ -18,9 +18,11 @@ package com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionnam
 import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.DateBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.DateBasedPartitionNameGeneratorConfig;
+import com.oceanbase.odc.plugin.task.api.partitionplan.model.NamingSuffixStrategy;
 import com.oceanbase.odc.plugin.task.api.partitionplan.util.DBTablePartitionUtil;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLAutoPartitionExtensionPoint;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.OBMySQLExprCalculator;
@@ -42,12 +44,21 @@ public class OBMySQLDateBasedPartitionNameGenerator implements DateBasedPartitio
 
     @Override
     public String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
-            @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
+            @NonNull Integer targetPartitionIndex, @NonNull List<DBTablePartitionDefinition> targets,
             @NonNull DateBasedPartitionNameGeneratorConfig config) {
         int index = DBTablePartitionUtil.getPartitionKeyIndex(
                 dbTable, config.getRefPartitionKey(), this::unquoteIdentifier);
+        DBTablePartitionDefinition baseDef;
+        if (config.getNamingSuffixStrategy() == NamingSuffixStrategy.PARTITION_LOWER_BOUND) {
+            baseDef = targetPartitionIndex == 0
+                    ? dbTable.getPartition().getPartitionDefinitions()
+                            .get(dbTable.getPartition().getPartitionDefinitions().size() - 1)
+                    : targets.get(targetPartitionIndex - 1);
+        } else {
+            baseDef = targets.get(targetPartitionIndex);
+        }
         Date baseDate = getPartitionUpperBound(
-                connection, config.getRefPartitionKey(), target.getMaxValues().get(index));
+                connection, config.getRefPartitionKey(), baseDef.getMaxValues().get(index));
         return config.getNamingPrefix() + new SimpleDateFormat(config.getNamingSuffixExpression()).format(baseDate);
     }
 

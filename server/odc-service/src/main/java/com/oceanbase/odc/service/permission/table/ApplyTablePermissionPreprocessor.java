@@ -48,6 +48,7 @@ import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter.ApplyTable;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 /**
  *
@@ -105,6 +106,7 @@ public class ApplyTablePermissionPreprocessor implements Preprocessor {
                 throw new NotFoundException(ResourceType.ODC_TABLE, "id", table.getTableId());
             }
             table.setTableName(tableEntity.getName());
+            table.setType(tableEntity.getType());
             Database database = id2Database.get(tableEntity.getDatabaseId());
             if (database == null) {
                 throw new NotFoundException(ResourceType.ODC_DATABASE, "id", tableEntity.getDatabaseId());
@@ -114,12 +116,14 @@ public class ApplyTablePermissionPreprocessor implements Preprocessor {
             }
             table.setDatabaseId(database.getId());
             table.setDatabaseName(database.getName());
-            ConnectionConfig dataSource = id2DataSource.get(database.getDataSource().getId());
-            if (dataSource == null) {
-                throw new NotFoundException(ResourceType.ODC_CONNECTION, "id", database.getDataSource().getId());
+            if (table.getType() == DBObjectType.TABLE) {
+                ConnectionConfig dataSource = id2DataSource.get(database.getDataSource().getId());
+                if (dataSource == null) {
+                    throw new NotFoundException(ResourceType.ODC_CONNECTION, "id", database.getDataSource().getId());
+                }
+                table.setDataSourceId(dataSource.getId());
+                table.setDataSourceName(dataSource.getName());
             }
-            table.setDataSourceId(dataSource.getId());
-            table.setDataSourceName(dataSource.getName());
         }
         parameter.setExpireTime(parameter.getExpireTime() == null ? TimeUtils.getMySQLMaxDatetime()
                 : TimeUtils.getEndOfDay(parameter.getExpireTime()));

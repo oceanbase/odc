@@ -29,8 +29,8 @@ import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsProjectContro
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectFullVerifyResultResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectProgressResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectStepVO;
-import com.oceanbase.odc.service.onlineschemachange.pipeline.ProjectStepResultChecker;
-import com.oceanbase.odc.service.onlineschemachange.pipeline.ProjectStepResultChecker.ProjectStepResult;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.ProjectStepResultChecker;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.ProjectStepResultChecker.ProjectStepResult;
 
 import lombok.extern.slf4j.Slf4j;
 

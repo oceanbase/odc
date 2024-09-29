@@ -17,7 +17,7 @@
 package com.oceanbase.odc.service.task.executor.server;
 
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.executor.task.Task;
+import com.oceanbase.odc.service.task.executor.task.BaseTask;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
@@ -26,10 +26,10 @@ import com.oceanbase.odc.service.task.schedule.JobIdentity;
  */
 public interface TaskExecutor {
 
-    void execute(Task<?> task, JobContext jc);
+    void execute(BaseTask<?> task, JobContext jc);
 
     boolean cancel(JobIdentity ji);
 
-    Task<?> getTask(JobIdentity ji);
+    BaseTask<?> getTask(JobIdentity ji);
 
 }

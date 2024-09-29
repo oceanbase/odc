@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.schedule;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -51,6 +52,20 @@ public class ScheduleTaskRepositoryTest extends ServiceTestEnv {
         taskRepository.updateStatusById(scheduleTask.getId(), TaskStatus.DONE);
         Optional<ScheduleTaskEntity> optional = taskRepository.findById(scheduleTask.getId());
         Assert.equals(optional.get().getStatus(), TaskStatus.DONE);
+        int affectRows = taskRepository.updateStatusById(scheduleTask.getId(), TaskStatus.PREPARING,
+                TaskStatus.getRetryAllowedStatus());
+        optional = taskRepository.findById(scheduleTask.getId());
+        System.out.println(optional.get().getStatus());
+        Assert.equals(1, affectRows);
+    }
+
+    @Test
+    public void updateStatusById_failed() {
+        ScheduleTaskEntity scheduleTask = createScheduleTask();
+        taskRepository.updateStatusById(scheduleTask.getId(), TaskStatus.RUNNING);
+        int affectRows = taskRepository.updateStatusById(scheduleTask.getId(), TaskStatus.PREPARING,
+                TaskStatus.getRetryAllowedStatus());
+        Assert.equals(0, affectRows);
     }
 
     @Test
@@ -74,6 +89,14 @@ public class ScheduleTaskRepositoryTest extends ServiceTestEnv {
     }
 
     @Test
+    public void findByIdIn() {
+        ScheduleTaskEntity scheduleTask = createScheduleTask();
+        List<ScheduleTaskEntity> res = taskRepository.findByIdIn(Collections.singleton(scheduleTask.getId()));
+        Assert.equals(res.size(), 1);
+        Assert.equals(scheduleTask, res.get(0));
+    }
+
+    @Test
     public void getLatestScheduleTaskByJobNameAndJobGroup() {
         taskRepository.deleteAll();
         createScheduleTask();
@@ -82,6 +105,14 @@ public class ScheduleTaskRepositoryTest extends ServiceTestEnv {
                 "MIGRATION");
         Assert.isTrue(latestTaskOptional.isPresent());
         Assert.equals(latestTask.getId(), latestTaskOptional.get().getId());
+    }
+
+    @Test
+    public void findByJobNames() {
+        taskRepository.deleteAll();
+        createScheduleTask();
+        List<ScheduleTaskEntity> tasks = taskRepository.findByJobNames(Collections.singleton("1"));
+        Assert.equals(1, tasks.size());
     }
 
     private ScheduleTaskEntity createScheduleTask() {

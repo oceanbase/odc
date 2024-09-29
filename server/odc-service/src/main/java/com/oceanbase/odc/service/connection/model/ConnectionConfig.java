@@ -28,6 +28,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
@@ -69,6 +70,8 @@ public class ConnectionConfig
     private static final long serialVersionUID = -7198204983655038981L;
     private static final String SESSION_INIT_SCRIPT_KEY = "SESSION_INIT_SCRIPT";
     private static final String JDBC_URL_PARAMETERS_KEY = "JDBC_URL_PARAMETERS";
+    private static final String CLOUD_PROVIDER = "CloudProvider";
+    private static final String REGION = "region";
     /**
      * 连接ID，对应 /api/v1 的 sid 字段，注意这里和使用连接时的 sid 概念是不一样的，之前版本未区分，另外之前是 String 类型，现在统一为 Long 类型
      */
@@ -121,6 +124,12 @@ public class ConnectionConfig
      * Oracle 连接方式特有的参数，该参数用户角色
      */
     private UserRole userRole;
+
+    /**
+     * 该参数表示一个数据库实例, currently used only for Postgres
+     */
+    @JsonAlias({"catalogName", "databaseName"})
+    private String catalogName;
 
     /**
      * 连接类型
@@ -362,12 +371,14 @@ public class ConnectionConfig
         switch (dialectType) {
             case ORACLE:
             case OB_ORACLE:
-                return ConnectionSessionUtil.getUserOrSchemaString(this.username, dialectType);
+                return ConnectionSessionUtil.getUserOrSchemaString(getUsername(), dialectType);
             case MYSQL:
             case DORIS:
             case OB_MYSQL:
             case ODP_SHARDING_OB_MYSQL:
                 return OdcConstants.MYSQL_DEFAULT_SCHEMA;
+            case POSTGRESQL:
+                return OdcConstants.POSTGRESQL_DEFAULT_SCHEMA;
             default:
                 return null;
         }
@@ -468,6 +479,77 @@ public class ConnectionConfig
         this.attributes.put(JDBC_URL_PARAMETERS_KEY, jdbcUrlParameters);
     }
 
+    public String getUsername() {
+        if (!StringUtils.contains(this.username, "@")) {
+            return this.username;
+        }
+        return this.username.substring(0, this.username.indexOf("@"));
+    }
+
+    public String getTenantName() {
+        if (!StringUtils.contains(this.username, "@")) {
+            return this.tenantName;
+        }
+        String tenant = this.username.substring(this.username.indexOf("@") + 1);
+        if (tenant.contains("#")) {
+            tenant = tenant.substring(0, tenant.indexOf("#"));
+        }
+        if (this.tenantName == null) {
+            return tenant;
+        } else if (!Objects.equals(this.tenantName, tenant)) {
+            throw new IllegalArgumentException("Username contains tenant name "
+                    + this.username + " which is not equals to the tenantName field " + this.tenantName);
+        }
+        return this.tenantName;
+    }
+
+    public String getOBTenantName() {
+        if (!StringUtils.contains(this.username, "@")) {
+            return this.OBTenantName;
+        }
+        String tenant = this.username.substring(this.username.indexOf("@") + 1);
+        if (tenant.contains("#")) {
+            tenant = tenant.substring(0, tenant.indexOf("#"));
+        }
+        if (this.OBTenantName == null) {
+            return tenant;
+        } else if (!Objects.equals(this.OBTenantName, tenant)) {
+            throw new IllegalArgumentException("Username contains tenant name "
+                    + this.username + " which is not equals to the OB tenantName field " + this.OBTenantName);
+        }
+        return this.OBTenantName;
+    }
+
+    public String getClusterName() {
+        if (!StringUtils.contains(this.username, "#")) {
+            return this.clusterName;
+        }
+        String cluster = this.username.substring(this.username.indexOf("#") + 1);
+        if (this.clusterName == null) {
+            return cluster;
+        } else if (!Objects.equals(this.clusterName, cluster)) {
+            throw new IllegalArgumentException("Username contains cluster name "
+                    + this.username + " which is not equals to the clusterName field " + this.clusterName);
+        }
+        return this.clusterName;
+    }
+
+    public String getCloudProvider() {
+        if (this.attributes == null) {
+            return null;
+        }
+        Object o = attributes.get(CLOUD_PROVIDER);
+        return o == null ? null : o.toString();
+    }
+
+    public String getRegion() {
+        if (this.attributes == null) {
+            return null;
+        }
+        Object o = attributes.get(REGION);
+        return o == null ? null : o.toString();
+    }
+
     public ConnectionInfo toConnectionInfo() {
         ConnectionInfo target = new ConnectionInfo();
         target.setConnectType(type);
@@ -487,6 +569,7 @@ public class ConnectionConfig
         if (Objects.nonNull(userRole)) {
             target.setUserRole(userRole.name());
         }
+        target.setCatalogName(catalogName);
         target.setJdbcUrlParameters(getJdbcUrlParameters());
         return target;
     }

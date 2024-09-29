@@ -78,6 +78,11 @@ public class DBTableEditorFactory extends AbstractDBBrowserFactory<DBTableEditor
         return buildForOBMySQL();
     }
 
+    @Override
+    public DBTableEditor buildForPostgres() {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
     private DBTableIndexEditor getTableIndexEditor() {
         DBTableIndexEditorFactory indexFactory = new DBTableIndexEditorFactory();
         indexFactory.setType(this.type);

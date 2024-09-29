@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase;
 
-import java.io.StringReader;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,29 +35,35 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
+import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingEntity;
+import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingRepository;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingEntity;
 import com.oceanbase.odc.metadb.connection.logicaldatabase.TableMappingRepository;
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
+import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
+import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.LogicalTableRecognitionUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.BadLogicalTableExpressionException;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.DefaultLogicalTableExpressionParser;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.LogicalTableExpressions;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalTable;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.parser.LogicalTableExpressionParseUtils;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalTableResp;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.LogicalTableTopologyResp;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
+import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
+import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
-import com.oceanbase.tools.sqlparser.SyntaxErrorException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -71,8 +77,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Validated
 public class LogicalTableService {
-    private final DefaultLogicalTableExpressionParser parser = new DefaultLogicalTableExpressionParser();
-
     @Autowired
     private DatabaseRepository databaseRepository;
 
@@ -94,6 +98,15 @@ public class LogicalTableService {
     @Autowired
     private DBResourcePermissionHelper permissionHelper;
 
+    @Autowired
+    private DatabaseService databaseService;
+
+    @Autowired
+    private ConnectionService connectionService;
+
+    @Autowired
+    private DatabaseMappingRepository databaseMappingRepository;
+
     public List<DetailLogicalTableResp> list(@NotNull Long logicalDatabaseId) {
         DatabaseEntity logicalDatabase =
                 databaseRepository.findById(logicalDatabaseId).orElseThrow(() -> new NotFoundException(
@@ -103,16 +116,19 @@ public class LogicalTableService {
 
         List<DBObjectEntity> logicalTables =
                 dbObjectRepository.findByDatabaseIdAndType(logicalDatabaseId, DBObjectType.LOGICAL_TABLE);
-
-
         Set<Long> logicalTableIds = logicalTables.stream().map(DBObjectEntity::getId).collect(Collectors.toSet());
         if (CollectionUtils.isEmpty(logicalTableIds)) {
             return Collections.emptyList();
         }
+        Set<Long> physicalDBIds =
+                databaseMappingRepository.findByLogicalDatabaseId(logicalDatabaseId).stream()
+                        .map(DatabaseMappingEntity::getPhysicalDatabaseId).collect(Collectors.toSet());
+        List<Database> physicalDatabases = databaseService.listDatabasesDetailsByIds(physicalDBIds);
+        Map<Long, Database> id2Database =
+                physicalDatabases.stream().collect(Collectors.toMap(Database::getId, db -> db));
         Map<Long, List<TableMappingEntity>> logicalTbId2Mappings =
                 mappingRepository.findByLogicalTableIdIn(logicalTableIds).stream()
                         .collect(Collectors.groupingBy(TableMappingEntity::getLogicalTableId));
-
 
         return logicalTables.stream().map(tableEntity -> {
             DetailLogicalTableResp resp = new DetailLogicalTableResp();
@@ -125,13 +141,144 @@ public class LogicalTableService {
             List<DataNode> inconsistentPhysicalTables = new ArrayList<>();
             relations.stream().filter(relation -> !relation.getConsistent()).forEach(relation -> {
                 DataNode dataNode = new DataNode();
+                dataNode.setDatabaseId(relation.getPhysicalDatabaseId());
                 dataNode.setSchemaName(relation.getPhysicalDatabaseName());
                 dataNode.setTableName(relation.getPhysicalTableName());
+                dataNode.setDataSourceConfig(id2Database.get(relation.getPhysicalDatabaseId()).getDataSource());
                 inconsistentPhysicalTables.add(dataNode);
             });
             resp.setInconsistentPhysicalTables(inconsistentPhysicalTables);
+            resp.setAllPhysicalTables(relations.stream().map(relation -> {
+                DataNode dataNode = new DataNode();
+                dataNode.setDatabaseId(relation.getPhysicalDatabaseId());
+                dataNode.setSchemaName(relation.getPhysicalDatabaseName());
+                dataNode.setTableName(relation.getPhysicalTableName());
+                return dataNode;
+            }).collect(Collectors.toList()));
             return resp;
         }).collect(Collectors.toList());
+    }
+
+    public List<LogicalTableTopologyResp> previewLogicalTableTopologies(@NotNull Long logicalDatabaseId,
+            @NotNull String expression) {
+        DatabaseEntity logicalDatabase =
+                databaseRepository.findById(logicalDatabaseId).orElseThrow(() -> new NotFoundException(
+                        ResourceType.ODC_DATABASE, "id", logicalDatabaseId));
+        Verify.equals(DatabaseType.LOGICAL, logicalDatabase.getType(), "database type");
+        projectPermissionValidator.checkProjectRole(logicalDatabase.getProjectId(), ResourceRoleName.all());
+        List<Long> physicalDatabaseIds = databaseMappingRepository.findByLogicalDatabaseId(logicalDatabaseId).stream()
+                .map(DatabaseMappingEntity::getPhysicalDatabaseId).collect(
+                        Collectors.toList());
+        Map<String, List<Database>> name2Databases = databaseService.listDatabasesByIds(physicalDatabaseIds).stream()
+                .collect(Collectors.groupingBy(Database::getName));
+        Map<String, List<DataNode>> schemaName2DataNodes =
+                LogicalTableExpressionParseUtils.resolve(expression).stream()
+                        .collect(Collectors.groupingBy(DataNode::getSchemaName));
+        Verify.verify(name2Databases.keySet().containsAll(schemaName2DataNodes.keySet()),
+                "The expression contains physical databases that not belong to the logical database");
+        return schemaName2DataNodes.entrySet().stream().map(entry -> {
+            LogicalTableTopologyResp resp = new LogicalTableTopologyResp();
+            resp.setPhysicalDatabase(name2Databases.get(entry.getKey()).get(0));
+            resp.setTableCount(entry.getValue().size());
+            // if only one table, just return the full-qualified name directly
+            if (entry.getValue().size() == 1) {
+                resp.setExpression(entry.getValue().get(0).getFullName());
+            } else {
+                List<LogicalTable> logicalTables =
+                        LogicalTableRecognitionUtils.recognizeLogicalTablesWithExpression(entry.getValue());
+                if (CollectionUtils.isNotEmpty(logicalTables)) {
+                    resp.setExpression(logicalTables.get(0).getFullNameExpression());
+                }
+            }
+            return resp;
+        }).collect(Collectors.toList());
+    }
+
+    public List<LogicalTableTopologyResp> listLogicalTableTopologies(@NotNull Long logicalDatabaseId,
+            @NotNull Long logicalTableId) {
+        Map<Long, List<TableMappingEntity>> physicalDBId2Tables = mappingRepository.findByLogicalTableId(logicalTableId)
+                .stream().collect(Collectors.groupingBy(TableMappingEntity::getPhysicalDatabaseId));
+        Map<Long, List<Database>> id2Databases =
+                databaseService.listDatabasesDetailsByIds(physicalDBId2Tables.keySet()).stream()
+                        .collect(Collectors.groupingBy(
+                                Database::getId));
+        return physicalDBId2Tables.entrySet().stream().map(entry -> {
+            List<TableMappingEntity> tables = entry.getValue();
+            LogicalTableTopologyResp resp = new LogicalTableTopologyResp();
+            resp.setPhysicalDatabase(id2Databases.get(entry.getKey()).get(0));
+            resp.setTableCount(tables.size());
+            // if only one table, just return the full-qualified name directly
+            if (tables.size() == 1) {
+                resp.setExpression(
+                        tables.get(0).getPhysicalDatabaseName() + "." + tables.get(0).getPhysicalTableName());
+            } else {
+                List<LogicalTable> logicalTables =
+                        LogicalTableRecognitionUtils.recognizeLogicalTablesWithExpression(tables.stream().map(table -> {
+                            DataNode dataNode = new DataNode();
+                            dataNode.setSchemaName(table.getPhysicalDatabaseName());
+                            dataNode.setTableName(table.getPhysicalTableName());
+                            return dataNode;
+                        }).collect(Collectors.toList()));
+                if (CollectionUtils.isNotEmpty(logicalTables)) {
+                    resp.setExpression(logicalTables.get(0).getFullNameExpression());
+                }
+            }
+            return resp;
+        }).collect(Collectors.toList());
+    }
+
+    public DetailLogicalTableResp detail(@NotNull Long logicalDatabaseId, @NotNull Long logicalTableId) {
+        DatabaseEntity logicalDatabase =
+                databaseRepository.findById(logicalDatabaseId).orElseThrow(() -> new NotFoundException(
+                        ResourceType.ODC_DATABASE, "id", logicalDatabaseId));
+        Verify.equals(DatabaseType.LOGICAL, logicalDatabase.getType(), "database type");
+        projectPermissionValidator.checkProjectRole(logicalDatabase.getProjectId(), ResourceRoleName.all());
+
+        DBObjectEntity logicalTable =
+                dbObjectRepository.findById(logicalTableId).orElseThrow(() -> new NotFoundException(
+                        ResourceType.ODC_LOGICAL_TABLE, "id", logicalTableId));
+        Verify.equals(logicalTable.getDatabaseId(), logicalDatabaseId, "logical database id");
+        Verify.equals(logicalTable.getType(), DBObjectType.LOGICAL_TABLE, "logical table type");
+
+        List<TableMappingEntity> relations = mappingRepository.findByLogicalTableId(logicalTableId);
+        DetailLogicalTableResp resp = new DetailLogicalTableResp();
+
+        resp.setId(logicalTable.getId());
+        resp.setName(logicalTable.getName());
+        resp.setExpression(relations.isEmpty() ? StringUtils.EMPTY : relations.get(0).getExpression());
+        resp.setPhysicalTableCount(relations.size());
+        List<DataNode> inconsistentPhysicalTables = new ArrayList<>();
+        relations.stream().filter(relation -> !relation.getConsistent()).forEach(relation -> {
+            DataNode dataNode = new DataNode();
+            dataNode.setSchemaName(relation.getPhysicalDatabaseName());
+            dataNode.setTableName(relation.getPhysicalTableName());
+            inconsistentPhysicalTables.add(dataNode);
+        });
+        resp.setInconsistentPhysicalTables(inconsistentPhysicalTables);
+        resp.setTopologies(listLogicalTableTopologies(logicalDatabaseId, logicalTableId));
+
+        TableMappingEntity baseTable = relations.stream().filter(relation -> relation.getConsistent()).findFirst()
+                .orElseThrow(() -> new NotFoundException(
+                        ResourceType.ODC_LOGICAL_TABLE, "id", logicalTableId));
+        DatabaseEntity physicalDatabase =
+                databaseRepository.findById(baseTable.getPhysicalDatabaseId()).orElseThrow(() -> new NotFoundException(
+                        ResourceType.ODC_DATABASE, "id", baseTable.getPhysicalDatabaseId()));
+
+        TableExtensionPoint tableExtensionPoint =
+                SchemaPluginUtil.getTableExtension(logicalDatabase.getConnectType().getDialectType());
+        if (tableExtensionPoint == null) {
+            throw new UnsupportedOperationException(
+                    "Unsupported dialect " + logicalDatabase.getConnectType().getDialectType());
+        }
+        try (Connection connection = new DruidDataSourceFactory(
+                connectionService.getForConnectionSkipPermissionCheck(physicalDatabase.getConnectionId()))
+                        .getDataSource().getConnection()) {
+            resp.setBasePhysicalTable(tableExtensionPoint.getDetail(connection, physicalDatabase.getName(),
+                    baseTable.getPhysicalTableName()));
+        } catch (Exception e) {
+            log.error("failed to get table structure, logical table id={}", logicalTableId, e);
+        }
+        return resp;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -164,23 +311,4 @@ public class LogicalTableService {
         return true;
     }
 
-
-    public List<DataNode> resolve(String expression) {
-        PreConditions.notEmpty(expression, "expression");
-        LogicalTableExpressions logicalTableExpression;
-        try {
-            logicalTableExpression = (LogicalTableExpressions) parser.parse(new StringReader(expression));
-        } catch (SyntaxErrorException e) {
-            throw new BadLogicalTableExpressionException(e);
-        } catch (Exception e) {
-            throw new UnexpectedException("failed to parse logical table expression", e);
-        }
-        return logicalTableExpression.evaluate().stream().map(name -> {
-            String[] parts = name.split("\\.");
-            if (parts.length != 2) {
-                throw new UnexpectedException("invalid logical table expression");
-            }
-            return new DataNode(parts[0], parts[1]);
-        }).collect(Collectors.toList());
-    }
 }

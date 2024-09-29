@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,8 +28,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
+import com.oceanbase.odc.service.integration.oauth2.Oauth2StateManager;
 import com.oceanbase.odc.service.integration.oauth2.SSOTestInfo;
 import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 
 @RestController
 @RequestMapping("/api/v2/sso")
@@ -35,6 +40,9 @@ public class SSOController {
 
     @Autowired
     private TestLoginManager testLoginManager;
+
+    @Autowired
+    private Oauth2StateManager oauth2StateManager;
 
     @PostMapping(value = "/test/start")
     public SuccessResponse<SSOTestInfo> addTestClientRegistration(@RequestBody IntegrationConfig config,
@@ -48,9 +56,16 @@ public class SSOController {
      * @return test login user profile
      */
     @GetMapping(value = "/test/info")
+    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#testId")
     public SuccessResponse<String> testUserInfo(String testId) {
         return Responses.ok(testLoginManager.getTestUserInfo(testId));
     }
 
+
+    @GetMapping("/state")
+    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#state")
+    public SuccessResponse<Map<String, String>> getTestClientInfo(@RequestParam String state) {
+        return Responses.ok(oauth2StateManager.getStateParameters(state));
+    }
 
 }

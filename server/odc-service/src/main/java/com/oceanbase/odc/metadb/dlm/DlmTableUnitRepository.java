@@ -37,6 +37,7 @@ public interface DlmTableUnitRepository extends OdcJpaRepository<DlmTableUnitEnt
     @Query("UPDATE DlmTableUnitEntity e SET e.statistic = ?2 WHERE e.dlmTableUnitId = ?1")
     int updateStatisticByDlmTableUnitId(String dlmTableUnitId, String statistic);
 
+
     List<DlmTableUnitEntity> findByScheduleTaskId(Long scheduleTaskId);
 
     Optional<DlmTableUnitEntity> findByDlmTableUnitId(String dlmTableUnitId);

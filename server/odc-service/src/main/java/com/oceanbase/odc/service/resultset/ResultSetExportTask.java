@@ -134,6 +134,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
              */
             File origin = new File(localResultSetFilePath);
             if (!origin.exists()) {
+                LOGGER.warn("There is no file generated, create an empty file instead.");
                 FileUtils.touch(origin);
             }
 
@@ -141,7 +142,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
              * OBDumper 不支持 excel 导出，需要先生成 csv, 然后使用工具类转换成 xlsx
              */
             if (DataTransferFormat.EXCEL == parameter.getFileFormat()) {
-                String excelFilePath = getDumpFileDirectory() + getFileName(DataTransferFormat.EXCEL.getExtension());
+                String excelFilePath = getDumpFileDirectory() + fileName;
                 try {
                     FileConvertUtils.convertCsvToXls(localResultSetFilePath, excelFilePath,
                             parameter.isSaveSql() ? Collections.singletonList(parameter.getSql()) : null);
@@ -295,13 +296,11 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
     private String getDumpFilePath(DataTransferTaskResult result, String extension) throws Exception {
         List<URL> exportPaths = result.getDataObjectsInfo().get(0).getExportPaths();
         if (CollectionUtils.isEmpty(exportPaths)) {
-            return Paths.get(getDumpFileDirectory(), getFileName(extension)).toString();
+            File[] files = new File(getDumpFileDirectory()).listFiles();
+            Verify.verify(files != null && files.length == 1, "");
+            return files[0].getPath();
         }
         return exportPaths.get(0).toURI().getPath();
-    }
-
-    private String getFileName(String extension) {
-        return parameter.getTableName() + extension;
     }
 
     private String getDumpFileDirectory() throws IOException {

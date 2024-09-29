@@ -30,12 +30,11 @@ import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
-import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration.CloudProvider;
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.caller.JobEnvironmentEncryptor;
 import com.oceanbase.odc.service.task.caller.JobEnvironmentFactory;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
@@ -72,8 +71,8 @@ public class TaskApplicationTest extends BaseJobTest {
     private void setJobContextInSystemProperty(JobIdentity jobIdentity) {
         JobDefinition jd = buildJobDefinition();
         JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
-        Map<String, String> envMap = new JobEnvironmentFactory().getEnvironments(jc, TaskRunMode.PROCESS);
-        new JobEnvironmentEncryptor().encrypt(envMap);
+        Map<String, String> envMap = new JobEnvironmentFactory().build(jc, TaskRunMode.PROCESS);
+        JobUtils.encryptEnvironments(envMap);
         envMap.forEach(System::setProperty);
     }
 

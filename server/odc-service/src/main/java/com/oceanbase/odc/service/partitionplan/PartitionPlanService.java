@@ -393,7 +393,7 @@ public class PartitionPlanService {
             throw new IllegalStateException("Partition definitions is empty");
         }
         DBTablePartitionDefinition lastDef = partition.getPartitionDefinitions().get(size - 1);
-        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, lastDef);
+        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, Collections.singletonList(lastDef));
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, 0);
         return generator.invoke(connection, dbTable, parameters);
     }
@@ -436,6 +436,11 @@ public class PartitionPlanService {
                 }
             }
         }
+        List<DBTablePartitionDefinition> definitions = lineNum2CreateExprs.values().stream().map(strings -> {
+            DBTablePartitionDefinition def = new DBTablePartitionDefinition();
+            def.setMaxValues(strings);
+            return def;
+        }).collect(Collectors.toList());
         strategyListMap.put(PartitionPlanStrategy.CREATE, lineNum2CreateExprs.entrySet().stream().map(s -> {
             DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
             definition.setMaxValues(s.getValue());
@@ -446,7 +451,7 @@ public class PartitionPlanService {
                         "Failed to get invoker by name, " + tableConfig.getPartitionNameInvoker());
             }
             Map<String, Object> parameters = tableConfig.getPartitionNameInvokerParameters();
-            parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
+            parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definitions);
             parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, s.getKey());
             try {
                 definition.setName(invoker.invoke(connection, dbTable, parameters));

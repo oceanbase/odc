@@ -23,7 +23,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.task.util.HttpUtil;
+import com.oceanbase.odc.service.task.util.HttpClientUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -50,8 +50,9 @@ public class TaskReporter {
         for (String host : hostUrls) {
             try {
                 String hostWithUrl = host + url;
-                SuccessResponse<String> response = HttpUtil.request(hostWithUrl, JsonUtils.toJson(result),
-                        new TypeReference<SuccessResponse<String>>() {});
+                SuccessResponse<String> response =
+                        HttpClientUtils.request("POST", hostWithUrl, JsonUtils.toJson(result),
+                                new TypeReference<SuccessResponse<String>>() {});
                 if (response != null && response.getSuccessful()) {
                     log.info("Report to host {} success, result is {}, response is {}.", host, JsonUtils.toJson(result),
                             JsonUtils.toJson(response));

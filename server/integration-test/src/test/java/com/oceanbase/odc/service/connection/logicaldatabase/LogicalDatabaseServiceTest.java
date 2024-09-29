@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +35,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -45,7 +49,6 @@ import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingEntity
 import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
-import com.oceanbase.odc.service.connection.database.DatabaseMapper;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.CreateLogicalDatabaseReq;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
@@ -68,12 +71,13 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
     private static final Long LOGICAL_DATABASE_ID = 2L;
     private static final String LOGICAL_DATABASE_NAME = "lebie_test";
     private static final String LOGICAL_DATABASE_ALIAS = "lebie_test_alias";
-    private static final DatabaseMapper databaseMapper = DatabaseMapper.INSTANCE;
 
     @Autowired
     private LogicalDatabaseService logicalDatabaseService;
     @MockBean
     private DatabaseRepository databaseRepository;
+    @MockBean
+    private LogicalTableService logicalTableService;
     @MockBean
     private AuthenticationFacade authenticationFacade;
     @MockBean
@@ -96,9 +100,13 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
         when(databaseRepository.findById(PHYSICAL_DATABASE_ID)).thenReturn(Optional.of(getPhysicalDatabase()));
         when(databaseRepository.saveAndFlush(any(DatabaseEntity.class))).thenReturn(getLogicalDatabase());
         when(databaseRepository.findById(LOGICAL_DATABASE_ID)).thenReturn(Optional.of(getLogicalDatabase()));
+        when(databaseRepository.findAllById(Arrays.asList(PHYSICAL_DATABASE_ID)))
+                .thenReturn(Arrays.asList(getLogicalDatabase(), getPhysicalDatabase()));
         when(databaseRepository.findByIdIn(anyCollection())).thenReturn(Arrays.asList(getPhysicalDatabase()));
         doNothing().when(projectPermissionValidator).checkProjectRole(anyLong(), anyList());
         doNothing().when(permissionHelper).checkDBPermissions(anyCollection(), anyCollection());
+        when(databaseRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(Arrays.asList(getPhysicalDatabase())));
     }
 
     @Test
@@ -110,13 +118,20 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
         Set<Long> databaseIds = new HashSet<>();
         databaseIds.addAll(Arrays.asList(PHYSICAL_DATABASE_ID));
         req.setPhysicalDatabaseIds(databaseIds);
-        Assert.assertTrue(logicalDatabaseService.create(req));
+        Assert.assertNotNull(logicalDatabaseService.create(req));
     }
 
     @Test
     public void testDetail() {
         when(databaseMappingRepository.findByLogicalDatabaseId(anyLong())).thenReturn(listDatabaseMappings(1));
+        when(logicalTableService.list(anyLong())).thenReturn(Collections.emptyList());
         Assert.assertNotNull(logicalDatabaseService.detail(LOGICAL_DATABASE_ID));
+    }
+
+    @Test
+    public void testListPhysicalDatabases() {
+        when(databaseMappingRepository.findByLogicalDatabaseId(anyLong())).thenReturn(listDatabaseMappings(1));
+        Assert.assertEquals(1, logicalDatabaseService.listPhysicalDatabases(LOGICAL_DATABASE_ID).size());
     }
 
     private ConnectionEntity getConnectionEntity() {
@@ -134,6 +149,7 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
         entity.setOrganizationId(ORGANIZATION_ID);
         entity.setProjectId(PROJECT_ID);
         entity.setEnvironmentId(ENVIRONMENT_ID);
+        entity.setConnectionId(CONNECTION_ID);
         return entity;
     }
 

@@ -18,12 +18,12 @@ package com.oceanbase.odc.service.dlm;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -90,16 +90,21 @@ public class DLMService {
     }
 
     @SkipAuthorize("odc internal usage")
-    @Transactional(rollbackFor = Exception.class)
-    public void updateStatusByDlmTableUnitId(String dlmTableUnitId, TaskStatus status) {
-        dlmTableUnitRepository.findByDlmTableUnitId(dlmTableUnitId).ifPresent(e -> {
-            e.setStatus(status);
-            if (status == TaskStatus.RUNNING && e.getStartTime() == null) {
-                e.setStartTime(new Date());
-            } else if (status.isTerminated()) {
-                e.setEndTime(new Date());
+    public void createOrUpdateDlmTableUnits(List<DlmTableUnit> dlmTableUnits) {
+        dlmTableUnits.forEach(o -> {
+            Optional<DlmTableUnitEntity> entityOptional = dlmTableUnitRepository.findByDlmTableUnitId(
+                    o.getDlmTableUnitId());
+            DlmTableUnitEntity entity;
+            if (entityOptional.isPresent()) {
+                entity = entityOptional.get();
+                entity.setStatistic(JsonUtils.toJson(o.getStatistic()));
+                entity.setStatus(o.getStatus());
+                entity.setStartTime(o.getStartTime());
+                entity.setEndTime(o.getEndTime());
+            } else {
+                entity = DlmTableUnitMapper.modelToEntity(o);
             }
-            dlmTableUnitRepository.save(e);
+            dlmTableUnitRepository.save(entity);
         });
     }
 
@@ -111,17 +116,28 @@ public class DLMService {
                         Collectors.toList());
     }
 
+    /**
+     * generate final task status by scheduleTaskId when the task is finished
+     */
     @SkipAuthorize("odc internal usage")
-    public TaskStatus getTaskStatus(Long scheduleTaskId) {
-        Set<TaskStatus> collect = findByScheduleTaskId(scheduleTaskId).stream()
-                .map(DlmTableUnit::getStatus).collect(Collectors.toSet());
+    public TaskStatus getFinalTaskStatus(Long scheduleTaskId) {
+        List<DlmTableUnit> dlmTableUnits = findByScheduleTaskId(scheduleTaskId);
+        Set<TaskStatus> collect = dlmTableUnits.stream().map(DlmTableUnit::getStatus).collect(
+                Collectors.toSet());
+        // If any table fails, the task is considered a failure.
         if (collect.contains(TaskStatus.FAILED)) {
             return TaskStatus.FAILED;
         }
-        if (collect.contains(TaskStatus.DONE) && collect.size() == 1) {
-            return TaskStatus.DONE;
+        // If any table is canceled, the task is considered canceled.
+        if (collect.contains(TaskStatus.CANCELED)) {
+            return TaskStatus.CANCELED;
         }
-        return TaskStatus.CANCELED;
+        // The task is considered failed if any table is still preparing or running when the task is
+        // finished.
+        if (collect.contains(TaskStatus.PREPARING) || collect.contains(TaskStatus.RUNNING)) {
+            return TaskStatus.FAILED;
+        }
+        return TaskStatus.DONE;
     }
 
 }

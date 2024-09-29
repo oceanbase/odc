@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -73,16 +74,19 @@ public class DataBaseController {
             @RequestParam(required = false, name = "dataSourceName") String dataSourceName,
             @RequestParam(required = false, name = "dataSourceId") Long dataSourceId,
             @RequestParam(required = false, name = "environmentId") Long environmentId,
+            @RequestParam(required = false, name = "connectType") List<ConnectType> connectTypes,
             @RequestParam(required = false, name = "projectName") String projectName,
             @RequestParam(required = false, name = "projectId") Long projectId,
             @RequestParam(required = false, defaultValue = "false",
                     name = "containsUnassigned") Boolean containsUnassigned,
             @RequestParam(required = false, defaultValue = "false",
                     name = "includesPermittedAction") Boolean includesPermittedAction,
-            @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
+            @PageableDefault(size = Integer.MAX_VALUE, sort = {"type", "name"},
+                    direction = Direction.ASC) Pageable pageable) {
         QueryDatabaseParams params = QueryDatabaseParams.builder()
                 .dataSourceId(dataSourceId)
                 .types(types)
+                .connectTypes(connectTypes)
                 .existed(existed)
                 .environmentId(environmentId)
                 .schemaName(name)

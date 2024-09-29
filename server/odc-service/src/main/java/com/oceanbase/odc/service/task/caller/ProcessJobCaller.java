@@ -18,18 +18,21 @@ package com.oceanbase.odc.service.task.caller;
 
 import static com.oceanbase.odc.service.task.constants.JobConstants.ODC_EXECUTOR_CANNOT_BE_DESTROYED;
 
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.service.common.response.OdcResult;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
-import com.oceanbase.odc.service.task.util.HttpUtil;
+import com.oceanbase.odc.service.task.util.HttpClientUtils;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -110,7 +113,7 @@ public class ProcessJobCaller extends BaseJobCaller {
         }
         JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
         JobEntity jobEntity = configuration.getTaskFrameworkService().find(ji.getId());
-        if (!HttpUtil.isOdcHealthy(ei.getHost(), ei.getPort())) {
+        if (!isOdcHealthy(ei.getHost(), ei.getPort())) {
             if (jobEntity.getStatus() == JobStatus.RUNNING) {
                 // Cannot connect to target identifier,we cannot kill the process,
                 // so we set job to FAILED and avoid two process running
@@ -141,7 +144,7 @@ public class ProcessJobCaller extends BaseJobCaller {
         if (SystemUtils.getLocalIpAddress().equals(ei.getHost()) && Objects.equals(portString, ei.getPort() + "")) {
             return true;
         }
-        if (!HttpUtil.isOdcHealthy(ei.getHost(), ei.getPort())) {
+        if (!isOdcHealthy(ei.getHost(), ei.getPort())) {
             log.info("Cannot connect to target odc server, executor can be destroyed,jobId={}, identifier={}",
                     ji.getId(), ei);
             return true;
@@ -173,4 +176,16 @@ public class ProcessJobCaller extends BaseJobCaller {
         }
         return result;
     }
+
+    private boolean isOdcHealthy(String server, int servPort) {
+        String url = String.format("http://%s:%d/api/v1/heartbeat/isHealthy", server, servPort);
+        try {
+            OdcResult<Boolean> result = HttpClientUtils.request("GET", url, new TypeReference<OdcResult<Boolean>>() {});
+            return result.getData();
+        } catch (IOException e) {
+            log.warn("Check odc server health failed, url={}", url);
+            return false;
+        }
+    }
+
 }

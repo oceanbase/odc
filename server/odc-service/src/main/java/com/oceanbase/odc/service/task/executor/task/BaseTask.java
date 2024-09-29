@@ -28,8 +28,10 @@ import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.server.TaskMonitor;
+import com.oceanbase.odc.service.task.util.CloudObjectStorageServiceBuilder;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -44,13 +46,25 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
     private Map<String, String> jobParameters;
     private volatile JobStatus status = JobStatus.PREPARING;
     private CloudObjectStorageService cloudObjectStorageService;
+
+    @Getter
     private TaskMonitor taskMonitor;
 
     @Override
     public void start(JobContext context) {
+        log.info("Start task, id={}.", context.getJobIdentity().getId());
+
         this.context = context;
+
         this.jobParameters = Collections.unmodifiableMap(context.getJobParameters());
-        initCloudObjectStorageService();
+        log.info("Init task parameters success, id={}.", context.getJobIdentity().getId());
+
+        try {
+            initCloudObjectStorageService();
+        } catch (Exception e) {
+            log.warn("Init cloud object storage service failed, id={}.", getJobId(), e);
+        }
+
         this.taskMonitor = new TaskMonitor(this, cloudObjectStorageService);
         try {
             doInit(context);
@@ -71,21 +85,13 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
 
     @Override
     public boolean stop() {
-        return stop(JobStatus.CANCELED);
-    }
-
-    @Override
-    public boolean abort() {
-        return stop(JobStatus.FAILED);
-    }
-
-    private synchronized boolean stop(JobStatus status) {
         try {
             if (getStatus().isTerminated()) {
-                log.warn("Task is already finished and cannot be stopped, id={}, status={}.", getJobId(), getStatus());
+                log.warn("Task is already finished and cannot be canceled, id={}, status={}.", getJobId(), getStatus());
             } else {
                 doStop();
-                updateStatus(status);
+                // doRefresh cannot execute if update status to 'canceled'.
+                updateStatus(JobStatus.CANCELING);
             }
             return true;
         } catch (Throwable e) {
@@ -107,9 +113,13 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
             return false;
         }
         DefaultJobContext ctx = (DefaultJobContext) getJobContext();
-        // change the value in job context
         ctx.setJobParameters(jobParameters);
         this.jobParameters = Collections.unmodifiableMap(jobParameters);
+        try {
+            afterModifiedJobParameters();
+        } catch (Exception e) {
+            log.warn("Do after modified job parameters failed", e);
+        }
         return true;
     }
 
@@ -172,4 +182,8 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
      * task can release relational resource in this method
      */
     protected abstract void doClose() throws Exception;
+
+    protected void afterModifiedJobParameters() throws Exception {
+        // do nothing
+    }
 }

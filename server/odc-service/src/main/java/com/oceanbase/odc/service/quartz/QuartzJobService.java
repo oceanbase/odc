@@ -37,11 +37,13 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.quartz.executor.QuartzJob;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
-import com.oceanbase.odc.service.schedule.model.CreateQuartzJobReq;
+import com.oceanbase.odc.service.schedule.model.ChangeQuartJobParam;
+import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 
@@ -59,25 +61,70 @@ public class QuartzJobService {
     @Qualifier(value = ("defaultScheduler"))
     private Scheduler scheduler;
 
-    public void createJob(CreateQuartzJobReq req) throws SchedulerException {
+    public void changeQuartzJob(ChangeQuartJobParam req) {
+
+        JobKey jobKey = QuartzKeyGenerator.generateJobKey(req.getJobName(), req.getJobGroup());
+        try {
+            switch (req.getOperationType()) {
+                case CREATE: {
+                    CreateQuartzJobParam createQuartzJobReq = new CreateQuartzJobParam();
+                    createQuartzJobReq.setJobKey(jobKey);
+                    createQuartzJobReq.setAllowConcurrent(req.getAllowConcurrent());
+                    createQuartzJobReq.setMisfireStrategy(req.getMisfireStrategy());
+                    createQuartzJobReq.setTriggerConfig(req.getTriggerConfig());
+                    createJob(createQuartzJobReq);
+                    break;
+                }
+                case UPDATE: {
+                    deleteJob(jobKey);
+                    CreateQuartzJobParam createQuartzJobReq = new CreateQuartzJobParam();
+                    createQuartzJobReq.setJobKey(jobKey);
+                    createQuartzJobReq.setAllowConcurrent(req.getAllowConcurrent());
+                    createQuartzJobReq.setMisfireStrategy(req.getMisfireStrategy());
+                    createQuartzJobReq.setTriggerConfig(req.getTriggerConfig());
+                    createJob(createQuartzJobReq);
+                    break;
+                }
+                case RESUME: {
+                    resumeJob(jobKey);
+                    break;
+                }
+                case PAUSE: {
+                    pauseJob(jobKey);
+                    break;
+                }
+                case TERMINATE: {
+                    deleteJob(jobKey);
+                    break;
+                }
+                default:
+                    throw new UnsupportedException();
+            }
+        } catch (Exception e) {
+            throw new UnexpectedException("");
+        }
+    }
+
+
+    public void createJob(CreateQuartzJobParam req) throws SchedulerException {
         createJob(req, null);
     }
 
-    public void createJob(CreateQuartzJobReq req, JobDataMap triggerDataMap) throws SchedulerException {
-
-        JobKey jobKey = QuartzKeyGenerator.generateJobKey(req.getScheduleId(), req.getType());
+    // TODO how can we recognize multi trigger for job. maybe we can use jobName as trigger group.
+    public void createJob(CreateQuartzJobParam req, JobDataMap triggerDataMap) throws SchedulerException {
 
         Class<? extends Job> clazz = QuartzJob.class;
 
         if (req.getTriggerConfig() != null) {
             JobDataMap triData = triggerDataMap == null ? new JobDataMap(new HashMap<>(1)) : triggerDataMap;
-            TriggerKey triggerKey = QuartzKeyGenerator.generateTriggerKey(req.getScheduleId(), req.getType());
+            TriggerKey triggerKey =
+                    QuartzKeyGenerator.generateTriggerKey(req.getJobKey().getName(), req.getJobKey().getGroup());
             Trigger trigger = buildTrigger(triggerKey, req.getTriggerConfig(), req.getMisfireStrategy(), triData);
-            JobDetail jobDetail = JobBuilder.newJob(clazz).withIdentity(jobKey)
+            JobDetail jobDetail = JobBuilder.newJob(clazz).withIdentity(req.getJobKey())
                     .usingJobData(req.getJobDataMap()).build();
             scheduler.scheduleJob(jobDetail, trigger);
         } else {
-            JobDetail jobDetail = JobBuilder.newJob(clazz).withIdentity(jobKey)
+            JobDetail jobDetail = JobBuilder.newJob(clazz).withIdentity(req.getJobKey())
                     .usingJobData(req.getJobDataMap()).storeDurably(true).build();
             scheduler.addJob(jobDetail, false);
         }

@@ -29,4 +29,6 @@ public class JobAttributeKeyConstants {
     public static final String LOG_STORAGE_WARN_OBJECT_ID = "LOG_STORAGE_WARN_OBJECT_ID";
 
     public static final String LOG_STORAGE_BUCKET_NAME = "LOG_STORAGE_BUCKET_NAME";
+
+    public static final String LOG_STORAGE_FAILED_REASON = "LOG_STORAGE_FAILED_REASON";
 }

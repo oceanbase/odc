@@ -110,7 +110,8 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
      * changed by default, and the {@code #setBlob} method is used to set the value.
      */
     private static final Pattern OBJECT_VALUE_PATTERN =
-            Pattern.compile("(?<!')(load_[a-zA-Z_]*file)\\('([a-zA-Z0-9_.\\-]+)'\\)(?!')", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("(?<!')(load_[a-zA-Z_]*file)\\s*\\(\\s*'([a-zA-Z0-9_.\\-]+)'\\s*\\)\\s*(?!')",
+                    Pattern.CASE_INSENSITIVE);
     private final ConnectType connectType;
     private final DialectType dialectType;
     private final JdbcRowMapper rowDataMapper;

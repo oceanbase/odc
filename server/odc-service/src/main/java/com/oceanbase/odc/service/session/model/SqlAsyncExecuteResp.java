@@ -38,6 +38,11 @@ public class SqlAsyncExecuteResp {
     private List<Rule> violatedRules;
     private List<SqlTuplesWithViolation> sqls;
     private List<UnauthorizedDBResource> unauthorizedDBResources;
+    private boolean logicalSql;
+
+    public SqlAsyncExecuteResp(boolean logicalSql) {
+        this.logicalSql = logicalSql;
+    }
 
     public SqlAsyncExecuteResp(String requestId, List<SqlTuplesWithViolation> sqls) {
         this.requestId = requestId;
