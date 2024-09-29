@@ -330,12 +330,21 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      */
     protected abstract void onProgressUpdate(Long taskId, TaskService taskService);
 
+    /**
+     * 取消任务
+     *
+     * @param mayInterruptIfRunning 是否中断正在运行的任务
+     * @return 是否成功取消任务
+     */
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
+        // 调用cancel方法取消任务，并获取返回结果
         boolean result = cancel(mayInterruptIfRunning, taskId, taskService);
+        // 如果取消成功，则设置下载日志的URL
         if (result) {
             setDownloadLogUrl();
         }
+        // 返回取消任务的结果
         return result;
     }
 
