@@ -31,8 +31,8 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
-import com.oceanbase.odc.service.db.browser.DBObjectOperators;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
+import com.oceanbase.odc.service.onlineschemachange.OscTableUtil;
 import com.oceanbase.odc.service.onlineschemachange.ddl.DdlUtils;
 import com.oceanbase.odc.service.onlineschemachange.fsm.Action;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
@@ -43,7 +43,6 @@ import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 
@@ -80,18 +79,11 @@ public class CreateGhostTableAction implements Action<OscActionContext, OscActio
                 OscStates.CREATE_DATA_TASK.getState());
     }
 
-    @Override
-    public void rollback(OscActionContext context) {
-        log.info("OSC: create table failed rollback, taskID {}", context.getScheduleTask().getId());
-        failedOscTask(context);
-    }
-
     @VisibleForTesting
     protected void prepareSchema(OnlineSchemaChangeParameters param, OnlineSchemaChangeScheduleTaskParameters taskParam,
             ConnectionSession session, Long scheduleTaskId, OscActionContext oscContext) throws SQLException {
-
-        dropNewTableIfExits(taskParam, session);
-
+        // drop is required, cause the following sql may failed, and we do retry from the beginning
+        OscTableUtil.dropNewTableIfExits(taskParam.getDatabaseName(), taskParam.getNewTableNameUnwrapped(), session);
         SyncJdbcExecutor executor = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
         String finalTableDdl;
         executor.execute(taskParam.getNewTableCreateDdl());
@@ -113,31 +105,6 @@ public class CreateGhostTableAction implements Action<OscActionContext, OscActio
         }
         log.info("Successfully created new table, ddl: {}", finalTableDdl);
         validateColumnDifferent(taskParam, session);
-    }
-
-    @VisibleForTesting
-    protected void dropNewTableIfExits(OnlineSchemaChangeScheduleTaskParameters taskParam, ConnectionSession session) {
-        List<String> list = DBSchemaAccessors.create(session)
-                .showTablesLike(taskParam.getDatabaseName(), taskParam.getNewTableNameUnwrapped());
-        // Drop new table suffix with _osc_new_ if exists
-        if (CollectionUtils.isNotEmpty(list)) {
-            DBObjectOperators.create(session)
-                    .drop(DBObjectType.TABLE, taskParam.getDatabaseName(), taskParam.getNewTableNameUnwrapped());
-            log.info("OSC: drop table {}.{}", taskParam.getDatabaseName(), taskParam.getNewTableNameUnwrapped());
-        }
-    }
-
-    @VisibleForTesting
-    protected void failedOscTask(OscActionContext context) {
-        ConnectionSession connectionSession = null;
-        try {
-            connectionSession = context.getConnectionProvider().createConnectionSession();
-            dropNewTableIfExits(context.getTaskParameter(), connectionSession);
-        } finally {
-            if (connectionSession != null) {
-                connectionSession.expire();
-            }
-        }
     }
 
     private void validateColumnDifferent(OnlineSchemaChangeScheduleTaskParameters taskParam,
