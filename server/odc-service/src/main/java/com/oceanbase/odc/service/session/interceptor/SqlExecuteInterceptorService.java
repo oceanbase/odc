@@ -24,6 +24,7 @@ import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.Ordered;
 import org.springframework.stereotype.Service;
 
@@ -49,16 +50,22 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize("odc internal usage")
 public class SqlExecuteInterceptorService {
 
+    @Value("${odc.sql.execute.interceptor.enabled:true}")
+    private Boolean isSqlExecuteInterceptorEnabled;
     @Autowired
     private ListableBeanFactory factory;
     private List<SqlExecuteInterceptor> interceptors;
 
     @PostConstruct
     public void init() {
-        Map<String, SqlExecuteInterceptor> beans = factory.getBeansOfType(SqlExecuteInterceptor.class);
-        List<SqlExecuteInterceptor> implementations = new ArrayList<>(beans.values());
-        implementations.sort(Comparator.comparingInt(Ordered::getOrder));
-        this.interceptors = implementations;
+        if (isSqlExecuteInterceptorEnabled) {
+            Map<String, SqlExecuteInterceptor> beans = factory.getBeansOfType(SqlExecuteInterceptor.class);
+            List<SqlExecuteInterceptor> implementations = new ArrayList<>(beans.values());
+            implementations.sort(Comparator.comparingInt(Ordered::getOrder));
+            this.interceptors = implementations;
+        } else {
+            this.interceptors = new ArrayList<>();
+        }
     }
 
     public boolean preHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
