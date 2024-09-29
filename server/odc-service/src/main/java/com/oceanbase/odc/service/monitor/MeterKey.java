@@ -15,85 +15,38 @@
  */
 package com.oceanbase.odc.service.monitor;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
-
 import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
 import lombok.Value;
 
 @Value
 public class MeterKey {
     MeterName meterName;
-    Iterable<Tag> tags;
+    Tags tags;
 
     public static MeterKey ofMeter(MeterName meter) {
-        return new MeterKey(meter, Collections.emptyList());
+        return new MeterKey(meter, Tags.empty());
     }
 
     public static MeterKey ofMeter(MeterName meter, Tag... tags) {
-        return new MeterKey(meter, Arrays.asList(tags));
-    }
-
-    public static MeterKey ofNeedRemoveMeter(MeterName meter, Tag... tags) {
-        return new MeterKey(meter, Arrays.asList(tags));
-    }
-
-    public static MeterKey ofMeter(MeterName meter, String uniqueKey, Tag... tags) {
-        return new MeterKey(meter, Arrays.asList(tags));
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
-        MeterKey that = (MeterKey) o;
-        if (!Objects.equals(meterName, that.meterName))
-            return false;
-        // Convert tags to sets for order-insensitive comparison
-        Set<Tag> thisTagSet = toTagSet(this.tags);
-        Set<Tag> thatTagSet = toTagSet(that.tags);
-
-        return Objects.equals(thisTagSet, thatTagSet);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = Objects.hash(meterName);
-        Set<Tag> tagSet = toTagSet(tags);
-        result = 31 * result + tagSet.hashCode();
-        return result;
-    }
-
-    private Set<Tag> toTagSet(Iterable<Tag> tags) {
-        Set<Tag> tagSet = new HashSet<>();
-        if (tags != null) {
-            for (Tag tag : tags) {
-                tagSet.add(tag);
-            }
-        }
-        return tagSet;
+        return new MeterKey(meter, Tags.of(tags));
     }
 
     public static class Builder {
         MeterName meterName;
-        Set<Tag> tags;
+        Tags tags;
 
         private Builder() {}
 
         public static Builder ofMeter(MeterName meter) {
             Builder builder = new Builder();
             builder.meterName = meter;
-            builder.tags = new HashSet<>();
+            builder.tags = Tags.empty();
             return builder;
         }
 
         public Builder addTag(String key, String value) {
-            this.tags.add(Tag.of(key, value));
+            this.tags.and(Tag.of(key, value));
             return this;
         }
 
