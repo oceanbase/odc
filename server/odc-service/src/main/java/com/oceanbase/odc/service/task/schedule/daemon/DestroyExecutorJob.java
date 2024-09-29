@@ -23,6 +23,7 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.data.domain.Page;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
@@ -82,8 +83,14 @@ public class DestroyExecutorJob implements Job {
                     if (e.getMessage() != null &&
                             !e.getMessage().startsWith(JobConstants.ODC_EXECUTOR_CANNOT_BE_DESTROYED)) {
                         AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTOR_DESTROY_FAILED,
-                                MessageFormat.format("Job executor destroy failed, jobId={0}, message={1}",
-                                        lockedEntity.getId(), e.getMessage()));
+                                JsonUtils.createJsonNodeBuilder()
+                                        .item("OrganizationId", lockedEntity.getOrganizationId())
+                                        .item("CreatorId", lockedEntity.getCreatorId())
+                                        .item("JobId", lockedEntity.getId())
+                                        .item("Message",
+                                                MessageFormat.format("Job executor destroy failed, message={0}",
+                                                        e.getMessage()))
+                                        .build());
                     }
                     throw new TaskRuntimeException(e);
                 }

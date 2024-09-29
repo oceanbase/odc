@@ -63,9 +63,29 @@ public final class AlarmEventNames {
      * TASK
      */
     public static final String TASK_CANCELED_FAILED = "TASK_CANCELED_FAILED";
+    public static final String TASK_CANCELED_FAILED_P0 = "TASK_CANCELED_FAILED_P0";
+    public static final String TASK_CANCELED_FAILED_P1 = "TASK_CANCELED_FAILED_P1";
+    public static final String TASK_CANCELED_FAILED_P2 = "TASK_CANCELED_FAILED_P2";
+
+
     public static final String TASK_HEARTBEAT_TIMEOUT = "TASK_HEARTBEAT_TIMEOUT";
+    public static final String TASK_HEARTBEAT_TIMEOUT_P0 = "TASK_HEARTBEAT_TIMEOUT_P0";
+    public static final String TASK_HEARTBEAT_TIMEOUT_P1 = "TASK_HEARTBEAT_TIMEOUT_P1";
+    public static final String TASK_HEARTBEAT_TIMEOUT_P2 = "TASK_HEARTBEAT_TIMEOUT_P2";
+
     public static final String TASK_START_FAILED = "TASK_START_FAILED";
+    public static final String TASK_START_FAILED_P0 = "TASK_START_FAILED_P0";
+    public static final String TASK_START_FAILED_P1 = "TASK_START_FAILED_P1";
+    public static final String TASK_START_FAILED_P2 = "TASK_START_FAILED_P2";
+
     public static final String TASK_EXECUTION_FAILED = "TASK_EXECUTION_FAILED";
+    public static final String TASK_EXECUTION_FAILED_P0 = "TASK_EXECUTION_FAILED_P0";
+    public static final String TASK_EXECUTION_FAILED_P1 = "TASK_EXECUTION_FAILED_P1";
+    public static final String TASK_EXECUTION_FAILED_P2 = "TASK_EXECUTION_FAILED_P2";
+
     public static final String TASK_EXECUTOR_DESTROY_FAILED = "TASK_EXECUTOR_DESTROY_FAILED";
+    public static final String TASK_EXECUTOR_DESTROY_FAILED_P0 = "TASK_EXECUTOR_DESTROY_FAILED_P0";
+    public static final String TASK_EXECUTOR_DESTROY_FAILED_P1 = "TASK_EXECUTOR_DESTROY_FAILED_P1";
+    public static final String TASK_EXECUTOR_DESTROY_FAILED_P2 = "TASK_EXECUTOR_DESTROY_FAILED_P2";
 
 }

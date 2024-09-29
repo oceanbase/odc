@@ -15,14 +15,13 @@
  */
 package com.oceanbase.odc.service.task.schedule.daemon;
 
-import java.text.MessageFormat;
-
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.data.domain.Page;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SilentExecutor;
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
@@ -110,7 +109,12 @@ public class CheckRunningJob implements Job {
             if (rows > 0) {
                 log.info("Set job status to FAILED accomplished, jobId={}, oldStatus={}.", a.getId(), a.getStatus());
                 AlarmUtils.alarm(AlarmEventNames.TASK_HEARTBEAT_TIMEOUT,
-                        MessageFormat.format("Job running failed due to heart timeout, jobId={0}", a.getId()));
+                        JsonUtils.createJsonNodeBuilder()
+                                .item("OrganizationId", jobEntity.getOrganizationId())
+                                .item("CreatorId", jobEntity.getCreatorId())
+                                .item("JobId", jobEntity.getId())
+                                .item("Message", "Job running failed due to heart timeout")
+                                .build());
             } else {
                 throw new TaskRuntimeException("Set job status to FAILED failed, jobId=" + jobEntity.getId());
             }

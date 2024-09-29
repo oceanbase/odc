@@ -25,6 +25,7 @@ import org.quartz.JobExecutionException;
 import org.springframework.data.domain.Page;
 
 import com.google.common.collect.Lists;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
@@ -112,8 +113,13 @@ public class StartPreparingJob implements Job {
                     getConfiguration().getJobDispatcher().start(jc);
                 } catch (JobException e) {
                     AlarmUtils.alarm(AlarmEventNames.TASK_START_FAILED,
-                            MessageFormat.format("Start job failed, jobId={0}, message={1}", lockedEntity.getId(),
-                                    e.getMessage()));
+                            JsonUtils.createJsonNodeBuilder()
+                                    .item("OrganizationId", lockedEntity.getOrganizationId())
+                                    .item("CreatorId", lockedEntity.getCreatorId())
+                                    .item("JobId", lockedEntity.getId())
+                                    .item("Message", MessageFormat.format("Start job failed, message={0}",
+                                            e.getMessage()))
+                                    .build());
                     throw new TaskRuntimeException(e);
                 }
             } else {

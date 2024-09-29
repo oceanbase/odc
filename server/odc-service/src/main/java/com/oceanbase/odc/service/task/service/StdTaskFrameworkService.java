@@ -334,9 +334,13 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
                 if (taskResult.getStatus() == JobStatus.FAILED) {
                     AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED,
-                            MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}",
-                                    taskResult.getJobIdentity().getId(),
-                                    SensitiveDataUtils.mask(taskResult.getResultJson())));
+                            JsonUtils.createJsonNodeBuilder()
+                                    .item("OrganizationId", je.getOrganizationId())
+                                    .item("CreatorId", je.getCreatorId())
+                                    .item("JobId", taskResult.getJobIdentity().getId())
+                                    .item("Message", MessageFormat.format("Job execution failed, resultJson={0}",
+                                            SensitiveDataUtils.mask(taskResult.getResultJson())))
+                                    .build());
                 }
             }
         }
@@ -434,8 +438,13 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             // TODO maybe we can destroy the pod there.
             if (result.getStatus() == JobStatus.FAILED) {
                 AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED,
-                        MessageFormat.format("Job execution failed, jobId={0}",
-                                result.getJobIdentity().getId()));
+                        JsonUtils.createJsonNodeBuilder()
+                                .item("OrganizationId", je.getOrganizationId())
+                                .item("CreatorId", je.getCreatorId())
+                                .item("JobId", result.getJobIdentity().getId())
+                                .item("Message", MessageFormat.format("Job execution failed, resultJson={0}",
+                                        SensitiveDataUtils.mask(result.getResultJson())))
+                                .build());
             }
         }
     }

@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
-import java.text.MessageFormat;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -171,7 +170,12 @@ public class StdJobScheduler implements JobScheduler {
         } catch (JobException e) {
             log.warn("Stop job occur error: ", e);
             AlarmUtils.alarm(AlarmEventNames.TASK_CANCELED_FAILED,
-                    MessageFormat.format("Cancel job failed, jobId={0}", jobEntity.getId()));
+                    JsonUtils.createJsonNodeBuilder()
+                            .item("OrganizationId", jobEntity.getOrganizationId())
+                            .item("CreatorId", jobEntity.getCreatorId())
+                            .item("JobId", jobEntity.getId())
+                            .item("Message", "Cancel job failed")
+                            .build());
             throw new TaskRuntimeException(e);
         }
         int count = configuration.getTaskFrameworkService().updateJobToCanceling(jobId, jobEntity.getStatus());

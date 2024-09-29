@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.core.alarm;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import lombok.Getter;
 
 @Getter
@@ -23,11 +25,11 @@ public class AlarmEvent {
 
     private final String eventName;
 
-    private final String eventMessage;
+    private final JsonNode eventMessage;
 
     private final AlarmLevel level;
 
-    public AlarmEvent(String eventName, String eventMessage, AlarmLevel level) {
+    public AlarmEvent(String eventName, JsonNode eventMessage, AlarmLevel level) {
         this.eventName = eventName;
         this.eventMessage = eventMessage;
         this.level = level;

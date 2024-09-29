@@ -30,13 +30,16 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.oceanbase.odc.common.util.StringUtils;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -236,4 +239,28 @@ public class JsonUtils {
             return null;
         }
     }
+
+    public static JsonNodeBuilder createJsonNodeBuilder() {
+        return new JsonNodeBuilder();
+    }
+
+    public static class JsonNodeBuilder {
+
+        ObjectNode jsonNode;
+
+        public JsonNodeBuilder() {
+            jsonNode = OBJECT_MAPPER.createObjectNode();
+        }
+
+        public JsonNodeBuilder item(@NonNull String key, @NonNull Object value) {
+            jsonNode.putPOJO(key, value);
+            return this;
+        }
+
+        public JsonNode build() {
+            return jsonNode;
+        }
+
+    }
+
 }
