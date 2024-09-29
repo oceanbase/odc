@@ -110,10 +110,17 @@ public class OnlineSchemaChangeValidator {
                         validateSchema(alter.getSchema(), database, connectionConfig.getDialectType());
                     }
                 }
+                OscFactoryWrapper oscFactoryWrapper = OscFactoryWrapperGenerator.generate(session.getDialectType());
+                TableNameDescriptorFactory tableNameDescriptorFactory =
+                        oscFactoryWrapper.getTableNameDescriptorFactory();
+                TableNameDescriptor tableNameDescriptor = tableNameDescriptorFactory.getTableNameDescriptor(tableName);
 
                 validateTableNameLength(tableName, connectionConfig.getDialectType());
                 validateOriginTableExists(database, tableName, session);
-                validateOldTableNotExists(database, tableName, session);
+                // valid check ghost table and renamed table not exists
+                validateTableNotExists(database, tableNameDescriptor.getNewTableNameUnWrapped(), session);
+                validateTableNotExists(database, tableNameDescriptor.getRenamedTableNameUnWrapped(), session);
+                // valid constraints
                 validateForeignKeyTable(database, tableName, session);
                 validateTableConstraints(database, tableName, session);
             }
@@ -175,14 +182,11 @@ public class OnlineSchemaChangeValidator {
                 () -> CollectionUtils.isNotEmpty(tables));
     }
 
-    private void validateOldTableNotExists(String database, String tableName, ConnectionSession session) {
+    private void validateTableNotExists(String database, String tableName, ConnectionSession session) {
         DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
-        OscFactoryWrapper oscFactoryWrapper = OscFactoryWrapperGenerator.generate(session.getDialectType());
-        TableNameDescriptorFactory tableNameDescriptorFactory = oscFactoryWrapper.getTableNameDescriptorFactory();
-        TableNameDescriptor tableNameDescriptor = tableNameDescriptorFactory.getTableNameDescriptor(tableName);
-        List<String> tables = accessor.showTablesLike(database, tableNameDescriptor.getRenamedTableNameUnWrapped());
+        List<String> tables = accessor.showTablesLike(database, DdlUtils.getUnwrappedName(tableName));
         PreConditions.validNoDuplicated(ResourceType.OB_TABLE, "tableName",
-                tableNameDescriptor.getRenamedTableName(), () -> CollectionUtils.isNotEmpty(tables));
+                tableName, () -> CollectionUtils.isNotEmpty(tables));
     }
 
     private void validateForeignKeyTable(String database, String tableName, ConnectionSession session) {
