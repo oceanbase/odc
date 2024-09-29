@@ -105,7 +105,7 @@ public class K8sDeploymentStatusDfa extends AbstractDfa<ResourceState, K8sDeploy
 
     @Override
     protected void onStateTransfer(ResourceState currentState, ResourceState nextState, K8sDeployment k8sDeployment) {
-        log.info("The state has been changed, currentState={}, nextState={}", currentState, nextState);
+        log.debug("The state has been changed, currentState={}, nextState={}", currentState, nextState);
     }
 
 }

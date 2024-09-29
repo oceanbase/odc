@@ -30,6 +30,7 @@ import lombok.Data;
 public class WorkflowClusterProperties {
     private List<String> imagePullSecrets;
     private String executorName;
+    private String imageName;
     private String shareVpcMetaDBHost;
     private Integer shareVpcMetaDBPort;
     private String shareVpcMetaDBUsername;

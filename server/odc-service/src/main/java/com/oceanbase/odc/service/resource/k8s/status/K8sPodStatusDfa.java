@@ -113,7 +113,7 @@ public class K8sPodStatusDfa extends AbstractDfa<ResourceState, K8sPod> {
 
     @Override
     protected void onStateTransfer(ResourceState currentState, ResourceState nextState, K8sPod pod) {
-        log.info("The state has been changed, currentState={}, nextState={}", currentState, nextState);
+        log.debug("The state has been changed, currentState={}, nextState={}", currentState, nextState);
     }
 
 }
