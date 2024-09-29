@@ -167,7 +167,7 @@ public class AbstractDlmPreprocessor implements Preprocessor {
                     String.format("Unsupported data link from %s to %s.", sourceDs.getCloudProvider(),
                             targetDs.getCloudProvider()));
         }
-        if (StringUtils.isNotEmpty(sourceDs.getRegion()) && !sourceDs.getCloudProvider().equals(targetDs.getRegion())) {
+        if (StringUtils.isNotEmpty(sourceDs.getRegion()) && !sourceDs.getRegion().equals(targetDs.getRegion())) {
             throw new UnsupportedException(
                     String.format("Unsupported data link from %s to %s.", sourceDs.getRegion(),
                             targetDs.getRegion()));
