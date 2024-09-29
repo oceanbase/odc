@@ -75,26 +75,47 @@ public class SqlDiagnoseService {
                                         odcSql.getTag()));
     }
 
+    /**
+     * 获取SQL执行详情
+     *
+     * @param session 数据库会话
+     * @param odcSql  ODC SQL对象
+     * @return SQL执行详情
+     */
     public SqlExecDetail getExecutionDetail(ConnectionSession session, ResourceSql odcSql) {
+        // 如果ODC SQL对象的标签为空，则通过SQL语句获取执行详情，否则通过标签获取执行详情
         return StringUtils.isBlank(odcSql.getTag())
-                ? session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                        .execute((ConnectionCallback<SqlExecDetail>) con -> ConnectionPluginUtil
-                                .getDiagnoseExtension(session.getDialectType()).getExecutionDetailBySql(con,
-                                        odcSql.getSql()))
-                : session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                        .execute((ConnectionCallback<SqlExecDetail>) con -> ConnectionPluginUtil
-                                .getDiagnoseExtension(session.getDialectType()).getExecutionDetailById(con,
-                                        odcSql.getTag()));
+            ? session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
+            .execute((ConnectionCallback<SqlExecDetail>) con -> ConnectionPluginUtil
+                .getDiagnoseExtension(session.getDialectType()).getExecutionDetailBySql(con,
+                    odcSql.getSql()))
+            : session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<SqlExecDetail>) con -> ConnectionPluginUtil
+                    .getDiagnoseExtension(session.getDialectType()).getExecutionDetailById(con,
+                        odcSql.getTag()));
     }
 
+    /**
+     * 获取全链路跟踪信息
+     *
+     * @param session 数据库连接会话
+     * @param odcSql  ODC SQL对象
+     * @return 全链路跟踪信息
+     * @throws IOException IO异常
+     */
     public TraceSpan getFullLinkTrace(ConnectionSession session, ResourceSql odcSql) throws IOException {
+        // 从ODC SQL对象中获取traceId
         String traceId = odcSql.getTag();
+        // 通过traceId获取二进制元数据
         BinaryContentMetaData metaData = ConnectionSessionUtil.getBinaryContentMetadata(session, traceId);
+        // 如果元数据为空，则抛出NotFoundException异常
         if (metaData == null) {
             throw new NotFoundException(ErrorCodes.NotFound, new Object[] {"Trace info", "traceId", traceId},
-                    "Trace info not found with traceId=" + traceId);
+                "Trace info not found with traceId=" + traceId);
         }
+        // 通过二进制数据管理器读取流
         InputStream stream = ConnectionSessionUtil.getBinaryDataManager(session).read(metaData);
+        // 将流转换为TraceSpan对象并返回
         return JsonUtils.fromJson(StreamUtils.copyToString(stream, StandardCharsets.UTF_8), TraceSpan.class);
     }
 
