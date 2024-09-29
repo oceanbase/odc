@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.monitor;
 
-import static com.oceanbase.odc.core.alarm.AlarmEventNames.TOO_MANY_REGISTERED_METER;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
@@ -27,7 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.service.monitor.MonitorAutoConfiguration.BusinessMeterRegistry;
 
 import io.micrometer.core.instrument.Counter;
@@ -53,14 +50,22 @@ public class InMemoryMetricManager implements MetricManager, InitializingBean {
     @Autowired
     private MonitorProperties monitorProperties;
 
+    private Counter overCounterMaxCounter;
+
+    private Counter overTimmerMaxCounter;
+
     @Override
     public void afterPropertiesSet() throws Exception {
         registerGauge(MeterKey.ofMeter(MeterName.METER_COUNTER_HOLDER_COUNT), this.COUNTER_MAP::size);
         registerGauge(MeterKey.ofMeter(MeterName.METER_TIMER_HOLDER_COUNT), this.TIMER_SAMPLE_MAP::size);
+        overCounterMaxCounter =
+                registerCounter(MeterKey.ofMeter(MeterName.METER_OVER_MAX_REGISTER_COUNT, Tag.of("meter", "counter")));
+        overTimmerMaxCounter =
+                registerCounter(MeterKey.ofMeter(MeterName.METER_OVER_MAX_REGISTER_COUNT, Tag.of("meter", "timer")));
     }
 
 
-    public void registerGauge(MeterKey meterKey, Supplier<Number> f) {
+    public boolean registerGauge(MeterKey meterKey, Supplier<Number> f) {
         MeterName meterName = meterKey.getMeterName();
         Iterable<Tag> tags = meterKey.getTags();
         Gauge.Builder<Supplier<Number>> builder = Gauge.builder(meterName.getMeterName(), f)
@@ -70,15 +75,16 @@ public class InMemoryMetricManager implements MetricManager, InitializingBean {
         }
         builder.register(businessMeterRegistry);
         log.info(String.format("Register gauge, meterKey=[%s]", meterKey));
+        return true;
     }
 
-    public void incrementCounter(MeterKey meterKey) {
+    public boolean incrementCounter(MeterKey meterKey) {
         CounterWrapper wrapper = COUNTER_MAP.get(meterKey);
         if (wrapper == null) {
             if (COUNTER_MAP.size() >= monitorProperties.getMeter().getMaxCounterMeterNumber()) {
                 log.error("Too many counter to register, meterKey={}", meterKey);
-                AlarmUtils.alarm(TOO_MANY_REGISTERED_METER, "Too many counter, meterKey=" + meterKey);
-                return;
+                overCounterMaxCounter.increment();
+                return false;
             }
             wrapper = COUNTER_MAP.computeIfAbsent(meterKey, (key) -> new CounterWrapper(null));
         }
@@ -88,6 +94,7 @@ public class InMemoryMetricManager implements MetricManager, InitializingBean {
                 wrapper.setCounter(counter);
             }
             wrapper.getCounter().increment();
+            return true;
         }
     }
 
@@ -103,38 +110,39 @@ public class InMemoryMetricManager implements MetricManager, InitializingBean {
         return register;
     }
 
-    public void startTimerSample(String sampleKey, MeterKey meterKey) {
+    public boolean startTimerSample(String sampleKey, MeterKey meterKey) {
         Pair<String, MeterKey> sampleMapKey = Pair.of(sampleKey, meterKey);
         TimerSampleHolder sampleHolder = this.TIMER_SAMPLE_MAP.get(sampleMapKey);
         if (sampleHolder == null) {
             if (this.TIMER_SAMPLE_MAP.size() >= monitorProperties.getMeter().getMaxTimerMeterNumber()) {
                 log.error("Too many Timer to register, meterKey={}", meterKey);
-                AlarmUtils.alarm(TOO_MANY_REGISTERED_METER, "Too many timer, meterKey=" + meterKey);
-                return;
+                overTimmerMaxCounter.increment();
+                return false;
             }
             sampleHolder = this.TIMER_SAMPLE_MAP.computeIfAbsent(sampleMapKey,
                     k -> new TimerSampleHolder(null));
         }
         synchronized (sampleHolder) {
             if (sampleHolder.sample != null) {
-                return;
+                return true;
             }
             Timer.Sample start = Timer.start(this.businessMeterRegistry);
             sampleHolder.setSample(start);
             log.info(String.format("Start a Timer Sample for MeterKey=%s", meterKey));
+            return true;
         }
     }
 
-    public void recordTimerSample(String sampleKey, MeterKey meterKey) {
+    public boolean recordTimerSample(String sampleKey, MeterKey meterKey) {
         Pair<String, MeterKey> sampleMapKey = Pair.of(sampleKey, meterKey);
         TimerSampleHolder timerSampleHolder = this.TIMER_SAMPLE_MAP.get(sampleMapKey);
         if (timerSampleHolder == null) {
-            return;
+            return false;
         }
         synchronized (timerSampleHolder) {
             timerSampleHolder = this.TIMER_SAMPLE_MAP.get(sampleMapKey);
             if (timerSampleHolder == null) {
-                return;
+                return false;
             }
             Iterable<Tag> tags = meterKey.getTags();
             Timer.Builder builder = Timer.builder(meterKey.getMeterName().getMeterName())
@@ -145,6 +153,7 @@ public class InMemoryMetricManager implements MetricManager, InitializingBean {
             timerSampleHolder.stop(builder.register(businessMeterRegistry));
             log.info(String.format("Record a Timer Sample for MeterKey=%s", meterKey));
             this.TIMER_SAMPLE_MAP.remove(sampleMapKey);
+            return true;
         }
     }
 

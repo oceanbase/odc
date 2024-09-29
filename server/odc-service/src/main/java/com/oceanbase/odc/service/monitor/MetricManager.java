@@ -19,11 +19,11 @@ import java.util.function.Supplier;
 
 public interface MetricManager {
 
-    void registerGauge(MeterKey meterKey, Supplier<Number> f);
+    boolean registerGauge(MeterKey meterKey, Supplier<Number> f);
 
-    void incrementCounter(MeterKey meterKey);
+    boolean incrementCounter(MeterKey meterKey);
 
-    void startTimerSample(String sampleKey, MeterKey meterKey);
+    boolean startTimerSample(String sampleKey, MeterKey meterKey);
 
-    void recordTimerSample(String sampleKey, MeterKey meterKey);
+    boolean recordTimerSample(String sampleKey, MeterKey meterKey);
 }

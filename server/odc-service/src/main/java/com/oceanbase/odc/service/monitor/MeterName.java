@@ -75,6 +75,7 @@ public enum MeterName {
 
     METER_COUNTER_HOLDER_COUNT("meter.counter.holder.count", "meter counter holder count"),
     METER_TIMER_HOLDER_COUNT("meter.timer.holder.count", "meter timer holder count"),
+    METER_OVER_MAX_REGISTER_COUNT("meter.over.max.register", "meter over max register"),
     ;
 
     private final String meterName;

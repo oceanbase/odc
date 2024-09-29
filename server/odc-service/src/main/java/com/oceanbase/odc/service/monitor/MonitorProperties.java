@@ -47,7 +47,6 @@ public class MonitorProperties {
     @Data
     public static class MeterProperties {
         private Integer maxTimerMeterNumber = 500;
-        private Integer maxGaugeMeterNumber = 100;
         private Integer maxCounterMeterNumber = 100;
     }
 }

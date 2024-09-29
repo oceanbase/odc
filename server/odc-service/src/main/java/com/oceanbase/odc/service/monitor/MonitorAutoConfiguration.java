@@ -117,23 +117,23 @@ public class MonitorAutoConfiguration {
     static class NonEnabledMetricManager implements MetricManager {
 
         @Override
-        public void registerGauge(MeterKey meterKey, Supplier<Number> f) {
-
+        public boolean registerGauge(MeterKey meterKey, Supplier<Number> f) {
+            return false;
         }
 
         @Override
-        public void incrementCounter(MeterKey meterKey) {
-
+        public boolean incrementCounter(MeterKey meterKey) {
+            return false;
         }
 
         @Override
-        public void startTimerSample(String sampleKey, MeterKey meterKey) {
-
+        public boolean startTimerSample(String sampleKey, MeterKey meterKey) {
+            return false;
         }
 
         @Override
-        public void recordTimerSample(String sampleKey, MeterKey meterKey) {
-
+        public boolean recordTimerSample(String sampleKey, MeterKey meterKey) {
+            return false;
         }
 
     }
