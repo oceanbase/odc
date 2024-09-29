@@ -166,6 +166,7 @@ public class ScheduleResponseMapperFactory {
             ScheduleOverview overview = new ScheduleOverview();
             overview.setScheduleId(o.getId());
             overview.setScheduleName(o.getName());
+            overview.setType(o.getType());
             overview.setCreator(new InnerUser(users.get(o.getCreatorId()).get(0), null));
             overview.setStatus(o.getStatus());
             overview.setTriggerConfig(JsonUtils.fromJson(o.getTriggerConfigJson(), TriggerConfig.class));
