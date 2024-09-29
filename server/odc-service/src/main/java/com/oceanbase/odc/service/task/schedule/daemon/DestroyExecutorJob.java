@@ -87,6 +87,7 @@ public class DestroyExecutorJob implements Job {
                                         .item("OrganizationId", lockedEntity.getOrganizationId())
                                         .item("CreatorId", lockedEntity.getCreatorId())
                                         .item("JobId", lockedEntity.getId())
+                                        .item("TaskType", lockedEntity.getJobType())
                                         .item("Message",
                                                 MessageFormat.format("Job executor destroy failed, message={0}",
                                                         e.getMessage()))

@@ -113,6 +113,7 @@ public class CheckRunningJob implements Job {
                                 .item("OrganizationId", jobEntity.getOrganizationId())
                                 .item("CreatorId", jobEntity.getCreatorId())
                                 .item("JobId", jobEntity.getId())
+                                .item("TaskType", jobEntity.getJobType())
                                 .item("Message", "Job running failed due to heart timeout")
                                 .build());
             } else {

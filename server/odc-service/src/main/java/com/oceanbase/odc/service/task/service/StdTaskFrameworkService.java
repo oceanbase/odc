@@ -338,6 +338,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                                     .item("OrganizationId", je.getOrganizationId())
                                     .item("CreatorId", je.getCreatorId())
                                     .item("JobId", taskResult.getJobIdentity().getId())
+                                    .item("TaskType", je.getJobType())
                                     .item("Message", MessageFormat.format("Job execution failed, resultJson={0}",
                                             SensitiveDataUtils.mask(taskResult.getResultJson())))
                                     .build());
@@ -442,6 +443,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                                 .item("OrganizationId", je.getOrganizationId())
                                 .item("CreatorId", je.getCreatorId())
                                 .item("JobId", result.getJobIdentity().getId())
+                                .item("TaskType", je.getJobType())
                                 .item("Message", MessageFormat.format("Job execution failed, resultJson={0}",
                                         SensitiveDataUtils.mask(result.getResultJson())))
                                 .build());

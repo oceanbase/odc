@@ -174,6 +174,7 @@ public class StdJobScheduler implements JobScheduler {
                             .item("OrganizationId", jobEntity.getOrganizationId())
                             .item("CreatorId", jobEntity.getCreatorId())
                             .item("JobId", jobEntity.getId())
+                            .item("TaskType", jobEntity.getJobType())
                             .item("Message", "Cancel job failed")
                             .build());
             throw new TaskRuntimeException(e);

@@ -117,6 +117,7 @@ public class StartPreparingJob implements Job {
                                     .item("OrganizationId", lockedEntity.getOrganizationId())
                                     .item("CreatorId", lockedEntity.getCreatorId())
                                     .item("JobId", lockedEntity.getId())
+                                    .item("TaskType", lockedEntity.getJobType())
                                     .item("Message", MessageFormat.format("Start job failed, message={0}",
                                             e.getMessage()))
                                     .build());
