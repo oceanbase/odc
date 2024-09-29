@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ public class OscTableUtil {
     public static void dropNewTableIfExits(String databaseName, String tableName, ConnectionSession session) {
         List<String> list = DBSchemaAccessors.create(session)
                 .showTablesLike(databaseName, tableName);
-        // Drop new table suffix with _osc_new_ if exists
+        // Drop new table if exists
         if (CollectionUtils.isNotEmpty(list)) {
             DBObjectOperators.create(session)
                     .drop(DBObjectType.TABLE, databaseName, tableName);
