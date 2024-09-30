@@ -517,7 +517,7 @@ public class DatabaseService {
             return true;
         } catch (Exception ex) {
             log.warn("Sync database failed, dataSourceId={}, errorMessage={}",
-                    dataSourceId, ExceptionUtils.getRootCauseReason(ex));
+                    dataSourceId, ExceptionUtils.getSimpleReason(ex));
             return false;
         } finally {
             lock.unlock();
