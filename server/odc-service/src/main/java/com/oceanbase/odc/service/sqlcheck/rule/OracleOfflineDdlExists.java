@@ -19,6 +19,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.jdbc.core.JdbcOperations;
@@ -72,7 +73,7 @@ public class OracleOfflineDdlExists extends MySQLOfflineDdlExists {
                 violations.addAll(dropPartition(statement, action));
                 violations.addAll(truncatePartition(statement, action));
                 return violations.stream();
-            }).collect(Collectors.toList());
+            }).filter(Objects::nonNull).collect(Collectors.toList());
         } else if (statement instanceof TruncateTable) {
             return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
                     statement, getType(), new Object[] {"TRUNCATE TABLE"}));

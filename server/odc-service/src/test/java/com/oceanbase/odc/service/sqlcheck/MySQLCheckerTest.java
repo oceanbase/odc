@@ -1144,7 +1144,9 @@ public class MySQLCheckerTest {
                 "create table abcd(id varchar(64))",
                 "alter table abcd modify id int AUTO_INCREMENT",
                 "alter table abcd modify id varchar(64)",
-                "alter table abcd add column a int after a"
+                "alter table abcd add column a int after a",
+                "ALTER TABLE `xes_qiwei_teacher_relation` CHANGE `bind_time` "
+                        + "`bind_time` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT '绑定时间';"
         };
         JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
         Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.any(RowMapper.class)))
