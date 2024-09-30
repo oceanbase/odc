@@ -56,6 +56,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.permission.Permission;
 import com.oceanbase.odc.core.authority.util.Authenticated;
@@ -515,7 +516,8 @@ public class DatabaseService {
             });
             return true;
         } catch (Exception ex) {
-            log.warn("Sync database failed, dataSourceId={}, errorMessage={}", dataSourceId, ex.getLocalizedMessage());
+            log.warn("Sync database failed, dataSourceId={}, errorMessage={}",
+                    dataSourceId, ExceptionUtils.getRootCauseReason(ex));
             return false;
         } finally {
             lock.unlock();
