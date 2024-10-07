@@ -45,16 +45,6 @@ public enum MeterName {
     JOB_DESTROY_SUCCESS_COUNT("job.destroy.success.count", "job destroy success count"),
     JOB_DESTROY_FAILED_COUNT("job.destroy.failed.count", "job destroy failed count"),
 
-    // task module
-    TASK_EXECUTE_COUNT("odc.server.task.execute.total.count", "total task execute count"),
-    TASK_RETRY_COUNT("odc.server.task.execute.retry.count", "total task retry count"),
-    TASK_EXECUTE_SUCCESS_COUNT("odc.server.task.execute.success.count", "total task execute success count"),
-    TASK_EXECUTE_FAILED_COUNT("odc.server.task.execute.failed.count", "total task execute failed count"),
-    RUNNING_TASK_GAUGE("odc.server.task.running.tasks", "Running task count"),
-    WAITING_TASK_GAUGE("odc.server.task.waiting.tasks", "Waiting task count"),
-    RUNNING_POD_GAUGE("odc.server.task.running.pods", "Running pod count"),
-    TASK_RUNNING_TIME("odc.server.task.running.time", "Task running time"),
-
     // session module
     CONNECT_SESSION_ACTIVE_COUNT("connect.session.active.count", "connect session active count"),
     CONNECT_SESSION_EXPIRED_COUNT("connect.session.expire.count", "connect session expired count"),

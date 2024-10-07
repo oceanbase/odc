@@ -69,7 +69,7 @@ public class InMemoryMetricManager implements MetricManager, InitializingBean {
         MeterName meterName = meterKey.getMeterName();
         Iterable<Tag> tags = meterKey.getTags();
         Gauge.Builder<Supplier<Number>> builder = Gauge.builder(meterName.getMeterName(), f)
-                .description(MeterName.CONNECT_SESSION_ACTIVE_COUNT.getDescription());
+                .description(meterName.getDescription());
         for (Tag tag : tags) {
             builder.tag(tag.getKey(), tag.getValue());
         }

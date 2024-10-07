@@ -206,14 +206,14 @@ public class FlowTaskSubmitter implements JavaDelegate {
     }
 
     private void sendEndMetric(String taskId, String taskType, String organizationId) {
-        metricManager.incrementCounter(getTaskMeterKey(MeterName.FLOW_TASK_START_COUNT, taskType, organizationId));
+        metricManager.incrementCounter(getTaskMeterKey(MeterName.FLOW_TASK_SUCCESS_COUNT, taskType, organizationId));
         metricManager
                 .recordTimerSample(taskId,
                         getUniqueTaskMeterKey(MeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
     }
 
     private void sendFailedMetric(String taskId, String taskType, String organizationId) {
-        metricManager.incrementCounter(getTaskMeterKey(MeterName.FLOW_TASK_START_COUNT, taskType, organizationId));
+        metricManager.incrementCounter(getTaskMeterKey(MeterName.FLOW_TASK_FAILED_COUNT, taskType, organizationId));
         metricManager
                 .recordTimerSample(taskId,
                         getUniqueTaskMeterKey(MeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
