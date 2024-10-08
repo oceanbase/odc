@@ -321,8 +321,7 @@
                             </preinstallScriptlet>
                             <postinstallScriptlet>
                                 <script>
-                                    echo "hello leo" &amp;&amp;
-                                    if [ -f "${rpm.rootdir}/bin/obclient.tar.gz"]; then
+                                    if [ -e "${rpm.rootdir}/bin/obclient.tar.gz" ]; then
                                     echo "start install obclient" &amp;&amp;
                                     tar -xvzf ${rpm.rootdir}/bin/obclient.tar.gz -C ${rpm.rootdir} &amp;&amp;
                                     rm -f ${rpm.rootdir}/bin/obclient.tar.gz &amp;&amp;
