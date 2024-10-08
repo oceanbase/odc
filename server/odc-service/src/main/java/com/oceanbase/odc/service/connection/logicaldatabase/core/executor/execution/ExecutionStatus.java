@@ -21,9 +21,12 @@ public enum ExecutionStatus {
     SKIPPED,
     RUNNING,
     PENDING,
+    SKIPPING,
+    TERMINATING,
+    TERMINATE_FAILED,
     TERMINATED;
 
     public boolean isCompleted() {
-        return this == SUCCESS || this == FAILED || this == SKIPPED || this == TERMINATED;
+        return this == SUCCESS || this == SKIPPED;
     }
 }

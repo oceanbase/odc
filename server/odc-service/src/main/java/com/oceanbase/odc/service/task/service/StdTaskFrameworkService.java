@@ -368,7 +368,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         try {
             String executorEndpoint = executorEndpointManager.getExecutorEndpoint(je);
             DefaultTaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
-            if (MapUtils.isEmpty(result.getLogMetadata())) {
+            if (je.getRunMode().isK8s() && MapUtils.isEmpty(result.getLogMetadata())) {
                 log.info("Refresh log failed due to log have not uploaded,  jobId={}, currentStatus={}", je.getId(),
                         je.getStatus());
                 return false;
@@ -376,7 +376,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
             if ("DLM".equals(je.getJobType())) {
                 dlmResultProcessor.process(result);
-            } else if ("LogicalDatabaseChange".equals(je.getJobType())) {
+            } else if (StringUtils.equalsIgnoreCase("LogicalDatabaseChange", je.getJobType())) {
                 logicalDBChangeResultProcessor.process(result);
             }
             return true;
@@ -410,7 +410,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         log.info("Progress changed, will update result, jobId={}, currentProgress={}", id, result.getProgress());
         if ("DLM".equals(je.getJobType())) {
             dlmResultProcessor.process(result);
-        } else if ("LogicalDatabaseChange".equals(je.getJobType())) {
+        } else if (StringUtils.equalsIgnoreCase("LogicalDatabaseChange", je.getJobType())) {
             logicalDBChangeResultProcessor.process(result);
         }
         saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
@@ -485,7 +485,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         JobEntity jse = new JobEntity();
         if ("DLM".equals(currentJob.getJobType())) {
             dlmResultProcessor.process(taskResult);
-        } else if ("LogicalDatabaseChange".equals(currentJob.getJobType())) {
+        } else if (StringUtils.equalsIgnoreCase("LogicalDatabaseChange", currentJob.getJobType())) {
             logicalDBChangeResultProcessor.process(taskResult);
         }
         jse.setResultJson(taskResult.getResultJson());

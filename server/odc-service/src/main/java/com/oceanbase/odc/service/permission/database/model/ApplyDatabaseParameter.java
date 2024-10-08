@@ -20,6 +20,8 @@ import java.util.Date;
 import java.util.List;
 
 import com.oceanbase.odc.core.flow.model.TaskParameters;
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter.ApplyProject;
 
 import lombok.Data;
@@ -60,9 +62,11 @@ public class ApplyDatabaseParameter implements Serializable, TaskParameters {
         private static final long serialVersionUID = -8433967513537417701L;
 
         private Long id;
+        private DatabaseType type;
         private String name;
         private Long dataSourceId;
         private String dataSourceName;
+        private DialectType dialectType;
 
     }
 
