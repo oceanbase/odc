@@ -77,6 +77,8 @@ import com.oceanbase.odc.service.collaboration.project.model.QueryProjectParams;
 import com.oceanbase.odc.service.collaboration.project.model.SetArchivedReq;
 import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
+import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.UserOrganizationService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -144,6 +146,12 @@ public class ProjectService {
 
     @Autowired
     private ScheduleRepository scheduleRepository;
+
+    @Autowired
+    private HorizontalDataPermissionValidator horizontalDataPermissionValidator;
+
+    @Autowired
+    private ProjectPermissionValidator projectPermissionValidator;
 
     @Value("${odc.integration.bastion.enabled:false}")
     private boolean bastionEnabled;
@@ -483,6 +491,14 @@ public class ProjectService {
     @SkipAuthorize("odc internal usage")
     public Project getBasicSkipPermissionCheck(Long id) {
         return projectMapper.entityToModel(nullSafeGet(id));
+    }
+
+
+    @SkipAuthorize("odc internal usage")
+    public void checkCurrentUserProjectRolePermissions(@NotNull Project project,
+            @NotEmpty List<ResourceRoleName> roleNames) {
+        horizontalDataPermissionValidator.checkCurrentOrganization(project);
+        projectPermissionValidator.checkProjectRole(project.getId(), roleNames);
     }
 
     private Project entityToModel(ProjectEntity entity, List<UserResourceRole> userResourceRoles) {

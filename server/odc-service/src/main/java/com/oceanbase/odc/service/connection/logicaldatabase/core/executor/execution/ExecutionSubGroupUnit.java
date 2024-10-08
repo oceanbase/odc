@@ -28,20 +28,20 @@ import lombok.extern.slf4j.Slf4j;
 public class ExecutionSubGroupUnit<Input, Result> {
     private final String id;
     private final Long order;
-    private final ExecutionHandler<Input, Result> callback;
+    private final ExecutionHandler<Input, Result> handler;
     private final Input input;
 
     public ExecutionSubGroupUnit(String id, Long order, ExecutionHandler<Input, Result> executionCallback,
             Input input) {
         this.id = id;
         this.order = order;
-        this.callback = executionCallback;
+        this.handler = executionCallback;
         this.input = input;
     }
 
     public void beforeExecute(ExecutionGroupContext<Input, Result> context) {
         try {
-            context.setExecutionResult(id, (k, v) -> callback.beforeExecute(context));
+            context.setExecutionResult(id, (k, v) -> handler.beforeExecute(context));
         } catch (Exception e) {
             log.warn("ExecutionUnit execute failed, executionId={}, ex=", id, e);
         }
@@ -51,47 +51,76 @@ public class ExecutionSubGroupUnit<Input, Result> {
         context.setExecutionResult(id, (k, v) -> {
             if (v.getStatus() != ExecutionStatus.PENDING) {
                 throw new IllegalStateException(
-                        "ExecutionUnit is not in PENDING status, executionId=" + id + ", status=" + v.getStatus());
+                        "Cannot execute because ExecutionUnit is not in PENDING status, executionId=" + id + ", status="
+                                + v.getStatus());
             }
             log.info("ExecutionUnit starts to execute, executionId={}", id);
             v.setStatus(ExecutionStatus.RUNNING);
             return v;
         });
-        context.setExecutionResult(id, (k, v) -> {
+        if (context.getExecutionResult(id).getStatus() == ExecutionStatus.RUNNING) {
             try {
-                if (v.getStatus() == ExecutionStatus.RUNNING) {
-                    ExecutionResult<Result> result = callback.execute(context);
-                    log.info("ExecutionUnit execute success, executionId={}", id);
+                ExecutionResult<Result> result = handler.execute(context);
+                log.info("ExecutionUnit execute done, executionId={}", id);
+                context.setExecutionResult(id, (k, v) -> {
+                    if (v.getStatus() == ExecutionStatus.RUNNING) {
+                        return result;
+                    }
+                    result.setStatus(v.getStatus());
                     return result;
-                }
-                log.warn("Abort to execute, as the ExecutionUnit({}) is not in RUNNING status, executionId={}",
-                        v.getStatus(), id);
-                return v;
+                });
             } catch (Exception e) {
                 log.warn("ExecutionUnit execute failed, executionId={}, ex=", id, e);
-                v.setStatus(ExecutionStatus.FAILED);
-                return v;
+                context.setExecutionResult(id, (k, v) -> {
+                    if (v.getStatus() == ExecutionStatus.RUNNING) {
+                        v.setStatus(ExecutionStatus.FAILED);
+                    }
+                    return v;
+                });
             }
-        });
+        }
     }
 
     public void terminate(ExecutionGroupContext<Input, Result> context) {
         context.setExecutionResult(id, (k, v) -> {
-            if (v.getStatus() == ExecutionStatus.RUNNING) {
-                try {
-                    callback.terminate(context);
-                    v.setStatus(ExecutionStatus.TERMINATED);
-                } catch (Exception e) {
-                    log.warn("ExecutionUnit terminate failed, executionId={}", id, e);
-                }
+            if (v.getStatus() != ExecutionStatus.RUNNING) {
+                throw new IllegalStateException(
+                        "Cannot terminate because ExecutionUnit is not in RUNNING status, executionId=" + id
+                                + ", status=" + v.getStatus());
             }
+            log.info("ExecutionUnit starts to terminate, executionId={}", id);
+            v.setStatus(ExecutionStatus.TERMINATING);
             return v;
         });
+        if (context.getExecutionResult(id).getStatus() == ExecutionStatus.TERMINATING) {
+            try {
+                handler.terminate(context);
+                context.setExecutionResult(id, (k, v) -> {
+                    if (v.getStatus() == ExecutionStatus.TERMINATING) {
+                        log.info("ExecutionUnit terminate done, executionId={}", id);
+                        v.setStatus(ExecutionStatus.TERMINATED);
+                    }
+                    return v;
+                });
+            } catch (Exception ex) {
+                log.warn("ExecutionUnit terminate failed, executionId={}, ex=", id, ex);
+                context.setExecutionResult(id, (k, v) -> {
+                    if (v.getStatus() == ExecutionStatus.TERMINATING) {
+                        v.setStatus(ExecutionStatus.TERMINATE_FAILED);
+                    }
+                    return v;
+                });
+            }
+        }
     }
 
     public void skip(ExecutionGroupContext<Input, Result> context) {
         context.setExecutionResult(id, (k, v) -> {
-            if (v.getStatus() == ExecutionStatus.FAILED || v.getStatus() == ExecutionStatus.TERMINATED) {
+            if (v.getStatus() == ExecutionStatus.FAILED || v.getStatus() == ExecutionStatus.TERMINATED
+                    || v.getStatus() == ExecutionStatus.TERMINATE_FAILED) {
+                log.info("ExecutionUnit starts to skip, executionId={}", id);
+                v.setStatus(ExecutionStatus.SKIPPING);
+                log.info("ExecutionUnit skip done, executionId={}", id);
                 v.setStatus(ExecutionStatus.SKIPPED);
             }
             return v;

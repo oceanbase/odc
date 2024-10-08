@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 
 import com.alibaba.fastjson.JSON;
@@ -93,13 +92,11 @@ public class SqlPlanJob implements OdcJob {
             executeInTaskFramework(context);
             return;
         }
-
-        JobDataMap jobDataMap = context.getJobDetail().getJobDataMap();
-
-        ScheduleEntity scheduleEntity = JSON.parseObject(JSON.toJSONString(jobDataMap), ScheduleEntity.class);
-
+        ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(ScheduleTaskUtils.getScheduleId(context));
         DatabaseChangeParameters taskParameters = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
                 DatabaseChangeParameters.class);
+        log.info("Execute sql plan job, scheduleId={}, taskParameters={}", scheduleEntity.getId(),
+                JSON.toJSONString(taskParameters));
         taskParameters.setParentScheduleType(ScheduleType.SQL_PLAN);
         CreateFlowInstanceReq flowInstanceReq = new CreateFlowInstanceReq();
         flowInstanceReq.setParameters(taskParameters);

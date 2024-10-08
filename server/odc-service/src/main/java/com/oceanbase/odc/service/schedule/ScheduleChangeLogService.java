@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.schedule.ScheduleChangeLogEntity;
@@ -36,6 +37,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleChangeStatus;
  */
 
 @Service
+@SkipAuthorize("odc internal usage")
 public class ScheduleChangeLogService {
     @Autowired
     private ScheduleChangeLogRepository scheduleChangeLogRepository;
@@ -51,6 +53,12 @@ public class ScheduleChangeLogService {
         return scheduleChangeLogRepository.findByIdAndScheduleId(id, scheduleId).map(mapper::entityToModel)
                 .orElseThrow(() -> new NotFoundException(
                         ResourceType.ODC_SCHEDULE_CHANGELOG, "id", id));
+    }
+
+    public ScheduleChangeLog getByFlowInstanceId(Long flowInstanceId) {
+        return scheduleChangeLogRepository.findByFlowInstanceId(flowInstanceId).map(mapper::entityToModel)
+                .orElseThrow(() -> new NotFoundException(
+                        ResourceType.ODC_SCHEDULE_CHANGELOG, "flowInstanceId", flowInstanceId));
     }
 
     public List<ScheduleChangeLog> listByScheduleId(Long scheduleId) {

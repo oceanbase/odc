@@ -128,7 +128,8 @@ public class TableService {
         }
     }
 
-    private void syncDBTables(Connection connection, Database database, DialectType dialectType)
+    @SkipAuthorize("permission check inside")
+    public void syncDBTables(Connection connection, Database database, DialectType dialectType)
             throws InterruptedException {
         Lock lock = lockRegistry
                 .obtain(dbSchemaSyncService.getSyncDBObjectLockKey(database.getDataSource().getId(), database.getId()));

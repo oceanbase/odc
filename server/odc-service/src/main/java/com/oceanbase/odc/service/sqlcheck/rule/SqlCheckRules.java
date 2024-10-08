@@ -85,6 +85,7 @@ import com.oceanbase.odc.service.sqlcheck.factory.TooManyInExpressionFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.TooManyOutOfLineIndexFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.TooManyTableJoinFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.TruncateTableExistsFactory;
+import com.oceanbase.odc.service.sqlcheck.factory.Unable2JudgeAffectedRowsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.ZeroFillExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 
@@ -153,6 +154,7 @@ public class SqlCheckRules {
         rules.add(new OfflineDdlExistsFactory(jdbc));
         rules.add(new TruncateTableExistsFactory());
         rules.add(new SqlAffectedRowsFactory(jdbc));
+        rules.add(new Unable2JudgeAffectedRowsFactory(jdbc));
         return rules;
     }
 
