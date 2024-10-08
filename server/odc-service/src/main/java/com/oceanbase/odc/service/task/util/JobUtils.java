@@ -180,4 +180,12 @@ public class JobUtils {
     public static void encryptEnvironments(Map<String, String> environments) {
         new JobEnvironmentEncryptor().encrypt(environments);
     }
+
+    public static String encrypt(String key, String salt, String raw) {
+        return new JobEnvironmentEncryptor().encrypt(key, salt, raw);
+    }
+
+    public static String decrypt(String key, String salt, String encrypted) {
+        return new JobEnvironmentEncryptor().decrypt(key, salt, encrypted);
+    }
 }
