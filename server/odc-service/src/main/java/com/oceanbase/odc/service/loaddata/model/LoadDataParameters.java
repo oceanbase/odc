@@ -82,6 +82,8 @@ public class LoadDataParameters implements ScheduleTaskParameters {
     @NotNull(message = "\"stopWhenError\" cannot be null")
     private Boolean stopWhenError;
 
+    private Long datasetId;
+
     /**
      * internal usage
      */
