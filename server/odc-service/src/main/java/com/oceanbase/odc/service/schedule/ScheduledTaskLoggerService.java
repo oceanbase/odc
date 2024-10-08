@@ -159,6 +159,7 @@ public class ScheduledTaskLoggerService {
             if (!cloudObjectStorageService.supported()) {
                 throw new RuntimeException("CloudObjectStorageService is not supported.");
             }
+
             String attributeKey = OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
                     : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
             Optional<String> objId = taskFrameworkService.findByJobIdAndAttributeKey(jobId, attributeKey);

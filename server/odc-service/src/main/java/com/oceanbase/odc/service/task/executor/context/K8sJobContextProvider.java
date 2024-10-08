@@ -25,7 +25,7 @@ import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
  * @author gaoda.xy
  * @date 2023/11/22 20:21
  */
-public class DefaultJobContextProvider implements JobContextProvider {
+public class K8sJobContextProvider implements JobContextProvider {
 
     @Override
     public JobContext provide() {

@@ -81,7 +81,8 @@ public class DataBaseController {
                     name = "containsUnassigned") Boolean containsUnassigned,
             @RequestParam(required = false, defaultValue = "false",
                     name = "includesPermittedAction") Boolean includesPermittedAction,
-            @PageableDefault(size = Integer.MAX_VALUE, sort = {"name"}, direction = Direction.ASC) Pageable pageable) {
+            @PageableDefault(size = Integer.MAX_VALUE, sort = {"type", "name"},
+                    direction = Direction.ASC) Pageable pageable) {
         QueryDatabaseParams params = QueryDatabaseParams.builder()
                 .dataSourceId(dataSourceId)
                 .types(types)

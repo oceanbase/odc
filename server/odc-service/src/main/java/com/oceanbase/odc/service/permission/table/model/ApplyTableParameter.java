@@ -23,6 +23,7 @@ import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter.ApplyProject;
 import com.oceanbase.odc.service.permission.table.ApplyTablePermissionPreprocessor;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.Data;
 
@@ -71,6 +72,7 @@ public class ApplyTableParameter implements Serializable, TaskParameters {
          * Following fields are all filled in by the {@link ApplyTablePermissionPreprocessor}
          */
         private String tableName;
+        private DBObjectType type;
         private Long databaseId;
         private String databaseName;
         private Long dataSourceId;

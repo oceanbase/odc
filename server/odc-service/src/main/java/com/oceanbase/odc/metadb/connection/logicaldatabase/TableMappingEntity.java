@@ -63,6 +63,9 @@ public class TableMappingEntity {
     @Column(name = "physical_database_name", updatable = false, nullable = false)
     private String physicalDatabaseName;
 
+    @Column(name = "physical_table_id", updatable = false, nullable = false)
+    private Long physicalTableId;
+
     @Column(name = "physical_table_name", updatable = false, nullable = false)
     private String physicalTableName;
 

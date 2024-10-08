@@ -16,3 +16,5 @@ CREATE TABLE IF NOT EXISTS `logicaldatabase_database_change_execution_unit` (
 ) COMMENT = 'logical database change task execution units';
 
 alter table schedule_schedule modify column connection_id bigint(20) COMMENT 'reference to connect_connection.id';
+
+alter table database_table_mapping add column `physical_table_id` bigint(20) NOT NULL COMMENT 'reference to database_schema_object.id whose type is TABLE';

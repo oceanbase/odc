@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.permission.database;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -28,6 +29,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,6 +50,7 @@ import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.metadb.connection.logicaldatabase.DatabaseMappingRepository;
 import com.oceanbase.odc.metadb.iam.PermissionEntity;
 import com.oceanbase.odc.metadb.iam.PermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserDatabasePermissionEntity;
@@ -59,6 +62,7 @@ import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.iam.PermissionService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -100,6 +104,9 @@ public class DatabasePermissionService {
 
     @Autowired
     private PermissionService permissionService;
+
+    @Autowired
+    private DatabaseMappingRepository databaseMappingRepository;
 
     @Value("${odc.iam.permission.expired-retention-time-seconds:7776000}")
     private long expiredRetentionTimeSeconds;
@@ -169,7 +176,19 @@ public class DatabasePermissionService {
         Long creatorId = authenticationFacade.currentUserId();
         Date expireTime = req.getExpireTime() == null ? TimeUtils.getMySQLMaxDatetime()
                 : TimeUtils.getEndOfDay(req.getExpireTime());
-        for (Long databaseId : req.getDatabaseIds()) {
+
+
+        Set<Long> expandedDatabaseIds = new HashSet<>();
+        expandedDatabaseIds.addAll(req.getDatabaseIds());
+        Map<Long, Database> id2LogicalDatabase =
+                id2Database.entrySet().stream().filter(entry -> entry.getValue().getType() == DatabaseType.LOGICAL)
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        if (MapUtils.isNotEmpty(id2LogicalDatabase)) {
+            expandedDatabaseIds
+                    .addAll(databaseMappingRepository.findByLogicalDatabaseIdIn(id2LogicalDatabase.keySet()).stream()
+                            .map(e -> e.getPhysicalDatabaseId()).collect(Collectors.toSet()));
+        }
+        for (Long databaseId : expandedDatabaseIds) {
             for (DatabasePermissionType permissionType : req.getTypes()) {
                 PermissionEntity entity = new PermissionEntity();
                 entity.setAction(permissionType.getAction());
