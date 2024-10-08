@@ -31,6 +31,7 @@ import lombok.Data;
 @Data
 public class PublishLogicalDatabaseChangeReq implements Serializable {
     private static final long serialVersionUID = 1L;
+    private Long creatorId;
     private Long scheduleTaskId;
     private String sqlContent;
     private String delimiter;

@@ -42,6 +42,7 @@ public class JobEnvironmentEncryptor {
             JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD,
             JobEnvKeyConstants.ODC_OBJECT_STORAGE_CONFIGURATION,
             JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_SALT,
+            JobEnvKeyConstants.ODC_JOB_CONTEXT_FILE_PATH,
             JobEnvKeyConstants.ODC_JOB_CONTEXT);
 
     private final AtomicBoolean encrypted = new AtomicBoolean(false);
@@ -85,5 +86,13 @@ public class JobEnvironmentEncryptor {
         });
     }
 
+    public String encrypt(String key, String salt, String raw) {
+        TextEncryptor textEncryptor = Encryptors.aesBase64(key, salt);
+        return textEncryptor.encrypt(raw);
+    }
 
+    public String decrypt(String key, String salt, String encrypted) {
+        TextEncryptor textEncryptor = Encryptors.aesBase64(key, salt);
+        return textEncryptor.decrypt(encrypted);
+    }
 }

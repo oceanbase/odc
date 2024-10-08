@@ -33,7 +33,6 @@ import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -44,7 +43,6 @@ import lombok.NoArgsConstructor;
  * @Description: []
  */
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(of = {"databaseId", "schemaName", "tableName"})
 public class DataNode {
@@ -56,6 +54,8 @@ public class DataNode {
 
     private String schemaName;
 
+    private Long tableId;
+
     private String tableName;
 
     public DataNode(String schemaName, String tableName) {
@@ -63,16 +63,29 @@ public class DataNode {
         this.tableName = tableName;
     }
 
-    public DataNode(Long databaseId, String schemaName, String tableName) {
-        this.databaseId = databaseId;
+    public DataNode(String schemaName, String tableName, Long databaseId) {
         this.schemaName = schemaName;
         this.tableName = tableName;
+        this.databaseId = databaseId;
+    }
+
+    public DataNode(Long databaseId, String schemaName) {
+        this.databaseId = databaseId;
+        this.schemaName = schemaName;
     }
 
     public DataNode(ConnectionConfig connectionConfig, Long databaseId, String schemaName) {
         this.dataSourceConfig = connectionConfig;
         this.databaseId = databaseId;
         this.schemaName = schemaName;
+    }
+
+    public DataNode(ConnectionConfig dataSource, Long databaseId, String databaseName, Long tableId, String tableName) {
+        this.dataSourceConfig = dataSource;
+        this.databaseId = databaseId;
+        this.schemaName = databaseName;
+        this.tableId = tableId;
+        this.tableName = tableName;
     }
 
     public String getFullName() {

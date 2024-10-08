@@ -39,6 +39,7 @@ import org.quartz.Trigger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanMap;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
@@ -73,9 +74,7 @@ import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
-import com.oceanbase.odc.service.flow.model.BinaryDataResult;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
-import com.oceanbase.odc.service.flow.model.FileBasedDataResult;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.util.DescriptionGenerator;
 import com.oceanbase.odc.service.iam.OrganizationService;
@@ -355,6 +354,10 @@ public class ScheduleService {
             if (approvalFlowInstanceId != null) {
                 changeLog.setFlowInstanceId(approvalFlowInstanceId);
                 scheduleChangeLogService.updateFlowInstanceIdById(changeLog.getId(), approvalFlowInstanceId);
+                // only update status to approving when create schedule
+                if (req.getOperationType() == OperationType.CREATE) {
+                    scheduleRepository.updateStatusById(targetSchedule.getId(), ScheduleStatus.APPROVING);
+                }
                 log.info("Create approval flow success,changelogId={},flowInstanceId", approvalFlowInstanceId);
             }
             return changeLog;
@@ -653,6 +656,14 @@ public class ScheduleService {
                 updateStatusById(scheduleId, status);
             }
         }
+        try {
+            ScheduleChangeLog changeLog = scheduleChangeLogService.getByFlowInstanceId(id);
+            if (changeLog.getStatus() == ScheduleChangeStatus.APPROVING) {
+                scheduleChangeLogService.updateStatusById(changeLog.getId(), ScheduleChangeStatus.SUCCESS);
+            }
+        } catch (NotFoundException e) {
+            log.warn("Change log not found,flowInstanceId={}", id);
+        }
     }
 
     public void updateJobParametersById(Long id, String jobParameters) {
@@ -834,10 +845,9 @@ public class ScheduleService {
         return scheduledTaskLoggerService.getLogContent(scheduleTaskId, logLevel);
     }
 
-    public List<BinaryDataResult> downloadLog(Long scheduleId, Long scheduleTaskId) {
+    public InputStreamResource downloadLog(Long scheduleId, Long scheduleTaskId) {
         nullSafeGetByIdWithCheckPermission(scheduleId);
-        File logFile = scheduledTaskLoggerService.downloadLog(scheduleTaskId, OdcTaskLogLevel.ALL);
-        return Collections.singletonList(new FileBasedDataResult(logFile));
+        return scheduledTaskLoggerService.downloadLog(scheduleTaskId, OdcTaskLogLevel.ALL);
     }
 
     public Schedule nullSafeGetByIdWithCheckPermission(Long id) {

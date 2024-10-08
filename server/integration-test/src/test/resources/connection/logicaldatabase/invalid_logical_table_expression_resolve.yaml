@@ -41,3 +41,11 @@
 - id: 11
   expression: "db.tb_[1-2147483648:1]"
   error_message_abstract: "In your expression, the range for [1-2147483648:1] must consist of valid positive integers."
+
+- id: 12
+  expression: "db.t_[1-3].tail"
+  error_message_abstract: "tail"
+
+- id: 13
+  expression: "db.t_[1-3].tail, db.t_[1-3].tail"
+  error_message_abstract: "tail"

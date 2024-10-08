@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.objectstorage.client;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
 
@@ -47,4 +48,6 @@ public interface ObjectStorageClient {
     void downloadToFile(@NotBlank String objectName, @NotNull File targetFile) throws IOException;
 
     List<String> deleteObjects(@NotEmpty List<String> objectNames) throws IOException;
+
+    InputStream getObject(@NotBlank String objectName) throws IOException;
 }

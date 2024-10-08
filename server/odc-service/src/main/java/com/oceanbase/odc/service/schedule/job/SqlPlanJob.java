@@ -32,6 +32,7 @@ import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
+import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
@@ -70,6 +71,7 @@ public class SqlPlanJob implements OdcJob {
     public final ConnectProperties connectProperties;
     public final JobScheduler jobScheduler;
     public final SystemConfigService systemConfigService;
+    public final ConnectionService datasourceService;
 
 
     public SqlPlanJob() {
@@ -80,6 +82,7 @@ public class SqlPlanJob implements OdcJob {
         this.connectProperties = SpringContextUtil.getBean(ConnectProperties.class);
         this.jobScheduler = SpringContextUtil.getBean(JobScheduler.class);
         this.systemConfigService = SpringContextUtil.getBean(SystemConfigService.class);
+        this.datasourceService = SpringContextUtil.getBean(ConnectionService.class);
     }
 
     @Override
@@ -126,8 +129,9 @@ public class SqlPlanJob implements OdcJob {
         parameters.setErrorStrategy(sqlPlanParameters.getErrorStrategy());
         parameters.setSessionTimeZone(connectProperties.getDefaultTimeZone());
         Map<String, String> jobData = new HashMap<>();
-        Database database = databaseService.detail(sqlPlanParameters.getDatabaseId());
-        ConnectionConfig dataSource = database.getDataSource();
+        Database database = databaseService.getBasicSkipPermissionCheck(sqlPlanParameters.getDatabaseId());
+        ConnectionConfig dataSource = datasourceService.internalGetSkipUserCheck(database.getDataSource().getId(),
+                false, false);
         dataSource.setDefaultSchema(database.getName());
         jobData.put(JobParametersKeyConstants.CONNECTION_CONFIG, JobUtils.toJson(dataSource));
         jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON, JobUtils.toJson(parameters));

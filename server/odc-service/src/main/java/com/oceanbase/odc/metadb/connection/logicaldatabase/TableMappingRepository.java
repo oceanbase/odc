@@ -50,6 +50,7 @@ public interface TableMappingRepository extends OdcJpaRepository<TableMappingEnt
                 .field(TableMappingEntity_.expression)
                 .field("is_consistent")
                 .field(TableMappingEntity_.organizationId)
+                .field(TableMappingEntity_.physicalTableId)
                 .build();
         List<Function<TableMappingEntity, Object>> getter = valueGetterBuilder()
                 .add(TableMappingEntity::getLogicalTableId)
@@ -59,6 +60,7 @@ public interface TableMappingRepository extends OdcJpaRepository<TableMappingEnt
                 .add(TableMappingEntity::getExpression)
                 .add(TableMappingEntity::getConsistent)
                 .add(TableMappingEntity::getOrganizationId)
+                .add(TableMappingEntity::getPhysicalTableId)
                 .build();
         return batchCreate(entities, sql, getter, TableMappingEntity::setId, 200);
     }

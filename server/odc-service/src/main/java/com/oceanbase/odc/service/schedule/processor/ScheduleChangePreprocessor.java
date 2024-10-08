@@ -65,10 +65,10 @@ public class ScheduleChangePreprocessor implements InitializingBean {
         ScheduleType type;
         if (params.getOperationType() == OperationType.CREATE) {
             type = params.getCreateScheduleReq().getType();
-            adaptScheduleChangeParams(params);
         } else {
             type = scheduleService.nullSafeGetModelById(params.getScheduleId()).getType();
         }
+        adaptScheduleChangeParams(params);
         if (type2Processor.containsKey(type)) {
             type2Processor.get(type).process(params);
         }

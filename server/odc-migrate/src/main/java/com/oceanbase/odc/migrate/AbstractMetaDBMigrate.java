@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
 
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
@@ -35,27 +33,19 @@ import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.odc.common.lang.Holder;
-import com.oceanbase.odc.core.migrate.DefaultSchemaHistoryRepository;
 import com.oceanbase.odc.core.migrate.MigrateConfiguration;
-import com.oceanbase.odc.core.migrate.Migrates;
 
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author yizhou.xw
  * @version : AbstractMetadbMigrate.java, v 0.1 2021-04-02 14:50
  */
-@Slf4j
-@DependsOn({"lockConfiguration"})
-abstract public class AbstractMetaDBMigrate {
-
-    private static final String LOCK_KEY = "ODC_METADB_MIGRATE";
-    private static final long TRY_LOCK_TIMEOUT_SECONDS = 60L;
+@DependsOn({"metadbLockConfiguration"})
+abstract public class AbstractMetaDBMigrate extends AbstractMigrate {
 
     @Autowired
     protected DataSource dataSource;
-
     @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
 
@@ -63,26 +53,7 @@ abstract public class AbstractMetaDBMigrate {
 
     @PostConstruct
     public void migrate() throws InterruptedException {
-        log.info("try lock...");
-        Lock lock = jdbcLockRegistry.obtain(LOCK_KEY);
-        if (lock.tryLock(TRY_LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
-            try {
-                log.info("get lock success");
-                MigrateConfiguration configuration = migrateConfiguration();
-                log.info("init configuration success, migrate starting, initVersion={}",
-                        configuration.getInitVersion());
-
-                new Migrates(configuration, new DefaultSchemaHistoryRepository(
-                        configuration.getDataSource())).migrate();
-                log.info("migrate success");
-            } finally {
-                lock.unlock();
-            }
-        } else {
-            log.warn("failed to start migrate due try lock timeout, TRY_LOCK_TIMEOUT_SECONDS={}",
-                    TRY_LOCK_TIMEOUT_SECONDS);
-            throw new RuntimeException("failed to start migrate due try lock timeout");
-        }
+        doMigrate(this.jdbcLockRegistry);
     }
 
     protected String getInitVersion() {
