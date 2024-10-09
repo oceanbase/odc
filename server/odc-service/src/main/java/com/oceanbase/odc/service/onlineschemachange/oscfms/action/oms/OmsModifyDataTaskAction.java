@@ -58,7 +58,7 @@ public class OmsModifyDataTaskAction implements Action<OscActionContext, OscActi
 
     public OscActionResult execute(OscActionContext context) throws Exception {
         ScheduleTaskEntity scheduleTask = context.getScheduleTask();
-        log.debug("Start execute {}, schedule task id {}", getClass().getSimpleName(), scheduleTask.getId());
+        log.debug("Start execute {}, schedule task id={}", getClass().getSimpleName(), scheduleTask.getId());
 
         OnlineSchemaChangeScheduleTaskParameters taskParameter = context.getTaskParameter();
         OnlineSchemaChangeParameters inputParameters = context.getParameter();
