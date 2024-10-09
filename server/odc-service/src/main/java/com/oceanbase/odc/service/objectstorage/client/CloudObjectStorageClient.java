@@ -89,14 +89,16 @@ public class CloudObjectStorageClient implements ObjectStorageClient {
     }
 
     @Override
-    public URL generateDownloadUrl(String objectName, Long expirationSeconds) {
+    public URL generateDownloadUrl(String objectName, Long expirationSeconds, String customFileName) {
         verifySupported();
         ObjectMetadata objectMetadata = publicEndpointCloudObjectStorage.getObjectMetadata(getBucketName(), objectName);
         Date expirationTime = calcExpirationTime(expirationSeconds, objectMetadata.getContentLength());
         URL presignedUrl =
-                publicEndpointCloudObjectStorage.generatePresignedUrl(getBucketName(), objectName, expirationTime);
-        log.info("generate temporary download Url successfully, expirationTime={}, objectName={}, presignedUrl={}",
-                expirationTime, objectName, presignedUrl);
+                publicEndpointCloudObjectStorage.generatePresignedUrlWithCustomFileName(getBucketName(), objectName,
+                        expirationTime, customFileName);
+        log.info(
+                "generate temporary download Url successfully, expirationTime={}, objectName={}, customFileName={}, presignedUrl={}",
+                expirationTime, objectName, customFileName, presignedUrl);
         return presignedUrl;
     }
 

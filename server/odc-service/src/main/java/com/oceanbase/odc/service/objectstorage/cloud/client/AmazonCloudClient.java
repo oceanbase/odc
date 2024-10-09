@@ -29,6 +29,8 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.DeleteObjectsResult.DeletedObject;
@@ -245,6 +247,27 @@ public class AmazonCloudClient implements CloudClient {
                     String.format("attachment;filename=%s",
                             new String(CloudObjectStorageUtil.getOriginalFileName(key).getBytes(),
                                     StandardCharsets.ISO_8859_1)));
+            request.setResponseHeaders(responseHeaderOverrides);
+            return s3.generatePresignedUrl(request);
+        });
+    }
+
+    @Override
+    public URL generatePresignedUrlWithCustomFileName(String bucketName, String key, Date expiration,
+            String customFileName) throws CloudException {
+        Verify.notBlank(key, "key");
+        return callAmazonMethod("Generate presigned URL", () -> {
+            GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(bucketName, key);
+            request.setBucketName(bucketName);
+            request.setExpiration(expiration);
+            request.setKey(key);
+            ResponseHeaderOverrides responseHeaderOverrides = new ResponseHeaderOverrides();
+            String fileName = customFileName;
+            if (StringUtils.isBlank(customFileName)) {
+                fileName = CloudObjectStorageUtil.getOriginalFileName(key);
+            }
+            responseHeaderOverrides.setContentDisposition(
+                    String.format("attachment;filename=%s", fileName));
             request.setResponseHeaders(responseHeaderOverrides);
             return s3.generatePresignedUrl(request);
         });
