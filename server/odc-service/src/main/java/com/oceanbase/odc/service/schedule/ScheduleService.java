@@ -803,6 +803,7 @@ public class ScheduleService {
                 .type(params.getScheduleType())
                 .creator(params.getCreator())
                 .projectId(params.getProjectId())
+                .organizationId(authenticationFacade.currentOrganizationId())
                 .build();
 
         List<Schedule> scheduleList = scheduleRepository.find(scheduleParams).stream()
