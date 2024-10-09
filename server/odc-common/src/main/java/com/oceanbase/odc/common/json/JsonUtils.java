@@ -292,7 +292,6 @@ public class JsonUtils {
                         && (--depth) <= 0) {
                     break;
                 }
-
             }
             return null;
         } catch (IOException e) {
