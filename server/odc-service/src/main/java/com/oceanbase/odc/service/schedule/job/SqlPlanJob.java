@@ -130,8 +130,7 @@ public class SqlPlanJob implements OdcJob {
         parameters.setSessionTimeZone(connectProperties.getDefaultTimeZone());
         Map<String, String> jobData = new HashMap<>();
         Database database = databaseService.getBasicSkipPermissionCheck(sqlPlanParameters.getDatabaseId());
-        ConnectionConfig dataSource = datasourceService.internalGetSkipUserCheck(database.getDataSource().getId(),
-                false, false);
+        ConnectionConfig dataSource = datasourceService.getDecryptedConfig(database.getDataSource().getId());
         dataSource.setDefaultSchema(database.getName());
         jobData.put(JobParametersKeyConstants.CONNECTION_CONFIG, JobUtils.toJson(dataSource));
         jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON, JobUtils.toJson(parameters));
