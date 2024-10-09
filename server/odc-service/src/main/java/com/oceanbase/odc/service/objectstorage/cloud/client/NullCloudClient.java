@@ -114,7 +114,7 @@ public class NullCloudClient implements CloudClient {
 
     @Override
     public URL generatePresignedUrlWithCustomFileName(String bucketName, String key, Date expiration,
-        String customFileName) throws CloudException {
+            String customFileName) throws CloudException {
         throw new UnsupportedException();
     }
 
