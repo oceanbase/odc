@@ -217,8 +217,7 @@ public class DatabaseService {
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public Database detail(@NonNull Long id) {
-        Database database = entityToModel(databaseRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
+        Database database = detailSkipPermissionCheck(id);
         horizontalDataPermissionValidator.checkCurrentOrganization(database);
         if (Objects.nonNull(database.getProject()) && Objects.nonNull(database.getProject().getId())) {
             projectPermissionValidator.checkProjectRole(database.getProject().getId(), ResourceRoleName.all());
@@ -230,6 +229,12 @@ public class DatabaseService {
             return database;
         }
         throw new NotFoundException(ResourceType.ODC_DATABASE, "id", id);
+    }
+
+    @SkipAuthorize("internal usage")
+    public Database detailSkipPermissionCheck(@NonNull Long id) {
+        return entityToModel(databaseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
     }
 
     @SkipAuthorize("odc internal usage")

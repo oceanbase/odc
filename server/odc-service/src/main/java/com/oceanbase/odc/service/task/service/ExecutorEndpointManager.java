@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
@@ -41,6 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
+@SkipAuthorize("odc internal usage")
 public class ExecutorEndpointManager {
     @Autowired
     private K8sJobClientSelector k8sJobClientSelector;

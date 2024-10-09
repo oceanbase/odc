@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 
 import com.alibaba.fastjson.JSON;
@@ -33,6 +32,7 @@ import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
+import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
@@ -71,6 +71,7 @@ public class SqlPlanJob implements OdcJob {
     public final ConnectProperties connectProperties;
     public final JobScheduler jobScheduler;
     public final SystemConfigService systemConfigService;
+    public final ConnectionService datasourceService;
 
 
     public SqlPlanJob() {
@@ -81,6 +82,7 @@ public class SqlPlanJob implements OdcJob {
         this.connectProperties = SpringContextUtil.getBean(ConnectProperties.class);
         this.jobScheduler = SpringContextUtil.getBean(JobScheduler.class);
         this.systemConfigService = SpringContextUtil.getBean(SystemConfigService.class);
+        this.datasourceService = SpringContextUtil.getBean(ConnectionService.class);
     }
 
     @Override
@@ -90,13 +92,11 @@ public class SqlPlanJob implements OdcJob {
             executeInTaskFramework(context);
             return;
         }
-
-        JobDataMap jobDataMap = context.getJobDetail().getJobDataMap();
-
-        ScheduleEntity scheduleEntity = JSON.parseObject(JSON.toJSONString(jobDataMap), ScheduleEntity.class);
-
+        ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(ScheduleTaskUtils.getScheduleId(context));
         DatabaseChangeParameters taskParameters = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
                 DatabaseChangeParameters.class);
+        log.info("Execute sql plan job, scheduleId={}, taskParameters={}", scheduleEntity.getId(),
+                JSON.toJSONString(taskParameters));
         taskParameters.setParentScheduleType(ScheduleType.SQL_PLAN);
         CreateFlowInstanceReq flowInstanceReq = new CreateFlowInstanceReq();
         flowInstanceReq.setParameters(taskParameters);
@@ -129,8 +129,8 @@ public class SqlPlanJob implements OdcJob {
         parameters.setErrorStrategy(sqlPlanParameters.getErrorStrategy());
         parameters.setSessionTimeZone(connectProperties.getDefaultTimeZone());
         Map<String, String> jobData = new HashMap<>();
-        Database database = databaseService.detail(sqlPlanParameters.getDatabaseId());
-        ConnectionConfig dataSource = database.getDataSource();
+        Database database = databaseService.getBasicSkipPermissionCheck(sqlPlanParameters.getDatabaseId());
+        ConnectionConfig dataSource = datasourceService.getDecryptedConfig(database.getDataSource().getId());
         dataSource.setDefaultSchema(database.getName());
         jobData.put(JobParametersKeyConstants.CONNECTION_CONFIG, JobUtils.toJson(dataSource));
         jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON, JobUtils.toJson(parameters));

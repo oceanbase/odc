@@ -18,8 +18,6 @@ package com.oceanbase.odc.service.schedule.model;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
@@ -27,7 +25,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.loaddata.model.LoadDataParameters;
-import com.oceanbase.odc.service.schedule.processor.ScheduleChangePreprocessor;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 
 import lombok.Data;
@@ -65,26 +62,6 @@ public class CreateScheduleReq {
     private TriggerConfig triggerConfig;
 
     private String description;
-
-    /**
-     * Followings are filled by aspect {@link ScheduleChangePreprocessor}
-     */
-    @JsonProperty(access = Access.READ_ONLY)
-    private Long projectId;
-    @JsonProperty(access = Access.READ_ONLY)
-    private String projectName;
-    @JsonProperty(access = Access.READ_ONLY)
-    private Long databaseId;
-    @JsonProperty(access = Access.READ_ONLY)
-    private String databaseName;
-    @JsonProperty(access = Access.READ_ONLY)
-    private Long connectionId;
-    @JsonProperty(access = Access.READ_ONLY)
-    private String connectionName;
-    @JsonProperty(access = Access.READ_ONLY)
-    private Long environmentId;
-    @JsonProperty(access = Access.READ_ONLY)
-    private String environmentName;
 
 }
 

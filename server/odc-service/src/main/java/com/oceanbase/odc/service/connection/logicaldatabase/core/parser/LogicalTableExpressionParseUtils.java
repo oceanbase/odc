@@ -85,13 +85,12 @@ public class LogicalTableExpressionParseUtils {
                             .getEnglishMessage(new Object[] {text, startInt, endInt}));
         }
 
-        boolean includeLeadingZeros = start.length() > String.valueOf(startInt).length();
-
-        int leadingZerosCount = includeLeadingZeros ? start.length() - String.valueOf(startInt).length() : 0;
+        boolean includeLeadingZeros = start.startsWith("0") && start.length() > 1;
+        int maxLength = includeLeadingZeros ? start.length() : 0;
 
         List<String> result = new ArrayList<>();
         for (int i = startInt; i <= endInt; i += stepInt) {
-            String format = includeLeadingZeros ? "%0" + (leadingZerosCount + String.valueOf(i).length()) + "d" : "%d";
+            String format = includeLeadingZeros ? "%0" + maxLength + "d" : "%d";
             result.add(String.format(format, i));
         }
 

@@ -18,22 +18,21 @@ package com.oceanbase.odc.service.sqlcheck.rule;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
-import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
-import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
-import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
-import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
+import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.delete.Delete;
 import com.oceanbase.tools.sqlparser.statement.insert.Insert;
+import com.oceanbase.tools.sqlparser.statement.insert.InsertTable;
+import com.oceanbase.tools.sqlparser.statement.select.Select;
+import com.oceanbase.tools.sqlparser.statement.select.SelectBody;
 import com.oceanbase.tools.sqlparser.statement.update.Update;
 
 import lombok.NonNull;
@@ -47,69 +46,16 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2024-08-01 18:18
  */
 @Slf4j
-public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
-
-    private final Long maxSqlAffectedRows;
+public class MySQLAffectedRowsExceedLimit extends BaseAffectedRowsExceedLimit {
 
     private final JdbcOperations jdbcOperations;
-
     private final DialectType dialectType;
 
     public MySQLAffectedRowsExceedLimit(@NonNull Long maxSqlAffectedRows, DialectType dialectType,
             JdbcOperations jdbcOperations) {
-        this.maxSqlAffectedRows = maxSqlAffectedRows <= 0 ? 0 : maxSqlAffectedRows;
+        super(maxSqlAffectedRows);
         this.jdbcOperations = jdbcOperations;
         this.dialectType = dialectType;
-    }
-
-    /**
-     * Get the rule type
-     */
-    @Override
-    public SqlCheckRuleType getType() {
-        return SqlCheckRuleType.RESTRICT_SQL_AFFECTED_ROWS;
-    }
-
-    /**
-     * Execution rule check
-     */
-    @Override
-    public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
-
-        if (statement instanceof Update || statement instanceof Delete || statement instanceof Insert) {
-            long affectedRows = 0;
-            String explainSql = "EXPLAIN " + statement.getText();
-            try {
-                if (jdbcOperations == null) {
-                    log.warn("jdbcOperations is null, please check your connection");
-                    return Collections.emptyList();
-                } else {
-                    switch (dialectType) {
-                        case MYSQL:
-                            affectedRows = getMySqlAffectedRows(explainSql, jdbcOperations);
-                            break;
-                        case OB_MYSQL:
-                            affectedRows = getOBMySqlAffectedRows(explainSql, jdbcOperations);
-                            break;
-                        default:
-                            log.warn("Unsupported dialect type: {}", dialectType);
-                            break;
-                    }
-                }
-            } catch (Exception e) {
-                log.warn("Error in calling getAffectedRows method", e);
-                affectedRows = -1;
-            }
-
-            if (affectedRows > maxSqlAffectedRows) {
-                return Collections.singletonList(SqlCheckUtil
-                        .buildViolation(statement.getText(), statement, getType(),
-                                new Object[] {maxSqlAffectedRows, affectedRows}));
-            } else {
-                return Collections.emptyList();
-            }
-        }
-        return Collections.emptyList();
     }
 
     /**
@@ -121,14 +67,85 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
     }
 
     /**
+     * Base method implemented by MySQL types
+     */
+    @Override
+    public long getStatementAffectedRows(Statement statement) {
+        long affectedRows = 0;
+        if (statement instanceof Update || statement instanceof Delete || statement instanceof Insert) {
+            String explainSql = "EXPLAIN " + statement.getText();
+            try {
+                if (this.jdbcOperations == null) {
+                    log.warn("JdbcOperations is null, please check your connection");
+                    return -1;
+                } else {
+                    switch (this.dialectType) {
+                        case MYSQL:
+                            affectedRows = (statement instanceof Insert)
+                                    ? getMySqlAffectedRowsByCount((Insert) statement)
+                                    : getMySqlAffectedRowsByExplain(explainSql, this.jdbcOperations);
+                            break;
+                        case OB_MYSQL:
+                            affectedRows = getOBMySqlAffectedRows(explainSql, this.jdbcOperations);
+                            break;
+                        default:
+                            log.warn("Unsupported dialect type: {}", this.dialectType);
+                            break;
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Error in calling getAffectedRows method", e);
+                affectedRows = -1;
+            }
+        }
+        return affectedRows;
+    }
+
+    /**
+     * MySQL checks the count of value list. Process mode: case1: For INSERT INTO ... VALUES(...)
+     * statements, ODC checks the count of value list. case2: For INSERT INTO ... SELECT ... statements,
+     * ODC runs EXPLAIN statements to get affected rows.
+     *
+     * @param insertStatement target sql
+     * @return affected rows
+     */
+    private long getMySqlAffectedRowsByCount(Insert insertStatement) {
+        List<InsertTable> insertTableList = insertStatement.getTableInsert();
+        if (insertTableList.isEmpty()) {
+            log.warn("InsertTableList is empty, please check your sql");
+            return -1;
+        }
+        InsertTable insertTable = insertTableList.get(0);
+        if (insertTable == null || insertTable.getValues() == null) {
+            log.warn("InsertTable is null or values is null, please check your sql");
+            return -1;
+        }
+        List<List<Expression>> values = insertTable.getValues();
+        if (CollectionUtils.isNotEmpty(values)) {
+            if (values.size() == 1 && values.get(0).size() == 1) {
+                Expression value = values.get(0).get(0);
+                if ((value instanceof Select) || (value instanceof SelectBody)) {
+                    return getMySqlAffectedRowsByExplain(insertStatement.getText(), this.jdbcOperations);
+                } else {
+                    return 1;
+                }
+            } else {
+                return values.size();
+            }
+        } else if (CollectionUtils.isNotEmpty(insertTable.getSetColumns())) {
+            return 1;
+        }
+        return -1;
+    }
+
+    /**
      * MySQL execute 'explain' statement
      *
      * @param explainSql target sql
      * @param jdbc jdbc Object
      * @return affected rows
      */
-    private long getMySqlAffectedRows(String explainSql, JdbcOperations jdbc) {
-
+    private long getMySqlAffectedRowsByExplain(String explainSql, JdbcOperations jdbc) {
         try {
             List<Long> resultSet = jdbc.query(explainSql,
                     (rs, rowNum) -> rs.getLong("rows"));
@@ -141,7 +158,8 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
             return firstNonNullResult != null ? firstNonNullResult : 0;
 
         } catch (Exception e) {
-            throw new RuntimeException("error: " + e.getMessage() + ", SQL: " + explainSql);
+            log.warn("MySQL mode: Error in execute " + explainSql + " failed. ", e);
+            return -1;
         }
     }
 
@@ -153,7 +171,6 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
      * @return affected rows
      */
     private long getOBMySqlAffectedRows(String explainSql, JdbcOperations jdbc) {
-
         /**
          * <pre>
          *
@@ -193,7 +210,8 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
             return firstNonNullResult != null ? firstNonNullResult : 0;
 
         } catch (Exception e) {
-            throw new RuntimeException("error: " + e.getMessage() + ", SQL: " + explainSql);
+            log.warn("OBMySQL mode: Error in execute " + explainSql + " failed. ", e);
+            return -1;
         }
     }
 
@@ -211,4 +229,5 @@ public class MySQLAffectedRowsExceedLimit implements SqlCheckRule {
         }
         return 0;
     }
+
 }
