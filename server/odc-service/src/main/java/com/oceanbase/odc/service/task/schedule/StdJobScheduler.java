@@ -188,14 +188,14 @@ public class StdJobScheduler implements JobScheduler {
         } catch (JobException e) {
             log.warn("Stop job occur error: ", e);
             JsonNode alarmDescription = JsonUtils.createJsonNodeBuilder()
-                .item("TaskType", scheduleTask.getJobGroup())
-                .item("AlarmType", "ODC")
-                .item("AlarmTarget", AlarmEventNames.TASK_CANCELED_FAILED).build();
+                    .item("TaskType", scheduleTask.getJobGroup())
+                    .item("AlarmType", "ODC")
+                    .item("AlarmTarget", AlarmEventNames.TASK_CANCELED_FAILED).build();
             AlarmUtils.alarm(AlarmEventNames.TASK_CANCELED_FAILED,
                     JsonUtils.createJsonNodeBuilder()
                             .item("ClusterName", connection.getClusterName())
                             .item("TenantName", connection.getTenantName())
-                            .item("ScheduleId", Long.valueOf(scheduleTask.getJobName()))
+                            .item("ScheduleId", scheduleTask.getJobName())
                             .item("Description", alarmDescription)
                             .item("Message", MessageFormat.format("Cancel job failed, message={0}", e.getMessage()))
                             .build());
