@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.resourcehistory;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Optional;
 
@@ -68,6 +69,23 @@ public class ResourceLastAccessServiceTest {
         clearDataInOrganization();
         resourceLastAccessRepository.delete(ResourceLastAccessEntity.builder()
                 .organizationId(organizationId).projectId(projectId).build());
+    }
+
+    @Test
+    public void batchAdd() {
+        ResourceLastAccessEntity entity =
+                resourceLastAccessService.add(organizationId, projectId, userId, resourceType, itemId,
+                        new Date(browseMills));
+        ResourceLastAccessEntity findEntity = resourceLastAccessRepository.findById(entity.getId()).get();
+        assertTimeEqualsInSeconds(browseMills, findEntity.getLastAccessTime());
+        entity.setLastAccessTime(new Date(browseMills + 1000));
+        ResourceLastAccessEntity entity2 = ResourceLastAccessEntity.builder()
+                .organizationId(organizationId).projectId(projectId).userId(userId)
+                .resourceType(resourceType.getLocalizedMessage()).resourceId(itemId)
+                .lastAccessTime(new Date(browseMills + 2000))
+                .build();
+        int affectCount = resourceLastAccessService.batchAdd(Arrays.asList(entity, entity2));
+        assertEquals(2, affectCount);
     }
 
     @Test

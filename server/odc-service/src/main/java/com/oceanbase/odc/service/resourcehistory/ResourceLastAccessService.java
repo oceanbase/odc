@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.resourcehistory;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +37,11 @@ public class ResourceLastAccessService {
     @Autowired
     public ResourceLastAccessService(ResourceLastAccessRepository resourceLastAccessRepository) {
         this.resourceLastAccessRepository = resourceLastAccessRepository;
+    }
+
+    public int batchAdd(List<ResourceLastAccessEntity> entities) {
+        PreConditions.notEmpty(entities, "entities");
+        return resourceLastAccessRepository.batchUpsert(entities);
     }
 
     public ResourceLastAccessEntity add(Long organizationId, Long projectId, Long userId, ResourceType resourceType,
