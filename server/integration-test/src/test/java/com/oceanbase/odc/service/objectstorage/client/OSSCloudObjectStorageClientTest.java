@@ -103,6 +103,17 @@ public class OSSCloudObjectStorageClientTest {
     }
 
     @Test
+    public void generateDownloadUrlWithCustomFileName() throws IOException {
+        objectName = CloudObjectStorageUtil.generateObjectName(null, UUID.randomUUID().toString(),
+                CloudObjectStorageConstants.ODC_SERVER_PREFIX, "fileName");
+        ossObjectStorageClient.putObject(objectName, new File(TEST_FILE_PATH), new ObjectTagging());
+        String customFileName = "customFileName";
+        String downloadUrl = ossObjectStorageClient
+                .generateDownloadUrlWithCustomFileName(objectName, 1000L, customFileName).toString();
+        Assert.assertTrue(downloadUrl.contains(customFileName));
+    }
+
+    @Test
     public void generateUploadUrl() throws IOException {
         objectName = CloudObjectStorageUtil.generateObjectName(null, UUID.randomUUID().toString(),
                 CloudObjectStorageConstants.ODC_SERVER_PREFIX, "fileName");

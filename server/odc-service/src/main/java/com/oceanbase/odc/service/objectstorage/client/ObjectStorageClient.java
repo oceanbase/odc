@@ -39,6 +39,8 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectTagging;
 public interface ObjectStorageClient {
     URL generateDownloadUrl(@NotBlank String objectName, Long expirationSeconds);
 
+    URL generateDownloadUrlWithCustomFileName(String objectName, Long expirationSeconds, String customFileName);
+
     URL generateUploadUrl(@NotBlank String objectName);
 
     void putObject(@NotBlank String objectName, @NotNull File file, ObjectTagging objectTagging) throws IOException;

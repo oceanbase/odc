@@ -30,6 +30,8 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.aliyun.oss.HttpMethod;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.model.GeneratePresignedUrlRequest;
@@ -230,6 +232,27 @@ public class AlibabaCloudClient implements CloudClient {
             ResponseHeaderOverrides responseHeaderOverrides = new ResponseHeaderOverrides();
             responseHeaderOverrides.setContentDisposition(
                     String.format("attachment;filename=%s", CloudObjectStorageUtil.getOriginalFileName(key)));
+            request.setResponseHeaders(responseHeaderOverrides);
+            return oss.generatePresignedUrl(request);
+        });
+    }
+
+    @Override
+    public URL generatePresignedUrlWithCustomFileName(String bucketName, String key, Date expiration,
+            String customFileName) throws CloudException {
+        Verify.notBlank(key, "key");
+        return callOssMethod("Generate presigned URL", () -> {
+            GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(bucketName, key);
+            request.setBucketName(bucketName);
+            request.setExpiration(expiration);
+            request.setKey(key);
+            ResponseHeaderOverrides responseHeaderOverrides = new ResponseHeaderOverrides();
+            String fileName = customFileName;
+            if (StringUtils.isBlank(customFileName)) {
+                fileName = CloudObjectStorageUtil.getOriginalFileName(key);
+            }
+            responseHeaderOverrides.setContentDisposition(
+                    String.format("attachment;filename=%s", fileName));
             request.setResponseHeaders(responseHeaderOverrides);
             return oss.generatePresignedUrl(request);
         });

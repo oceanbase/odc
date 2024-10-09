@@ -53,6 +53,11 @@ public class LocalObjectStorageClient implements ObjectStorageClient {
     }
 
     @Override
+    public URL generateDownloadUrlWithCustomFileName(String objectName, Long expirationSeconds, String customFileName) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
     public URL generateUploadUrl(String objectName) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
