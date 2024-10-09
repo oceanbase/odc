@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.core.alarm;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 public final class AlarmUtils {
 
     private AlarmUtils() {}
@@ -26,12 +28,20 @@ public final class AlarmUtils {
         alarmService.alarm(eventName, eventMessage);
     }
 
+    public static void alarm(String eventName, JsonNode eventMessageNode) {
+        alarmService.alarm(eventName, eventMessageNode);
+    }
+
     public static void alarm(String eventName, Throwable e) {
         alarmService.alarm(eventName, e);
     }
 
     public static void warn(String eventName, String eventMessage) {
         alarmService.warn(eventName, eventMessage);
+    }
+
+    public static void warn(String eventName, JsonNode eventMessageNode) {
+        alarmService.warn(eventName, eventMessageNode);
     }
 
     public static void warn(String eventName, Throwable e) {
