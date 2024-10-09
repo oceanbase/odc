@@ -13,27 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.model;
+package com.oceanbase.tools.dbbrowser.editor;
 
-import com.oceanbase.odc.service.session.model.SessionSettings;
-import com.oceanbase.tools.dbbrowser.model.DBSession;
+import com.oceanbase.tools.dbbrowser.model.DbClientInfo;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+public interface DBClientInfoEditor {
 
-/**
- * @Author: Lebie
- * @Date: 2023/6/5 11:12
- * @Description: []
- */
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class DBSessionResp {
-    private DBSession session;
-    private SessionSettings settings;
-    private boolean supportKillConsoleQuery;
+    void setClientInfo(DbClientInfo clientInfo);
+
 }

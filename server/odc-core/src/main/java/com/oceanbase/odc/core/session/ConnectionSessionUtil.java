@@ -326,6 +326,14 @@ public class ConnectionSessionUtil {
         return (Boolean) value;
     }
 
+    public static void setConsoleSessionClientInfo(@NonNull ConnectionSession connectionSession, String clientInfo) {
+        connectionSession.setAttribute(ConnectionSessionConstants.CONNECTION_CLIENTINFO_KEY, clientInfo);
+    }
+
+    public static String getConsoleSessionClientInfo(@NonNull ConnectionSession connectionSession) {
+        return (String) connectionSession.getAttribute(ConnectionSessionConstants.CONNECTION_CLIENTINFO_KEY);
+    }
+
     public static void setConsoleSessionKillQueryFlag(@NonNull ConnectionSession connectionSession,
             @NonNull Boolean killQuery) {
         connectionSession.setAttribute(ConnectionSessionConstants.CONNECTION_KILLQUERY_KEY, killQuery);

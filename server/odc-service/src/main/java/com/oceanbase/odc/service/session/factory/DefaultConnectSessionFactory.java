@@ -15,9 +15,13 @@
  */
 package com.oceanbase.odc.service.session.factory;
 
+import static com.oceanbase.tools.dbbrowser.model.DbClientInfo.CONNECT_SESSION_SQL_CONSOLE;
+import static com.oceanbase.tools.dbbrowser.model.DbClientInfo.DEFAULT_MODULE;
+
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.jdbc.core.ConnectionCallback;
@@ -40,8 +44,11 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 import com.oceanbase.odc.service.connection.util.ConnectionInfoUtil;
 import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
+import com.oceanbase.odc.service.db.browser.DBClientInfoEditors;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.initializer.SwitchSchemaInitializer;
+import com.oceanbase.tools.dbbrowser.editor.DBClientInfoEditor;
+import com.oceanbase.tools.dbbrowser.model.DbClientInfo;
 
 import lombok.NonNull;
 import lombok.Setter;
@@ -155,6 +162,7 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
             ConnectionSessionUtil.setClusterName(session, connectionConfig.getClusterName());
         }
         setNlsFormat(session);
+        setClientInfo(session);
     }
 
     private static void setNlsFormat(ConnectionSession session) {
@@ -180,6 +188,16 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
                 Objects.isNull(nlsTimestampTZFormat) ? "DD-MON-RR" : nlsTimestampTZFormat);
 
         log.info("Set nls format completed.");
+    }
+
+    private void setClientInfo(ConnectionSession session) {
+        DBClientInfoEditor consoleClientInfoEditor =
+                DBClientInfoEditors.create(session, ConnectionSessionConstants.CONSOLE_DS_KEY);
+        String clientInfo = UUID.randomUUID().toString();
+        consoleClientInfoEditor.setClientInfo(
+                new DbClientInfo(DEFAULT_MODULE, CONNECT_SESSION_SQL_CONSOLE, clientInfo));
+        ConnectionSessionUtil.setConsoleSessionClientInfo(session, clientInfo);
+        log.info("Set client info completed. sid={}, clientInfo={}", session.getId(), clientInfo);
     }
 
     /**
