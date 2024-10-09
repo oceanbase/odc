@@ -34,7 +34,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
@@ -74,8 +73,6 @@ import io.swagger.annotations.ApiOperation;
 public class ScheduleController {
     @Autowired
     private ScheduleService scheduleService;
-    @Autowired
-    private ProjectService projectService;
 
     // change log
 
