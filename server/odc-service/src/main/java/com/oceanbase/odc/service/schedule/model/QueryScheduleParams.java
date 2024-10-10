@@ -42,7 +42,7 @@ public class QueryScheduleParams {
     private String creator;
     private Set<Long> creatorIds;
     private Long projectId;
-    private String obProjectId;
+    private String projectUniqueIdentifier;
     private Set<Long> projectIds;
     private Long organizationId;
     private String databaseName;

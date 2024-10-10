@@ -741,8 +741,8 @@ public class ScheduleService {
                     authenticationFacade.currentOrganizationId(), params.getTenantId()));
         }
         // load project by unique identifier if project id is null
-        if (params.getProjectId() == null && StringUtils.isNotEmpty(params.getObProjectId())) {
-            Project project = projectService.getByIdentifier(params.getObProjectId());
+        if (params.getProjectId() == null && StringUtils.isNotEmpty(params.getProjectUniqueIdentifier())) {
+            Project project = projectService.getByIdentifier(params.getProjectUniqueIdentifier());
             if (project != null) {
                 params.setProjectId(project.getId());
             }

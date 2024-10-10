@@ -248,7 +248,7 @@ public class ScheduleController {
             @RequestParam(required = false, name = "startTime") Date startTime,
             @RequestParam(required = false, name = "endTime") Date endTime,
             @RequestParam(required = false, name = "creator") String creator,
-            @RequestParam(required = false, name = "obProjectId") String obProjectId,
+            @RequestParam(required = false, name = "obProjectId") String projectUniqueIdentifier,
             @RequestParam(required = false, name = "projectId") Long projectId) {
         QueryScheduleParams req = QueryScheduleParams.builder()
                 .id(id)
@@ -263,7 +263,7 @@ public class ScheduleController {
                 .endTime(endTime)
                 .creator(creator)
                 .projectId(projectId)
-                .obProjectId(obProjectId)
+                .projectUniqueIdentifier(projectUniqueIdentifier)
                 .build();
 
         return Responses.paginated(scheduleService.listScheduleOverview(pageable, req));
