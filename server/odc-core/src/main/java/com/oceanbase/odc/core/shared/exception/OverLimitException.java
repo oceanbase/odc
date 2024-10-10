@@ -30,7 +30,7 @@ public class OverLimitException extends HttpException implements Transient {
         super(ErrorCodes.OverLimit, new Object[] {metric.getLocalizedMessage(), limit}, message);
     }
 
-    public OverLimitException(ErrorCode errorCode, Object[] args, String message) {
+    public OverLimitException(ErrorCodes errorCode, Object[] args, String message) {
         super(errorCode, args, message);
     }
 
