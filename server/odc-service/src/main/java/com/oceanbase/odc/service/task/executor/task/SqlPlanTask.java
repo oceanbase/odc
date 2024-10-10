@@ -238,9 +238,9 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
 
     private boolean executeSqlWithRetries(String sql) {
         int executeTime = 0;
+        GeneralSqlType sqlType = parseSqlType(sql);
         while (executeTime <= parameters.getRetryTimes() && !canceled) {
             OdcStatementCallBack statementCallback = getOdcStatementCallBack(sql);
-            GeneralSqlType sqlType = parseSqlType(sql);
             try {
                 List<JdbcGeneralResult> results =
                         executor.execute((StatementCallback<List<JdbcGeneralResult>>) stmt -> {
