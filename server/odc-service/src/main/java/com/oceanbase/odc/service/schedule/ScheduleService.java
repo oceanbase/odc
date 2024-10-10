@@ -67,6 +67,7 @@ import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -738,6 +739,13 @@ public class ScheduleService {
         if (StringUtils.isNotEmpty(params.getTenantId())) {
             params.getDataSourceIds().addAll(connectionService.innerListIdByOrganizationIdAndTenantId(
                     authenticationFacade.currentOrganizationId(), params.getTenantId()));
+        }
+        // load project by unique identifier if project id is null
+        if (params.getProjectId() == null && StringUtils.isNotEmpty(params.getProjectUniqueIdentifier())) {
+            Project project = projectService.getByIdentifier(params.getProjectUniqueIdentifier());
+            if (project != null) {
+                params.setProjectId(project.getId());
+            }
         }
 
         if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
