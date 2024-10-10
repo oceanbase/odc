@@ -17,7 +17,6 @@ package com.oceanbase.odc.core.shared.exception;
 
 import org.springframework.http.HttpStatus;
 
-import com.oceanbase.odc.core.shared.constant.ErrorCode;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
 
