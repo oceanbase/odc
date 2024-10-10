@@ -190,9 +190,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         }
 
         for (String sqlObjectId : parameters.getSqlObjectIds()) {
-            InputStream current = null;
-            try {
-                current = cloudObjectStorageService.getObject(sqlObjectId);
+            try (InputStream current = cloudObjectStorageService.getObject(sqlObjectId)) {
                 // remove UTF-8 BOM if exists
                 current.mark(3);
                 byte[] byteSql = new byte[3];
@@ -207,14 +205,6 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             } catch (IOException e) {
                 log.warn("Read content from cloud object storage failed, sqlObjectId={}", sqlObjectId);
                 throw new InternalServerError("load database change task file failed", e);
-            } finally {
-                if (current != null) {
-                    try {
-                        current.close();
-                    } catch (IOException e) {
-                        log.warn("close current failed", e);
-                    }
-                }
             }
         }
         this.sqlIterator = SqlUtils.iterator(connectionSession, sqlInputStream, StandardCharsets.UTF_8);
