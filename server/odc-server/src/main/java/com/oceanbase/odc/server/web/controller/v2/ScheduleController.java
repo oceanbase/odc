@@ -159,7 +159,6 @@ public class ScheduleController {
     }
 
 
-    // list all schedule task by schedule type, type can not be null, currently only for sql plan
     @RequestMapping(value = "/tasks", method = RequestMethod.GET)
     public PaginatedResponse<ScheduleTaskListOverview> listAllTask(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
