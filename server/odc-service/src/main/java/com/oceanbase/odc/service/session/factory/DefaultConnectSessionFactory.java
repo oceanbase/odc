@@ -194,10 +194,12 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
         DBClientInfoEditor consoleClientInfoEditor =
                 DBClientInfoEditors.create(session, ConnectionSessionConstants.CONSOLE_DS_KEY);
         String clientInfo = UUID.randomUUID().toString();
-        consoleClientInfoEditor.setClientInfo(
+        boolean setSuccess = consoleClientInfoEditor.setClientInfo(
                 new DbClientInfo(DEFAULT_MODULE, CONNECT_SESSION_SQL_CONSOLE, clientInfo));
-        ConnectionSessionUtil.setConsoleSessionClientInfo(session, clientInfo);
-        log.info("Set client info completed. sid={}, clientInfo={}", session.getId(), clientInfo);
+        if (setSuccess) {
+            ConnectionSessionUtil.setConsoleSessionClientInfo(session, clientInfo);
+            log.info("Set client info completed. sid={}, clientInfo={}", session.getId(), clientInfo);
+        }
     }
 
     /**

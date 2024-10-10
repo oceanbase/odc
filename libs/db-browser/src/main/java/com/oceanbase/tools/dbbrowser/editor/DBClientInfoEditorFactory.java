@@ -78,8 +78,8 @@ public class DBClientInfoEditorFactory extends AbstractDBBrowserFactory<DBClient
     static class NotSupportDBClientInfoEditor implements DBClientInfoEditor {
 
         @Override
-        public void setClientInfo(DbClientInfo clientInfo) {
-            // do nothing
+        public boolean setClientInfo(DbClientInfo clientInfo) {
+            return false;
         }
     }
 }

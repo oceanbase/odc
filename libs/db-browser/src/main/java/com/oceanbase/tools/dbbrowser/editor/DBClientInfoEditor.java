@@ -19,6 +19,6 @@ import com.oceanbase.tools.dbbrowser.model.DbClientInfo;
 
 public interface DBClientInfoEditor {
 
-    void setClientInfo(DbClientInfo clientInfo);
+    boolean setClientInfo(DbClientInfo clientInfo);
 
 }

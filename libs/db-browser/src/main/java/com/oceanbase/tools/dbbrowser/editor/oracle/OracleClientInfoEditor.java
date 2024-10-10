@@ -35,12 +35,14 @@ public class OracleClientInfoEditor implements DBClientInfoEditor {
     }
 
     @Override
-    public void setClientInfo(DbClientInfo clientInfo) {
+    public boolean setClientInfo(DbClientInfo clientInfo) {
         try {
             String sql = String.format(SET_MODULE_TEMPLATE, clientInfo.getModule(), clientInfo.getAction());
             jdbcOperations.execute(sql);
+            return true;
         } catch (Exception e) {
             log.info("Set oracle clientInfo failed", e);
+            return false;
         }
     }
 }

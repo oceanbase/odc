@@ -20,6 +20,9 @@ import org.springframework.jdbc.core.JdbcOperations;
 import com.oceanbase.tools.dbbrowser.editor.DBClientInfoEditor;
 import com.oceanbase.tools.dbbrowser.model.DbClientInfo;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class OBOracleNoLess400ClientInfoEditor implements DBClientInfoEditor {
 
     private final String SET_MODULE_TEMPLATE =
@@ -31,9 +34,15 @@ public class OBOracleNoLess400ClientInfoEditor implements DBClientInfoEditor {
     }
 
     @Override
-    public void setClientInfo(DbClientInfo clientInfo) {
-        String sql = String.format(SET_MODULE_TEMPLATE, clientInfo.getModule(), clientInfo.getAction(),
-                clientInfo.getContext());
-        jdbcOperations.execute(sql);
+    public boolean setClientInfo(DbClientInfo clientInfo) {
+        try {
+            String sql = String.format(SET_MODULE_TEMPLATE, clientInfo.getModule(), clientInfo.getAction(),
+                    clientInfo.getContext());
+            jdbcOperations.execute(sql);
+            return true;
+        } catch (Exception e) {
+            log.info("set OBOracle clientInfo", e);
+            return false;
+        }
     }
 }

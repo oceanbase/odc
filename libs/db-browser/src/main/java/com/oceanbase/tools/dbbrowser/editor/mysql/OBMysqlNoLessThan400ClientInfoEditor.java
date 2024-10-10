@@ -20,6 +20,9 @@ import org.springframework.jdbc.core.JdbcOperations;
 import com.oceanbase.tools.dbbrowser.editor.DBClientInfoEditor;
 import com.oceanbase.tools.dbbrowser.model.DbClientInfo;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class OBMysqlNoLessThan400ClientInfoEditor implements DBClientInfoEditor {
 
     private final String SET_CLIENT_INFO_SQL =
@@ -31,9 +34,15 @@ public class OBMysqlNoLessThan400ClientInfoEditor implements DBClientInfoEditor 
     }
 
     @Override
-    public void setClientInfo(DbClientInfo clientInfo) {
-        String sql = String.format(SET_CLIENT_INFO_SQL, clientInfo.getModule(), clientInfo.getAction(),
-                clientInfo.getContext());
-        jdbcOperations.execute(sql);
+    public boolean setClientInfo(DbClientInfo clientInfo) {
+        try {
+            String sql = String.format(SET_CLIENT_INFO_SQL, clientInfo.getModule(), clientInfo.getAction(),
+                    clientInfo.getContext());
+            jdbcOperations.execute(sql);
+            return true;
+        } catch (Exception e) {
+            log.info("set OBMysql clientInfo failed", e);
+            return false;
+        }
     }
 }
