@@ -17,6 +17,7 @@ package com.oceanbase.odc.core.shared.exception;
 
 import org.springframework.http.HttpStatus;
 
+import com.oceanbase.odc.core.shared.constant.ErrorCode;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
 
@@ -27,6 +28,10 @@ import com.oceanbase.odc.core.shared.constant.LimitMetric;
 public class OverLimitException extends HttpException implements Transient {
     public OverLimitException(LimitMetric metric, Double limit, String message) {
         super(ErrorCodes.OverLimit, new Object[] {metric.getLocalizedMessage(), limit}, message);
+    }
+
+    public OverLimitException(ErrorCode errorCode, Object[] args, String message) {
+        super(errorCode, args, message);
     }
 
     @Override
