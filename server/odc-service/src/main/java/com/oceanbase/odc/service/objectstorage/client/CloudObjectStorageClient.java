@@ -173,9 +173,8 @@ public class CloudObjectStorageClient implements ObjectStorageClient {
         if (!exist) {
             throw new FileNotFoundException("File dose not exist, object name " + objectName);
         }
-        try (InputStream inputStream =
-                internalEndpointCloudObjectStorage.getObject(getBucketName(), objectName).getObjectContent()) {
-            return inputStream;
+        try {
+            return internalEndpointCloudObjectStorage.getObject(getBucketName(), objectName).getObjectContent();
         } catch (Exception exception) {
             log.warn("get object failed, objectName={}", objectName, exception);
             throw new IOException(exception);
