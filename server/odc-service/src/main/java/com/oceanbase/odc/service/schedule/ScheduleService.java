@@ -59,6 +59,7 @@ import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
@@ -66,6 +67,7 @@ import com.oceanbase.odc.metadb.schedule.LatestTaskMappingEntity;
 import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
@@ -96,6 +98,7 @@ import com.oceanbase.odc.service.schedule.model.ChangeQuartJobParam;
 import com.oceanbase.odc.service.schedule.model.ChangeScheduleResp;
 import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
 import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
+import com.oceanbase.odc.service.schedule.model.CreateScheduleTaskParams;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
@@ -139,6 +142,8 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @SkipAuthorize
 public class ScheduleService {
+    @Autowired
+    private ScheduleTaskRepository scheduleTaskRepository;
     @Autowired
     private ScheduleRepository scheduleRepository;
     @Autowired
@@ -880,6 +885,54 @@ public class ScheduleService {
     public ScheduleEntity nullSafeGetById(Long id) {
         Optional<ScheduleEntity> scheduleEntityOptional = scheduleRepository.findById(id);
         return scheduleEntityOptional.orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE, "id", id));
+    }
+
+    public void updateJobId(Long id, Long jobId) {
+        scheduleTaskRepository.updateJobIdById(id, jobId);
+    }
+
+    @SkipAuthorize("odc internal usage")
+    @Transactional(rollbackFor = Exception.class)
+    public ScheduleTask createScheduleNextTask(CreateScheduleTaskParams params) {
+        Schedule schedule = nullSafeGetModelById(params.getScheduleId());
+        ScheduleTask scheduleNextTask;
+        try {
+            if (params.getScheduleTaskId() == null) {
+                scheduleNextTask = scheduleTaskService.createScheduleTask(params);
+            } else {
+                scheduleNextTask =
+                        scheduleTaskService.restartScheduleTask(params.getScheduleTaskId(), params.getFireTime());
+            }
+        } catch (Exception e) {
+            log.warn("Create schedule task failed,params = {}", params, e);
+            throw new UnexpectedException("Create schedule task failed");
+        }
+
+        updateLatestTaskId(schedule.getId(), scheduleNextTask.getId());
+        return scheduleNextTask;
+    }
+
+    private void updateLatestTaskId(Long scheduleId, Long scheduleTaskId) {
+        Optional<LatestTaskMappingEntity> optional = latestTaskMappingRepository.findByScheduleId(scheduleId);
+        LatestTaskMappingEntity entity;
+        if (optional.isPresent()) {
+            entity = optional.get();
+            // double check
+            if (entity.getLatestScheduleTaskId() != null) {
+                Optional<ScheduleTask> taskOptional = scheduleTaskService.findById(entity.getLatestScheduleTaskId());
+                log.info("Found latest task,scheduleId={},taskId={},status={}", scheduleId, scheduleTaskId,
+                        taskOptional.isPresent() ? taskOptional.get().getStatus() : null);
+                if (taskOptional.isPresent() && !taskOptional.get().getStatus().isTerminated()) {
+                    throw new UnexpectedException("Concurrent is not allowed.");
+                }
+            }
+        } else {
+            entity = new LatestTaskMappingEntity();
+            entity.setScheduleId(scheduleId);
+        }
+        log.info("Update latest task from {} to {}", entity.getLatestScheduleTaskId(), scheduleTaskId);
+        entity.setLatestScheduleTaskId(scheduleTaskId);
+        latestTaskMappingRepository.save(entity);
     }
 
 

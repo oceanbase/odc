@@ -23,7 +23,7 @@ import org.quartz.JobExecutionContext;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -33,6 +33,7 @@ import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.executor.task.DataArchiveTask;
@@ -53,7 +54,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class AbstractDlmJob implements OdcJob {
 
-    public final ScheduleTaskRepository scheduleTaskRepository;
+    public final ScheduleTaskService scheduleTaskService;
     public final DatabaseService databaseService;
     public final ScheduleService scheduleService;
     public final DlmLimiterService limiterService;
@@ -66,7 +67,7 @@ public abstract class AbstractDlmJob implements OdcJob {
 
 
     public AbstractDlmJob() {
-        scheduleTaskRepository = SpringContextUtil.getBean(ScheduleTaskRepository.class);
+        scheduleTaskService = SpringContextUtil.getBean(ScheduleTaskService.class);
         databaseService = SpringContextUtil.getBean(DatabaseService.class);
         scheduleService = SpringContextUtil.getBean(ScheduleService.class);
         limiterService = SpringContextUtil.getBean(DlmLimiterService.class);
@@ -147,6 +148,9 @@ public abstract class AbstractDlmJob implements OdcJob {
 
     public abstract void executeJob(JobExecutionContext context);
 
+    public void onFailure(Long scheduleTaskId) {
+        scheduleTaskService.updateStatusById(scheduleTaskId, TaskStatus.FAILED);
+    }
 
     @Override
     public void before(JobExecutionContext context) {

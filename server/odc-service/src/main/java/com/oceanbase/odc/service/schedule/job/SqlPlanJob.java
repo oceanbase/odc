@@ -21,17 +21,11 @@ import java.util.Map;
 
 import org.quartz.JobExecutionContext;
 
-import com.alibaba.fastjson.JSON;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
-import com.oceanbase.odc.service.config.SystemConfigService;
-import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -43,6 +37,8 @@ import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.model.Schedule;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskType;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
@@ -70,7 +66,6 @@ public class SqlPlanJob implements OdcJob {
     public final ScheduleService scheduleService;
     public final ConnectProperties connectProperties;
     public final JobScheduler jobScheduler;
-    public final SystemConfigService systemConfigService;
     public final ConnectionService datasourceService;
 
 
@@ -81,28 +76,25 @@ public class SqlPlanJob implements OdcJob {
         this.scheduleService = SpringContextUtil.getBean(ScheduleService.class);
         this.connectProperties = SpringContextUtil.getBean(ConnectProperties.class);
         this.jobScheduler = SpringContextUtil.getBean(JobScheduler.class);
-        this.systemConfigService = SpringContextUtil.getBean(SystemConfigService.class);
         this.datasourceService = SpringContextUtil.getBean(ConnectionService.class);
     }
 
     @Override
     public void execute(JobExecutionContext context) {
-        Configuration configuration = systemConfigService.queryByKey("odc.iam.auth.type");
-        if (taskFrameworkProperties.isEnabled() && "obcloud".equals(configuration.getValue())) {
+        ScheduleTaskType scheduleTaskType = ScheduleTaskUtils.getScheduleTaskType(context);
+        if (scheduleTaskType.isExecuteInTaskFramework()) {
             executeInTaskFramework(context);
             return;
         }
-        ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(ScheduleTaskUtils.getScheduleId(context));
-        DatabaseChangeParameters taskParameters = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
-                DatabaseChangeParameters.class);
-        log.info("Execute sql plan job, scheduleId={}, taskParameters={}", scheduleEntity.getId(),
-                JSON.toJSONString(taskParameters));
+        DatabaseChangeParameters taskParameters = ScheduleTaskUtils.getDatabaseChangeTaskParameters(context);
+        Schedule schedule = scheduleService.nullSafeGetModelById(ScheduleTaskUtils.getScheduleId(context));
+        log.info("Execute sql plan job, scheduleId={}, taskParameters={}", schedule.getId(), taskParameters);
         taskParameters.setParentScheduleType(ScheduleType.SQL_PLAN);
         CreateFlowInstanceReq flowInstanceReq = new CreateFlowInstanceReq();
         flowInstanceReq.setParameters(taskParameters);
         flowInstanceReq.setTaskType(TaskType.ASYNC);
         flowInstanceReq.setParentFlowInstanceId(Long.parseLong(context.getJobDetail().getKey().getName()));
-        flowInstanceReq.setDatabaseId(scheduleEntity.getDatabaseId());
+        flowInstanceReq.setDatabaseId(schedule.getDatabaseId());
 
         FlowInstanceService flowInstanceService = SpringContextUtil.getBean(FlowInstanceService.class);
         List<FlowInstanceDetailResp> flowInstance = flowInstanceService.createWithoutApprovalNode(
@@ -116,9 +108,8 @@ public class SqlPlanJob implements OdcJob {
     }
 
     private void executeInTaskFramework(JobExecutionContext context) {
-        ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
-        SqlPlanParameters sqlPlanParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
-                SqlPlanParameters.class);
+        Long scheduleTaskId = ScheduleTaskUtils.getScheduleTaskId(context);
+        SqlPlanParameters sqlPlanParameters = ScheduleTaskUtils.getSqlPlanParameters(context);
         PublishSqlPlanJobReq parameters = new PublishSqlPlanJobReq();
         parameters.setSqlContent(sqlPlanParameters.getSqlContent());
         parameters.setRetryTimes(sqlPlanParameters.getRetryTimes());
@@ -154,10 +145,8 @@ public class SqlPlanJob implements OdcJob {
                 .build();
 
         Long jobId = jobScheduler.scheduleJobNow(jd);
-        scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
-        log.info("Publish sql plan job to task framework success, scheduleTaskId={}, jobId={}",
-                taskEntity.getId(),
-                jobId);
+        scheduleTaskRepository.updateJobIdById(scheduleTaskId, jobId);
+        log.info("Publish sql plan job to task framework success, scheduleTaskId={}, jobId={}", scheduleTaskId, jobId);
     }
 
 

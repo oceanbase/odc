@@ -15,15 +15,14 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
-import java.util.Optional;
-
 import org.quartz.JobExecutionContext;
 
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
+import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.model.DataArchiveClearParameters;
+import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
 import lombok.extern.slf4j.Slf4j;
@@ -37,42 +36,39 @@ import lombok.extern.slf4j.Slf4j;
 public class DataArchiveDeleteJob extends AbstractDlmJob {
     @Override
     public void executeJob(JobExecutionContext context) {
+        Long scheduleId = ScheduleTaskUtils.getScheduleId(context);
+        Long scheduleTaskId = ScheduleTaskUtils.getScheduleTaskId(context);
+        DataArchiveClearParameters dataArchiveClearParameters =
+                ScheduleTaskUtils.getDataArchiveClearParameters(context);
 
-        ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
-        DataArchiveClearParameters dataArchiveClearParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
-                DataArchiveClearParameters.class);
-
-        // find data archive task by id.
-        Optional<ScheduleTaskEntity> dataArchiveTaskOption =
-                scheduleTaskRepository.findById(dataArchiveClearParameters.getDataArchiveTaskId());
-
-        if (!dataArchiveTaskOption.isPresent()) {
+        ScheduleTask dataArchiveTask;
+        try {
+            dataArchiveTask = scheduleTaskService.nullSafeGetModelById(
+                    dataArchiveClearParameters.getDataArchiveTaskId());
+        } catch (NotFoundException e) {
             log.warn("Data archive task not found,rollback task fast failed.scheduleTaskId={}",
                     dataArchiveClearParameters.getDataArchiveTaskId());
-            scheduleTaskRepository.updateStatusById(taskEntity.getId(), TaskStatus.FAILED);
+            onFailure(scheduleTaskId);
             return;
         }
 
-        ScheduleTaskEntity dataArchiveTask = dataArchiveTaskOption.get();
-        DataArchiveParameters dataArchiveParameters = JsonUtils.fromJson(dataArchiveTask.getParametersJson(),
-                DataArchiveParameters.class);
+        DataArchiveParameters dataArchiveParameters = (DataArchiveParameters) dataArchiveTask.getParameters();
 
         if (dataArchiveTask.getStatus() != TaskStatus.DONE) {
             log.warn("Data archive task do not finish,scheduleTaskId = {}", dataArchiveTask.getId());
-            scheduleTaskRepository.updateStatusById(taskEntity.getId(), TaskStatus.FAILED);
+            onFailure(scheduleTaskId);
             return;
         }
 
         DLMJobReq parameters = getDLMJobReq(dataArchiveTask.getJobId());
         parameters.setJobType(JobType.DELETE);
-        parameters.setScheduleTaskId(taskEntity.getId());
+        parameters.setScheduleTaskId(scheduleTaskId);
         parameters
-                .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName())));
+                .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(scheduleId));
         Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis(),
                 dataArchiveParameters.getSourceDatabaseId());
-        log.info("Publish DLM job to task framework succeed,scheduleTaskId={},jobIdentity={}", taskEntity.getId(),
+        log.info("Publish DLM job to task framework succeed,scheduleTaskId={},jobIdentity={}", scheduleTaskId,
                 jobId);
-        scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
-        scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));
+        scheduleService.updateJobId(scheduleTaskId, jobId);
     }
 }

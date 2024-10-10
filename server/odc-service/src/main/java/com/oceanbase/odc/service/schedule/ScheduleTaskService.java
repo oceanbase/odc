@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.schedule;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,7 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskSpecs;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.JobRepository;
+import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseChangeService;
@@ -56,10 +58,12 @@ import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
 import com.oceanbase.odc.service.dlm.DLMService;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.factory.ScheduleResponseMapperFactory;
 import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
+import com.oceanbase.odc.service.schedule.model.CreateScheduleTaskParams;
 import com.oceanbase.odc.service.schedule.model.DataArchiveClearParameters;
 import com.oceanbase.odc.service.schedule.model.DataArchiveRollbackParameters;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
@@ -129,6 +133,10 @@ public class ScheduleTaskService {
     @Autowired
     private JobRepository jobRepository;
 
+    @Autowired
+    private HostProperties hostProperties;
+
+
     private final ScheduleTaskMapper scheduleTaskMapper = ScheduleTaskMapper.INSTANCE;
 
     public ScheduleTaskDetailResp getScheduleTaskDetailResp(Long id, Long scheduleId) {
@@ -164,8 +172,50 @@ public class ScheduleTaskService {
         return res;
     }
 
-    public ScheduleTaskEntity create(ScheduleTaskEntity taskEntity) {
-        return scheduleTaskRepository.save(taskEntity);
+
+    public ScheduleTask createScheduleTask(CreateScheduleTaskParams params) {
+        ScheduleTaskEntity scheduleTask = new ScheduleTaskEntity();
+        scheduleTask.setJobName(params.getScheduleId().toString());
+        scheduleTask.setJobGroup(params.getTaskType().name());
+        scheduleTask.setExecutor(JsonUtils.toJson(new ExecutorInfo(hostProperties)));
+        scheduleTask.setFireTime(params.getFireTime());
+        scheduleTask.setStatus(TaskStatus.PREPARING);
+        scheduleTask.setParametersJson(params.getTaskParameters());
+        return scheduleTaskMapper.entityToModel(scheduleTaskRepository.save(scheduleTask));
+    }
+
+    public ScheduleTask restartScheduleTask(Long scheduleTaskId, Date fireTime) {
+        ScheduleTaskEntity scheduleTask = nullSafeGetById(scheduleTaskId);
+
+        scheduleTask.setStatus(TaskStatus.PREPARING);
+        scheduleTask.setFireTime(fireTime);
+        if (!scheduleTask.getStatus().isRetryAllowed()) {
+            throw new IllegalStateException(
+                    "The task cannot be restarted because it is currently in progress or has already completed.");
+        }
+        scheduleTask.setStatus(TaskStatus.PREPARING);
+        scheduleTask.setFireTime(fireTime);
+        ScheduleTaskType taskType = ScheduleTaskType.valueOf(scheduleTask.getJobGroup());
+        // refresh task unit status.
+        switch (taskType) {
+            case DATA_ARCHIVE:
+            case DATA_ARCHIVE_ROLLBACK:
+            case DATA_ARCHIVE_DELETE:
+            case DATA_DELETE: {
+                List<DlmTableUnit> tableUnits = dlmService.findByScheduleTaskId(scheduleTaskId).stream().peek(unit -> {
+                    // Re-run all unfinished tableUnits
+                    if (unit.getStatus() != TaskStatus.DONE) {
+                        unit.setStatus(TaskStatus.PREPARING);
+                    }
+                }).collect(Collectors.toList());
+                dlmService.createOrUpdateDlmTableUnits(tableUnits);
+                break;
+            }
+            default:
+                break;
+        }
+
+        return scheduleTaskMapper.entityToModel(scheduleTaskRepository.save(scheduleTask));
     }
 
     /**
@@ -237,6 +287,12 @@ public class ScheduleTaskService {
 
     public void updateStatusById(Long id, TaskStatus status) {
         scheduleTaskRepository.updateStatusById(id, status);
+    }
+
+
+    public void updateStatusById(Long id, TaskStatus status, List<TaskStatus> previousStatus) {
+        scheduleTaskRepository.updateStatusById(id, status,
+                previousStatus.stream().map(TaskStatus::name).collect(Collectors.toList()));
     }
 
     public void update(ScheduleTask scheduleTask) {
@@ -387,7 +443,6 @@ public class ScheduleTaskService {
             log.warn("Delete is not allowed because the data archive job has not succeeded.JobKey={}", jobKey);
             throw new IllegalStateException("Delete is not allowed because the data archive job has not succeeded.");
         }
-
         try {
             if (quartzJobService.checkExists(jobKey)) {
                 log.info("Data archive delete job exists and start delete job,jobKey={}", jobKey);

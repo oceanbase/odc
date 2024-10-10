@@ -17,12 +17,11 @@ package com.oceanbase.odc.service.schedule.job;
 
 import org.quartz.JobExecutionContext;
 
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
+import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
 import lombok.extern.slf4j.Slf4j;
@@ -43,12 +42,12 @@ public class DataDeleteJob extends AbstractDlmJob {
 
 
     private void executeInTaskFramework(JobExecutionContext context) {
-        ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
-        DataDeleteParameters dataDeleteParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
-                DataDeleteParameters.class);
+        Long scheduleId = ScheduleTaskUtils.getScheduleId(context);
+        Long scheduleTaskId = ScheduleTaskUtils.getScheduleTaskId(context);
+        DataDeleteParameters dataDeleteParameters = ScheduleTaskUtils.getDataDeleteParameters(context);
         DLMJobReq parameters = new DLMJobReq();
-        parameters.setJobName(taskEntity.getJobName());
-        parameters.setScheduleTaskId(taskEntity.getId());
+        parameters.setJobName(scheduleId.toString());
+        parameters.setScheduleTaskId(scheduleTaskId);
         JobType jobType = dataDeleteParameters.getNeedCheckBeforeDelete() ? JobType.DELETE : JobType.QUICK_DELETE;
         parameters.setJobType(dataDeleteParameters.getDeleteByUniqueKey() ? jobType : JobType.DEIRECT_DELETE);
         parameters.setTables(dataDeleteParameters.getTables());
@@ -60,8 +59,7 @@ public class DataDeleteJob extends AbstractDlmJob {
                     : "");
         }
         parameters.setNeedPrintSqlTrace(dataDeleteParameters.isNeedPrintSqlTrace());
-        parameters
-                .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName())));
+        parameters.setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(scheduleId));
         parameters.setWriteThreadCount(dataDeleteParameters.getWriteThreadCount());
         parameters.setReadThreadCount(dataDeleteParameters.getReadThreadCount());
         parameters.setScanBatchSize(dataDeleteParameters.getScanBatchSize());
@@ -74,10 +72,9 @@ public class DataDeleteJob extends AbstractDlmJob {
 
         Long jobId =
                 publishJob(parameters, dataDeleteParameters.getTimeoutMillis(), dataDeleteParameters.getDatabaseId());
-        scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
-        scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));
+        scheduleService.updateJobId(scheduleTaskId, jobId);
         log.info("Publish data-delete job to task framework succeed,scheduleTaskId={},jobIdentity={}",
-                taskEntity.getId(),
+                scheduleTaskId,
                 jobId);
     }
 

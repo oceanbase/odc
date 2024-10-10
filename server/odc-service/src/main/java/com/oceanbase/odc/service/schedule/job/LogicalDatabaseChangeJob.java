@@ -23,7 +23,6 @@ import org.quartz.JobExecutionContext;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.ConnectionService;
@@ -79,13 +78,12 @@ public class LogicalDatabaseChangeJob implements OdcJob {
 
     @Override
     public void execute(JobExecutionContext context) {
-        ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
-        String scheduleId = taskEntity.getJobName();
+        Long scheduleId = ScheduleTaskUtils.getScheduleId(context);
+        Long scheduleTaskId = ScheduleTaskUtils.getScheduleTaskId(context);
         ScheduleEntity scheduleEntity =
-                scheduleRepository.findById(Long.parseLong(scheduleId)).orElseThrow(() -> new IllegalArgumentException(
+                scheduleRepository.findById(scheduleId).orElseThrow(() -> new IllegalArgumentException(
                         "Schedule not found, scheduleId=" + scheduleId));
-        LogicalDatabaseChangeParameters parameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
-                LogicalDatabaseChangeParameters.class);
+        LogicalDatabaseChangeParameters parameters = ScheduleTaskUtils.getLogicalDatabaseChangeParameters(context);
         PublishLogicalDatabaseChangeReq req = new PublishLogicalDatabaseChangeReq();
         req.setSqlContent(parameters.getSqlContent());
         req.setCreatorId(scheduleEntity.getCreatorId());
@@ -96,12 +94,12 @@ public class LogicalDatabaseChangeJob implements OdcJob {
         req.setLogicalDatabaseResp(logicalDatabaseResp);
         req.setDelimiter(parameters.getDelimiter());
         req.setTimeoutMillis(parameters.getTimeoutMillis());
-        req.setScheduleTaskId(taskEntity.getId());
+        req.setScheduleTaskId(scheduleTaskId);
         Long jobId = publishJob(req, parameters.getTimeoutMillis());
-        scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
-        scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));
-        log.info("Publish data-archive job to task framework succeed,scheduleTaskId={},jobIdentity={}",
-                taskEntity.getId(), jobId);
+        scheduleTaskRepository.updateJobIdById(scheduleTaskId, jobId);
+        scheduleTaskRepository.updateTaskResult(scheduleTaskId, JsonUtils.toJson(parameters));
+        log.info("Publish data-archive job to task framework succeed,scheduleTaskId={},jobIdentity={}", scheduleTaskId,
+                jobId);
     }
 
     @Override

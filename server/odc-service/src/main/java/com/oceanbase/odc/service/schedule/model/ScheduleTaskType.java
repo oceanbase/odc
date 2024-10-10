@@ -15,6 +15,10 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
+import org.springframework.core.env.Environment;
+
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
+
 /**
  * @Author：tinker
  * @Date: 2024/6/18 16:56
@@ -38,6 +42,29 @@ public enum ScheduleTaskType {
 
     LOGICAL_DATABASE_CHANGE,
 
-    LOAD_DATA
+    LOAD_DATA;
+
+    public boolean isExecuteInTaskFramework() {
+        switch (this) {
+            case SQL_PLAN: {
+                String property = SpringContextUtil.getBean(Environment.class).getProperty("odc.iam.auth.type");
+                return "obcloud".equals(property);
+            }
+            case DATA_ARCHIVE:
+            case DATA_ARCHIVE_DELETE:
+            case DATA_DELETE:
+            case DATA_ARCHIVE_ROLLBACK:
+            case LOGICAL_DATABASE_CHANGE:
+            case LOAD_DATA: {
+                return true;
+            }
+            case ONLINE_SCHEMA_CHANGE_COMPLETE:
+            case PARTITION_PLAN: {
+                return false;
+            }
+            default:
+                return false;
+        }
+    }
 
 }
