@@ -327,7 +327,7 @@ public class DatabaseChangeThread extends Thread {
         this.stop = true;
         log.info("Try to kill current query");
         try {
-            sessionManageFacade.killCurrentQuery(connectionSession);
+            sessionManageFacade.killConsoleQuery(connectionSession);
             log.info("Kill current query success");
         } catch (Exception e) {
             log.warn("Kill current query failed", e);

@@ -61,7 +61,6 @@ import com.oceanbase.odc.service.connection.util.ConnectionInfoUtil;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.db.browser.DBStatsAccessors;
 import com.oceanbase.odc.service.db.session.DBSessionService.SessionIdKillSql;
-import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
@@ -89,10 +88,6 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     private static final byte GLOBAL_CLIENT_SESSION_PROXY_ID_MIN = 0;
     private static final short GLOBAL_CLIENT_SESSION_PROXY_ID_MAX = 8191;
     private static final byte GLOBAL_CLIENT_SESSION_ID_VERSION = 2;
-
-
-    @Autowired
-    private ConnectSessionService sessionService;
 
     @Autowired
     private DBSessionService dbSessionService;
@@ -124,9 +119,14 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     }
 
     @Override
+    public boolean supportKillConsoleQuery(ConnectionSession session) {
+        return true;
+    }
+
+    @Override
     @SneakyThrows
     @SkipAuthorize
-    public boolean killCurrentQuery(ConnectionSession session) {
+    public boolean killConsoleQuery(ConnectionSession session) {
         String connectionId = ConnectionSessionUtil.getConsoleConnectionId(session);
         Verify.notNull(connectionId, "ConnectionId");
         ConnectionConfig conn = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);

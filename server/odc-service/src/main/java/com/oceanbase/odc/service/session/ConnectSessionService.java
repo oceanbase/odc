@@ -157,6 +157,8 @@ public class ConnectSessionService {
     private LogicalDatabaseService logicalDatabaseService;
     @Autowired
     private StateHostGenerator stateHostGenerator;
+    @Autowired
+    private DBSessionManageFacade dbSessionManageFacade;
     private final Map<String, Lock> sessionId2Lock = new ConcurrentHashMap<>();
 
     @PostConstruct
@@ -417,6 +419,7 @@ public class ConnectSessionService {
         return DBSessionResp.builder()
                 .settings(settingsService.getSessionSettings(connectionSession))
                 .session(dbSessionService.currentSession(connectionSession))
+                .supportKillConsoleQuery(dbSessionManageFacade.supportKillConsoleQuery(connectionSession))
                 .build();
     }
 

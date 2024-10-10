@@ -27,7 +27,9 @@ public interface DBSessionManageFacade {
 
     List<KillSessionResult> killSessionOrQuery(KillSessionOrQueryReq request);
 
-    boolean killCurrentQuery(ConnectionSession session);
+    boolean supportKillConsoleQuery(ConnectionSession session);
+
+    boolean killConsoleQuery(ConnectionSession session);
 
     void killAllSessions(ConnectionSession connectionSession,
             Predicate<OdcDBSession> filter, Integer lockTableTimeOutSeconds);

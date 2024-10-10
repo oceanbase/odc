@@ -47,15 +47,17 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ConnectionInfoUtil {
 
-    public static void initConsoleConnectionId(@NonNull ConnectionSession connectionSession) {
+    public static boolean initConsoleConnectionId(@NonNull ConnectionSession connectionSession) {
         try {
             getSyncJdbcExecutor(connectionSession).execute((StatementCallback<Void>) stmt -> {
                 initConnectionId(stmt, connectionSession);
                 return null;
             });
             log.debug("Init connection id completed.");
+            return true;
         } catch (Exception e) {
             log.warn("Failed to get database session ID, session={}", connectionSession, e);
+            return false;
         }
     }
 
