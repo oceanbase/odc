@@ -237,10 +237,10 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
     }
 
     private boolean executeSqlWithRetries(String sql) {
-        OdcStatementCallBack statementCallback = getOdcStatementCallBack(sql);
-        GeneralSqlType sqlType = parseSqlType(sql);
         int executeTime = 0;
         while (executeTime <= parameters.getRetryTimes() && !canceled) {
+            OdcStatementCallBack statementCallback = getOdcStatementCallBack(sql);
+            GeneralSqlType sqlType = parseSqlType(sql);
             try {
                 List<JdbcGeneralResult> results =
                         executor.execute((StatementCallback<List<JdbcGeneralResult>>) stmt -> {
@@ -263,6 +263,8 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                         log.warn("Error occurs when executing sql={}, error message={}", sql,
                                 executeResult.getTrack());
                         return false;
+                    } else {
+                        return true;
                     }
                 }
             } catch (Exception e) {
