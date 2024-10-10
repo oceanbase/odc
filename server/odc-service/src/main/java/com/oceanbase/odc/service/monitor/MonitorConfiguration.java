@@ -19,15 +19,15 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.oceanbase.odc.service.monitor.MonitorAutoConfiguration.NonEnabledMetricManager;
+import com.oceanbase.odc.service.monitor.MonitorAutoConfiguration.NonEnabledMeterManager;
 
 @Configuration
-public class MonitorConfig {
+public class MonitorConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    MetricManager defaultMetricManager() {
-        return new NonEnabledMetricManager();
+    MeterManager defaultMetricManager() {
+        return new NonEnabledMeterManager();
     }
 
 }

@@ -24,45 +24,45 @@ import static com.oceanbase.odc.service.monitor.MeterName.JOB_STOP_SUCCESS_COUNT
 
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.monitor.MeterKey;
-import com.oceanbase.odc.service.monitor.MetricManager;
+import com.oceanbase.odc.service.monitor.MeterManager;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.listener.JobCallerListener;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 public class JobMonitorListener extends JobCallerListener {
 
-    private final MetricManager metricManager;
+    private final MeterManager meterManager;
 
     public JobMonitorListener() {
-        this.metricManager = SpringContextUtil.getBean(MetricManager.class);
+        this.meterManager = SpringContextUtil.getBean(MeterManager.class);
     }
 
     public void startSucceed(JobIdentity ji, ExecutorIdentifier executorIdentifier) {
-        metricManager.incrementCounter(MeterKey.ofMeter(JOB_START_SUCCESS_COUNT));
+        meterManager.incrementCounter(MeterKey.ofMeter(JOB_START_SUCCESS_COUNT));
     }
 
     public void startFailed(JobIdentity ji, Exception ex) {
-        metricManager.incrementCounter(MeterKey.ofMeter(JOB_START_FAILED_COUNT));
+        meterManager.incrementCounter(MeterKey.ofMeter(JOB_START_FAILED_COUNT));
 
     }
 
     public void stopSucceed(JobIdentity ji) {
-        metricManager.incrementCounter(MeterKey.ofMeter(JOB_STOP_SUCCESS_COUNT));
+        meterManager.incrementCounter(MeterKey.ofMeter(JOB_STOP_SUCCESS_COUNT));
 
     }
 
     public void stopFailed(JobIdentity ji, Exception ex) {
-        metricManager.incrementCounter(MeterKey.ofMeter(JOB_STOP_FAILED_COUNT));
+        meterManager.incrementCounter(MeterKey.ofMeter(JOB_STOP_FAILED_COUNT));
 
     }
 
     public void destroySucceed(JobIdentity ji) {
-        metricManager.incrementCounter(MeterKey.ofMeter(JOB_DESTROY_SUCCESS_COUNT));
+        meterManager.incrementCounter(MeterKey.ofMeter(JOB_DESTROY_SUCCESS_COUNT));
 
     }
 
     public void destroyFailed(JobIdentity ji, Exception ex) {
-        metricManager.incrementCounter(MeterKey.ofMeter(JOB_DESTROY_FAILED_COUNT));
+        meterManager.incrementCounter(MeterKey.ofMeter(JOB_DESTROY_FAILED_COUNT));
 
     }
 

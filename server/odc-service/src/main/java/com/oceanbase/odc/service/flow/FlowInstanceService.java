@@ -156,7 +156,7 @@ import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
 import com.oceanbase.odc.service.monitor.MeterKey;
 import com.oceanbase.odc.service.monitor.MeterName;
-import com.oceanbase.odc.service.monitor.MetricManager;
+import com.oceanbase.odc.service.monitor.MeterManager;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
@@ -262,7 +262,7 @@ public class FlowInstanceService {
     @Autowired
     private EnvironmentService environmentService;
     @Autowired
-    private MetricManager metricManager;
+    private MeterManager       meterManager;
 
     private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
     private static final String ODC_SITE_URL = "odc.site.url";
@@ -942,7 +942,7 @@ public class FlowInstanceService {
                 flowInstance.getId(), flowInstanceReq);
         MeterKey meterKey = MeterKey.ofMeter(MeterName.FLOW_CREATED_COUNT,
                 Tag.of("organizationId", flowInstance.getOrganizationId().toString()));
-        metricManager.incrementCounter(meterKey);
+        meterManager.incrementCounter(meterKey);
         return FlowInstanceDetailResp.withIdAndType(flowInstance.getId(), flowInstanceReq.getTaskType());
     }
 

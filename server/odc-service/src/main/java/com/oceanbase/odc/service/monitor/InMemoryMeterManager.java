@@ -41,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Getter
 @ConditionalOnProperty(value = "odc.system.monitor.actuator.enabled", havingValue = "true")
-public class InMemoryMetricManager implements MetricManager, InitializingBean {
+public class InMemoryMeterManager implements MeterManager, InitializingBean {
 
     private final Map<MeterKey, CounterWrapper> COUNTER_MAP = new ConcurrentHashMap<>();
     private final Map<Pair<String, MeterKey>, TimerSampleHolder> TIMER_SAMPLE_MAP = new ConcurrentHashMap<>();

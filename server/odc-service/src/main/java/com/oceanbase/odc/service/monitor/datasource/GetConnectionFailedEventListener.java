@@ -20,22 +20,22 @@ import static com.oceanbase.odc.service.monitor.MeterName.DATASOURCE_GET_CONNECT
 import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.core.datasource.event.GetConnectionFailedEvent;
 import com.oceanbase.odc.service.monitor.MeterKey;
-import com.oceanbase.odc.service.monitor.MetricManager;
+import com.oceanbase.odc.service.monitor.MeterManager;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class GetConnectionFailedEventListener extends AbstractEventListener<GetConnectionFailedEvent> {
 
-    private final MetricManager metricManager;
+    private final MeterManager meterManager;
 
-    public GetConnectionFailedEventListener(MetricManager metricManager) {
-        this.metricManager = metricManager;
+    public GetConnectionFailedEventListener(MeterManager meterManager) {
+        this.meterManager = meterManager;
     }
 
     @Override
     public void onEvent(GetConnectionFailedEvent event) {
-        metricManager.incrementCounter(MeterKey.ofMeter(DATASOURCE_GET_CONNECTION_FAILED_COUNT));
+        meterManager.incrementCounter(MeterKey.ofMeter(DATASOURCE_GET_CONNECTION_FAILED_COUNT));
     }
 
 }

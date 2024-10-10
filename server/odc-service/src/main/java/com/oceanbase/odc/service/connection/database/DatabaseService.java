@@ -114,7 +114,7 @@ import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.model.UserResourceRole;
-import com.oceanbase.odc.service.monitor.MetricManager;
+import com.oceanbase.odc.service.monitor.MeterManager;
 import com.oceanbase.odc.service.monitor.datasource.GetConnectionFailedEventListener;
 import com.oceanbase.odc.service.onlineschemachange.ddl.DBUser;
 import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessor;
@@ -218,7 +218,7 @@ public class DatabaseService {
     private GlobalSearchProperties globalSearchProperties;
 
     @Autowired
-    private MetricManager metricManager;
+    private MeterManager meterManager;
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
@@ -647,7 +647,7 @@ public class DatabaseService {
     private OBConsoleDataSourceFactory getDataSourceFactory(ConnectionConfig connection) {
         OBConsoleDataSourceFactory obConsoleDataSourceFactory = new OBConsoleDataSourceFactory(connection, true, false);
         LocalEventPublisher localEventPublisher = new LocalEventPublisher();
-        localEventPublisher.addEventListener(new GetConnectionFailedEventListener(metricManager));
+        localEventPublisher.addEventListener(new GetConnectionFailedEventListener(meterManager));
         obConsoleDataSourceFactory.setEventPublisher(localEventPublisher);
         return obConsoleDataSourceFactory;
     }

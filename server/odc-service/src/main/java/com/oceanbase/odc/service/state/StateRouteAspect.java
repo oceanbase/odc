@@ -61,7 +61,7 @@ import com.oceanbase.odc.service.dispatch.HttpRequestProvider;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.monitor.MeterKey;
 import com.oceanbase.odc.service.monitor.MeterKey.Builder;
-import com.oceanbase.odc.service.monitor.MetricManager;
+import com.oceanbase.odc.service.monitor.MeterManager;
 import com.oceanbase.odc.service.session.factory.StateHostGenerator;
 import com.oceanbase.odc.service.state.model.RouteInfo;
 import com.oceanbase.odc.service.state.model.SingleNodeStateResponse;
@@ -95,7 +95,7 @@ public class StateRouteAspect {
     private StateHostGenerator stateHostGenerator;
 
     @Autowired
-    private MetricManager metricManager;
+    private MeterManager meterManager;
 
     @Pointcut("@annotation(com.oceanbase.odc.service.state.model.StatefulRoute)")
     public void stateRouteMethods() {}
@@ -142,13 +142,13 @@ public class StateRouteAspect {
 
     private void sendMetric(RouteInfo routeInfo) {
         MeterKey meterKey = Builder.ofMeter(STATEFUL_ROUTE_COUNT).addTag("host", routeInfo.getHostName()).build();
-        metricManager.incrementCounter(meterKey);
+        meterManager.incrementCounter(meterKey);
     }
 
     private void sendUnhealthyMetric(RouteInfo routeInfo) {
         MeterKey meterKey =
                 Builder.ofMeter(STATEFUL_ROUTE_UNHEALTHY_COUNT).addTag("host", routeInfo.getHostName()).build();
-        metricManager.incrementCounter(meterKey);
+        meterManager.incrementCounter(meterKey);
     }
 
     private Object handleMultiState(StateManager stateManager, Object stateIdBySePL,

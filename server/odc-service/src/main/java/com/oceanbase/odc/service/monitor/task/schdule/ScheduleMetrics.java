@@ -23,21 +23,21 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.service.monitor.MeterKey;
 import com.oceanbase.odc.service.monitor.MeterName;
-import com.oceanbase.odc.service.monitor.MetricManager;
+import com.oceanbase.odc.service.monitor.MeterManager;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 
 @Component
 @ConditionalOnProperty(value = "odc.system.monitor.actuator.enabled", havingValue = "true")
 public class ScheduleMetrics implements InitializingBean {
     @Autowired
-    MetricManager metricManager;
+    MeterManager meterManager;
 
     @Autowired
     ScheduleRepository scheduleRepository;
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        metricManager.registerGauge(MeterKey.ofMeter(MeterName.SCHEDULE_ENABLED_COUNT),
+        meterManager.registerGauge(MeterKey.ofMeter(MeterName.SCHEDULE_ENABLED_COUNT),
                 () -> scheduleRepository.countByStatus(ScheduleStatus.ENABLED));
     }
 }

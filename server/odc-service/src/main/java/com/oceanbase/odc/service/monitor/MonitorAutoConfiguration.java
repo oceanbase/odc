@@ -114,7 +114,7 @@ public class MonitorAutoConfiguration {
     }
 
 
-    static class NonEnabledMetricManager implements MetricManager {
+    static class NonEnabledMeterManager implements MeterManager {
 
         @Override
         public boolean registerGauge(MeterKey meterKey, Supplier<Number> f) {

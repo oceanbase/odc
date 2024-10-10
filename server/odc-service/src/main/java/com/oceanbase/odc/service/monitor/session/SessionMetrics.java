@@ -23,7 +23,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.service.monitor.MeterKey;
-import com.oceanbase.odc.service.monitor.MetricManager;
+import com.oceanbase.odc.service.monitor.MeterManager;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 
 @Component
@@ -32,7 +32,7 @@ public class SessionMetrics implements InitializingBean {
 
 
     @Autowired
-    private MetricManager metricManager;
+    private MeterManager meterManager;
 
     @Autowired
     private ConnectSessionService connectSessionService;
@@ -43,7 +43,7 @@ public class SessionMetrics implements InitializingBean {
     }
 
     public void init() {
-        metricManager.registerGauge(MeterKey.ofMeter(CONNECT_SESSION_ACTIVE_COUNT),
+        meterManager.registerGauge(MeterKey.ofMeter(CONNECT_SESSION_ACTIVE_COUNT),
                 connectSessionService::getActiveSession);
     }
 }

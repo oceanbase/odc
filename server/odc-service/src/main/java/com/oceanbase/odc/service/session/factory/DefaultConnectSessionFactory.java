@@ -41,7 +41,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 import com.oceanbase.odc.service.connection.util.ConnectionInfoUtil;
 import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
-import com.oceanbase.odc.service.monitor.MetricManager;
+import com.oceanbase.odc.service.monitor.MeterManager;
 import com.oceanbase.odc.service.monitor.datasource.GetConnectionFailedEventListener;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.initializer.SwitchSchemaInitializer;
@@ -147,7 +147,7 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
     private void initSession(ConnectionSession session) {
         this.eventPublisher.addEventListener(new ConsoleConnectionResetListener(session));
         this.eventPublisher.addEventListener(new GetConnectionFailedEventListener(SpringContextUtil.getBean(
-                MetricManager.class)));
+                MeterManager.class)));
         ConnectionSessionUtil.initArchitecture(session);
         ConnectionInfoUtil.initSessionVersion(session);
         ConnectionSessionUtil.setConsoleSessionResetFlag(session, false);

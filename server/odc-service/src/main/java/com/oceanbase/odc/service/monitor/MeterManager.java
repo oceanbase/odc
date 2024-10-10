@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.monitor;
 
 import java.util.function.Supplier;
 
-public interface MetricManager {
+public interface MeterManager {
 
     boolean registerGauge(MeterKey meterKey, Supplier<Number> f);
 
