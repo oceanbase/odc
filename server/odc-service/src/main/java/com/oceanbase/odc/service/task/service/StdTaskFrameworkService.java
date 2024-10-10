@@ -334,14 +334,17 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                         .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
 
                 if (taskResult.getStatus() == JobStatus.FAILED) {
+                    Map<String, Object> eventMessageWithJob = AlarmHelper.buildAlarmMessageWithJob(je.getId());
+                    String eventName = eventMessageWithJob.get(AlarmUtils.TASK_TYPE_NAME) + "_"
+                            + AlarmEventNames.TASK_EXECUTION_FAILED;
                     Map<String, Object> eventMessage = AlarmUtils.createAlarmMessageBuilder()
-                            .item(AlarmUtils.ALARM_TARGET_NAME, AlarmEventNames.TASK_EXECUTION_FAILED)
+                            .item(AlarmUtils.ALARM_TARGET_NAME, eventName)
                             .item(AlarmUtils.ORGANIZATION_NAME, je.getOrganizationId())
                             .item(AlarmUtils.MESSAGE_NAME, MessageFormat.format("Job execution failed, resultJson={0}",
                                     SensitiveDataUtils.mask(taskResult.getResultJson())))
                             .build();
-                    eventMessage.putAll(AlarmHelper.buildAlarmMessageWithJob(je.getId()));
-                    AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED, eventMessage);
+                    eventMessage.putAll(eventMessageWithJob);
+                    AlarmUtils.alarm(eventName, eventMessage);
                 }
             }
         }
@@ -438,14 +441,17 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
             // TODO maybe we can destroy the pod there.
             if (result.getStatus() == JobStatus.FAILED) {
+                Map<String, Object> eventMessageWithJob = AlarmHelper.buildAlarmMessageWithJob(je.getId());
+                String eventName = eventMessageWithJob.get(AlarmUtils.TASK_TYPE_NAME) + "_"
+                        + AlarmEventNames.TASK_EXECUTION_FAILED;
                 Map<String, Object> eventMessage = AlarmUtils.createAlarmMessageBuilder()
-                        .item(AlarmUtils.ALARM_TARGET_NAME, AlarmEventNames.TASK_EXECUTION_FAILED)
+                        .item(AlarmUtils.ALARM_TARGET_NAME, eventName)
                         .item(AlarmUtils.ORGANIZATION_NAME, je.getOrganizationId())
                         .item(AlarmUtils.MESSAGE_NAME, MessageFormat.format("Job execution failed, resultJson={0}",
                                 SensitiveDataUtils.mask(result.getResultJson())))
                         .build();
-                eventMessage.putAll(AlarmHelper.buildAlarmMessageWithJob(je.getId()));
-                AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED, eventMessage);
+                eventMessage.putAll(eventMessageWithJob);
+                AlarmUtils.alarm(eventName, eventMessage);
             }
         }
     }

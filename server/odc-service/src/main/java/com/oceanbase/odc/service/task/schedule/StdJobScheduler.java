@@ -171,14 +171,17 @@ public class StdJobScheduler implements JobScheduler {
             configuration.getJobDispatcher().stop(JobIdentity.of(jobEntity.getId()));
         } catch (JobException e) {
             log.warn("Stop job occur error: ", e);
+            Map<String, Object> eventMessageWithJob = AlarmHelper.buildAlarmMessageWithJob(jobEntity.getId());
+            String eventName =
+                    eventMessageWithJob.get(AlarmUtils.TASK_TYPE_NAME) + "_" + AlarmEventNames.TASK_CANCELED_FAILED;
             Map<String, Object> eventMessage = AlarmUtils.createAlarmMessageBuilder()
-                    .item(AlarmUtils.ALARM_TARGET_NAME, AlarmEventNames.TASK_CANCELED_FAILED)
+                    .item(AlarmUtils.ALARM_TARGET_NAME, eventName)
                     .item(AlarmUtils.ORGANIZATION_NAME, jobEntity.getOrganizationId())
                     .item(AlarmUtils.MESSAGE_NAME,
                             MessageFormat.format("Cancel job failed, message={0}", e.getMessage()))
                     .build();
-            eventMessage.putAll(AlarmHelper.buildAlarmMessageWithJob(jobId));
-            AlarmUtils.alarm(AlarmEventNames.TASK_CANCELED_FAILED, eventMessage);
+            eventMessage.putAll(eventMessageWithJob);
+            AlarmUtils.alarm(eventName, eventMessage);
             throw new TaskRuntimeException(e);
         }
         int count = configuration.getTaskFrameworkService().updateJobToCanceling(jobId, jobEntity.getStatus());

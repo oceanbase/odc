@@ -112,14 +112,17 @@ public class StartPreparingJob implements Job {
                 try {
                     getConfiguration().getJobDispatcher().start(jc);
                 } catch (JobException e) {
+                    Map<String, Object> eventMessageWithJob = AlarmHelper.buildAlarmMessageWithJob(jobEntity.getId());
+                    String eventName = eventMessageWithJob.get(AlarmUtils.TASK_TYPE_NAME) + "_"
+                            + AlarmEventNames.TASK_START_FAILED;
                     Map<String, Object> eventMessage = AlarmUtils.createAlarmMessageBuilder()
-                            .item(AlarmUtils.ALARM_TARGET_NAME, AlarmEventNames.TASK_START_FAILED)
+                            .item(AlarmUtils.ALARM_TARGET_NAME, eventName)
                             .item(AlarmUtils.ORGANIZATION_NAME, jobEntity.getOrganizationId())
                             .item(AlarmUtils.MESSAGE_NAME, MessageFormat.format("Start job failed, message={0}",
                                     e.getMessage()))
                             .build();
-                    eventMessage.putAll(AlarmHelper.buildAlarmMessageWithJob(jobEntity.getId()));
-                    AlarmUtils.alarm(AlarmEventNames.TASK_START_FAILED, eventMessage);
+                    eventMessage.putAll(eventMessageWithJob);
+                    AlarmUtils.alarm(eventName, eventMessage);
                     throw new TaskRuntimeException(e);
                 }
             } else {
