@@ -134,6 +134,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
 
         while (sqlIterator.hasNext()) {
             String sql = sqlIterator.next().getStr();
+            log.info("Start execute sql, sql={}", sql);
             index++;
             // The retry statement will write the result into the buffer, while executing a new SQL command will
             // clear the buffer.
@@ -162,12 +163,13 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             }
         }
         result.setTotalStatements(index);
-        log.info("The sql plan task execute finished,result={}", result);
 
         // all sql execute csv file list write to zip file
         writeZipFile();
         // upload file to OSS, also contains error record where is non-null
         upload();
+
+        log.info("The sql plan task execute finished,result={}", result);
         return true;
     }
 
@@ -252,6 +254,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                     SqlExecuteResult executeResult = new SqlExecuteResult(result);
                     if (sqlType == GeneralSqlType.DQL) {
                         // todo: weather need data masking
+                        log.info("Success execute DQL sql, result={}", executeResult.getRows());
                     }
                     queryResultSetBuffer.add(executeResult);
 
@@ -261,7 +264,6 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                                 executeResult.getTrack());
                         return false;
                     }
-                    log.info("Success execute DQL sql, result={}", executeResult.getRows());
                 }
             } catch (Exception e) {
                 if (executeTime < parameters.getRetryTimes()) {
@@ -305,7 +307,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             String fileName = StringUtils.uuid();
             String filePath = String.format("%s/%s.json", fileRootDir, fileName);
             this.resultJsonFile = new File(filePath);
-            this.zipFileRootPath = String.format("%s/%s.zip", fileRootDir, StringUtils.uuid());
+            this.zipFileRootPath = String.format("%s/%s", fileRootDir, StringUtils.uuid());
         } catch (Exception e) {
             throw new InternalServerError("create sql plan task file dir failed", e);
         }
@@ -395,8 +397,9 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             String jsonString = JsonUtils.prettyToJson(csvFileMappers);
             File file = new File(String.format("%s/csv_execute_result.json", zipFileRootPath));
             FileUtils.writeStringToFile(file, jsonString, StandardCharsets.UTF_8, true);
-            OdcFileUtil.zip(zipFileRootPath, String.format("%s.zip", zipFileRootPath));
-            log.info("sql plan task result set was saved as local zip file, file name={}", file.getName());
+            String zipFileName = String.format("%s.zip", zipFileRootPath);
+            OdcFileUtil.zip(zipFileRootPath, zipFileName);
+            log.info("sql plan task result set was saved as local zip file, file name={}", zipFileName);
             FileUtils.deleteDirectory(new File(zipFileRootPath));
         } catch (IOException ex) {
             throw new UnexpectedException("build zip file failed");
@@ -409,7 +412,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         this.result.setCsvResultSetZipDownloadUrl(uploadToOSS(zipFilePath));
 
         // upload sql execute json file
-        this.result.setSqlExecuteJsonFileDownloadUrl(uploadToOSS(resultJsonFile.getAbsolutePath()));
+        this.result.setSqlExecuteJsonFileDownloadUrl(uploadToOSS(resultJsonFile.getPath()));
 
         // upload error record
         if (errorRecordPath != null) {
@@ -426,11 +429,10 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             try {
                 String objectName = cloudObjectStorageService.upload(file.getName(), file);
                 ossAddress = String.valueOf(cloudObjectStorageService.generateDownloadUrl(objectName));
-                log.info("upload sql plan task result file to OSS, file name={}", file.getName());
+                log.info("succeed to upload sql plan task result file to OSS, file download url = {}", ossAddress);
             } catch (Exception exception) {
-                log.warn("upload sql plan task result file to OSS, file name={}", file.getName());
                 throw new RuntimeException(String.format(
-                        "upload sql plan task result file to OSS, file name: %s", file.getName()),
+                        "failed to upload sql plan task result file to OSS, file name: %s", file.getName()),
                         exception.getCause());
             } finally {
                 OdcFileUtil.deleteFiles(file);
