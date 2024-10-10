@@ -39,6 +39,7 @@ import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.service.monitor.task.job.JobMonitorListener;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
@@ -80,6 +81,8 @@ public class StdJobScheduler implements JobScheduler {
         JobConfigurationHolder.setJobConfiguration(configuration);
 
         getEventPublisher().addEventListener(new DefaultJobCallerListener(this));
+        getEventPublisher().addEventListener(new JobMonitorListener());
+
         initDaemonJob();
         log.info("Start StdJobScheduler succeed.");
     }

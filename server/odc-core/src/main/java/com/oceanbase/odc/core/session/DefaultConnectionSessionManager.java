@@ -128,6 +128,11 @@ public class DefaultConnectionSessionManager extends BaseValidatedConnectionSess
         this.repository.store(session);
     }
 
+    public Integer getActiveSessionCount() {
+        return repository.listAllSessions().size();
+    }
+
+
     /**
      * {@link DelayDeleteTask}
      *

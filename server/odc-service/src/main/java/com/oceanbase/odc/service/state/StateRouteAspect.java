@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.state;
 
+import static com.oceanbase.odc.service.monitor.MeterName.STATEFUL_ROUTE_COUNT;
+import static com.oceanbase.odc.service.monitor.MeterName.STATEFUL_ROUTE_UNHEALTHY_COUNT;
 import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
 
 import java.io.ByteArrayOutputStream;
@@ -57,6 +59,9 @@ import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.HttpRequestProvider;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
+import com.oceanbase.odc.service.monitor.MeterKey;
+import com.oceanbase.odc.service.monitor.MeterKey.Builder;
+import com.oceanbase.odc.service.monitor.MeterManager;
 import com.oceanbase.odc.service.session.factory.StateHostGenerator;
 import com.oceanbase.odc.service.state.model.RouteInfo;
 import com.oceanbase.odc.service.state.model.SingleNodeStateResponse;
@@ -89,6 +94,9 @@ public class StateRouteAspect {
     @Autowired
     private StateHostGenerator stateHostGenerator;
 
+    @Autowired
+    private MeterManager meterManager;
+
     @Pointcut("@annotation(com.oceanbase.odc.service.state.model.StatefulRoute)")
     public void stateRouteMethods() {}
 
@@ -111,6 +119,7 @@ public class StateRouteAspect {
                 boolean healthyNode = routeHealthManager.isHealthy(routeInfo);
                 boolean notCurrentNode =
                         !routeInfo.isCurrentNode(properties.getRequestPort(), stateHostGenerator.getHost());
+                sendMetric(routeInfo);
                 log.debug("sate routeInfo={}, host={},port={}", routeInfo, stateHostGenerator.getHost(),
                         properties.getRequestPort());
                 log.debug("healthyNode={}, notCurrentNode={}", healthyNode, notCurrentNode);
@@ -122,12 +131,24 @@ public class StateRouteAspect {
                     return null;
                 }
                 if (!healthyNode) {
+                    sendUnhealthyMetric(routeInfo);
                     AlarmUtils.alarm(AlarmEventNames.STATEFUL_ROUTE_NOT_HEALTHY,
                             "can't arrive route info " + routeInfo);
                 }
             }
         }
         return proceedingJoinPoint.proceed();
+    }
+
+    private void sendMetric(RouteInfo routeInfo) {
+        MeterKey meterKey = Builder.ofMeter(STATEFUL_ROUTE_COUNT).addTag("host", routeInfo.getHostName()).build();
+        meterManager.incrementCounter(meterKey);
+    }
+
+    private void sendUnhealthyMetric(RouteInfo routeInfo) {
+        MeterKey meterKey =
+                Builder.ofMeter(STATEFUL_ROUTE_UNHEALTHY_COUNT).addTag("host", routeInfo.getHostName()).build();
+        meterManager.incrementCounter(meterKey);
     }
 
     private Object handleMultiState(StateManager stateManager, Object stateIdBySePL,

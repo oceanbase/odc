@@ -118,6 +118,7 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Autowired
     private LdapConfigRegistrationManager ldapConfigRegistrationManager;
 
+
     private BastionAuthenticationProvider bastionAuthenticationProvider() {
         return new BastionAuthenticationProvider(bastionUserDetailService);
     }
@@ -213,5 +214,6 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
         filter.setAuthenticationFailureHandler(customAuthenticationFailureHandler);
         return filter;
     }
+
 
 }

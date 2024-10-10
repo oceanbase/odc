@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.monitor;
+package com.oceanbase.odc.service.monitor.service;
 
 /**
  * 用于封装ODC资源水位监控中与内存相关的指标

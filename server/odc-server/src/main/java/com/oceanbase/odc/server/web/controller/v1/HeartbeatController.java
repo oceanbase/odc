@@ -28,9 +28,9 @@ import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.service.common.response.OdcResult;
 import com.oceanbase.odc.service.connection.model.MultiSessionsReq;
-import com.oceanbase.odc.service.monitor.MemUnitType;
-import com.oceanbase.odc.service.monitor.MetaInfo;
-import com.oceanbase.odc.service.monitor.MonitorService;
+import com.oceanbase.odc.service.monitor.service.MemUnitType;
+import com.oceanbase.odc.service.monitor.service.MetaInfo;
+import com.oceanbase.odc.service.monitor.service.MonitorService;
 
 import io.swagger.annotations.ApiOperation;
 
