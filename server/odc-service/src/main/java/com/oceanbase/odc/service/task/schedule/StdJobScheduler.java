@@ -19,7 +19,6 @@ package com.oceanbase.odc.service.task.schedule;
 import java.text.MessageFormat;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.quartz.CronTrigger;
@@ -33,18 +32,14 @@ import org.quartz.Trigger;
 import org.quartz.TriggerKey;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.oceanbase.odc.common.concurrent.Await;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.metadb.task.TaskEntity;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.schedule.model.ScheduleTask;
+import com.oceanbase.odc.service.common.util.AlarmHelper;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
@@ -167,17 +162,6 @@ public class StdJobScheduler implements JobScheduler {
 
     private void tryCanceling(Long jobId) throws JobException {
         JobEntity jobEntity = configuration.getTaskFrameworkService().findWithPessimisticLock(jobId);
-
-        Optional<ScheduleTask> scheduleTaskOptional = configuration.getScheduleTaskService().findByJobId(jobId);
-        Verify.notNull(scheduleTaskOptional.get(), "ScheduleTask");
-
-        ScheduleTask scheduleTask = scheduleTaskOptional.get();
-        Optional<TaskEntity> taskOptional = configuration.getTaskService().findByJobId(jobId);
-        Verify.notNull(taskOptional.get(), "TaskEntity");
-
-        ConnectionConfig connection = configuration.getConnectionService().detail(taskOptional.get().getConnectionId());
-        Verify.notNull(connection, "ConnectionConfig");
-
         if (!jobEntity.getStatus().isExecuting()) {
             throw new JobException("Cancel job failed, current job {0} status is {1}, can't be cancel.",
                     jobEntity.getId(), jobEntity.getStatus());
@@ -187,18 +171,14 @@ public class StdJobScheduler implements JobScheduler {
             configuration.getJobDispatcher().stop(JobIdentity.of(jobEntity.getId()));
         } catch (JobException e) {
             log.warn("Stop job occur error: ", e);
-            JsonNode alarmDescription = JsonUtils.createJsonNodeBuilder()
-                    .item("TaskType", scheduleTask.getJobGroup())
-                    .item("AlarmType", "ODC")
-                    .item("AlarmTarget", AlarmEventNames.TASK_CANCELED_FAILED).build();
-            AlarmUtils.alarm(AlarmEventNames.TASK_CANCELED_FAILED,
-                    JsonUtils.createJsonNodeBuilder()
-                            .item("ClusterName", connection.getClusterName())
-                            .item("TenantName", connection.getTenantName())
-                            .item("ScheduleId", scheduleTask.getJobName())
-                            .item("Description", alarmDescription)
-                            .item("Message", MessageFormat.format("Cancel job failed, message={0}", e.getMessage()))
-                            .build());
+            Map<String, Object> eventMessage = AlarmUtils.createAlarmMessageBuilder()
+                    .item(AlarmUtils.ALARM_TARGET_NAME, AlarmEventNames.TASK_CANCELED_FAILED)
+                    .item(AlarmUtils.ORGANIZATION_NAME, jobEntity.getOrganizationId())
+                    .item(AlarmUtils.MESSAGE_NAME,
+                            MessageFormat.format("Cancel job failed, message={0}", e.getMessage()))
+                    .build();
+            eventMessage.putAll(AlarmHelper.buildAlarmMessageWithJob(jobId));
+            AlarmUtils.alarm(AlarmEventNames.TASK_CANCELED_FAILED, eventMessage);
             throw new TaskRuntimeException(e);
         }
         int count = configuration.getTaskFrameworkService().updateJobToCanceling(jobId, jobEntity.getStatus());

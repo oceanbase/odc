@@ -20,6 +20,7 @@ import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -42,7 +43,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.jpa.SpecificationUtil;
@@ -56,19 +56,13 @@ import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.task.JobAttributeEntity;
 import com.oceanbase.odc.metadb.task.JobAttributeRepository;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.JobRepository;
-import com.oceanbase.odc.service.connection.ConnectionService;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.ScheduleTaskService;
-import com.oceanbase.odc.service.schedule.model.ScheduleTask;
+import com.oceanbase.odc.service.common.util.AlarmHelper;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobAttributeEntityColumn;
 import com.oceanbase.odc.service.task.constants.JobEntityColumn;
@@ -122,12 +116,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     @Autowired
     private TaskFrameworkProperties taskFrameworkProperties;
-    @Autowired
-    private ScheduleService scheduleService;
-    @Autowired
-    private ScheduleTaskService scheduleTaskService;
-    @Autowired
-    private ConnectionService connectionService;
     @Autowired
     private EntityManager entityManager;
     @Autowired
@@ -346,28 +334,14 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                         .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
 
                 if (taskResult.getStatus() == JobStatus.FAILED) {
-
-                    Optional<ScheduleTask> scheduleTaskOptional = scheduleTaskService.findByJobId(je.getId());
-                    Verify.notNull(scheduleTaskOptional.get(), "ScheduleTask");
-                    ScheduleTask scheduleTask = scheduleTaskOptional.get();
-                    ScheduleEntity schedule = scheduleService.nullSafeGetById(Long.valueOf(scheduleTask.getJobName()));
-
-                    ConnectionConfig connection = connectionService.detail(schedule.getDataSourceId());
-                    Verify.notNull(connection, "ConnectionConfig");
-
-                    JsonNode alarmDescription = JsonUtils.createJsonNodeBuilder()
-                            .item("TaskType", scheduleTask.getJobGroup())
-                            .item("AlarmType", "ODC")
-                            .item("AlarmTarget", AlarmEventNames.TASK_EXECUTION_FAILED).build();
-                    AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED,
-                            JsonUtils.createJsonNodeBuilder()
-                                    .item("ClusterName", connection.getClusterName())
-                                    .item("TenantName", connection.getTenantName())
-                                    .item("ScheduleId", scheduleTask.getJobName())
-                                    .item("Description", alarmDescription)
-                                    .item("Message", MessageFormat.format("Job execution failed, resultJson={0}",
-                                            SensitiveDataUtils.mask(taskResult.getResultJson())))
-                                    .build());
+                    Map<String, Object> eventMessage = AlarmUtils.createAlarmMessageBuilder()
+                            .item(AlarmUtils.ALARM_TARGET_NAME, AlarmEventNames.TASK_EXECUTION_FAILED)
+                            .item(AlarmUtils.ORGANIZATION_NAME, je.getOrganizationId())
+                            .item(AlarmUtils.MESSAGE_NAME, MessageFormat.format("Job execution failed, resultJson={0}",
+                                    SensitiveDataUtils.mask(taskResult.getResultJson())))
+                            .build();
+                    eventMessage.putAll(AlarmHelper.buildAlarmMessageWithJob(je.getId()));
+                    AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED, eventMessage);
                 }
             }
         }
@@ -464,28 +438,14 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
             // TODO maybe we can destroy the pod there.
             if (result.getStatus() == JobStatus.FAILED) {
-
-                Optional<ScheduleTask> scheduleTaskOptional = scheduleTaskService.findByJobId(je.getId());
-                Verify.notNull(scheduleTaskOptional.get(), "ScheduleTask");
-                ScheduleTask scheduleTask = scheduleTaskOptional.get();
-                ScheduleEntity schedule = scheduleService.nullSafeGetById(Long.valueOf(scheduleTask.getJobName()));
-
-                ConnectionConfig connection = connectionService.detail(schedule.getDataSourceId());
-                Verify.notNull(connection, "ConnectionConfig");
-
-                JsonNode alarmDescription = JsonUtils.createJsonNodeBuilder()
-                        .item("TaskType", scheduleTask.getJobGroup())
-                        .item("AlarmType", "ODC")
-                        .item("AlarmTarget", AlarmEventNames.TASK_EXECUTION_FAILED).build();
-                AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED,
-                        JsonUtils.createJsonNodeBuilder()
-                                .item("ClusterName", connection.getClusterName())
-                                .item("TenantName", connection.getTenantName())
-                                .item("ScheduleId", scheduleTask.getJobName())
-                                .item("Description", alarmDescription)
-                                .item("Message", MessageFormat.format("Job execution failed, resultJson={0}",
-                                        SensitiveDataUtils.mask(result.getResultJson())))
-                                .build());
+                Map<String, Object> eventMessage = AlarmUtils.createAlarmMessageBuilder()
+                        .item(AlarmUtils.ALARM_TARGET_NAME, AlarmEventNames.TASK_EXECUTION_FAILED)
+                        .item(AlarmUtils.ORGANIZATION_NAME, je.getOrganizationId())
+                        .item(AlarmUtils.MESSAGE_NAME, MessageFormat.format("Job execution failed, resultJson={0}",
+                                SensitiveDataUtils.mask(result.getResultJson())))
+                        .build();
+                eventMessage.putAll(AlarmHelper.buildAlarmMessageWithJob(je.getId()));
+                AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED, eventMessage);
             }
         }
     }

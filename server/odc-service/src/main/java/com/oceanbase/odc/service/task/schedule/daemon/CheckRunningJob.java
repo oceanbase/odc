@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.task.schedule.daemon;
 
-import java.util.Optional;
+import java.util.Map;
 
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
@@ -23,16 +23,11 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.data.domain.Page;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SilentExecutor;
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
-import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.metadb.task.TaskEntity;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.schedule.model.ScheduleTask;
+import com.oceanbase.odc.service.common.util.AlarmHelper;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
@@ -84,17 +79,6 @@ public class CheckRunningJob implements Job {
         TaskFrameworkService taskFrameworkService = getConfiguration().getTaskFrameworkService();
         JobEntity a = taskFrameworkService.findWithPessimisticLock(jobEntity.getId());
 
-        Optional<ScheduleTask> scheduleTaskOptional =
-                configuration.getScheduleTaskService().findByJobId(jobEntity.getId());
-        Verify.notNull(scheduleTaskOptional.get(), "ScheduleTask");
-
-        ScheduleTask scheduleTask = scheduleTaskOptional.get();
-        Optional<TaskEntity> taskOptional = configuration.getTaskService().findByJobId(jobEntity.getId());
-        Verify.notNull(taskOptional.get(), "ScheduleTask");
-
-        ConnectionConfig connection = configuration.getConnectionService().detail(taskOptional.get().getConnectionId());
-        Verify.notNull(connection, "ConnectionConfig");
-
         if (a.getStatus() != JobStatus.RUNNING) {
             log.warn("Current job is not RUNNING, abort continue, jobId={}.", a.getId());
             return;
@@ -127,18 +111,13 @@ public class CheckRunningJob implements Job {
                             "Heart timeout and set job to status FAILED.");
             if (rows > 0) {
                 log.info("Set job status to FAILED accomplished, jobId={}, oldStatus={}.", a.getId(), a.getStatus());
-                JsonNode alarmDescription = JsonUtils.createJsonNodeBuilder()
-                        .item("TaskType", scheduleTask.getJobGroup())
-                        .item("AlarmType", "ODC")
-                        .item("AlarmTarget", AlarmEventNames.TASK_HEARTBEAT_TIMEOUT).build();
-                AlarmUtils.alarm(AlarmEventNames.TASK_HEARTBEAT_TIMEOUT,
-                        JsonUtils.createJsonNodeBuilder()
-                                .item("ClusterName", connection.getClusterName())
-                                .item("TenantName", connection.getTenantName())
-                                .item("ScheduleId", scheduleTask.getJobName())
-                                .item("Description", alarmDescription)
-                                .item("Message", "Job running failed due to heart timeout")
-                                .build());
+                Map<String, Object> eventMessage = AlarmUtils.createAlarmMessageBuilder()
+                        .item(AlarmUtils.ALARM_TARGET_NAME, AlarmEventNames.TASK_HEARTBEAT_TIMEOUT)
+                        .item(AlarmUtils.ORGANIZATION_NAME, jobEntity.getOrganizationId())
+                        .item(AlarmUtils.MESSAGE_NAME, "Job running failed due to heart timeout")
+                        .build();
+                eventMessage.putAll(AlarmHelper.buildAlarmMessageWithJob(jobEntity.getId()));
+                AlarmUtils.alarm(AlarmEventNames.TASK_HEARTBEAT_TIMEOUT, eventMessage);
             } else {
                 throw new TaskRuntimeException("Set job status to FAILED failed, jobId=" + jobEntity.getId());
             }

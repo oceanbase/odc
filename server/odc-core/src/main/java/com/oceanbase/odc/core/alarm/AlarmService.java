@@ -21,12 +21,11 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.ServiceLoader;
 
 import javax.annotation.Nullable;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.alarm.AlarmEvent.AlarmLevel;
 
 import lombok.extern.slf4j.Slf4j;
@@ -46,44 +45,50 @@ class AlarmService {
         }
     }
 
-    public void alarm(String eventName, JsonNode eventMessageNode) {
+    public void alarm(String eventName, Map<String, Object> eventMessageNode) {
         monitor(eventName, eventMessageNode, AlarmLevel.ERROR, null);
     }
 
     public void alarm(String eventName, String eventMessage) {
-        monitor(eventName, JsonUtils.createJsonNodeBuilder().item("Message", eventMessage).build(), AlarmLevel.ERROR,
+        monitor(eventName, AlarmUtils.createAlarmMessageBuilder()
+                .item(AlarmUtils.MESSAGE_NAME, eventMessage).build(), AlarmLevel.ERROR,
                 null);
     }
 
     public void alarm(String eventName, Throwable e) {
-        monitor(eventName, JsonUtils.createJsonNodeBuilder().item("Message", e.getMessage()).build(), AlarmLevel.ERROR,
+        monitor(eventName, AlarmUtils.createAlarmMessageBuilder()
+                .item(AlarmUtils.MESSAGE_NAME, e.getMessage()).build(), AlarmLevel.ERROR,
                 e);
     }
 
-    public void warn(String eventName, JsonNode eventMessageNode) {
+    public void warn(String eventName, Map<String, Object> eventMessageNode) {
         monitor(eventName, eventMessageNode, AlarmLevel.WARN, null);
     }
 
     public void warn(String eventName, String eventMessage) {
-        monitor(eventName, JsonUtils.createJsonNodeBuilder().item("Message", eventMessage).build(), AlarmLevel.WARN,
-                null);
+        monitor(eventName, AlarmUtils.createAlarmMessageBuilder()
+                .item(AlarmUtils.MESSAGE_NAME, eventMessage).build(),
+                AlarmLevel.WARN, null);
     }
 
     public void warn(String eventName, Throwable e) {
-        monitor(eventName, JsonUtils.createJsonNodeBuilder().item("Message", e.getMessage()).build(), AlarmLevel.WARN,
-                e);
+        monitor(eventName, AlarmUtils.createAlarmMessageBuilder()
+                .item(AlarmUtils.MESSAGE_NAME, e.getMessage()).build(),
+                AlarmLevel.WARN, e);
     }
 
-    public void info(String eventName, JsonNode eventMessageNode) {
+    public void info(String eventName, Map<String, Object> eventMessageNode) {
         monitor(eventName, eventMessageNode, AlarmLevel.INFO, null);
     }
 
     public void info(String eventName, String eventMessage) {
-        monitor(eventName, JsonUtils.createJsonNodeBuilder().item("Message", eventMessage).build(), AlarmLevel.INFO,
+        monitor(eventName, AlarmUtils.createAlarmMessageBuilder()
+                .item(AlarmUtils.MESSAGE_NAME, eventMessage)
+                .build(), AlarmLevel.INFO,
                 null);
     }
 
-    private void monitor(String eventName, JsonNode eventMessage, AlarmLevel level, @Nullable Throwable e) {
+    private void monitor(String eventName, Map<String, Object> eventMessage, AlarmLevel level, @Nullable Throwable e) {
         String msg = String.format("eventName=%s, eventMessage=%s .", eventName, eventMessage);
         switch (level) {
             case INFO:

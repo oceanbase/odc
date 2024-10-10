@@ -16,9 +16,25 @@
 
 package com.oceanbase.odc.core.alarm;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import java.util.HashMap;
+import java.util.Map;
 
 public final class AlarmUtils {
+
+    /**
+     * Base alarm message names
+     */
+    public static final String CLUSTER_NAME = "Cluster";
+    public static final String TENANT_NAME = "Tenant";
+    public static final String ORGANIZATION_NAME = "OrganizationId";
+    public static final String MESSAGE_NAME = "Message";
+    public static final String ALARM_TARGET_NAME = "AlarmTarget";
+
+    /**
+     * TaskFramework alarm message names
+     */
+    public static final String TASK_TYPE_NAME = "TaskType";
+    public static final String SCHEDULE_NAME = "ScheduleId";
 
     private AlarmUtils() {}
 
@@ -28,7 +44,7 @@ public final class AlarmUtils {
         alarmService.alarm(eventName, eventMessage);
     }
 
-    public static void alarm(String eventName, JsonNode eventMessageNode) {
+    public static void alarm(String eventName, Map<String, Object> eventMessageNode) {
         alarmService.alarm(eventName, eventMessageNode);
     }
 
@@ -40,7 +56,7 @@ public final class AlarmUtils {
         alarmService.warn(eventName, eventMessage);
     }
 
-    public static void warn(String eventName, JsonNode eventMessageNode) {
+    public static void warn(String eventName, Map<String, Object> eventMessageNode) {
         alarmService.warn(eventName, eventMessageNode);
     }
 
@@ -50,5 +66,27 @@ public final class AlarmUtils {
 
     public static void info(String eventName, String eventMessage) {
         alarmService.info(eventName, eventMessage);
+    }
+
+    public static AlarmMessageBuilder createAlarmMessageBuilder() {
+        return new AlarmMessageBuilder();
+    }
+
+    public static class AlarmMessageBuilder {
+
+        final Map<String, Object> alarmMessage;
+
+        public AlarmMessageBuilder() {
+            alarmMessage = new HashMap<>();
+        }
+
+        public AlarmMessageBuilder item(String key, Object value) {
+            alarmMessage.put(key, value);
+            return this;
+        }
+
+        public Map<String, Object> build() {
+            return alarmMessage;
+        }
     }
 }

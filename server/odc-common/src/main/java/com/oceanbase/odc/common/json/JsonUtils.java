@@ -26,22 +26,17 @@ import org.json.JSONObject;
 import org.json.XML;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.oceanbase.odc.common.util.StringUtils;
 
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -244,87 +239,4 @@ public class JsonUtils {
             return null;
         }
     }
-
-    /**
-     * create jsonNode builder to add key-value
-     * 
-     * @return JsonNodeBuilder
-     */
-    public static JsonNodeBuilder createJsonNodeBuilder() {
-        return new JsonNodeBuilder();
-    }
-
-    /**
-     * <blockquote>
-     * 
-     * <pre>
-     *  { "obj": "{ \"k1\":\"v1\" }" } translate to blow as
-     * </pre>
-     * 
-     * <pre>
-     *  { "obj": {"k1":"v1"} }
-     * </pre>
-     * 
-     * </blockquote>
-     */
-    public static String normalizeJsonString(String jsonString) {
-        return jsonString.replace("\\", "")
-                .replace("\"{", "{")
-                .replace("}\"", "}");
-    }
-
-    /**
-     * given a standard json string and a key, getting the value corresponding to that key and
-     * converting it to the corresponding type can be quite complex
-     */
-    public static <T> T readValueByKey(String jsonString, String key, TypeReference<T> type) {
-        try (JsonParser parser = OBJECT_MAPPER.getFactory().createParser(normalizeJsonString(jsonString))) {
-            int depth = 0;
-            while (parser.nextToken() != null) {
-                if (parser.getCurrentToken() == JsonToken.START_OBJECT
-                        || parser.getCurrentToken() == JsonToken.START_ARRAY) {
-                    ++depth;
-                } else if (parser.getCurrentToken() == JsonToken.FIELD_NAME && parser.getCurrentName().equals(key)) {
-                    parser.nextToken();
-                    return parser.readValueAs(type);
-                } else if ((parser.getCurrentToken() == JsonToken.END_OBJECT
-                        || parser.getCurrentToken() == JsonToken.END_ARRAY)
-                        && (--depth) <= 0) {
-                    break;
-                }
-            }
-            return null;
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    public static <T> T readValueByKeyFromJsonNode(JsonNode jsonNode, String key, TypeReference<T> type) {
-        return readValueByKey(toJson(jsonNode), key, type);
-    }
-
-    public static class JsonNodeBuilder {
-
-        ObjectNode jsonNode;
-
-        public JsonNodeBuilder() {
-            this.jsonNode = OBJECT_MAPPER.createObjectNode();
-        }
-
-        /**
-         * do not put in a json string from {@link JsonUtils#toJson(Object obj)
-         * JsonUtils.toJson}{@code (Object obj)}, it is better to put in the object directly. for example:
-         * <b> Student stu = new Student() </b>, you need do push(stu) or not push(toJson(stu))
-         */
-        public JsonNodeBuilder item(@NonNull String key, @NonNull Object value) {
-            this.jsonNode.putPOJO(key, value);
-            return this;
-        }
-
-        public JsonNode build() {
-            return this.jsonNode;
-        }
-
-    }
-
 }

@@ -16,7 +16,7 @@
 package com.oceanbase.odc.service.task.schedule.daemon;
 
 import java.text.MessageFormat;
-import java.util.Optional;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.quartz.DisallowConcurrentExecution;
@@ -25,17 +25,12 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.data.domain.Page;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
-import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.metadb.task.TaskEntity;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.schedule.model.ScheduleTask;
+import com.oceanbase.odc.service.common.util.AlarmHelper;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
@@ -103,19 +98,6 @@ public class StartPreparingJob implements Job {
     private void startJob(TaskFrameworkService taskFrameworkService, JobEntity jobEntity) {
         getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
             JobEntity lockedEntity = taskFrameworkService.findWithPessimisticLock(jobEntity.getId());
-
-            Optional<ScheduleTask> scheduleTaskOptional =
-                    configuration.getScheduleTaskService().findByJobId(jobEntity.getId());
-            Verify.notNull(scheduleTaskOptional.get(), "ScheduleTask");
-
-            ScheduleTask scheduleTask = scheduleTaskOptional.get();
-            Optional<TaskEntity> taskOptional = configuration.getTaskService().findByJobId(jobEntity.getId());
-            Verify.notNull(taskOptional.get(), "TaskEntity");
-
-            ConnectionConfig connection =
-                    configuration.getConnectionService().detail(taskOptional.get().getConnectionId());
-            Verify.notNull(connection, "ConnectionConfig");
-
             if (lockedEntity.getStatus() == JobStatus.PREPARING || lockedEntity.getStatus() == JobStatus.RETRYING) {
 
                 // todo user id should be not null when submit job
@@ -130,19 +112,14 @@ public class StartPreparingJob implements Job {
                 try {
                     getConfiguration().getJobDispatcher().start(jc);
                 } catch (JobException e) {
-                    JsonNode alarmDescription = JsonUtils.createJsonNodeBuilder()
-                            .item("TaskType", scheduleTask.getJobGroup())
-                            .item("AlarmType", "ODC")
-                            .item("AlarmTarget", AlarmEventNames.TASK_START_FAILED).build();
-                    AlarmUtils.alarm(AlarmEventNames.TASK_START_FAILED,
-                            JsonUtils.createJsonNodeBuilder()
-                                    .item("ClusterName", connection.getClusterName())
-                                    .item("TenantName", connection.getTenantName())
-                                    .item("ScheduleId", scheduleTask.getJobName())
-                                    .item("Description", alarmDescription)
-                                    .item("Message", MessageFormat.format("Start job failed, message={0}",
-                                            e.getMessage()))
-                                    .build());
+                    Map<String, Object> eventMessage = AlarmUtils.createAlarmMessageBuilder()
+                            .item(AlarmUtils.ALARM_TARGET_NAME, AlarmEventNames.TASK_START_FAILED)
+                            .item(AlarmUtils.ORGANIZATION_NAME, jobEntity.getOrganizationId())
+                            .item(AlarmUtils.MESSAGE_NAME, MessageFormat.format("Start job failed, message={0}",
+                                    e.getMessage()))
+                            .build();
+                    eventMessage.putAll(AlarmHelper.buildAlarmMessageWithJob(jobEntity.getId()));
+                    AlarmUtils.alarm(AlarmEventNames.TASK_START_FAILED, eventMessage);
                     throw new TaskRuntimeException(e);
                 }
             } else {
