@@ -45,8 +45,8 @@ import com.oceanbase.odc.service.flow.task.mapper.OdcRuntimeDelegateMapper;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.monitor.MeterKey;
 import com.oceanbase.odc.service.monitor.MeterKey.Builder;
-import com.oceanbase.odc.service.monitor.MeterName;
 import com.oceanbase.odc.service.monitor.MeterManager;
+import com.oceanbase.odc.service.monitor.MeterName;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -68,7 +68,7 @@ public class FlowTaskSubmitter implements JavaDelegate {
     @Autowired
     private ServiceTaskInstanceRepository serviceTaskRepository;
     @Autowired
-    private MeterManager                  meterManager;
+    private MeterManager meterManager;
 
     @Override
     public void execute(DelegateExecution execution) {

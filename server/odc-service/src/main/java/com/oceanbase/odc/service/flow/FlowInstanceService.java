@@ -155,8 +155,8 @@ import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
 import com.oceanbase.odc.service.monitor.MeterKey;
-import com.oceanbase.odc.service.monitor.MeterName;
 import com.oceanbase.odc.service.monitor.MeterManager;
+import com.oceanbase.odc.service.monitor.MeterName;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
@@ -262,7 +262,7 @@ public class FlowInstanceService {
     @Autowired
     private EnvironmentService environmentService;
     @Autowired
-    private MeterManager       meterManager;
+    private MeterManager meterManager;
 
     private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
     private static final String ODC_SITE_URL = "odc.site.url";

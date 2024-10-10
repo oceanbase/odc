@@ -22,8 +22,8 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.service.monitor.MeterKey;
-import com.oceanbase.odc.service.monitor.MeterName;
 import com.oceanbase.odc.service.monitor.MeterManager;
+import com.oceanbase.odc.service.monitor.MeterName;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 
 @Component

@@ -23,8 +23,8 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionEventListener;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.monitor.MeterKey;
-import com.oceanbase.odc.service.monitor.MeterName;
 import com.oceanbase.odc.service.monitor.MeterManager;
+import com.oceanbase.odc.service.monitor.MeterName;
 
 public class ConnectionSessionMonitorListener implements ConnectionSessionEventListener {
 
