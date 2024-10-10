@@ -17,7 +17,18 @@ package com.oceanbase.odc.service.schedule.model;
 
 import java.util.Date;
 
+import javax.validation.constraints.NotNull;
+
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
+import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
+import com.oceanbase.odc.service.loaddata.model.LoadDataParameters;
+import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
+import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 
 import lombok.Data;
 
@@ -31,11 +42,22 @@ import lombok.Data;
 public class ScheduleTask {
 
     private Long id;
-
+    @NotNull
     private String jobName;
-
+    @NotNull
     private String jobGroup;
-
+    @NotNull
+    @JsonTypeInfo(use = Id.NAME, include = As.EXTERNAL_PROPERTY, property = "jobGroup")
+    @JsonSubTypes(value = {
+            @JsonSubTypes.Type(value = DataArchiveParameters.class, name = "DATA_ARCHIVE"),
+            @JsonSubTypes.Type(value = DataDeleteParameters.class, name = "DATA_DELETE"),
+            @JsonSubTypes.Type(value = DataArchiveClearParameters.class, names = "DATA_ARCHIVE_DELETE"),
+            @JsonSubTypes.Type(value = DataArchiveRollbackParameters.class, names = "DATA_ARCHIVE_ROLLBACK"),
+            @JsonSubTypes.Type(value = LoadDataParameters.class, name = "LOAD_DATA"),
+            @JsonSubTypes.Type(value = SqlPlanParameters.class, name = "SQL_PLAN"),
+            @JsonSubTypes.Type(value = OnlineSchemaChangeParameters.class, name = "ONLINE_SCHEMA_CHANGE_COMPLETE"),
+            @JsonSubTypes.Type(value = LogicalDatabaseChangeParameters.class, name = "LOGICAL_DATABASE_CHANGE")
+    })
     private ScheduleTaskParameters parameters;
 
     private TaskStatus status;

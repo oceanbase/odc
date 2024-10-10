@@ -18,6 +18,18 @@ package com.oceanbase.odc.service.quartz.util;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
+import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
+import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
+import com.oceanbase.odc.service.loaddata.model.LoadDataParameters;
+import com.oceanbase.odc.service.schedule.model.DataArchiveClearParameters;
+import com.oceanbase.odc.service.schedule.model.DataArchiveRollbackParameters;
+import com.oceanbase.odc.service.schedule.model.LogicalDatabaseChangeParameters;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskType;
+import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
+
 /**
  * @Author：tinker
  * @Date: 2023/6/25 14:23
@@ -26,6 +38,8 @@ import org.quartz.JobExecutionContext;
 public class ScheduleTaskUtils {
 
     public static final String id = "ODC_SCHEDULE_TASK_OERPATION_ID";
+    private static final String SCHEDULE_TASK_ID = "ODC_SCHEDULE_TASK_ID";
+    private static final String SCHEDULE_TASK_PARAMETERS = "ODC_SCHEDULE_TASK_PARAMETERS";
 
     public static JobDataMap buildTriggerDataMap(Long taskId) {
         JobDataMap dataMap = new JobDataMap();
@@ -45,4 +59,63 @@ public class ScheduleTaskUtils {
         String name = context.getJobDetail().getKey().getName();
         return Long.parseLong(name);
     }
+
+    public static ScheduleTaskType getScheduleTaskType(JobExecutionContext context) {
+        return ScheduleTaskType.valueOf(context.getJobDetail().getKey().getGroup());
+    }
+
+    public static String getJobName(JobExecutionContext context) {
+        return context.getJobDetail().getKey().getName();
+    }
+
+    public static void setScheduleTaskId(Long scheduleTaskId, JobExecutionContext context) {
+        context.getTrigger().getJobDataMap().put(SCHEDULE_TASK_ID, scheduleTaskId);
+    }
+
+    public static Long getScheduleTaskId(JobExecutionContext context) {
+        return context.getTrigger().getJobDataMap().getLong(SCHEDULE_TASK_ID);
+    }
+
+    public static void setScheduleTaskParameters(ScheduleTaskParameters taskParameters, JobExecutionContext context) {
+        context.getTrigger().getJobDataMap().put(SCHEDULE_TASK_PARAMETERS, taskParameters);
+    }
+
+    public static String getScheduleTaskParametersJson(JobExecutionContext context) {
+        return context.getTrigger().getJobDataMap().getString(SCHEDULE_TASK_PARAMETERS);
+    }
+
+    public static DatabaseChangeParameters getDatabaseChangeTaskParameters(JobExecutionContext context) {
+        return JsonUtils.fromJson(getScheduleTaskParametersJson(context), DatabaseChangeParameters.class);
+    }
+
+    public static SqlPlanParameters getSqlPlanParameters(JobExecutionContext context) {
+        return JsonUtils.fromJson(getScheduleTaskParametersJson(context), SqlPlanParameters.class);
+    }
+
+    public static DataArchiveParameters getDataArchiveParameters(JobExecutionContext context) {
+        return JsonUtils.fromJson(getScheduleTaskParametersJson(context), DataArchiveParameters.class);
+    }
+
+    public static DataDeleteParameters getDataDeleteParameters(JobExecutionContext context) {
+        return JsonUtils.fromJson(getScheduleTaskParametersJson(context), DataDeleteParameters.class);
+    }
+
+    public static DataArchiveClearParameters getDataArchiveClearParameters(JobExecutionContext context) {
+        return JsonUtils.fromJson(getScheduleTaskParametersJson(context), DataArchiveClearParameters.class);
+    }
+
+
+    public static DataArchiveRollbackParameters getDataArchiveRollbackParameters(JobExecutionContext context) {
+        return JsonUtils.fromJson(getScheduleTaskParametersJson(context), DataArchiveRollbackParameters.class);
+    }
+
+    public static LoadDataParameters getLoadDataParameters(JobExecutionContext context) {
+        return JsonUtils.fromJson(getScheduleTaskParametersJson(context), LoadDataParameters.class);
+    }
+
+    public static LogicalDatabaseChangeParameters getLogicalDatabaseChangeParameters(JobExecutionContext context) {
+        return JsonUtils.fromJson(getScheduleTaskParametersJson(context), LogicalDatabaseChangeParameters.class);
+    }
+
+
 }

@@ -17,12 +17,11 @@ package com.oceanbase.odc.service.schedule.job;
 
 import org.quartz.JobExecutionContext;
 
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
+import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
 import lombok.extern.slf4j.Slf4j;
@@ -40,12 +39,13 @@ public class DataArchiveJob extends AbstractDlmJob {
     }
 
     private void executeInTaskFramework(JobExecutionContext context) {
-        ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
-        DataArchiveParameters dataArchiveParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
-                DataArchiveParameters.class);
+
+        Long scheduleTaskId = ScheduleTaskUtils.getScheduleTaskId(context);
+        Long scheduleId = ScheduleTaskUtils.getScheduleId(context);
+        DataArchiveParameters dataArchiveParameters = ScheduleTaskUtils.getDataArchiveParameters(context);
         DLMJobReq parameters = new DLMJobReq();
-        parameters.setJobName(taskEntity.getJobName());
-        parameters.setScheduleTaskId(taskEntity.getId());
+        parameters.setJobName(scheduleId.toString());
+        parameters.setScheduleTaskId(scheduleTaskId);
         parameters.setJobType(JobType.MIGRATE);
         parameters.setTables(dataArchiveParameters.getTables());
         for (DataArchiveTableConfig tableConfig : parameters.getTables()) {
@@ -59,7 +59,7 @@ public class DataArchiveJob extends AbstractDlmJob {
         parameters.setMigrationInsertAction(dataArchiveParameters.getMigrationInsertAction());
         parameters.setNeedPrintSqlTrace(dataArchiveParameters.isNeedPrintSqlTrace());
         parameters
-                .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName())));
+                .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(scheduleId));
         parameters.setWriteThreadCount(dataArchiveParameters.getWriteThreadCount());
         parameters.setReadThreadCount(dataArchiveParameters.getReadThreadCount());
         parameters.setShardingStrategy(dataArchiveParameters.getShardingStrategy());
@@ -72,10 +72,9 @@ public class DataArchiveJob extends AbstractDlmJob {
 
         Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis(),
                 dataArchiveParameters.getSourceDatabaseId());
-        scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
-        scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));
+        scheduleService.updateJobId(scheduleTaskId, jobId);
         log.info("Publish data-archive job to task framework succeed,scheduleTaskId={},jobIdentity={}",
-                taskEntity.getId(),
+                scheduleTaskId,
                 jobId);
     }
 

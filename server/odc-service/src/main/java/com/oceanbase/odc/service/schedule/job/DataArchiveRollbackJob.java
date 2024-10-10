@@ -15,15 +15,13 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
-import java.util.Optional;
-
 import org.quartz.JobExecutionContext;
 
-import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
+import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.model.DataArchiveRollbackParameters;
+import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
@@ -40,23 +38,23 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
     @Override
     public void executeJob(JobExecutionContext context) {
 
-        ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
-        DataArchiveRollbackParameters rollbackParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
-                DataArchiveRollbackParameters.class);
+        Long scheduleId = ScheduleTaskUtils.getScheduleId(context);
+        Long scheduleTaskId = ScheduleTaskUtils.getScheduleTaskId(context);
+        DataArchiveRollbackParameters rollbackParameters = ScheduleTaskUtils.getDataArchiveRollbackParameters(context);
 
         // find data archive task by id.
-        Optional<ScheduleTaskEntity> dataArchiveTaskOption =
-                scheduleTaskRepository.findById(rollbackParameters.getDataArchiveTaskId());
-
-        if (!dataArchiveTaskOption.isPresent()) {
-            log.warn("Data archive task not found,rollback task fast failed,scheduleTaskId={}",
+        ScheduleTask dataArchiveTask;
+        try {
+            dataArchiveTask = scheduleTaskService.nullSafeGetModelById(
                     rollbackParameters.getDataArchiveTaskId());
-            scheduleTaskRepository.updateStatusById(taskEntity.getId(), TaskStatus.FAILED);
+        } catch (NotFoundException e) {
+            log.warn("Data archive task not found,rollback task fast failed.scheduleTaskId={}",
+                    rollbackParameters.getDataArchiveTaskId());
+            onFailure(scheduleTaskId);
             return;
         }
-        ScheduleTaskEntity dataArchiveTask = dataArchiveTaskOption.get();
-        DataArchiveParameters dataArchiveParameters = JsonUtils.fromJson(dataArchiveTask.getParametersJson(),
-                DataArchiveParameters.class);
+        DataArchiveParameters dataArchiveParameters = (DataArchiveParameters) dataArchiveTask.getParameters();
+
         // execute in task framework.
         DLMJobReq parameters = getDLMJobReq(dataArchiveTask.getJobId());
         parameters.setJobType(JobType.ROLLBACK);
@@ -64,18 +62,17 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
         parameters.setSourceDs(parameters.getTargetDs());
         parameters.setTargetDs(tempDataSource);
         parameters
-                .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName())));
+                .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(scheduleId));
         parameters.getTables().forEach(o -> {
             String temp = o.getTableName();
             o.setTableName(o.getTargetTableName());
             o.setTargetTableName(temp);
         });
-        parameters.setScheduleTaskId(taskEntity.getId());
+        parameters.setScheduleTaskId(scheduleTaskId);
         Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis(),
                 dataArchiveParameters.getSourceDatabaseId());
-        log.info("Publish DLM job to task framework succeed,scheduleTaskId={},jobIdentity={}", taskEntity.getId(),
+        log.info("Publish DLM job to task framework succeed,scheduleTaskId={},jobIdentity={}", scheduleTaskId,
                 jobId);
-        scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
-        scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));
+        scheduleService.updateJobId(scheduleTaskId, jobId);
     }
 }
