@@ -25,6 +25,7 @@ import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.plugin.connect.model.DBClientInfo;
 import com.oceanbase.odc.plugin.connect.oboracle.OBOracleSessionExtension;
 
 import lombok.NonNull;
@@ -97,4 +98,23 @@ public class OracleSessionExtension extends OBOracleSessionExtension {
         }
         return String.format("alter %s set %s=%s", variableScope, variableName, variableValue);
     }
+
+    @Override
+    public boolean setClientInfo(Connection connection, DBClientInfo clientInfo) {
+        try {
+            String SET_MODULE_TEMPLATE =
+                    "BEGIN DBMS_APPLICATION_INFO.SET_MODULE(module_name => '%s',action_name => '%s'); END;";
+            String sql = String.format(SET_MODULE_TEMPLATE, clientInfo.getModule(), clientInfo.getAction());
+            JdbcOperationsUtil.getJdbcOperations(connection).execute(sql);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean supportClientInfo(String dbVersion) {
+        return true;
+    }
+
 }

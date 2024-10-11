@@ -34,18 +34,18 @@ import com.oceanbase.odc.core.session.ConnectionSessionFactory;
 import com.oceanbase.odc.core.session.ConnectionSessionIdGenerator;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.session.DefaultConnectionSession;
+import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.core.sql.execute.task.SqlExecuteTaskManager;
 import com.oceanbase.odc.core.task.TaskManagerFactory;
 import com.oceanbase.odc.plugin.connect.api.JdbcUrlParser;
+import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
+import com.oceanbase.odc.plugin.connect.model.DBClientInfo;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 import com.oceanbase.odc.service.connection.util.ConnectionInfoUtil;
 import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
-import com.oceanbase.odc.service.db.browser.DBClientInfoEditors;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.initializer.SwitchSchemaInitializer;
-import com.oceanbase.tools.dbbrowser.editor.DBClientInfoEditor;
-import com.oceanbase.tools.dbbrowser.model.DBClientInfo;
 
 import lombok.NonNull;
 import lombok.Setter;
@@ -190,15 +190,24 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
     }
 
     private void setClientInfo(ConnectionSession session) {
-        DBClientInfoEditor consoleClientInfoEditor =
-                DBClientInfoEditors.create(session, ConnectionSessionConstants.CONSOLE_DS_KEY);
-        String clientInfo = UUID.randomUUID().toString();
-        boolean setSuccess = consoleClientInfoEditor.setClientInfo(
-                new DBClientInfo(DEFAULT_MODULE, CONNECT_SESSION_SQL_CONSOLE, clientInfo));
-        if (setSuccess) {
-            ConnectionSessionUtil.setConsoleSessionClientInfo(session, clientInfo);
-            log.info("Set client info completed. sid={}, clientInfo={}", session.getId(), clientInfo);
+        SessionExtensionPoint extensionPoint = ConnectionPluginUtil.getSessionExtension(session.getDialectType());
+        String dbVersion = ConnectionSessionUtil.getVersion(session);
+
+        if (extensionPoint.supportClientInfo(dbVersion)) {
+            String clientInfo = UUID.randomUUID().toString();
+            SyncJdbcExecutor consoleJdbcExecutor =
+                    session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
+            consoleJdbcExecutor.execute((ConnectionCallback<Void>) con -> {
+                boolean setSuccess = extensionPoint.setClientInfo(con,
+                        new DBClientInfo(DEFAULT_MODULE, CONNECT_SESSION_SQL_CONSOLE, clientInfo));
+                if (setSuccess) {
+                    ConnectionSessionUtil.setConsoleSessionClientInfo(session, clientInfo);
+                    log.info("Set client info completed. sid={}, clientInfo={}", session.getId(), clientInfo);
+                }
+                return null;
+            });
         }
+
     }
 
     /**

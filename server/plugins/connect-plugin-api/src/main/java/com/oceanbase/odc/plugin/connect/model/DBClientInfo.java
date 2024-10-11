@@ -13,12 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.dbbrowser.editor;
+package com.oceanbase.odc.plugin.connect.model;
 
-import com.oceanbase.tools.dbbrowser.model.DBClientInfo;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
-public interface DBClientInfoEditor {
+@Data
+@AllArgsConstructor
+public class DBClientInfo {
 
-    boolean setClientInfo(DBClientInfo clientInfo);
+    private String module;
+    private String action;
+    private String context;
 
 }
