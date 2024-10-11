@@ -431,7 +431,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             try {
                 String objectName = cloudObjectStorageService.upload(file.getName(), file);
                 ossAddress = String.valueOf(cloudObjectStorageService.generateDownloadUrl(objectName));
-                log.info("succeed to upload sql plan task result file to OSS, file download url = {}", ossAddress);
+                log.info("Upload sql plan task result to cloud object storage successfully, objectName={}", objectName);
             } catch (Exception exception) {
                 throw new RuntimeException(String.format(
                         "failed to upload sql plan task result file to OSS, file name: %s", file.getName()),
