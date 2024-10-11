@@ -15,9 +15,6 @@
  */
 package com.oceanbase.odc.service.session.factory;
 
-import static com.oceanbase.tools.dbbrowser.model.DbClientInfo.CONNECT_SESSION_SQL_CONSOLE;
-import static com.oceanbase.tools.dbbrowser.model.DbClientInfo.DEFAULT_MODULE;
-
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.Objects;
@@ -48,7 +45,7 @@ import com.oceanbase.odc.service.db.browser.DBClientInfoEditors;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.initializer.SwitchSchemaInitializer;
 import com.oceanbase.tools.dbbrowser.editor.DBClientInfoEditor;
-import com.oceanbase.tools.dbbrowser.model.DbClientInfo;
+import com.oceanbase.tools.dbbrowser.model.DBClientInfo;
 
 import lombok.NonNull;
 import lombok.Setter;
@@ -65,6 +62,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
+    public static final String DEFAULT_MODULE = "ODC";
+    public static final String CONNECT_SESSION_SQL_CONSOLE = "ConnectSession-SqlConsole";
 
     private final ConnectionConfig connectionConfig;
     private final TaskManagerFactory<SqlExecuteTaskManager> taskManagerFactory;
@@ -195,7 +194,7 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
                 DBClientInfoEditors.create(session, ConnectionSessionConstants.CONSOLE_DS_KEY);
         String clientInfo = UUID.randomUUID().toString();
         boolean setSuccess = consoleClientInfoEditor.setClientInfo(
-                new DbClientInfo(DEFAULT_MODULE, CONNECT_SESSION_SQL_CONSOLE, clientInfo));
+                new DBClientInfo(DEFAULT_MODULE, CONNECT_SESSION_SQL_CONSOLE, clientInfo));
         if (setSuccess) {
             ConnectionSessionUtil.setConsoleSessionClientInfo(session, clientInfo);
             log.info("Set client info completed. sid={}, clientInfo={}", session.getId(), clientInfo);

@@ -21,7 +21,7 @@ import com.oceanbase.tools.dbbrowser.AbstractDBBrowserFactory;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMysqlNoLessThan400ClientInfoEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleNoLess400ClientInfoEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleClientInfoEditor;
-import com.oceanbase.tools.dbbrowser.model.DbClientInfo;
+import com.oceanbase.tools.dbbrowser.model.DBClientInfo;
 import com.oceanbase.tools.dbbrowser.util.VersionUtils;
 
 import lombok.Setter;
@@ -78,7 +78,7 @@ public class DBClientInfoEditorFactory extends AbstractDBBrowserFactory<DBClient
     static class NotSupportDBClientInfoEditor implements DBClientInfoEditor {
 
         @Override
-        public boolean setClientInfo(DbClientInfo clientInfo) {
+        public boolean setClientInfo(DBClientInfo clientInfo) {
             return false;
         }
     }

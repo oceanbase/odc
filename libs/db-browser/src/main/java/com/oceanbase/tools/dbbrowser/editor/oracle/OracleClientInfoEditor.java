@@ -18,7 +18,7 @@ package com.oceanbase.tools.dbbrowser.editor.oracle;
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.tools.dbbrowser.editor.DBClientInfoEditor;
-import com.oceanbase.tools.dbbrowser.model.DbClientInfo;
+import com.oceanbase.tools.dbbrowser.model.DBClientInfo;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,7 +35,7 @@ public class OracleClientInfoEditor implements DBClientInfoEditor {
     }
 
     @Override
-    public boolean setClientInfo(DbClientInfo clientInfo) {
+    public boolean setClientInfo(DBClientInfo clientInfo) {
         try {
             String sql = String.format(SET_MODULE_TEMPLATE, clientInfo.getModule(), clientInfo.getAction());
             jdbcOperations.execute(sql);

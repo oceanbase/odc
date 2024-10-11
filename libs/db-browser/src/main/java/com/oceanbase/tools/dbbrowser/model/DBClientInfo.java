@@ -20,10 +20,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class DbClientInfo {
-
-    public static final String DEFAULT_MODULE = "ODC";
-    public static final String CONNECT_SESSION_SQL_CONSOLE = "ConnectSession-SqlConsole";
+public class DBClientInfo {
 
     private String module;
     private String action;

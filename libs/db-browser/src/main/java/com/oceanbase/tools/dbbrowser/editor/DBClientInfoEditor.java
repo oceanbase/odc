@@ -15,10 +15,10 @@
  */
 package com.oceanbase.tools.dbbrowser.editor;
 
-import com.oceanbase.tools.dbbrowser.model.DbClientInfo;
+import com.oceanbase.tools.dbbrowser.model.DBClientInfo;
 
 public interface DBClientInfoEditor {
 
-    boolean setClientInfo(DbClientInfo clientInfo);
+    boolean setClientInfo(DBClientInfo clientInfo);
 
 }
