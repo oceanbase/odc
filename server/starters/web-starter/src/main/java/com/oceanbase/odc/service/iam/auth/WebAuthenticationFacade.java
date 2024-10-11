@@ -15,9 +15,10 @@
  */
 package com.oceanbase.odc.service.iam.auth;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
+
+import com.oceanbase.odc.service.common.util.ConditionalOnProperty;
 
 /**
  * @author yizhou.xw
@@ -25,6 +26,6 @@ import org.springframework.stereotype.Service;
  */
 @Profile("alipay")
 @Service
-@ConditionalOnMissingBean(AuthenticationFacade.class)
+@ConditionalOnProperty(value = "odc.iam.auth.type", havingValues = {"local", "alipay", "buc", "oauth2"})
 public class WebAuthenticationFacade extends DefaultAuthenticationFacade {
 }
