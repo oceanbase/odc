@@ -42,6 +42,16 @@ public class RateLimitedExecutorTest {
         }
     }
 
+    @Test(expected = ArithmeticException.class)
+    public void submit_simpleTaskWithExp_expThrown() throws Exception {
+        try (RateLimitedExecutor executor = new RateLimitedExecutor(1, 1)) {
+            executor.submit(() -> {
+                int a = 1 / 0;
+                return null;
+            });
+        }
+    }
+
     @Test
     public void submit_qps3AndSubmit10QuerySecond_executedSucceed() throws Exception {
         List<Long> timestamps = new ArrayList<>();
