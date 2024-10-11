@@ -134,7 +134,6 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
 
         while (sqlIterator.hasNext()) {
             String sql = sqlIterator.next().getStr();
-            log.info("Start execute sql, sql={}", sql);
             index++;
             // The retry statement will write the result into the buffer, while executing a new SQL command will
             // clear the buffer.
@@ -148,11 +147,13 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                 if (success) {
                     result.incrementSucceedStatements();
                 } else {
+                    log.info("execute sql failed, sql={}", sql);
                     result.incrementFailedStatements();
                     // only write failed record into error records file
                     addErrorRecordsToFile(index, sql);
                 }
             } catch (Exception e) {
+                log.info("execute sql failed, sql={}", sql);
                 result.incrementFailedStatements();
                 addErrorRecordsToFile(index, sql);
                 if (parameters.getErrorStrategy() == TaskErrorStrategy.ABORT) {
