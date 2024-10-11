@@ -138,11 +138,6 @@ public abstract class AbstractDlmJob implements OdcJob {
 
     @Override
     public void execute(JobExecutionContext context) {
-        if (context.getResult() == null) {
-            log.warn("Concurrent execute is not allowed,job will be existed.jobKey={}",
-                    context.getJobDetail().getKey());
-            return;
-        }
         executeJob(context);
     }
 
