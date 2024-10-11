@@ -18,6 +18,7 @@ package com.oceanbase.odc.common.util;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeoutException;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -51,6 +52,26 @@ public class RateLimitedExecutorTest {
         }
         Assert.assertEquals(10, timestamps.size());
         assertQpsEquals(3, timestamps);
+    }
+
+    @Test(expected = TimeoutException.class)
+    public void submit_submitLongTaskAndSetTimeoutShort_timeoutExpThrown() throws Exception {
+        try (RateLimitedExecutor executor = new RateLimitedExecutor(1, 1)) {
+            executor.setSubmitTimeoutMillis(100);
+            Thread t = new Thread(() -> {
+                try {
+                    executor.submit(() -> {
+                        Thread.sleep(20000);
+                        return null;
+                    });
+                } catch (Exception ignored) {
+
+                }
+            });
+            t.start();
+            Thread.sleep(100);
+            executor.submit(() -> null);
+        }
     }
 
     @Test

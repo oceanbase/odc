@@ -26,6 +26,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -74,7 +75,7 @@ public class RateLimitedExecutor implements Closeable {
     public <T> T submit(Callable<T> query) throws Exception {
         boolean result = this.queryQueueLock.tryLock(this.submitTimeoutMillis, TimeUnit.MILLISECONDS);
         if (!result) {
-            throw new IllegalStateException("Failed to submit the query, reason: timeout");
+            throw new TimeoutException("Failed to submit the query, reason: timeout");
         }
         Query<T> queryObject = new Query<>(query, this);
         try {
@@ -152,7 +153,7 @@ public class RateLimitedExecutor implements Closeable {
         public T getResult() throws Exception {
             boolean res = this.latch.await(this.rateLimitedExecutor.submitTimeoutMillis, TimeUnit.MILLISECONDS);
             if (!res) {
-                throw new IllegalStateException("Failed to get result, reason: timeout");
+                throw new TimeoutException("Failed to get result, reason: timeout");
             }
             if (this.thrown != null) {
                 throw this.thrown;
