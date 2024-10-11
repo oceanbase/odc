@@ -101,4 +101,9 @@ public class LocalObjectStorageClient implements ObjectStorageClient {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
+    public InputStream getAbortableObject(String objectName) throws IOException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
 }

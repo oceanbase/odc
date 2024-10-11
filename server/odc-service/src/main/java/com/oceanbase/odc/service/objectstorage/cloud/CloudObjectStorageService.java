@@ -206,6 +206,10 @@ public class CloudObjectStorageService {
         return cloudObjectStorageClient.getObject(objectName);
     }
 
+    public InputStream getAbortableObject(@NotBlank String objectName) throws IOException {
+        return cloudObjectStorageClient.getAbortableObject(objectName);
+    }
+
     ObjectStorageConfiguration getObjectStorageConfiguration() {
         return cloudObjectStorageClient.getObjectStorageConfiguration();
     }
