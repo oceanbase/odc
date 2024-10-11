@@ -60,10 +60,11 @@ public class LoadDataResource {
     private Source source;
 
     /**
-     * 当多文件导入时可以不填。 单文件导入时必填： 当 source 为 UPLOAD 或 CLOUD_OBJECT_STORAGE 时，填写待导入文件名； 当 source 为
-     * SAMPLE_DATA 时，该字段填写具体的模型： 支持的模型有： - TPC_H_25M，TPC_DS_25M
+     * 当多文件导入时可以不填。 单文件导入时必填： 当 source 为 UPLOAD 或 CLOUD_OBJECT_STORAGE 时，填写待导入文件名
      */
     private String objectName;
+
+    private Long datasetId;
 
     /**
      * 对象存储配置. 导入 sample data 或本地上传时不传，从云存储导入时则需要填写
