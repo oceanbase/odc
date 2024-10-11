@@ -169,7 +169,8 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         // upload file to OSS, also contains error record where is non-null
         upload();
 
-        log.info("The sql plan task execute finished,result={}", result);
+        log.info("The sql plan task execute finished, report statistics:total={}, succeed={}, failed={}",
+                result.getTotalStatements(), result.getSucceedStatements(), result.getFailedStatements());
         return true;
     }
 
