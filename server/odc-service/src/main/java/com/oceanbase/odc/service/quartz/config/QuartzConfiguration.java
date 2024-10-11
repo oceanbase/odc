@@ -43,8 +43,6 @@ import com.oceanbase.odc.service.quartz.OdcTriggerListener;
 public class QuartzConfiguration {
 
     @Autowired
-    private OdcJobListener odcJobListener;
-    @Autowired
     private OdcTriggerListener odcTriggerListener;
     @Value("${odc.task.max-concurrent-task-count:10}")
     private Long maxConcurrentTaskCount;
@@ -67,7 +65,7 @@ public class QuartzConfiguration {
             @Autowired @Qualifier("defaultSchedulerFactoryBean") SchedulerFactoryBean schedulerFactoryBean)
             throws SchedulerException {
         Scheduler scheduler = schedulerFactoryBean.getScheduler();
-        scheduler.getListenerManager().addJobListener(odcJobListener);
+        scheduler.getListenerManager().addJobListener(new OdcJobListener());
         scheduler.getListenerManager().addTriggerListener(odcTriggerListener);
         return scheduler;
     }
