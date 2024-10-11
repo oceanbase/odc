@@ -147,11 +147,13 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                 if (success) {
                     result.incrementSucceedStatements();
                 } else {
+                    log.info("execute sql failed, sql={}", sql);
                     result.incrementFailedStatements();
                     // only write failed record into error records file
                     addErrorRecordsToFile(index, sql);
                 }
             } catch (Exception e) {
+                log.info("execute sql failed, sql={}", sql);
                 result.incrementFailedStatements();
                 addErrorRecordsToFile(index, sql);
                 if (parameters.getErrorStrategy() == TaskErrorStrategy.ABORT) {
@@ -162,12 +164,14 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             }
         }
         result.setTotalStatements(index);
-        log.info("The sql plan task execute finished,result={}", result);
 
         // all sql execute csv file list write to zip file
         writeZipFile();
         // upload file to OSS, also contains error record where is non-null
         upload();
+
+        log.info("The sql plan task execute finished, report statistics:total={}, succeed={}, failed={}",
+                result.getTotalStatements(), result.getSucceedStatements(), result.getFailedStatements());
         return true;
     }
 
@@ -235,10 +239,10 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
     }
 
     private boolean executeSqlWithRetries(String sql) {
-        OdcStatementCallBack statementCallback = getOdcStatementCallBack(sql);
-        GeneralSqlType sqlType = parseSqlType(sql);
         int executeTime = 0;
+        GeneralSqlType sqlType = parseSqlType(sql);
         while (executeTime <= parameters.getRetryTimes() && !canceled) {
+            OdcStatementCallBack statementCallback = getOdcStatementCallBack(sql);
             try {
                 List<JdbcGeneralResult> results =
                         executor.execute((StatementCallback<List<JdbcGeneralResult>>) stmt -> {
@@ -252,6 +256,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                     SqlExecuteResult executeResult = new SqlExecuteResult(result);
                     if (sqlType == GeneralSqlType.DQL) {
                         // todo: weather need data masking
+                        log.info("Success execute DQL sql, result={}", executeResult.getRows());
                     }
                     queryResultSetBuffer.add(executeResult);
 
@@ -260,8 +265,9 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                         log.warn("Error occurs when executing sql={}, error message={}", sql,
                                 executeResult.getTrack());
                         return false;
+                    } else {
+                        return true;
                     }
-                    log.info("Success execute DQL sql, result={}", executeResult.getRows());
                 }
             } catch (Exception e) {
                 if (executeTime < parameters.getRetryTimes()) {
@@ -305,7 +311,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             String fileName = StringUtils.uuid();
             String filePath = String.format("%s/%s.json", fileRootDir, fileName);
             this.resultJsonFile = new File(filePath);
-            this.zipFileRootPath = String.format("%s/%s.zip", fileRootDir, StringUtils.uuid());
+            this.zipFileRootPath = String.format("%s/%s", fileRootDir, StringUtils.uuid());
         } catch (Exception e) {
             throw new InternalServerError("create sql plan task file dir failed", e);
         }
@@ -395,8 +401,9 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             String jsonString = JsonUtils.prettyToJson(csvFileMappers);
             File file = new File(String.format("%s/csv_execute_result.json", zipFileRootPath));
             FileUtils.writeStringToFile(file, jsonString, StandardCharsets.UTF_8, true);
-            OdcFileUtil.zip(zipFileRootPath, String.format("%s.zip", zipFileRootPath));
-            log.info("sql plan task result set was saved as local zip file, file name={}", file.getName());
+            String zipFileName = String.format("%s.zip", zipFileRootPath);
+            OdcFileUtil.zip(zipFileRootPath, zipFileName);
+            log.info("sql plan task result set was saved as local zip file, file name={}", zipFileName);
             FileUtils.deleteDirectory(new File(zipFileRootPath));
         } catch (IOException ex) {
             throw new UnexpectedException("build zip file failed");
@@ -409,7 +416,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         this.result.setCsvResultSetZipDownloadUrl(uploadToOSS(zipFilePath));
 
         // upload sql execute json file
-        this.result.setSqlExecuteJsonFileDownloadUrl(uploadToOSS(resultJsonFile.getAbsolutePath()));
+        this.result.setSqlExecuteJsonFileDownloadUrl(uploadToOSS(resultJsonFile.getPath()));
 
         // upload error record
         if (errorRecordPath != null) {
@@ -426,11 +433,10 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             try {
                 String objectName = cloudObjectStorageService.upload(file.getName(), file);
                 ossAddress = String.valueOf(cloudObjectStorageService.generateDownloadUrl(objectName));
-                log.info("upload sql plan task result file to OSS, file name={}", file.getName());
+                log.info("Upload sql plan task result to cloud object storage successfully, objectName={}", objectName);
             } catch (Exception exception) {
-                log.warn("upload sql plan task result file to OSS, file name={}", file.getName());
                 throw new RuntimeException(String.format(
-                        "upload sql plan task result file to OSS, file name: %s", file.getName()),
+                        "failed to upload sql plan task result file to OSS, file name: %s", file.getName()),
                         exception.getCause());
             } finally {
                 OdcFileUtil.deleteFiles(file);
