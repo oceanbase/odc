@@ -30,7 +30,9 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.executor.task.BaseTask;
+import com.oceanbase.odc.service.task.executor.task.ExceptionListener;
 import com.oceanbase.odc.service.task.executor.task.Task;
+import com.oceanbase.odc.service.task.executor.task.TaskContext;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 import lombok.extern.slf4j.Slf4j;
@@ -68,9 +70,15 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
         }
         Future<?> future = executor.submit(() -> {
             try {
-                task.start(jc);
+                task.start(jc, new TaskContext() {
+                    @Override
+                    public ExceptionListener getExceptionListener() {
+                        return task;
+                    }
+                });
             } catch (Exception e) {
                 log.error("Task start failed, jobIdentity={}.", jobIdentity.getId(), e);
+                task.onException(e);
             }
         });
         futures.put(jobIdentity, future);

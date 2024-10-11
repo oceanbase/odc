@@ -13,32 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.task.executor.task;
 
-import java.util.Map;
-
-import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
-
 /**
- * @author yaobin
- * @date 2023-11-29
- * @since 4.2.4
+ * listener for exception
+ * 
+ * @author longpeng.zlp
+ * @date 2024/10/10 15:42
  */
-public interface TaskResult {
-
-    JobIdentity getJobIdentity();
-
-    JobStatus getStatus();
-
-    String getResultJson();
-
-    String getExecutorEndpoint();
-
-    String getErrorMessage();
-
-    double getProgress();
-
-    Map<String, String> getLogMetadata();
+public interface ExceptionListener {
+    /**
+     * notify exception if any
+     * 
+     * @param e
+     */
+    void onException(Throwable e);
 }
