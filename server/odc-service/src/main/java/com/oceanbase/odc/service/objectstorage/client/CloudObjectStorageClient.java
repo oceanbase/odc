@@ -181,6 +181,21 @@ public class CloudObjectStorageClient implements ObjectStorageClient {
         }
     }
 
+    @Override
+    public InputStream getAbortableObject(String objectName) throws IOException {
+        verifySupported();
+        if (!internalEndpointCloudObjectStorage.doesObjectExist(getBucketName(), objectName)) {
+            throw new FileNotFoundException("File dose not exist, object name " + objectName);
+        }
+        try {
+            return internalEndpointCloudObjectStorage.getObject(getBucketName(), objectName)
+                    .getAbortableContent();
+        } catch (Exception exception) {
+            log.warn("get object failed, objectName={}", objectName, exception);
+            throw new IOException(exception);
+        }
+    }
+
     /**
      * 文件上传方法，为了保证性能，如果文件大小小于10MB使用简单上传，如果文件大小大于10MB则使用分片上传功能
      *
