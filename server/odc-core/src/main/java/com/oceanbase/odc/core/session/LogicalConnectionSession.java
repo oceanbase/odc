@@ -16,7 +16,6 @@
 package com.oceanbase.odc.core.session;
 
 import java.io.IOException;
-import java.util.Date;
 
 import com.oceanbase.odc.core.datasource.DataSourceFactory;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
