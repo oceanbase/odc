@@ -315,7 +315,7 @@ public class ConnectConsoleService {
         OdcStatementCallBack statementCallBack = null;
         if (request.ifEditPLSql() && connectionSession.getConnectType() == ConnectType.OB_MYSQL) {
             statementCallBack = generateEditPLSqlODCStatementCallBackForOBMysql(sqlTuples,
-                    connectionSession, request, queryLimit, stopOnError, executeContext);
+                    connectionSession, request, queryLimit, true, executeContext);
         } else {
             statementCallBack = new OdcStatementCallBack(sqlTuples, connectionSession,
                     request.getAutoCommit(), queryLimit, stopOnError, executeContext);
