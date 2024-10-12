@@ -27,6 +27,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -35,6 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
@@ -53,6 +55,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
@@ -101,8 +104,10 @@ import com.oceanbase.odc.service.session.model.QueryTableOrViewDataReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
+import com.oceanbase.odc.service.session.util.DBSchemaExtractor;
 import com.oceanbase.odc.service.session.util.SqlRewriteUtil;
 import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
+import com.oceanbase.tools.dbbrowser.parser.result.ParsePLResult;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
@@ -127,6 +132,8 @@ public class ConnectConsoleService {
 
     public static final int DEFAULT_GET_RESULT_TIMEOUT_SECONDS = 1;
     public static final String SHOW_TABLE_COLUMN_INFO = "SHOW_TABLE_COLUMN_INFO";
+    public static final String ODC_TEMP_STORED_PROC = "_ODC_TEMP_STORED_PROC";
+
 
     @Autowired
     private ConnectSessionService sessionService;
@@ -146,6 +153,8 @@ public class ConnectConsoleService {
     private AuthenticationFacade authenticationFacade;
     @Autowired
     private OBQueryProfileManager profileManager;
+    @Autowired
+    private JdbcLockRegistry jdbcLockRegistry;
 
     public SqlExecuteResult queryTableOrViewData(@NotNull String sessionId,
             @NotNull @Valid QueryTableOrViewDataReq req) throws Exception {
@@ -303,9 +312,14 @@ public class ConnectConsoleService {
                 Objects.nonNull(request.getContinueExecutionOnError()) ? request.getContinueExecutionOnError()
                         : userConfigFacade.isContinueExecutionOnError();
         boolean stopOnError = !continueExecutionOnError;
-        OdcStatementCallBack statementCallBack = new OdcStatementCallBack(sqlTuples, connectionSession,
-                request.getAutoCommit(), queryLimit, stopOnError, executeContext);
-
+        OdcStatementCallBack statementCallBack = null;
+        if (request.ifEditPLSql() && connectionSession.getConnectType() == ConnectType.OB_MYSQL) {
+            statementCallBack = generateEditPLSqlODCStatementCallBackForOBMysql(sqlTuples,
+                    connectionSession, request, queryLimit, stopOnError, executeContext);
+        } else {
+            statementCallBack = new OdcStatementCallBack(sqlTuples, connectionSession,
+                    request.getAutoCommit(), queryLimit, stopOnError, executeContext);
+        }
         statementCallBack.setDbmsoutputMaxRows(sessionProperties.getDbmsOutputMaxRows());
 
         boolean fullLinkTraceEnabled =
@@ -621,4 +635,43 @@ public class ConnectConsoleService {
         return queryLimit;
     }
 
+    private OdcStatementCallBack generateEditPLSqlODCStatementCallBackForOBMysql(@NotEmpty List<SqlTuple> sqlTuples,
+            @NotNull ConnectionSession connectionSession, @NotNull SqlAsyncExecuteReq request, Integer queryLimit,
+            boolean stopOnError, AsyncExecuteContext context)
+            throws Exception {
+        sqlTuples = getWrappedSqlTuplesForOBMysql(sqlTuples, connectionSession, request);
+        OdcStatementCallBack statementCallBack = new OdcStatementCallBack(sqlTuples, connectionSession,
+                request.getAutoCommit(), queryLimit, stopOnError, context);
+        statementCallBack.setJdbcLockRegistry(jdbcLockRegistry);
+        return statementCallBack;
+    }
+
+    private List<SqlTuple> getWrappedSqlTuplesForOBMysql(@NotEmpty List<SqlTuple> sqlTuples,
+            @NotNull ConnectionSession connectionSession,
+            SqlAsyncExecuteReq request) throws Exception {
+        if (sqlTuples.size() != 1) {
+            throw new IllegalArgumentException("the sql for editing procedure must generate single sql tuple");
+        }
+        SqlTuple sqlTuple = sqlTuples.get(0);
+        if (sqlTuple == null) {
+            throw new IllegalArgumentException("the sql of editing procedure is null");
+        }
+        String testSql = DBSchemaExtractor.getTempPLSqlForOBMysql(sqlTuple);
+        List<SqlTuple> testSqlTuples = generateSqlTuple(
+                Collections.singletonList(new OffsetString(0, testSql)), connectionSession, request);
+        String dropTestSql = "drop procedure " + ODC_TEMP_STORED_PROC + ";";
+        List<SqlTuple> dropTestSqlTuples = generateSqlTuple(
+                Collections.singletonList(new OffsetString(0, dropTestSql)), connectionSession, request);
+        AbstractSyntaxTree ast = sqlTuple.getAst();
+        ParsePLResult parseResult = (ParsePLResult) ast.getParseResult();
+        String plName = parseResult.getPlName();
+        String dropSql = "drop procedure " + plName + ";";
+        List<SqlTuple> dropSqlTuples = generateSqlTuple(
+                Collections.singletonList(new OffsetString(0, dropSql)), connectionSession, request);
+        testSqlTuples.addAll(dropTestSqlTuples);
+        testSqlTuples.addAll(dropSqlTuples);
+        testSqlTuples.addAll(sqlTuples);
+        sqlTuples = testSqlTuples;
+        return sqlTuples;
+    }
 }

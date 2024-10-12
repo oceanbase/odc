@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.session.util;
 
+import static com.oceanbase.odc.service.session.ConnectConsoleService.ODC_TEMP_STORED_PROC;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,6 +28,9 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import javax.validation.constraints.NotNull;
+
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.common.util.StringUtils;
@@ -55,6 +60,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Rename_table_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Simple_exprContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Use_database_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
+import com.oceanbase.tools.sqlparser.obmysql.PLParser.Create_procedure_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.PLParser.IdentContext;
 import com.oceanbase.tools.sqlparser.obmysql.PLParser.Sp_call_nameContext;
 import com.oceanbase.tools.sqlparser.obmysql.PLParser.Sp_nameContext;
@@ -82,6 +88,22 @@ import lombok.NoArgsConstructor;
  * @date 2024/5/7 11:53
  */
 public class DBSchemaExtractor {
+
+    public static String getTempPLSqlForOBMysql(@NotNull SqlTuple sqlTuple) {
+        try {
+            AbstractSyntaxTree ast = sqlTuple.getAst();
+            if (ast == null) {
+                sqlTuple.initAst(AbstractSyntaxTreeFactories.getAstFactory(DialectType.OB_MYSQL, 0));
+                ast = sqlTuple.getAst();
+            }
+            OBMySQLObtainTempPLVisitor visitor = new OBMySQLObtainTempPLVisitor();
+            visitor.visit(ast.getRoot());
+            return visitor.getTempPLSql().toString();
+        } catch (Exception e) {
+            // just eat exception due to parse failed
+        }
+        throw new RuntimeException("Failed to extract schema name from sql");
+    }
 
     public static Optional<String> extractSwitchedSchemaName(List<SqlTuple> sqlTuples, DialectType dialectType) {
         Optional<String> schemaName = Optional.empty();
@@ -330,6 +352,39 @@ public class DBSchemaExtractor {
         }
 
     }
+
+    @Getter
+    private static class OBMySQLObtainTempPLVisitor extends PLParserBaseVisitor<RelationFactor> {
+
+        private final StringBuilder tempPLSql = new StringBuilder();
+
+        @Override
+        public RelationFactor visitCreate_procedure_stmt(Create_procedure_stmtContext ctx) {
+            getEachTerminalNodeTexts(ctx);
+            return null;
+        }
+
+        private void getEachTerminalNodeTexts(ParseTree ctx) {
+            for (int i = 0; i < ctx.getChildCount(); i++) {
+                ParseTree child = ctx.getChild(i);
+                if (child instanceof Sp_nameContext) {
+                    tempPLSql.append(ODC_TEMP_STORED_PROC);
+                    tempPLSql.append(" ");
+                } else {
+                    if (child.getChildCount() == 0) {
+                        if (!"<EOF>".equals(child.getText())) {
+                            tempPLSql.append(child.getText());
+                            tempPLSql.append(" ");
+                        }
+                    } else {
+                        getEachTerminalNodeTexts(child);
+                    }
+                }
+            }
+        }
+
+    }
+
 
 
     @Getter

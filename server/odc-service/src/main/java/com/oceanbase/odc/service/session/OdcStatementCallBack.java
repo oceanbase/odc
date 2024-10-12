@@ -41,6 +41,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 import java.util.function.BiPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -50,6 +51,7 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.dao.DataAccessException;
+import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.jdbc.core.StatementCallback;
 
 import com.oceanbase.jdbc.OceanBaseConnection;
@@ -65,6 +67,7 @@ import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
+import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.core.shared.model.TraceSpan;
 import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
@@ -82,6 +85,7 @@ import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.util.FullLinkTraceUtil;
 import com.oceanbase.odc.core.sql.util.OBUtils;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
 
@@ -138,6 +142,8 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
     private Integer dbmsoutputMaxRows = null;
     @Setter
     private Locale locale;
+    @Setter
+    private JdbcLockRegistry jdbcLockRegistry;
 
     public OdcStatementCallBack(@NonNull List<SqlTuple> sqls, @NonNull ConnectionSession connectionSession,
             Boolean autoCommit, Integer queryLimit) {
@@ -190,39 +196,28 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             if (this.autoCommit ^ currentAutoCommit) {
                 statement.getConnection().setAutoCommit(this.autoCommit);
             }
-            Future<Void> handle = null;
-            for (SqlTuple sqlTuple : this.sqls) {
-                if (handle != null) {
-                    try {
-                        handle.get();
-                    } catch (Exception e) {
-                        // eat exception
-                    }
+            Lock lock = null;
+            if (this.jdbcLockRegistry != null) {
+                ConnectionConfig connConfig =
+                        (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
+                Long dataSourceId = connConfig.getId();
+                String connectSchema = ConnectionSessionUtil.getConnectSchema(connectionSession);
+                lock = jdbcLockRegistry.obtain(getEditOBMysqlPLLockKey(dataSourceId, connectSchema));
+                if (!lock.tryLock(3, TimeUnit.SECONDS)) {
+                    returnVal.add(JdbcGeneralResult.failedResult(sqls.get(sqls.size() - 1),
+                            new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock")));
+                    onExecutionEnd(sqls.get(sqls.size() - 1), returnVal);
+                    return returnVal;
                 }
-                onExecutionStart(sqlTuple);
-                try {
-                    applyConnectionSettings(statement);
-                } catch (Exception e) {
-                    log.warn("Init driver statistic collect failed, reason={}", e.getMessage());
-                }
-                List<JdbcGeneralResult> executeResults;
-                if (returnVal.stream().noneMatch(r -> r.getStatus() == SqlExecuteStatus.FAILED) || !stopWhenError) {
-                    if (Thread.currentThread().isInterrupted()
-                            || ConnectionSessionUtil.isConsoleSessionKillQuery(connectionSession)) {
-                        executeResults = Collections.singletonList(JdbcGeneralResult.canceledResult(sqlTuple));
-                        onExecutionCancelled(sqlTuple, executeResults);
-                    } else {
-                        CountDownLatch latch = new CountDownLatch(1);
-                        handle = executor.submit(() -> onExecutionStartAfterMillis(sqlTuple, latch));
-                        executeResults = doExecuteSql(statement, sqlTuple, latch);
-                        onExecutionEnd(sqlTuple, executeResults);
-                    }
-                } else {
-                    executeResults = Collections.singletonList(JdbcGeneralResult.canceledResult(sqlTuple));
-                    onExecutionCancelled(sqlTuple, executeResults);
-                }
-                returnVal.addAll(executeResults);
             }
+            try {
+                doExecuteSqlTuples(statement, returnVal);
+            } finally {
+                if (lock != null) {
+                    lock.unlock();
+                }
+            }
+
             Optional<JdbcGeneralResult> failed = returnVal
                     .stream().filter(r -> r.getStatus() == SqlExecuteStatus.FAILED).findFirst();
             if (failed.isPresent()) {
@@ -247,6 +242,46 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             executor.shutdownNow();
         }
         return returnVal;
+    }
+
+    private void doExecuteSqlTuples(Statement statement, List<JdbcGeneralResult> returnVal) {
+        Future<Void> handle = null;
+        for (SqlTuple sqlTuple : this.sqls) {
+            if (handle != null) {
+                try {
+                    handle.get();
+                } catch (Exception e) {
+                    // eat exception
+                }
+            }
+            onExecutionStart(sqlTuple);
+            try {
+                applyConnectionSettings(statement);
+            } catch (Exception e) {
+                log.warn("Init driver statistic collect failed, reason={}", e.getMessage());
+            }
+            List<JdbcGeneralResult> executeResults;
+            if (returnVal.stream().noneMatch(r -> r.getStatus() == SqlExecuteStatus.FAILED) || !stopWhenError) {
+                if (Thread.currentThread().isInterrupted()
+                        || ConnectionSessionUtil.isConsoleSessionKillQuery(connectionSession)) {
+                    executeResults = Collections.singletonList(JdbcGeneralResult.canceledResult(sqlTuple));
+                    onExecutionCancelled(sqlTuple, executeResults);
+                } else {
+                    CountDownLatch latch = new CountDownLatch(1);
+                    handle = executor.submit(() -> onExecutionStartAfterMillis(sqlTuple, latch));
+                    executeResults = doExecuteSql(statement, sqlTuple, latch);
+                    onExecutionEnd(sqlTuple, executeResults);
+                }
+            } else {
+                executeResults = Collections.singletonList(JdbcGeneralResult.canceledResult(sqlTuple));
+                onExecutionCancelled(sqlTuple, executeResults);
+            }
+            returnVal.addAll(executeResults);
+        }
+    }
+
+    private String getEditOBMysqlPLLockKey(@NonNull Long dataSourceId, @NonNull String databaseName) {
+        return "edit-ob-mysql-pl-datasourceId-" + dataSourceId + "-databaseName-" + databaseName;
     }
 
     private void applyConnectionSettings(Statement statement) throws SQLException {
