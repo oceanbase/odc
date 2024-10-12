@@ -659,13 +659,13 @@ public class ConnectConsoleService {
         String testSql = DBSchemaExtractor.getTempPLSqlForOBMysql(sqlTuple);
         List<SqlTuple> testSqlTuples = generateSqlTuple(
                 Collections.singletonList(new OffsetString(0, testSql)), connectionSession, request);
-        String dropTestSql = "drop procedure " + ODC_TEMP_STORED_PROC + ";";
+        String dropTestSql = "DROP PROCEDURE IF EXISTS " + ODC_TEMP_STORED_PROC + ";";
         List<SqlTuple> dropTestSqlTuples = generateSqlTuple(
                 Collections.singletonList(new OffsetString(0, dropTestSql)), connectionSession, request);
         AbstractSyntaxTree ast = sqlTuple.getAst();
         ParsePLResult parseResult = (ParsePLResult) ast.getParseResult();
         String plName = parseResult.getPlName();
-        String dropSql = "drop procedure " + plName + ";";
+        String dropSql = "DROP PROCEDURE IF EXISTS " + plName + ";";
         List<SqlTuple> dropSqlTuples = generateSqlTuple(
                 Collections.singletonList(new OffsetString(0, dropSql)), connectionSession, request);
         testSqlTuples.addAll(dropTestSqlTuples);
