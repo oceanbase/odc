@@ -43,6 +43,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class OBOracleSessionExtension implements SessionExtensionPoint {
 
+    private final OBOracleInformationExtension obOracleInformationExtension = new OBOracleInformationExtension();
+
     @Override
     public void killQuery(Connection connection, String connectionId) {
         JdbcOperationsUtil.getJdbcOperations(connection).execute("KILL QUERY " + connectionId);
@@ -113,6 +115,10 @@ public class OBOracleSessionExtension implements SessionExtensionPoint {
 
     @Override
     public boolean setClientInfo(Connection connection, DBClientInfo clientInfo) {
+        String dbVersion = obOracleInformationExtension.getDBVersion(connection);
+        if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
+            return false;
+        }
         String SET_MODULE_TEMPLATE =
                 "BEGIN DBMS_APPLICATION_INFO.SET_MODULE(module_name => ? , action_name => ? ); DBMS_APPLICATION_INFO.SET_CLIENT_INFO(?); END";
         try (PreparedStatement pstmt = connection.prepareStatement(SET_MODULE_TEMPLATE)) {
@@ -124,11 +130,6 @@ public class OBOracleSessionExtension implements SessionExtensionPoint {
         } catch (Exception e) {
             return false;
         }
-    }
-
-    @Override
-    public boolean supportClientInfo(String dbVersion) {
-        return VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "4.0.0");
     }
 
 

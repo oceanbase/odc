@@ -30,9 +30,4 @@ public class PostgresSessionExtension extends OBMySQLSessionExtension {
         return false;
     }
 
-    @Override
-    public boolean supportClientInfo(String dbVersion) {
-        return false;
-    }
-
 }

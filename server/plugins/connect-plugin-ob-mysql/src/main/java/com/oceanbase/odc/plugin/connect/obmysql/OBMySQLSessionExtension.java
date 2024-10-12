@@ -42,6 +42,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class OBMySQLSessionExtension implements SessionExtensionPoint {
 
+    private final OBMySQLInformationExtension obMySQLInformationExtension = new OBMySQLInformationExtension();
+
     @Override
     public void killQuery(Connection connection, String connectionId) {
         JdbcOperationsUtil.getJdbcOperations(connection).execute("KILL QUERY " + connectionId);
@@ -103,6 +105,10 @@ public class OBMySQLSessionExtension implements SessionExtensionPoint {
 
     @Override
     public boolean setClientInfo(Connection connection, DBClientInfo clientInfo) {
+        String dbVersion = obMySQLInformationExtension.getDBVersion(connection);
+        if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
+            return false;
+        }
         String SET_CLIENT_INFO_SQL =
                 "call dbms_application_info.set_module(module_name => ?, action_name => ? );call dbms_application_info.set_client_info(?); ";
         try (PreparedStatement pstmt = connection.prepareStatement(SET_CLIENT_INFO_SQL)) {
@@ -116,8 +122,4 @@ public class OBMySQLSessionExtension implements SessionExtensionPoint {
         }
     }
 
-    @Override
-    public boolean supportClientInfo(String dbVersion) {
-        return VersionUtils.isGreaterThanOrEqualsTo(dbVersion, "4.0.0");
-    }
 }

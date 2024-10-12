@@ -40,5 +40,4 @@ public interface SessionExtensionPoint extends ExtensionPoint, SessionOperations
 
     boolean setClientInfo(Connection connection, DBClientInfo clientInfo);
 
-    boolean supportClientInfo(String version);
 }

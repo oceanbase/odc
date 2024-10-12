@@ -114,9 +114,5 @@ public class OracleSessionExtension extends OBOracleSessionExtension {
         }
     }
 
-    @Override
-    public boolean supportClientInfo(String dbVersion) {
-        return true;
-    }
 
 }

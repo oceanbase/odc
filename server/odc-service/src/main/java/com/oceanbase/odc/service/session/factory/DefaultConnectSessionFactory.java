@@ -196,22 +196,18 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
 
     private void setClientInfo(ConnectionSession session) {
         SessionExtensionPoint extensionPoint = ConnectionPluginUtil.getSessionExtension(session.getDialectType());
-        String dbVersion = ConnectionSessionUtil.getVersion(session);
-
-        if (extensionPoint.supportClientInfo(dbVersion)) {
-            String clientInfo = UUID.randomUUID().toString();
-            SyncJdbcExecutor consoleJdbcExecutor =
-                    session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
-            consoleJdbcExecutor.execute((ConnectionCallback<Void>) con -> {
-                boolean setSuccess = extensionPoint.setClientInfo(con,
-                        new DBClientInfo(DEFAULT_MODULE, CONNECT_SESSION_SQL_CONSOLE, clientInfo));
-                if (setSuccess) {
-                    ConnectionSessionUtil.setConsoleSessionClientInfo(session, clientInfo);
-                    log.info("Set client info completed. sid={}, clientInfo={}", session.getId(), clientInfo);
-                }
-                return null;
-            });
-        }
+        String clientInfo = UUID.randomUUID().toString();
+        SyncJdbcExecutor consoleJdbcExecutor =
+                session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
+        consoleJdbcExecutor.execute((ConnectionCallback<Void>) con -> {
+            boolean setSuccess = extensionPoint.setClientInfo(con,
+                    new DBClientInfo(DEFAULT_MODULE, CONNECT_SESSION_SQL_CONSOLE, clientInfo));
+            if (setSuccess) {
+                ConnectionSessionUtil.setConsoleSessionClientInfo(session, clientInfo);
+                log.info("Set client info completed. sid={}, clientInfo={}", session.getId(), clientInfo);
+            }
+            return null;
+        });
 
     }
 
