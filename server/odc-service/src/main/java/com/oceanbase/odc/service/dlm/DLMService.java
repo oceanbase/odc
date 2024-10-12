@@ -124,8 +124,8 @@ public class DLMService {
         List<DlmTableUnit> dlmTableUnits = findByScheduleTaskId(scheduleTaskId);
         Set<TaskStatus> collect = dlmTableUnits.stream().map(DlmTableUnit::getStatus).collect(
                 Collectors.toSet());
-        // If any table fails, the task is considered a failure.
-        if (collect.contains(TaskStatus.FAILED)) {
+        // If the tables do not exist or any table fails, the task is considered a failure.
+        if (dlmTableUnits.isEmpty() || collect.contains(TaskStatus.FAILED)) {
             return TaskStatus.FAILED;
         }
         // If any table is canceled, the task is considered canceled.
