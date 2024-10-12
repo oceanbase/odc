@@ -15,16 +15,17 @@
  */
 package com.oceanbase.odc.common.security;
 
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.json.JSONObject;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 
 public class SensitiveDataUtils {
@@ -50,9 +51,9 @@ public class SensitiveDataUtils {
             return objectMapper.writeValueAsString(rootNode);
         } catch (Exception e) {
             String message = "MESSAGE_MASK_FAILED, origin message start with " + json.substring(0, 10);
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("msg", message);
-            return jsonObject.toString();
+            Map<String, String> map = new HashMap<>();
+            map.put("msg", message);
+            return JsonUtils.toJson(map);
         }
     }
 
