@@ -16,6 +16,7 @@
 package com.oceanbase.odc.plugin.connect.obmysql;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Objects;
 
@@ -102,12 +103,13 @@ public class OBMySQLSessionExtension implements SessionExtensionPoint {
 
     @Override
     public boolean setClientInfo(Connection connection, DBClientInfo clientInfo) {
-        try {
-            String SET_CLIENT_INFO_SQL =
-                    "call dbms_application_info.SET_MODULE(module_name => '%s', action_name => '%s');call dbms_application_info.set_client_info('%s'); ";
-            String sql = String.format(SET_CLIENT_INFO_SQL, clientInfo.getModule(), clientInfo.getAction(),
-                    clientInfo.getContext());
-            JdbcOperationsUtil.getJdbcOperations(connection).execute(sql);
+        String SET_CLIENT_INFO_SQL =
+                "call dbms_application_info.set_module(module_name => ?, action_name => ? );call dbms_application_info.set_client_info(?); ";
+        try (PreparedStatement pstmt = connection.prepareStatement(SET_CLIENT_INFO_SQL)) {
+            pstmt.setString(1, clientInfo.getModule());
+            pstmt.setString(2, clientInfo.getAction());
+            pstmt.setString(3, clientInfo.getContext());
+            pstmt.execute();
             return true;
         } catch (Exception e) {
             return false;

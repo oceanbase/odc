@@ -16,6 +16,7 @@
 package com.oceanbase.odc.plugin.connect.oboracle;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Objects;
 
@@ -112,12 +113,13 @@ public class OBOracleSessionExtension implements SessionExtensionPoint {
 
     @Override
     public boolean setClientInfo(Connection connection, DBClientInfo clientInfo) {
-        try {
-            String SET_MODULE_TEMPLATE =
-                    "BEGIN DBMS_APPLICATION_INFO.SET_MODULE(module_name => '%s', action_name => '%s'); DBMS_APPLICATION_INFO.SET_CLIENT_INFO( '%s'); END";
-            String sql = String.format(SET_MODULE_TEMPLATE, clientInfo.getModule(), clientInfo.getAction(),
-                    clientInfo.getContext());
-            JdbcOperationsUtil.getJdbcOperations(connection).execute(sql);
+        String SET_MODULE_TEMPLATE =
+                "BEGIN DBMS_APPLICATION_INFO.SET_MODULE(module_name => ? , action_name => ? ); DBMS_APPLICATION_INFO.SET_CLIENT_INFO(?); END";
+        try (PreparedStatement pstmt = connection.prepareStatement(SET_MODULE_TEMPLATE)) {
+            pstmt.setString(1, clientInfo.getModule());
+            pstmt.setString(2, clientInfo.getAction());
+            pstmt.setString(3, clientInfo.getContext());
+            pstmt.execute();
             return true;
         } catch (Exception e) {
             return false;
