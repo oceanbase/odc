@@ -114,7 +114,6 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize("personal resource")
 public class ConnectSessionService {
 
-    private final Map<String, Lock> sessionId2Lock = new ConcurrentHashMap<>();
     @Autowired
     private ConnectionService connectionService;
     @Autowired
@@ -159,6 +158,9 @@ public class ConnectSessionService {
     private LogicalDatabaseService logicalDatabaseService;
     @Autowired
     private StateHostGenerator stateHostGenerator;
+    @Autowired
+    private DBSessionManageFacade dbSessionManageFacade;
+    private final Map<String, Lock> sessionId2Lock = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void init() {
@@ -419,6 +421,7 @@ public class ConnectSessionService {
         return DBSessionResp.builder()
                 .settings(settingsService.getSessionSettings(connectionSession))
                 .session(dbSessionService.currentSession(connectionSession))
+                .killCurrrentQuerySupported(dbSessionManageFacade.supportKillConsoleQuery(connectionSession))
                 .build();
     }
 

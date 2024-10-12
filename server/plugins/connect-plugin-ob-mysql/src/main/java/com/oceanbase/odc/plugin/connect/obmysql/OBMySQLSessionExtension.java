@@ -16,6 +16,7 @@
 package com.oceanbase.odc.plugin.connect.obmysql;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Objects;
 
@@ -27,6 +28,8 @@ import com.oceanbase.odc.common.util.ReflectionUtils;
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource.CloseIgnoreInvocationHandler;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
+import com.oceanbase.odc.plugin.connect.model.DBClientInfo;
+import com.oceanbase.tools.dbbrowser.util.VersionUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,6 +41,8 @@ import lombok.extern.slf4j.Slf4j;
 @Extension
 @Slf4j
 public class OBMySQLSessionExtension implements SessionExtensionPoint {
+
+    private final OBMySQLInformationExtension obMySQLInformationExtension = new OBMySQLInformationExtension();
 
     @Override
     public void killQuery(Connection connection, String connectionId) {
@@ -97,4 +102,24 @@ public class OBMySQLSessionExtension implements SessionExtensionPoint {
     public String getAlterVariableStatement(String variableScope, String variableName, String variableValue) {
         return String.format("set %s %s=%s", variableScope, variableName, variableValue);
     }
+
+    @Override
+    public boolean setClientInfo(Connection connection, DBClientInfo clientInfo) {
+        String dbVersion = obMySQLInformationExtension.getDBVersion(connection);
+        if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
+            return false;
+        }
+        String SET_CLIENT_INFO_SQL =
+                "call dbms_application_info.set_module(module_name => ?, action_name => ? );call dbms_application_info.set_client_info(?); ";
+        try (PreparedStatement pstmt = connection.prepareStatement(SET_CLIENT_INFO_SQL)) {
+            pstmt.setString(1, clientInfo.getModule());
+            pstmt.setString(2, clientInfo.getAction());
+            pstmt.setString(3, clientInfo.getContext());
+            pstmt.execute();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
 }
