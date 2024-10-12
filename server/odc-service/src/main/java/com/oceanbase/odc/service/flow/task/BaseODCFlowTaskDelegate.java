@@ -84,7 +84,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     protected ServiceTaskInstanceRepository serviceTaskRepository;
     private final CountDownLatch taskLatch = new CountDownLatch(1);
     @Getter
-    private volatile Long taskId;
+    protected volatile Long taskId;
     @Getter
     private volatile long timeoutMillis;
     @Getter
@@ -101,14 +101,14 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     @Autowired
     private FlowTaskInstanceService flowTaskInstanceService;
 
-    private void init(DelegateExecution execution) {
+    protected void init(DelegateExecution execution) {
         this.taskId = FlowTaskUtil.getTaskId(execution);
         this.timeoutMillis = getTimeoutMillis(execution);
         this.taskService.updateExecutorInfo(taskId, new ExecutorInfo(hostProperties));
         SecurityContextUtils.setCurrentUser(FlowTaskUtil.getTaskCreator(execution));
     }
 
-    private void initMonitorExecutor() {
+    protected void initMonitorExecutor() {
         ThreadFactory threadFactory = new ThreadFactoryBuilder()
                 .setNameFormat("Task-Periodically-Scheduled-%d")
                 .build();
@@ -178,6 +178,13 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
             SecurityContextUtils.clear();
             throw new ServiceTaskError(e);
         }
+        completeTask();
+    }
+
+    /**
+     * wait task finish and do the remain job
+     */
+    protected void completeTask() {
         try {
             taskLatch.await(timeoutMillis, TimeUnit.MILLISECONDS);
             if (isCancelled()) {
