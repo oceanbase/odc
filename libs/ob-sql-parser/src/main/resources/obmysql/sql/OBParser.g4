@@ -311,7 +311,7 @@ simple_expr
     | (BINARY|Plus|Minus|Tilde|Not|NOT) simple_expr
     | ROW? LeftParen expr_list RightParen
     | EXISTS? select_with_parens
-    | MATCH LeftParen column_list RightParen AGAINST LeftParen search_expr ((IN NATURAL LANGUAGE MODE (WITH QUERY EXPANSION)?) | (IN BOOLEAN MODE) | (WITH QUERY EXPANSION))? RightParen
+    | MATCH LeftParen column_list RightParen AGAINST LeftParen STRING_VALUE ((IN NATURAL LANGUAGE MODE (WITH QUERY EXPANSION)?) | (IN BOOLEAN MODE) | (WITH QUERY EXPANSION))? RightParen
     | case_expr
     | func_expr
     | window_function
@@ -449,11 +449,6 @@ case_default
     //| empty
     ;
 
-geometry_collection
-    : GEOMETRYCOLLECTION
-    | GEOMCOLLECTION
-    ;
-
 func_expr
     : func_name=COUNT LeftParen ALL? (Star|expr) RightParen # simple_func_expr
     | func_name=COUNT LeftParen (DISTINCT|UNIQUE) expr_list RightParen # simple_func_expr
@@ -514,8 +509,6 @@ func_expr
     | func_name=ST_ASMVT LeftParen column_ref Comma mvt_param Comma mvt_param RightParen # simple_func_expr
     | func_name=ST_ASMVT LeftParen column_ref Comma mvt_param Comma mvt_param Comma mvt_param RightParen # simple_func_expr
     | func_name=ST_ASMVT LeftParen column_ref Comma mvt_param Comma mvt_param Comma mvt_param Comma mvt_param RightParen # simple_func_expr
-    | func_name=geometry_collection LeftParen expr_list RightParen # simple_func_expr
-    | func_name=geometry_collection LeftParen RightParen # simple_func_expr
     | func_name=UnderlineST_ASMVT LeftParen column_ref RightParen # simple_func_expr
     | func_name=UnderlineST_ASMVT LeftParen column_ref Comma mvt_param RightParen # simple_func_expr
     | func_name=UnderlineST_ASMVT LeftParen column_ref Comma mvt_param Comma mvt_param RightParen # simple_func_expr
@@ -1048,7 +1041,7 @@ match_action
 column_definition
     : column_definition_ref data_type opt_column_attribute_list? (REFERENCES relation_factor LeftParen column_name_list RightParen opt_match_option opt_reference_option_list)? (FIRST | (BEFORE column_name) | (AFTER column_name))?
     | column_definition_ref data_type (GENERATED opt_generated_option_list)? AS LeftParen expr RightParen (VIRTUAL | STORED)? opt_generated_column_attribute_list? (REFERENCES relation_factor LeftParen column_name_list RightParen opt_match_option opt_reference_option_list)? (FIRST | (BEFORE column_name) | (AFTER column_name))?
-    | column_definition_ref SERIAL column_attribute_list? (FIRST | (BEFORE column_name) | (AFTER column_name))?
+    | column_definition_ref SERIAL opt_column_attribute_list? (FIRST | (BEFORE column_name) | (AFTER column_name))?
     ;
 
 opt_generated_option_list
@@ -1297,6 +1290,10 @@ signed_literal
     : literal
     | Plus number_literal
     | Minus number_literal
+    ;
+
+opt_comma
+    : Comma?
     ;
 
 table_option_list_space_seperated
@@ -1682,7 +1679,7 @@ external_file_format
     | format_key=SKIP_HEADER COMP_EQ INTNUM
     | format_key=(SKIP_BLANK_LINES|TRIM_SPACE|EMPTY_FIELD_AS_NULL) COMP_EQ BOOL_VALUE
     | format_key=NULL_IF_EXETERNAL COMP_EQ LeftParen expr_list RightParen
-    | format_key=| COMPRESSION COMP_EQ compression_name
+    | format_key=COMPRESSION COMP_EQ compression_name
     ;
 
 create_tablegroup_stmt
@@ -3057,7 +3054,7 @@ user_list
     ;
 
 create_role_stmt
-    : create_with_opt_hint ROLE (IF not EXISTS)? role_list
+    : CREATE ROLE (IF not EXISTS)? role_list
     ;
 
 role_list
@@ -3236,7 +3233,7 @@ role_or_priv_list
     ;
 
 role_or_priv
-    | role_with_host
+    : role_with_host
     | ALTER TENANT?
     | CREATE (RESOURCE POOL|USER?)
     | DELETE
