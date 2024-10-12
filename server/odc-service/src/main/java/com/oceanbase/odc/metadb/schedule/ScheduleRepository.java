@@ -49,6 +49,8 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
             + "where id=:id", nativeQuery = true)
     int updateStatusById(@Param("id") Long id, @Param("status") ScheduleStatus status);
 
+    Long countByStatus(ScheduleStatus status);
+
     @Transactional
     @Modifying
     @Query(value = "update schedule_schedule set job_parameters_json = :jobParametersJson "
