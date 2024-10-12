@@ -39,8 +39,8 @@ import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.monitor.task.job.JobMonitorListener;
 import com.oceanbase.odc.service.common.util.AlarmHelper;
+import com.oceanbase.odc.service.monitor.task.job.JobMonitorListener;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
@@ -174,16 +174,12 @@ public class StdJobScheduler implements JobScheduler {
             configuration.getJobDispatcher().stop(JobIdentity.of(jobEntity.getId()));
         } catch (JobException e) {
             log.warn("Stop job occur error: ", e);
-            Map<String, Object> eventMessageWithJob = AlarmHelper.buildAlarmMessageWithJob(jobEntity.getId());
-            String eventName =
-                    eventMessageWithJob.get(AlarmUtils.TASK_TYPE_NAME) + "_" + AlarmEventNames.TASK_CANCELED_FAILED;
-            Map<String, Object> eventMessage = AlarmUtils.createAlarmMessageBuilder()
-                    .item(AlarmUtils.ALARM_TARGET_NAME, eventName)
-                    .item(AlarmUtils.ORGANIZATION_NAME, jobEntity.getOrganizationId())
-                    .item(AlarmUtils.MESSAGE_NAME,
-                            MessageFormat.format("Cancel job failed, message={0}", e.getMessage()))
-                    .build();
-            eventMessage.putAll(eventMessageWithJob);
+            Map<String, Object> eventMessage = AlarmHelper.buildAlarmMessageWithJob(jobEntity.getId());
+            String eventName = eventMessage.get(AlarmUtils.TASK_TYPE_NAME) + "_" + AlarmEventNames.TASK_CANCELED_FAILED;
+            eventMessage.put(AlarmUtils.ALARM_TARGET_NAME, eventName);
+            eventMessage.put(AlarmUtils.ORGANIZATION_NAME, jobEntity.getOrganizationId());
+            eventMessage.put(AlarmUtils.MESSAGE_NAME,
+                    MessageFormat.format("Cancel job failed, message={0}", e.getMessage()));
             AlarmUtils.alarm(eventName, eventMessage);
             throw new TaskRuntimeException(e);
         }

@@ -82,18 +82,15 @@ public class DestroyExecutorJob implements Job {
                     log.warn("Destroy executor occur error, jobId={}: ", lockedEntity.getId(), e);
                     if (e.getMessage() != null &&
                             !e.getMessage().startsWith(JobConstants.ODC_EXECUTOR_CANNOT_BE_DESTROYED)) {
-                        Map<String, Object> eventMessageWithJob =
+                        Map<String, Object> eventMessage =
                                 AlarmHelper.buildAlarmMessageWithJob(jobEntity.getId());
-                        String eventName = eventMessageWithJob.get(AlarmUtils.TASK_TYPE_NAME) + "_"
+                        String eventName = eventMessage.get(AlarmUtils.TASK_TYPE_NAME) + "_"
                                 + AlarmEventNames.TASK_EXECUTOR_DESTROY_FAILED;
-                        Map<String, Object> eventMessage = AlarmUtils.createAlarmMessageBuilder()
-                                .item(AlarmUtils.ALARM_TARGET_NAME, eventName)
-                                .item(AlarmUtils.ORGANIZATION_NAME, jobEntity.getOrganizationId())
-                                .item(AlarmUtils.MESSAGE_NAME,
-                                        MessageFormat.format("Job executor destroy failed, message={0}",
-                                                e.getMessage()))
-                                .build();
-                        eventMessage.putAll(eventMessageWithJob);
+                        eventMessage.put(AlarmUtils.ALARM_TARGET_NAME, eventName);
+                        eventMessage.put(AlarmUtils.ORGANIZATION_NAME, jobEntity.getOrganizationId());
+                        eventMessage.put(AlarmUtils.MESSAGE_NAME,
+                                MessageFormat.format("Job executor destroy failed, message={0}",
+                                        e.getMessage()));
                         AlarmUtils.alarm(eventName, eventMessage);
                     }
                     throw new TaskRuntimeException(e);
