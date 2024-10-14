@@ -86,34 +86,55 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
         }
     }
 
+    /**
+     * 处理 SQL 异步执行请求
+     *
+     * @param request  SQL 异步执行请求
+     * @param response SQL 异步执行响应
+     * @param session  数据库连接会话
+     * @param context  上下文信息
+     * @return 处理结果，true 表示处理成功，false 表示处理失败
+     */
     private boolean handle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
-            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
+        @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
+        // 判断当前用户所属组织类型和是否需要进行 SQL 检查
         if (this.authenticationFacade.currentUser().getOrganizationType() != OrganizationType.TEAM
-                || Boolean.FALSE.equals(context.get(NEED_SQL_CHECK_KEY))) {
+            || Boolean.FALSE.equals(context.get(NEED_SQL_CHECK_KEY))) {
             // 个人组织下不检查
             return true;
         }
+        // 获取规则集 ID
         Long ruleSetId = ConnectionSessionUtil.getRuleSetId(session);
         if (ruleSetId == null) {
             return true;
         }
+        // 获取所有规则
         List<Rule> rules = this.ruleService.listAllFromCache(ruleSetId);
+        // 获取 SQL 检查规则
         List<SqlCheckRule> sqlCheckRules = this.sqlCheckService.getRules(rules, session);
         if (CollectionUtils.isEmpty(sqlCheckRules)) {
             return true;
         }
+        // 创建 SQL 检查器
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(session.getDialectType(), null, sqlCheckRules);
         try {
+            // 存储偏移量和违规信息的映射关系
             Map<Integer, List<CheckViolation>> offset2Violations = new HashMap<>();
+            // 创建 SQL 检查上下文
             SqlCheckContext checkContext = new SqlCheckContext((long) response.getSqls().size());
+            // 遍历 SQL 语句列表，进行 SQL 检查
             response.getSqls().forEach(v -> {
                 List<CheckViolation> violations = sqlChecker.check(checkContext,
-                        Collections.singletonList(v.getSqlTuple()));
+                    Collections.singletonList(v.getSqlTuple()));
+                // 填充风险级别并设置违规信息
                 fullFillRiskLevelAndSetViolation(violations, rules, response);
+                // 将违规信息按偏移量存储到映射关系中
                 violations
-                        .forEach(c -> offset2Violations.computeIfAbsent(c.getOffset(), k -> new ArrayList<>()).add(c));
+                    .forEach(c -> offset2Violations.computeIfAbsent(c.getOffset(), k -> new ArrayList<>()).add(c));
             });
+            // 将映射关系存储到上下文中
             context.put(SQL_CHECK_RESULT_KEY, offset2Violations);
+            // 判断是否有违规 SQL 语句
             return response.getSqls().stream().noneMatch(v -> {
                 if (CollectionUtils.isEmpty(v.getViolatedRules())) {
                     return false;
