@@ -491,8 +491,6 @@ func_expr
     | WEIGHT_STRING LeftParen expr (AS CHARACTER ws_nweights)? (LEVEL ws_level_list_or_range)? RightParen # complex_func_expr
     | WEIGHT_STRING LeftParen expr AS BINARY ws_nweights RightParen # complex_func_expr
     | WEIGHT_STRING LeftParen expr Comma INTNUM Comma INTNUM Comma INTNUM Comma INTNUM RightParen # complex_func_expr
-    | json_extract_unquote_expr # complex_func_expr
-    | json_extract_expr # complex_func_expr
     | json_value_expr # complex_func_expr
     | json_query_expr # complex_func_expr
     | vector_distance_expr # complex_func_expr
@@ -1862,7 +1860,7 @@ index_option
     | COMMENT STRING_VALUE
     | (STORING|CTXCAT) LeftParen column_name_list RightParen
     | WITH ROWID
-    | WITH PARSER relation_name
+    | WITH PARSER STRING_VALUE
     | WITH LeftParen vec_index_params RightParen
     | index_using_algorithm
     | visibility_option
@@ -4473,14 +4471,6 @@ vec_index_param_value
 
 json_query_expr
     : JSON_QUERY LeftParen simple_expr Comma complex_string_literal (RETURNING cast_data_type)? TRUNCATE? ((ALLOW SCALARS) | (DISALLOW SCALARS))? PRETTY? ASCII? ((WITHOUT WRAPPER) | (WITHOUT ARRAY WRAPPER) | (WITH WRAPPER) | (WITH ARRAY WRAPPER) | (WITH UNCONDITIONAL WRAPPER) | (WITH CONDITIONAL WRAPPER) | (WITH UNCONDITIONAL ARRAY WRAPPER) | (WITH CONDITIONAL ARRAY WRAPPER))? ASIS? (on_empty_query | on_error_query | on_mismatch_query | (on_error_query on_empty_query) | (on_empty_query on_error_query) | (on_error_query on_mismatch_query) | (on_empty_query on_mismatch_query) | (on_error_query on_empty_query on_mismatch_query) | (on_empty_query on_error_query on_mismatch_query))? MULTIVALUE? RightParen
-    ;
-
-json_extract_unquote_expr
-    : column_definition_ref JSON_EXTRACT_UNQUOTED complex_string_literal
-    ;
-
-json_extract_expr
-    : column_definition_ref JSON_EXTRACT complex_string_literal
     ;
 
 opt_response_query

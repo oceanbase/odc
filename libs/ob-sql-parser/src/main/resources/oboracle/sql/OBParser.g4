@@ -530,15 +530,6 @@ in_expr
 
 case_expr
     : CASE (bit_expr simple_when_clause_list|bool_when_clause_list) case_default END CASE?
-    | CASE WHEN (case_when_expr_after|case_when_expr_after_end_case)
-    ;
-
-case_when_expr_after_end_case
-    : case_when_expr_after CASE
-    ;
-
-case_when_expr_after
-    : bool_when_clause_list case_default END
     ;
 
 window_function
@@ -665,11 +656,11 @@ simple_when_clause
     ;
 
 bool_when_clause_list
-    : bool_when_clause+ (WHEN bool_when_clause)*
+    : bool_when_clause+
     ;
 
 bool_when_clause
-    : expr THEN bit_expr
+    : WHEN expr THEN bit_expr
     ;
 
 case_default
@@ -741,7 +732,7 @@ environment_id_function
     ;
 
 aggregate_function
-    : funcName=APPROX_COUNT_DISTINCT LeftParen (DISTINCT)? DISTINCT expr_list RightParen
+    : funcName=APPROX_COUNT_DISTINCT LeftParen DISTINCT? expr_list RightParen
     | funcName=APPROX_COUNT_DISTINCT_SYNOPSIS LeftParen expr_list RightParen
     | funcName=APPROX_COUNT_DISTINCT_SYNOPSIS_MERGE LeftParen bit_expr RightParen
     | funcName=SUM LeftParen (ALL | DISTINCT | UNIQUE)? bit_expr RightParen
@@ -2798,7 +2789,7 @@ table_reference
 
 table_factor
     : tbl_name
-    | LATERAL? table_subquery
+    | (LATERAL)? table_subquery
     | LeftParen table_reference RightParen
     | TABLE LeftParen (select_no_parens|simple_expr) RightParen relation_name?
     | select_function relation_name?
@@ -4528,7 +4519,7 @@ cancel_transfer_partition_clause
     ;
 
 service_name_stmt
-    : alter_with_opt_hint SYSTEM service_op SERVICE relation_name tenant_name?
+    : ALTER SYSTEM service_op SERVICE relation_name tenant_name?
     ;
 
 service_op

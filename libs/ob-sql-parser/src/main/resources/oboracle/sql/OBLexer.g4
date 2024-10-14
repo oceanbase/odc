@@ -28,15 +28,8 @@ PQ_DISTINCT
     : P Q '_' D I S T I N C T
     ;
 
-XMLSEQUENCE
-    : X M L S E Q U E N C E
-    ;
-
 NO_MV_REWRITE
     : N O '_' M V '_' R E W R I T E
-    ;
-INSERTCHILDXML
-    : I N S E R T C H I L D X M L
     ;
 
 INDEXTYPE
@@ -99,14 +92,6 @@ COMPRESSION_CODE
     : C O M P R E S S I O N '_' C O D E
     ;
 
-NOWAIT
-    : N O W A I T
-    ;
-
-SDO_GEOMETRY
-    : S D O '_' G E O M E T R Y
-    ;
-
 MULTIVALUE
     : M U L T I V A L U E
     ;
@@ -131,10 +116,6 @@ BUFFER_SIZE
     : B U F F E R '_' S I Z E
     ;
 
-REF
-    : R E F
-    ;
-
 PROPERTIES
     : P R O P E R T I E S
     ;
@@ -143,16 +124,8 @@ ATTRIBUTE
     : A T T R I B U T E
     ;
 
-TRANSFER
-    : T R A N S F E R
-    ;
-
 USER_SPECIFIED
     : U S E R '_' S P E C I F I E D
-    ;
-
-XMLNAMESPACES
-    : X M L N A M E S P A C E S
     ;
 
 THROUGH
@@ -211,10 +184,6 @@ SPATIAL_MBR
     : S P A T I A L '_' M B R
     ;
 
-DELETEXML
-    : D E L E T E X M L
-    ;
-
 LAST_REFRESH_SCN
     : L A S T '_' R E F R E S H '_' S C N
     ;
@@ -223,16 +192,8 @@ COALESCE_AGGR
     : C O A L E S C E '_' A G G R
     ;
 
-XMLTABLE
-    : X M L T A B L E
-    ;
-
 RESOURCE_GROUP
     : R E S O U R C E '_' G R O U P
-    ;
-
-OBJECT_ID
-    : O B J E C T '_' I D
     ;
 
 SDO_RELATE
@@ -241,10 +202,6 @@ SDO_RELATE
 
 MAX_FILE_SIZE
     : M A X '_' F I L E '_' S I Z E
-    ;
-
-LATERAL
-    : L A T E R A L
     ;
 
 SRID
