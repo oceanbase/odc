@@ -179,7 +179,8 @@ public class StdJobScheduler implements JobScheduler {
             eventMessage.put(AlarmUtils.ALARM_TARGET_NAME, eventName);
             eventMessage.put(AlarmUtils.ORGANIZATION_NAME, jobEntity.getOrganizationId());
             eventMessage.put(AlarmUtils.MESSAGE_NAME,
-                    MessageFormat.format("Cancel job failed, message={0}", e.getMessage()));
+                    MessageFormat.format("Cancel job failed, jobId={0}, message={1}", jobEntity.getId(),
+                            e.getMessage()));
             AlarmUtils.alarm(eventName, eventMessage);
             throw new TaskRuntimeException(e);
         }

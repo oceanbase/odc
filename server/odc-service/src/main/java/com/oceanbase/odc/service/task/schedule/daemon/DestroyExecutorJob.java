@@ -89,8 +89,8 @@ public class DestroyExecutorJob implements Job {
                         eventMessage.put(AlarmUtils.ALARM_TARGET_NAME, eventName);
                         eventMessage.put(AlarmUtils.ORGANIZATION_NAME, jobEntity.getOrganizationId());
                         eventMessage.put(AlarmUtils.MESSAGE_NAME,
-                                MessageFormat.format("Job executor destroy failed, message={0}",
-                                        e.getMessage()));
+                                MessageFormat.format("Job executor destroy failed, jobId={0}, message={1}",
+                                        lockedEntity.getId(), e.getMessage()));
                         AlarmUtils.alarm(eventName, eventMessage);
                     }
                     throw new TaskRuntimeException(e);

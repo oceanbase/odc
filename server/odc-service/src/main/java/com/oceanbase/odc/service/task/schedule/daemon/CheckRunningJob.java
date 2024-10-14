@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.task.schedule.daemon;
 
+import java.text.MessageFormat;
 import java.util.Map;
 
 import org.quartz.DisallowConcurrentExecution;
@@ -116,7 +117,8 @@ public class CheckRunningJob implements Job {
                         + AlarmEventNames.TASK_HEARTBEAT_TIMEOUT;
                 eventMessage.put(AlarmUtils.ALARM_TARGET_NAME, eventName);
                 eventMessage.put(AlarmUtils.ORGANIZATION_NAME, jobEntity.getOrganizationId());
-                eventMessage.put(AlarmUtils.MESSAGE_NAME, "Job running failed due to heart timeout");
+                eventMessage.put(AlarmUtils.MESSAGE_NAME,
+                        MessageFormat.format("Job running failed due to heart timeout, jobId={0}", a.getId()));
                 AlarmUtils.alarm(eventName, eventMessage);
             } else {
                 throw new TaskRuntimeException("Set job status to FAILED failed, jobId=" + jobEntity.getId());

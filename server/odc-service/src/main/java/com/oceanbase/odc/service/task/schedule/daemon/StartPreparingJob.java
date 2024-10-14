@@ -117,8 +117,9 @@ public class StartPreparingJob implements Job {
                             + AlarmEventNames.TASK_START_FAILED;
                     eventMessage.put(AlarmUtils.ALARM_TARGET_NAME, eventName);
                     eventMessage.put(AlarmUtils.ORGANIZATION_NAME, jobEntity.getOrganizationId());
-                    eventMessage.put(AlarmUtils.MESSAGE_NAME, MessageFormat.format("Start job failed, message={0}",
-                            e.getMessage()));
+                    eventMessage.put(AlarmUtils.MESSAGE_NAME,
+                            MessageFormat.format("Start job failed, jobId={0}, message={1}", lockedEntity.getId(),
+                                    e.getMessage()));
                     AlarmUtils.alarm(eventName, eventMessage);
                     throw new TaskRuntimeException(e);
                 }

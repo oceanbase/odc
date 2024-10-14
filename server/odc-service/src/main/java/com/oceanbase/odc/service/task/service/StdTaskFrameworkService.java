@@ -340,7 +340,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                     eventMessage.put(AlarmUtils.ALARM_TARGET_NAME, eventName);
                     eventMessage.put(AlarmUtils.ORGANIZATION_NAME, je.getOrganizationId());
                     eventMessage.put(AlarmUtils.MESSAGE_NAME,
-                            MessageFormat.format("Job execution failed, resultJson={0}",
+                            MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}",
+                                    taskResult.getJobIdentity().getId(),
                                     SensitiveDataUtils.mask(taskResult.getResultJson())));
                     AlarmUtils.alarm(eventName, eventMessage);
                 }
@@ -444,8 +445,10 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                         + AlarmEventNames.TASK_EXECUTION_FAILED;
                 eventMessage.put(AlarmUtils.ALARM_TARGET_NAME, eventName);
                 eventMessage.put(AlarmUtils.ORGANIZATION_NAME, je.getOrganizationId());
-                eventMessage.put(AlarmUtils.MESSAGE_NAME, MessageFormat.format("Job execution failed, resultJson={0}",
-                        SensitiveDataUtils.mask(result.getResultJson())));
+                eventMessage.put(AlarmUtils.MESSAGE_NAME,
+                        MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}",
+                                result.getJobIdentity().getId(),
+                                SensitiveDataUtils.mask(result.getResultJson())));
                 AlarmUtils.alarm(eventName, eventMessage);
             }
         }
