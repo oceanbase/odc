@@ -62,16 +62,28 @@ public class VersionDiffConfigService {
         return getDatatypeList(connectionSession, COLUMN_DATA_TYPE);
     }
 
+    /**
+     * 获取数据类型列表
+     *
+     * @param connectionSession 数据库连接会话
+     * @param configKey         配置项键值
+     * @return 数据类型列表
+     */
     public List<DataTypeUnit> getDatatypeList(@NonNull ConnectionSession connectionSession, String configKey) {
         List<DataTypeUnit> datatypes = new ArrayList<>();
 
+        // 创建版本差异配置对象
         VersionDiffConfig config = new VersionDiffConfig();
         config.setConfigKey(configKey);
+        // 设置数据库模式
         config.setDbMode(getDbMode(connectionSession));
+        // 查询版本差异配置列表
         List<VersionDiffConfig> list = this.versionDiffConfigDAO.query(config);
 
+        // 获取当前版本
         String currentVersion = ConnectionSessionUtil.getVersion(connectionSession);
         for (VersionDiffConfig diffConfig : list) {
+            // 如果当前版本大于等于最小版本
             if (VersionUtils.isGreaterThanOrEqualsTo(currentVersion, diffConfig.getMinVersion())) {
                 String configValues = diffConfig.getConfigValue();
                 String[] arrays = configValues.split(",");
@@ -81,9 +93,10 @@ public class VersionDiffConfigService {
                     dataTypeUnit.setDatabaseType(segs[0].trim());
                     dataTypeUnit.setShowType(segs[1].trim());
                     // oracle mode，date类型默认展示DATE时间组件，如果是有时分秒格式，则展示TIMESTAMP组件
+                    // oracle模式，日期类型默认展示DATE时间组件，如果是有时分秒格式，则展示TIMESTAMP组件
                     if (connectionSession.getDialectType() == DialectType.OB_ORACLE
-                            && dataTypeUnit.getShowType().equalsIgnoreCase("DATE")
-                            && this.isHourFormat(connectionSession)) {
+                        && dataTypeUnit.getShowType().equalsIgnoreCase("DATE")
+                        && this.isHourFormat(connectionSession)) {
                         dataTypeUnit.setShowType("TIMESTAMP");
                     }
                     datatypes.add(dataTypeUnit);

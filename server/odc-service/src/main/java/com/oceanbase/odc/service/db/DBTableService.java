@@ -136,16 +136,25 @@ public class DBTableService {
                 }).collect(Collectors.toList());
     }
 
+    /**
+     * 生成创建表的DDL语句
+     *
+     * @param session 数据库连接会话
+     * @param table   数据库表对象
+     * @return 生成表的DDL语句和表的身份信息
+     */
     public GenerateTableDDLResp generateCreateDDL(@NotNull ConnectionSession session, @NotNull DBTable table) {
+        // 通过同步JDBC执行器获取数据库连接，并执行获取表的扩展点的生成DDL语句的方法
         String ddl = session.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<String>) con -> getTableExtensionPoint(session).generateCreateDDL(con,
-                        table));
+            .execute((ConnectionCallback<String>) con -> getTableExtensionPoint(session).generateCreateDDL(con,
+                table));
+        // 构建生成表的DDL语句和表的身份信息的响应对象
         return GenerateTableDDLResp.builder()
-                .sql(ddl)
-                .currentIdentity(TableIdentity.of(table.getSchemaName(), table.getName()))
-                .previousIdentity(TableIdentity.of(table.getSchemaName(), table.getName()))
-                .build();
+            .sql(ddl)
+            .currentIdentity(TableIdentity.of(table.getSchemaName(), table.getName()))
+            .previousIdentity(TableIdentity.of(table.getSchemaName(), table.getName()))
+            .build();
     }
 
     public GenerateTableDDLResp generateUpdateDDL(@NotNull ConnectionSession session,

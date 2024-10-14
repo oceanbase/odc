@@ -81,52 +81,72 @@ public abstract class DBTableEditor implements DBObjectEditor<DBTable> {
     }
 
     @Override
+    /**
+     * 生成创建对象的DDL语句
+     * @param table 数据库表对象
+     * @return 返回创建对象的DDL语句
+     */
     public String generateCreateObjectDDL(@NotNull DBTable table) {
+        // 填充模式名称和表名称
         fillSchemaNameAndTableName(table);
+        // 创建SQL构建器
         SqlBuilder sqlBuilder = sqlBuilder();
+        // 添加创建表的语句
         sqlBuilder.append("CREATE TABLE ").append(getFullyQualifiedTableName(table))
-                .append(" (").line();
+            .append(" (").line();
         boolean isFirstSentence = true;
+        // 遍历表的列
         for (DBTableColumn column : table.getColumns()) {
             if (!isFirstSentence) {
                 sqlBuilder.append(",").line();
             }
             isFirstSentence = false;
+            // 生成创建列的DDL语句
             sqlBuilder.append(columnEditor.generateCreateDefinitionDDL(column));
         }
+        // 如果创建表时需要创建索引，则遍历表的索引
         if (createIndexWhenCreatingTable()) {
             for (DBTableIndex index : excludePrimaryKeyIndex(table.getIndexes(), table.getConstraints())) {
                 if (!isFirstSentence) {
                     sqlBuilder.append(",").line();
                 }
                 isFirstSentence = false;
+                // 生成创建索引的DDL语句
                 sqlBuilder.append(indexEditor.generateCreateDefinitionDDL(index));
             }
         }
+        // 遍历表的约束
         for (DBTableConstraint constraint : excludeUniqueConstraint(table.getIndexes(), table.getConstraints())) {
             if (!isFirstSentence) {
                 sqlBuilder.append(",").line();
             }
             isFirstSentence = false;
+            // 生成创建约束的DDL语句
             sqlBuilder.append(constraintEditor.generateCreateDefinitionDDL(constraint));
         }
+        // 添加表的选项
         sqlBuilder.line().append(") ");
         appendTableOptions(table, sqlBuilder);
+        // 如果表有分区，则生成创建分区的DDL语句
         if (Objects.nonNull(table.getPartition())) {
             sqlBuilder.append(partitionEditor.generateCreateDefinitionDDL(table.getPartition()));
         }
+        // 如果表有列组，则生成创建列组的DDL语句
         if (CollectionUtils.isNotEmpty(table.getColumnGroups())) {
             sqlBuilder.append(" WITH COLUMN GROUP(")
-                    .append(table.getColumnGroups().stream().map(DBColumnGroupElement::toString)
-                            .collect(Collectors.joining(",")))
-                    .append(")");
+                .append(table.getColumnGroups().stream().map(DBColumnGroupElement::toString)
+                    .collect(Collectors.joining(",")))
+                .append(")");
         }
+        // 添加分号和换行符
         sqlBuilder.append(";\n");
+        // 添加表的注释
         appendTableComment(table, sqlBuilder);
+        // 添加列的注释
         appendColumnComment(table, sqlBuilder);
+        // 返回创建对象的DDL语句
         return sqlBuilder.toString();
     }
-
     protected abstract void appendColumnComment(DBTable table, SqlBuilder sqlBuilder);
 
     protected abstract void appendTableComment(DBTable table, SqlBuilder sqlBuilder);
