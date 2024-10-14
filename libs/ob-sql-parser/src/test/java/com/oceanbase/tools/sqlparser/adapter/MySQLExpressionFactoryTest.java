@@ -17,9 +17,11 @@ package com.oceanbase.tools.sqlparser.adapter;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import com.oceanbase.tools.sqlparser.statement.expression.ArrayExpression;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -1414,6 +1416,50 @@ public class MySQLExpressionFactoryTest {
         expect.setCaseDefault(new ConstExpression("33"));
         Assert.assertEquals(expect, actual);
     }
+
+    @Test
+    public void generate_vectorDistanceExpr_Succeed() {
+        ExprContext context = getExprContext("VECTOR_DISTANCE(vector1, vector2)");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        params.add(new ExpressionParam(new ColumnReference(null, null, "vector1")));
+        params.add(new ExpressionParam(new ColumnReference(null, null, "vector2")));
+        FunctionCall expected = new FunctionCall("VECTOR_DISTANCE", params);
+        Assert.assertEquals(expected, actual);
+    }
+
+    @Test
+    public void generate_ArrayExpr_1_Succeed() {
+        ExprContext context = getExprContext("\"hel\" = ANY([\"hello\", \"hi\"])");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+        ConstExpression left = new ConstExpression("\"hel\"");
+        CollectionExpression right = new CollectionExpression();
+        ArrayExpression arrayExpression = new ArrayExpression(Arrays.asList(new ConstExpression("\"hello\""), new ConstExpression("\"hi\"")));
+        right.addExpression(arrayExpression);
+        CompoundExpression expected = new CompoundExpression(left, right, Operator.EQ);
+        Assert.assertEquals(expected, actual);
+    }
+
+    @Test
+    public void generate_ArrayExpr_2_Succeed() {
+        ExprContext context = getExprContext("[3,4] = ANY([[1,2],[3,4]])");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+        ArrayExpression left = new ArrayExpression(Arrays.asList(new ConstExpression("3"), new ConstExpression("4")));
+        CollectionExpression right = new CollectionExpression();
+        ArrayExpression arrayExpression1 =
+            new ArrayExpression(Arrays.asList(new ConstExpression("1"), new ConstExpression("2")));
+        ArrayExpression arrayExpression2 =
+            new ArrayExpression(Arrays.asList(new ConstExpression("3"), new ConstExpression("4")));
+        ArrayExpression arrayExpression = new ArrayExpression(Arrays.asList(arrayExpression1, arrayExpression2));
+        right.addExpression(arrayExpression);
+        CompoundExpression expected = new CompoundExpression(left, right, Operator.EQ);
+        Assert.assertEquals(expected, actual);
+    }
+
 
     private ExprContext getExprContext(String expr) {
         OBLexer lexer = new OBLexer(CharStreams.fromString(expr));

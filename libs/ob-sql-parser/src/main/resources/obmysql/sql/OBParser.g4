@@ -279,7 +279,7 @@ bool_pri
     | bool_pri IS not? NULLX
     | bool_pri (COMP_GE|COMP_GT|COMP_LE|COMP_LT|COMP_NE) (ALL|ANY|SOME) select_with_parens
     | bool_pri (COMP_EQ|COMP_GE|COMP_GT|COMP_LE|COMP_LT|COMP_NE) (ALL|ANY|SOME) LeftParen select_no_parens RightParen
-    | bool_pri PARSER_SYNTAX_ERROR (ALL|ANY|SOME) any_expr
+    | bool_pri (COMP_EQ|COMP_GE|COMP_GT|COMP_LE|COMP_LT|COMP_NE) (ALL|ANY|SOME) any_expr
     ;
 
 
@@ -319,6 +319,8 @@ simple_expr
     | USER_VARIABLE
     | column_definition_ref (JSON_EXTRACT|JSON_EXTRACT_UNQUOTED) complex_string_literal
     | relation_name Dot relation_name (Dot relation_name)? USER_VARIABLE
+    | ARRAY LeftParen expr_list RightParen
+    | LeftBracket expr_list RightBracket
     ;
 
 search_expr
@@ -514,8 +516,6 @@ func_expr
     | func_name=UnderlineST_ASMVT LeftParen column_ref Comma mvt_param Comma mvt_param Comma mvt_param Comma mvt_param RightParen # simple_func_expr
     | func_name=LAST_REFRESH_SCN LeftParen INTNUM RightParen # simple_func_expr
     | func_name=SUM_OPNSIZE LeftParen expr RightParen # simple_func_expr
-    | func_name=ARRAY LeftParen expr_list RightParen # simple_func_expr
-    | func_name=LeftBracket expr_list RightBracket # simple_func_expr
     | func_name=RB_BUILD_AGG LeftParen expr RightParen # simple_func_expr
     | func_name=RB_OR_AGG LeftParen expr RightParen # simple_func_expr
     | func_name=RB_AND_AGG LeftParen expr RightParen # simple_func_expr
@@ -1081,7 +1081,7 @@ cast_data_type
     | json_type_i
     | geo_type_i
     | (SIGNED|UNSIGNED) INTEGER?
-    | ROARINGBITMAP
+    | roaringbitmap_type_i
     ;
 
 get_format_unit
@@ -1120,10 +1120,10 @@ data_type
     | json_type_i
     | collection_type_i
     | geo_type_i
+    | vector_type_i
+    | roaringbitmap_type_i
     | ARRAY LeftParen data_type RightParen
     | data_type LeftBracket RightBracket
-    | VECTOR LeftParen INTNUM RightParen
-    | ROARINGBITMAP
     | STRING_VALUE
     ;
 
@@ -1143,6 +1143,14 @@ collection_type_i
 
 json_type_i
     : JSON
+    ;
+
+roaringbitmap_type_i
+    : ROARINGBITMAP
+    ;
+
+vector_type_i
+    : VECTOR LeftParen INTNUM RightParen
     ;
 
 bit_type_i
@@ -2769,7 +2777,7 @@ show_stmt
     | SHOW ENGINE_ relation_name_or_string opt_show_engine
     | SHOW OPEN TABLES (from_or_in database_factor)? ((LIKE STRING_VALUE) | (LIKE STRING_VALUE ESCAPE STRING_VALUE) | (WHERE expr))?
     | SHOW JOB STATUS
-    | SHOW JOB STATUS WHERE JOB PARSER_SYNTAX_ERROR STRING_VALUE
+    | SHOW JOB STATUS WHERE JOB COMP_EQ STRING_VALUE
     | CHECK TABLE table_list check_table_options
     | CHECK TABLE table_list
     ;
@@ -2911,7 +2919,7 @@ permanent_tablespace_option
 
 opt_tablespace_option
     : ADD DATAFILE STRING_VALUE
-    | FILE_BLOCK_SIZE PARSER_SYNTAX_ERROR INTNUM
+    | FILE_BLOCK_SIZE opt_equal_mark INTNUM
     | USE LOGFILE GROUP STRING_VALUE
     | (((AUTOEXTEND_SIZE|MAX_SIZE)|(EXTENT_SIZE|INITIAL_SIZE))|NODEGROUP) opt_equal_mark INTNUM
     | WAIT
@@ -3502,7 +3510,7 @@ add_external_table_partition_actions
     ;
 
 add_external_table_partition_action
-    : column_name PARSER_SYNTAX_ERROR? expr_const
+    : column_name opt_equal_mark expr_const
     ;
 
 alter_table_actions
@@ -3684,12 +3692,12 @@ alter_system_stmt
     | ALTER SYSTEM RELOAD ZONE
     | ALTER SYSTEM MIGRATE UNIT opt_equal_mark INTNUM DESTINATION opt_equal_mark STRING_VALUE
     | ALTER SYSTEM CANCEL MIGRATE UNIT INTNUM
-    | ALTER SYSTEM ADD REPLICA ls SERVER PARSER_SYNTAX_ERROR? STRING_VALUE REPLICA_TYPE PARSER_SYNTAX_ERROR? STRING_VALUE (DATA_SOURCE opt_equal_mark STRING_VALUE)? (PAXOS_REPLICA_NUM opt_equal_mark INTNUM)? tenant_name?
-    | ALTER SYSTEM REMOVE REPLICA ls SERVER PARSER_SYNTAX_ERROR? STRING_VALUE (PAXOS_REPLICA_NUM opt_equal_mark INTNUM)? tenant_name?
-    | ALTER SYSTEM MIGRATE REPLICA ls SOURCE PARSER_SYNTAX_ERROR? STRING_VALUE DESTINATION PARSER_SYNTAX_ERROR? STRING_VALUE (DATA_SOURCE opt_equal_mark STRING_VALUE)? tenant_name?
-    | ALTER SYSTEM MODIFY REPLICA ls SERVER PARSER_SYNTAX_ERROR? STRING_VALUE REPLICA_TYPE PARSER_SYNTAX_ERROR? STRING_VALUE (PAXOS_REPLICA_NUM opt_equal_mark INTNUM)? tenant_name?
-    | ALTER SYSTEM MODIFY ls PAXOS_REPLICA_NUM PARSER_SYNTAX_ERROR? INTNUM tenant_name?
-    | ALTER SYSTEM CANCEL REPLICA TASK TASK_ID PARSER_SYNTAX_ERROR? STRING_VALUE tenant_name?
+    | ALTER SYSTEM ADD REPLICA ls SERVER opt_equal_mark STRING_VALUE REPLICA_TYPE opt_equal_mark STRING_VALUE (DATA_SOURCE opt_equal_mark STRING_VALUE)? (PAXOS_REPLICA_NUM opt_equal_mark INTNUM)? tenant_name?
+    | ALTER SYSTEM REMOVE REPLICA ls SERVER opt_equal_mark STRING_VALUE (PAXOS_REPLICA_NUM opt_equal_mark INTNUM)? tenant_name?
+    | ALTER SYSTEM MIGRATE REPLICA ls SOURCE opt_equal_mark STRING_VALUE DESTINATION opt_equal_mark STRING_VALUE (DATA_SOURCE opt_equal_mark STRING_VALUE)? tenant_name?
+    | ALTER SYSTEM MODIFY REPLICA ls SERVER opt_equal_mark STRING_VALUE REPLICA_TYPE opt_equal_mark STRING_VALUE (PAXOS_REPLICA_NUM opt_equal_mark INTNUM)? tenant_name?
+    | ALTER SYSTEM MODIFY ls PAXOS_REPLICA_NUM opt_equal_mark INTNUM tenant_name?
+    | ALTER SYSTEM CANCEL REPLICA TASK TASK_ID opt_equal_mark STRING_VALUE tenant_name?
     | ALTER SYSTEM UPGRADE VIRTUAL SCHEMA
     | ALTER SYSTEM RUN JOB STRING_VALUE server_or_zone?
     | ALTER SYSTEM upgrade_action UPGRADE
@@ -3775,7 +3783,7 @@ server_info
     ;
 
 shared_storage_info
-    : Comma SHARED_STORAGE_INFO PARSER_SYNTAX_ERROR? STRING_VALUE
+    : Comma SHARED_STORAGE_INFO opt_equal_mark STRING_VALUE
     ;
 
 server_action
@@ -4055,7 +4063,7 @@ handler_rkey_function
     ;
 
 handler_rkey_mode
-    : PARSER_SYNTAX_ERROR
+    : COMP_EQ
     | COMP_GE
     | COMP_LE
     | COMP_GT
@@ -4461,7 +4469,7 @@ vec_index_params
     ;
 
 vec_index_param
-    : relation_name PARSER_SYNTAX_ERROR vec_index_param_value
+    : relation_name COMP_EQ vec_index_param_value
     ;
 
 vec_index_param_value
