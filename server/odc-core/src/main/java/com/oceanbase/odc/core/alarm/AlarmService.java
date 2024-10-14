@@ -45,7 +45,7 @@ class AlarmService {
         }
     }
 
-    public void alarm(String eventName, Map<String, Object> eventMessageNode) {
+    public void alarm(String eventName, Map<String, String> eventMessageNode) {
         monitor(eventName, eventMessageNode, AlarmLevel.ERROR, null);
     }
 
@@ -61,7 +61,7 @@ class AlarmService {
                 e);
     }
 
-    public void warn(String eventName, Map<String, Object> eventMessageNode) {
+    public void warn(String eventName, Map<String, String> eventMessageNode) {
         monitor(eventName, eventMessageNode, AlarmLevel.WARN, null);
     }
 
@@ -77,7 +77,7 @@ class AlarmService {
                 AlarmLevel.WARN, e);
     }
 
-    public void info(String eventName, Map<String, Object> eventMessageNode) {
+    public void info(String eventName, Map<String, String> eventMessageNode) {
         monitor(eventName, eventMessageNode, AlarmLevel.INFO, null);
     }
 
@@ -88,7 +88,7 @@ class AlarmService {
                 null);
     }
 
-    private void monitor(String eventName, Map<String, Object> eventMessage, AlarmLevel level, @Nullable Throwable e) {
+    private void monitor(String eventName, Map<String, String> eventMessage, AlarmLevel level, @Nullable Throwable e) {
         String msg = String.format("eventName=%s, eventMessage=%s .", eventName, eventMessage);
         switch (level) {
             case INFO:

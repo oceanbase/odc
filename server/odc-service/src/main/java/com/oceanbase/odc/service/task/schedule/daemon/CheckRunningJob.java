@@ -112,11 +112,11 @@ public class CheckRunningJob implements Job {
                             "Heart timeout and set job to status FAILED.");
             if (rows > 0) {
                 log.info("Set job status to FAILED accomplished, jobId={}, oldStatus={}.", a.getId(), a.getStatus());
-                Map<String, Object> eventMessage = AlarmHelper.buildAlarmMessageWithJob(jobEntity.getId());
+                Map<String, String> eventMessage = AlarmHelper.buildAlarmMessageWithJob(jobEntity.getId());
                 String eventName = eventMessage.get(AlarmUtils.TASK_TYPE_NAME) + "_"
                         + AlarmEventNames.TASK_HEARTBEAT_TIMEOUT;
                 eventMessage.put(AlarmUtils.ALARM_TARGET_NAME, eventName);
-                eventMessage.put(AlarmUtils.ORGANIZATION_NAME, jobEntity.getOrganizationId());
+                eventMessage.put(AlarmUtils.ORGANIZATION_NAME, String.valueOf(jobEntity.getOrganizationId()));
                 eventMessage.put(AlarmUtils.MESSAGE_NAME,
                         MessageFormat.format("Job running failed due to heart timeout, jobId={0}", a.getId()));
                 AlarmUtils.alarm(eventName, eventMessage);

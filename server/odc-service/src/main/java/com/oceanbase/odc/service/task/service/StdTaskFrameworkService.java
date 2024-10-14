@@ -334,11 +334,11 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                         .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
 
                 if (taskResult.getStatus() == JobStatus.FAILED) {
-                    Map<String, Object> eventMessage = AlarmHelper.buildAlarmMessageWithJob(je.getId());
+                    Map<String, String> eventMessage = AlarmHelper.buildAlarmMessageWithJob(je.getId());
                     String eventName = eventMessage.get(AlarmUtils.TASK_TYPE_NAME) + "_"
                             + AlarmEventNames.TASK_EXECUTION_FAILED;
                     eventMessage.put(AlarmUtils.ALARM_TARGET_NAME, eventName);
-                    eventMessage.put(AlarmUtils.ORGANIZATION_NAME, je.getOrganizationId());
+                    eventMessage.put(AlarmUtils.ORGANIZATION_NAME, String.valueOf(je.getOrganizationId()));
                     eventMessage.put(AlarmUtils.MESSAGE_NAME,
                             MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}",
                                     taskResult.getJobIdentity().getId(),
@@ -440,11 +440,11 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
             // TODO maybe we can destroy the pod there.
             if (result.getStatus() == JobStatus.FAILED) {
-                Map<String, Object> eventMessage = AlarmHelper.buildAlarmMessageWithJob(je.getId());
+                Map<String, String> eventMessage = AlarmHelper.buildAlarmMessageWithJob(je.getId());
                 String eventName = eventMessage.get(AlarmUtils.TASK_TYPE_NAME) + "_"
                         + AlarmEventNames.TASK_EXECUTION_FAILED;
                 eventMessage.put(AlarmUtils.ALARM_TARGET_NAME, eventName);
-                eventMessage.put(AlarmUtils.ORGANIZATION_NAME, je.getOrganizationId());
+                eventMessage.put(AlarmUtils.ORGANIZATION_NAME, String.valueOf(je.getOrganizationId()));
                 eventMessage.put(AlarmUtils.MESSAGE_NAME,
                         MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}",
                                 result.getJobIdentity().getId(),

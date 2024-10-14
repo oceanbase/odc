@@ -42,7 +42,7 @@ public final class AlarmHelper {
                 .cast(ServiceMap.computeIfAbsent(serviceClass, k -> SpringContextUtil.getBean(serviceClass)));
     }
 
-    public static Map<String, Object> buildAlarmMessageWithJob(@NonNull Long jobId) {
+    public static Map<String, String> buildAlarmMessageWithJob(@NonNull Long jobId) {
         ScheduleService scheduleService = getService(ScheduleService.class);
         ScheduleTaskService scheduleTaskService = getService(ScheduleTaskService.class);
         ConnectionService connectionService = getService(ConnectionService.class);

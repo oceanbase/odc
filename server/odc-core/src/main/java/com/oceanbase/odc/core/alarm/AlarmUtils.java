@@ -44,7 +44,7 @@ public final class AlarmUtils {
         alarmService.alarm(eventName, eventMessage);
     }
 
-    public static void alarm(String eventName, Map<String, Object> eventMessageNode) {
+    public static void alarm(String eventName, Map<String, String> eventMessageNode) {
         alarmService.alarm(eventName, eventMessageNode);
     }
 
@@ -56,7 +56,7 @@ public final class AlarmUtils {
         alarmService.warn(eventName, eventMessage);
     }
 
-    public static void warn(String eventName, Map<String, Object> eventMessageNode) {
+    public static void warn(String eventName, Map<String, String> eventMessageNode) {
         alarmService.warn(eventName, eventMessageNode);
     }
 
@@ -74,18 +74,18 @@ public final class AlarmUtils {
 
     public static class AlarmMessageBuilder {
 
-        final Map<String, Object> alarmMessage;
+        final Map<String, String> alarmMessage;
 
         public AlarmMessageBuilder() {
             alarmMessage = new HashMap<>();
         }
 
-        public AlarmMessageBuilder item(String key, Object value) {
+        public AlarmMessageBuilder item(String key, String value) {
             alarmMessage.put(key, value);
             return this;
         }
 
-        public Map<String, Object> build() {
+        public Map<String, String> build() {
             return alarmMessage;
         }
     }

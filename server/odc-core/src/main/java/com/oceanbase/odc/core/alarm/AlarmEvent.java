@@ -25,11 +25,11 @@ public class AlarmEvent {
 
     private final String eventName;
 
-    private final Map<String, Object> eventMessage;
+    private final Map<String, String> eventMessage;
 
     private final AlarmLevel level;
 
-    public AlarmEvent(String eventName, Map<String, Object> eventMessage, AlarmLevel level) {
+    public AlarmEvent(String eventName, Map<String, String> eventMessage, AlarmLevel level) {
         this.eventName = eventName;
         this.eventMessage = eventMessage;
         this.level = level;
