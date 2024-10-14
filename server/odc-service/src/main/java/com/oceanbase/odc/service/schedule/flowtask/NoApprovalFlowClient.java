@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.iam.auth;
+package com.oceanbase.odc.service.schedule.flowtask;
 
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Service;
-
-import com.oceanbase.odc.service.common.util.ConditionalOnProperty;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 
 /**
- * @author yizhou.xw
- * @version : PrivateAuthenticationFacadeImpl.java, v 0.1 2021-07-26 9:41
+ * @Author：tinker
+ * @Date: 2024/10/12 11:22
+ * @Descripition:
  */
-@Profile("alipay")
-@Service
-@ConditionalOnProperty(value = "odc.iam.auth.type", havingValues = {"local", "alipay", "buc", "oauth2"})
-public class WebAuthenticationFacade extends DefaultAuthenticationFacade {
+public class NoApprovalFlowClient implements ApprovalFlowClient {
+
+    @Override
+    public Long create(ScheduleChangeParams params) {
+        return null;
+    }
 }

@@ -89,14 +89,16 @@ public class CloudObjectStorageClient implements ObjectStorageClient {
     }
 
     @Override
-    public URL generateDownloadUrl(String objectName, Long expirationSeconds) {
+    public URL generateDownloadUrl(String objectName, Long expirationSeconds, String customFileName) {
         verifySupported();
         ObjectMetadata objectMetadata = publicEndpointCloudObjectStorage.getObjectMetadata(getBucketName(), objectName);
         Date expirationTime = calcExpirationTime(expirationSeconds, objectMetadata.getContentLength());
         URL presignedUrl =
-                publicEndpointCloudObjectStorage.generatePresignedUrl(getBucketName(), objectName, expirationTime);
-        log.info("generate temporary download Url successfully, expirationTime={}, objectName={}, presignedUrl={}",
-                expirationTime, objectName, presignedUrl);
+                publicEndpointCloudObjectStorage.generatePresignedUrlWithCustomFileName(getBucketName(), objectName,
+                        expirationTime, customFileName);
+        log.info(
+                "generate temporary download Url successfully, expirationTime={}, objectName={}, customFileName={}, presignedUrl={}",
+                expirationTime, objectName, customFileName, presignedUrl);
         return presignedUrl;
     }
 
@@ -171,9 +173,23 @@ public class CloudObjectStorageClient implements ObjectStorageClient {
         if (!exist) {
             throw new FileNotFoundException("File dose not exist, object name " + objectName);
         }
-        try (InputStream inputStream =
-                internalEndpointCloudObjectStorage.getObject(getBucketName(), objectName).getObjectContent()) {
-            return inputStream;
+        try {
+            return internalEndpointCloudObjectStorage.getObject(getBucketName(), objectName).getObjectContent();
+        } catch (Exception exception) {
+            log.warn("get object failed, objectName={}", objectName, exception);
+            throw new IOException(exception);
+        }
+    }
+
+    @Override
+    public InputStream getAbortableObject(String objectName) throws IOException {
+        verifySupported();
+        if (!internalEndpointCloudObjectStorage.doesObjectExist(getBucketName(), objectName)) {
+            throw new FileNotFoundException("File dose not exist, object name " + objectName);
+        }
+        try {
+            return internalEndpointCloudObjectStorage.getObject(getBucketName(), objectName)
+                    .getAbortableContent();
         } catch (Exception exception) {
             log.warn("get object failed, objectName={}", objectName, exception);
             throw new IOException(exception);

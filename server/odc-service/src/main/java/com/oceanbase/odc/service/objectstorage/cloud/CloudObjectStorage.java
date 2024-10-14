@@ -79,6 +79,9 @@ public interface CloudObjectStorage {
 
     URL generatePresignedUrl(String bucketName, String key, Date expiration) throws CloudException;
 
+    URL generatePresignedUrlWithCustomFileName(String bucketName, String key, Date expiration,
+            String customFileName) throws CloudException;
+
     URL generatePresignedPutUrl(String bucketName, String key, Date expiration) throws CloudException;
 
     List<ObjectSummary> list(String bucketName, String prefix) throws CloudException;
