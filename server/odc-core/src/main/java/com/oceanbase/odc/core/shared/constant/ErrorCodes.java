@@ -305,6 +305,11 @@ public enum ErrorCodes implements ErrorCode {
      * version conflict
      */
     WorksheetEditVersionConflict,
+
+    /**
+     * workspace
+     */
+    WorkspaceDatabaseUserTypeMustBeAdmin,
     ;
 
     @Override
