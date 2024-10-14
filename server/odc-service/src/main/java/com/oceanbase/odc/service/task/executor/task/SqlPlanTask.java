@@ -108,7 +108,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                 PublishSqlPlanJobReq.class);
         JobContext jobContext = getJobContext();
         Map<String, String> jobProperties = jobContext.getJobProperties();
-        this.result.setRegion(jobProperties.get("region"));
+        this.result.setRegion(jobProperties.get("regionName"));
         this.result.setCloudProvider(jobProperties.get("cloudProvider"));
         this.connectionSession = generateSession();
         initSqlIterator();
