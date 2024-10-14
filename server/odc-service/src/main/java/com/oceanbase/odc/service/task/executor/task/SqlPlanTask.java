@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.task.executor.task;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
@@ -36,6 +37,7 @@ import org.springframework.jdbc.core.StatementCallback;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.CSVUtils;
+import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -69,6 +71,7 @@ import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanTaskResult;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
+import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.tools.dbbrowser.parser.ParserUtil;
 import com.oceanbase.tools.dbbrowser.parser.constant.GeneralSqlType;
@@ -108,8 +111,8 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                 PublishSqlPlanJobReq.class);
         JobContext jobContext = getJobContext();
         Map<String, String> jobProperties = jobContext.getJobProperties();
-        this.result.setRegion(jobProperties.get("region"));
-        this.result.setCloudProvider(jobProperties.get("cloudProvider"));
+        this.result.setRegion(JobPropertiesUtils.getRegionName(jobProperties));
+        this.result.setCloudProvider(JobPropertiesUtils.getCloudProvider(jobProperties));
         this.connectionSession = generateSession();
         initSqlIterator();
         this.executor = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
@@ -194,7 +197,8 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         }
 
         for (String sqlObjectId : parameters.getSqlObjectIds()) {
-            try (InputStream current = cloudObjectStorageService.getObject(sqlObjectId)) {
+            try (BufferedInputStream current =
+                    new BufferedInputStream(cloudObjectStorageService.getObject(sqlObjectId))) {
                 // remove UTF-8 BOM if exists
                 current.mark(3);
                 byte[] byteSql = new byte[3];
@@ -207,7 +211,8 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                 }
                 sqlInputStream = new SequenceInputStream(sqlInputStream, current);
             } catch (IOException e) {
-                log.warn("Read content from cloud object storage failed, sqlObjectId={}", sqlObjectId);
+                log.warn("Parsing sql script file failed, objectName={}, errorReason={}", sqlObjectId,
+                        ExceptionUtils.getSimpleReason(e));
                 throw new InternalServerError("load database change task file failed", e);
             }
         }

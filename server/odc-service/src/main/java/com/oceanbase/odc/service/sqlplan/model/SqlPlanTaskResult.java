@@ -18,6 +18,8 @@ package com.oceanbase.odc.service.sqlplan.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.oceanbase.odc.service.cloud.model.CloudProvider;
+
 import lombok.Data;
 
 @Data
@@ -35,7 +37,7 @@ public class SqlPlanTaskResult {
 
     private String region;
 
-    private String cloudProvider;
+    private CloudProvider cloudProvider;
 
     /**
      * sql execution json file download url
