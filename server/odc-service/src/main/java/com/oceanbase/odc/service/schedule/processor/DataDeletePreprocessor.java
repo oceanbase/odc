@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -66,6 +67,9 @@ public class DataDeletePreprocessor extends AbstractDlmPreprocessor {
             }
             Database sourceDb = databaseService.detail(parameters.getDatabaseId());
             ConnectionConfig dataSource = sourceDb.getDataSource();
+            if (!parameters.getDeleteByUniqueKey() && dataSource.getDialectType().isOceanbase()) {
+                throw new UnsupportedException("Delete by non-primary is not supported in oceanbase.");
+            }
             dataSource.setDefaultSchema(sourceDb.getName());
             ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
             ConnectionSession connectionSession = connectionSessionFactory.generateSession();
@@ -90,6 +94,9 @@ public class DataDeletePreprocessor extends AbstractDlmPreprocessor {
                 .setWriteThreadCount(dlmConfiguration.getSingleTaskThreadPoolSize() - parameters.getReadThreadCount());
         parameters.setScanBatchSize(dlmConfiguration.getDefaultScanBatchSize());
         parameters.setQueryTimeout(dlmConfiguration.getTaskConnectionQueryTimeout());
+        if (parameters.getShardingStrategy() == null) {
+            parameters.setShardingStrategy(dlmConfiguration.getShardingStrategy());
+        }
     }
 
 }
