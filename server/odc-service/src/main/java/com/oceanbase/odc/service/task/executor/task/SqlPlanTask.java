@@ -197,22 +197,8 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         }
 
         for (String sqlObjectId : parameters.getSqlObjectIds()) {
-            InputStream inputStream = null;
-            try {
-                // read sql file from cloud object storage
-                inputStream = cloudObjectStorageService.getObject(sqlObjectId);
-            } catch (Exception e) {
-                // if exception occurs, close inputStream
-                try {
-                    inputStream.close();
-                    log.warn("Input stream closed, get object from cloud object storage failed, sqlObjectId={}",
-                            sqlObjectId);
-                } catch (IOException ex) {
-                    // eat exception
-                }
-                throw new InternalServerError("load database change task file failed", e);
-            }
-            try (BufferedInputStream current = new BufferedInputStream(inputStream)) {
+            try (BufferedInputStream current =
+                    new BufferedInputStream(cloudObjectStorageService.getObject(sqlObjectId))) {
                 // remove UTF-8 BOM if exists
                 current.mark(3);
                 byte[] byteSql = new byte[3];
@@ -225,7 +211,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                 }
                 sqlInputStream = new SequenceInputStream(sqlInputStream, current);
             } catch (IOException e) {
-                log.warn("Parsing file failed, objectName={}, errorReason={}", sqlObjectId,
+                log.warn("Parsing sql script file failed, objectName={}, errorReason={}", sqlObjectId,
                         ExceptionUtils.getSimpleReason(e));
                 throw new InternalServerError("load database change task file failed", e);
             }
