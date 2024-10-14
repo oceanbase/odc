@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.task.executor.task;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
@@ -194,7 +195,14 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         }
 
         for (String sqlObjectId : parameters.getSqlObjectIds()) {
-            try (InputStream current = cloudObjectStorageService.getObject(sqlObjectId)) {
+            InputStream inputStream;
+            try {
+                inputStream = cloudObjectStorageService.getObject(sqlObjectId);
+            } catch (Exception e) {
+                log.warn("Get object from cloud object storage failed, sqlObjectId={}", sqlObjectId);
+                throw new InternalServerError("load database change task file failed", e);
+            }
+            try (BufferedInputStream current = new BufferedInputStream(inputStream)) {
                 // remove UTF-8 BOM if exists
                 current.mark(3);
                 byte[] byteSql = new byte[3];
@@ -207,7 +215,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                 }
                 sqlInputStream = new SequenceInputStream(sqlInputStream, current);
             } catch (IOException e) {
-                log.warn("Read content from cloud object storage failed, sqlObjectId={}", sqlObjectId);
+                log.warn("Parsing file failed, objectName={}", sqlObjectId);
                 throw new InternalServerError("load database change task file failed", e);
             }
         }
