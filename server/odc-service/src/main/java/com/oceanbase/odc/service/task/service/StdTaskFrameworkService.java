@@ -20,8 +20,10 @@ import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
@@ -366,7 +368,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         try {
             String executorEndpoint = executorEndpointManager.getExecutorEndpoint(je);
             DefaultTaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
-            if (MapUtils.isEmpty(result.getLogMetadata())) {
+            if (je.getRunMode().isK8s() && MapUtils.isEmpty(result.getLogMetadata())) {
                 log.info("Refresh log failed due to log have not uploaded,  jobId={}, currentStatus={}", je.getId(),
                         je.getStatus());
                 return false;
@@ -374,7 +376,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
             if ("DLM".equals(je.getJobType())) {
                 dlmResultProcessor.process(result);
-            } else if ("LogicalDatabaseChange".equals(je.getJobType())) {
+            } else if (StringUtils.equalsIgnoreCase("LogicalDatabaseChange", je.getJobType())) {
                 logicalDBChangeResultProcessor.process(result);
             }
             return true;
@@ -408,7 +410,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         log.info("Progress changed, will update result, jobId={}, currentProgress={}", id, result.getProgress());
         if ("DLM".equals(je.getJobType())) {
             dlmResultProcessor.process(result);
-        } else if ("LogicalDatabaseChange".equals(je.getJobType())) {
+        } else if (StringUtils.equalsIgnoreCase("LogicalDatabaseChange", je.getJobType())) {
             logicalDBChangeResultProcessor.process(result);
         }
         saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
@@ -483,7 +485,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         JobEntity jse = new JobEntity();
         if ("DLM".equals(currentJob.getJobType())) {
             dlmResultProcessor.process(taskResult);
-        } else if ("LogicalDatabaseChange".equals(currentJob.getJobType())) {
+        } else if (StringUtils.equalsIgnoreCase("LogicalDatabaseChange", currentJob.getJobType())) {
             logicalDBChangeResultProcessor.process(taskResult);
         }
         jse.setResultJson(taskResult.getResultJson());
@@ -650,6 +652,14 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     public Optional<String> findByJobIdAndAttributeKey(Long jobId, String attributeKey) {
         JobAttributeEntity attributeEntity = jobAttributeRepository.findByJobIdAndAttributeKey(jobId, attributeKey);
         return Objects.isNull(attributeEntity) ? Optional.empty() : Optional.of(attributeEntity.getAttributeValue());
+    }
+
+    @Override
+    public Map<String, String> getJobAttributes(Long jobId) {
+        List<JobAttributeEntity> attributeEntityList = jobAttributeRepository.findByJobId(jobId);
+        return attributeEntityList.stream().collect(Collectors.toMap(
+                JobAttributeEntity::getAttributeKey,
+                JobAttributeEntity::getAttributeValue));
     }
 
 }

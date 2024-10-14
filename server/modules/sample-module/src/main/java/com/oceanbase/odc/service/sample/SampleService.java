@@ -17,7 +17,10 @@ package com.oceanbase.odc.service.sample;
 
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+
 @Service
+@SkipAuthorize("odc internal usage")
 public class SampleService {
 
     public String getSample() {

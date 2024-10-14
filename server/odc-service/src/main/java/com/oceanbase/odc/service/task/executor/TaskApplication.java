@@ -27,6 +27,7 @@ import org.apache.logging.log4j.core.LoggerContext;
 
 import com.oceanbase.odc.common.trace.TaskContextHolder;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.task.caller.JobContext;
@@ -90,7 +91,8 @@ public class TaskApplication {
         log.info("decrypt environment variables success.");
 
         // 3 step: get JobContext from environment
-        context = JobContextProviderFactory.create().provide();
+        context = JobContextProviderFactory.create(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_TASK_RUN_MODE))
+                .provide();
         log.info("initial job context success.");
 
         // 4 step: trace taskId in log4j2 context
@@ -151,9 +153,14 @@ public class TaskApplication {
     }
 
     private void validEnvValues() {
-        validNotBlank(JobEnvKeyConstants.ODC_JOB_CONTEXT);
-        validNotBlank(JobEnvKeyConstants.ODC_BOOT_MODE);
         validNotBlank(JobEnvKeyConstants.ODC_TASK_RUN_MODE);
+        if (StringUtils.equalsIgnoreCase("PROCESS",
+                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_TASK_RUN_MODE))) {
+            validNotBlank(JobEnvKeyConstants.ODC_JOB_CONTEXT_FILE_PATH);
+        } else {
+            validNotBlank(JobEnvKeyConstants.ODC_JOB_CONTEXT);
+        }
+        validNotBlank(JobEnvKeyConstants.ODC_BOOT_MODE);
         validNotBlank(JobEnvKeyConstants.ENCRYPT_SALT);
         validNotBlank(JobEnvKeyConstants.ENCRYPT_KEY);
         validNotBlank(JobEnvKeyConstants.ODC_EXECUTOR_USER_ID);

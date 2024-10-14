@@ -21,6 +21,8 @@ import java.util.Map;
 import org.quartz.JobExecutionContext;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
@@ -57,6 +59,7 @@ public class LogicalDatabaseChangeJob implements OdcJob {
     private final ConnectionService connectionService;
     private final LogicalDatabaseService logicalDatabaseService;
     private final LogicalTableService logicalTableService;
+    private final ScheduleRepository scheduleRepository;
     private JobScheduler jobScheduler;
 
     public LogicalDatabaseChangeJob() {
@@ -67,6 +70,8 @@ public class LogicalDatabaseChangeJob implements OdcJob {
         this.connectionService = SpringContextUtil.getBean(ConnectionService.class);
         this.logicalDatabaseService = SpringContextUtil.getBean(LogicalDatabaseService.class);
         this.logicalTableService = SpringContextUtil.getBean(LogicalTableService.class);
+        this.scheduleRepository = SpringContextUtil.getBean(ScheduleRepository.class);
+
         if (taskFrameworkProperties.isEnabled()) {
             jobScheduler = SpringContextUtil.getBean(JobScheduler.class);
         }
@@ -75,13 +80,19 @@ public class LogicalDatabaseChangeJob implements OdcJob {
     @Override
     public void execute(JobExecutionContext context) {
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
+        String scheduleId = taskEntity.getJobName();
+        ScheduleEntity scheduleEntity =
+                scheduleRepository.findById(Long.parseLong(scheduleId)).orElseThrow(() -> new IllegalArgumentException(
+                        "Schedule not found, scheduleId=" + scheduleId));
         LogicalDatabaseChangeParameters parameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                 LogicalDatabaseChangeParameters.class);
         PublishLogicalDatabaseChangeReq req = new PublishLogicalDatabaseChangeReq();
         req.setSqlContent(parameters.getSqlContent());
+        req.setCreatorId(scheduleEntity.getCreatorId());
         DetailLogicalDatabaseResp logicalDatabaseResp = logicalDatabaseService.detail(parameters.getDatabaseId());
         logicalDatabaseResp.getPhysicalDatabases().stream().forEach(
-                database -> database.setDataSource(connectionService.getForConnect(database.getDataSource().getId())));
+                database -> database.setDataSource(
+                        connectionService.getForConnectionSkipPermissionCheck(database.getDataSource().getId())));
         req.setLogicalDatabaseResp(logicalDatabaseResp);
         req.setDelimiter(parameters.getDelimiter());
         req.setTimeoutMillis(parameters.getTimeoutMillis());

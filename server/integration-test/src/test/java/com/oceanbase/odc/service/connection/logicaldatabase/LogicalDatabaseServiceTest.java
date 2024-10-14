@@ -35,6 +35,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -102,6 +105,8 @@ public class LogicalDatabaseServiceTest extends ServiceTestEnv {
         when(databaseRepository.findByIdIn(anyCollection())).thenReturn(Arrays.asList(getPhysicalDatabase()));
         doNothing().when(projectPermissionValidator).checkProjectRole(anyLong(), anyList());
         doNothing().when(permissionHelper).checkDBPermissions(anyCollection(), anyCollection());
+        when(databaseRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(Arrays.asList(getPhysicalDatabase())));
     }
 
     @Test

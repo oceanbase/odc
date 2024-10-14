@@ -45,6 +45,15 @@ public interface DBObjectRepository extends OdcJpaRepository<DBObjectEntity, Lon
 
     List<DBObjectEntity> findByDatabaseIdInAndType(Collection<Long> databaseIds, DBObjectType type);
 
+    /**
+     * list physical tables that not belongs to any logical tables in a physical database
+     * 
+     * @param databaseId
+     */
+    @Query(value = "select * from database_schema_object t1 where t1.type='TABLE' and t1.database_id=:databaseId and t1.id not in(select t2.physical_table_id from database_table_mapping t2 where t2.physical_database_id=:databaseId)",
+            nativeQuery = true)
+    List<DBObjectEntity> listPhysicalTablesThatNotBelongsToLogicalTables(@Param("databaseId") Long databaseId);
+
     @Modifying
     @Transactional
     @Query(value = "delete from database_schema_object t where t.id in (:ids)", nativeQuery = true)

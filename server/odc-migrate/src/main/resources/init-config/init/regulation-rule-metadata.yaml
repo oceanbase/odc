@@ -1423,3 +1423,21 @@
       componentType: INPUT_NUMBER
       defaultValues:
         - !!int 1000
+- id: 60
+  name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.estimate-sql-affected-rows-failed.name}
+  description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.estimate-sql-affected-rows-failed.description}
+  type: SQL_CHECK
+  builtIn: 1
+  labels:
+    - label: SUB_TYPE
+      value: DML
+    - label: SUB_TYPE
+      value: UPDATE
+    - label: SUB_TYPE
+      value: DELETE
+    - label: SUB_TYPE
+      value: INSERT
+    - label: SUPPORTED_DIALECT_TYPE
+      value: OB_MYSQL
+    - label: SUPPORTED_DIALECT_TYPE
+      value: MYSQL

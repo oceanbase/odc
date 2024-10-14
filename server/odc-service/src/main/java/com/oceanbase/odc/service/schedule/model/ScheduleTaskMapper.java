@@ -43,6 +43,7 @@ public interface ScheduleTaskMapper {
     @Mapping(target = "parameters", source = "entity", qualifiedByName = "entityToParameters")
     ScheduleTask entityToModel(ScheduleTaskEntity entity);
 
+    @Mapping(target = "parametersJson", source = "model", qualifiedByName = "modelToParametersJson")
     ScheduleTaskEntity modelToEntity(ScheduleTask model);
 
     @Named("entityToParameters")
@@ -67,5 +68,10 @@ public interface ScheduleTaskMapper {
             default:
                 throw new UnsupportedException();
         }
+    }
+
+    @Named("modelToParametersJson")
+    default String modelToParametersJson(ScheduleTask model) {
+        return JsonUtils.toJson(model.getParameters());
     }
 }

@@ -1,3 +1,205 @@
+4.3.2 (2024-09-??)
+------------
+
+New
+~~~
+- Feat(schedule): support download full log for running task (#3335)
+  [ystring]
+- Feat(taskframework): add job termination event for all scheduled tasks
+  (#3344) [guowl3]
+- Feat(logicaldatabase): logical database change task implementation
+  (#3324) [pynzzZ]
+- Feat(schedule): adaption for support obcloud operation event (#3325)
+  [ZhanHong, jingtian]
+- Feat(load-data):  add load data job  (#3280) [LuckyLeo]
+- Feat(connection): adaption for obcloud kv instance type (#3120)
+  [zhangxiao]
+- Feat(partition-plan): opt part name generator (#3253) [guowl3]
+- Feat(dfa): add simple dfa for workflow cluster's status transfer
+  (#3289) [IL MARE]
+- Feat(database-change): sql plan task execution (#3246) [IL MARE, kiko,
+  zhangxiao]
+- Feat(sqlcheck): SQL check supports affected  rows (#3147) [yiminpeng]
+- Feat(data-transfer): data import supports file directory (#3248)
+  [youshu]
+- Feat(data-transfer): upgrade ob-loader-dumper version to 4.3.1.1
+  (#3247) [youshu]
+- Feat(database-change): add and adapt the current schedule interface
+  (#3143) [LioRoger, kiko]
+- Feat(logicaldatabase): rewriting the logical sql into the physical sql
+  (#3176) [pynzzZ]
+- Feat(logicaldatabase): supplementary implementation of logical
+  database/table metadata management (#3146) [pynzzZ]
+- Feat(module): increase sub-module loading capabilities  (#3154) [IL
+  MARE]
+- Feat(objectstorage): add pure object storage without the operating of
+  object storage metadata and predefined objectName (#3119) [CHLK]
+- Feat(dlm): support to connect postgres datasource (#3079) [kiko,
+  tinker]
+- Feat(schedule): schedule module adapts to the historical API (#3126)
+  [guowl3]
+- Feat(git-integration): add service layer for git repository
+  integration (#3116) [LuckyLeo]
+- Feat(osc):enhance osc, let swap table reentrant (#3123) [LioRoger]
+- Feat(osc): refactor online schame change module, introduce fms package
+  (#3106) [IL MARE, LioRoger]
+- Feat(worksheet): add controller define for project files (#3089)
+  [CHLK]
+- Feat(integration-git): init git integration storage layer and git
+  client (#3070) [LuckyLeo]
+- Feat(log): display time zone when printing logs (#2932) [zhangxiao]
+- Feat(util): enhance duplicated migrator validation, output detail
+  scripts info (#2878) [yizhou]
+- Feat(task-framework): task log download support multiple region
+  scenarios (#2866) [yizhou]
+- Feat(task-framework): handle executor endpoint for PULL monitor mode
+  (#2851) [yizhou]
+- Feat(schedule): modify the schedule module API and add change log
+  (#2832) [guowl3]
+- Feat(auth): add projectId in TraceContextHolder (#2788) [zhangxiao]
+
+Changes
+~~~~~~~
+- Refactor(load-data): move LoadDataParameters to odc-server (#3414)
+  [LuckyLeo]
+- Refactor(migrate): supports load sql script from custom jar file
+  (#3209) [IL MARE]
+- Refactor(web): remove unnecessary bean (#3130) [Ang]
+- Refactor(statefulRoute): generalization plDebugsession to UUID stateId
+  (#2960) [Ang]
+- Refactor(schedule): separate the schedule module interface (#2881)
+  [guowl3]
+- Refactor(task-executor): involve pull mode for task monitor (#2801)
+  [yizhou]
+
+Fix
+~~~
+- Fix(logicaldatabase): adapt logical database/table permission apply
+  (#3452) [pynzzZ]
+- Fix(schedule): get schedule detail may cause NPE in logical database
+  job (#3454) [pynzzZ]
+- Fix(osc): new create table ddl not display when use alter table mode
+  (#3437) [LioRoger]
+- Fix(logicaldatabase): project info not shown and schedule description
+  shows 'null' (#3410) [pynzzZ]
+- Fix(logicaldatabase): apply logicla database permission caused to NPE
+  (#3435) [pynzzZ]
+- Fix(structure-compare): show incorrect precision of tinyint datatype
+  in mysql mode (#3419) [zhangxiao]
+- Fix(script): local build libs failure (#3424) [ystring]
+- Fix(table permission): index name displays as table name in sql
+  windows check (#3401) [zijia.cj]
+- Fix(taskframework): cannot release resource when logfile upload failed
+  (#3417) [guowl3]
+- Fix(migrate): alter column `value_json` size in
+  `regulation_riskdetect_rule` table (#3396) [yiminpeng]
+- Fix(schedule): several bugfix (#3377) [guowl3]
+- Fix(table permission): partition name shouldn't display in the table
+  permission check window (#3402) [zijia.cj]
+- Fix(logicaldatabase): submit a extract logical table task after
+  logical database change task done (#3372) [pynzzZ]
+- Fix(logicaldatabase): logical database last sync time not shown
+  (#3408) [pynzzZ]
+- Fix(logicaldatabase): wrong generated ddl of creating and altering
+  logical tables (#3399) [pynzzZ]
+- Fix(permission): failed to execute sql of renaming table (#3361)
+  [zijia.cj]
+- Fix(mock-data): failed to mock data at mysql 5.7 (#3392) [IL MARE]
+- Fix(database-change): sql plan job set database name as default schema
+  (#3376) [kiko]
+- Fix(dlm): create connection failed in oracle (#3355) [guowl3]
+- Fix(execute-sql): failed to execute insert upload file sql (#3338)
+  [zhangxiao]
+- Fix(connection): scanning and adding sensitive columns, selecting a
+  database will not display database details (#3271) [yiminpeng]
+- Fix(auth): adaption for obcloud auth (#3151) [zhangxiao]
+- Fix(dlm):  detail schedule task missing parameters (#3323) [guowl3]
+- Fix(osc): osc manual swap table button not displayed (#3320)
+  [LioRoger]
+- Fix(sql-plan): detail sql-plan failed (#3321) [guowl3]
+- Fix(database-change): missing sql plan task execution result  (#3290)
+  [kiko]
+- Fix(data-transfer): incorrect schema file would be generated when
+  merge schema (#3315) [LuckyLeo]
+- Fix(project): developer localized display errors. [zijia.cj]
+- Fix(sql-plan): create sql-plan failed #3302. [guowl3]
+- Fix(web): add server restart alarm (#3296) [Ang]
+- Fix(data-transfer): fix several data-transfer bugs (#3288) [LuckyLeo]
+- Fix(data-transfer): fail to start transfer task on windows (#3281)
+  [LuckyLeo]
+- Fix(sso): get state params may failed when use load banlance (#3273)
+  [Ang]
+- Fix(manual execution): manual execution button should not be displayed
+  after clicking manual execution (#3269) [zijia.cj]
+- Fix(sso): azure integration migrate failed (#3263) [Ang]
+- Fix(deployment): ODC_APP_EXTRA_ARGS not works (#3244) [yizhou]
+- Fix(connection): choosing the wrong mode when testing connection with
+  sys tenant result in false success (#3124) [ZhanHong]
+- Fix(web): fix tomcat threads config (#3201) [Ang]
+- Fix(partition-plan): failed to generate partition name when using
+  custom generator (#3131) [IL MARE]
+- Fix(osc): compatible with cloud odc code, fix ScheduleTaskParameter
+  deserialize… #3202. [LioRoger]
+- Fix(connect): make odc connect to the obcloud instance (#3203) [IL
+  MARE]
+- Fix(logicaldatabase): index out of bound when there only exists one
+  table in the database (#3160) [pynzzZ]
+- Fix(dlm): alter file seq for 'connect_connection.sql' from 4 to 2
+  (#3142) [kiko]
+- Fix(task): fix 2203 by triggering task log rollover when task start up
+  (#3088) [CHLK]
+- Fix(schedule):  concurrent execution (#3017) [guowl3]
+- Fix(organization): failed to list individual organization (#3007)
+  [zhangxiao]
+- Fix(schedule): concurrent executing job (#2999) [guowl3]
+- Fix(dlm): update limit config throw NPE (#2990) [guowl3]
+- Fix(schedule): check cron expression (#2989) [guowl3]
+- Fix(schedule): parameters missing in changelog  (#2977) [guowl3]
+- Fix(dlm): several bugfix (#2965) [guowl3]
+- Fix(diagnose): get incorrect record from sql audit (#2974) [LuckyLeo]
+- Fix(stateful): remove wrong generator conditional load (#2976) [Ang]
+- Fix(statefulRoute): failed to list built-in snippets (#2935) [Ang]
+- Fix(statefulRoute): fix list column can't reach (#2953) [Ang]
+- Fix(connect): failed to connect to ap instance (#2967) [zhangxiao]
+- Fix(session): support auto recreate session when upgrade (#2959)
+  [zhangxiao]
+- Fix(task-framework): ignore location validation and update task status
+  after refresh (#2961) [guowl3]
+- Fix(dlm): start job failed  (#2937) [guowl3]
+- Fix(connection): automatically reconnect during the cloud upgrade
+  process (#2924) [zhangxiao]
+- Fix(alarm): condition not found (#2927) [guowl3, yizhouxw]
+- Fix(schedule): several bugfix during integration with task framework
+  (#2919) [guowl3, yizhouxw]
+- Fix(auth): access denied for current project interface (#2862)
+  [zhangxiao]
+- Fix(taskframework): daemon job be fired at one time in cluster model
+  (#2408) [krihy]
+
+
+v4.3.1_bp1 (2024-08-13)
+-----------------------
+
+Fix
+~~~
+- Fix(notification): class cast exception would be thrown when sending
+  to feishu or wecom (#3118) [LuckyLeo]
+- Fix(notification): support response type text/plain and others (#3114)
+  [LuckyLeo]
+- Fix(permission): users cannot call function in oracle mode (#3109)
+  [pynzzZ]
+- Fix(dlm): sync table structure failed (#3100) [guowl3]
+- Fix(permission): 1) users could export the whole database even if they
+  don't have database export permissions 2) SQL contains function call
+  will be wrongly intercepted (#3101) [pynzzZ]
+- Fix(object-search): failed to sync db object when sync logic is run by
+  an async thread (#3104) [IL MARE]
+- Fix(schema): show constraint's on delete rule correctly by parser
+  (#3098) [zhangxiao]
+- Fix(osc): enhance osc feature (#3087) [LioRoger]
+- Fix(schedule): the creator cannot change the schedule (#3085) [guowl3]
+
+
 v4.3.1 (2024-07-31)
 -------------------
 

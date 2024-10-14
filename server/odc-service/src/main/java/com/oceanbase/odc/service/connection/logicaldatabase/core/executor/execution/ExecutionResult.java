@@ -45,6 +45,6 @@ public class ExecutionResult<Result> implements Serializable {
     }
 
     public boolean isCompleted() {
-        return status == ExecutionStatus.SUCCESS || status == ExecutionStatus.SKIPPED;
+        return this.status.isCompleted();
     }
 }

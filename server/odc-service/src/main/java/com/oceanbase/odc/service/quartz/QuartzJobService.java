@@ -93,7 +93,8 @@ public class QuartzJobService {
                     pauseJob(jobKey);
                     break;
                 }
-                case TERMINATE: {
+                case TERMINATE:
+                case DELETE: {
                     deleteJob(jobKey);
                     break;
                 }

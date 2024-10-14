@@ -175,6 +175,12 @@ public class TableService {
         }
     }
 
+    // sync normal table
+    public void syncDBTables(@NotNull Connection connection, @NotNull Database database,
+            @NotNull DialectType dialectType) throws InterruptedException {
+        syncDBTables(connection, database, dialectType, dbTableSyncer);
+    }
+
     private void syncDBTables(@NotNull Connection connection, @NotNull Database database,
             @NotNull DialectType dialectType,
             @NotNull DBSchemaSyncer syncer) throws InterruptedException {

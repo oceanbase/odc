@@ -808,6 +808,11 @@ public class ConnectionService {
         }
     }
 
+    @SkipAuthorize("odc internal usage")
+    public List<ConnectionConfig> listSkipPermissionCheck(@NotNull QueryConnectionParams params) {
+        return innerList(params, Pageable.unpaged()).toList();
+    }
+
     private Page<ConnectionConfig> innerList(@NotNull QueryConnectionParams params, @NotNull Pageable pageable) {
         Specification<ConnectionEntity> spec = Specification
                 .where(ConnectionSpecs.organizationIdEqual(authenticationFacade.currentOrganizationId()));

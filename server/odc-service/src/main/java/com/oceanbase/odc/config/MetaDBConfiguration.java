@@ -82,7 +82,7 @@ public class MetaDBConfiguration {
     }
 
     @PreDestroy
-    public void destory() {
+    public void destroy() {
         ExecutorUtils.gracefulShutdown(bootstrapExecutor, "bootstrapExecutor", 5);
     }
 

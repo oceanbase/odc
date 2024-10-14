@@ -39,6 +39,7 @@ import org.quartz.Trigger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanMap;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
@@ -66,6 +67,7 @@ import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -73,9 +75,7 @@ import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
-import com.oceanbase.odc.service.flow.model.BinaryDataResult;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
-import com.oceanbase.odc.service.flow.model.FileBasedDataResult;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.util.DescriptionGenerator;
 import com.oceanbase.odc.service.iam.OrganizationService;
@@ -355,6 +355,10 @@ public class ScheduleService {
             if (approvalFlowInstanceId != null) {
                 changeLog.setFlowInstanceId(approvalFlowInstanceId);
                 scheduleChangeLogService.updateFlowInstanceIdById(changeLog.getId(), approvalFlowInstanceId);
+                // only update status to approving when create schedule
+                if (req.getOperationType() == OperationType.CREATE) {
+                    scheduleRepository.updateStatusById(targetSchedule.getId(), ScheduleStatus.APPROVING);
+                }
                 log.info("Create approval flow success,changelogId={},flowInstanceId", approvalFlowInstanceId);
             }
             return changeLog;
@@ -653,6 +657,14 @@ public class ScheduleService {
                 updateStatusById(scheduleId, status);
             }
         }
+        try {
+            ScheduleChangeLog changeLog = scheduleChangeLogService.getByFlowInstanceId(id);
+            if (changeLog.getStatus() == ScheduleChangeStatus.APPROVING) {
+                scheduleChangeLogService.updateStatusById(changeLog.getId(), ScheduleChangeStatus.SUCCESS);
+            }
+        } catch (NotFoundException e) {
+            log.warn("Change log not found,flowInstanceId={}", id);
+        }
     }
 
     public void updateJobParametersById(Long id, String jobParameters) {
@@ -728,6 +740,13 @@ public class ScheduleService {
             params.getDataSourceIds().addAll(connectionService.innerListIdByOrganizationIdAndTenantId(
                     authenticationFacade.currentOrganizationId(), params.getTenantId()));
         }
+        // load project by unique identifier if project id is null
+        if (params.getProjectId() == null && StringUtils.isNotEmpty(params.getProjectUniqueIdentifier())) {
+            Project project = projectService.getByIdentifier(params.getProjectUniqueIdentifier());
+            if (project != null) {
+                params.setProjectId(project.getId());
+            }
+        }
 
         if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
             Set<Long> projectIds = params.getProjectId() == null
@@ -792,6 +811,7 @@ public class ScheduleService {
                 .type(params.getScheduleType())
                 .creator(params.getCreator())
                 .projectId(params.getProjectId())
+                .organizationId(authenticationFacade.currentOrganizationId())
                 .build();
 
         List<Schedule> scheduleList = scheduleRepository.find(scheduleParams).stream()
@@ -834,10 +854,9 @@ public class ScheduleService {
         return scheduledTaskLoggerService.getLogContent(scheduleTaskId, logLevel);
     }
 
-    public List<BinaryDataResult> downloadLog(Long scheduleId, Long scheduleTaskId) {
+    public InputStreamResource downloadLog(Long scheduleId, Long scheduleTaskId) {
         nullSafeGetByIdWithCheckPermission(scheduleId);
-        File logFile = scheduledTaskLoggerService.downloadLog(scheduleTaskId, OdcTaskLogLevel.ALL);
-        return Collections.singletonList(new FileBasedDataResult(logFile));
+        return scheduledTaskLoggerService.downloadLog(scheduleTaskId, OdcTaskLogLevel.ALL);
     }
 
     public Schedule nullSafeGetByIdWithCheckPermission(Long id) {

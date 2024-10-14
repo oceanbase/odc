@@ -96,7 +96,6 @@ public class SqlExecutionHandler implements ExecutionHandler<SqlExecuteReq, SqlE
                         return statementCallBack.doInStatement(stmt);
                     });
             JdbcGeneralResult result = results.get(0);
-            log.info("SqlExecutionCallback execute result, connectionReset={}", result.isConnectionReset());
             return new ExecutionResult<>(
                     new SqlExecutionResultWrapper(req.getLogicalDatabaseId(), req.getPhysicalDatabaseId(),
                             req.getScheduleTaskId(), new SqlExecuteResult(result)),
