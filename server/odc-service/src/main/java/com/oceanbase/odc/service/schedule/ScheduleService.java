@@ -586,6 +586,7 @@ public class ScheduleService {
      * @param scheduleId the task must belong to a valid schedule,so this param is not be null.
      * @param scheduleTaskId the task uid. Start a paused or pending task.
      */
+    @Transactional(rollbackFor = Exception.class)
     public void startTask(Long scheduleId, Long scheduleTaskId) {
         nullSafeGetByIdWithCheckPermission(scheduleId, true);
         Lock lock = jdbcLockRegistry.obtain(getScheduleTaskLockKey(scheduleTaskId));
