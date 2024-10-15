@@ -164,6 +164,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
             jobParameter.setMigrationInsertAction(req.getMigrationInsertAction());
             jobParameter.setMigratePartitions(table.getPartitions());
             jobParameter.setSyncDBObjectType(req.getSyncTableStructure());
+            jobParameter.setShardingStrategy(req.getShardingStrategy());
             dlmTableUnit.setParameters(jobParameter);
             dlmTableUnit.setDlmTableUnitId(DlmJobIdUtil.generateHistoryJobId(req.getJobName(), req.getJobType().name(),
                     req.getScheduleTaskId(), dlmTableUnits.size()));
