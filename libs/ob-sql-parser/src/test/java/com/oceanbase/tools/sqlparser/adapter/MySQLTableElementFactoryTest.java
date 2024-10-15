@@ -1119,6 +1119,7 @@ public class MySQLTableElementFactoryTest {
         OutOfLineIndex expected = new OutOfLineIndex("idx1",
                 Collections.singletonList(new SortColumn(new ColumnReference(null, null, "c2"))));
         expected.setIndexOptions(new IndexOptions());
+        expected.setVector(true);
         Assert.assertEquals(expected, actual);
     }
 
