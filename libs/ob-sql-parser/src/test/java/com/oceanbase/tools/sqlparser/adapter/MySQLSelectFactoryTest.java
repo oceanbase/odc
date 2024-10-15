@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import com.oceanbase.tools.sqlparser.statement.expression.ArrayExpression;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -649,6 +650,24 @@ public class MySQLSelectFactoryTest {
 
         Select expect = new Select(body);
         Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_SelectArray_Succeed() {
+        Select_stmtContext context = getSelectContext("select [[1,2],[3,4],[5,6]];");
+        StatementFactory<Select> factory = new MySQLSelectFactory(context);
+        Select actual = factory.generate();
+
+        ArrayExpression expression1 = new ArrayExpression(Arrays.asList(new ConstExpression("1"), new ConstExpression("2")));
+        ArrayExpression expression2 = new ArrayExpression(Arrays.asList(new ConstExpression("3"), new ConstExpression("4")));
+        ArrayExpression expression3 = new ArrayExpression(Arrays.asList(new ConstExpression("5"), new ConstExpression("6")));
+
+        ArrayExpression column = new ArrayExpression(Arrays.asList(expression1, expression2, expression3));
+        Projection projection = new Projection(column, null);
+        SelectBody body = new SelectBody(Collections.singletonList(projection), Collections.emptyList());
+        Select expected = new Select(body);
+        Assert.assertEquals(expected, actual);
+
     }
 
     private SelectBody getDefaultSelect() {

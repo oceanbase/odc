@@ -323,6 +323,37 @@ public class MySQLDataTypeFactoryTest {
         Assert.assertEquals(expect, actual);
     }
 
+
+    @Test
+    public void generate_ArrayTypePGCompatible_Succeed() {
+        StatementFactory<DataType> factory = new MySQLDataTypeFactory(getDataTypeContext("varchar(32)[]"));
+        DataType actual = factory.generate();
+        CharacterType characterType = new CharacterType("varchar", new BigDecimal("32"));
+        DataType expect = new ArrayType(characterType);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_ArrayTypeNestedPGCompatible_Succeed() {
+        StatementFactory<DataType> factory = new MySQLDataTypeFactory(getDataTypeContext("array(array(varchar(32)))"));
+        DataType actual = factory.generate();
+        CharacterType characterType = new CharacterType("varchar", new BigDecimal("32"));
+        ArrayType nested = new ArrayType(characterType);
+        DataType expect = new ArrayType(nested);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_ArrayTypePGNested_Succeed() {
+        StatementFactory<DataType> factory = new MySQLDataTypeFactory(getDataTypeContext("varchar(32)[][]"));
+        DataType actual = factory.generate();
+        CharacterType characterType = new CharacterType("varchar", new BigDecimal("32"));
+        ArrayType nested = new ArrayType(characterType);
+        DataType expect = new ArrayType(nested);
+        Assert.assertEquals(expect, actual);
+    }
+
+
     private Data_typeContext getDataTypeContext(String type) {
         OBLexer lexer = new OBLexer(CharStreams.fromString(type));
         CommonTokenStream tokens = new CommonTokenStream(lexer);
