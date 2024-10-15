@@ -29,6 +29,10 @@ public class OverLimitException extends HttpException implements Transient {
         super(ErrorCodes.OverLimit, new Object[] {metric.getLocalizedMessage(), limit}, message);
     }
 
+    public OverLimitException(ErrorCodes errorCode, Object[] args, String message) {
+        super(errorCode, args, message);
+    }
+
     @Override
     public HttpStatus httpStatus() {
         return HttpStatus.BAD_REQUEST;

@@ -74,7 +74,6 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
     @Override
     protected DumpParameter doGenerate(File workingDir) throws IOException {
         DumpParameter parameter = new DumpParameter();
-        setFileConfig(parameter, workingDir);
         if (StringUtils.isNotEmpty(transferConfig.getQuerySql())) {
             parameter.setQuerySql(transferConfig.getQuerySql());
         }

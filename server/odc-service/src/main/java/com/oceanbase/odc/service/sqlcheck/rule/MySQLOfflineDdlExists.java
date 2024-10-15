@@ -91,7 +91,7 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
                 violations.addAll(dropPartition(statement, action));
                 violations.addAll(truncatePartition(statement, action));
                 return violations.stream();
-            }).collect(Collectors.toList());
+            }).filter(Objects::nonNull).collect(Collectors.toList());
         } else if (statement instanceof TruncateTable) {
             return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
                     statement, getType(), new Object[] {"TRUNCATE TABLE"}));

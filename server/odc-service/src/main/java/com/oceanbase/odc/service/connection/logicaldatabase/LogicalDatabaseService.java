@@ -33,8 +33,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.task.TaskRejectedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.common.util.MapUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.Verify;
@@ -70,7 +72,9 @@ import com.oceanbase.odc.service.connection.logicaldatabase.model.PreviewSqlReq;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.PreviewSqlResp;
 import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
+import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.sqlparser.statement.Statement;
@@ -90,6 +94,8 @@ import lombok.extern.slf4j.Slf4j;
 @Validated
 public class LogicalDatabaseService {
     private final DatabaseMapper databaseMapper = DatabaseMapper.INSTANCE;
+
+    private final int MAX_PHYSICAL_DATABASE_COUNT = 1000;
 
     @Autowired
     private ProjectPermissionValidator projectPermissionValidator;
@@ -126,6 +132,9 @@ public class LogicalDatabaseService {
 
     @Autowired
     private DBResourcePermissionHelper permissionHelper;
+
+    @Autowired
+    private UserService userService;
 
 
     @Transactional(rollbackFor = Exception.class)
@@ -193,7 +202,7 @@ public class LogicalDatabaseService {
         Set<Long> physicalDBIds =
                 databaseMappingRepository.findByLogicalDatabaseId(logicalDatabaseId).stream()
                         .map(DatabaseMappingEntity::getPhysicalDatabaseId).collect(Collectors.toSet());
-        return databaseService.listDatabasesByIds(physicalDBIds);
+        return databaseService.listDatabasesDetailsByIds(physicalDBIds);
     }
 
     public Set<Long> listDataSourceIds(@NotNull Long logicalDatabaseId) {
@@ -243,11 +252,28 @@ public class LogicalDatabaseService {
         return true;
     }
 
+    public boolean extractLogicalTablesSkipAuth(@NotNull Long logicalDatabaseId, @NotNull Long creatorId) {
+        Database logicalDatabase =
+                databaseService.getBasicSkipPermissionCheck(logicalDatabaseId);
+        Verify.equals(logicalDatabase.getType(), DatabaseType.LOGICAL, "database type");
+        try {
+            syncManager.submitExtractLogicalTablesTask(logicalDatabase, new User(userService.nullSafeGet(creatorId)));
+        } catch (TaskRejectedException ex) {
+            log.warn("submit extract logical tables task rejected, logical database id={}", logicalDatabaseId);
+            return false;
+        }
+        return true;
+    }
+
     protected void preCheck(CreateLogicalDatabaseReq req) {
         projectPermissionValidator.checkProjectRole(req.getProjectId(),
                 Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER));
+        Verify.notGreaterThan(req.getPhysicalDatabaseIds().size(), MAX_PHYSICAL_DATABASE_COUNT,
+                "physical database count");
         List<DatabaseEntity> databases = databaseRepository.findByIdIn(req.getPhysicalDatabaseIds());
         Verify.equals(databases.size(), req.getPhysicalDatabaseIds().size(), "physical database");
+        Verify.verify(databases.stream().allMatch(database -> DatabaseType.PHYSICAL == database.getType()),
+                "databases should all be the physical databases");
 
         if (!databases.stream().allMatch(database -> Objects.equals(req.getProjectId(), database.getProjectId()))) {
             throw new BadRequestException(
@@ -269,13 +295,31 @@ public class LogicalDatabaseService {
         if (aliasNames.contains(req.getAlias())) {
             throw new BadRequestException("alias name already exists, alias=" + req.getAlias());
         }
+
+        List<DatabaseMappingEntity> mappings = databaseMappingRepository
+                .findByPhysicalDatabaseIdIn(databases.stream().map(DatabaseEntity::getId).collect(Collectors.toSet()));
+        if (!mappings.isEmpty()) {
+            Map<Long, DatabaseEntity> id2PhysicalDatabases =
+                    databases.stream().collect(Collectors.toMap(DatabaseEntity::getId, db -> db));
+            throw new BadRequestException(
+                    "physical databases already mapped to a logical database, physical database names: "
+                            + mappings.stream()
+                                    .map(mapping -> id2PhysicalDatabases.get(mapping.getPhysicalDatabaseId()).getName())
+                                    .collect(Collectors.joining(", ")));
+        }
     }
 
     public List<PreviewSqlResp> preview(@NonNull Long logicalDatabaseId, @NonNull PreviewSqlReq req) {
         DetailLogicalDatabaseResp logicalDatabase = detail(logicalDatabaseId);
-        Set<DataNode> allDataNodes = logicalDatabase.getLogicalTables().stream()
-                .map(DetailLogicalTableResp::getAllPhysicalTables).flatMap(List::stream)
-                .collect(Collectors.toSet());
+        Set<DataNode> physicalDatabases = logicalDatabase.getPhysicalDatabases().stream()
+                .map(database -> new DataNode(database.getId(), database.getName())).collect(
+                        Collectors.toSet());
+        Map<String, DataNode> databaseName2DataNodes = physicalDatabases.stream()
+                .collect(Collectors.toMap(dataNode -> dataNode.getSchemaName(), dataNode -> dataNode,
+                        (value1, value2) -> value1));
+        Map<String, Set<DataNode>> logicalTableName2DataNodes = logicalDatabase.getLogicalTables().stream()
+                .collect(Collectors.toMap(DetailLogicalTableResp::getName,
+                        resp -> resp.getAllPhysicalTables().stream().collect(Collectors.toSet())));
         Map<Long, List<String>> databaseId2Sqls = new HashMap<>();
         String delimiter = StringUtils.isEmpty(req.getDelimiter()) ? ";" : req.getDelimiter();
         List<String> sqls =
@@ -286,19 +330,25 @@ public class LogicalDatabaseService {
             Set<DataNode> dataNodesToExecute;
             if (statement instanceof CreateTable) {
                 dataNodesToExecute = LogicalDatabaseUtils.getDataNodesFromCreateTable(sql,
-                        logicalDatabase.getDialectType(), allDataNodes);
+                        logicalDatabase.getDialectType(), databaseName2DataNodes);
             } else {
                 dataNodesToExecute = LogicalDatabaseUtils.getDataNodesFromNotCreateTable(sql,
-                        logicalDatabase.getDialectType(), logicalDatabase);
+                        logicalDatabase.getDialectType(), logicalTableName2DataNodes, logicalDatabase.getName());
+            }
+            if (CollectionUtils.isEmpty(dataNodesToExecute)) {
+                continue;
             }
             RewriteResult rewriteResult = sqlRewriter.rewrite(
                     new RewriteContext(statement, logicalDatabase.getDialectType(), dataNodesToExecute));
             for (Map.Entry<DataNode, String> result : rewriteResult.getSqls().entrySet()) {
-                Long databaseId = result.getKey().getDatabaseId();
-                databaseId2Sqls.computeIfAbsent(databaseId, k -> new ArrayList<>()).add(result.getValue());
+                databaseId2Sqls.computeIfAbsent(result.getKey().getDatabaseId(), k -> new ArrayList<>())
+                        .add(result.getValue());
             }
         }
-        Map<Long, Database> id2Database = databaseService.listDatabasesByIds(databaseId2Sqls.keySet()).stream()
+        if (MapUtils.isEmpty(databaseId2Sqls)) {
+            return Collections.emptyList();
+        }
+        Map<Long, Database> id2Database = databaseService.listDatabasesDetailsByIds(databaseId2Sqls.keySet()).stream()
                 .collect(Collectors.toMap(Database::getId, db -> db));
         return databaseId2Sqls.entrySet().stream()
                 .map(entry -> PreviewSqlResp.builder().database(id2Database.getOrDefault(entry.getKey(), null))

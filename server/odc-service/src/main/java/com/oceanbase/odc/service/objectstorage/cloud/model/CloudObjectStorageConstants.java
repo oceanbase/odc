@@ -42,6 +42,11 @@ public class CloudObjectStorageConstants {
     public static final String TEMP_DIR = "oss_temp_dir";
 
     /**
+     * temporary object storage directory, valid for 1 day
+     */
+    public static final String TEMP_ONE_DAY_DIR = "oss_temp_1day_dir/";
+
+    /**
      * 默认临时凭证过期时间，单位为秒
      */
     public static final Long DEFAULT_EXPIRATION_TIME = 15 * 60L;

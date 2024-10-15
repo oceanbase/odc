@@ -34,7 +34,6 @@ import com.alibaba.fastjson.JSON;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
-import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceEntity;
@@ -167,6 +166,7 @@ public class ScheduleResponseMapperFactory {
             ScheduleOverview overview = new ScheduleOverview();
             overview.setScheduleId(o.getId());
             overview.setScheduleName(o.getName());
+            overview.setType(o.getType());
             overview.setCreator(new InnerUser(users.get(o.getCreatorId()).get(0), null));
             overview.setStatus(o.getStatus());
             overview.setTriggerConfig(JsonUtils.fromJson(o.getTriggerConfigJson(), TriggerConfig.class));
@@ -412,8 +412,12 @@ public class ScheduleResponseMapperFactory {
 
     private Database detailDatabaseOrNull(Long databaseId) {
         try {
-            return databaseService.detail(databaseId);
-        } catch (NotFoundException e) {
+            Database database = databaseService.getBasicSkipPermissionCheck(databaseId);
+            ConnectionConfig datasource = dataSourceService.internalGetSkipUserCheck(
+                    database.getDataSource().getId(), false, false);
+            database.setDataSource(datasource);
+            return database;
+        } catch (Exception e) {
             return null;
         }
     }

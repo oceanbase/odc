@@ -38,6 +38,8 @@ public class ScheduleOverview {
 
     private String scheduleName;
 
+    private ScheduleType type;
+
     private InnerUser creator;
 
     private TriggerConfig triggerConfig;

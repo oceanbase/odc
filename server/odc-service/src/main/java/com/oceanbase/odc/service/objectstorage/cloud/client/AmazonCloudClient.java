@@ -29,6 +29,8 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.DeleteObjectsResult.DeletedObject;
@@ -48,6 +50,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadResult;
+import com.oceanbase.odc.service.objectstorage.cloud.model.CopyObjectResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectsRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectsResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.GetObjectRequest;
@@ -164,7 +167,7 @@ public class AmazonCloudClient implements CloudClient {
     @Override
     public PutObjectResult putObject(String bucketName, String key, File file, ObjectMetadata metadata)
             throws CloudException {
-        PutObjectResult putObject = callAmazonMethod("Put object", () -> {
+        return callAmazonMethod("Put object", () -> {
             com.amazonaws.services.s3.model.ObjectMetadata objectMetadata = toS3(metadata);
             PutObjectRequest putRequest = new PutObjectRequest(bucketName, key, file)
                     .withMetadata(objectMetadata);
@@ -174,10 +177,23 @@ public class AmazonCloudClient implements CloudClient {
             com.amazonaws.services.s3.model.PutObjectResult s3Result = s3.putObject(putRequest);
             PutObjectResult result = new PutObjectResult();
             result.setVersionId(s3Result.getVersionId());
-            result.setVersionId(s3Result.getETag());
+            result.setETag(s3Result.getETag());
             return result;
         });
-        return putObject;
+    }
+
+    @Override
+    public CopyObjectResult copyObject(String bucketName, String from, String to)
+            throws CloudException {
+        return callAmazonMethod("Copy object to", () -> {
+            com.amazonaws.services.s3.model.CopyObjectResult copyObjectResult =
+                    s3.copyObject(bucketName, from, bucketName, to);
+            CopyObjectResult result = new CopyObjectResult();
+            result.setVersionId(copyObjectResult.getVersionId());
+            result.setVersionId(copyObjectResult.getETag());
+            result.setLastModifyTime(copyObjectResult.getLastModifiedDate());
+            return result;
+        });
     }
 
     @Override
@@ -231,6 +247,27 @@ public class AmazonCloudClient implements CloudClient {
                     String.format("attachment;filename=%s",
                             new String(CloudObjectStorageUtil.getOriginalFileName(key).getBytes(),
                                     StandardCharsets.ISO_8859_1)));
+            request.setResponseHeaders(responseHeaderOverrides);
+            return s3.generatePresignedUrl(request);
+        });
+    }
+
+    @Override
+    public URL generatePresignedUrlWithCustomFileName(String bucketName, String key, Date expiration,
+            String customFileName) throws CloudException {
+        Verify.notBlank(key, "key");
+        return callAmazonMethod("Generate presigned URL", () -> {
+            GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(bucketName, key);
+            request.setBucketName(bucketName);
+            request.setExpiration(expiration);
+            request.setKey(key);
+            ResponseHeaderOverrides responseHeaderOverrides = new ResponseHeaderOverrides();
+            String fileName = customFileName;
+            if (StringUtils.isBlank(customFileName)) {
+                fileName = CloudObjectStorageUtil.getOriginalFileName(key);
+            }
+            responseHeaderOverrides.setContentDisposition(
+                    String.format("attachment;filename=%s", fileName));
             request.setResponseHeaders(responseHeaderOverrides);
             return s3.generatePresignedUrl(request);
         });

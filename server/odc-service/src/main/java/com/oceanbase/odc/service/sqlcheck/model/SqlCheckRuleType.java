@@ -247,7 +247,11 @@ public enum SqlCheckRuleType implements Translatable {
     /**
      * Restrict the number of lines affected by SQL
      */
-    RESTRICT_SQL_AFFECTED_ROWS("restrict-sql-affected-rows");
+    RESTRICT_SQL_AFFECTED_ROWS("restrict-sql-affected-rows"),
+    /**
+     * Unable to judge restrict the number of lines affected by SQL
+     */
+    ESTIMATE_SQL_AFFECTED_ROWS_FAILED("estimate-sql-affected-rows-failed");
 
     private final String name;
     private static final String NAME_CODE = "name";

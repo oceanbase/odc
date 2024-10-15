@@ -43,6 +43,7 @@ public class LogUtils {
 
     public final static String DEFAULT_LOG_CONTENT = "read log failed, may be log file not exist";
     public final static String TASK_LOG_PATH_PATTERN = "%s/task/%s/task-log.%s";
+    public final static String SCHEDULE_LOG_FILE_NAME_PATTERN = "odc_schedule_%d_task_%d.log";
     public final static long CONTENT_MAX_LINES = 10000L;
     public final static long CONTENT_MAX_SIZE = 1024L * 1024;
 
@@ -90,6 +91,10 @@ public class LogUtils {
 
     public static String getBaseLogPath() {
         return Optional.ofNullable(System.getProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY)).orElse("./log");
+    }
+
+    public static String generateScheduleTaskLogFileName(@NonNull Long scheduleId, Long scheduleTaskId) {
+        return String.format(SCHEDULE_LOG_FILE_NAME_PATTERN, scheduleId, scheduleTaskId);
     }
 
 }

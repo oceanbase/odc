@@ -37,6 +37,9 @@ public interface ScheduleChangeLogRepository extends OdcJpaRepository<ScheduleCh
 
     Optional<ScheduleChangeLogEntity> findByIdAndScheduleId(Long id, Long scheduleId);
 
+    Optional<ScheduleChangeLogEntity> findByFlowInstanceId(Long flowInstanceId);
+
+
     @Transactional
     @Modifying
     @Query("update ScheduleChangeLogEntity e set e.status = ?2 where e.id = ?1")
