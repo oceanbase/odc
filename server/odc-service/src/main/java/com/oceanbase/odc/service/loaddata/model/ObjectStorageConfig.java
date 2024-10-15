@@ -213,6 +213,7 @@ public class ObjectStorageConfig {
         config.setAccessKeySecret(this.getSecretKey());
         config.setBucketName(this.getBucket());
         config.setCloudProvider(this.getCloudProvider());
+        config.setRegion(this.getRegion());
         return config;
     }
 
