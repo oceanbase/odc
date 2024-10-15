@@ -185,10 +185,6 @@ public class ObjectStorageConfig {
             parseAndFill();
         }
 
-        if (endpoint != null) {
-            return endpoint;
-        }
-
         // S3 and other compatible cloud storage types that requires a region to concat the whole endpoint,
         // while azure use the account name as one component in endpoint.
         // GCS need neither region nor access key to concat the endpoint.
