@@ -243,9 +243,16 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
             // check current
             OnlineSchemaChangeScheduleTaskResult result = JsonUtils.fromJson(task.getResultJson(),
                     OnlineSchemaChangeScheduleTaskResult.class);
+            OnlineSchemaChangeScheduleTaskParameters onlineSchemaChangeScheduleTaskParameters =
+                    JsonUtils.fromJson(task.getParametersJson(), OnlineSchemaChangeScheduleTaskParameters.class);
             if (null != result) {
                 ret += (result.isManualSwapTableEnabled() ? 1 : 0);
                 taskAndStep.put(task.getId(), result.getCurrentStep());
+            }
+            if (null != onlineSchemaChangeScheduleTaskParameters) {
+                taskAndStep.compute(task.getId(), (k, v) -> {
+                    return v + onlineSchemaChangeScheduleTaskParameters.getState();
+                });
             }
         }
         return new ScheduleTasksUpdateHint(ret, taskAndStep);
