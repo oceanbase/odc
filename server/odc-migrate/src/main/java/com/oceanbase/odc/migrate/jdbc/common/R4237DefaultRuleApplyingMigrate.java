@@ -38,7 +38,11 @@ import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.regulation.ruleset.DefaultRuleApplyingEntity;
 import com.oceanbase.odc.metadb.regulation.ruleset.DefaultRuleApplyingRepository;
 import com.oceanbase.odc.metadb.regulation.ruleset.MetadataEntity;
+import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingEntity;
+import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingRepository;
 import com.oceanbase.odc.metadb.regulation.ruleset.RuleMetadataRepository;
+import com.oceanbase.odc.metadb.regulation.ruleset.RulesetEntity;
+import com.oceanbase.odc.metadb.regulation.ruleset.RulesetRepository;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 
 import lombok.AllArgsConstructor;
@@ -106,6 +110,44 @@ public class R4237DefaultRuleApplyingMigrate implements JdbcMigratable {
             log.info("default rule applying changed, start saving, size={}", toAdd.size());
             defaultRuleApplyingRepository.saveAll(toAdd);
             log.info("saving changed default rule applying succeed, size={}", toAdd.size());
+
+            /**
+             * For migrating the customized environment's SQL rules:<br>
+             * 1. All the customized rules will be disabled by default.<br>
+             * 2. All the customized rules' default value will follow the value of the built-in default
+             * environment.<br>
+             */
+            List<DefaultRuleApplyingEntity> defaultEnvDefaultRuleApplyings =
+                    toAdd.stream().filter(e -> e.getRulesetName().endsWith("default-default-ruleset.name"))
+                            .collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(defaultEnvDefaultRuleApplyings)) {
+                RulesetRepository rulesetRepository = SpringContextUtil.getBean(RulesetRepository.class);
+                List<RulesetEntity> userDefinedRulesets = rulesetRepository.findByBuiltin(false);
+                if (CollectionUtils.isEmpty(userDefinedRulesets)) {
+                    return;
+                }
+                RuleApplyingRepository ruleApplyingRepository = SpringContextUtil.getBean(RuleApplyingRepository.class);
+                List<RuleApplyingEntity> defaultEnvRuleAppyings = defaultEnvDefaultRuleApplyings.stream().map(e -> {
+                    RuleApplyingEntity ruleApplyingEntity = new RuleApplyingEntity();
+                    ruleApplyingEntity.setAppliedDialectTypes(e.getAppliedDialectTypes());
+                    ruleApplyingEntity.setEnabled(false);
+                    ruleApplyingEntity.setLevel(e.getLevel());
+                    ruleApplyingEntity.setPropertiesJson(e.getPropertiesJson());
+                    ruleApplyingEntity.setRuleMetadataId(e.getRuleMetadataId());
+                    return ruleApplyingEntity;
+                }).collect(Collectors.toList());
+
+                List<RuleApplyingEntity> userDefinedRulesToAdd =
+                        defaultEnvRuleAppyings.stream().flatMap(e -> userDefinedRulesets.stream().map(r -> {
+                            e.setRulesetId(r.getId());
+                            e.setOrganizationId(r.getOrganizationId());
+                            return e;
+                        })).collect(Collectors.toList());
+                log.info("saving user defined ruleset's default rule applying, size={}", userDefinedRulesToAdd.size());
+                ruleApplyingRepository.saveAll(userDefinedRulesToAdd);
+                log.info("saving user defined ruleset's default rule applying succeed, size={}",
+                        userDefinedRulesToAdd.size());
+            }
         }
     }
 
