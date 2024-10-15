@@ -39,12 +39,16 @@ import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
 import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.common.DataType;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
+import com.oceanbase.tools.sqlparser.statement.common.mysql.VectorType;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnAttributes;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import com.oceanbase.tools.sqlparser.statement.createtable.HashPartition;
 import com.oceanbase.tools.sqlparser.statement.createtable.HashPartitionElement;
+import com.oceanbase.tools.sqlparser.statement.createtable.IndexOptions;
+import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineIndex;
 import com.oceanbase.tools.sqlparser.statement.createtable.PartitionOptions;
+import com.oceanbase.tools.sqlparser.statement.createtable.SortColumn;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
 import com.oceanbase.tools.sqlparser.statement.expression.BoolValue;
 import com.oceanbase.tools.sqlparser.statement.expression.CollectionExpression;
@@ -488,6 +492,24 @@ public class MySQLCreateTableFactoryTest {
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_WithVectorIndex_Succeed() {
+        Create_table_stmtContext ctx = getCreateTableContext(
+                "create table any_schema.t_vec(c1 vector(3), vector index idx1(c1) with (distance=L2, type=hnsw));");
+        MySQLCreateTableFactory factory = new MySQLCreateTableFactory(ctx);
+        CreateTable actual = factory.generate();
+
+        CreateTable expect = new CreateTable(ctx, getRelationFactor("any_schema", "t_vec"));
+        DataType dataType = new VectorType("vector", 3);
+        SortColumn indexColumn = new SortColumn(new ColumnReference(null, null, "c1"));
+        OutOfLineIndex index = new OutOfLineIndex("idx1", Collections.singletonList(indexColumn));
+        index.setVector(true);
+        index.setIndexOptions(new IndexOptions());
+        expect.setTableElements(
+                Arrays.asList(new ColumnDefinition(new ColumnReference(null, null, "c1"), dataType), index));
         Assert.assertEquals(expect, actual);
     }
 

@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.oceanbase.tools.sqlparser.statement.expression.ArrayExpression;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -80,6 +79,7 @@ import com.oceanbase.tools.sqlparser.statement.common.BraceBlock;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
 import com.oceanbase.tools.sqlparser.statement.common.GeneralDataType;
 import com.oceanbase.tools.sqlparser.statement.common.WindowSpec;
+import com.oceanbase.tools.sqlparser.statement.expression.ArrayExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.BoolValue;
 import com.oceanbase.tools.sqlparser.statement.expression.CaseWhen;
 import com.oceanbase.tools.sqlparser.statement.expression.CollectionExpression;
@@ -362,7 +362,8 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             return visit(ctx.expr_const());
         } else if (ctx.expr_list() != null) {
             if (ctx.ARRAY() != null || (ctx.LeftBracket() != null && ctx.RightBracket() != null)) {
-                return new ArrayExpression(ctx, ctx.expr_list().expr().stream().map(this::visit).collect(Collectors.toList()));
+                return new ArrayExpression(ctx,
+                        ctx.expr_list().expr().stream().map(this::visit).collect(Collectors.toList()));
             } else if (ctx.ROW() == null) {
                 return visit(ctx.expr_list());
             }

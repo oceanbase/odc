@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import com.oceanbase.tools.sqlparser.statement.expression.ArrayExpression;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -40,6 +39,7 @@ import com.oceanbase.tools.sqlparser.statement.common.WindowOffset;
 import com.oceanbase.tools.sqlparser.statement.common.WindowOffsetType;
 import com.oceanbase.tools.sqlparser.statement.common.WindowSpec;
 import com.oceanbase.tools.sqlparser.statement.common.WindowType;
+import com.oceanbase.tools.sqlparser.statement.expression.ArrayExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 import com.oceanbase.tools.sqlparser.statement.expression.CompoundExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
@@ -658,9 +658,12 @@ public class MySQLSelectFactoryTest {
         StatementFactory<Select> factory = new MySQLSelectFactory(context);
         Select actual = factory.generate();
 
-        ArrayExpression expression1 = new ArrayExpression(Arrays.asList(new ConstExpression("1"), new ConstExpression("2")));
-        ArrayExpression expression2 = new ArrayExpression(Arrays.asList(new ConstExpression("3"), new ConstExpression("4")));
-        ArrayExpression expression3 = new ArrayExpression(Arrays.asList(new ConstExpression("5"), new ConstExpression("6")));
+        ArrayExpression expression1 =
+                new ArrayExpression(Arrays.asList(new ConstExpression("1"), new ConstExpression("2")));
+        ArrayExpression expression2 =
+                new ArrayExpression(Arrays.asList(new ConstExpression("3"), new ConstExpression("4")));
+        ArrayExpression expression3 =
+                new ArrayExpression(Arrays.asList(new ConstExpression("5"), new ConstExpression("6")));
 
         ArrayExpression column = new ArrayExpression(Arrays.asList(expression1, expression2, expression3));
         Projection projection = new Projection(column, null);

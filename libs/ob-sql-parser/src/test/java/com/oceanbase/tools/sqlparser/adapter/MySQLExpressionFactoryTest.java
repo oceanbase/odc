@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import com.oceanbase.tools.sqlparser.statement.expression.ArrayExpression;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -44,6 +43,7 @@ import com.oceanbase.tools.sqlparser.statement.common.WindowOffset;
 import com.oceanbase.tools.sqlparser.statement.common.WindowOffsetType;
 import com.oceanbase.tools.sqlparser.statement.common.WindowSpec;
 import com.oceanbase.tools.sqlparser.statement.common.WindowType;
+import com.oceanbase.tools.sqlparser.statement.expression.ArrayExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.BoolValue;
 import com.oceanbase.tools.sqlparser.statement.expression.CaseWhen;
 import com.oceanbase.tools.sqlparser.statement.expression.CollectionExpression;
@@ -1437,7 +1437,8 @@ public class MySQLExpressionFactoryTest {
         Expression actual = factory.generate();
         ConstExpression left = new ConstExpression("\"hel\"");
         CollectionExpression right = new CollectionExpression();
-        ArrayExpression arrayExpression = new ArrayExpression(Arrays.asList(new ConstExpression("\"hello\""), new ConstExpression("\"hi\"")));
+        ArrayExpression arrayExpression =
+                new ArrayExpression(Arrays.asList(new ConstExpression("\"hello\""), new ConstExpression("\"hi\"")));
         right.addExpression(arrayExpression);
         CompoundExpression expected = new CompoundExpression(left, right, Operator.EQ);
         Assert.assertEquals(expected, actual);
@@ -1451,9 +1452,9 @@ public class MySQLExpressionFactoryTest {
         ArrayExpression left = new ArrayExpression(Arrays.asList(new ConstExpression("3"), new ConstExpression("4")));
         CollectionExpression right = new CollectionExpression();
         ArrayExpression arrayExpression1 =
-            new ArrayExpression(Arrays.asList(new ConstExpression("1"), new ConstExpression("2")));
+                new ArrayExpression(Arrays.asList(new ConstExpression("1"), new ConstExpression("2")));
         ArrayExpression arrayExpression2 =
-            new ArrayExpression(Arrays.asList(new ConstExpression("3"), new ConstExpression("4")));
+                new ArrayExpression(Arrays.asList(new ConstExpression("3"), new ConstExpression("4")));
         ArrayExpression arrayExpression = new ArrayExpression(Arrays.asList(arrayExpression1, arrayExpression2));
         right.addExpression(arrayExpression);
         CompoundExpression expected = new CompoundExpression(left, right, Operator.EQ);
@@ -1462,18 +1463,20 @@ public class MySQLExpressionFactoryTest {
 
     @Test
     public void generate_AnyArrayExprNested_Succeed() {
-        ExprContext context = getExprContext("[\"are You?\"] = ANY([[\"hello\", \"world\"], [\"hi\", \"what\"], [\"are you?\"]]);");
+        ExprContext context =
+                getExprContext("[\"are You?\"] = ANY([[\"hello\", \"world\"], [\"hi\", \"what\"], [\"are you?\"]]);");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
         ArrayExpression left = new ArrayExpression(Arrays.asList(new ConstExpression("\"are You?\"")));
         CollectionExpression right = new CollectionExpression();
         ArrayExpression arrayExpression1 =
-            new ArrayExpression(Arrays.asList(new ConstExpression("\"hello\""), new ConstExpression("\"world\"")));
+                new ArrayExpression(Arrays.asList(new ConstExpression("\"hello\""), new ConstExpression("\"world\"")));
         ArrayExpression arrayExpression2 =
-            new ArrayExpression(Arrays.asList(new ConstExpression("\"hi\""), new ConstExpression("\"what\"")));
+                new ArrayExpression(Arrays.asList(new ConstExpression("\"hi\""), new ConstExpression("\"what\"")));
         ArrayExpression arrayExpression3 =
-            new ArrayExpression(Arrays.asList(new ConstExpression("\"are you?\"")));
-        ArrayExpression arrayExpression = new ArrayExpression(Arrays.asList(arrayExpression1, arrayExpression2, arrayExpression3));
+                new ArrayExpression(Arrays.asList(new ConstExpression("\"are you?\"")));
+        ArrayExpression arrayExpression =
+                new ArrayExpression(Arrays.asList(arrayExpression1, arrayExpression2, arrayExpression3));
         right.addExpression(arrayExpression);
         CompoundExpression expected = new CompoundExpression(left, right, Operator.EQ);
         Assert.assertEquals(expected, actual);
@@ -1485,7 +1488,8 @@ public class MySQLExpressionFactoryTest {
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
         ArrayExpression expected =
-            new ArrayExpression(Arrays.asList(new ConstExpression("1"), new ConstExpression("2"), new ConstExpression("3")));
+                new ArrayExpression(
+                        Arrays.asList(new ConstExpression("1"), new ConstExpression("2"), new ConstExpression("3")));
         Assert.assertEquals(expected, actual);
     }
 
@@ -1495,7 +1499,8 @@ public class MySQLExpressionFactoryTest {
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
         ArrayExpression expected =
-            new ArrayExpression(Arrays.asList(new ConstExpression("1"), new ConstExpression("2"), new ConstExpression("3")));
+                new ArrayExpression(
+                        Arrays.asList(new ConstExpression("1"), new ConstExpression("2"), new ConstExpression("3")));
         Assert.assertEquals(expected, actual);
     }
 
@@ -1514,7 +1519,8 @@ public class MySQLExpressionFactoryTest {
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
         List<FunctionParam> params = new ArrayList<>();
-        ArrayExpression arrayExpression = new ArrayExpression(Arrays.asList(new ConstExpression("1"), new ConstExpression("2"), new ConstExpression("3")));
+        ArrayExpression arrayExpression = new ArrayExpression(
+                Arrays.asList(new ConstExpression("1"), new ConstExpression("2"), new ConstExpression("3")));
         ConstExpression constExpression = new ConstExpression("2");
         params.add(new ExpressionParam(arrayExpression));
         params.add(new ExpressionParam(constExpression));
