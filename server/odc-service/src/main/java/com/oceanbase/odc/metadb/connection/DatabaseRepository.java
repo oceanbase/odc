@@ -32,7 +32,7 @@ import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 
 public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
         JpaSpecificationExecutor<DatabaseEntity> {
-    Optional<DatabaseEntity> findByConnectionIdAndName(Long connectionId, String name);
+    Optional<DatabaseEntity> findByConnectionIdAndNameAndExisted(Long connectionId, String name, Boolean existed);
 
     List<DatabaseEntity> findByConnectionId(Long connectionId);
 
