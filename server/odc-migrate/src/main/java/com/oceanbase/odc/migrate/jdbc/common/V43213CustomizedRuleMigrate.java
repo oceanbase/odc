@@ -108,18 +108,18 @@ public class V43213CustomizedRuleMigrate implements JdbcMigratable {
     }
 
     private class Rule {
-        private Long organizationId;
+        Long organizationId;
 
-        private Boolean enabled;
+        Boolean enabled;
 
-        private Integer level;
+        Integer level;
 
-        private Long rulesetId;
+        Long rulesetId;
 
-        private Long ruleMetadataId;
+        Long ruleMetadataId;
 
-        private String appliedDialectTypes;
+        String appliedDialectTypes;
 
-        private String propertiesJson;
+        String propertiesJson;
     }
 }
