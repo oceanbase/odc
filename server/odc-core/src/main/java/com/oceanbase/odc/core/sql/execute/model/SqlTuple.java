@@ -32,6 +32,7 @@ import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.ToString;
 
 /**
@@ -57,6 +58,8 @@ public class SqlTuple {
     @JsonIgnore
     @Getter(AccessLevel.NONE)
     private Pair<AbstractSyntaxTree, Exception> ast;
+    @Setter
+    private String procedureName;
 
     private SqlTuple(@NonNull String sqlId, @NonNull String originalSql, @NonNull String executedSql,
             @NonNull TraceWatch sqlWatch, @NonNull Integer offset) {

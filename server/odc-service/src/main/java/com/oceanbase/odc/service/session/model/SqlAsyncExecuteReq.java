@@ -40,7 +40,10 @@ public class SqlAsyncExecuteReq {
     private Boolean showTableColumnInfo;
     private Boolean fullLinkTraceEnabled;
     private Boolean continueExecutionOnError;
-    private boolean editPLSql;
+    /**
+     * in request of editing the pl，the procedureName is not empty
+     */
+    private String procedureName;
 
     public boolean ifSplitSqls() {
         if (this.split == null) {
@@ -54,9 +57,5 @@ public class SqlAsyncExecuteReq {
             return true;
         }
         return this.addROWID;
-    }
-
-    public boolean ifEditPLSql() {
-        return this.editPLSql;
     }
 }

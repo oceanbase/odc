@@ -202,9 +202,11 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                         (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
                 Long dataSourceId = connConfig.getId();
                 String connectSchema = ConnectionSessionUtil.getConnectSchema(connectionSession);
-                lock = jdbcLockRegistry.obtain(getEditOBMysqlPLLockKey(dataSourceId, connectSchema));
+                SqlTuple sqlTuple = sqls.get(sqls.size() - 1);
+                String procedureName = sqlTuple.getProcedureName();
+                lock = jdbcLockRegistry.obtain(getEditOBMysqlPLLockKey(dataSourceId, connectSchema, procedureName));
                 if (!lock.tryLock(3, TimeUnit.SECONDS)) {
-                    returnVal.add(JdbcGeneralResult.failedResult(sqls.get(sqls.size() - 1),
+                    returnVal.add(JdbcGeneralResult.failedResult(sqlTuple,
                             new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock")));
                     onExecutionEnd(sqls.get(sqls.size() - 1), returnVal);
                     return returnVal;
@@ -280,8 +282,10 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
         }
     }
 
-    private String getEditOBMysqlPLLockKey(@NonNull Long dataSourceId, @NonNull String databaseName) {
-        return "edit-ob-mysql-pl-datasourceId-" + dataSourceId + "-databaseName-" + databaseName;
+    private String getEditOBMysqlPLLockKey(@NonNull Long dataSourceId, @NonNull String databaseName,
+            @NonNull String procedureName) {
+        return "edit-ob-mysql-pl-datasourceId-" + dataSourceId + "-databaseName-" + databaseName + "-plName-"
+                + procedureName;
     }
 
     private void applyConnectionSettings(Statement statement) throws SQLException {

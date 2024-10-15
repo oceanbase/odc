@@ -104,10 +104,8 @@ import com.oceanbase.odc.service.session.model.QueryTableOrViewDataReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
-import com.oceanbase.odc.service.session.util.DBSchemaExtractor;
 import com.oceanbase.odc.service.session.util.SqlRewriteUtil;
 import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
-import com.oceanbase.tools.dbbrowser.parser.result.ParsePLResult;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
@@ -132,7 +130,7 @@ public class ConnectConsoleService {
 
     public static final int DEFAULT_GET_RESULT_TIMEOUT_SECONDS = 1;
     public static final String SHOW_TABLE_COLUMN_INFO = "SHOW_TABLE_COLUMN_INFO";
-    public static final String ODC_TEMP_STORED_PROC = "_ODC_TEMP_STORED_PROC";
+    public static final String ODC_TEMP_STORED_PROC_PREFIX = "_ODC_TEMP_STORED_PROC_";
 
 
     @Autowired
@@ -313,7 +311,8 @@ public class ConnectConsoleService {
                         : userConfigFacade.isContinueExecutionOnError();
         boolean stopOnError = !continueExecutionOnError;
         OdcStatementCallBack statementCallBack = null;
-        if (request.ifEditPLSql() && connectionSession.getConnectType() == ConnectType.OB_MYSQL) {
+        if (StringUtils.isNotBlank(request.getProcedureName())
+                && connectionSession.getConnectType() == ConnectType.OB_MYSQL) {
             statementCallBack = generateEditPLSqlODCStatementCallBackForOBMysql(sqlTuples,
                     connectionSession, request, queryLimit, true, executeContext);
         } else {
@@ -656,22 +655,21 @@ public class ConnectConsoleService {
         if (sqlTuple == null) {
             throw new IllegalArgumentException("the sql of editing procedure is null");
         }
-        String testSql = DBSchemaExtractor.getTempPLSqlForOBMysql(sqlTuple);
-        List<SqlTuple> testSqlTuples = generateSqlTuple(
-                Collections.singletonList(new OffsetString(0, testSql)), connectionSession, request);
-        String dropTestSql = "DROP PROCEDURE IF EXISTS " + ODC_TEMP_STORED_PROC + ";";
-        List<SqlTuple> dropTestSqlTuples = generateSqlTuple(
-                Collections.singletonList(new OffsetString(0, dropTestSql)), connectionSession, request);
-        AbstractSyntaxTree ast = sqlTuple.getAst();
-        ParsePLResult parseResult = (ParsePLResult) ast.getParseResult();
-        String plName = parseResult.getPlName();
-        String dropSql = "DROP PROCEDURE IF EXISTS " + plName + ";";
+        String procedureName = request.getProcedureName();
+        sqlTuple.setProcedureName(procedureName);
+        String tempSql = sqlTuple.getExecutedSql().replace(procedureName, ODC_TEMP_STORED_PROC_PREFIX + procedureName);
+        List<SqlTuple> tempSqlTuples = generateSqlTuple(
+                Collections.singletonList(new OffsetString(0, tempSql)), connectionSession, request);
+        String dropTempSql = "DROP PROCEDURE IF EXISTS " + ODC_TEMP_STORED_PROC_PREFIX + procedureName + ";";
+        List<SqlTuple> dropTempSqlTuples = generateSqlTuple(
+                Collections.singletonList(new OffsetString(0, dropTempSql)), connectionSession, request);
+        String dropSql = "DROP PROCEDURE IF EXISTS " + procedureName + ";";
         List<SqlTuple> dropSqlTuples = generateSqlTuple(
                 Collections.singletonList(new OffsetString(0, dropSql)), connectionSession, request);
-        testSqlTuples.addAll(dropTestSqlTuples);
-        testSqlTuples.addAll(dropSqlTuples);
-        testSqlTuples.addAll(sqlTuples);
-        sqlTuples = testSqlTuples;
+        tempSqlTuples.addAll(dropTempSqlTuples);
+        tempSqlTuples.addAll(dropSqlTuples);
+        tempSqlTuples.addAll(sqlTuples);
+        sqlTuples = tempSqlTuples;
         return sqlTuples;
     }
 }
