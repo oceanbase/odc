@@ -343,12 +343,6 @@ bit_expr
     | BOOL_VALUE
     ;
 
-conf_expr
-    : unary_expr
-    | BOOL_VALUE
-    | conf_expr (CNNOP|Div|MOD|Minus|Plus|Star) conf_expr
-    ;
-
 is_nan_inf_value
     : NAN_VALUE
     | INFINITE_VALUE
@@ -879,7 +873,8 @@ updating_func
     ;
 
 updating_params
-    : bit_expr
+    : STRING_VALUE
+    | pl_var_name
     ;
 
 substr_params
@@ -4058,7 +4053,7 @@ alter_system_reset_clause
     ;
 
 set_system_parameter_clause
-    : var_name COMP_EQ conf_expr
+    : var_name COMP_EQ bit_expr
     ;
 
 reset_system_parameter_clause
