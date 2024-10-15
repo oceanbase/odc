@@ -16,9 +16,13 @@
 package com.oceanbase.odc.service.onlineschemachange;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
@@ -29,6 +33,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
@@ -207,13 +212,14 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
             double currentProgressPercentage = getProgressPercentage(scheduleTasks);
             double prevProgressPercentage =
                     null != previousTaskResult ? getProgressPercentage(previousTaskResult.getTasks()) : 0;
-            // get swap table flag changed
-            int currentEnableManualSwapTableFlagCounts = getManualSwapTableEnableFlagCounts(scheduleTasks);
-            int prevEnableManualSwapTableFlagCounts =
-                    null != previousTaskResult ? getManualSwapTableEnableFlagCounts(previousTaskResult.getTasks()) : 0;
+            // get swap table flag and oms step changed hint
+            ScheduleTasksUpdateHint currentHint = getScheduleTasksUpdateHint(scheduleTasks);
+            ScheduleTasksUpdateHint prevHint =
+                    null != previousTaskResult ? getScheduleTasksUpdateHint(previousTaskResult.getTasks())
+                            : new ScheduleTasksUpdateHint(0);
 
             if (currentProgressPercentage > prevProgressPercentage || dbStatus != currentStatus
-                    || (currentEnableManualSwapTableFlagCounts != prevEnableManualSwapTableFlagCounts)) {
+                    || currentHint.hasDiff(prevHint)) {
                 flowTask.setResultJson(JsonUtils.toJson(new OnlineSchemaChangeTaskResult(scheduleTasks.getContent())));
                 flowTask.setStatus(currentStatus);
                 flowTask.setProgressPercentage(Math.min(currentProgressPercentage, 100));
@@ -225,22 +231,31 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     }
 
     /**
-     * get counts of tasks with swap table flag enabled
+     * get schedule task update hint including manual swap table counts and steps
      */
-    protected int getManualSwapTableEnableFlagCounts(Iterable<ScheduleTaskEntity> tasks) {
+    protected ScheduleTasksUpdateHint getScheduleTasksUpdateHint(Iterable<ScheduleTaskEntity> tasks) {
         if (null == tasks) {
-            return 0;
+            return new ScheduleTasksUpdateHint(0);
         }
         int ret = 0;
+        Map<Long, String> taskAndStep = new HashMap<>();
         for (ScheduleTaskEntity task : tasks) {
             // check current
             OnlineSchemaChangeScheduleTaskResult result = JsonUtils.fromJson(task.getResultJson(),
                     OnlineSchemaChangeScheduleTaskResult.class);
-            if (null != result && result.isManualSwapTableEnabled()) {
-                ret++;
+            OnlineSchemaChangeScheduleTaskParameters onlineSchemaChangeScheduleTaskParameters =
+                    JsonUtils.fromJson(task.getParametersJson(), OnlineSchemaChangeScheduleTaskParameters.class);
+            if (null != result) {
+                ret += (result.isManualSwapTableEnabled() ? 1 : 0);
+                taskAndStep.put(task.getId(), result.getCurrentStep());
+            }
+            if (null != onlineSchemaChangeScheduleTaskParameters) {
+                taskAndStep.compute(task.getId(), (k, v) -> {
+                    return v + onlineSchemaChangeScheduleTaskParameters.getState();
+                });
             }
         }
-        return ret;
+        return new ScheduleTasksUpdateHint(ret, taskAndStep);
     }
 
     protected double getProgressPercentage(Iterable<ScheduleTaskEntity> tasks) {
@@ -401,5 +416,49 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     @Override
     protected boolean isFailure() {
         throw new RuntimeException("not impl");
+    }
+
+    /**
+     * hint to determinate if schedule task has changed
+     */
+    protected static final class ScheduleTasksUpdateHint {
+        private final int enableManualSwapTableFlagCounts;
+        private final Map<Long, String> taskStepsMap = new HashMap<>();
+
+        protected ScheduleTasksUpdateHint(int enableManualSwapTableFlagCounts, Map<Long, String> taskStepsMap) {
+            this.enableManualSwapTableFlagCounts = enableManualSwapTableFlagCounts;
+            this.taskStepsMap.putAll(taskStepsMap);
+        }
+
+        protected ScheduleTasksUpdateHint(int enableManualSwapTableFlagCounts) {
+            this.enableManualSwapTableFlagCounts = enableManualSwapTableFlagCounts;
+        }
+
+        // if two hint has diff
+        public boolean hasDiff(@NotNull ScheduleTasksUpdateHint other) {
+            if (other.enableManualSwapTableFlagCounts != this.enableManualSwapTableFlagCounts) {
+                return true;
+            }
+            if (taskStepsMap.size() != other.taskStepsMap.size()) {
+                return true;
+            }
+            for (Long scheduleTaskId : taskStepsMap.keySet()) {
+                if (!StringUtils.equalsIgnoreCase(taskStepsMap.get(scheduleTaskId),
+                        other.taskStepsMap.get(scheduleTaskId))) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @VisibleForTesting
+        public int getEnableManualSwapTableFlagCounts() {
+            return enableManualSwapTableFlagCounts;
+        }
+
+        @VisibleForTesting
+        public Map<Long, String> getTaskStepsMap() {
+            return taskStepsMap;
+        }
     }
 }
