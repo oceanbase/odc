@@ -49,14 +49,24 @@ public enum DBColumnTypeDisplay {
         return this == DISPLAY_PRECISION_AND_SCALE;
     }
 
+    /**
+     * 通过名称获取数据库列类型显示枚举值
+     *
+     * @param name 列类型名称
+     * @return 数据库列类型显示枚举值
+     */
     @JsonCreator
     public static DBColumnTypeDisplay fromName(String name) {
+        // 遍历所有数据库列类型显示枚举值
         for (DBColumnTypeDisplay type : DBColumnTypeDisplay.values()) {
+            // 遍历当前枚举值的所有类型名称
             for (String singleValue : type.typeNames)
+                // 如果传入的名称与当前枚举值的类型名称相同，则返回当前枚举值
                 if (StringUtils.equals(singleValue, name)) {
                     return type;
                 }
         }
+        // 如果没有匹配的枚举值，则返回不显示精度和小数位数的枚举值
         return NOT_DISPLAY_PRECISION_AND_SCALE;
     }
 }

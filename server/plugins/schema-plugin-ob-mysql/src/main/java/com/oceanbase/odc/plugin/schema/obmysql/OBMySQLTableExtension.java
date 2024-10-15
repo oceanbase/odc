@@ -63,29 +63,51 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
         return getSchemaAccessor(connection).showTablesLike(schemaName, tableNameLike);
     }
 
+    /**
+     * 根据给定的连接、模式名和表名获取表的详细信息
+     *
+     * @param connection 数据库连接
+     * @param schemaName 模式名
+     * @param tableName  表名
+     * @return 包含表详细信息的DBTable对象
+     */
     @Override
     public DBTable getDetail(@NonNull Connection connection, @NonNull String schemaName, @NonNull String tableName) {
+        // 获取模式访问器
         DBSchemaAccessor schemaAccessor = getSchemaAccessor(connection);
+        // 获取表的DDL语句
         String ddl = schemaAccessor.getTableDDL(schemaName, tableName);
+        // 通过DDL语句解析表的分区信息
         OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(ddl);
 
+        // 创建DBTable对象并设置基本信息
         DBTable table = new DBTable();
         table.setSchemaName(schemaName);
         table.setOwner(schemaName);
         table.setName(tableName);
+        // 获取表的列信息并设置到DBTable对象中
         table.setColumns(schemaAccessor.listTableColumns(schemaName, tableName));
+        // 获取表的约束信息并设置到DBTable对象中
         table.setConstraints(schemaAccessor.listTableConstraints(schemaName, tableName));
+        // 设置表的分区信息
         table.setPartition(parser.getPartition());
+        // 获取表的索引信息并设置到DBTable对象中
         table.setIndexes(schemaAccessor.listTableIndexes(schemaName, tableName));
+        // 设置表的DDL语句
         table.setDDL(ddl);
+        // 获取表的选项信息并设置到DBTable对象中
         table.setTableOptions(schemaAccessor.getTableOptions(schemaName, tableName));
+        // 获取表的统计信息并设置到DBTable对象中
         table.setStats(getTableStats(connection, schemaName, tableName));
         try {
+            // 获取表的列组信息并设置到DBTable对象中
             table.setColumnGroups(schemaAccessor.listTableColumnGroups(schemaName, tableName));
         } catch (Exception e) {
             // eat the exception
+            // 忽略异常
         }
         return table;
+        // 忽略异常
     }
 
     protected DBTableStats getTableStats(@NonNull Connection connection, @NonNull String schemaName,

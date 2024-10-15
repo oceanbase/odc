@@ -271,10 +271,19 @@ public abstract class DBTableEditor implements DBObjectEditor<DBTable> {
         fillSchemaNameAndTableName(newTable);
     }
 
+    /**
+     * 填充表格的模式名称和表名称
+     *
+     * @param table 数据库表格对象
+     */
     private void fillSchemaNameAndTableName(DBTable table) {
+        // 填充列的模式名称和表名称
         fillColumnSchemaNameAndTableName(table.getColumns(), table.getSchemaName(), table.getName());
+        // 填充索引的模式名称和表名称
         fillIndexSchemaNameAndTableName(table.getIndexes(), table.getSchemaName(), table.getName());
+        // 填充约束的模式名称和表名称
         fillConstraintSchemaNameAndTableName(table.getConstraints(), table.getSchemaName(), table.getName());
+        // 填充分区的模式名称和表名称
         fillPartitionSchemaNameAndTableName(table.getPartition(), table.getSchemaName(), table.getName());
     }
 

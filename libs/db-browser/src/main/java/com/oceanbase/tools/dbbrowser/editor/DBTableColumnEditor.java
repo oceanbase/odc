@@ -176,47 +176,67 @@ public abstract class DBTableColumnEditor implements DBObjectEditor<DBTableColum
 
     public static class DataTypeModifier implements DBColumnModifier {
 
+        /**
+         * 在SqlBuilder中添加列的修饰符
+         *
+         * @param column     数据库表列对象
+         * @param sqlBuilder SqlBuilder对象
+         */
         @Override
         public void appendModifier(DBTableColumn column, SqlBuilder sqlBuilder) {
             String typeName = column.getTypeName();
+            // 获取列的精度
             Long precision = column.getPrecision();
+            // 获取列的小数位数
             Integer scale = column.getScale();
+            // 在SqlBuilder中添加列的数据类型名称
             sqlBuilder.space().append(typeName);
+            // 如果列的数据类型是enum或set
             if (StringUtils.equalsIgnoreCase(typeName, "enum") || StringUtils.equalsIgnoreCase(typeName, "set")) {
                 if (CollectionUtils.isNotEmpty(column.getEnumValues())) {
                     List<String> quotedValues =
-                            column.getEnumValues().stream()
-                                    .map(StringUtils::quoteMysqlValue)
-                                    .collect(Collectors.toList());
+                        column.getEnumValues().stream()
+                            .map(StringUtils::quoteMysqlValue)
+                            .collect(Collectors.toList());
+                    // 在SqlBuilder中添加枚举值
                     sqlBuilder.append("(").append(String.join(",", quotedValues)).append(")");
                 }
                 return;
             }
             if (Objects.isNull(scale)) {
+                // 如果列的精度不为空
                 if (Objects.nonNull(precision)) {
                     sqlBuilder.append("(").append(String.valueOf(precision)).append(")");
                 }
+                // 如果列的精度和小数位数都不为空
             } else {
                 if (Objects.isNull(precision)) {
                     sqlBuilder.append("(").append(String.valueOf(scale)).append(")");
+                    // 如果列的精度和小数位数都不为空
                 } else {
                     sqlBuilder.append("(").append(String.valueOf(precision)).append(", ").append(String.valueOf(scale))
-                            .append(")");
+                        .append(")");
                 }
             }
             if (DataTypeUtil.isDateType(column.getTypeName())
-                    && Objects.nonNull(column.getOnUpdateCurrentTimestamp())) {
+                && Objects.nonNull(column.getOnUpdateCurrentTimestamp())) {
+                // 如果 on update current timestamp 属性为 true，则添加 on update current timestamp 子句
                 if (column.getOnUpdateCurrentTimestamp()) {
                     sqlBuilder.append(" ON UPDATE CURRENT_TIMESTAMP");
+                    // 如果列的精度不为空，则添加精度参数
                     if (Objects.nonNull(precision)) {
                         sqlBuilder.append("(").append(String.valueOf(precision)).append(")");
                     }
                 }
             }
+            // 判断列的数据类型是否为无符号整数类型，并且列的 unsigned 属性不为 null
             if (DataTypeUtil.isIntegerType(column.getTypeName()) && Objects.nonNull(column.getUnsigned())) {
+                // 如果 unsigned 属性为 true，则添加 unsigned 子句
                 sqlBuilder.append(column.getUnsigned() ? " UNSIGNED " : "");
             }
+            // 判断列的数据类型是否为带前导零的整数类型，并且列的 zerofill 属性不为 null
             if (DataTypeUtil.isIntegerType(column.getTypeName()) && Objects.nonNull(column.getZerofill())) {
+                // 如果 zerofill 属性为 true，则添加 zerofill 子句
                 sqlBuilder.append(column.getZerofill() ? " ZEROFILL " : "");
             }
         }
