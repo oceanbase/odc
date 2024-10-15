@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.migrate.jdbc.common;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.persistence.Column;
-import javax.persistence.Convert;
 import javax.sql.DataSource;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -28,7 +25,6 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.CollectionUtils;
 
-import com.oceanbase.odc.common.jpa.JsonListConverter;
 import com.oceanbase.odc.core.migrate.JdbcMigratable;
 import com.oceanbase.odc.core.migrate.Migratable;
 
@@ -73,9 +69,9 @@ public class V43213CustomizedRuleMigrate implements JdbcMigratable {
 
     private List<Rule> listDefaultEnvSqlAffectedRowsRules(List<RulesetInfo> customizedRulesets) {
         String sql = "select level, rule_metadata_id, applied_dialect_types, properties_json "
-                        + "from regulation_default_rule_applying"
-                     + " where (rule_metadata_id=59 and ruleset_name='${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}')"
-                     + " or (rule_metadata_id=60 and ruleset_name='${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}')";
+                + "from regulation_default_rule_applying"
+                + " where (rule_metadata_id=59 and ruleset_name='${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}')"
+                + " or (rule_metadata_id=60 and ruleset_name='${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}')";
         List<Rule> rules = jdbcTemplate.query(sql, (rs, rowNum) -> {
             Rule rule = new Rule();
             rule.level = rs.getInt("level");
@@ -94,12 +90,14 @@ public class V43213CustomizedRuleMigrate implements JdbcMigratable {
     }
 
     private int insertOnDuplicateKey(List<Rule> rules) {
-        String sql = "INSERT INTO regulation_rule_applying (organization_id, is_enabled, level, ruleset_id, rule_metadata_id, applied_dialect_types, properties_json) "
+        String sql =
+                "INSERT INTO regulation_rule_applying (organization_id, is_enabled, level, ruleset_id, rule_metadata_id, applied_dialect_types, properties_json) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?) "
                         + "ON DUPLICATE KEY UPDATE `id` = `id`";
         int affectedRows = 0;
         for (Rule rule : rules) {
-            affectedRows += jdbcTemplate.update(sql, rule.organizationId, rule.enabled, rule.level, rule.rulesetId, rule.ruleMetadataId, rule.appliedDialectTypes, rule.propertiesJson);
+            affectedRows += jdbcTemplate.update(sql, rule.organizationId, rule.enabled, rule.level, rule.rulesetId,
+                    rule.ruleMetadataId, rule.appliedDialectTypes, rule.propertiesJson);
         }
         return affectedRows;
     }
