@@ -104,4 +104,11 @@ public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
             nativeQuery = true)
     int setProjectIdToNull(@Param("projectId") Long projectId);
 
+    @Modifying
+    @Transactional
+    @Query(value = "update connect_database t set t.environment_id = :environmentId where t.connection_id = :connectionId",
+            nativeQuery = true)
+    int setEnvironmentIdByConnectionId(@Param("environmentId") Long environmentId,
+            @Param("connectionId") Long connectionId);
+
 }
