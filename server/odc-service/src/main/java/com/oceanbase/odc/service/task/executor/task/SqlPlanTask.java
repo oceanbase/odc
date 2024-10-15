@@ -134,7 +134,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
     protected boolean doStart(JobContext context) throws Exception {
         try {
             int index = 0;
-            initSqlIterator();
+            initSqlInputStream();
             SqlStatementIterator sqlIterator =
                     SqlUtils.iterator(connectionSession, sqlInputStream, StandardCharsets.UTF_8);
             while (sqlIterator.hasNext()) {
@@ -183,7 +183,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         }
     }
 
-    private void initSqlIterator() {
+    private void initSqlInputStream() {
         if (CollectionUtils.isEmpty(parameters.getSqlObjectIds()) && StringUtils.isBlank(parameters.getSqlContent())) {
             throw new UnexpectedException("Sql content and sql object id can not be null at the same time.");
         }
