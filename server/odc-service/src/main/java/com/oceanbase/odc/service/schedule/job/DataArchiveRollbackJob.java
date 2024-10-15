@@ -38,8 +38,6 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
     @Override
     public void executeJob(JobExecutionContext context) {
 
-        Long scheduleId = ScheduleTaskUtils.getScheduleId(context);
-        Long scheduleTaskId = ScheduleTaskUtils.getScheduleTaskId(context);
         DataArchiveRollbackParameters rollbackParameters = ScheduleTaskUtils.getDataArchiveRollbackParameters(context);
 
         // find data archive task by id.
@@ -50,7 +48,7 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
         } catch (NotFoundException e) {
             log.warn("Data archive task not found,rollback task fast failed.scheduleTaskId={}",
                     rollbackParameters.getDataArchiveTaskId());
-            onFailure(scheduleTaskId);
+            onFailure();
             return;
         }
         DataArchiveParameters dataArchiveParameters = (DataArchiveParameters) dataArchiveTask.getParameters();
@@ -62,17 +60,14 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
         parameters.setSourceDs(parameters.getTargetDs());
         parameters.setTargetDs(tempDataSource);
         parameters
-                .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(scheduleId));
+                .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(getScheduleId()));
         parameters.getTables().forEach(o -> {
             String temp = o.getTableName();
             o.setTableName(o.getTargetTableName());
             o.setTargetTableName(temp);
         });
-        parameters.setScheduleTaskId(scheduleTaskId);
-        Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis(),
+        parameters.setScheduleTaskId(getScheduleTaskId());
+        publishJob(parameters, dataArchiveParameters.getTimeoutMillis(),
                 dataArchiveParameters.getSourceDatabaseId());
-        log.info("Publish DLM job to task framework succeed,scheduleTaskId={},jobIdentity={}", scheduleTaskId,
-                jobId);
-        scheduleService.updateJobId(scheduleTaskId, jobId);
     }
 }

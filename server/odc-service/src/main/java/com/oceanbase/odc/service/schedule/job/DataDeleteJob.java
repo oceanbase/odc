@@ -42,12 +42,10 @@ public class DataDeleteJob extends AbstractDlmJob {
 
 
     private void executeInTaskFramework(JobExecutionContext context) {
-        Long scheduleId = ScheduleTaskUtils.getScheduleId(context);
-        Long scheduleTaskId = ScheduleTaskUtils.getScheduleTaskId(context);
         DataDeleteParameters dataDeleteParameters = ScheduleTaskUtils.getDataDeleteParameters(context);
         DLMJobReq parameters = new DLMJobReq();
-        parameters.setJobName(scheduleId.toString());
-        parameters.setScheduleTaskId(scheduleTaskId);
+        parameters.setJobName(ScheduleTaskUtils.getJobName(context));
+        parameters.setScheduleTaskId(getScheduleTaskId());
         JobType jobType = dataDeleteParameters.getNeedCheckBeforeDelete() ? JobType.DELETE : JobType.QUICK_DELETE;
         parameters.setJobType(dataDeleteParameters.getDeleteByUniqueKey() ? jobType : JobType.DEIRECT_DELETE);
         parameters.setTables(dataDeleteParameters.getTables());
@@ -59,7 +57,7 @@ public class DataDeleteJob extends AbstractDlmJob {
                     : "");
         }
         parameters.setNeedPrintSqlTrace(dataDeleteParameters.isNeedPrintSqlTrace());
-        parameters.setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(scheduleId));
+        parameters.setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(getScheduleId()));
         parameters.setWriteThreadCount(dataDeleteParameters.getWriteThreadCount());
         parameters.setReadThreadCount(dataDeleteParameters.getReadThreadCount());
         parameters.setScanBatchSize(dataDeleteParameters.getScanBatchSize());
@@ -70,12 +68,7 @@ public class DataDeleteJob extends AbstractDlmJob {
         parameters.getSourceDs().setQueryTimeout(dataDeleteParameters.getQueryTimeout());
         parameters.getTargetDs().setQueryTimeout(dataDeleteParameters.getQueryTimeout());
 
-        Long jobId =
-                publishJob(parameters, dataDeleteParameters.getTimeoutMillis(), dataDeleteParameters.getDatabaseId());
-        scheduleService.updateJobId(scheduleTaskId, jobId);
-        log.info("Publish data-delete job to task framework succeed,scheduleTaskId={},jobIdentity={}",
-                scheduleTaskId,
-                jobId);
+        publishJob(parameters, dataDeleteParameters.getTimeoutMillis(), dataDeleteParameters.getDatabaseId());
     }
 
 

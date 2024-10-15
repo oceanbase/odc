@@ -505,5 +505,9 @@ public class ScheduleTaskService {
         return scheduleTaskRepository.findById(id).map(scheduleTaskMapper::entityToModel);
     }
 
+    public void updateJobId(Long id, Long jobId) {
+        scheduleTaskRepository.updateJobIdById(id, jobId);
+    }
+
 
 }

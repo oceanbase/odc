@@ -13,36 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.job;
+package com.oceanbase.odc.service.schedule.model;
 
-import java.util.List;
-
-import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.cloud.model.CloudProvider;
+import com.oceanbase.odc.service.task.executor.task.Task;
 
 import lombok.Data;
 
+/**
+ * @Author：tinker
+ * @Date: 2024/10/15 10:31
+ * @Descripition:
+ */
+
 @Data
-public class PublishSqlPlanJobReq {
+public class PublishJobParams {
 
-    private ConnectionConfig dataSource;
-
-    private String sqlContent;
-
-    private List<String> sqlObjectIds;
-
-    private String delimiter;
-
-    private Integer retryTimes;
-
-    private Long retryIntervalMillis = 10000L;
-
-    private Integer queryLimit;
+    private String taskParametersJson;
 
     private Long timeoutMillis;
 
-    private TaskErrorStrategy errorStrategy;
+    private String region;
+    private CloudProvider cloudProvider;
 
-    private String sessionTimeZone;
+    private String jobType;
+    private Class<? extends Task<?>> jobClass;
 
 }

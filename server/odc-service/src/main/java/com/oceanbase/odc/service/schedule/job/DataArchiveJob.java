@@ -40,12 +40,10 @@ public class DataArchiveJob extends AbstractDlmJob {
 
     private void executeInTaskFramework(JobExecutionContext context) {
 
-        Long scheduleTaskId = ScheduleTaskUtils.getScheduleTaskId(context);
-        Long scheduleId = ScheduleTaskUtils.getScheduleId(context);
         DataArchiveParameters dataArchiveParameters = ScheduleTaskUtils.getDataArchiveParameters(context);
         DLMJobReq parameters = new DLMJobReq();
-        parameters.setJobName(scheduleId.toString());
-        parameters.setScheduleTaskId(scheduleTaskId);
+        parameters.setJobName(ScheduleTaskUtils.getJobName(context));
+        parameters.setScheduleTaskId(getScheduleTaskId());
         parameters.setJobType(JobType.MIGRATE);
         parameters.setTables(dataArchiveParameters.getTables());
         for (DataArchiveTableConfig tableConfig : parameters.getTables()) {
@@ -59,7 +57,7 @@ public class DataArchiveJob extends AbstractDlmJob {
         parameters.setMigrationInsertAction(dataArchiveParameters.getMigrationInsertAction());
         parameters.setNeedPrintSqlTrace(dataArchiveParameters.isNeedPrintSqlTrace());
         parameters
-                .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(scheduleId));
+                .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(getScheduleId()));
         parameters.setWriteThreadCount(dataArchiveParameters.getWriteThreadCount());
         parameters.setReadThreadCount(dataArchiveParameters.getReadThreadCount());
         parameters.setShardingStrategy(dataArchiveParameters.getShardingStrategy());
@@ -70,12 +68,10 @@ public class DataArchiveJob extends AbstractDlmJob {
         parameters.getTargetDs().setQueryTimeout(dataArchiveParameters.getQueryTimeout());
         parameters.setSyncTableStructure(dataArchiveParameters.getSyncTableStructure());
 
-        Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis(),
+
+
+        publishJob(parameters, dataArchiveParameters.getTimeoutMillis(),
                 dataArchiveParameters.getSourceDatabaseId());
-        scheduleService.updateJobId(scheduleTaskId, jobId);
-        log.info("Publish data-archive job to task framework succeed,scheduleTaskId={},jobIdentity={}",
-                scheduleTaskId,
-                jobId);
     }
 
 }

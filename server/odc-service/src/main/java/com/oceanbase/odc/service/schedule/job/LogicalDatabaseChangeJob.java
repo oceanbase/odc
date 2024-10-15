@@ -15,12 +15,8 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.quartz.JobExecutionContext;
 
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
@@ -33,13 +29,11 @@ import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalD
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.LogicalDatabaseChangeParameters;
+import com.oceanbase.odc.service.schedule.model.PublishJobParams;
 import com.oceanbase.odc.service.schedule.model.PublishLogicalDatabaseChangeReq;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
-import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.executor.task.LogicalDatabaseChangeTask;
-import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
-import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -50,7 +44,7 @@ import lombok.extern.slf4j.Slf4j;
  * @Description: []
  */
 @Slf4j
-public class LogicalDatabaseChangeJob implements OdcJob {
+public class LogicalDatabaseChangeJob extends AbstractJob {
     public final ScheduleTaskRepository scheduleTaskRepository;
     public final ScheduleService scheduleService;
     private final DatabaseService databaseService;
@@ -78,11 +72,9 @@ public class LogicalDatabaseChangeJob implements OdcJob {
 
     @Override
     public void execute(JobExecutionContext context) {
-        Long scheduleId = ScheduleTaskUtils.getScheduleId(context);
-        Long scheduleTaskId = ScheduleTaskUtils.getScheduleTaskId(context);
         ScheduleEntity scheduleEntity =
-                scheduleRepository.findById(scheduleId).orElseThrow(() -> new IllegalArgumentException(
-                        "Schedule not found, scheduleId=" + scheduleId));
+                scheduleRepository.findById(getScheduleId()).orElseThrow(() -> new IllegalArgumentException(
+                        "Schedule not found, scheduleId=" + getScheduleId()));
         LogicalDatabaseChangeParameters parameters = ScheduleTaskUtils.getLogicalDatabaseChangeParameters(context);
         PublishLogicalDatabaseChangeReq req = new PublishLogicalDatabaseChangeReq();
         req.setSqlContent(parameters.getSqlContent());
@@ -94,12 +86,13 @@ public class LogicalDatabaseChangeJob implements OdcJob {
         req.setLogicalDatabaseResp(logicalDatabaseResp);
         req.setDelimiter(parameters.getDelimiter());
         req.setTimeoutMillis(parameters.getTimeoutMillis());
-        req.setScheduleTaskId(scheduleTaskId);
-        Long jobId = publishJob(req, parameters.getTimeoutMillis());
-        scheduleTaskRepository.updateJobIdById(scheduleTaskId, jobId);
-        scheduleTaskRepository.updateTaskResult(scheduleTaskId, JsonUtils.toJson(parameters));
-        log.info("Publish data-archive job to task framework succeed,scheduleTaskId={},jobIdentity={}", scheduleTaskId,
-                jobId);
+        req.setScheduleTaskId(getScheduleTaskId());
+        PublishJobParams publishJobParams = new PublishJobParams();
+        publishJobParams.setTaskParametersJson(JobUtils.toJson(req));
+        publishJobParams.setJobType("LogicalDatabaseChange");
+        publishJobParams.setJobClass(LogicalDatabaseChangeTask.class);
+        publishJobParams.setTimeoutMillis(parameters.getTimeoutMillis());
+        publishJob(publishJobParams);
     }
 
     @Override
@@ -117,24 +110,4 @@ public class LogicalDatabaseChangeJob implements OdcJob {
 
     }
 
-    public Long publishJob(PublishLogicalDatabaseChangeReq publishReq, Long timeoutMillis) {
-        Map<String, String> jobData = new HashMap<>();
-        jobData.put(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY,
-                JobUtils.toJson(publishReq));
-        if (timeoutMillis != null) {
-            jobData.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, timeoutMillis.toString());
-        }
-        Map<String, String> jobProperties = new HashMap<>();
-        SingleJobProperties singleJobProperties = new SingleJobProperties();
-        singleJobProperties.setEnableRetryAfterHeartTimeout(true);
-        singleJobProperties.setMaxRetryTimesAfterHeartTimeout(1);
-        jobProperties.putAll(singleJobProperties.toJobProperties());
-
-        DefaultJobDefinition jobDefinition = DefaultJobDefinition.builder().jobClass(LogicalDatabaseChangeTask.class)
-                .jobType("LogicalDatabaseChange")
-                .jobParameters(jobData)
-                .jobProperties(jobProperties)
-                .build();
-        return jobScheduler.scheduleJobNow(jobDefinition);
-    }
 }

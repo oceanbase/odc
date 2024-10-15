@@ -110,7 +110,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         Map<String, String> jobProperties = jobContext.getJobProperties();
         this.result.setRegion(jobProperties.get("region"));
         this.result.setCloudProvider(jobProperties.get("cloudProvider"));
-        this.connectionSession = generateSession();
+        this.connectionSession = generateSession(parameters.getDataSource());
         initSqlIterator();
         this.executor = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
         long timeoutUs = TimeUnit.MILLISECONDS.toMicros(parameters.getTimeoutMillis());
@@ -286,9 +286,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
     }
 
 
-    private ConnectionSession generateSession() {
-        ConnectionConfig connectionConfig = JobUtils.fromJson(
-                getJobParameters().get(JobParametersKeyConstants.CONNECTION_CONFIG), ConnectionConfig.class);
+    private ConnectionSession generateSession(ConnectionConfig connectionConfig) {
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(connectionConfig);
         sessionFactory.setSessionTimeoutMillis(parameters.getTimeoutMillis());
         ConnectionSession connectionSession = sessionFactory.generateSession();

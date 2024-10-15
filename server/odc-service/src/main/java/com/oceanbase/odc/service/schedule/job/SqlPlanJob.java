@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,17 +36,14 @@ import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.model.PublishJobParams;
 import com.oceanbase.odc.service.schedule.model.Schedule;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskType;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
-import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.executor.task.SqlPlanTask;
-import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
-import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
-import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -58,7 +54,7 @@ import lombok.extern.slf4j.Slf4j;
  * @Descripition:
  */
 @Slf4j
-public class SqlPlanJob implements OdcJob {
+public class SqlPlanJob extends AbstractJob {
 
     public final TaskFrameworkEnabledProperties taskFrameworkProperties;
     public final ScheduleTaskRepository scheduleTaskRepository;
@@ -108,7 +104,6 @@ public class SqlPlanJob implements OdcJob {
     }
 
     private void executeInTaskFramework(JobExecutionContext context) {
-        Long scheduleTaskId = ScheduleTaskUtils.getScheduleTaskId(context);
         SqlPlanParameters sqlPlanParameters = ScheduleTaskUtils.getSqlPlanParameters(context);
         PublishSqlPlanJobReq parameters = new PublishSqlPlanJobReq();
         parameters.setSqlContent(sqlPlanParameters.getSqlContent());
@@ -119,34 +114,22 @@ public class SqlPlanJob implements OdcJob {
         parameters.setQueryLimit(sqlPlanParameters.getQueryLimit());
         parameters.setErrorStrategy(sqlPlanParameters.getErrorStrategy());
         parameters.setSessionTimeZone(connectProperties.getDefaultTimeZone());
-        Map<String, String> jobData = new HashMap<>();
         Database database = databaseService.getBasicSkipPermissionCheck(sqlPlanParameters.getDatabaseId());
         ConnectionConfig dataSource = datasourceService.getDecryptedConfig(database.getDataSource().getId());
         dataSource.setDefaultSchema(database.getName());
-        jobData.put(JobParametersKeyConstants.CONNECTION_CONFIG, JobUtils.toJson(dataSource));
-        jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON, JobUtils.toJson(parameters));
+        parameters.setDataSource(dataSource);
 
-        SingleJobProperties singleJobProperties = new SingleJobProperties();
-        singleJobProperties.setEnableRetryAfterHeartTimeout(true);
-        singleJobProperties.setMaxRetryTimesAfterHeartTimeout(1);
-        Map<String, String> jobProperties = new HashMap<>(singleJobProperties.toJobProperties());
-
+        PublishJobParams publishJobParams = new PublishJobParams();
+        publishJobParams.setTaskParametersJson(JobUtils.toJson(parameters));
+        publishJobParams.setJobType("SQL_PLAN");
+        publishJobParams.setJobClass(SqlPlanTask.class);
+        publishJobParams.setTimeoutMillis(parameters.getTimeoutMillis());
         Map<String, Object> attributes = getDatasourceAttributesByDatabaseId(sqlPlanParameters.getDatabaseId());
-        if (attributes != null && !attributes.isEmpty() && attributes.containsKey("cloudProvider")
-                && attributes.containsKey("region")) {
-            JobPropertiesUtils.setCloudProvider(jobProperties,
-                    CloudProvider.fromValue(attributes.get("cloudProvider").toString()));
-            JobPropertiesUtils.setRegionName(jobProperties, attributes.get("region").toString());
+        if (attributes != null && attributes.containsKey("cloudProvider") && attributes.containsKey("region")) {
+            publishJobParams.setCloudProvider(CloudProvider.fromValue(attributes.get("cloudProvider").toString()));
+            publishJobParams.setRegion(attributes.get("region").toString());
         }
-        DefaultJobDefinition jd = DefaultJobDefinition.builder().jobClass(SqlPlanTask.class)
-                .jobType("SQL_PLAN")
-                .jobParameters(jobData)
-                .jobProperties(jobProperties)
-                .build();
-
-        Long jobId = jobScheduler.scheduleJobNow(jd);
-        scheduleTaskRepository.updateJobIdById(scheduleTaskId, jobId);
-        log.info("Publish sql plan job to task framework success, scheduleTaskId={}, jobId={}", scheduleTaskId, jobId);
+        publishJob(publishJobParams);
     }
 
 

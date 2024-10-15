@@ -36,8 +36,6 @@ import lombok.extern.slf4j.Slf4j;
 public class DataArchiveDeleteJob extends AbstractDlmJob {
     @Override
     public void executeJob(JobExecutionContext context) {
-        Long scheduleId = ScheduleTaskUtils.getScheduleId(context);
-        Long scheduleTaskId = ScheduleTaskUtils.getScheduleTaskId(context);
         DataArchiveClearParameters dataArchiveClearParameters =
                 ScheduleTaskUtils.getDataArchiveClearParameters(context);
 
@@ -48,7 +46,7 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
         } catch (NotFoundException e) {
             log.warn("Data archive task not found,rollback task fast failed.scheduleTaskId={}",
                     dataArchiveClearParameters.getDataArchiveTaskId());
-            onFailure(scheduleTaskId);
+            onFailure();
             return;
         }
 
@@ -56,19 +54,16 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
 
         if (dataArchiveTask.getStatus() != TaskStatus.DONE) {
             log.warn("Data archive task do not finish,scheduleTaskId = {}", dataArchiveTask.getId());
-            onFailure(scheduleTaskId);
+            onFailure();
             return;
         }
 
         DLMJobReq parameters = getDLMJobReq(dataArchiveTask.getJobId());
         parameters.setJobType(JobType.DELETE);
-        parameters.setScheduleTaskId(scheduleTaskId);
+        parameters.setScheduleTaskId(getScheduleTaskId());
         parameters
-                .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(scheduleId));
-        Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis(),
+                .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(getScheduleId()));
+        publishJob(parameters, dataArchiveParameters.getTimeoutMillis(),
                 dataArchiveParameters.getSourceDatabaseId());
-        log.info("Publish DLM job to task framework succeed,scheduleTaskId={},jobIdentity={}", scheduleTaskId,
-                jobId);
-        scheduleService.updateJobId(scheduleTaskId, jobId);
     }
 }

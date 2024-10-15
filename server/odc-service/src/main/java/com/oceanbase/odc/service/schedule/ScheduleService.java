@@ -67,7 +67,6 @@ import com.oceanbase.odc.metadb.schedule.LatestTaskMappingEntity;
 import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
@@ -142,8 +141,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @SkipAuthorize
 public class ScheduleService {
-    @Autowired
-    private ScheduleTaskRepository scheduleTaskRepository;
+
     @Autowired
     private ScheduleRepository scheduleRepository;
     @Autowired
@@ -887,9 +885,6 @@ public class ScheduleService {
         return scheduleEntityOptional.orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE, "id", id));
     }
 
-    public void updateJobId(Long id, Long jobId) {
-        scheduleTaskRepository.updateJobIdById(id, jobId);
-    }
 
     @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)

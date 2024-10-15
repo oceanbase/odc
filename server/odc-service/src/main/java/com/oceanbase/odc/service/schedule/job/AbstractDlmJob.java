@@ -15,14 +15,12 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.quartz.JobExecutionContext;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
@@ -34,14 +32,13 @@ import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
+import com.oceanbase.odc.service.schedule.model.PublishJobParams;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.executor.task.DataArchiveTask;
-import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
-import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
-import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
+import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 
 import lombok.extern.slf4j.Slf4j;
@@ -52,7 +49,7 @@ import lombok.extern.slf4j.Slf4j;
  * @Descripition:
  */
 @Slf4j
-public abstract class AbstractDlmJob implements OdcJob {
+public abstract class AbstractDlmJob extends AbstractJob {
 
     public final ScheduleTaskService scheduleTaskService;
     public final DatabaseService databaseService;
@@ -90,42 +87,23 @@ public abstract class AbstractDlmJob implements OdcJob {
         return databaseService.findDataSourceForTaskById(databaseId).getAttributes();
     }
 
-    public Long publishJob(DLMJobReq params, Long timeoutMillis, Long srcDatabaseId) {
+    public void publishJob(DLMJobReq params, Long timeoutMillis, Long srcDatabaseId) {
         Map<String, Object> attributes = getDatasourceAttributesByDatabaseId(srcDatabaseId);
-
-        if (attributes != null && !attributes.isEmpty() && attributes.containsKey("cloudProvider")
-                && attributes.containsKey("region")) {
-            return publishJob(params, timeoutMillis,
-                    CloudProvider.fromValue(attributes.get("cloudProvider").toString()),
-                    attributes.get("region").toString());
-        } else {
-            return publishJob(params, timeoutMillis, null, null);
-        }
+        publishJob(params, timeoutMillis, CloudProvider.fromValue(attributes.get("cloudProvider").toString()),
+                attributes.get("region").toString());
     }
 
-    public Long publishJob(DLMJobReq parameters, Long timeoutMillis, CloudProvider provider, String region) {
-        Map<String, String> jobData = new HashMap<>();
-        jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON,
-                JsonUtils.toJson(parameters));
-        if (timeoutMillis != null) {
-            jobData.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, timeoutMillis.toString());
-        }
-        Map<String, String> jobProperties = new HashMap<>();
-        if (provider != null && StringUtils.isNotEmpty(region)) {
-            JobPropertiesUtils.setCloudProvider(jobProperties, provider);
-            JobPropertiesUtils.setRegionName(jobProperties, region);
-        }
-        SingleJobProperties singleJobProperties = new SingleJobProperties();
-        singleJobProperties.setEnableRetryAfterHeartTimeout(true);
-        singleJobProperties.setMaxRetryTimesAfterHeartTimeout(1);
-        jobProperties.putAll(singleJobProperties.toJobProperties());
+    public void publishJob(DLMJobReq parameters, Long timeoutMillis, CloudProvider provider, String region) {
 
-        DefaultJobDefinition jobDefinition = DefaultJobDefinition.builder().jobClass(DataArchiveTask.class)
-                .jobType("DLM")
-                .jobParameters(jobData)
-                .jobProperties(jobProperties)
-                .build();
-        return jobScheduler.scheduleJobNow(jobDefinition);
+        PublishJobParams publishJobParams = new PublishJobParams();
+        publishJobParams.setTaskParametersJson(JobUtils.toJson(parameters));
+        publishJobParams.setJobType("DLM");
+        publishJobParams.setJobClass(DataArchiveTask.class);
+        publishJobParams.setTimeoutMillis(timeoutMillis);
+        publishJobParams.setCloudProvider(provider);
+        publishJobParams.setRegion(region);
+        publishJob(publishJobParams);
+
     }
 
     public DLMJobReq getDLMJobReq(Long jobId) {
@@ -143,8 +121,8 @@ public abstract class AbstractDlmJob implements OdcJob {
 
     public abstract void executeJob(JobExecutionContext context);
 
-    public void onFailure(Long scheduleTaskId) {
-        scheduleTaskService.updateStatusById(scheduleTaskId, TaskStatus.FAILED);
+    public void onFailure() {
+        scheduleTaskService.updateStatusById(getScheduleTaskId(), TaskStatus.FAILED);
     }
 
     @Override
