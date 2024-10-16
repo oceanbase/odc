@@ -40,7 +40,7 @@ public final class AlarmUtils {
     public static final String TASK_JOB_ID_NAME = "JobId";
     public static final String TASK_TYPE_NAME = "TaskType";
     public static final String SCHEDULE_NAME = "ScheduleId";
-    public static final Collection<String> TASK_FRAMWORK_ALARM_DIGEST_NAMES =
+    public static final Collection<String> TASK_FRAMEWORK_ALARM_DIGEST_NAMES =
             Arrays.asList(CLUSTER_NAME, TENANT_NAME, SCHEDULE_NAME);
 
     private AlarmUtils() {}
