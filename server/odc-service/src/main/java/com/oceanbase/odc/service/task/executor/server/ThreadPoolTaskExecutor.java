@@ -70,10 +70,15 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
         }
         Future<?> future = executor.submit(() -> {
             try {
-                task.start(jc, new TaskContext() {
+                task.start(new TaskContext() {
                     @Override
                     public ExceptionListener getExceptionListener() {
                         return task;
+                    }
+
+                    @Override
+                    public JobContext getJobContext() {
+                        return jc;
                     }
                 });
             } catch (Exception e) {

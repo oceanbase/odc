@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.task.executor.task;
 
+import com.oceanbase.odc.service.task.caller.JobContext;
+
 /**
  * context for task runtime
  * 
@@ -28,4 +30,11 @@ public interface TaskContext {
      * @return
      */
     ExceptionListener getExceptionListener();
+
+    /**
+     * provide job context
+     * 
+     * @return
+     */
+    JobContext getJobContext();
 }

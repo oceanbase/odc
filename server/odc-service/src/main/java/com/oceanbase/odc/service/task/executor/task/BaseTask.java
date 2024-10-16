@@ -55,10 +55,10 @@ public abstract class BaseTask<RESULT> implements Task<RESULT>, ExceptionListene
     private TaskMonitor taskMonitor;
 
     @Override
-    public void start(JobContext context, TaskContext taskContext) {
+    public void start(TaskContext taskContext) {
+        this.context = taskContext.getJobContext();
         log.info("Start task, id={}.", context.getJobIdentity().getId());
 
-        this.context = context;
         this.jobParameters = Collections.unmodifiableMap(context.getJobParameters());
         log.info("Init task parameters success, id={}.", context.getJobIdentity().getId());
 

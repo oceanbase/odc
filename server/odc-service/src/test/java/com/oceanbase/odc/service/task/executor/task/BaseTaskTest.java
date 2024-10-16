@@ -56,10 +56,15 @@ public class BaseTaskTest {
                 SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_EXECUTOR_PORT);
             }).thenReturn("9099");
             DummyBaseTask dummyBaseTask = new DummyBaseTask(false);
-            dummyBaseTask.start(jobContext, new TaskContext() {
+            dummyBaseTask.start(new TaskContext() {
                 @Override
                 public ExceptionListener getExceptionListener() {
                     return dummyBaseTask;
+                }
+
+                @Override
+                public JobContext getJobContext() {
+                    return jobContext;
                 }
             });
             TaskResult taskResult = DefaultTaskResultBuilder.build(dummyBaseTask);
@@ -74,10 +79,15 @@ public class BaseTaskTest {
                 SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_EXECUTOR_PORT);
             }).thenReturn("9099");
             DummyBaseTask dummyBaseTask = new DummyBaseTask(true);
-            dummyBaseTask.start(jobContext, new TaskContext() {
+            dummyBaseTask.start(new TaskContext() {
                 @Override
                 public ExceptionListener getExceptionListener() {
                     return dummyBaseTask;
+                }
+
+                @Override
+                public JobContext getJobContext() {
+                    return jobContext;
                 }
             });
             TaskResult taskResult = DefaultTaskResultBuilder.build(dummyBaseTask);
