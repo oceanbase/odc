@@ -261,7 +261,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             try {
                 applyConnectionSettings(statement);
             } catch (Exception e) {
-                log.warn("Init driver statistic collect failed, reason={}", e.getMessage());
+                log.warn("Init driver statistic collection failed, reason={}", e.getMessage());
             }
             List<JdbcGeneralResult> executeResults;
             if (returnVal.stream().noneMatch(r -> r.getStatus() == SqlExecuteStatus.FAILED) || !stopWhenError) {
