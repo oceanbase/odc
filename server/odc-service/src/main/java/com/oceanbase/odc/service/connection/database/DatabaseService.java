@@ -522,8 +522,8 @@ public class DatabaseService {
         }
     }
 
-    public int updateEnvironmentIdByConnectionId(@NotNull Long connectionId, @NotNull Long environmentId) {
-        return databaseRepository.setEnvironmentIdByConnectionId(connectionId, environmentId);
+    public int updateEnvironmentIdByConnectionId(@NotNull Long environmentId, @NotNull Long connectionId) {
+        return databaseRepository.setEnvironmentIdByConnectionId(environmentId, connectionId);
     }
 
     private void syncTeamDataSources(ConnectionConfig connection) {
