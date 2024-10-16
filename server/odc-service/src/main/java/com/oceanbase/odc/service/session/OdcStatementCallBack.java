@@ -88,6 +88,7 @@ import com.oceanbase.odc.core.sql.util.OBUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -203,8 +204,8 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                 Long dataSourceId = connConfig.getId();
                 String connectSchema = ConnectionSessionUtil.getConnectSchema(connectionSession);
                 SqlTuple sqlTuple = sqls.get(sqls.size() - 1);
-                String procedureName = sqlTuple.getProcedureName();
-                lock = jdbcLockRegistry.obtain(getEditOBMysqlPLLockKey(dataSourceId, connectSchema, procedureName));
+                lock = jdbcLockRegistry.obtain(getEditOBMysqlPLLockKey(dataSourceId, connectSchema,
+                        sqlTuple.getPlName(), sqlTuple.getPlType()));
                 if (!lock.tryLock(3, TimeUnit.SECONDS)) {
                     returnVal.add(JdbcGeneralResult.failedResult(sqlTuple,
                             new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock")));
@@ -283,8 +284,17 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
     }
 
     private String getEditOBMysqlPLLockKey(@NonNull Long dataSourceId, @NonNull String databaseName,
-            @NonNull String procedureName) {
-        return String.format("pl-%d-%s-%s", dataSourceId, databaseName, procedureName);
+            @NonNull String procedureName, @NonNull DBObjectType plType) {
+        switch (plType) {
+            case PROCEDURE:
+                return String.format("proc-%d-%s-%s", dataSourceId, databaseName, procedureName);
+            case FUNCTION:
+                return String.format("func-%d-%s-%s", dataSourceId, databaseName, procedureName);
+            case TRIGGER:
+                return String.format("trig-%d-%s-%s", dataSourceId, databaseName, procedureName);
+            default:
+                throw new IllegalArgumentException(String.format("Unsupported pl type %s", plType));
+        }
     }
 
     private void applyConnectionSettings(Statement statement) throws SQLException {

@@ -105,6 +105,7 @@ import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.session.util.SqlRewriteUtil;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -130,7 +131,10 @@ public class ConnectConsoleService {
 
     public static final int DEFAULT_GET_RESULT_TIMEOUT_SECONDS = 1;
     public static final String SHOW_TABLE_COLUMN_INFO = "SHOW_TABLE_COLUMN_INFO";
-    public static final String ODC_TEMP_STORED_PROC_PREFIX = "_ODC_TEMP_STORED_PROC_";
+    public static final String ODC_TEMP_PROCEDURE_PREFIX = "_ODC_TEMP_PROCEDURE_";
+    public static final String ODC_TEMP_TRIGGER_PREFIX = "_ODC_TEMP_TRIGGER_";
+    public static final String ODC_TEMP_FUNCTION_PREFIX = "_ODC_TEMP_FUNCTION_";
+
 
 
     @Autowired
@@ -311,7 +315,7 @@ public class ConnectConsoleService {
                         : userConfigFacade.isContinueExecutionOnError();
         boolean stopOnError = !continueExecutionOnError;
         OdcStatementCallBack statementCallBack = null;
-        if (StringUtils.isNotBlank(request.getProcedureName())
+        if (StringUtils.isNotBlank(request.getPlName())
                 && connectionSession.getConnectType() == ConnectType.OB_MYSQL) {
             statementCallBack = generateEditPLSqlODCStatementCallBackForOBMysql(sqlTuples,
                     connectionSession, request, queryLimit, true, executeContext);
@@ -655,15 +659,34 @@ public class ConnectConsoleService {
         if (sqlTuple == null) {
             throw new IllegalArgumentException("the sql of editing procedure is null");
         }
-        String procedureName = request.getProcedureName();
-        sqlTuple.setProcedureName(procedureName);
-        String tempSql = sqlTuple.getExecutedSql().replace(procedureName, ODC_TEMP_STORED_PROC_PREFIX + procedureName);
+        String plName = request.getPlName();
+        DBObjectType plType = request.getPlType();
+        sqlTuple.setPlName(plName);
+        sqlTuple.setPlType(plType);
+        switch (plType) {
+            case PROCEDURE:
+                return getWrappedSqlTuplesByPLType(sqlTuples, connectionSession, request, plName, plType,
+                        ODC_TEMP_PROCEDURE_PREFIX);
+            case FUNCTION:
+                return getWrappedSqlTuplesByPLType(sqlTuples, connectionSession, request, plName, plType,
+                        ODC_TEMP_FUNCTION_PREFIX);
+            case TRIGGER:
+                return getWrappedSqlTuplesByPLType(sqlTuples, connectionSession, request, plName, plType,
+                        ODC_TEMP_TRIGGER_PREFIX);
+            default:
+                throw new IllegalArgumentException("the pl type of editing procedure is not supported");
+        }
+    }
+
+    private List<SqlTuple> getWrappedSqlTuplesByPLType(List<SqlTuple> sqlTuples, ConnectionSession connectionSession,
+            SqlAsyncExecuteReq request, String plName, DBObjectType plType, String tempPLTypePrefix) {
+        String tempSql = sqlTuples.get(0).getExecutedSql().replace(plName, tempPLTypePrefix + plName);
         List<SqlTuple> tempSqlTuples = generateSqlTuple(
                 Collections.singletonList(new OffsetString(0, tempSql)), connectionSession, request);
-        String dropTempSql = "DROP PROCEDURE IF EXISTS " + ODC_TEMP_STORED_PROC_PREFIX + procedureName + ";";
+        String dropTempSql = "DROP " + plType + " IF EXISTS " + tempPLTypePrefix + plName;
         List<SqlTuple> dropTempSqlTuples = generateSqlTuple(
                 Collections.singletonList(new OffsetString(0, dropTempSql)), connectionSession, request);
-        String dropSql = "DROP PROCEDURE IF EXISTS " + procedureName + ";";
+        String dropSql = "DROP " + plType + " IF EXISTS " + plName;
         List<SqlTuple> dropSqlTuples = generateSqlTuple(
                 Collections.singletonList(new OffsetString(0, dropSql)), connectionSession, request);
         tempSqlTuples.addAll(dropTempSqlTuples);
