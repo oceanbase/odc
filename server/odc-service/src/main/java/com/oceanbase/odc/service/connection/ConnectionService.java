@@ -658,7 +658,7 @@ public class ConnectionService {
                 // if ConnectionConfig's environmentId changed, update databases' environmentId either.
                 if (Objects.nonNull(saved.getEnvironmentId()) && Objects.nonNull(updated.getEnvironmentId())
                         && saved.getEnvironmentId().compareTo(updated.getEnvironmentId()) != 0) {
-                    databaseService.updateEnvironmentIdByConnectionId(updated.getId(), updated.getEnvironmentId());
+                    databaseService.updateEnvironmentIdByConnectionId(updated.getEnvironmentId(), updated.getId());
                 }
                 return updated;
             } catch (Exception ex) {
