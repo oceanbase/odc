@@ -31,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * operator to manipulate resource for k8s cluster of given region
- * 
+ *
  * @author longpeng.zlp
  * @date 2024/8/13 10:29
  */
@@ -122,7 +122,7 @@ public class K8sResourceOperator implements ResourceOperator<K8sResourceContext,
     /**
      * if pod is idle, currently always return true if pod is reusable, task counter should impl,
      * rewrite this method
-     * 
+     *
      * @return true if there is no task running on it
      */
     private boolean isPodIdle() {

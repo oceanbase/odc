@@ -22,11 +22,12 @@ import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 
+import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
-import com.oceanbase.odc.service.task.executor.server.HeartbeatRequest;
-import com.oceanbase.odc.service.task.executor.task.TaskResult;
+import com.oceanbase.odc.service.task.executor.HeartbeatRequest;
+import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 
 /**
@@ -51,6 +52,8 @@ public interface TaskFrameworkService {
     Page<JobEntity> findCancelingJob(int page, int size);
 
     Page<JobEntity> findTerminalJob(int page, int size);
+
+    Page<ResourceEntity> findAbandonedResource(int page, int size);
 
     JobEntity findWithPessimisticLock(Long id);
 

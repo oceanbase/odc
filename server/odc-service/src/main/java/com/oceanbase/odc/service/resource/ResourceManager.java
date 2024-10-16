@@ -45,7 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * resource manager to holds resource allocate and free
- * 
+ *
  * @author longpeng.zlp
  * @date 2024/8/26 20:17
  */
@@ -143,7 +143,7 @@ public class ResourceManager {
 
     /**
      * query resource state with resource id
-     * 
+     *
      * @param resourceID
      * @return
      * @throws Exception
@@ -215,17 +215,17 @@ public class ResourceManager {
             resourceEntity.setGroupName(resourceID.getResourceLocation().getGroup());
             resourceEntity.setNamespace(resourceID.getNamespace());
             resourceEntity.setResourceName(resourceID.getIdentifier());
-            resourceEntity.setStatus(ResourceState.DESTROYING);
+            resourceEntity.setStatus(ResourceState.ABANDONED);
             resourceRepository.save(resourceEntity);
         } else {
             // update resource state to destroying
-            resourceRepository.updateResourceStatus(resourceID, ResourceState.DESTROYING);
+            resourceRepository.updateResourceStatus(resourceID, ResourceState.ABANDONED);
         }
     }
 
     /**
      * real destroy by resource id
-     * 
+     *
      * @param resourceID
      * @return
      * @throws Exception
