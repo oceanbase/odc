@@ -13,28 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.plugin.connect.mysql;
+package com.oceanbase.odc.service.monitor;
 
-import java.sql.Connection;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-import org.pf4j.Extension;
+import com.oceanbase.odc.service.monitor.MonitorAutoConfiguration.NonEnabledMeterManager;
 
-import com.oceanbase.odc.plugin.connect.model.DBClientInfo;
-import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLSessionExtension;
+@Configuration
+public class MonitorConfiguration {
 
-import lombok.extern.slf4j.Slf4j;
-
-/**
- * @author jingtian
- * @date 2023/5/26
- * @since ODC_release_4.2.0
- */
-@Slf4j
-@Extension
-public class MySQLSessionExtension extends OBMySQLSessionExtension {
-    @Override
-    public boolean setClientInfo(Connection connection, DBClientInfo clientInfo) {
-        return false;
+    @Bean
+    @ConditionalOnMissingBean
+    MeterManager defaultMetricManager() {
+        return new NonEnabledMeterManager();
     }
 
 }

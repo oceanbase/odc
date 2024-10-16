@@ -13,28 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.plugin.connect.mysql;
+package com.oceanbase.odc.service.monitor;
 
-import java.sql.Connection;
+import java.util.function.Supplier;
 
-import org.pf4j.Extension;
+public interface MeterManager {
 
-import com.oceanbase.odc.plugin.connect.model.DBClientInfo;
-import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLSessionExtension;
+    boolean registerGauge(MeterKey meterKey, Supplier<Number> f);
 
-import lombok.extern.slf4j.Slf4j;
+    boolean incrementCounter(MeterKey meterKey);
 
-/**
- * @author jingtian
- * @date 2023/5/26
- * @since ODC_release_4.2.0
- */
-@Slf4j
-@Extension
-public class MySQLSessionExtension extends OBMySQLSessionExtension {
-    @Override
-    public boolean setClientInfo(Connection connection, DBClientInfo clientInfo) {
-        return false;
-    }
+    boolean startTimerSample(String sampleKey, MeterKey meterKey);
 
+    boolean recordTimerSample(String sampleKey, MeterKey meterKey);
 }

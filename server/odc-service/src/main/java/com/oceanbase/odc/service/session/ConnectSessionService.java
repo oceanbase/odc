@@ -92,6 +92,7 @@ import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.lab.model.LabProperties;
+import com.oceanbase.odc.service.monitor.session.ConnectionSessionMonitorListener;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
@@ -157,6 +158,8 @@ public class ConnectSessionService {
     private LogicalDatabaseService logicalDatabaseService;
     @Autowired
     private StateHostGenerator stateHostGenerator;
+    @Autowired
+    private DBSessionManageFacade dbSessionManageFacade;
     private final Map<String, Lock> sessionId2Lock = new ConcurrentHashMap<>();
 
     @PostConstruct
@@ -168,6 +171,7 @@ public class ConnectSessionService {
                 new DefaultTaskManager("connection-session-management"), repository);
         this.connectionSessionManager.addListener(new SessionLimitListener(limitService));
         this.connectionSessionManager.addListener(new SessionLockRemoveListener(this.sessionId2Lock));
+        this.connectionSessionManager.addListener(new ConnectionSessionMonitorListener());
         this.connectionSessionManager.enableAsyncRefreshSessionManager();
         this.connectionSessionManager.addSessionValidator(
                 new SessionValidatorPredicate(sessionProperties.getTimeoutMins(), TimeUnit.MINUTES));
@@ -417,6 +421,7 @@ public class ConnectSessionService {
         return DBSessionResp.builder()
                 .settings(settingsService.getSessionSettings(connectionSession))
                 .session(dbSessionService.currentSession(connectionSession))
+                .killCurrrentQuerySupported(dbSessionManageFacade.supportKillConsoleQuery(connectionSession))
                 .build();
     }
 
@@ -535,6 +540,10 @@ public class ConnectSessionService {
     private boolean isOBCloudEnvironment() {
         return cloudMetadataClient.supportsCloudMetadata()
                 && Boolean.FALSE.equals(cloudMetadataClient.supportsCloudParentUid());
+    }
+
+    public Integer getActiveSession() {
+        return this.connectionSessionManager.getActiveSessionCount();
     }
 
 }

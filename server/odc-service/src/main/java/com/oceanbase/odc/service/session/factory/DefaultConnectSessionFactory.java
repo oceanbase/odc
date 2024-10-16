@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.session.factory;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.jdbc.core.ConnectionCallback;
@@ -26,20 +27,26 @@ import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.event.LocalEventPublisher;
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.datasource.ConnectionResetEvent;
+import com.oceanbase.odc.core.datasource.event.ConnectionResetEvent;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
 import com.oceanbase.odc.core.session.ConnectionSessionIdGenerator;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.session.DefaultConnectionSession;
+import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.core.sql.execute.task.SqlExecuteTaskManager;
 import com.oceanbase.odc.core.task.TaskManagerFactory;
 import com.oceanbase.odc.plugin.connect.api.JdbcUrlParser;
+import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
+import com.oceanbase.odc.plugin.connect.model.DBClientInfo;
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 import com.oceanbase.odc.service.connection.util.ConnectionInfoUtil;
 import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
+import com.oceanbase.odc.service.monitor.MeterManager;
+import com.oceanbase.odc.service.monitor.datasource.GetConnectionFailedEventListener;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.initializer.SwitchSchemaInitializer;
 
@@ -58,6 +65,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
+    public static final String DEFAULT_MODULE = "ODC";
+    public static final String CONNECT_SESSION_SQL_CONSOLE = "ConnectSession-SqlConsole";
 
     private final ConnectionConfig connectionConfig;
     private final TaskManagerFactory<SqlExecuteTaskManager> taskManagerFactory;
@@ -142,6 +151,8 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
 
     private void initSession(ConnectionSession session) {
         this.eventPublisher.addEventListener(new ConsoleConnectionResetListener(session));
+        this.eventPublisher.addEventListener(new GetConnectionFailedEventListener(SpringContextUtil.getBean(
+                MeterManager.class)));
         ConnectionSessionUtil.initArchitecture(session);
         ConnectionInfoUtil.initSessionVersion(session);
         ConnectionSessionUtil.setConsoleSessionResetFlag(session, false);
@@ -155,6 +166,7 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
             ConnectionSessionUtil.setClusterName(session, connectionConfig.getClusterName());
         }
         setNlsFormat(session);
+        setClientInfo(session);
     }
 
     private static void setNlsFormat(ConnectionSession session) {
@@ -180,6 +192,23 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
                 Objects.isNull(nlsTimestampTZFormat) ? "DD-MON-RR" : nlsTimestampTZFormat);
 
         log.info("Set nls format completed.");
+    }
+
+    private void setClientInfo(ConnectionSession session) {
+        SessionExtensionPoint extensionPoint = ConnectionPluginUtil.getSessionExtension(session.getDialectType());
+        String clientInfo = UUID.randomUUID().toString();
+        SyncJdbcExecutor consoleJdbcExecutor =
+                session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
+        consoleJdbcExecutor.execute((ConnectionCallback<Void>) con -> {
+            boolean setSuccess = extensionPoint.setClientInfo(con,
+                    new DBClientInfo(DEFAULT_MODULE, CONNECT_SESSION_SQL_CONSOLE, clientInfo));
+            if (setSuccess) {
+                ConnectionSessionUtil.setConsoleSessionClientInfo(session, clientInfo);
+                log.info("Set client info completed. sid={}, clientInfo={}", session.getId(), clientInfo);
+            }
+            return null;
+        });
+
     }
 
     /**

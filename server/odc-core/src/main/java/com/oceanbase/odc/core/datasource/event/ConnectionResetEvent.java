@@ -13,28 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.plugin.connect.mysql;
+package com.oceanbase.odc.core.datasource.event;
 
 import java.sql.Connection;
 
-import org.pf4j.Extension;
-
-import com.oceanbase.odc.plugin.connect.model.DBClientInfo;
-import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLSessionExtension;
-
-import lombok.extern.slf4j.Slf4j;
+import com.oceanbase.odc.common.event.AbstractEvent;
 
 /**
- * @author jingtian
- * @date 2023/5/26
- * @since ODC_release_4.2.0
+ * {@link ConnectionResetEvent}
+ *
+ * @author yh263208
+ * @date 2022-05-11 16:09
+ * @since ODC_release_3.3.1
+ * @see com.oceanbase.odc.common.event.AbstractEvent
  */
-@Slf4j
-@Extension
-public class MySQLSessionExtension extends OBMySQLSessionExtension {
-    @Override
-    public boolean setClientInfo(Connection connection, DBClientInfo clientInfo) {
-        return false;
+public class ConnectionResetEvent extends AbstractEvent {
+    /**
+     * Constructs a prototypical Event.
+     *
+     * @param source The object on which the Event initially occurred.
+     * @throws IllegalArgumentException if source is null.
+     */
+    public ConnectionResetEvent(Connection source) {
+        super(source, "ConnectionReset");
     }
 
 }
