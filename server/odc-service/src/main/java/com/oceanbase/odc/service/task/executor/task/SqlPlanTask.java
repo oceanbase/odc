@@ -192,6 +192,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         if (StringUtils.isNotBlank(parameters.getSqlContent())) {
             byte[] bytes = parameters.getSqlContent().getBytes();
             this.sqlInputStream = new ByteArrayInputStream(bytes);
+            return;
         }
 
         CloudObjectStorageService cloudObjectStorageService = getCloudObjectStorageService();
