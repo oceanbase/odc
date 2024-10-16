@@ -30,7 +30,6 @@ import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.common.util.AlarmHelper;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
@@ -112,15 +111,15 @@ public class StartPreparingJob implements Job {
                 try {
                     getConfiguration().getJobDispatcher().start(jc);
                 } catch (JobException e) {
-                    Map<String, String> eventMessage = AlarmHelper.buildAlarmMessageWithJob(jobEntity.getId());
-                    String eventName = eventMessage.get(AlarmUtils.TASK_TYPE_NAME) + "_"
-                            + AlarmEventNames.TASK_START_FAILED;
-                    eventMessage.put(AlarmUtils.ALARM_TARGET_NAME, eventName);
-                    eventMessage.put(AlarmUtils.ORGANIZATION_NAME, String.valueOf(jobEntity.getOrganizationId()));
-                    eventMessage.put(AlarmUtils.MESSAGE_NAME,
-                            MessageFormat.format("Start job failed, jobId={0}, message={1}", lockedEntity.getId(),
-                                    e.getMessage()));
-                    AlarmUtils.alarm(eventName, eventMessage);
+                    Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                            .item(AlarmUtils.ORGANIZATION_NAME, String.valueOf(jobEntity.getOrganizationId()))
+                            .item(AlarmUtils.TASK_JOB_ID_NAME, String.valueOf(jobEntity.getId()))
+                            .item(AlarmUtils.MESSAGE_NAME,
+                                    MessageFormat.format("Start job failed, jobId={0}, message={1}",
+                                            lockedEntity.getId(),
+                                            e.getMessage()))
+                            .build();
+                    AlarmUtils.alarm(AlarmEventNames.TASK_START_FAILED, eventMessage);
                     throw new TaskRuntimeException(e);
                 }
             } else {

@@ -62,7 +62,6 @@ import com.oceanbase.odc.metadb.task.JobAttributeEntity;
 import com.oceanbase.odc.metadb.task.JobAttributeRepository;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.JobRepository;
-import com.oceanbase.odc.service.common.util.AlarmHelper;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobAttributeEntityColumn;
 import com.oceanbase.odc.service.task.constants.JobEntityColumn;
@@ -334,16 +333,15 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                         .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
 
                 if (taskResult.getStatus() == JobStatus.FAILED) {
-                    Map<String, String> eventMessage = AlarmHelper.buildAlarmMessageWithJob(je.getId());
-                    String eventName = eventMessage.get(AlarmUtils.TASK_TYPE_NAME) + "_"
-                            + AlarmEventNames.TASK_EXECUTION_FAILED;
-                    eventMessage.put(AlarmUtils.ALARM_TARGET_NAME, eventName);
-                    eventMessage.put(AlarmUtils.ORGANIZATION_NAME, String.valueOf(je.getOrganizationId()));
-                    eventMessage.put(AlarmUtils.MESSAGE_NAME,
-                            MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}",
-                                    taskResult.getJobIdentity().getId(),
-                                    SensitiveDataUtils.mask(taskResult.getResultJson())));
-                    AlarmUtils.alarm(eventName, eventMessage);
+                    Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                            .item(AlarmUtils.ORGANIZATION_NAME, String.valueOf(je.getOrganizationId()))
+                            .item(AlarmUtils.TASK_JOB_ID_NAME, String.valueOf(je.getId()))
+                            .item(AlarmUtils.MESSAGE_NAME,
+                                    MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}",
+                                            taskResult.getJobIdentity().getId(),
+                                            SensitiveDataUtils.mask(taskResult.getResultJson())))
+                            .build();
+                    AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED, eventMessage);
                 }
             }
         }
@@ -440,16 +438,15 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
             // TODO maybe we can destroy the pod there.
             if (result.getStatus() == JobStatus.FAILED) {
-                Map<String, String> eventMessage = AlarmHelper.buildAlarmMessageWithJob(je.getId());
-                String eventName = eventMessage.get(AlarmUtils.TASK_TYPE_NAME) + "_"
-                        + AlarmEventNames.TASK_EXECUTION_FAILED;
-                eventMessage.put(AlarmUtils.ALARM_TARGET_NAME, eventName);
-                eventMessage.put(AlarmUtils.ORGANIZATION_NAME, String.valueOf(je.getOrganizationId()));
-                eventMessage.put(AlarmUtils.MESSAGE_NAME,
-                        MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}",
-                                result.getJobIdentity().getId(),
-                                SensitiveDataUtils.mask(result.getResultJson())));
-                AlarmUtils.alarm(eventName, eventMessage);
+                Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                        .item(AlarmUtils.ORGANIZATION_NAME, String.valueOf(je.getOrganizationId()))
+                        .item(AlarmUtils.TASK_JOB_ID_NAME, String.valueOf(je.getId()))
+                        .item(AlarmUtils.MESSAGE_NAME,
+                                MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}",
+                                        result.getJobIdentity().getId(),
+                                        SensitiveDataUtils.mask(result.getResultJson())))
+                        .build();
+                AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED, eventMessage);
             }
         }
     }

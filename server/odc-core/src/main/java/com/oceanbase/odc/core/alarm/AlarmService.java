@@ -27,6 +27,7 @@ import java.util.ServiceLoader;
 import javax.annotation.Nullable;
 
 import com.oceanbase.odc.core.alarm.AlarmEvent.AlarmLevel;
+import com.oceanbase.odc.core.alarm.AlarmEvent.AlarmMessage;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,51 +46,53 @@ class AlarmService {
         }
     }
 
-    public void alarm(String eventName, Map<String, String> eventMessageNode) {
+    public void alarm(String eventName, AlarmMessage eventMessageNode) {
         monitor(eventName, eventMessageNode, AlarmLevel.ERROR, null);
     }
 
     public void alarm(String eventName, String eventMessage) {
-        monitor(eventName, AlarmUtils.createAlarmMessageBuilder()
-                .item(AlarmUtils.MESSAGE_NAME, eventMessage).build(), AlarmLevel.ERROR,
+        Map<String, String> alarmContent = AlarmUtils.createAlarmMapBuilder()
+                .item(AlarmUtils.MESSAGE_NAME, eventMessage).build();
+        monitor(eventName, new AlarmMessage().setAlarmContent(alarmContent), AlarmLevel.ERROR,
                 null);
     }
 
     public void alarm(String eventName, Throwable e) {
-        monitor(eventName, AlarmUtils.createAlarmMessageBuilder()
-                .item(AlarmUtils.MESSAGE_NAME, e.getMessage()).build(), AlarmLevel.ERROR,
+        Map<String, String> alarmContent = AlarmUtils.createAlarmMapBuilder()
+                .item(AlarmUtils.MESSAGE_NAME, e.getMessage()).build();
+        monitor(eventName, new AlarmMessage().setAlarmContent(alarmContent), AlarmLevel.ERROR,
                 e);
     }
 
-    public void warn(String eventName, Map<String, String> eventMessageNode) {
+    public void warn(String eventName, AlarmMessage eventMessageNode) {
         monitor(eventName, eventMessageNode, AlarmLevel.WARN, null);
     }
 
     public void warn(String eventName, String eventMessage) {
-        monitor(eventName, AlarmUtils.createAlarmMessageBuilder()
-                .item(AlarmUtils.MESSAGE_NAME, eventMessage).build(),
-                AlarmLevel.WARN, null);
+        Map<String, String> alarmContent = AlarmUtils.createAlarmMapBuilder()
+                .item(AlarmUtils.MESSAGE_NAME, eventMessage).build();
+        monitor(eventName, new AlarmMessage().setAlarmContent(alarmContent), AlarmLevel.WARN, null);
     }
 
     public void warn(String eventName, Throwable e) {
-        monitor(eventName, AlarmUtils.createAlarmMessageBuilder()
-                .item(AlarmUtils.MESSAGE_NAME, e.getMessage()).build(),
-                AlarmLevel.WARN, e);
+        Map<String, String> alarmContent = AlarmUtils.createAlarmMapBuilder()
+                .item(AlarmUtils.MESSAGE_NAME, e.getMessage()).build();
+        monitor(eventName, new AlarmMessage().setAlarmContent(alarmContent), AlarmLevel.WARN,
+                e);
     }
 
-    public void info(String eventName, Map<String, String> eventMessageNode) {
+    public void info(String eventName, AlarmMessage eventMessageNode) {
         monitor(eventName, eventMessageNode, AlarmLevel.INFO, null);
     }
 
     public void info(String eventName, String eventMessage) {
-        monitor(eventName, AlarmUtils.createAlarmMessageBuilder()
-                .item(AlarmUtils.MESSAGE_NAME, eventMessage)
-                .build(), AlarmLevel.INFO,
-                null);
+        Map<String, String> alarmContent = AlarmUtils.createAlarmMapBuilder()
+                .item(AlarmUtils.MESSAGE_NAME, eventMessage).build();
+        monitor(eventName, new AlarmMessage().setAlarmContent(alarmContent), AlarmLevel.INFO, null);
     }
 
-    private void monitor(String eventName, Map<String, String> eventMessage, AlarmLevel level, @Nullable Throwable e) {
-        String msg = String.format("eventName=%s, eventMessage=%s .", eventName, eventMessage);
+    private void monitor(String eventName, AlarmMessage eventMessageNode, AlarmLevel level, @Nullable Throwable e) {
+        String msg = String.format("eventName=%s, eventMessage=%s .", eventName, eventMessageNode);
         switch (level) {
             case INFO:
                 if (e == null) {
@@ -115,7 +118,7 @@ class AlarmService {
             default:
                 throw new IllegalArgumentException();
         }
-        doPublish(new AlarmEvent(eventName, eventMessage, level));
+        doPublish(new AlarmEvent(eventName, eventMessageNode, level));
     }
 
     private void doPublish(AlarmEvent alarmEvent) {

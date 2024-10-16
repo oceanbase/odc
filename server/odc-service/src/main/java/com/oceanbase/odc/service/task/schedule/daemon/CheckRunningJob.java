@@ -28,7 +28,6 @@ import com.oceanbase.odc.common.util.SilentExecutor;
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.common.util.AlarmHelper;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
@@ -112,14 +111,13 @@ public class CheckRunningJob implements Job {
                             "Heart timeout and set job to status FAILED.");
             if (rows > 0) {
                 log.info("Set job status to FAILED accomplished, jobId={}, oldStatus={}.", a.getId(), a.getStatus());
-                Map<String, String> eventMessage = AlarmHelper.buildAlarmMessageWithJob(jobEntity.getId());
-                String eventName = eventMessage.get(AlarmUtils.TASK_TYPE_NAME) + "_"
-                        + AlarmEventNames.TASK_HEARTBEAT_TIMEOUT;
-                eventMessage.put(AlarmUtils.ALARM_TARGET_NAME, eventName);
-                eventMessage.put(AlarmUtils.ORGANIZATION_NAME, String.valueOf(jobEntity.getOrganizationId()));
-                eventMessage.put(AlarmUtils.MESSAGE_NAME,
-                        MessageFormat.format("Job running failed due to heart timeout, jobId={0}", a.getId()));
-                AlarmUtils.alarm(eventName, eventMessage);
+                Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                        .item(AlarmUtils.ORGANIZATION_NAME, String.valueOf(jobEntity.getOrganizationId()))
+                        .item(AlarmUtils.TASK_JOB_ID_NAME, String.valueOf(jobEntity.getId()))
+                        .item(AlarmUtils.MESSAGE_NAME,
+                                MessageFormat.format("Job running failed due to heart timeout, jobId={0}", a.getId()))
+                        .build();
+                AlarmUtils.alarm(AlarmEventNames.TASK_HEARTBEAT_TIMEOUT, eventMessage);
             } else {
                 throw new TaskRuntimeException("Set job status to FAILED failed, jobId=" + jobEntity.getId());
             }
