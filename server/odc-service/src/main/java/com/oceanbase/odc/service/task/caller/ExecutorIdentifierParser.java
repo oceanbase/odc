@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.task.caller;
 
 import org.springframework.web.util.UriComponents;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.common.util.UrlUtils;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 
@@ -35,12 +36,19 @@ public class ExecutorIdentifierParser {
             throw new TaskRuntimeException("Illegal executor name : " + path);
         }
 
-        String namespace = path.substring(0, nameIndex).replace("/", "");
+        String tmpStr = path.substring(0, nameIndex);
+        String[] regionAndNamespace = StringUtils.split(tmpStr, "/");
+        String namespace = null;
+        // new version
+        if (regionAndNamespace.length == 1) {
+            // old version
+            namespace = regionAndNamespace[0];
+        }
         return DefaultExecutorIdentifier.builder().host(uriComponents.getHost())
                 .port(uriComponents.getPort())
                 .protocol(uriComponents.getScheme())
-                .namespace(namespace.length() == 0 ? null : namespace)
-                .executorName(path.substring(nameIndex).replace("/", ""))
+                .namespace(StringUtils.isEmpty(namespace) ? null : UrlUtils.decode(namespace))
+                .executorName(UrlUtils.decode(path.substring(nameIndex).replace("/", "")))
                 .build();
     }
 }

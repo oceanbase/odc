@@ -26,7 +26,7 @@ import com.oceanbase.odc.metadb.resource.ResourceEntity;
 public interface ResourceEntityConverter<T extends Resource> {
     /**
      * convert resource to ResourceEntity
-     * 
+     *
      * @param resource
      * @return
      */
@@ -34,7 +34,7 @@ public interface ResourceEntityConverter<T extends Resource> {
 
     /**
      * convert resourceEntity to resource
-     * 
+     *
      * @param resourceEntity
      * @return
      */

@@ -72,4 +72,6 @@ public interface TaskFrameworkProperties {
 
     String getDestroyExecutorJobCronExpression();
 
+    boolean isEnableK8sLocalDebugMode();
+
 }

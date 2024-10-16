@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.task.processor;
 
-import com.oceanbase.odc.service.task.executor.task.TaskResult;
+import com.oceanbase.odc.service.task.executor.TaskResult;
 
 /**
  * @Author：tinker

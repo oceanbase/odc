@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.common.util;
 
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -55,6 +56,14 @@ public class UrlUtils {
     public static String decode(String encode) {
         try {
             return URLDecoder.decode(encode, "UTF-8");
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public static String encode(String str) {
+        try {
+            return URLEncoder.encode(str, "UTF-8");
         } catch (Exception e) {
             return null;
         }

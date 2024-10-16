@@ -22,7 +22,7 @@ import org.apache.hadoop.classification.InterfaceStability.Evolving;
 
 /**
  * operator resource create / recycle / destroy
- * 
+ *
  * @param <RC> config of resource creating
  * @param <R> resource describe
  * @author longpeng.zlp
@@ -32,7 +32,7 @@ import org.apache.hadoop.classification.InterfaceStability.Evolving;
 public interface ResourceOperator<RC extends ResourceContext, R extends Resource> {
     /**
      * create a resource by resource context, create may not real create
-     * 
+     *
      * @param resourceContext resource config
      * @return resource, may not available, maybe creating
      */
@@ -40,7 +40,7 @@ public interface ResourceOperator<RC extends ResourceContext, R extends Resource
 
     /**
      * modify a resource with resourceID
-     * 
+     *
      * @param resourceContext
      * @return
      * @throws Exception
@@ -49,7 +49,7 @@ public interface ResourceOperator<RC extends ResourceContext, R extends Resource
 
     /**
      * query if resource with resource id existed
-     * 
+     *
      * @param resourceID
      * @return
      */
@@ -57,7 +57,7 @@ public interface ResourceOperator<RC extends ResourceContext, R extends Resource
 
     /**
      * destroy resource with resourceID destroy may not real destroy
-     * 
+     *
      * @param resourceID
      * @return
      */
@@ -72,7 +72,7 @@ public interface ResourceOperator<RC extends ResourceContext, R extends Resource
 
     /**
      * detect if resource can be destroyed
-     * 
+     *
      * @param resourceID
      * @return true if resource can be destroyed
      */
