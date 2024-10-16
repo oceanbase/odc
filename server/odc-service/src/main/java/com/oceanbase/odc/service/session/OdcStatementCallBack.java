@@ -284,8 +284,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
 
     private String getEditOBMysqlPLLockKey(@NonNull Long dataSourceId, @NonNull String databaseName,
             @NonNull String procedureName) {
-        return "edit-ob-mysql-pl-datasourceId-" + dataSourceId + "-databaseName-" + databaseName + "-plName-"
-                + procedureName;
+        return String.format("pl-%d-%s-%s", dataSourceId, databaseName, procedureName);
     }
 
     private void applyConnectionSettings(Statement statement) throws SQLException {
