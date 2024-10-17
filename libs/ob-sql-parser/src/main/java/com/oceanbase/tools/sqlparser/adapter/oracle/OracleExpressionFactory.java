@@ -1243,7 +1243,7 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
             return new ExpressionParam(visit(bitExpr));
         } else if (paramWithAssign != null) {
             // 函数参数带赋值操作
-            String varName = paramWithAssign.var_name().getText();
+            String varName = paramWithAssign.pl_var_name().getText();
             Bit_exprContext assignExpr = paramWithAssign.bit_expr();
             Expression varValue;
             if (assignExpr != null) {

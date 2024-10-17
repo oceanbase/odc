@@ -191,6 +191,21 @@ public class MySQLCreateIndexFactoryTest {
         Assert.assertEquals(expect, actual);
     }
 
+    @Test
+    public void generate_CreateVectorIndex_Succeed() {
+        StatementFactory<CreateIndex> factory = new MySQLCreateIndexFactory(
+                getCreateIdxContext("create vector index vec_idx1 on t_vec(c2) with (distance=l2, type=hnsw);"));
+        CreateIndex actual = factory.generate();
+
+        CreateIndex expected = new CreateIndex(new RelationFactor("vec_idx1"),
+                new RelationFactor("t_vec"), Arrays.asList(
+                        new SortColumn(new ColumnReference(null, null, "c2"))));
+        expected.setIndexOptions(new IndexOptions());
+        expected.setVector(true);
+
+        Assert.assertEquals(expected, actual);
+    }
+
     private Create_index_stmtContext getCreateIdxContext(String expr) {
         OBLexer lexer = new OBLexer(CharStreams.fromString(expr));
         CommonTokenStream tokens = new CommonTokenStream(lexer);

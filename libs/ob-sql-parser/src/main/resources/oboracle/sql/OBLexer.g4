@@ -19,6 +19,208 @@ lexer grammar OBLexer;
 public boolean inRangeOperator = false;
 }
 
+// the below is what's new in OB 4.3.3.0
+QUOTA_NAME
+    : Q U O T A '_' N A M E
+    ;
+
+PQ_DISTINCT
+    : P Q '_' D I S T I N C T
+    ;
+
+NO_MV_REWRITE
+    : N O '_' M V '_' R E W R I T E
+    ;
+
+INDEXTYPE
+    : I N D E X T Y P E
+    ;
+
+STSTOKEN
+    : S T S T O K E N
+    ;
+
+REWRITE
+    : R E W R I T E
+    ;
+
+NO_COALESCE_AGGR
+    : N O '_' C O A L E S C E '_' A G G R
+    ;
+
+PARTITION_TYPE
+    : P A R T I T I O N '_' T Y P E
+    ;
+
+TASK_ID
+    : T A S K '_' I D
+    ;
+
+COMPUTATION
+    : C O M P U T A T I O N
+    ;
+
+AUTO_REFRESH
+    : A U T O '_' R E F R E S H
+    ;
+
+SINGLE
+    : S I N G L E
+    ;
+
+MDSYS
+    : M D S Y S
+    ;
+
+WITH_PULLUP
+    : W I T H '_' P U L L U P
+    ;
+
+NO_DECORRELATE
+    : N O '_' D E C O R R E L A T E
+    ;
+
+WO_PULLUP
+    : W O '_' P U L L U P
+    ;
+
+SPATIAL_CELLID
+    : S P A T I A L '_' C E L L I D
+    ;
+
+COMPRESSION_CODE
+    : C O M P R E S S I O N '_' C O D E
+    ;
+
+MULTIVALUE
+    : M U L T I V A L U E
+    ;
+
+SERVICE
+    : S E R V I C E
+    ;
+
+DATA_SOURCE
+    : D A T A '_' S O U R C E
+    ;
+
+PROJECT_NAME
+    : P R O J E C T '_' N A M E
+    ;
+
+ENDPOINT
+    : E N D P O I N T
+    ;
+
+BUFFER_SIZE
+    : B U F F E R '_' S I Z E
+    ;
+
+PROPERTIES
+    : P R O P E R T I E S
+    ;
+
+ATTRIBUTE
+    : A T T R I B U T E
+    ;
+
+USER_SPECIFIED
+    : U S E R '_' S P E C I F I E D
+    ;
+
+THROUGH
+    : T H R O U G H
+    ;
+
+SPATIAL_INDEX
+    : S P A T I A L '_' I N D E X
+    ;
+
+ACCESS_INFO
+    : A C C E S S '_' I N F O
+    ;
+
+VALIDATION
+    : V A L I D A T I O N
+    ;
+
+DECORRELATE
+    : D E C O R R E L A T E
+    ;
+
+SUM_OPNSIZE
+    : S U M '_' O P N S I Z E
+    ;
+
+ACCESSKEY
+    : A C C E S S K E Y
+    ;
+
+MICRO_INDEX_CLUSTERED
+    : M I C R O '_' I N D E X '_' C L U S T E R E D
+    ;
+
+ACCESSTYPE
+    : A C C E S S T Y P E
+    ;
+
+PQ_GBY
+    : P Q '_' G B Y
+    ;
+
+EXTERNAL_STORAGE_DEST
+    : E X T E R N A L '_' S T O R A G E '_' D E S T
+    ;
+
+OVERWRITE
+    : O V E R W R I T E
+    ;
+
+MV_REWRITE
+    : M V '_' R E W R I T E
+    ;
+
+SPATIAL_MBR
+    : S P A T I A L '_' M B R
+    ;
+
+LAST_REFRESH_SCN
+    : L A S T '_' R E F R E S H '_' S C N
+    ;
+
+COALESCE_AGGR
+    : C O A L E S C E '_' A G G R
+    ;
+
+RESOURCE_GROUP
+    : R E S O U R C E '_' G R O U P
+    ;
+
+SDO_RELATE
+    : S D O '_' R E L A T E
+    ;
+
+MAX_FILE_SIZE
+    : M A X '_' F I L E '_' S I Z E
+    ;
+
+SRID
+    : S R I D
+    ;
+
+SS_MICRO_CACHE
+    : S S '_' M I C R O '_' C A C H E
+    ;
+
+PAXOS_REPLICA_NUM
+    : P A X O S '_' R E P L I C A '_' N U M
+    ;
+
+ACCESSID
+    : A C C E S S I D
+    ;
+// the above is what's new in OB 4.3.3.0
+
 M_SIZE
     : M
     ;

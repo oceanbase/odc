@@ -46,6 +46,7 @@ public class CreateIndex extends BaseStatement {
 
     private boolean fullText;
     private boolean spatial;
+    private boolean vector;
     private boolean unique;
     private boolean ifNotExists;
     private RelationFactor on;
@@ -79,6 +80,9 @@ public class CreateIndex extends BaseStatement {
         }
         if (this.fullText) {
             builder.append(" FULLTEXT");
+        }
+        if (this.vector) {
+            builder.append(" VECTOR");
         }
         if (this.spatial) {
             builder.append(" SPATIAL");

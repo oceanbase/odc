@@ -1110,6 +1110,19 @@ public class MySQLTableElementFactoryTest {
         Assert.assertEquals(expect, actual);
     }
 
+
+    @Test
+    public void generate_outOfLineIndexVectorIndex_succeed() {
+        StatementFactory<TableElement> factory = new MySQLTableElementFactory(
+                getTableElementContext("vector index idx1(c2) with (distance=L2, type=hnsw)"));
+        TableElement actual = factory.generate();
+        OutOfLineIndex expected = new OutOfLineIndex("idx1",
+                Collections.singletonList(new SortColumn(new ColumnReference(null, null, "c2"))));
+        expected.setIndexOptions(new IndexOptions());
+        expected.setVector(true);
+        Assert.assertEquals(expected, actual);
+    }
+
     private Table_elementContext getTableElementContext(String str) {
         OBLexer lexer = new OBLexer(CharStreams.fromString(str));
         CommonTokenStream tokens = new CommonTokenStream(lexer);

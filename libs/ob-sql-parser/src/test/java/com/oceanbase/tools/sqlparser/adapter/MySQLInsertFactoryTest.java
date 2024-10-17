@@ -33,6 +33,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Insert_stmtContext;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
+import com.oceanbase.tools.sqlparser.statement.expression.ArrayExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
 import com.oceanbase.tools.sqlparser.statement.insert.Insert;
@@ -171,6 +172,26 @@ public class MySQLInsertFactoryTest {
         expect.setIgnore(true);
         SetColumn setColumn = new SetColumn(new ColumnReference(null, "tb", "col1"), new ConstExpression("'abcd'"));
         expect.setOnDuplicateKeyUpdateColumns(Collections.singletonList(setColumn));
+        Assert.assertEquals(actual, expect);
+    }
+
+    @Test
+    public void generate_InsertVectorValues_Succeed() {
+        StatementFactory<Insert> factory = new MySQLInsertFactory(
+                getInsertContext(
+                        "insert into any_schema.t_vec values(41, [0.735541,0.670776,0.903237]);"));
+        Insert actual = factory.generate();
+
+        RelationFactor factor = new RelationFactor("t_vec");
+        factor.setSchema("any_schema");
+        InsertTable insertTable = new InsertTable(factor);
+        List<List<Expression>> values = new ArrayList<>();
+        ArrayExpression arrayExpression = new ArrayExpression(Arrays.asList(
+                new ConstExpression("0.735541"), new ConstExpression("0.670776"), new ConstExpression("0.903237")));
+        values.add(Arrays.asList(new ConstExpression("41"), arrayExpression));
+
+        insertTable.setValues(values);
+        Insert expect = new Insert(Collections.singletonList(insertTable), null);
         Assert.assertEquals(actual, expect);
     }
 

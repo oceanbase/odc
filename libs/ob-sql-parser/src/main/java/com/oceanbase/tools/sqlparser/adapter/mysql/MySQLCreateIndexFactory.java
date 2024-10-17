@@ -73,6 +73,8 @@ public class MySQLCreateIndexFactory extends OBParserBaseVisitor<CreateIndex> im
             index.setUnique(true);
         } else if (ctx.FULLTEXT() != null) {
             index.setFullText(true);
+        } else if (ctx.VECTOR() != null) {
+            index.setVector(true);
         } else if (ctx.SPATIAL() != null) {
             index.setSpatial(true);
         }
