@@ -330,6 +330,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         }
         SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(), true, true);
         ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
+        ConnectionSessionUtil.getSqlCommentProcessor(connectionSession).setDelimiter(parameters.getDelimiter());
         return connectionSession;
     }
 
