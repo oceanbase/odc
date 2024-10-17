@@ -171,7 +171,6 @@ public class TaskMonitor {
     private void doFinal() {
 
         DefaultTaskResult finalResult = DefaultTaskResultBuilder.build(getTask());
-        DefaultTaskResultBuilder.assignErrorMessage(finalResult, getTask());
         // Report final result
         log.info("Task id: {}, finished with status: {}, start to report final result", getJobId(),
                 finalResult.getStatus());
@@ -188,6 +187,8 @@ public class TaskMonitor {
         log.info("Task id: {}, remained work be completed, report finished status.", getJobId());
 
         if (JobUtils.isReportEnabled()) {
+            // assign error for last report
+            DefaultTaskResultBuilder.assignErrorMessage(finalResult, getTask());
             // Report finish signal to task server
             reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES);
         } else {
