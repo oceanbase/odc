@@ -326,6 +326,11 @@ public class ScheduleTaskService {
         return scheduleTaskRepository.findByJobNameAndStatusIn(jobName, statuses);
     }
 
+    public ScheduleTask nullSafeGetByJobId(Long jobId) {
+        return findByJobId(jobId)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE_TASK, "jobId", jobId));
+    }
+
     public Optional<ScheduleTask> findByJobId(Long jobId) {
         List<ScheduleTaskEntity> scheduleTasks = scheduleTaskRepository.findByJobId(jobId);
         if (scheduleTasks != null) {
