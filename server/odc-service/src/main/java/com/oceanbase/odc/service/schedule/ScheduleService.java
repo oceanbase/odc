@@ -43,6 +43,7 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -740,20 +741,18 @@ public class ScheduleService {
         if (StringUtils.isNotEmpty(params.getClusterId())) {
             List<Long> datasourceIdsByCluster = connectionService.innerListIdByOrganizationIdAndClusterId(
                     authenticationFacade.currentOrganizationId(), params.getClusterId());
-            if (params.getDataSourceIds().isEmpty()) {
-                params.getDataSourceIds().addAll(datasourceIdsByCluster);
-            } else {
-                params.getDataSourceIds().retainAll(datasourceIdsByCluster);
+            if (datasourceIdsByCluster.isEmpty()) {
+                return Page.empty();
             }
+            params.getDataSourceIds().addAll(datasourceIdsByCluster);
         }
         if (StringUtils.isNotEmpty(params.getTenantId())) {
             List<Long> datasourceIdsByTenantId = connectionService.innerListIdByOrganizationIdAndTenantId(
                     authenticationFacade.currentOrganizationId(), params.getTenantId());
-            if (params.getDataSourceIds().isEmpty()) {
-                params.getDataSourceIds().addAll(datasourceIdsByTenantId);
-            } else {
-                params.getDataSourceIds().retainAll(datasourceIdsByTenantId);
+            if (datasourceIdsByTenantId.isEmpty()) {
+                return Page.empty();
             }
+            params.getDataSourceIds().addAll(datasourceIdsByTenantId);
         }
         // load project by unique identifier if project id is null
         if (params.getProjectId() == null && StringUtils.isNotEmpty(params.getProjectUniqueIdentifier())) {
