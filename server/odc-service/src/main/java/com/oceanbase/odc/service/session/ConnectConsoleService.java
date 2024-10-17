@@ -149,7 +149,7 @@ public class ConnectConsoleService {
     @Autowired
     private OBQueryProfileManager profileManager;
     @Autowired
-    private DBPLModifyHelper dbplModifyHelper;
+    private DBPLModifyHelper dBPLModifyHelper;
 
     public SqlExecuteResult queryTableOrViewData(@NotNull String sessionId,
             @NotNull @Valid QueryTableOrViewDataReq req) throws Exception {
@@ -310,7 +310,7 @@ public class ConnectConsoleService {
         OdcStatementCallBack statementCallBack = null;
         if (StringUtils.isNotBlank(request.getPlName())
                 && connectionSession.getConnectType() == ConnectType.OB_MYSQL) {
-            statementCallBack = dbplModifyHelper.generateEditPLSqlODCStatementCallBackForOBMysql(sqlTuples,
+            statementCallBack = dBPLModifyHelper.generateEditPLSqlODCStatementCallBackForOBMysql(sqlTuples,
                     connectionSession, request, queryLimit, true, executeContext);
         } else {
             statementCallBack = new OdcStatementCallBack(sqlTuples, connectionSession,
