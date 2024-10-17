@@ -36,6 +36,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.TestConnectionUtil;
+import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.datasource.DataSourceFactory;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
@@ -260,6 +261,9 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
     @Test
     public void editTriggerForOBMysql_normal_successResult() throws Exception {
         ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        if (VersionUtils.isLessThanOrEqualsTo(ConnectionSessionUtil.getVersion(testConnectionSession), "4.2")) {
+            return;
+        }
         SyncJdbcExecutor syncJdbcExecutor = testConnectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY);
         String dropTestTrigger = "DROP TRIGGER IF EXISTS ODC_TEST_TRIGGER;";
@@ -307,6 +311,9 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
     @Test
     public void editTriggerForOBMysql_odcTempTriggerHaveExisted_failResult() throws Exception {
         ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        if (VersionUtils.isLessThanOrEqualsTo(ConnectionSessionUtil.getVersion(testConnectionSession), "4.2")) {
+            return;
+        }
         SyncJdbcExecutor syncJdbcExecutor = testConnectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY);
         String dropTestTrigger =
