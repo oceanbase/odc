@@ -127,16 +127,13 @@ public class DBPLModifyHelper {
         String lockKeyString;
         switch (plType) {
             case PROCEDURE:
-                lockKeyString = String.format("proc-datasourceId-%d", dataSourceId);
-                break;
             case FUNCTION:
-                lockKeyString = String.format("func-datasourceId-%d", dataSourceId);
-                break;
             case TRIGGER:
-                lockKeyString = String.format("trig-datasourceId-%d", dataSourceId);
+                lockKeyString = String.format("%s-%d", plType, dataSourceId);
                 break;
             default:
-                throw new IllegalArgumentException(String.format("Unsupported pl type %s", plType));
+                throw new IllegalArgumentException(
+                        String.format("Unsupported pl type %s for dataSourceId %d", plType, dataSourceId));
         }
         return jdbcLockRegistry.obtain(lockKeyString);
     }
