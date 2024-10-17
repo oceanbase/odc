@@ -100,7 +100,7 @@
         <alibaba-dingtalk-service-sdk.version>2.0.0</alibaba-dingtalk-service-sdk.version>
         <org.apache.tika.version>2.7.0</org.apache.tika.version>
         <fasterxml.woodstox.version>6.4.0</fasterxml.woodstox.version>
-        <groovy-all.version>2.4.7</groovy-all.version>
+        <groovy-all.version>2.4.21</groovy-all.version>
         <org.locationtech.jts.version>1.16.1</org.locationtech.jts.version>
         <org.json.version>20230618</org.json.version>
 
