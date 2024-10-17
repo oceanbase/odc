@@ -53,6 +53,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
@@ -81,6 +82,7 @@ import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.model.UnauthorizedDBResource;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.db.DBPLModifyHelper;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.session.DefaultDBSessionManage;
 import com.oceanbase.odc.service.db.session.KillSessionOrQueryReq;
@@ -146,6 +148,8 @@ public class ConnectConsoleService {
     private AuthenticationFacade authenticationFacade;
     @Autowired
     private OBQueryProfileManager profileManager;
+    @Autowired
+    private DBPLModifyHelper dBPLModifyHelper;
 
     public SqlExecuteResult queryTableOrViewData(@NotNull String sessionId,
             @NotNull @Valid QueryTableOrViewDataReq req) throws Exception {
@@ -303,9 +307,15 @@ public class ConnectConsoleService {
                 Objects.nonNull(request.getContinueExecutionOnError()) ? request.getContinueExecutionOnError()
                         : userConfigFacade.isContinueExecutionOnError();
         boolean stopOnError = !continueExecutionOnError;
-        OdcStatementCallBack statementCallBack = new OdcStatementCallBack(sqlTuples, connectionSession,
-                request.getAutoCommit(), queryLimit, stopOnError, executeContext);
-
+        OdcStatementCallBack statementCallBack = null;
+        if (StringUtils.isNotBlank(request.getPlName())
+                && connectionSession.getConnectType() == ConnectType.OB_MYSQL) {
+            statementCallBack = dBPLModifyHelper.generateEditPLSqlODCStatementCallBackForOBMysql(sqlTuples,
+                    connectionSession, request, queryLimit, true, executeContext);
+        } else {
+            statementCallBack = new OdcStatementCallBack(sqlTuples, connectionSession,
+                    request.getAutoCommit(), queryLimit, stopOnError, executeContext);
+        }
         statementCallBack.setDbmsoutputMaxRows(sessionProperties.getDbmsOutputMaxRows());
 
         boolean fullLinkTraceEnabled =
@@ -466,7 +476,7 @@ public class ConnectConsoleService {
      * Rewrite sqls, will do <br>
      * 1. add ODC_INTERNAL_ROWID query column
      */
-    private List<SqlTuple> generateSqlTuple(List<OffsetString> sqls, ConnectionSession session,
+    public List<SqlTuple> generateSqlTuple(List<OffsetString> sqls, ConnectionSession session,
             SqlAsyncExecuteReq request) {
         return sqls.stream().filter(s -> StringUtils.isNotBlank(s.getStr())).map(sql -> {
             TraceWatch traceWatch = new TraceWatch("SQL-EXEC");
@@ -620,5 +630,4 @@ public class ConnectConsoleService {
         }
         return queryLimit;
     }
-
 }

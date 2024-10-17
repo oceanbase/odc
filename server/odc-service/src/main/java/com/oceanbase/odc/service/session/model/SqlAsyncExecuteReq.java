@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.session.model;
 
 import javax.validation.constraints.NotNull;
 
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+
 import lombok.Data;
 
 /**
@@ -40,6 +42,14 @@ public class SqlAsyncExecuteReq {
     private Boolean showTableColumnInfo;
     private Boolean fullLinkTraceEnabled;
     private Boolean continueExecutionOnError;
+    /**
+     * in request of editing the pl，the ObjectName is not empty
+     */
+    private String plName;
+    /**
+     * in request of editing the pl，the ObjectName is not empty
+     */
+    private DBObjectType plType;
 
     public boolean ifSplitSqls() {
         if (this.split == null) {
