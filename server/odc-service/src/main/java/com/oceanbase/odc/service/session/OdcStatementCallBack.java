@@ -88,7 +88,6 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.DBPLModifyHelper;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -278,20 +277,6 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                 onExecutionCancelled(sqlTuple, executeResults);
             }
             returnVal.addAll(executeResults);
-        }
-    }
-
-    private String getEditOBMysqlPLLockKey(@NonNull Long dataSourceId, @NonNull String databaseName,
-            @NonNull String procedureName, @NonNull DBObjectType plType) {
-        switch (plType) {
-            case PROCEDURE:
-                return String.format("proc-%d-%s-%s", dataSourceId, databaseName, procedureName);
-            case FUNCTION:
-                return String.format("func-%d-%s-%s", dataSourceId, databaseName, procedureName);
-            case TRIGGER:
-                return String.format("trig-%d-%s-%s", dataSourceId, databaseName, procedureName);
-            default:
-                throw new IllegalArgumentException(String.format("Unsupported pl type %s", plType));
         }
     }
 
