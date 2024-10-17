@@ -102,6 +102,7 @@ public class ExecutorRequestHandler {
                 if (taskMonitor != null && MapUtils.isNotEmpty(taskMonitor.getLogMetadata())) {
                     result.setLogMetadata(taskMonitor.getLogMetadata());
                     taskMonitor.markLogMetaCollected();
+                    log.info("Task log metadata collected, ji={}.", ji.getId());
                 }
                 DefaultTaskResult copiedResult = ObjectUtil.deepCopy(result, DefaultTaskResult.class);
                 return Responses.ok(copiedResult);
