@@ -49,7 +49,7 @@ public abstract class BaseTask<RESULT> implements Task<RESULT>, ExceptionListene
     private CloudObjectStorageService cloudObjectStorageService;
     // only save latest exception if any
     // it will be cleaned if been fetched
-    private volatile AtomicReference<Throwable> latestException = new AtomicReference<>();
+    protected AtomicReference<Throwable> latestException = new AtomicReference<>();
 
     @Getter
     private TaskMonitor taskMonitor;

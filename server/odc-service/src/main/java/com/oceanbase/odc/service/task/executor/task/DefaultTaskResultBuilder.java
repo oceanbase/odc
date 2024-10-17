@@ -32,8 +32,11 @@ public class DefaultTaskResultBuilder {
         result.setProgress(task.getProgress());
         result.setJobIdentity(task.getJobContext().getJobIdentity());
         result.setExecutorEndpoint(JobUtils.getExecutorPoint());
+        return result;
+    }
+
+    public static void assignErrorMessage(DefaultTaskResult result, BaseTask<?> task) {
         Throwable e = task.getError();
         result.setErrorMessage(null == e ? null : e.getMessage());
-        return result;
     }
 }

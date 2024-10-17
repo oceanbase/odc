@@ -67,7 +67,8 @@ public class BaseTaskTest {
                     return jobContext;
                 }
             });
-            TaskResult taskResult = DefaultTaskResultBuilder.build(dummyBaseTask);
+            DefaultTaskResult taskResult = DefaultTaskResultBuilder.build(dummyBaseTask);
+            DefaultTaskResultBuilder.assignErrorMessage(taskResult, dummyBaseTask);
             Assert.assertNull(taskResult.getErrorMessage());
         }
     }
@@ -90,7 +91,8 @@ public class BaseTaskTest {
                     return jobContext;
                 }
             });
-            TaskResult taskResult = DefaultTaskResultBuilder.build(dummyBaseTask);
+            DefaultTaskResult taskResult = DefaultTaskResultBuilder.build(dummyBaseTask);
+            DefaultTaskResultBuilder.assignErrorMessage(taskResult, dummyBaseTask);
             Assert.assertEquals(taskResult.getErrorMessage(), "exception should be thrown");
         }
     }

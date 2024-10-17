@@ -171,6 +171,7 @@ public class TaskMonitor {
     private void doFinal() {
 
         DefaultTaskResult finalResult = DefaultTaskResultBuilder.build(getTask());
+        DefaultTaskResultBuilder.assignErrorMessage(finalResult, getTask());
         // Report final result
         log.info("Task id: {}, finished with status: {}, start to report final result", getJobId(),
                 finalResult.getStatus());

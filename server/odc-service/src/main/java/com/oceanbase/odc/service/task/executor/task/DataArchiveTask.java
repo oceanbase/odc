@@ -136,8 +136,8 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
                     finishTableUnit(dlmTableUnitId, TaskStatus.CANCELED);
                 } else {
                     finishTableUnit(dlmTableUnitId, TaskStatus.FAILED);
+                    taskContext.getExceptionListener().onException(e);
                 }
-                taskContext.getExceptionListener().onException(e);
             }
         }
         return true;
