@@ -71,6 +71,7 @@ import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanTaskResult;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
+import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.tools.dbbrowser.parser.ParserUtil;
@@ -84,6 +85,8 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
 
     private PublishSqlPlanJobReq parameters;
 
+    private long taskId;
+
     private InputStream sqlInputStream;
 
     private ConnectionSession connectionSession;
@@ -93,6 +96,8 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
     private SqlPlanTaskResult result;
 
     private volatile boolean canceled = false;
+
+    private volatile boolean aborted = false;
 
     private File resultJsonFile;
 
@@ -111,6 +116,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                 PublishSqlPlanJobReq.class);
         JobContext jobContext = getJobContext();
         Map<String, String> jobProperties = jobContext.getJobProperties();
+        this.taskId = jobContext.getJobIdentity().getId();
         this.result.setRegion(JobPropertiesUtils.getRegionName(jobProperties));
         this.result.setCloudProvider(JobPropertiesUtils.getCloudProvider(jobProperties));
         this.connectionSession = generateSession();
@@ -138,6 +144,10 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             SqlStatementIterator sqlIterator =
                     SqlUtils.iterator(connectionSession, sqlInputStream, StandardCharsets.UTF_8);
             while (sqlIterator.hasNext()) {
+                if (canceled) {
+                    log.info("Accept cancel task request, taskId={}", taskId);
+                    break;
+                }
                 String sql = sqlIterator.next().getStr();
                 index++;
                 // The retry statement will write the result into the buffer, while executing a new SQL command will
@@ -156,13 +166,17 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                         result.incrementFailedStatements();
                         // only write failed record into error records file
                         addErrorRecordsToFile(index, sql);
+                        if (parameters.getErrorStrategy() == TaskErrorStrategy.ABORT) {
+                            aborted = true;
+                            break;
+                        }
                     }
                 } catch (Exception e) {
                     log.info("execute sql failed, sql={}", sql);
                     result.incrementFailedStatements();
                     addErrorRecordsToFile(index, sql);
                     if (parameters.getErrorStrategy() == TaskErrorStrategy.ABORT) {
-                        canceled = true;
+                        aborted = true;
                         break;
                     }
                     log.warn("Sql task execution failed, will continue to execute next statement.", e);
@@ -174,6 +188,10 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             writeZipFile();
             // upload file to OSS, also contains error record where is non-null
             upload();
+
+            if (aborted) {
+                throw new JobException("There exists error sql, and the task is aborted");
+            }
 
             log.info("The sql plan task execute finished, report statistics:total={}, succeed={}, failed={}",
                     result.getTotalStatements(), result.getSucceedStatements(), result.getFailedStatements());
