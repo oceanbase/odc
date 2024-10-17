@@ -573,6 +573,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         asyncParam.setErrorStrategy(TaskErrorStrategy.ABORT.name());
         asyncParam.setSqlContent("select 1 from dual");
         asyncParam.setRollbackSqlContent("select 1 from dual");
+        asyncParam.setDelimiter(";");
         req.setParameters(asyncParam);
         return req;
     }
