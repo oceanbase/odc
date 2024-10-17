@@ -124,6 +124,7 @@ public class ProcessModeTest extends BaseJobTest {
         DatabaseChangeParameters parameters = new DatabaseChangeParameters();
         parameters.setSqlContent(String.format("CREATE TABLE %s (id int(10))", "t_" + exceptedTaskId));
         parameters.setErrorStrategy(TaskErrorStrategy.ABORT.name());
+        parameters.setDelimiter(";");
         PreConditions.validArgumentState(
                 parameters.getSqlContent() != null || CollectionUtils.isNotEmpty(parameters.getSqlObjectIds()),
                 ErrorCodes.BadArgument, new Object[] {"sql"}, "input sql is empty");

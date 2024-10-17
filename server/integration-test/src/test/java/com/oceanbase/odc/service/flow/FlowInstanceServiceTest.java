@@ -595,6 +595,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         DatabaseChangeParameters asyncParam = new DatabaseChangeParameters();
         asyncParam.setErrorStrategy(TaskErrorStrategy.ABORT.name());
         asyncParam.setRollbackSqlContent("select 1 from dual");
+        asyncParam.setDelimiter(";");
         taskEntity.setParametersJson(JsonUtils.toJson(asyncParam));
         return taskEntity;
     }

@@ -147,6 +147,7 @@ public class TaskServiceTest extends ServiceTestEnv {
         DatabaseChangeParameters parameters1 = new DatabaseChangeParameters();
         parameters1.setSqlContent("select * from dual;");
         parameters1.setQueryLimit(10000);
+        parameters1.setDelimiter(";");
         req.setParameters(parameters1);
         req.setDescription("test_task");
         return req;
