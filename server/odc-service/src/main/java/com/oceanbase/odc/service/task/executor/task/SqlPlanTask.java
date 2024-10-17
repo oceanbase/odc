@@ -120,8 +120,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         this.result.setRegion(JobPropertiesUtils.getRegionName(jobProperties));
         this.result.setCloudProvider(JobPropertiesUtils.getCloudProvider(jobProperties));
         this.connectionSession = generateSession();
-        String delimiter = Objects.isNull(parameters.getDelimiter()) ? ";" : parameters.getDelimiter();
-        ConnectionSessionUtil.getSqlCommentProcessor(connectionSession).setDelimiter(delimiter);
+        ConnectionSessionUtil.getSqlCommentProcessor(connectionSession).setDelimiter(parameters.getDelimiter());
         this.executor = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
         long timeoutUs = TimeUnit.MILLISECONDS.toMicros(parameters.getTimeoutMillis());
         PreConditions.notNull(timeoutUs, "timeoutUs");
