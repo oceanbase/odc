@@ -533,6 +533,7 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
     }
 }
 
+
 class TestBinaryDataManager implements BinaryDataManager {
 
     private final InputStream input;
