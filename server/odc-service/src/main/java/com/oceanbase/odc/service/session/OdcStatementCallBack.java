@@ -51,7 +51,6 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.dao.DataAccessException;
-import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.jdbc.core.StatementCallback;
 
 import com.oceanbase.jdbc.OceanBaseConnection;
@@ -86,6 +85,7 @@ import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.util.FullLinkTraceUtil;
 import com.oceanbase.odc.core.sql.util.OBUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.db.DBPLModifyHelper;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -144,7 +144,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
     @Setter
     private Locale locale;
     @Setter
-    private JdbcLockRegistry jdbcLockRegistry;
+    private DBPLModifyHelper dBPLModifyHelper;
 
     public OdcStatementCallBack(@NonNull List<SqlTuple> sqls, @NonNull ConnectionSession connectionSession,
             Boolean autoCommit, Integer queryLimit) {
@@ -198,14 +198,12 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                 statement.getConnection().setAutoCommit(this.autoCommit);
             }
             Lock lock = null;
-            if (this.jdbcLockRegistry != null) {
+            if (this.dBPLModifyHelper != null) {
                 ConnectionConfig connConfig =
                         (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
                 Long dataSourceId = connConfig.getId();
-                String connectSchema = ConnectionSessionUtil.getConnectSchema(connectionSession);
                 SqlTuple sqlTuple = sqls.get(sqls.size() - 1);
-                lock = jdbcLockRegistry.obtain(getEditOBMysqlPLLockKey(dataSourceId, connectSchema,
-                        sqlTuple.getPlName(), sqlTuple.getPlType()));
+                lock = dBPLModifyHelper.getEditPLLock(dataSourceId, sqlTuple.getPlType());
                 if (!lock.tryLock(3, TimeUnit.SECONDS)) {
                     returnVal.add(JdbcGeneralResult.failedResult(sqlTuple,
                             new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock")));

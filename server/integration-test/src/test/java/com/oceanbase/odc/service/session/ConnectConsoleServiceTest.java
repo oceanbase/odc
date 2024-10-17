@@ -61,6 +61,7 @@ import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.db.DBPLModifyHelper;
 import com.oceanbase.odc.service.db.session.DefaultDBSessionManage;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
 import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
@@ -103,7 +104,7 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
                 + "END";
         syncJdbcExecutor.execute(createTestProcedure);
         String dropODCTempProcedure =
-                "DROP PROCEDURE IF EXISTS " + ConnectConsoleService.ODC_TEMP_PROCEDURE_PREFIX + "ODC_TEST_PROCEDURE;";
+                "DROP PROCEDURE IF EXISTS " + DBPLModifyHelper.ODC_TEMPORARY_PROCEDURE;
         syncJdbcExecutor.execute(dropODCTempProcedure);
         String editTestProcedure = "CREATE PROCEDURE ODC_TEST_PROCEDURE(IN num1 INT, OUT square1 INT)\n"
                 + "BEGIN\n"
@@ -139,10 +140,10 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
                 + "END";
         syncJdbcExecutor.execute(createTestProcedure);
         String dropODCTempProcedure =
-                "DROP PROCEDURE IF EXISTS " + ConnectConsoleService.ODC_TEMP_PROCEDURE_PREFIX + "ODC_TEST_PROCEDURE;";
+                "DROP PROCEDURE IF EXISTS " + DBPLModifyHelper.ODC_TEMPORARY_PROCEDURE;
         syncJdbcExecutor.execute(dropODCTempProcedure);
-        String createTempProcedure = "CREATE PROCEDURE " + ConnectConsoleService.ODC_TEMP_PROCEDURE_PREFIX
-                + "ODC_TEST_PROCEDURE(IN num INT, OUT square INT)\n"
+        String createTempProcedure = "CREATE PROCEDURE " + DBPLModifyHelper.ODC_TEMPORARY_PROCEDURE
+                + "(IN num INT, OUT square INT)\n"
                 + "BEGIN\n"
                 + "    SET square = num * num;\n"
                 + "END";
@@ -186,7 +187,7 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
                 + "END";
         syncJdbcExecutor.execute(createTestFunction);
         String dropODCTempFunction =
-                "DROP FUNCTION IF EXISTS " + ConnectConsoleService.ODC_TEMP_FUNCTION_PREFIX + "ODC_TEST_FUNCTION;";
+                "DROP FUNCTION IF EXISTS " + DBPLModifyHelper.ODC_TEMPORARY_FUNCTION;
         syncJdbcExecutor.execute(dropODCTempFunction);
         String editTestFunction = "CREATE FUNCTION ODC_TEST_FUNCTION(num1 INT) \n"
                 + "RETURNS INT\n"
@@ -223,10 +224,10 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
                 + "END";
         syncJdbcExecutor.execute(createTestFunction);
         String dropODCTempFunction =
-                "DROP FUNCTION IF EXISTS " + ConnectConsoleService.ODC_TEMP_FUNCTION_PREFIX + "ODC_TEST_FUNCTION;";
+                "DROP FUNCTION IF EXISTS " + DBPLModifyHelper.ODC_TEMPORARY_FUNCTION;
         syncJdbcExecutor.execute(dropODCTempFunction);
         String createODCTempFunction =
-                "CREATE FUNCTION " + ConnectConsoleService.ODC_TEMP_FUNCTION_PREFIX + "ODC_TEST_FUNCTION(num INT) \n"
+                "CREATE FUNCTION " + DBPLModifyHelper.ODC_TEMPORARY_FUNCTION + "(num INT) \n"
                         + "RETURNS INT\n"
                         + "BEGIN\n"
                         + "    RETURN num * num * num;\n"
@@ -262,7 +263,7 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
     public void editTriggerForOBMysql_normal_successResult() throws Exception {
         ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
         if (VersionUtils.isLessThan(ConnectionSessionUtil.getVersion(testConnectionSession),
-                ConnectConsoleService.OB_VERSION_SUPPORT_MULTIPLE_SAME_TRIGGERS)) {
+                DBPLModifyHelper.OB_VERSION_SUPPORT_MULTIPLE_SAME_TRIGGERS)) {
             return;
         }
         SyncJdbcExecutor syncJdbcExecutor = testConnectionSession.getSyncJdbcExecutor(
@@ -270,7 +271,7 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
         String dropTestTrigger = "DROP TRIGGER IF EXISTS ODC_TEST_TRIGGER;";
         syncJdbcExecutor.execute(dropTestTrigger);
         String dropODCTempTestTrigger =
-                "DROP TRIGGER IF EXISTS " + ConnectConsoleService.ODC_TEMP_TRIGGER_PREFIX + "ODC_TEST_TRIGGER;";
+                "DROP TRIGGER IF EXISTS " + DBPLModifyHelper.ODC_TEMPORARY_TRIGGER;
         syncJdbcExecutor.execute(dropODCTempTestTrigger);
         String dropTestTable = "DROP TABLE IF EXISTS ODC_TEST_TRIGGER_TABLE;";
         syncJdbcExecutor.execute(dropTestTable);
@@ -318,10 +319,10 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
         SyncJdbcExecutor syncJdbcExecutor = testConnectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY);
         String dropTestTrigger =
-                "DROP TRIGGER IF EXISTS " + ConnectConsoleService.ODC_TEMP_TRIGGER_PREFIX + "ODC_TEST_TRIGGER;";
+                "DROP TRIGGER IF EXISTS " + DBPLModifyHelper.ODC_TEMPORARY_TRIGGER;
         syncJdbcExecutor.execute(dropTestTrigger);
         String dropODCTempTestTrigger =
-                "DROP TRIGGER IF EXISTS " + ConnectConsoleService.ODC_TEMP_TRIGGER_PREFIX + "ODC_TEST_TRIGGER;";
+                "DROP TRIGGER IF EXISTS " + DBPLModifyHelper.ODC_TEMPORARY_TRIGGER;
         syncJdbcExecutor.execute(dropODCTempTestTrigger);
         String dropTestTable = "DROP TABLE IF EXISTS ODC_TEST_TRIGGER_TABLE;";
         syncJdbcExecutor.execute(dropTestTable);
@@ -338,7 +339,7 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
                 + "END";
         syncJdbcExecutor.execute(createTestTrigger);
         String createODCTempTrigger =
-                "CREATE TRIGGER " + ConnectConsoleService.ODC_TEMP_TRIGGER_PREFIX + "ODC_TEST_TRIGGER\n"
+                "CREATE TRIGGER " + DBPLModifyHelper.ODC_TEMPORARY_TRIGGER
                         + "BEFORE INSERT ON ODC_TEST_TRIGGER_TABLE\n"
                         + "FOR EACH ROW\n"
                         + "BEGIN\n"
@@ -346,7 +347,7 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
                         + "END";
         syncJdbcExecutor.execute(createODCTempTrigger);
         String editTestTrigger =
-                "CREATE TRIGGER " + ConnectConsoleService.ODC_TEMP_TRIGGER_PREFIX + "ODC_TEST_TRIGGER\n"
+                "CREATE TRIGGER " + DBPLModifyHelper.ODC_TEMPORARY_TRIGGER + "\n"
                         + "BEFORE INSERT ON ODC_TEST_TRIGGER_TABLE\n"
                         + "FOR EACH ROW\n"
                         + "BEGIN\n"

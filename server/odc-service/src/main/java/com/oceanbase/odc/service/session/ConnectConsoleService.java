@@ -27,7 +27,6 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -36,7 +35,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
-import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
@@ -84,6 +82,7 @@ import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.model.UnauthorizedDBResource;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.db.DBPLModifyHelper;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.session.DefaultDBSessionManage;
 import com.oceanbase.odc.service.db.session.KillSessionOrQueryReq;
@@ -105,7 +104,6 @@ import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.session.util.SqlRewriteUtil;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -131,10 +129,6 @@ public class ConnectConsoleService {
 
     public static final int DEFAULT_GET_RESULT_TIMEOUT_SECONDS = 1;
     public static final String SHOW_TABLE_COLUMN_INFO = "SHOW_TABLE_COLUMN_INFO";
-    public static final String ODC_TEMP_PROCEDURE_PREFIX = "_ODC_TEMP_PROCEDURE_";
-    public static final String ODC_TEMP_TRIGGER_PREFIX = "_ODC_TEMP_TRIGGER_";
-    public static final String ODC_TEMP_FUNCTION_PREFIX = "_ODC_TEMP_FUNCTION_";
-    public static final String OB_VERSION_SUPPORT_MULTIPLE_SAME_TRIGGERS = "4.2";
 
     @Autowired
     private ConnectSessionService sessionService;
@@ -155,7 +149,7 @@ public class ConnectConsoleService {
     @Autowired
     private OBQueryProfileManager profileManager;
     @Autowired
-    private JdbcLockRegistry jdbcLockRegistry;
+    private DBPLModifyHelper dbplModifyHelper;
 
     public SqlExecuteResult queryTableOrViewData(@NotNull String sessionId,
             @NotNull @Valid QueryTableOrViewDataReq req) throws Exception {
@@ -316,7 +310,7 @@ public class ConnectConsoleService {
         OdcStatementCallBack statementCallBack = null;
         if (StringUtils.isNotBlank(request.getPlName())
                 && connectionSession.getConnectType() == ConnectType.OB_MYSQL) {
-            statementCallBack = generateEditPLSqlODCStatementCallBackForOBMysql(sqlTuples,
+            statementCallBack = dbplModifyHelper.generateEditPLSqlODCStatementCallBackForOBMysql(sqlTuples,
                     connectionSession, request, queryLimit, true, executeContext);
         } else {
             statementCallBack = new OdcStatementCallBack(sqlTuples, connectionSession,
@@ -482,7 +476,7 @@ public class ConnectConsoleService {
      * Rewrite sqls, will do <br>
      * 1. add ODC_INTERNAL_ROWID query column
      */
-    private List<SqlTuple> generateSqlTuple(List<OffsetString> sqls, ConnectionSession session,
+    public List<SqlTuple> generateSqlTuple(List<OffsetString> sqls, ConnectionSession session,
             SqlAsyncExecuteReq request) {
         return sqls.stream().filter(s -> StringUtils.isNotBlank(s.getStr())).map(sql -> {
             TraceWatch traceWatch = new TraceWatch("SQL-EXEC");
@@ -635,69 +629,5 @@ public class ConnectConsoleService {
             return Math.min(queryLimit, (int) sessionProperties.getResultSetMaxRows());
         }
         return queryLimit;
-    }
-
-    private OdcStatementCallBack generateEditPLSqlODCStatementCallBackForOBMysql(@NotEmpty List<SqlTuple> sqlTuples,
-            @NotNull ConnectionSession connectionSession, @NotNull SqlAsyncExecuteReq request, Integer queryLimit,
-            boolean stopOnError, AsyncExecuteContext context)
-            throws Exception {
-        sqlTuples = getWrappedSqlTuplesForOBMysql(sqlTuples, connectionSession, request);
-        OdcStatementCallBack statementCallBack = new OdcStatementCallBack(sqlTuples, connectionSession,
-                request.getAutoCommit(), queryLimit, stopOnError, context);
-        statementCallBack.setJdbcLockRegistry(jdbcLockRegistry);
-        return statementCallBack;
-    }
-
-    private List<SqlTuple> getWrappedSqlTuplesForOBMysql(@NotEmpty List<SqlTuple> sqlTuples,
-            @NotNull ConnectionSession connectionSession,
-            SqlAsyncExecuteReq request) throws Exception {
-        if (sqlTuples.size() != 1) {
-            throw new IllegalArgumentException("the sql for editing procedure must generate single sql tuple");
-        }
-        SqlTuple sqlTuple = sqlTuples.get(0);
-        if (sqlTuple == null) {
-            throw new IllegalArgumentException("the sql of editing procedure is null");
-        }
-        String plName = request.getPlName();
-        DBObjectType plType = request.getPlType();
-        sqlTuple.setPlName(plName);
-        sqlTuple.setPlType(plType);
-        switch (plType) {
-            case PROCEDURE:
-                return getWrappedSqlTuplesByPLType(sqlTuples, connectionSession, request, plName, plType,
-                        ODC_TEMP_PROCEDURE_PREFIX);
-            case FUNCTION:
-                return getWrappedSqlTuplesByPLType(sqlTuples, connectionSession, request, plName, plType,
-                        ODC_TEMP_FUNCTION_PREFIX);
-            case TRIGGER:
-                if (VersionUtils.isLessThan(ConnectionSessionUtil.getVersion(connectionSession),
-                        OB_VERSION_SUPPORT_MULTIPLE_SAME_TRIGGERS)) {
-                    throw new BadRequestException(
-                            "editing trigger in mysql mode is not supported in ob version less than "
-                                    + OB_VERSION_SUPPORT_MULTIPLE_SAME_TRIGGERS);
-                }
-                return getWrappedSqlTuplesByPLType(sqlTuples, connectionSession, request, plName, plType,
-                        ODC_TEMP_TRIGGER_PREFIX);
-            default:
-                throw new IllegalArgumentException("the pl type of editing procedure is not supported");
-        }
-    }
-
-    private List<SqlTuple> getWrappedSqlTuplesByPLType(List<SqlTuple> sqlTuples, ConnectionSession connectionSession,
-            SqlAsyncExecuteReq request, String plName, DBObjectType plType, String tempPLTypePrefix) {
-        String tempSql = sqlTuples.get(0).getExecutedSql().replaceFirst(plName, tempPLTypePrefix + plName);
-        List<SqlTuple> tempSqlTuples = generateSqlTuple(
-                Collections.singletonList(new OffsetString(0, tempSql)), connectionSession, request);
-        String dropTempSql = "DROP " + plType + " IF EXISTS " + tempPLTypePrefix + plName;
-        List<SqlTuple> dropTempSqlTuples = generateSqlTuple(
-                Collections.singletonList(new OffsetString(0, dropTempSql)), connectionSession, request);
-        String dropSql = "DROP " + plType + " IF EXISTS " + plName;
-        List<SqlTuple> dropSqlTuples = generateSqlTuple(
-                Collections.singletonList(new OffsetString(0, dropSql)), connectionSession, request);
-        tempSqlTuples.addAll(dropTempSqlTuples);
-        tempSqlTuples.addAll(dropSqlTuples);
-        tempSqlTuples.addAll(sqlTuples);
-        sqlTuples = tempSqlTuples;
-        return sqlTuples;
     }
 }
