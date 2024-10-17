@@ -261,7 +261,8 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
     @Test
     public void editTriggerForOBMysql_normal_successResult() throws Exception {
         ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
-        if (VersionUtils.isLessThanOrEqualsTo(ConnectionSessionUtil.getVersion(testConnectionSession), "4.2")) {
+        if (VersionUtils.isLessThan(ConnectionSessionUtil.getVersion(testConnectionSession),
+                ConnectConsoleService.OB_VERSION_SUPPORT_MULTIPLE_SAME_TRIGGERS)) {
             return;
         }
         SyncJdbcExecutor syncJdbcExecutor = testConnectionSession.getSyncJdbcExecutor(

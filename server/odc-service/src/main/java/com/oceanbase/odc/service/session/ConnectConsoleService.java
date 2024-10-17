@@ -134,8 +134,7 @@ public class ConnectConsoleService {
     public static final String ODC_TEMP_PROCEDURE_PREFIX = "_ODC_TEMP_PROCEDURE_";
     public static final String ODC_TEMP_TRIGGER_PREFIX = "_ODC_TEMP_TRIGGER_";
     public static final String ODC_TEMP_FUNCTION_PREFIX = "_ODC_TEMP_FUNCTION_";
-
-
+    public static final String OB_VERSION_SUPPORT_MULTIPLE_SAME_TRIGGERS = "4.2";
 
     @Autowired
     private ConnectSessionService sessionService;
@@ -671,6 +670,12 @@ public class ConnectConsoleService {
                 return getWrappedSqlTuplesByPLType(sqlTuples, connectionSession, request, plName, plType,
                         ODC_TEMP_FUNCTION_PREFIX);
             case TRIGGER:
+                if (VersionUtils.isLessThan(ConnectionSessionUtil.getVersion(connectionSession),
+                        OB_VERSION_SUPPORT_MULTIPLE_SAME_TRIGGERS)) {
+                    throw new BadRequestException(
+                            "editing trigger in mysql mode is not supported in ob version less than "
+                                    + OB_VERSION_SUPPORT_MULTIPLE_SAME_TRIGGERS);
+                }
                 return getWrappedSqlTuplesByPLType(sqlTuples, connectionSession, request, plName, plType,
                         ODC_TEMP_TRIGGER_PREFIX);
             default:
