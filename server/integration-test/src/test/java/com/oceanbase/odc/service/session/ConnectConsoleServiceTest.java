@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -62,10 +63,12 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.session.DefaultDBSessionManage;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
 import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
+import com.oceanbase.odc.service.session.model.AsyncExecuteResultResp;
 import com.oceanbase.odc.service.session.model.BinaryContent;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.NonNull;
 
@@ -78,7 +81,7 @@ import lombok.NonNull;
  */
 public class ConnectConsoleServiceTest extends ServiceTestEnv {
 
-    private final String sessionid = "10000";
+    private final String sessionId = "10000";
     @MockBean
     private ConnectSessionService sessionService;
     @Autowired
@@ -87,12 +90,284 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
     private DefaultDBSessionManage defaultConnectSessionManage;
 
     @Test
+    public void editProcedureForOBMysql_normal_successResult() throws Exception {
+        ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        SyncJdbcExecutor syncJdbcExecutor = testConnectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.CONSOLE_DS_KEY);
+        String dropTestProcedure = "DROP PROCEDURE IF EXISTS ODC_TEST_PROCEDURE;";
+        syncJdbcExecutor.execute(dropTestProcedure);
+        String createTestProcedure = "CREATE PROCEDURE ODC_TEST_PROCEDURE(IN num INT, OUT square INT)\n"
+                + "BEGIN\n"
+                + "    SET square = num * num;\n"
+                + "END";
+        syncJdbcExecutor.execute(createTestProcedure);
+        String dropODCTempProcedure =
+                "DROP PROCEDURE IF EXISTS " + ConnectConsoleService.ODC_TEMP_PROCEDURE_PREFIX + "ODC_TEST_PROCEDURE;";
+        syncJdbcExecutor.execute(dropODCTempProcedure);
+        String editTestProcedure = "CREATE PROCEDURE ODC_TEST_PROCEDURE(IN num1 INT, OUT square1 INT)\n"
+                + "BEGIN\n"
+                + "    SET square1 = num1 * num1;\n"
+                + "END";
+        SqlAsyncExecuteResp sqlAsyncExecuteResp = getSqlAsyncExecuteResp(
+                testConnectionSession, editTestProcedure, "ODC_TEST_PROCEDURE", DBObjectType.PROCEDURE);
+        List<SqlExecuteResult> sqlExecuteResults = new ArrayList<>();
+        AsyncExecuteResultResp moreResults = null;
+        do {
+            moreResults =
+                    consoleService.getMoreResults(testConnectionSession.getId(), sqlAsyncExecuteResp.getRequestId());
+            sqlExecuteResults.addAll(moreResults.getResults());
+        } while (!moreResults.isFinished());
+        Assert.assertTrue(sqlExecuteResults.size() == 4);
+        for (SqlExecuteResult sqlExecuteResult : sqlExecuteResults) {
+            Assert.assertTrue(sqlExecuteResult.getStatus() == SqlExecuteStatus.SUCCESS);
+        }
+        syncJdbcExecutor.execute(dropTestProcedure);
+        syncJdbcExecutor.execute(dropODCTempProcedure);
+    }
+
+    @Test
+    public void editProcedureForOBMysql_odcTempProcedureHaveExisted_failResult() throws Exception {
+        ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        SyncJdbcExecutor syncJdbcExecutor = testConnectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.CONSOLE_DS_KEY);
+        String dropTestProcedure = "DROP PROCEDURE IF EXISTS ODC_TEST_PROCEDURE;";
+        syncJdbcExecutor.execute(dropTestProcedure);
+        String createTestProcedure = "CREATE PROCEDURE ODC_TEST_PROCEDURE(IN num INT, OUT square INT)\n"
+                + "BEGIN\n"
+                + "    SET square = num * num;\n"
+                + "END";
+        syncJdbcExecutor.execute(createTestProcedure);
+        String dropODCTempProcedure =
+                "DROP PROCEDURE IF EXISTS " + ConnectConsoleService.ODC_TEMP_PROCEDURE_PREFIX + "ODC_TEST_PROCEDURE;";
+        syncJdbcExecutor.execute(dropODCTempProcedure);
+        String createTempProcedure = "CREATE PROCEDURE " + ConnectConsoleService.ODC_TEMP_PROCEDURE_PREFIX
+                + "ODC_TEST_PROCEDURE(IN num INT, OUT square INT)\n"
+                + "BEGIN\n"
+                + "    SET square = num * num;\n"
+                + "END";
+        syncJdbcExecutor.execute(createTempProcedure);
+        String editTestProcedure = "CREATE PROCEDURE ODC_TEST_PROCEDURE(IN num1 INT, OUT square1 INT)\n"
+                + "BEGIN\n"
+                + "    SET square1 = num1 * num1;\n"
+                + "END";
+        SqlAsyncExecuteResp sqlAsyncExecuteResp = getSqlAsyncExecuteResp(
+                testConnectionSession, editTestProcedure, "ODC_TEST_PROCEDURE", DBObjectType.PROCEDURE);
+        List<SqlExecuteResult> sqlExecuteResults = new ArrayList<>();
+        AsyncExecuteResultResp moreResults = null;
+        do {
+            moreResults =
+                    consoleService.getMoreResults(testConnectionSession.getId(), sqlAsyncExecuteResp.getRequestId());
+            sqlExecuteResults.addAll(moreResults.getResults());
+        } while (!moreResults.isFinished());
+        Assert.assertTrue(sqlExecuteResults.size() == 4);
+        for (int i = 0; i < sqlExecuteResults.size(); i++) {
+            if (i == 0) {
+                Assert.assertTrue(sqlExecuteResults.get(i).getStatus() == SqlExecuteStatus.FAILED);
+            } else {
+                Assert.assertTrue(sqlExecuteResults.get(i).getStatus() == SqlExecuteStatus.CANCELED);
+            }
+        }
+        syncJdbcExecutor.execute(dropTestProcedure);
+        syncJdbcExecutor.execute(dropODCTempProcedure);
+    }
+
+    @Test
+    public void editFunctionForOBMysql_normal_successResult() throws Exception {
+        ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        SyncJdbcExecutor syncJdbcExecutor = testConnectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.CONSOLE_DS_KEY);
+        String dropTestFunction = "DROP FUNCTION IF EXISTS ODC_TEST_FUNCTION;";
+        syncJdbcExecutor.execute(dropTestFunction);
+        String createTestFunction = "CREATE FUNCTION ODC_TEST_FUNCTION(num INT) \n"
+                + "RETURNS INT\n"
+                + "BEGIN\n"
+                + "    RETURN num * num * num;\n"
+                + "END";
+        syncJdbcExecutor.execute(createTestFunction);
+        String dropODCTempFunction =
+                "DROP FUNCTION IF EXISTS " + ConnectConsoleService.ODC_TEMP_FUNCTION_PREFIX + "ODC_TEST_FUNCTION;";
+        syncJdbcExecutor.execute(dropODCTempFunction);
+        String editTestFunction = "CREATE FUNCTION ODC_TEST_FUNCTION(num1 INT) \n"
+                + "RETURNS INT\n"
+                + "BEGIN\n"
+                + "    RETURN num1 * num1 * num1;\n"
+                + "END";
+        SqlAsyncExecuteResp sqlAsyncExecuteResp = getSqlAsyncExecuteResp(
+                testConnectionSession, editTestFunction, "ODC_TEST_FUNCTION", DBObjectType.FUNCTION);
+        List<SqlExecuteResult> sqlExecuteResults = new ArrayList<>();
+        AsyncExecuteResultResp moreResults = null;
+        do {
+            moreResults =
+                    consoleService.getMoreResults(testConnectionSession.getId(), sqlAsyncExecuteResp.getRequestId());
+            sqlExecuteResults.addAll(moreResults.getResults());
+        } while (!moreResults.isFinished());
+        for (SqlExecuteResult sqlExecuteResult : sqlExecuteResults) {
+            Assert.assertTrue(sqlExecuteResult.getStatus() == SqlExecuteStatus.SUCCESS);
+        }
+        syncJdbcExecutor.execute(dropTestFunction);
+        syncJdbcExecutor.execute(dropODCTempFunction);
+    }
+
+    @Test
+    public void editFunctionForOBMysql_odcTempFunctionHaveExisted_failResultResult() throws Exception {
+        ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        SyncJdbcExecutor syncJdbcExecutor = testConnectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.CONSOLE_DS_KEY);
+        String dropTestFunction = "DROP FUNCTION IF EXISTS ODC_TEST_FUNCTION;";
+        syncJdbcExecutor.execute(dropTestFunction);
+        String createTestFunction = "CREATE FUNCTION ODC_TEST_FUNCTION(num INT) \n"
+                + "RETURNS INT\n"
+                + "BEGIN\n"
+                + "    RETURN num * num * num;\n"
+                + "END";
+        syncJdbcExecutor.execute(createTestFunction);
+        String dropODCTempFunction =
+                "DROP FUNCTION IF EXISTS " + ConnectConsoleService.ODC_TEMP_FUNCTION_PREFIX + "ODC_TEST_FUNCTION;";
+        syncJdbcExecutor.execute(dropODCTempFunction);
+        String createODCTempFunction =
+                "CREATE FUNCTION " + ConnectConsoleService.ODC_TEMP_FUNCTION_PREFIX + "ODC_TEST_FUNCTION(num INT) \n"
+                        + "RETURNS INT\n"
+                        + "BEGIN\n"
+                        + "    RETURN num * num * num;\n"
+                        + "END";
+        syncJdbcExecutor.execute(createODCTempFunction);
+        String editTestFunction = "CREATE FUNCTION ODC_TEST_FUNCTION(num1 INT) \n"
+                + "RETURNS INT\n"
+                + "BEGIN\n"
+                + "    RETURN num1 * num1 * num1;\n"
+                + "END";
+        SqlAsyncExecuteResp sqlAsyncExecuteResp = getSqlAsyncExecuteResp(
+                testConnectionSession, editTestFunction, "ODC_TEST_FUNCTION", DBObjectType.FUNCTION);
+        List<SqlExecuteResult> sqlExecuteResults = new ArrayList<>();
+        AsyncExecuteResultResp moreResults = null;
+        do {
+            moreResults =
+                    consoleService.getMoreResults(testConnectionSession.getId(), sqlAsyncExecuteResp.getRequestId());
+            sqlExecuteResults.addAll(moreResults.getResults());
+        } while (!moreResults.isFinished());
+        Assert.assertTrue(sqlExecuteResults.size() == 4);
+        for (int i = 0; i < sqlExecuteResults.size(); i++) {
+            if (i == 0) {
+                Assert.assertTrue(sqlExecuteResults.get(i).getStatus() == SqlExecuteStatus.FAILED);
+            } else {
+                Assert.assertTrue(sqlExecuteResults.get(i).getStatus() == SqlExecuteStatus.CANCELED);
+            }
+        }
+        syncJdbcExecutor.execute(dropTestFunction);
+        syncJdbcExecutor.execute(dropODCTempFunction);
+    }
+
+    @Test
+    public void editTriggerForOBMysql_normal_successResult() throws Exception {
+        ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        SyncJdbcExecutor syncJdbcExecutor = testConnectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.CONSOLE_DS_KEY);
+        String dropTestTrigger = "DROP TRIGGER IF EXISTS ODC_TEST_TRIGGER;";
+        syncJdbcExecutor.execute(dropTestTrigger);
+        String dropODCTempTestTrigger =
+                "DROP TRIGGER IF EXISTS " + ConnectConsoleService.ODC_TEMP_TRIGGER_PREFIX + "ODC_TEST_TRIGGER;";
+        syncJdbcExecutor.execute(dropODCTempTestTrigger);
+        String dropTestTable = "DROP TABLE IF EXISTS ODC_TEST_TRIGGER_TABLE;";
+        syncJdbcExecutor.execute(dropTestTable);
+        String createTestTable = "CREATE TABLE ODC_TEST_TRIGGER_TABLE (\n"
+                + "    id INT AUTO_INCREMENT PRIMARY KEY,\n"
+                + "    value INT\n"
+                + ");";
+        syncJdbcExecutor.execute(createTestTable);
+        String createTestTrigger = "CREATE TRIGGER ODC_TEST_TRIGGER\n"
+                + "BEFORE INSERT ON ODC_TEST_TRIGGER_TABLE\n"
+                + "FOR EACH ROW\n"
+                + "BEGIN\n"
+                + "    SET NEW.value = NEW.value * 1;\n"
+                + "END";
+        syncJdbcExecutor.execute(createTestTrigger);
+        String editTestTrigger = "CREATE TRIGGER ODC_TEST_TRIGGER\n"
+                + "BEFORE INSERT ON ODC_TEST_TRIGGER_TABLE\n"
+                + "FOR EACH ROW\n"
+                + "BEGIN\n"
+                + "    SET NEW.value = NEW.value * 2;\n"
+                + "END";
+        SqlAsyncExecuteResp sqlAsyncExecuteResp = getSqlAsyncExecuteResp(
+                testConnectionSession, editTestTrigger, "ODC_TEST_TRIGGER", DBObjectType.TRIGGER);
+        List<SqlExecuteResult> sqlExecuteResults = new ArrayList<>();
+        AsyncExecuteResultResp moreResults = null;
+        do {
+            moreResults =
+                    consoleService.getMoreResults(testConnectionSession.getId(), sqlAsyncExecuteResp.getRequestId());
+            sqlExecuteResults.addAll(moreResults.getResults());
+        } while (!moreResults.isFinished());
+        for (SqlExecuteResult sqlExecuteResult : sqlExecuteResults) {
+            Assert.assertTrue(sqlExecuteResult.getStatus() == SqlExecuteStatus.SUCCESS);
+        }
+        syncJdbcExecutor.execute(dropTestTrigger);
+        syncJdbcExecutor.execute(dropODCTempTestTrigger);
+        syncJdbcExecutor.execute(dropTestTable);
+    }
+
+    @Test
+    public void editTriggerForOBMysql_odcTempTriggerHaveExisted_failResult() throws Exception {
+        ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        SyncJdbcExecutor syncJdbcExecutor = testConnectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.CONSOLE_DS_KEY);
+        String dropTestTrigger =
+                "DROP TRIGGER IF EXISTS " + ConnectConsoleService.ODC_TEMP_TRIGGER_PREFIX + "ODC_TEST_TRIGGER;";
+        syncJdbcExecutor.execute(dropTestTrigger);
+        String dropODCTempTestTrigger =
+                "DROP TRIGGER IF EXISTS " + ConnectConsoleService.ODC_TEMP_TRIGGER_PREFIX + "ODC_TEST_TRIGGER;";
+        syncJdbcExecutor.execute(dropODCTempTestTrigger);
+        String dropTestTable = "DROP TABLE IF EXISTS ODC_TEST_TRIGGER_TABLE;";
+        syncJdbcExecutor.execute(dropTestTable);
+        String createTestTable = "CREATE TABLE ODC_TEST_TRIGGER_TABLE (\n"
+                + "    id INT AUTO_INCREMENT PRIMARY KEY,\n"
+                + "    value INT\n"
+                + ");";
+        syncJdbcExecutor.execute(createTestTable);
+        String createTestTrigger = "CREATE TRIGGER ODC_TEST_TRIGGER\n"
+                + "BEFORE INSERT ON ODC_TEST_TRIGGER_TABLE\n"
+                + "FOR EACH ROW\n"
+                + "BEGIN\n"
+                + "    SET NEW.value = NEW.value * 1;\n"
+                + "END";
+        syncJdbcExecutor.execute(createTestTrigger);
+        String createODCTempTrigger =
+                "CREATE TRIGGER " + ConnectConsoleService.ODC_TEMP_TRIGGER_PREFIX + "ODC_TEST_TRIGGER\n"
+                        + "BEFORE INSERT ON ODC_TEST_TRIGGER_TABLE\n"
+                        + "FOR EACH ROW\n"
+                        + "BEGIN\n"
+                        + "    SET NEW.value = NEW.value * 1;\n"
+                        + "END";
+        syncJdbcExecutor.execute(createODCTempTrigger);
+        String editTestTrigger =
+                "CREATE TRIGGER " + ConnectConsoleService.ODC_TEMP_TRIGGER_PREFIX + "ODC_TEST_TRIGGER\n"
+                        + "BEFORE INSERT ON ODC_TEST_TRIGGER_TABLE\n"
+                        + "FOR EACH ROW\n"
+                        + "BEGIN\n"
+                        + "    SET NEW.value = NEW.value * 2;\n"
+                        + "END";
+        SqlAsyncExecuteResp sqlAsyncExecuteResp = getSqlAsyncExecuteResp(
+                testConnectionSession, editTestTrigger, "ODC_TEST_TRIGGER", DBObjectType.TRIGGER);
+        List<SqlExecuteResult> sqlExecuteResults = new ArrayList<>();
+        AsyncExecuteResultResp moreResults = null;
+        do {
+            moreResults =
+                    consoleService.getMoreResults(testConnectionSession.getId(), sqlAsyncExecuteResp.getRequestId());
+            sqlExecuteResults.addAll(moreResults.getResults());
+        } while (!moreResults.isFinished());
+        for (SqlExecuteResult sqlExecuteResult : sqlExecuteResults) {
+            Assert.assertTrue(sqlExecuteResult.getStatus() == SqlExecuteStatus.SUCCESS);
+        }
+        syncJdbcExecutor.execute(dropTestTrigger);
+        syncJdbcExecutor.execute(dropODCTempTestTrigger);
+        syncJdbcExecutor.execute(dropTestTable);
+    }
+
+    @Test
     public void getAsyncResult_killSessionSql_successResult() throws Exception {
         String sql = "kill session /*";
         injectAsyncJdbcExecutor(JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
-        SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionid, getSqlAsyncExecuteReq(sql));
-        injectExecuteContext(sessionid, resp.getRequestId(), JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
-        List<SqlExecuteResult> resultList = consoleService.getMoreResults(sessionid, resp.getRequestId()).getResults();
+        SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionId, getSqlAsyncExecuteReq(sql));
+        injectExecuteContext(sessionId, resp.getRequestId(), JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
+        List<SqlExecuteResult> resultList = consoleService.getMoreResults(sessionId, resp.getRequestId()).getResults();
 
         Assert.assertFalse(resultList.isEmpty());
     }
@@ -102,7 +377,7 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
         String sql = "kill session 12345";
         injectAsyncJdbcExecutor(JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
         List<JdbcGeneralResult> jdbcGeneralResults = defaultConnectSessionManage.executeKillSession(
-                sessionService.nullSafeGet(sessionid), Collections.singletonList(SqlTuple.newTuple(sql)), sql);
+                sessionService.nullSafeGet(sessionId), Collections.singletonList(SqlTuple.newTuple(sql)), sql);
         Assert.assertFalse(jdbcGeneralResults.isEmpty());
     }
 
@@ -111,9 +386,9 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
         String sql = "kill session /*";
         JdbcGeneralResult failedResult = JdbcGeneralResult.failedResult(SqlTuple.newTuple(sql), new Exception("test"));
         injectAsyncJdbcExecutor(failedResult);
-        SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionid, getSqlAsyncExecuteReq(sql));
-        injectExecuteContext(sessionid, resp.getRequestId(), failedResult);
-        List<SqlExecuteResult> resultList = consoleService.getMoreResults(sessionid, resp.getRequestId()).getResults();
+        SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionId, getSqlAsyncExecuteReq(sql));
+        injectExecuteContext(sessionId, resp.getRequestId(), failedResult);
+        List<SqlExecuteResult> resultList = consoleService.getMoreResults(sessionId, resp.getRequestId()).getResults();
 
         Assert.assertFalse(resultList.isEmpty());
         Assert.assertSame(SqlExecuteStatus.FAILED, resultList.get(0).getStatus());
@@ -123,8 +398,8 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
     public void getAsyncResult_delimiter_getResultSucceed() throws Exception {
         String sql = "delimiter $$";
         injectAsyncJdbcExecutor(JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
-        SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionid, getSqlAsyncExecuteReq(sql));
-        List<SqlExecuteResult> resultList = consoleService.getMoreResults(sessionid, resp.getRequestId()).getResults();
+        SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionId, getSqlAsyncExecuteReq(sql));
+        List<SqlExecuteResult> resultList = consoleService.getMoreResults(sessionId, resp.getRequestId()).getResults();
 
         Assert.assertFalse(resultList.isEmpty());
     }
@@ -133,9 +408,9 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
     public void getAsyncResult_commonSQLForOracle_getResultSucceed() throws Exception {
         String sql = "select * from tableaas";
         injectAsyncJdbcExecutor(JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
-        SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionid, getSqlAsyncExecuteReq(sql));
-        injectExecuteContext(sessionid, resp.getRequestId(), JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
-        List<SqlExecuteResult> resultList = consoleService.getMoreResults(sessionid, resp.getRequestId()).getResults();
+        SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionId, getSqlAsyncExecuteReq(sql));
+        injectExecuteContext(sessionId, resp.getRequestId(), JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
+        List<SqlExecuteResult> resultList = consoleService.getMoreResults(sessionId, resp.getRequestId()).getResults();
 
         Assert.assertFalse(resultList.isEmpty());
     }
@@ -145,9 +420,9 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
         String sql = "select * from tableaas";
         injectAsyncJdbcExecutor(JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)),
                 ConnectType.OB_MYSQL);
-        SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionid, getSqlAsyncExecuteReq(sql));
-        injectExecuteContext(sessionid, resp.getRequestId(), JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
-        List<SqlExecuteResult> resultList = consoleService.getMoreResults(sessionid, resp.getRequestId()).getResults();
+        SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionId, getSqlAsyncExecuteReq(sql));
+        injectExecuteContext(sessionId, resp.getRequestId(), JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
+        List<SqlExecuteResult> resultList = consoleService.getMoreResults(sessionId, resp.getRequestId()).getResults();
 
         Assert.assertFalse(resultList.isEmpty());
     }
@@ -157,9 +432,9 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
         String sql = "select * from table_test";
         JdbcGeneralResult executeResult = getJdbcGeneralResultWithQueryData(sql);
         injectAsyncJdbcExecutor(executeResult, ConnectType.OB_MYSQL);
-        SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionid, getSqlAsyncExecuteReq(sql));
-        injectExecuteContext(sessionid, resp.getRequestId(), executeResult);
-        List<SqlExecuteResult> resultList = consoleService.getMoreResults(sessionid, resp.getRequestId()).getResults();
+        SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionId, getSqlAsyncExecuteReq(sql));
+        injectExecuteContext(sessionId, resp.getRequestId(), executeResult);
+        List<SqlExecuteResult> resultList = consoleService.getMoreResults(sessionId, resp.getRequestId()).getResults();
 
         Assert.assertTrue(resultList.get(0).getResultSetMetaData().isEditable());
     }
@@ -167,8 +442,8 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
     @Test
     public void getBinaryContent_skipSeveralBytes_readSucceed() throws IOException {
         ConnectionSession session = new TestConnectionSession(
-                sessionid, new ByteArrayInputStream("abcd".getBytes()));
-        Mockito.when(sessionService.nullSafeGet(sessionid)).thenReturn(session);
+                sessionId, new ByteArrayInputStream("abcd".getBytes()));
+        Mockito.when(sessionService.nullSafeGet(sessionId)).thenReturn(session);
         CrossLinkedVirtualTable table = new CrossLinkedVirtualTable("tableId");
         long rowId = 1;
         int colId = 1;
@@ -176,7 +451,7 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
         VirtualElement elt = new CommonVirtualElement("tableId", rowId, colId, "test_type", "test_name", metaData);
         table.put(elt);
         ConnectionSessionUtil.setQueryCache(session, table);
-        BinaryContent actual = consoleService.getBinaryContent(sessionid, "tableId",
+        BinaryContent actual = consoleService.getBinaryContent(sessionId, "tableId",
                 rowId, colId, 2L, 1, ValueEncodeType.TXT);
         BinaryContent expect = new BinaryContent("c".getBytes(), 4, ValueEncodeType.TXT);
         Assert.assertEquals(expect, actual);
@@ -193,10 +468,10 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
         GeneralSyncJdbcExecutor syncJdbcExecutor = Mockito.mock(GeneralSyncJdbcExecutor.class);
         Mockito.when(syncJdbcExecutor.execute(Mockito.any(OdcStatementCallBack.class)))
                 .thenReturn(Collections.singletonList(result));
-        ConnectionSession session = new TestConnectionSession(sessionid, connectType,
+        ConnectionSession session = new TestConnectionSession(sessionId, connectType,
                 buildTestConnection(connectType), asyncJdbcExecutor, syncJdbcExecutor);
-        Mockito.when(sessionService.nullSafeGet(sessionid, true)).thenReturn(session);
-        Mockito.when(sessionService.nullSafeGet(sessionid)).thenReturn(session);
+        Mockito.when(sessionService.nullSafeGet(sessionId, true)).thenReturn(session);
+        Mockito.when(sessionService.nullSafeGet(sessionId)).thenReturn(session);
     }
 
     private SqlAsyncExecuteReq getSqlAsyncExecuteReq(String sql) {
@@ -216,7 +491,7 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
     }
 
     private void injectExecuteContext(String sessionId, String requestId, JdbcGeneralResult result) {
-        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionid);
+        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId);
         AsyncExecuteContext context =
                 (AsyncExecuteContext) ConnectionSessionUtil.getExecuteContext(connectionSession, requestId);
         context.addSqlExecutionResults(Collections.singletonList(result));
@@ -238,8 +513,25 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
         return executeResult;
     }
 
-}
+    private SqlAsyncExecuteResp getSqlAsyncExecuteResp(ConnectionSession testConnectionSession,
+            String editPLSql, String plName, DBObjectType plType) throws Exception {
+        SqlAsyncExecuteReq sqlAsyncExecuteReq = getEditPLAsyncExecuteReq(editPLSql, plName, plType);
+        Mockito.when(sessionService.nullSafeGet(testConnectionSession.getId(), true)).thenReturn(testConnectionSession);
+        Mockito.when(sessionService.nullSafeGet(testConnectionSession.getId())).thenReturn(testConnectionSession);
+        SqlAsyncExecuteResp sqlAsyncExecuteResp =
+                consoleService.streamExecute(testConnectionSession.getId(), sqlAsyncExecuteReq);
+        return sqlAsyncExecuteResp;
+    }
 
+    private SqlAsyncExecuteReq getEditPLAsyncExecuteReq(String editTestProcedure, String plName, DBObjectType plType) {
+        SqlAsyncExecuteReq editProcedureReq = new SqlAsyncExecuteReq();
+        editProcedureReq.setSql(editTestProcedure);
+        editProcedureReq.setSplit(false);
+        editProcedureReq.setPlName(plName);
+        editProcedureReq.setPlType(plType);
+        return editProcedureReq;
+    }
+}
 
 class TestBinaryDataManager implements BinaryDataManager {
 

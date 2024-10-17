@@ -680,7 +680,7 @@ public class ConnectConsoleService {
 
     private List<SqlTuple> getWrappedSqlTuplesByPLType(List<SqlTuple> sqlTuples, ConnectionSession connectionSession,
             SqlAsyncExecuteReq request, String plName, DBObjectType plType, String tempPLTypePrefix) {
-        String tempSql = sqlTuples.get(0).getExecutedSql().replace(plName, tempPLTypePrefix + plName);
+        String tempSql = sqlTuples.get(0).getExecutedSql().replaceFirst(plName, tempPLTypePrefix + plName);
         List<SqlTuple> tempSqlTuples = generateSqlTuple(
                 Collections.singletonList(new OffsetString(0, tempSql)), connectionSession, request);
         String dropTempSql = "DROP " + plType + " IF EXISTS " + tempPLTypePrefix + plName;
