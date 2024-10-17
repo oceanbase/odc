@@ -68,4 +68,21 @@ public class DataDeleteParameters implements ScheduleTaskParameters {
 
     private boolean fullDatabase = false;
 
+    public String getDatabaseName() {
+        return database == null ? null : database.getName();
+    }
+
+    public String getTargetDatabaseName() {
+        return targetDatabase == null ? null : targetDatabase.getName();
+    }
+
+    public String getSourceDataSourceName() {
+        return database == null || database.getDataSource() == null ? null
+                : database.getDataSource().getName();
+    }
+
+    public String getTargetDataSourceName() {
+        return targetDatabase == null || targetDatabase.getDataSource() == null ? null
+                : targetDatabase.getDataSource().getName();
+    }
 }
