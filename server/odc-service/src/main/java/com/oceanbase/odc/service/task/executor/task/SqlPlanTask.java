@@ -116,7 +116,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
     }
 
     @Override
-    protected boolean doStart(JobContext context) throws Exception {
+    protected boolean doStart(JobContext context, TaskContext taskContext) throws Exception {
         String sqlContent = parameters.getSqlContent();
         log.info("sql content={}", sqlContent);
         // todo: Download the attachment that needs to execute SQL from OSS
@@ -152,6 +152,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                     break;
                 }
                 log.warn("Sql task execution failed, will continue to execute next statement.", e);
+                taskContext.getExceptionListener().onException(e);
             }
         }
         log.info("The sql plan task execute finished,result={}", result);

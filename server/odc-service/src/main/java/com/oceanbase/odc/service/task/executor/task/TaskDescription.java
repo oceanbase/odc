@@ -13,32 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.task.executor.task;
 
-import java.util.Map;
+import com.oceanbase.odc.common.util.StringUtils;
 
-import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import lombok.Getter;
 
 /**
- * @author yaobin
- * @date 2023-11-29
- * @since 4.2.4
+ * @author longpeng.zlp
+ * @date 2024/10/10 10:37
  */
-public interface TaskResult {
+public enum TaskDescription {
+    DLM("DML", "data lifecycle management task"),
+    LOGICAL_DATABASE_CHANGE("LogicalDatabaseChange", "logic database change task");
 
-    JobIdentity getJobIdentity();
+    @Getter
+    private final String type;
+    @Getter
+    private final String description;
 
-    JobStatus getStatus();
+    TaskDescription(String type, String description) {
+        this.type = type;
+        this.description = description;
+    }
 
-    String getResultJson();
-
-    String getExecutorEndpoint();
-
-    String getErrorMessage();
-
-    double getProgress();
-
-    Map<String, String> getLogMetadata();
+    public boolean matched(String targetType) {
+        return StringUtils.equalsIgnoreCase(this.type, targetType);
+    }
 }

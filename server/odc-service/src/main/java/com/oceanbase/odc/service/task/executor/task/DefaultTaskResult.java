@@ -39,6 +39,8 @@ public class DefaultTaskResult implements TaskResult {
 
     private String executorEndpoint;
 
+    private String errorMessage;
+
     private double progress;
 
     private Map<String, String> logMetadata;

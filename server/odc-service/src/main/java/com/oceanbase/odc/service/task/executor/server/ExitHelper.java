@@ -36,5 +36,4 @@ public class ExitHelper {
             log.warn("Await thread be interrupted and exit:", e);
         }
     }
-
 }

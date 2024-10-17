@@ -101,6 +101,8 @@ public class ExecutorRequestHandler {
                 DefaultTaskResult result = DefaultTaskResultBuilder.build(task);
                 if (taskMonitor != null && MapUtils.isNotEmpty(taskMonitor.getLogMetadata())) {
                     result.setLogMetadata(taskMonitor.getLogMetadata());
+                    // assign final error message
+                    DefaultTaskResultBuilder.assignErrorMessage(result, task);
                     taskMonitor.markLogMetaCollected();
                 }
                 DefaultTaskResult copiedResult = ObjectUtil.deepCopy(result, DefaultTaskResult.class);
