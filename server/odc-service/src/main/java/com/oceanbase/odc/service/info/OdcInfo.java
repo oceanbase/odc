@@ -150,4 +150,9 @@ public class OdcInfo {
      * 创建新用户默认关联的角色
      */
     private List<String> defaultRoles;
+
+    /**
+     * 是否支持AI
+     */
+    private boolean enableCopilot;
 }

@@ -102,6 +102,9 @@ public class OdcInfoService {
     @Value("${odc.iam.user.default-roles:}")
     private String defaultRolesString;
 
+    @Value("${odc.copilot.enable:true}")
+    private boolean enableCopilot;
+
     @PostConstruct
     public void init() {
         staticOdcInfo = new OdcInfo();
@@ -143,6 +146,7 @@ public class OdcInfoService {
         odcInfo.setSsoLoginName(infoAdapter.ssoLoginName());
         odcInfo.setSsoLoginType(infoAdapter.ssoLoginType());
         odcInfo.setSupportGroupQRCodeUrl(getSupportGroupQRCodeUrl());
+        odcInfo.setEnableCopilot(enableCopilot);
         return odcInfo;
     }
 
