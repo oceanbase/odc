@@ -21,8 +21,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.oceanbase.odc.core.alarm.AlarmEvent.AlarmMessage;
-
 public final class AlarmUtils {
 
     /**
@@ -33,15 +31,15 @@ public final class AlarmUtils {
     public static final String ORGANIZATION_NAME = "OrganizationId";
     public static final String MESSAGE_NAME = "Message";
     public static final String ALARM_TARGET_NAME = "AlarmTarget";
-    public static final String ALARM_TYPE_NAME = "AlarmType";
+    public static final String ALARM_FIRE_ERROR_NAME = "AlarmFireError";
     /**
      * TaskFramework alarm message names
      */
     public static final String TASK_JOB_ID_NAME = "JobId";
     public static final String TASK_TYPE_NAME = "TaskType";
-    public static final String SCHEDULE_NAME = "ScheduleId";
+    public static final String SCHEDULE_ID_NAME = "ScheduleId";
     public static final Collection<String> TASK_FRAMEWORK_ALARM_DIGEST_NAMES =
-            Arrays.asList(CLUSTER_NAME, TENANT_NAME, SCHEDULE_NAME);
+            Arrays.asList(CLUSTER_NAME, TENANT_NAME, SCHEDULE_ID_NAME);
 
     private AlarmUtils() {}
 
@@ -51,12 +49,8 @@ public final class AlarmUtils {
         alarmService.alarm(eventName, eventMessage);
     }
 
-    public static void alarm(String eventName, Map<String, String> eventContent) {
-        alarmService.alarm(eventName, new AlarmMessage().setAlarmContent(eventContent));
-    }
-
-    public static void alarm(String eventName, AlarmMessage alarmMessage) {
-        alarmService.alarm(eventName, alarmMessage);
+    public static void alarm(String eventName, Map<String, String> eventMessage) {
+        alarmService.alarm(eventName, eventMessage);
     }
 
     public static void alarm(String eventName, Throwable e) {
@@ -67,12 +61,8 @@ public final class AlarmUtils {
         alarmService.warn(eventName, eventMessage);
     }
 
-    public static void warn(String eventName, Map<String, String> eventContent) {
-        alarmService.warn(eventName, new AlarmMessage().setAlarmContent(eventContent));
-    }
-
-    public static void warn(String eventName, AlarmMessage eventMessageNode) {
-        alarmService.warn(eventName, eventMessageNode);
+    public static void warn(String eventName, Map<String, String> eventMessage) {
+        alarmService.warn(eventName, eventMessage);
     }
 
     public static void warn(String eventName, Throwable e) {

@@ -18,42 +18,21 @@ package com.oceanbase.odc.core.alarm;
 
 import java.util.Map;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.experimental.Accessors;
 
 @Getter
 public class AlarmEvent {
 
     private final String eventName;
 
-    private final AlarmMessage eventMessage;
+    private final Map<String, String> eventMessage;
 
     private final AlarmLevel level;
 
-    public AlarmEvent(String eventName, AlarmMessage eventMessage, AlarmLevel level) {
+    public AlarmEvent(String eventName, Map<String, String> eventMessage, AlarmLevel level) {
         this.eventName = eventName;
         this.eventMessage = eventMessage;
         this.level = level;
-    }
-
-    @AllArgsConstructor
-    @NoArgsConstructor
-    @Data
-    @Accessors(chain = true)
-    public static class AlarmMessage {
-
-        /**
-         * OCP Alarm Content, it must no null
-         */
-        private Map<String, String> alarmContent;
-
-        /**
-         * OCP Alarm Digest, the default is alarmContent if it is null or empty
-         */
-        private Map<String, String> alarmDigest;
     }
 
     public enum AlarmLevel {

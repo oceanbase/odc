@@ -82,8 +82,8 @@ public class DestroyExecutorJob implements Job {
                     if (e.getMessage() != null &&
                             !e.getMessage().startsWith(JobConstants.ODC_EXECUTOR_CANNOT_BE_DESTROYED)) {
                         Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
-                                .item(AlarmUtils.ORGANIZATION_NAME, String.valueOf(jobEntity.getOrganizationId()))
-                                .item(AlarmUtils.TASK_JOB_ID_NAME, String.valueOf(jobEntity.getId()))
+                                .item(AlarmUtils.ORGANIZATION_NAME, jobEntity.getOrganizationId().toString())
+                                .item(AlarmUtils.TASK_JOB_ID_NAME, jobEntity.getId().toString())
                                 .item(AlarmUtils.MESSAGE_NAME,
                                         MessageFormat.format("Job executor destroy failed, jobId={0}, message={1}",
                                                 lockedEntity.getId(), e.getMessage()))

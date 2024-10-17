@@ -334,8 +334,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
                 if (taskResult.getStatus() == JobStatus.FAILED) {
                     Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
-                            .item(AlarmUtils.ORGANIZATION_NAME, String.valueOf(je.getOrganizationId()))
-                            .item(AlarmUtils.TASK_JOB_ID_NAME, String.valueOf(je.getId()))
+                            .item(AlarmUtils.ORGANIZATION_NAME, je.getOrganizationId().toString())
+                            .item(AlarmUtils.TASK_JOB_ID_NAME, je.getId().toString())
                             .item(AlarmUtils.MESSAGE_NAME,
                                     MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}",
                                             taskResult.getJobIdentity().getId(),
@@ -439,8 +439,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             // TODO maybe we can destroy the pod there.
             if (result.getStatus() == JobStatus.FAILED) {
                 Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
-                        .item(AlarmUtils.ORGANIZATION_NAME, String.valueOf(je.getOrganizationId()))
-                        .item(AlarmUtils.TASK_JOB_ID_NAME, String.valueOf(je.getId()))
+                        .item(AlarmUtils.ORGANIZATION_NAME, je.getOrganizationId().toString())
+                        .item(AlarmUtils.TASK_JOB_ID_NAME, je.getId().toString())
                         .item(AlarmUtils.MESSAGE_NAME,
                                 MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}",
                                         result.getJobIdentity().getId(),

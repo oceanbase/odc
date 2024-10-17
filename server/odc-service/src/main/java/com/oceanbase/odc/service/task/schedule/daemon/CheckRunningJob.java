@@ -112,8 +112,8 @@ public class CheckRunningJob implements Job {
             if (rows > 0) {
                 log.info("Set job status to FAILED accomplished, jobId={}, oldStatus={}.", a.getId(), a.getStatus());
                 Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
-                        .item(AlarmUtils.ORGANIZATION_NAME, String.valueOf(jobEntity.getOrganizationId()))
-                        .item(AlarmUtils.TASK_JOB_ID_NAME, String.valueOf(jobEntity.getId()))
+                        .item(AlarmUtils.ORGANIZATION_NAME, jobEntity.getOrganizationId().toString())
+                        .item(AlarmUtils.TASK_JOB_ID_NAME, jobEntity.getId().toString())
                         .item(AlarmUtils.MESSAGE_NAME,
                                 MessageFormat.format("Job running failed due to heart timeout, jobId={0}", a.getId()))
                         .build();

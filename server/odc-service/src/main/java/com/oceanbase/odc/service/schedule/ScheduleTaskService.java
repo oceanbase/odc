@@ -326,17 +326,9 @@ public class ScheduleTaskService {
         return scheduleTaskRepository.findByJobNameAndStatusIn(jobName, statuses);
     }
 
-    public ScheduleTaskEntity nullSafeGetByJobId(Long jobId) {
-        List<ScheduleTaskEntity> scheduleTasks = scheduleTaskRepository.findByJobId(jobId);
-        if (scheduleTasks != null) {
-            if (scheduleTasks.size() > 1) {
-                throw new IllegalStateException("Query scheduleTaskEntities by jobId occur error, except 1 but found "
-                        + scheduleTasks.size() + ",jobId=" + jobId);
-            } else if (scheduleTasks.size() == 1) {
-                return scheduleTasks.get(0);
-            }
-        }
-        throw new NotFoundException(ResourceType.ODC_SCHEDULE_TASK, "jobId", jobId);
+    public ScheduleTask nullSafeGetByJobId(Long jobId) {
+        return findByJobId(jobId)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE_TASK, "jobId", jobId));
     }
 
     public Optional<ScheduleTask> findByJobId(Long jobId) {
