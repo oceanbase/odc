@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.k8s.client;
+package com.oceanbase.odc.service.task.resource.client;
 
 import java.util.Optional;
 
-import com.oceanbase.odc.service.resource.k8s.K8sPodResource;
-import com.oceanbase.odc.service.resource.k8s.K8sResourceContext;
 import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.resource.K8sPodResource;
+import com.oceanbase.odc.service.task.resource.K8sResourceContext;
 
 /**
  * K8sJobClient is a client to CRUD k8s job in different environment. eg: native or cloud k8s

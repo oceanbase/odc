@@ -13,14 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.k8s.client;
+package com.oceanbase.odc.service.task.resource.client;
 
 
-/**
- * select the matched K8sJobClient by JobContext. <br>
- * in some deployment scenario, there may exist multiple k8s cluster for job execution.
- */
-public interface K8sJobClientSelector {
+public class DefaultK8sJobClientSelector implements K8sJobClientSelector {
 
-    K8sJobClient select(String resourceGroup);
+    private final K8sJobClient k8sJobClient;
+
+    public DefaultK8sJobClientSelector(K8sJobClient k8sJobClient) {
+        this.k8sJobClient = k8sJobClient;
+    }
+
+    @Override
+    public K8sJobClient select(String resourceGroup) {
+        return k8sJobClient;
+    }
 }

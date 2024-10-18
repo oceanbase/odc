@@ -28,13 +28,13 @@ import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceManager;
-import com.oceanbase.odc.service.resource.k8s.K8sPodResource;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
+import com.oceanbase.odc.service.task.resource.K8sPodResource;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 

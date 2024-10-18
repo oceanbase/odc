@@ -13,19 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.k8s.client;
+package com.oceanbase.odc.service.task.resource;
 
+import java.util.function.Function;
 
-public class DefaultK8sJobClientSelector implements K8sJobClientSelector {
+import com.oceanbase.odc.service.resource.ResourceID;
+import com.oceanbase.odc.service.task.resource.client.K8sJobClientSelector;
 
-    private final K8sJobClient k8sJobClient;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
-    public DefaultK8sJobClientSelector(K8sJobClient k8sJobClient) {
-        this.k8sJobClient = k8sJobClient;
-    }
-
-    @Override
-    public K8sJobClient select(String resourceGroup) {
-        return k8sJobClient;
-    }
+/**
+ * @author longpeng.zlp
+ * @date 2024/9/2 17:24
+ */
+@AllArgsConstructor
+@Data
+public class K8sResourceOperatorContext {
+    private final K8sJobClientSelector k8sJobClientSelector;
+    private final Function<ResourceID, Long> createElapsedTimeFunc;
+    private final long podPendingTimeoutSeconds;
 }

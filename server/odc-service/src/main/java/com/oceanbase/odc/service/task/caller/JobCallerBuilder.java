@@ -23,13 +23,13 @@ import org.apache.commons.io.FileUtils;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.resource.ResourceManager;
-import com.oceanbase.odc.service.resource.k8s.PodConfig;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskMonitorMode;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
+import com.oceanbase.odc.service.task.resource.PodConfig;
 import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 import com.oceanbase.odc.service.task.util.JobUtils;
 

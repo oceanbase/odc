@@ -37,7 +37,6 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.metadb.resource.ResourceRepository;
 import com.oceanbase.odc.metadb.resource.ResourceSpecs;
-import com.oceanbase.odc.service.resource.k8s.DefaultResourceOperatorBuilder;
 import com.oceanbase.odc.service.resource.k8s.model.QueryResourceParams;
 
 import lombok.NonNull;
@@ -208,7 +207,7 @@ public class ResourceManager {
         if (!savedResource.isPresent()) {
             // create resource_resource with DESTROYING state
             ResourceEntity resourceEntity = new ResourceEntity();
-            resourceEntity.setResourceType(DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE);
+            resourceEntity.setResourceType(resourceID.getType());
             resourceEntity.setEndpoint("unknown");
             resourceEntity.setCreateTime(new Date(System.currentTimeMillis()));
             resourceEntity.setRegion(resourceID.getResourceLocation().getRegion());

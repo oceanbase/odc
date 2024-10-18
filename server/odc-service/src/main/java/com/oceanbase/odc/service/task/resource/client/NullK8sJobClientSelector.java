@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.k8s.client;
+package com.oceanbase.odc.service.task.resource.client;
 
 public class NullK8sJobClientSelector implements K8sJobClientSelector {
     @Override

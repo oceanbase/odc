@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.k8s;
+package com.oceanbase.odc.service.task.resource;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,8 +23,8 @@ import com.google.common.base.Preconditions;
 import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceOperator;
 import com.oceanbase.odc.service.resource.ResourceState;
-import com.oceanbase.odc.service.resource.k8s.client.K8sJobClient;
 import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.resource.client.K8sJobClient;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

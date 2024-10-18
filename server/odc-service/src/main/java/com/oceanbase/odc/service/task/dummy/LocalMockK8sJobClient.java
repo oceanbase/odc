@@ -20,11 +20,6 @@ import java.util.Optional;
 
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.resource.ResourceState;
-import com.oceanbase.odc.service.resource.k8s.DefaultResourceOperatorBuilder;
-import com.oceanbase.odc.service.resource.k8s.K8sPodResource;
-import com.oceanbase.odc.service.resource.k8s.K8sResourceContext;
-import com.oceanbase.odc.service.resource.k8s.client.K8sJobClient;
-import com.oceanbase.odc.service.resource.k8s.client.K8sJobClientSelector;
 import com.oceanbase.odc.service.task.caller.DefaultExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobCallerBuilder;
@@ -32,6 +27,11 @@ import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.ProcessJobCaller;
 import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
 import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.resource.DefaultResourceOperatorBuilder;
+import com.oceanbase.odc.service.task.resource.K8sPodResource;
+import com.oceanbase.odc.service.task.resource.K8sResourceContext;
+import com.oceanbase.odc.service.task.resource.client.K8sJobClient;
+import com.oceanbase.odc.service.task.resource.client.K8sJobClientSelector;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**

@@ -21,14 +21,14 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.oceanbase.odc.service.common.model.HostProperties;
-import com.oceanbase.odc.service.resource.k8s.K8sPodResource;
-import com.oceanbase.odc.service.resource.k8s.K8sResourceContext;
-import com.oceanbase.odc.service.resource.k8s.PodConfig;
-import com.oceanbase.odc.service.resource.k8s.client.K8sJobClient;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.resource.K8sPodResource;
+import com.oceanbase.odc.service.task.resource.K8sResourceContext;
+import com.oceanbase.odc.service.task.resource.PodConfig;
+import com.oceanbase.odc.service.task.resource.client.K8sJobClient;
 import com.oceanbase.odc.service.task.schedule.JobCredentialProvider;
 
 /**

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.k8s.client;
+package com.oceanbase.odc.service.task.resource.client;
 
 import static com.oceanbase.odc.service.task.constants.JobConstants.FIELD_SELECTOR_METADATA_NAME;
 import static com.oceanbase.odc.service.task.constants.JobConstants.RESTART_POLICY_NEVER;
@@ -41,12 +41,12 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.service.resource.ResourceState;
-import com.oceanbase.odc.service.resource.k8s.K8sPodResource;
-import com.oceanbase.odc.service.resource.k8s.K8sResourceContext;
-import com.oceanbase.odc.service.resource.k8s.PodConfig;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.resource.K8sPodResource;
+import com.oceanbase.odc.service.task.resource.K8sResourceContext;
+import com.oceanbase.odc.service.task.resource.PodConfig;
 
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;

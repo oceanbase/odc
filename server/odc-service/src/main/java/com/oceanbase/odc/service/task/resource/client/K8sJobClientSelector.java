@@ -13,24 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.k8s;
+package com.oceanbase.odc.service.task.resource.client;
 
-import java.util.function.Function;
-
-import com.oceanbase.odc.service.resource.ResourceID;
-import com.oceanbase.odc.service.resource.k8s.client.K8sJobClientSelector;
-
-import lombok.AllArgsConstructor;
-import lombok.Data;
 
 /**
- * @author longpeng.zlp
- * @date 2024/9/2 17:24
+ * select the matched K8sJobClient by JobContext. <br>
+ * in some deployment scenario, there may exist multiple k8s cluster for job execution.
  */
-@AllArgsConstructor
-@Data
-public class K8sResourceOperatorContext {
-    private final K8sJobClientSelector k8sJobClientSelector;
-    private final Function<ResourceID, Long> createElapsedTimeFunc;
-    private final long podPendingTimeoutSeconds;
+public interface K8sJobClientSelector {
+
+    K8sJobClient select(String resourceGroup);
 }

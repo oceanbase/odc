@@ -20,7 +20,7 @@ import java.util.Map;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceLocation;
-import com.oceanbase.odc.service.resource.k8s.DefaultResourceOperatorBuilder;
+import com.oceanbase.odc.service.task.resource.DefaultResourceOperatorBuilder;
 
 import lombok.extern.slf4j.Slf4j;
 

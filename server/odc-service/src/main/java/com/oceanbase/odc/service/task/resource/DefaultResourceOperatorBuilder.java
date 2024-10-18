@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource.k8s;
+package com.oceanbase.odc.service.task.resource;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -27,13 +27,13 @@ import com.oceanbase.odc.metadb.resource.ResourceRepository;
 import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceOperatorBuilder;
-import com.oceanbase.odc.service.resource.k8s.client.DefaultK8sJobClientSelector;
-import com.oceanbase.odc.service.resource.k8s.client.K8sJobClientSelector;
-import com.oceanbase.odc.service.resource.k8s.client.NativeK8sJobClient;
-import com.oceanbase.odc.service.resource.k8s.client.NullK8sJobClientSelector;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.dummy.LocalMockK8sJobClient;
+import com.oceanbase.odc.service.task.resource.client.DefaultK8sJobClientSelector;
+import com.oceanbase.odc.service.task.resource.client.K8sJobClientSelector;
+import com.oceanbase.odc.service.task.resource.client.NativeK8sJobClient;
+import com.oceanbase.odc.service.task.resource.client.NullK8sJobClientSelector;
 
 import lombok.extern.slf4j.Slf4j;
 
