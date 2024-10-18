@@ -29,6 +29,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.oceanbase.odc.common.event.EventPublisher;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 
@@ -87,6 +88,11 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         }
         try {
             if (this.connection.isClosed() || !this.connection.isValid(getLoginTimeout())) {
+                try {
+                    ConnectionSessionUtil.logSocketInfo(this.connection, "SingleConnectionDataSource#getConnection()");
+                } catch (Exception ignore) {
+                    // eat the exception
+                }
                 if (!this.autoReconnect) {
                     throw new SQLException("Connection was closed or not valid");
                 }
