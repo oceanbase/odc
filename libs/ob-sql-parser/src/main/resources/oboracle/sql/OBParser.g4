@@ -777,7 +777,7 @@ aggregate_function
     | funcName=TOP_K_FRE_HIST LeftParen bit_expr Comma bit_expr Comma bit_expr RightParen
     | funcName=HYBRID_HIST LeftParen bit_expr Comma bit_expr RightParen
     | funcName=XMLAGG LeftParen simple_expr order_by? RightParen
-    | SUM_OPNSIZE LeftParen bit_expr RightParen
+    | funcName=SUM_OPNSIZE LeftParen bit_expr RightParen
     ;
 
 js_agg_on_null
@@ -1477,15 +1477,6 @@ trans_param_name
     ;
 
 trans_param_value
-    : STRING_VALUE
-    | INTNUM
-    ;
-
-dblink_info_param_name
-    : STRING_VALUE
-    ;
-
-dblink_info_param_value
     : STRING_VALUE
     | INTNUM
     ;
@@ -2250,6 +2241,7 @@ single_table_insert
     : INTO insert_table_clause NOLOGGING? LeftParen column_list RightParen values_clause returning_log_error_clause?
     | INTO insert_table_clause NOLOGGING? LeftParen RightParen values_clause returning_log_error_clause?
     | INTO insert_table_clause NOLOGGING? values_clause returning_log_error_clause?
+    | OVERWRITE insert_table_clause NOLOGGING? (LeftParen column_list RightParen)? values_clause
     ;
 
 multi_table_insert
@@ -2952,10 +2944,6 @@ relation_sep_option
     : Comma?
     ;
 
-relation_factor_in_mv_hint_list
-    : normal_relation_factor (relation_sep_option normal_relation_factor)*
-    ;
-
 relation_factor_in_pq_hint
     : relation_factor_in_hint
     | LeftParen relation_factor_in_hint_list RightParen
@@ -2985,11 +2973,6 @@ relation_factor_in_use_join_hint_list
     | LeftParen relation_factor_in_hint_list RightParen
     | relation_factor_in_use_join_hint_list relation_sep_option relation_factor_in_hint
     | relation_factor_in_use_join_hint_list relation_sep_option LeftParen relation_factor_in_hint_list RightParen
-    ;
-
-coalesce_strategy_list
-    : WO_PULLUP WITH_PULLUP?
-    | WITH_PULLUP
     ;
 
 join_condition
@@ -4752,7 +4735,7 @@ json_exists_response_type
     ;
 
 json_query_expr
-    : JSON_QUERY LeftParen js_doc_expr Comma js_literal (RETURNING js_query_return_type)? TRUNCATE? scalars_opt? PRETTY? ASCII? wrapper_opts? json_query_on_opt? MULTIVALUE? RightParen
+    : JSON_QUERY LeftParen js_doc_expr Comma js_literal (RETURNING js_query_return_type)? TRUNCATE? scalars_opt? PRETTY? ASCII? wrapper_opts? ASIS? json_query_on_opt? MULTIVALUE? RightParen
     ;
 
 json_query_on_opt

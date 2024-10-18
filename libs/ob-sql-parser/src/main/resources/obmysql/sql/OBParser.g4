@@ -2516,11 +2516,6 @@ relation_sep_option
     : Comma?
     ;
 
-relation_factor_in_mv_hint_list
-    : normal_relation_factor (relation_sep_option normal_relation_factor)*
-    ;
-
-
 relation_factor_in_pq_hint
     : relation_factor_in_hint
     | LeftParen relation_factor_in_hint_list RightParen
@@ -2546,11 +2541,6 @@ relation_factor_in_use_join_hint_list
     | LeftParen relation_factor_in_hint_list RightParen
     | relation_factor_in_use_join_hint_list relation_sep_option relation_factor_in_hint
     | relation_factor_in_use_join_hint_list relation_sep_option LeftParen relation_factor_in_hint_list RightParen
-    ;
-
-coalesce_strategy_list
-    : WO_PULLUP WITH_PULLUP?
-    | WITH_PULLUP
     ;
 
 tracing_num_list
