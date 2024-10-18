@@ -219,6 +219,11 @@ PAXOS_REPLICA_NUM
 ACCESSID
     : A C C E S S I D
     ;
+
+HINT_HINT_BEGIN
+    : H I N T (SPACE_* ('/*' ( ~[+*] | '*' ~[*/] )* '*'+ '/')* '/+*' (SPACE_* H I N T SPACE_+)?)
+    ;
+
 // the above is what's new in OB 4.3.3.0
 
 M_SIZE

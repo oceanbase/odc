@@ -2763,7 +2763,7 @@ show_stmt
     | SHOW CREATE TABLEGROUP relation_name
     | SHOW RESTORE PREVIEW
     | SHOW SEQUENCES ((LIKE STRING_VALUE) | (LIKE STRING_VALUE ESCAPE STRING_VALUE) | (WHERE expr))? (from_or_in database_factor)?
-    | SHOW CREATE USER Eser_host_or_current_user
+    | SHOW CREATE USER user_host_or_current_user
     | SHOW ENGINE_ relation_name_or_string opt_show_engine
     | SHOW OPEN TABLES (from_or_in database_factor)? ((LIKE STRING_VALUE) | (LIKE STRING_VALUE ESCAPE STRING_VALUE) | (WHERE expr))?
     | SHOW JOB STATUS

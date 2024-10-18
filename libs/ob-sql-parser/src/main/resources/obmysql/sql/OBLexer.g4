@@ -335,6 +335,11 @@ LeftBracket
 RightBracket
     : ']'
     ;
+
+HINT_HINT_BEGIN
+    : H I N T (SPACE_* ('/*' ( ~[+*] | '*' ~[*/] )* '*'+ '/')* '/+*' (SPACE_* H I N T SPACE_+)?)
+    ;
+
 // the above is what's new in OB 4.3.3.0
 
 ACCESS
@@ -4822,4 +4827,5 @@ fragment W : [wW];
 fragment X : [xX];
 fragment Y : [yY];
 fragment Z : [zZ];
+fragment SPACE_ : [ \t\n\r\f];
 
