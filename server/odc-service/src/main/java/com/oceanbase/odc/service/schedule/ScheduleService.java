@@ -304,7 +304,7 @@ public class ScheduleService {
             }
             if (req.getOperationType() == OperationType.DELETE
                     && (targetSchedule.getStatus() != ScheduleStatus.TERMINATED
-                            || targetSchedule.getStatus() != ScheduleStatus.COMPLETED)) {
+                            && targetSchedule.getStatus() != ScheduleStatus.COMPLETED)) {
                 log.warn("Delete schedule is not allowed,status={}", targetSchedule.getStatus());
                 throw new IllegalStateException(
                         "Delete schedule is not allowed, only can delete terminated schedule or finished schedule.");
