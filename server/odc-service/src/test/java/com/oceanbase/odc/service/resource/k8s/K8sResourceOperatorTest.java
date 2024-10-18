@@ -25,9 +25,15 @@ import org.junit.Test;
 import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceState;
-import com.oceanbase.odc.service.resource.k8s.client.K8sJobClient;
-import com.oceanbase.odc.service.resource.k8s.client.K8sJobClientSelector;
 import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.resource.DefaultResourceOperatorBuilder;
+import com.oceanbase.odc.service.task.resource.K8sPodResource;
+import com.oceanbase.odc.service.task.resource.K8sResourceContext;
+import com.oceanbase.odc.service.task.resource.K8sResourceOperator;
+import com.oceanbase.odc.service.task.resource.K8sResourceOperatorContext;
+import com.oceanbase.odc.service.task.resource.PodConfig;
+import com.oceanbase.odc.service.task.resource.client.K8sJobClient;
+import com.oceanbase.odc.service.task.resource.client.K8sJobClientSelector;
 
 /**
  * test for K8SResourceOperator

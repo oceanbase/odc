@@ -21,10 +21,10 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.service.resource.ResourceOperatorBuilder;
-import com.oceanbase.odc.service.resource.k8s.client.NativeK8sJobClient;
 import com.oceanbase.odc.service.resource.k8s.model.K8sResource;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+import com.oceanbase.odc.service.task.resource.client.NativeK8sJobClient;
 
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.Configuration;

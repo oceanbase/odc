@@ -96,4 +96,8 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
     private String destroyExecutorJobCronExpression;
 
     private String pullTaskResultJobCronExpression;
+    /**
+     * local k8s debug mode, use process builder mock k8s
+     */
+    private boolean enableK8sLocalDebugMode;
 }

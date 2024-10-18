@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ResourceDetectUtil {
 
-    public static boolean isResourceAvailable(TaskFrameworkProperties taskFrameworkProperties) {
+    public static boolean isProcessResourceAvailable(TaskFrameworkProperties taskFrameworkProperties) {
         boolean result = true;
         if (taskFrameworkProperties.getRunMode().isProcess() && SystemUtils.isOnLinux()) {
             long systemFreeMemory = SystemUtils.getSystemFreePhysicalMemory().convert(BinarySizeUnit.MB).getSizeDigit();

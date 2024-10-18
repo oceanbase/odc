@@ -16,6 +16,9 @@ gc_log_options="-Xloggc:${install_directory}/log/gc.log -XX:+UseGCLogFileRotatio
 default_heap_options="-XX:MaxRAMPercentage=60.0 -XX:InitialRAMPercentage=60.0"
 default_gc_options="${gc_basic_options} ${gc_log_options}"
 default_oom_options="-XX:+ExitOnOutOfMemoryError"
+default_agent_main_class_name="com.oceanbase.odc.agent.OdcAgent"
+default_spring_boot_loader="org.springframework.boot.loader.PropertiesLauncher"
+main_class_caller="-Dloader.main=${default_agent_main_class_name} ${default_spring_boot_loader}"
 
 # define some helper functions
 function usage() {
@@ -139,8 +142,8 @@ main() {
     echo "Starting odc-job..."
 
     local cmd="${java_exec} ${remote_debug_options} ${spacev_java_agent_options} ${gc_options} ${heap_options} ${oom_options}
-    ${extra_options} ${app_options} -jar
-    ${jar_file} ${app_args}"
+    ${extra_options} ${app_options} -cp
+    ${jar_file} ${main_class_caller} ${app_args}"
     echo "cmd=${cmd}"
     eval ${cmd}
     return $?

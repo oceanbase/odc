@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.task.caller;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.service.common.util.UrlUtils;
 
 import lombok.Builder;
 import lombok.Data;
@@ -56,11 +57,10 @@ public class DefaultExecutorIdentifier implements ExecutorIdentifier {
                 .append(port);
         if (StringUtils.isNotBlank(namespace)) {
             sb.append("/");
-            sb.append(namespace);
+            sb.append(UrlUtils.encode(namespace));
         }
         sb.append("/")
-                .append(executorName);
+                .append(UrlUtils.encode(executorName));
         return sb.toString();
     }
-
 }

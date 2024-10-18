@@ -99,7 +99,7 @@
         <Logger name="com.oceanbase.odc.server.OdcServer" level="INFO" additivity="false">
             <AppenderRef ref="ExecutorFileAppender"/>
         </Logger>
-        <Logger name="com.oceanbase.odc.service.task.executor.TaskApplication" level="INFO" additivity="false">
+        <Logger name="com.oceanbase.odc.TaskApplication" level="INFO" additivity="false">
             <AppenderRef ref="ExecutorFileAppender"/>
         </Logger>
         <Logger name="com.oceanbase.odc.service.task.executor.server" level="INFO" additivity="false">
