@@ -80,6 +80,7 @@ import com.oceanbase.odc.service.task.util.JobDateUtils;
 import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
+import cn.hutool.core.text.CharSequenceUtil;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -329,15 +330,17 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             if (publisher != null && taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
                 taskResultPublisherExecutor.execute(() -> publisher
                         .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
-
+                taskResult.getErrorMessage();
                 if (taskResult.getStatus() == JobStatus.FAILED) {
                     Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
                             .item(AlarmUtils.ORGANIZATION_NAME, je.getOrganizationId().toString())
                             .item(AlarmUtils.TASK_JOB_ID_NAME, je.getId().toString())
                             .item(AlarmUtils.MESSAGE_NAME,
-                                    MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}",
+                                    MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}, message={2}",
                                             taskResult.getJobIdentity().getId(),
-                                            SensitiveDataUtils.mask(taskResult.getResultJson())))
+                                            SensitiveDataUtils.mask(taskResult.getResultJson()),
+                                            CharSequenceUtil.nullToDefault(taskResult.getErrorMessage(),
+                                                    CharSequenceUtil.EMPTY)))
                             .build();
                     AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED, eventMessage);
                 }
@@ -432,9 +435,11 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                         .item(AlarmUtils.ORGANIZATION_NAME, je.getOrganizationId().toString())
                         .item(AlarmUtils.TASK_JOB_ID_NAME, je.getId().toString())
                         .item(AlarmUtils.MESSAGE_NAME,
-                                MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}",
+                                MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}, message={2}",
                                         result.getJobIdentity().getId(),
-                                        SensitiveDataUtils.mask(result.getResultJson())))
+                                        SensitiveDataUtils.mask(result.getResultJson()),
+                                        CharSequenceUtil.nullToDefault(result.getErrorMessage(),
+                                                CharSequenceUtil.EMPTY)))
                         .build();
                 AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED, eventMessage);
             }
