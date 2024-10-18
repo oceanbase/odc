@@ -732,16 +732,32 @@ public class ScheduleService {
     public Page<ScheduleOverview> listScheduleOverview(@NotNull Pageable pageable,
             @NotNull QueryScheduleParams params) {
         log.info("List schedule overview req:{}", params);
+        if (StringUtils.isNotBlank(params.getCreator())) {
+            Set<Long> creatorIds = userService.getUsersByFuzzyNameWithoutPermissionCheck(
+                    params.getCreator()).stream().map(User::getId).collect(Collectors.toSet());
+            if (creatorIds.isEmpty()) {
+                return Page.empty();
+            }
+            params.setCreatorIds(creatorIds);
+        }
         if (params.getDataSourceIds() == null) {
             params.setDataSourceIds(new HashSet<>());
         }
         if (StringUtils.isNotEmpty(params.getClusterId())) {
-            params.getDataSourceIds().addAll(connectionService.innerListIdByOrganizationIdAndClusterId(
-                    authenticationFacade.currentOrganizationId(), params.getClusterId()));
+            List<Long> datasourceIdsByCluster = connectionService.innerListIdByOrganizationIdAndClusterId(
+                    authenticationFacade.currentOrganizationId(), params.getClusterId());
+            if (datasourceIdsByCluster.isEmpty()) {
+                return Page.empty();
+            }
+            params.getDataSourceIds().addAll(datasourceIdsByCluster);
         }
         if (StringUtils.isNotEmpty(params.getTenantId())) {
-            params.getDataSourceIds().addAll(connectionService.innerListIdByOrganizationIdAndTenantId(
-                    authenticationFacade.currentOrganizationId(), params.getTenantId()));
+            List<Long> datasourceIdsByTenantId = connectionService.innerListIdByOrganizationIdAndTenantId(
+                    authenticationFacade.currentOrganizationId(), params.getTenantId());
+            if (datasourceIdsByTenantId.isEmpty()) {
+                return Page.empty();
+            }
+            params.getDataSourceIds().addAll(datasourceIdsByTenantId);
         }
         // load project by unique identifier if project id is null
         if (params.getProjectId() == null && StringUtils.isNotEmpty(params.getProjectUniqueIdentifier())) {
@@ -790,9 +806,21 @@ public class ScheduleService {
             params.getDataSourceIds().addAll(connectionService.innerListIdByOrganizationIdAndClusterId(
                     authenticationFacade.currentOrganizationId(), params.getClusterId()));
         }
+        if (StringUtils.isNotEmpty(params.getClusterId())) {
+            List<Long> datasourceIdsByCluster = connectionService.innerListIdByOrganizationIdAndClusterId(
+                    authenticationFacade.currentOrganizationId(), params.getClusterId());
+            if (datasourceIdsByCluster.isEmpty()) {
+                return Page.empty();
+            }
+            params.getDataSourceIds().addAll(datasourceIdsByCluster);
+        }
         if (StringUtils.isNotEmpty(params.getTenantId())) {
-            params.getDataSourceIds().addAll(connectionService.innerListIdByOrganizationIdAndTenantId(
-                    authenticationFacade.currentOrganizationId(), params.getTenantId()));
+            List<Long> datasourceIdsByTenantId = connectionService.innerListIdByOrganizationIdAndTenantId(
+                    authenticationFacade.currentOrganizationId(), params.getTenantId());
+            if (datasourceIdsByTenantId.isEmpty()) {
+                return Page.empty();
+            }
+            params.getDataSourceIds().addAll(datasourceIdsByTenantId);
         }
 
         if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
