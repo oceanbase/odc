@@ -31,8 +31,8 @@ import lombok.Data;
  */
 @Data
 public class EditPLResp {
-    private boolean                      shouldIntercepted;
-    private List<Rule>                   violatedRules;
+    private boolean shouldIntercepted;
+    private List<Rule> violatedRules;
     private List<SqlTuplesWithViolation> sqls;
     private List<UnauthorizedDBResource> unauthorizedDBResources;
 }

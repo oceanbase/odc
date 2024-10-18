@@ -115,7 +115,7 @@ public class DBPLController {
         return Responses.ok(PLIdentity.of(identity.getType(), identity.getName()));
     }
 
-    @ApiOperation(value = "editPL", notes = "edit DDL of a PL object")
+    @ApiOperation(value = "editPL", notes = "edit DDL of a pl object")
     @RequestMapping(value = "/editPL/{sid}", method = RequestMethod.POST)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public SuccessResponse<EditPLResp> editPL(@PathVariable String sid, @RequestBody EditPLReq editPLReq)
