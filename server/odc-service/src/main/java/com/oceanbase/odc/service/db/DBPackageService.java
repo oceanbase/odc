@@ -42,20 +42,29 @@ public class DBPackageService {
     @Autowired
     private ConnectConsoleService consoleService;
 
+    /**
+     * 从数据库中获取指定数据库下的所有包（DBPackage）。
+     *
+     * @param connectionSession 数据库连接会话
+     * @param dbName            数据库名称
+     * @return 包含所有包信息的列表
+     */
     public List<DBPackage> list(ConnectionSession connectionSession, String dbName) {
         return connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<List<DBPLObjectIdentity>>) con -> getPackageExtensionPoint(
-                        connectionSession).list(con, dbName))
-                .stream()
-                .filter(i -> !StringUtils.equalsIgnoreCase(i.getName(), OdcConstants.PL_DEBUG_PACKAGE))
-                .map(item -> {
-                    DBPackage dbPackage = new DBPackage();
-                    dbPackage.setPackageName(item.getName());
-                    dbPackage.setErrorMessage(item.getErrorMessage());
-                    dbPackage.setStatus(item.getStatus());
-                    return dbPackage;
-                }).collect(Collectors.toList());
+            .execute((ConnectionCallback<List<DBPLObjectIdentity>>) con -> getPackageExtensionPoint(
+                connectionSession).list(con, dbName))
+            // 将结果转换为流，并过滤掉名称为OdcConstants.PL_DEBUG_PACKAGE的包
+            .stream()
+            .filter(i -> !StringUtils.equalsIgnoreCase(i.getName(), OdcConstants.PL_DEBUG_PACKAGE))
+            // 将每个包对象转换为DBPackage对象，并收集到列表中
+            .map(item -> {
+                DBPackage dbPackage = new DBPackage();
+                dbPackage.setPackageName(item.getName());
+                dbPackage.setErrorMessage(item.getErrorMessage());
+                dbPackage.setStatus(item.getStatus());
+                return dbPackage;
+            }).collect(Collectors.toList());
     }
 
     public DBPackage detail(ConnectionSession connectionSession, String schemaName, String packageName) {

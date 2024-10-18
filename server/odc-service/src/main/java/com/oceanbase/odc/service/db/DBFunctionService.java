@@ -40,9 +40,16 @@ public class DBFunctionService {
     @Autowired
     private ConnectConsoleService consoleService;
 
+    /**
+     * 从数据库中获取指定数据库下的所有函数列表
+     *
+     * @param connectionSession 数据库连接会话
+     * @param dbName            数据库名称
+     * @return 函数列表
+     */
     public List<DBFunction> list(ConnectionSession connectionSession, String dbName) {
         return connectionSession.getSyncJdbcExecutor(
-                ConnectionSessionConstants.BACKEND_DS_KEY)
+                        ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<List<DBPLObjectIdentity>>) con -> getFunctionExtensionPoint(
                         connectionSession).list(con, dbName))
                 .stream().map(

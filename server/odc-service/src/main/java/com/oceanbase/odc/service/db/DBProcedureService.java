@@ -40,20 +40,27 @@ public class DBProcedureService {
     @Autowired
     private ConnectConsoleService consoleService;
 
+    /**
+     * 获取指定数据库中的存储过程列表
+     *
+     * @param connectionSession 数据库连接会话
+     * @param dbName            数据库名称
+     * @return 存储过程列表
+     */
     public List<DBProcedure> list(ConnectionSession connectionSession, String dbName) {
         return connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<List<DBPLObjectIdentity>>) con -> getProcedureExtensionPoint(
-                        connectionSession).list(con, dbName))
-                .stream().map(
-                        item -> {
-                            DBProcedure procedure = new DBProcedure();
-                            procedure.setProName(item.getName());
-                            procedure.setErrorMessage(item.getErrorMessage());
-                            procedure.setStatus(item.getStatus());
-                            return procedure;
-                        })
-                .collect(Collectors.toList());
+            .execute((ConnectionCallback<List<DBPLObjectIdentity>>) con -> getProcedureExtensionPoint(
+                connectionSession).list(con, dbName))
+            .stream().map(
+                item -> {
+                    DBProcedure procedure = new DBProcedure();
+                    procedure.setProName(item.getName());
+                    procedure.setErrorMessage(item.getErrorMessage());
+                    procedure.setStatus(item.getStatus());
+                    return procedure;
+                })
+            .collect(Collectors.toList());
     }
 
     public DBProcedure detail(ConnectionSession connectionSession, String dbName, String proName) {
