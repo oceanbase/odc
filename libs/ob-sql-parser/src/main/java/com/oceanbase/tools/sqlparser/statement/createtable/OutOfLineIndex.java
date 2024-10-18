@@ -45,6 +45,7 @@ public class OutOfLineIndex extends BaseStatement implements TableElement {
     private Partition partition;
     private boolean fullText;
     private boolean spatial;
+    private boolean vector;
     private final String indexName;
     private final List<SortColumn> columns;
     private List<ColumnGroupElement> columnGroupElements;
