@@ -27,13 +27,11 @@ import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.common.util.TraceWatch;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 import lombok.ToString;
 
 /**
@@ -59,10 +57,6 @@ public class SqlTuple {
     @JsonIgnore
     @Getter(AccessLevel.NONE)
     private Pair<AbstractSyntaxTree, Exception> ast;
-    @Setter
-    private String plName;
-    @Setter
-    private DBObjectType plType;
 
     private SqlTuple(@NonNull String sqlId, @NonNull String originalSql, @NonNull String executedSql,
             @NonNull TraceWatch sqlWatch, @NonNull Integer offset) {
