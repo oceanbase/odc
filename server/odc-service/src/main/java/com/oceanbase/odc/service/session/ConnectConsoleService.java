@@ -53,7 +53,6 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
@@ -307,15 +306,9 @@ public class ConnectConsoleService {
                 Objects.nonNull(request.getContinueExecutionOnError()) ? request.getContinueExecutionOnError()
                         : userConfigFacade.isContinueExecutionOnError();
         boolean stopOnError = !continueExecutionOnError;
-        OdcStatementCallBack statementCallBack = null;
-        if (StringUtils.isNotBlank(request.getPlName())
-                && connectionSession.getConnectType() == ConnectType.OB_MYSQL) {
-            statementCallBack = dBPLModifyHelper.generateEditPLSqlODCStatementCallBackForOBMysql(sqlTuples,
-                    connectionSession, request, queryLimit, true, executeContext);
-        } else {
-            statementCallBack = new OdcStatementCallBack(sqlTuples, connectionSession,
-                    request.getAutoCommit(), queryLimit, stopOnError, executeContext);
-        }
+        OdcStatementCallBack statementCallBack = new OdcStatementCallBack(sqlTuples, connectionSession,
+                request.getAutoCommit(), queryLimit, stopOnError, executeContext);
+
         statementCallBack.setDbmsoutputMaxRows(sessionProperties.getDbmsOutputMaxRows());
 
         boolean fullLinkTraceEnabled =
