@@ -20,6 +20,7 @@ import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -79,6 +80,7 @@ import com.oceanbase.odc.service.task.util.JobDateUtils;
 import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
+import cn.hutool.core.text.CharSequenceUtil;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -328,12 +330,19 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             if (publisher != null && taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
                 taskResultPublisherExecutor.execute(() -> publisher
                         .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
-
+                taskResult.getErrorMessage();
                 if (taskResult.getStatus() == JobStatus.FAILED) {
-                    AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED,
-                            MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}, errorMessage={2}",
-                                    taskResult.getJobIdentity().getId(),
-                                    SensitiveDataUtils.mask(taskResult.getResultJson()), taskResult.getErrorMessage()));
+                    Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                            .item(AlarmUtils.ORGANIZATION_NAME, je.getOrganizationId().toString())
+                            .item(AlarmUtils.TASK_JOB_ID_NAME, je.getId().toString())
+                            .item(AlarmUtils.MESSAGE_NAME,
+                                    MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}, message={2}",
+                                            taskResult.getJobIdentity().getId(),
+                                            SensitiveDataUtils.mask(taskResult.getResultJson()),
+                                            CharSequenceUtil.nullToDefault(taskResult.getErrorMessage(),
+                                                    CharSequenceUtil.EMPTY)))
+                            .build();
+                    AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED, eventMessage);
                 }
             }
         }
@@ -422,9 +431,17 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
             // TODO maybe we can destroy the pod there.
             if (result.getStatus() == JobStatus.FAILED) {
-                AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED,
-                        MessageFormat.format("Job execution failed, jobId={0}, errorMessage={1}",
-                                result.getJobIdentity().getId(), result.getErrorMessage()));
+                Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                        .item(AlarmUtils.ORGANIZATION_NAME, je.getOrganizationId().toString())
+                        .item(AlarmUtils.TASK_JOB_ID_NAME, je.getId().toString())
+                        .item(AlarmUtils.MESSAGE_NAME,
+                                MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}, message={2}",
+                                        result.getJobIdentity().getId(),
+                                        SensitiveDataUtils.mask(result.getResultJson()),
+                                        CharSequenceUtil.nullToDefault(result.getErrorMessage(),
+                                                CharSequenceUtil.EMPTY)))
+                        .build();
+                AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED, eventMessage);
             }
         }
     }
