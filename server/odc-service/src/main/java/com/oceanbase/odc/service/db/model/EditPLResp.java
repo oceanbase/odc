@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.db.model;
 import java.util.List;
 
 import com.oceanbase.odc.service.connection.database.model.UnauthorizedDBResource;
+import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.session.model.SqlTuplesWithViolation;
 
 import lombok.Data;
@@ -30,8 +31,8 @@ import lombok.Data;
  */
 @Data
 public class EditPLResp {
-    private boolean shouldIntercepted;
-    private String errorMessage;
+    private boolean                      shouldIntercepted;
+    private List<Rule>                   violatedRules;
     private List<SqlTuplesWithViolation> sqls;
     private List<UnauthorizedDBResource> unauthorizedDBResources;
 }

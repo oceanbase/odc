@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.db;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.ServiceTestEnv;
-import com.oceanbase.odc.service.session.ConnectConsoleService;
 
 /**
  * @description:
@@ -28,9 +27,6 @@ import com.oceanbase.odc.service.session.ConnectConsoleService;
  */
 public class DBPLModifyHelperTest extends ServiceTestEnv {
     @Autowired
-    private ConnectConsoleService connectConsoleService;
-    @Autowired
     private DBPLModifyHelper dbplModifyHelper;
-
 
 }

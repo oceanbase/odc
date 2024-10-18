@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.service.db.model;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.Data;
@@ -27,7 +30,10 @@ import lombok.Data;
  */
 @Data
 public class EditPLReq {
+    @NotBlank
     private String sql;
+    @NotBlank
     private String plName;
+    @NotNull
     private DBObjectType plType;
 }

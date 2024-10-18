@@ -22,21 +22,26 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.VersionUtils;
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
+import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.split.OffsetString;
@@ -62,7 +67,9 @@ import lombok.NonNull;
  * @date: 2024/10/17 18:59
  * @since: 4.3.3
  */
+@Validated
 @Component
+@SkipAuthorize("permission check inside")
 public class DBPLModifyHelper {
     public static final String ODC_TEMPORARY_PROCEDURE = "_ODC_TEMPORARY_PROCEDURE";
     public static final String ODC_TEMPORARY_TRIGGER = "_ODC_TEMPORARY_TRIGGER";
@@ -78,7 +85,7 @@ public class DBPLModifyHelper {
     @Autowired
     private SqlExecuteInterceptorService sqlInterceptService;
 
-    public EditPLResp editPL(@NotNull ConnectionSession connectionSession, @NotNull EditPLReq editPLReq,
+    public EditPLResp editPL(@NotNull ConnectionSession connectionSession, @NotNull @Valid EditPLReq editPLReq,
             @NotNull Boolean needSqlRuleCheck)
             throws InterruptedException {
         long maxSqlLength = sessionProperties.getMaxSqlLength();
@@ -118,10 +125,9 @@ public class DBPLModifyHelper {
         String tempPLSql = editPLSql.replaceFirst(plName, ODC_TEMPORARY_PROCEDURE);
         SyncJdbcExecutor syncJdbcExecutor = connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY);
-        Lock editPLLock = getEditPLLock(connectionSession, plType);
+        Lock editPLLock = obtainEditPLLock(connectionSession, plType);
         if (!editPLLock.tryLock(3, TimeUnit.SECONDS)) {
-            editPLResp.setErrorMessage("can not get lock");
-            return editPLResp;
+            throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
         }
         try {
             syncJdbcExecutor.execute(tempPLSql);
@@ -136,7 +142,7 @@ public class DBPLModifyHelper {
         }
     }
 
-    public Lock getEditPLLock(@NotNull ConnectionSession connectionSession, @NonNull DBObjectType plType) {
+    private Lock obtainEditPLLock(@NotNull ConnectionSession connectionSession, @NonNull DBObjectType plType) {
         ConnectionConfig connConfig =
                 (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
         Long dataSourceId = connConfig.getId();
@@ -173,6 +179,7 @@ public class DBPLModifyHelper {
         try {
             boolean shouldIntercepted =
                     !sqlInterceptService.preHandle(sqlAsyncExecuteReq, response, connectionSession, executeContext);
+            editPLResp.setViolatedRules(response.getViolatedRules());
             editPLResp.setSqls(response.getSqls());
             editPLResp.setUnauthorizedDBResources(response.getUnauthorizedDBResources());
             if (shouldIntercepted) {
