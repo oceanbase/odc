@@ -731,9 +731,12 @@ public class ScheduleService {
             @NotNull QueryScheduleParams params) {
         log.info("List schedule overview req:{}", params);
         if (StringUtils.isNotBlank(params.getCreator())) {
-            params.setCreatorIds(userService.getUsersByFuzzyNameWithoutPermissionCheck(
-                    params.getCreator()).stream().map(User::getId).collect(Collectors.toSet()));
-            return Page.empty();
+            Set<Long> creatorIds = userService.getUsersByFuzzyNameWithoutPermissionCheck(
+                    params.getCreator()).stream().map(User::getId).collect(Collectors.toSet());
+            if (creatorIds.isEmpty()) {
+                return Page.empty();
+            }
+            params.setCreatorIds(creatorIds);
         }
         if (params.getDataSourceIds() == null) {
             params.setDataSourceIds(new HashSet<>());
