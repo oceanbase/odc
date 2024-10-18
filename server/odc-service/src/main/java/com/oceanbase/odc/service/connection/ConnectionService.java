@@ -665,6 +665,76 @@ public class ConnectionService {
         return config;
     }
 
+    @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
+    public ConnectionConfig updateWithoutPermission(@NotNull Long id, @NotNull @Valid ConnectionConfig connection) {
+        ConnectionConfig config = txTemplate.execute(status -> {
+            try {
+                environmentAdapter.adaptConfig(connection);
+                connectionSSLAdaptor.adapt(connection);
+                ConnectionConfig saved = internalGet(id);
+                connectionValidator.validateForUpdate(connection, saved);
+                if (StringUtils.isBlank(connection.getSysTenantUsername())) {
+                    // sys 用户没有设的情况下，相应地，密码要设置为空
+                    connection.setSysTenantPassword("");
+                }
+                connection.setId(id);
+                connection.setCreatorId(saved.getCreatorId());
+                connection.setOrganizationId(saved.getOrganizationId());
+                connection.setType(saved.getType());
+                connection.setCipher(saved.getCipher());
+                connection.setSalt(saved.getSalt());
+                connection.setTemp(saved.getTemp());
+                connection.setPasswordEncrypted(null);
+                connection.setSysTenantPasswordEncrypted(null);
+                if (!connection.getType().isDefaultSchemaRequired()) {
+                    connection.setDefaultSchema(null);
+                }
+                connectionValidator.validateForUpsert(connection);
+                // validate same name while rename connection
+                repository.findByOrganizationIdAndName(connection.getOrganizationId(), connection.getName())
+                        .ifPresent(sameNameEntity -> {
+                            if (!id.equals(sameNameEntity.getId())) {
+                                throw new BadRequestException(ErrorCodes.ConnectionDuplicatedName,
+                                        new Object[] {connection.getName()}, "same datasource name exists");
+                            }
+                        });
+                if (Boolean.FALSE.equals(connection.getPasswordSaved())) {
+                    connection.setPassword(null);
+                }
+                connectionEncryption.encryptPasswords(connection);
+                connection.fillEncryptedPasswordFromSavedIfNull(saved);
+
+                ConnectionEntity entity = modelToEntity(connection);
+                ConnectionEntity savedEntity = repository.saveAndFlush(entity);
+
+                // for workaround createTime/updateTime not refresh in server mode,
+                // seems JPA bug, it works while UT
+                entityManager.refresh(savedEntity);
+                ConnectionConfig updated = entityToModel(savedEntity, true, true);
+                this.attributeRepository.deleteByConnectionId(updated.getId());
+                updated.setAttributes(connection.getAttributes());
+                List<ConnectionAttributeEntity> attrEntities = connToAttrEntities(updated);
+                attrEntities = this.attributeRepository.saveAll(attrEntities);
+                updated.setAttributes(attrEntitiesToMap(attrEntities));
+                log.info("Connection updated, connection={}", updated);
+                if (saved.getProjectId() != null && updated.getProjectId() == null) {
+                    // Remove databases from project when unbind project from connection
+                    try {
+                        updateDatabaseProjectId(savedEntity, null, false);
+                    } catch (InterruptedException e) {
+                        throw new UnexpectedException("Failed to update database project id", e);
+                    }
+                }
+                return updated;
+            } catch (Exception ex) {
+                status.setRollbackOnly();
+                throw ex;
+            }
+        });
+        databaseSyncManager.submitSyncDataSourceAndDBSchemaTask(config);
+        return config;
+    }
+
     @SkipAuthorize("odc internal usage")
     public void updateDatabaseProjectId(Collection<ConnectionEntity> connectionIds, Long projectId,
             boolean blockInternalDatabase) throws InterruptedException {
