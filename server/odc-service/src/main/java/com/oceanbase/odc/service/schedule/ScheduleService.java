@@ -804,17 +804,21 @@ public class ScheduleService {
             params.getDataSourceIds().addAll(connectionService.innerListIdByOrganizationIdAndClusterId(
                     authenticationFacade.currentOrganizationId(), params.getClusterId()));
         }
-        if (StringUtils.isNotEmpty(params.getTenantId())) {
-            List<Long> datasourceIds = connectionService.innerListIdByOrganizationIdAndTenantId(
-                    authenticationFacade.currentOrganizationId(), params.getTenantId());
-            if (datasourceIds.isEmpty()) {
+        if (StringUtils.isNotEmpty(params.getClusterId())) {
+            List<Long> datasourceIdsByCluster = connectionService.innerListIdByOrganizationIdAndClusterId(
+                    authenticationFacade.currentOrganizationId(), params.getClusterId());
+            if (datasourceIdsByCluster.isEmpty()) {
                 return Page.empty();
             }
-            if (params.getDataSourceIds().isEmpty()) {
-                params.getDataSourceIds().addAll(datasourceIds);
-            } else {
-                params.getDataSourceIds().retainAll(datasourceIds);
+            params.getDataSourceIds().addAll(datasourceIdsByCluster);
+        }
+        if (StringUtils.isNotEmpty(params.getTenantId())) {
+            List<Long> datasourceIdsByTenantId = connectionService.innerListIdByOrganizationIdAndTenantId(
+                    authenticationFacade.currentOrganizationId(), params.getTenantId());
+            if (datasourceIdsByTenantId.isEmpty()) {
+                return Page.empty();
             }
+            params.getDataSourceIds().addAll(datasourceIdsByTenantId);
         }
 
         if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
