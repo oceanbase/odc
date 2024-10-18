@@ -69,7 +69,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
     }
 
     @Override
-    protected boolean doStart(JobContext context) throws Exception {
+    protected boolean doStart(JobContext context, TaskContext taskContext) throws Exception {
 
         jobStore.setJobParameters(getJobParameters());
         DLMJobReq parameters =
@@ -84,6 +84,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
             jobStore.setDlmTableUnits(result);
         } catch (Exception e) {
             log.warn("Get dlm job failed!", e);
+            taskContext.getExceptionListener().onException(e);
             return false;
         }
         Set<String> dlmTableUnitIds = result.keySet();
@@ -135,6 +136,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
                     finishTableUnit(dlmTableUnitId, TaskStatus.CANCELED);
                 } else {
                     finishTableUnit(dlmTableUnitId, TaskStatus.FAILED);
+                    taskContext.getExceptionListener().onException(e);
                 }
             }
         }

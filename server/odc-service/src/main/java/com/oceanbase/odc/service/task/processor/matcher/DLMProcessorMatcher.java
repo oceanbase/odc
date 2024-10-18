@@ -13,15 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.processor;
+package com.oceanbase.odc.service.task.processor.matcher;
 
-import com.oceanbase.odc.service.task.executor.task.TaskResult;
+import com.oceanbase.odc.service.task.executor.task.TaskDescription;
+import com.oceanbase.odc.service.task.processor.ProcessorMatcher;
 
 /**
- * @Author：tinker
- * @Date: 2024/7/6 10:45
- * @Descripition:
+ * @author longpeng.zlp
+ * @date 2024/10/10 11:36
  */
-public interface ResultProcessor {
-    void process(TaskResult result);
+public class DLMProcessorMatcher implements ProcessorMatcher {
+    @Override
+    public boolean interested(String type) {
+        return TaskDescription.DLM.matched(type);
+    }
 }

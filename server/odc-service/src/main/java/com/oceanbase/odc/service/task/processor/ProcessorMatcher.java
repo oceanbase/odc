@@ -13,32 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.task.executor.task;
-
-import java.util.Map;
-
-import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
+package com.oceanbase.odc.service.task.processor;
 
 /**
- * @author yaobin
- * @date 2023-11-29
- * @since 4.2.4
+ * @author longpeng.zlp
+ * @date 2024/10/10 11:29
  */
-public interface TaskResult {
-
-    JobIdentity getJobIdentity();
-
-    JobStatus getStatus();
-
-    String getResultJson();
-
-    String getExecutorEndpoint();
-
-    String getErrorMessage();
-
-    double getProgress();
-
-    Map<String, String> getLogMetadata();
+public interface ProcessorMatcher {
+    /**
+     * if type is interested for current matcher remaining processor method will be called if interested
+     * 
+     * @param type
+     * @return
+     */
+    boolean interested(String type);
 }

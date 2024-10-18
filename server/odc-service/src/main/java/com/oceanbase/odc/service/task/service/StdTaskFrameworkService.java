@@ -73,8 +73,7 @@ import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.listener.DefaultJobProcessUpdateEvent;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
-import com.oceanbase.odc.service.task.processor.DLMResultProcessor;
-import com.oceanbase.odc.service.task.processor.LogicalDBChangeResultProcessor;
+import com.oceanbase.odc.service.task.processor.result.ResultProcessor;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
@@ -115,6 +114,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     @Autowired
     private TaskFrameworkProperties taskFrameworkProperties;
+
     @Autowired
     private EntityManager entityManager;
     @Autowired
@@ -122,9 +122,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Autowired
     private ExecutorEndpointManager executorEndpointManager;
     @Autowired
-    private DLMResultProcessor dlmResultProcessor;
-    @Autowired
-    private LogicalDBChangeResultProcessor logicalDBChangeResultProcessor;
+    private List<ResultProcessor> resultProcessors;
 
     @Override
     public JobEntity find(Long id) {
@@ -377,11 +375,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 return false;
             }
             saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
-            if ("DLM".equals(je.getJobType())) {
-                dlmResultProcessor.process(result);
-            } else if (StringUtils.equalsIgnoreCase("LogicalDatabaseChange", je.getJobType())) {
-                logicalDBChangeResultProcessor.process(result);
-            }
+            handleTaskResult(je.getJobType(), result);
             return true;
         } catch (Exception exception) {
             log.warn("Refresh log meta failed,errorMsg={}", exception.getMessage());
@@ -411,11 +405,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             return;
         }
         log.info("Progress changed, will update result, jobId={}, currentProgress={}", id, result.getProgress());
-        if ("DLM".equals(je.getJobType())) {
-            dlmResultProcessor.process(result);
-        } else if (StringUtils.equalsIgnoreCase("LogicalDatabaseChange", je.getJobType())) {
-            logicalDBChangeResultProcessor.process(result);
-        }
+        handleTaskResult(je.getJobType(), result);
         saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
 
         if (result.getStatus().isTerminated() && MapUtils.isEmpty(result.getLogMetadata())) {
@@ -492,11 +482,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     private int updateTaskResult(TaskResult taskResult, JobEntity currentJob) {
         JobEntity jse = new JobEntity();
-        if ("DLM".equals(currentJob.getJobType())) {
-            dlmResultProcessor.process(taskResult);
-        } else if (StringUtils.equalsIgnoreCase("LogicalDatabaseChange", currentJob.getJobType())) {
-            logicalDBChangeResultProcessor.process(taskResult);
-        }
+        handleTaskResult(currentJob.getJobType(), taskResult);
         jse.setResultJson(taskResult.getResultJson());
         jse.setStatus(taskResult.getStatus());
         jse.setProgressPercentage(taskResult.getProgress());
@@ -661,6 +647,14 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     public Optional<String> findByJobIdAndAttributeKey(Long jobId, String attributeKey) {
         JobAttributeEntity attributeEntity = jobAttributeRepository.findByJobIdAndAttributeKey(jobId, attributeKey);
         return Objects.isNull(attributeEntity) ? Optional.empty() : Optional.of(attributeEntity.getAttributeValue());
+    }
+
+    private void handleTaskResult(String jobType, TaskResult taskResult) {
+        for (ResultProcessor processor : resultProcessors) {
+            if (processor.interested(jobType)) {
+                processor.process(taskResult);
+            }
+        }
     }
 
 }
