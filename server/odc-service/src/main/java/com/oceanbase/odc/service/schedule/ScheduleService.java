@@ -733,6 +733,7 @@ public class ScheduleService {
         if (StringUtils.isNotBlank(params.getCreator())) {
             params.setCreatorIds(userService.getUsersByFuzzyNameWithoutPermissionCheck(
                     params.getCreator()).stream().map(User::getId).collect(Collectors.toSet()));
+            return Page.empty();
         }
         if (params.getDataSourceIds() == null) {
             params.setDataSourceIds(new HashSet<>());
