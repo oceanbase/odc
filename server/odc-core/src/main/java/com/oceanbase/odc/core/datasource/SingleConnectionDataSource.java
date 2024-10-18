@@ -75,7 +75,10 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     @Override
     public Connection getConnection() throws SQLException {
         if (Objects.isNull(this.connection)) {
-            return innerCreateConnection();
+            Connection conn = innerCreateWhenConnectionIsNull();
+            if (conn != null) {
+                return conn;
+            }
         }
         Lock thisLock = this.lock;
         if (!tryLock(thisLock)) {
@@ -149,6 +152,10 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         } catch (InterruptedException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    private synchronized Connection innerCreateWhenConnectionIsNull() throws SQLException {
+        return this.connection == null ? innerCreateConnection() : null;
     }
 
     private Connection getConnectionProxy(@NonNull Connection connection, @NonNull Lock thisLock) {
