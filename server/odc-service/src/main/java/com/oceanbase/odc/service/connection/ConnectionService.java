@@ -596,15 +596,15 @@ public class ConnectionService {
 
     @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public ConnectionConfig update(@NotNull Long id, @NotNull @Valid ConnectionConfig connection) {
-        return syncDatasource(id, connection, true);
+        return updateConnectionConfig(id, connection, true);
     }
 
     public ConnectionConfig updateWithoutPermissionCheck(@NotNull Long id,
             @NotNull @Valid ConnectionConfig connection) {
-        return syncDatasource(id, connection, false);
+        return updateConnectionConfig(id, connection, false);
     }
 
-    private ConnectionConfig syncDatasource(Long id, ConnectionConfig connection, boolean needCheckPermission) {
+    private ConnectionConfig updateConnectionConfig(Long id, ConnectionConfig connection, boolean needCheckPermission) {
         ConnectionConfig config = txTemplate.execute(status -> {
             try {
                 environmentAdapter.adaptConfig(connection);
