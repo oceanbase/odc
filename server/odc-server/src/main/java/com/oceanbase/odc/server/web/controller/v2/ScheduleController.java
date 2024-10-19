@@ -56,6 +56,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskListOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
+import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -169,7 +170,7 @@ public class ScheduleController {
             @RequestParam(required = false, name = "id") Long id,
             @RequestParam(required = false, name = "scheduleId") Long scheduleId,
             @RequestParam(required = false, name = "scheduleName") String scheduleName,
-            @RequestParam(required = false, name = "status") List<TaskStatus> status,
+            @RequestParam(required = false, name = "status") TaskStatus status,
             @RequestParam(required = true, name = "scheduleType") ScheduleType scheduleType,
             @RequestParam(required = false, name = "startTime") Date startTime,
             @RequestParam(required = false, name = "endTime") Date endTime,
@@ -184,7 +185,7 @@ public class ScheduleController {
                 .databaseName(databaseName)
                 .tenantId(tenantId)
                 .clusterId(clusterId)
-                .statuses(status)
+                .status(status)
                 .scheduleType(scheduleType)
                 .startTime(startTime)
                 .endTime(endTime)
@@ -248,7 +249,8 @@ public class ScheduleController {
             @RequestParam(required = false, name = "endTime") Date endTime,
             @RequestParam(required = false, name = "creator") String creator,
             @RequestParam(required = false, name = "projectUniqueIdentifier") String projectUniqueIdentifier,
-            @RequestParam(required = false, name = "projectId") Long projectId) {
+            @RequestParam(required = false, name = "projectId") Long projectId,
+            @RequestParam(required = false, name = "triggerStrategy") TriggerStrategy triggerStrategy) {
         QueryScheduleParams req = QueryScheduleParams.builder()
                 .id(id)
                 .name(name)
@@ -263,6 +265,7 @@ public class ScheduleController {
                 .creator(creator)
                 .projectId(projectId)
                 .projectUniqueIdentifier(projectUniqueIdentifier)
+                .triggerStrategy(triggerStrategy)
                 .build();
 
         return Responses.paginated(scheduleService.listScheduleOverview(pageable, req));

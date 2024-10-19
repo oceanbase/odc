@@ -291,7 +291,7 @@ public class ScheduleTaskService {
         Specification<ScheduleTaskEntity> specification =
                 Specification.where(ScheduleTaskSpecs.jobNameIn(scheduleMap.keySet()))
                         .and(ScheduleTaskSpecs.jobIdEquals(params.getScheduleId()))
-                        .and(ScheduleTaskSpecs.statusIn(params.getStatuses()))
+                        .and(ScheduleTaskSpecs.statusEquals(params.getStatus()))
                         .and(ScheduleTaskSpecs.fireTimeLate(params.getStartTime()))
                         .and(ScheduleTaskSpecs.fireTimeBefore(params.getEndTime()));
 

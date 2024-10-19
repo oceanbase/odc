@@ -779,8 +779,17 @@ public class ScheduleService {
 
         params.setOrganizationId(authenticationFacade.currentOrganizationId());
         Page<ScheduleEntity> returnValue = scheduleRepository.find(pageable, params);
+        List<ScheduleEntity> schedules = returnValue.getContent();
+
+        if (params.getTriggerStrategy() != null) {
+            schedules = schedules.stream().filter(schedule -> {
+                TriggerConfig triggerConfig = JsonUtils.fromJson(schedule.getTriggerConfigJson(), TriggerConfig.class);
+                return triggerConfig.getTriggerStrategy().equals(params.getTriggerStrategy());
+            }).collect(Collectors.toList());
+        }
+
         Map<Long, ScheduleOverview> id2Overview =
-                scheduleResponseMapperFactory.generateScheduleOverviewListMapper(returnValue.getContent());
+                scheduleResponseMapperFactory.generateScheduleOverviewListMapper(schedules);
 
         return returnValue.map(o -> id2Overview.get(o.getId()));
     }
@@ -801,10 +810,6 @@ public class ScheduleService {
         log.info("List schedule task overview req, params={}", params);
         if (params.getDataSourceIds() == null) {
             params.setDataSourceIds(new HashSet<>());
-        }
-        if (StringUtils.isNotEmpty(params.getClusterId())) {
-            params.getDataSourceIds().addAll(connectionService.innerListIdByOrganizationIdAndClusterId(
-                    authenticationFacade.currentOrganizationId(), params.getClusterId()));
         }
         if (StringUtils.isNotEmpty(params.getClusterId())) {
             List<Long> datasourceIdsByCluster = connectionService.innerListIdByOrganizationIdAndClusterId(

@@ -70,6 +70,7 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
                 .and(OdcJpaRepository.in(ScheduleEntity_.status, params.getStatuses()))
                 .and(OdcJpaRepository.notEq(ScheduleEntity_.status, ScheduleStatus.DELETED))
                 .and(OdcJpaRepository.in(ScheduleEntity_.creatorId, params.getCreatorIds()))
+                .and(OdcJpaRepository.like(ScheduleEntity_.name, params.getName()))
                 .and(OdcJpaRepository.eq(ScheduleEntity_.organizationId, params.getOrganizationId()));
         return findAll(specification, pageable);
     }
@@ -84,6 +85,7 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
                 .and(OdcJpaRepository.eq(ScheduleEntity_.id, params.getId()))
                 .and(OdcJpaRepository.notEq(ScheduleEntity_.status, ScheduleStatus.DELETED))
                 .and(OdcJpaRepository.in(ScheduleEntity_.creatorId, params.getCreatorIds()))
+                .and(OdcJpaRepository.like(ScheduleEntity_.name, params.getName()))
                 .and(OdcJpaRepository.eq(ScheduleEntity_.organizationId, params.getOrganizationId()));
         return findAll(specification);
     }
