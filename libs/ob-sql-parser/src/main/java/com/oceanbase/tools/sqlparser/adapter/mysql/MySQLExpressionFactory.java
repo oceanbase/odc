@@ -30,6 +30,7 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Any_exprContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Bit_exprContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Bool_priContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Case_exprContext;
@@ -78,6 +79,7 @@ import com.oceanbase.tools.sqlparser.statement.common.BraceBlock;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
 import com.oceanbase.tools.sqlparser.statement.common.GeneralDataType;
 import com.oceanbase.tools.sqlparser.statement.common.WindowSpec;
+import com.oceanbase.tools.sqlparser.statement.expression.ArrayExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.BoolValue;
 import com.oceanbase.tools.sqlparser.statement.expression.CaseWhen;
 import com.oceanbase.tools.sqlparser.statement.expression.CollectionExpression;
@@ -218,6 +220,9 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
         } else if (ctx.bool_pri() != null && ctx.select_no_parens() != null) {
             left = visit(ctx.bool_pri());
             right = visit(ctx.select_no_parens());
+        } else if (ctx.bool_pri() != null && ctx.any_expr() != null) {
+            left = visit(ctx.bool_pri());
+            right = visit(ctx.any_expr());
         }
         if (left == null || right == null || operator == null) {
             throw new IllegalStateException("Unable to build expression, some syntax modules are missing");
@@ -356,7 +361,10 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
         } else if (ctx.expr_const() != null) {
             return visit(ctx.expr_const());
         } else if (ctx.expr_list() != null) {
-            if (ctx.ROW() == null) {
+            if (ctx.ARRAY() != null || (ctx.LeftBracket() != null && ctx.RightBracket() != null)) {
+                return new ArrayExpression(ctx,
+                        ctx.expr_list().expr().stream().map(this::visit).collect(Collectors.toList()));
+            } else if (ctx.ROW() == null) {
                 return visit(ctx.expr_list());
             }
             List<FunctionParam> params = ctx.expr_list().expr().stream()
@@ -703,6 +711,10 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             } else if (ctx.sys_interval_func().CHECK() != null) {
                 funcName = ctx.sys_interval_func().CHECK().getText();
             }
+        } else if (ctx.vector_distance_expr() != null) {
+            params = ctx.vector_distance_expr().expr()
+                    .stream().map(this::wrap).collect(Collectors.toList());
+            funcName = ctx.vector_distance_expr().VECTOR_DISTANCE().getText();
         }
         if (funcName == null) {
             throw new IllegalStateException("Missing function name");
@@ -872,6 +884,14 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
         fCall.addOption(getJsonOnOption(ctx.mock_jt_on_error_on_empty()));
         ctx.jt_column_list().json_table_column_def().forEach(c -> fCall.addOption(visitJsonTableColumnDef(c)));
         return fCall;
+    }
+
+    @Override
+    public Expression visitAny_expr(Any_exprContext ctx) {
+        if (ctx.select_with_parens() != null) {
+            return new MySQLSelectBodyFactory(ctx.select_with_parens()).generate();
+        }
+        return visit(ctx.expr_list());
     }
 
     private JsonOnOption getJsonOnOption(Mock_jt_on_error_on_emptyContext ctx) {
