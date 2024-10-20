@@ -150,15 +150,8 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                 }
                 String sql = sqlIterator.next().getStr();
                 index++;
-                // The retry statement will write the result into the buffer, while executing a new SQL command will
-                // clear the buffer.
-                queryResultSetBuffer.clear();
                 try {
                     boolean success = executeSqlWithRetries(sql);
-                    // write all result into json file
-                    appendResultToJsonFile(index == 1, !sqlIterator.hasNext());
-                    // write result rows into csv file
-                    writeCsvFiles(index);
                     if (success) {
                         result.incrementSucceedStatements();
                     } else {
@@ -180,6 +173,12 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                         break;
                     }
                     log.warn("Sql task execution failed, will continue to execute next statement.", e);
+                } finally {
+                    // write all result into json file
+                    appendResultToJsonFile(index == 1, !sqlIterator.hasNext() || aborted);
+                    // write result rows into csv file
+                    writeCsvFiles(index);
+                    queryResultSetBuffer.clear();
                 }
             }
             result.setTotalStatements(index);
@@ -189,12 +188,13 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             // upload file to OSS, also contains error record where is non-null
             upload();
 
+            log.info("The sql plan task execute finished, report statistics:total={}, succeed={}, failed={}",
+                    result.getTotalStatements(), result.getSucceedStatements(), result.getFailedStatements());
+
             if (aborted) {
                 throw new JobException("There exists error sql, and the task is aborted");
             }
 
-            log.info("The sql plan task execute finished, report statistics:total={}, succeed={}, failed={}",
-                    result.getTotalStatements(), result.getSucceedStatements(), result.getFailedStatements());
             return true;
         } finally {
             tryCloseInputStream();
@@ -267,11 +267,13 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
     }
 
     private boolean executeSqlWithRetries(String sql) {
-        int executeTime = 0;
         GeneralSqlType sqlType = parseSqlType(sql);
-        while (executeTime <= parameters.getRetryTimes() && !canceled) {
+        boolean success = true;
+        for (int executeTime = 1; executeTime <= parameters.getRetryTimes() && !canceled; executeTime++) {
             OdcStatementCallBack statementCallback = getOdcStatementCallBack(sql);
+            success = true;
             try {
+                queryResultSetBuffer.clear();
                 List<JdbcGeneralResult> results =
                         executor.execute((StatementCallback<List<JdbcGeneralResult>>) stmt -> {
                             stmt.setQueryTimeout(
@@ -282,40 +284,41 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                 for (JdbcGeneralResult result : results) {
                     // one sql, one execute result
                     SqlExecuteResult executeResult = new SqlExecuteResult(result);
-                    if (sqlType == GeneralSqlType.DQL) {
-                        // todo: weather need data masking
-                        log.info("Success execute DQL sql, result={}", executeResult.getRows());
-                    }
                     queryResultSetBuffer.add(executeResult);
 
                     if (result.getStatus() != SqlExecuteStatus.SUCCESS) {
-                        // differ from the query timeout retries, this means sql executed but failed.
-                        log.warn("Error occurs when executing sql={}, error message={}", sql,
-                                executeResult.getTrack());
-                        return false;
+                        success = false;
                     } else {
-                        return true;
+                        if (sqlType == GeneralSqlType.DQL) {
+                            // todo: weather need data masking
+                            log.info("Success execute DQL sql, result={}", executeResult.getRows());
+                        }
                     }
                 }
             } catch (Exception e) {
-                if (executeTime < parameters.getRetryTimes()) {
-                    log.warn(String.format("Will retry for the %sth time in %s seconds...", executeTime + 1,
-                            parameters.getRetryIntervalMillis() / 1000));
-                    try {
-                        Thread.sleep(parameters.getRetryIntervalMillis());
-                    } catch (InterruptedException ex) {
-                        log.warn("sql task execution is interrupted, task will exit", ex);
-                        canceled = true;
-                        return false;
-                    }
+                if (executeTime == parameters.getRetryTimes()) {
+                    throw e;
                 }
-                throw e;
-            } finally {
-                executeTime++;
+                success = false;
+                log.warn("Error occurs when executing sql: {}, error message: {}", sql, e);
+            }
+
+            if (success || executeTime == parameters.getRetryTimes()) {
+                break;
+            } else {
+                log.warn(String.format("Will retry for the %sth time in %s seconds...", executeTime + 1,
+                        parameters.getRetryIntervalMillis() / 1000));
+                try {
+                    Thread.sleep(parameters.getRetryIntervalMillis());
+                } catch (InterruptedException ex) {
+                    log.warn("sql task execution is interrupted, task will exit", ex);
+                    canceled = true;
+                    break;
+                }
             }
         }
         log.info("Sql task execution succeed.");
-        return true;
+        return success;
     }
 
 
