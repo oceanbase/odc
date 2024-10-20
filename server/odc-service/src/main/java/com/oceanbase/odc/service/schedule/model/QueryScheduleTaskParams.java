@@ -32,7 +32,7 @@ public class QueryScheduleTaskParams {
     private List<Schedule> schedules;
     private String scheduleName;
     private Set<Long> dataSourceIds;
-    private TaskStatus status;
+    private List<TaskStatus> statuses;
     private ScheduleType scheduleType;
     private Date startTime;
     private Date endTime;

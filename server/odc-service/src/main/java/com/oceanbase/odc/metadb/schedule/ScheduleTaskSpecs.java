@@ -16,6 +16,7 @@
 package com.oceanbase.odc.metadb.schedule;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 import org.springframework.data.jpa.domain.Specification;
@@ -46,8 +47,8 @@ public class ScheduleTaskSpecs {
         return SpecificationUtil.columnEqual("id", id);
     }
 
-    public static Specification<ScheduleTaskEntity> statusEquals(TaskStatus jobStatuses) {
-        return SpecificationUtil.columnEqual("status", jobStatuses);
+    public static Specification<ScheduleTaskEntity> statusIn(List<TaskStatus> jobStatuses) {
+        return SpecificationUtil.columnIn("status", jobStatuses);
     }
 
     public static Specification<ScheduleTaskEntity> fireTimeBefore(Date fireTime) {

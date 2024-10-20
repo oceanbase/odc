@@ -170,7 +170,7 @@ public class ScheduleController {
             @RequestParam(required = false, name = "id") Long id,
             @RequestParam(required = false, name = "scheduleId") Long scheduleId,
             @RequestParam(required = false, name = "scheduleName") String scheduleName,
-            @RequestParam(required = false, name = "status") TaskStatus status,
+            @RequestParam(required = false, name = "status") List<TaskStatus> status,
             @RequestParam(required = true, name = "scheduleType") ScheduleType scheduleType,
             @RequestParam(required = false, name = "startTime") Date startTime,
             @RequestParam(required = false, name = "endTime") Date endTime,
@@ -185,7 +185,7 @@ public class ScheduleController {
                 .databaseName(databaseName)
                 .tenantId(tenantId)
                 .clusterId(clusterId)
-                .status(status)
+                .statuses(status)
                 .scheduleType(scheduleType)
                 .startTime(startTime)
                 .endTime(endTime)
