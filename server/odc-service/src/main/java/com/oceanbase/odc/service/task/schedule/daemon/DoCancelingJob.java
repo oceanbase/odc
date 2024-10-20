@@ -73,8 +73,6 @@ public class DoCancelingJob implements Job {
                             lockedEntity.getId(), lockedEntity.getStatus());
                     return;
                 }
-                // For transaction atomic, first update to CANCELED, then stop remote job in executor,
-                // if stop remote failed, transaction will be rollback
                 JobStatus currentStatus = taskFrameworkService.find(lockedEntity.getId()).getStatus();
                 if (currentStatus.isTerminated()) {
                     // the job terminated before we update it to CANCELED
@@ -83,14 +81,15 @@ public class DoCancelingJob implements Job {
                     getConfiguration().getEventPublisher().publishEvent(
                             new JobTerminateEvent(JobIdentity.of(lockedEntity.getId()), currentStatus));
                     return;
-                } else {
-                    int rows = getConfiguration().getTaskFrameworkService()
-                            .updateStatusDescriptionByIdOldStatus(lockedEntity.getId(),
-                                    JobStatus.CANCELING, JobStatus.CANCELED, "stop job completed.");
-                    if (rows <= 0) {
-                        throw new TaskRuntimeException(
-                                "Update job status to CANCELED failed, jobId=" + lockedEntity.getId());
-                    }
+                }
+                // For transaction atomic, first update to CANCELED, then stop remote job in executor,
+                // if stop remote failed, transaction will be rollback
+                int rows = getConfiguration().getTaskFrameworkService()
+                        .updateStatusDescriptionByIdOldStatus(lockedEntity.getId(),
+                                JobStatus.CANCELING, JobStatus.CANCELED, "stop job completed.");
+                if (rows <= 0) {
+                    throw new TaskRuntimeException(
+                            "Update job status to CANCELED failed, jobId=" + lockedEntity.getId());
                 }
                 // log.info("Prepare cancel task, jobId={}.", lockedEntity.getId());
                 // try {
