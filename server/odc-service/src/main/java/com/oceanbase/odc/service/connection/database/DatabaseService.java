@@ -528,6 +528,10 @@ public class DatabaseService {
         }
     }
 
+    public int updateEnvironmentIdByConnectionId(@NotNull Long environmentId, @NotNull Long connectionId) {
+        return databaseRepository.setEnvironmentIdByConnectionId(environmentId, connectionId);
+    }
+
     private void syncTeamDataSources(ConnectionConfig connection) {
         Long currentProjectId = connection.getProjectId();
         boolean blockExcludeSchemas = dbSchemaSyncProperties.isBlockExclusionsWhenSyncDbToProject();

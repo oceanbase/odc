@@ -21,6 +21,7 @@ import javax.validation.constraints.NotNull;
 
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
+import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
 
 import lombok.Data;
 
@@ -52,6 +53,8 @@ public class DataDeleteParameters implements ScheduleTaskParameters {
 
     private Boolean deleteByUniqueKey = true;
 
+    private ShardingStrategy shardingStrategy;
+
     private Boolean needCheckBeforeDelete = false;
 
     private boolean needPrintSqlTrace = false;
@@ -68,4 +71,21 @@ public class DataDeleteParameters implements ScheduleTaskParameters {
 
     private boolean fullDatabase = false;
 
+    public String getDatabaseName() {
+        return database == null ? null : database.getName();
+    }
+
+    public String getTargetDatabaseName() {
+        return targetDatabase == null ? null : targetDatabase.getName();
+    }
+
+    public String getSourceDataSourceName() {
+        return database == null || database.getDataSource() == null ? null
+                : database.getDataSource().getName();
+    }
+
+    public String getTargetDataSourceName() {
+        return targetDatabase == null || targetDatabase.getDataSource() == null ? null
+                : targetDatabase.getDataSource().getName();
+    }
 }

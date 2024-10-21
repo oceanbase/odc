@@ -23,4 +23,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 public interface RulesetRepository extends JpaRepository<RulesetEntity, Long>,
         JpaSpecificationExecutor<RulesetEntity> {
     List<RulesetEntity> findByOrganizationId(Long organizationId);
+
+    List<RulesetEntity> findByBuiltin(Boolean builtin);
 }
