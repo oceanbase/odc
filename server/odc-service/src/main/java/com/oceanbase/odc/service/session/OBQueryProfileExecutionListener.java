@@ -123,7 +123,7 @@ public class OBQueryProfileExecutionListener implements SqlExecutionListener {
     public static boolean isObVersionSupportQueryProfile(String version) {
         return VersionUtils.isGreaterThanOrEqualsTo(version, "4.2.4")
                 && VersionUtils.isLessThan(version, "4.3.0")
-                || VersionUtils.isGreaterThanOrEqualsTo(version, "4.3.3");
+                || VersionUtils.isGreaterThanOrEqualsTo(version, "4.3.3.1");
 
     }
 }
