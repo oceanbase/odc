@@ -15,8 +15,8 @@
  */
 package com.oceanbase.odc.service.state;
 
-import static com.oceanbase.odc.service.monitor.MeterName.STATEFUL_ROUTE_COUNT;
-import static com.oceanbase.odc.service.monitor.MeterName.STATEFUL_ROUTE_UNHEALTHY_COUNT;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.STATEFUL_ROUTE_COUNT;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.STATEFUL_ROUTE_UNHEALTHY_COUNT;
 import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
 
 import java.io.ByteArrayOutputStream;

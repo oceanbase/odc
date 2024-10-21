@@ -21,9 +21,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
+import com.oceanbase.odc.service.monitor.DefaultMeterName;
 import com.oceanbase.odc.service.monitor.MeterKey;
 import com.oceanbase.odc.service.monitor.MeterManager;
-import com.oceanbase.odc.service.monitor.MeterName;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 
 @Component
@@ -37,7 +37,7 @@ public class ScheduleMetrics implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        meterManager.registerGauge(MeterKey.ofMeter(MeterName.SCHEDULE_ENABLED_COUNT),
+        meterManager.registerGauge(MeterKey.ofMeter(DefaultMeterName.SCHEDULE_ENABLED_COUNT),
                 () -> scheduleRepository.countByStatus(ScheduleStatus.ENABLED));
     }
 }

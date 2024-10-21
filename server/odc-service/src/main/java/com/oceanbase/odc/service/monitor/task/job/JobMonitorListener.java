@@ -15,12 +15,12 @@
  */
 package com.oceanbase.odc.service.monitor.task.job;
 
-import static com.oceanbase.odc.service.monitor.MeterName.JOB_DESTROY_FAILED_COUNT;
-import static com.oceanbase.odc.service.monitor.MeterName.JOB_DESTROY_SUCCESS_COUNT;
-import static com.oceanbase.odc.service.monitor.MeterName.JOB_START_FAILED_COUNT;
-import static com.oceanbase.odc.service.monitor.MeterName.JOB_START_SUCCESS_COUNT;
-import static com.oceanbase.odc.service.monitor.MeterName.JOB_STOP_FAILED_COUNT;
-import static com.oceanbase.odc.service.monitor.MeterName.JOB_STOP_SUCCESS_COUNT;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.JOB_DESTROY_FAILED_COUNT;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.JOB_DESTROY_SUCCESS_COUNT;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.JOB_START_FAILED_COUNT;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.JOB_START_SUCCESS_COUNT;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.JOB_STOP_FAILED_COUNT;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.JOB_STOP_SUCCESS_COUNT;
 
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.monitor.MeterKey;

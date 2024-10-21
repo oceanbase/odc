@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.monitor.datasource;
 
-import static com.oceanbase.odc.service.monitor.MeterName.DATASOURCE_GET_CONNECTION_FAILED_COUNT;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.DATASOURCE_GET_CONNECTION_FAILED_COUNT;
 
 import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.core.datasource.event.GetConnectionFailedEvent;

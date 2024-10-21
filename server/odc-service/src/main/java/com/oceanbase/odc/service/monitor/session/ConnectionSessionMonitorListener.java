@@ -15,16 +15,16 @@
  */
 package com.oceanbase.odc.service.monitor.session;
 
-import static com.oceanbase.odc.service.monitor.MeterName.CONNECT_SESSION_DURATION_TIME;
-import static com.oceanbase.odc.service.monitor.MeterName.CONNECT_SESSION_EXPIRED_COUNT;
-import static com.oceanbase.odc.service.monitor.MeterName.CONNECT_SESSION_EXPIRED_FAILED_COUNT;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.CONNECT_SESSION_DURATION_TIME;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.CONNECT_SESSION_EXPIRED_COUNT;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.CONNECT_SESSION_EXPIRED_FAILED_COUNT;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionEventListener;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
+import com.oceanbase.odc.service.monitor.DefaultMeterName;
 import com.oceanbase.odc.service.monitor.MeterKey;
 import com.oceanbase.odc.service.monitor.MeterManager;
-import com.oceanbase.odc.service.monitor.MeterName;
 
 public class ConnectionSessionMonitorListener implements ConnectionSessionEventListener {
 
@@ -36,37 +36,37 @@ public class ConnectionSessionMonitorListener implements ConnectionSessionEventL
 
     @Override
     public void onCreateSucceed(ConnectionSession session) {
-        meterManager.incrementCounter(MeterKey.ofMeter(MeterName.CONNECT_SESSION_TOTAL));
+        meterManager.incrementCounter(MeterKey.ofMeter(DefaultMeterName.CONNECT_SESSION_TOTAL));
         meterManager.startTimerSample(session.getId(), MeterKey.ofMeter(CONNECT_SESSION_DURATION_TIME));
     }
 
     @Override
     public void onCreateFailed(ConnectionSession session, Throwable e) {
-        meterManager.incrementCounter(MeterKey.ofMeter(MeterName.CONNECT_SESSION_TOTAL));
-        meterManager.incrementCounter(MeterKey.ofMeter(MeterName.CONNECT_SESSION_CREATED_FAILED_COUNT));
+        meterManager.incrementCounter(MeterKey.ofMeter(DefaultMeterName.CONNECT_SESSION_TOTAL));
+        meterManager.incrementCounter(MeterKey.ofMeter(DefaultMeterName.CONNECT_SESSION_CREATED_FAILED_COUNT));
     }
 
     @Override
     public void onDeleteSucceed(ConnectionSession session) {
-        meterManager.incrementCounter(MeterKey.ofMeter(MeterName.CONNECT_SESSION_DELETE_SUCCESS_COUNT));
+        meterManager.incrementCounter(MeterKey.ofMeter(DefaultMeterName.CONNECT_SESSION_DELETE_SUCCESS_COUNT));
         meterManager.recordTimerSample(session.getId(), MeterKey.ofMeter(CONNECT_SESSION_DURATION_TIME));
 
     }
 
     @Override
     public void onDeleteFailed(String id, Throwable e) {
-        meterManager.incrementCounter(MeterKey.ofMeter(MeterName.CONNECT_SESSION_DELETE_FAILED_COUNT));
+        meterManager.incrementCounter(MeterKey.ofMeter(DefaultMeterName.CONNECT_SESSION_DELETE_FAILED_COUNT));
         meterManager.recordTimerSample(id, MeterKey.ofMeter(CONNECT_SESSION_DURATION_TIME));
     }
 
     @Override
     public void onGetSucceed(ConnectionSession session) {
-        meterManager.incrementCounter(MeterKey.ofMeter(MeterName.CONNECT_SESSION_GET_COUNT));
+        meterManager.incrementCounter(MeterKey.ofMeter(DefaultMeterName.CONNECT_SESSION_GET_COUNT));
     }
 
     @Override
     public void onGetFailed(String id, Throwable e) {
-        meterManager.incrementCounter(MeterKey.ofMeter(MeterName.CONNECT_SESSION_GET_FAILED_COUNT));
+        meterManager.incrementCounter(MeterKey.ofMeter(DefaultMeterName.CONNECT_SESSION_GET_FAILED_COUNT));
 
     }
 

@@ -154,9 +154,9 @@ import com.oceanbase.odc.service.integration.model.ApprovalProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
+import com.oceanbase.odc.service.monitor.DefaultMeterName;
 import com.oceanbase.odc.service.monitor.MeterKey;
 import com.oceanbase.odc.service.monitor.MeterManager;
-import com.oceanbase.odc.service.monitor.MeterName;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
@@ -949,7 +949,7 @@ public class FlowInstanceService {
         }
         log.info("New flow instance succeeded, instanceId={}, flowInstanceReq={}",
                 flowInstance.getId(), flowInstanceReq);
-        MeterKey meterKey = MeterKey.ofMeter(MeterName.FLOW_CREATED_COUNT,
+        MeterKey meterKey = MeterKey.ofMeter(DefaultMeterName.FLOW_CREATED_COUNT,
                 Tag.of("organizationId", flowInstance.getOrganizationId().toString()));
         meterManager.incrementCounter(meterKey);
         return FlowInstanceDetailResp.withIdAndType(flowInstance.getId(), flowInstanceReq.getTaskType());

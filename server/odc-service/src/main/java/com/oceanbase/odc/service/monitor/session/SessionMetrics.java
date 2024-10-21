@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.monitor.session;
 
-import static com.oceanbase.odc.service.monitor.MeterName.CONNECT_SESSION_ACTIVE_COUNT;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.CONNECT_SESSION_ACTIVE_COUNT;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
