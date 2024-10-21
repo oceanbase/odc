@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.task.schedule.daemon;
 
 import java.text.MessageFormat;
-import java.util.Map;
 
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
@@ -72,6 +71,7 @@ public class DestroyExecutorJob implements Job {
     private void destroyExecutor(TaskFrameworkService taskFrameworkService, JobEntity jobEntity) {
         getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
             JobEntity lockedEntity = taskFrameworkService.findWithPessimisticLock(jobEntity.getId());
+
             if (lockedEntity.getStatus().isTerminated() && lockedEntity.getExecutorIdentifier() != null) {
                 log.info("Job prepare destroy executor, jobId={},status={}.", lockedEntity.getId(),
                         lockedEntity.getStatus());
@@ -81,14 +81,9 @@ public class DestroyExecutorJob implements Job {
                     log.warn("Destroy executor occur error, jobId={}: ", lockedEntity.getId(), e);
                     if (e.getMessage() != null &&
                             !e.getMessage().startsWith(JobConstants.ODC_EXECUTOR_CANNOT_BE_DESTROYED)) {
-                        Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
-                                .item(AlarmUtils.ORGANIZATION_NAME, jobEntity.getOrganizationId().toString())
-                                .item(AlarmUtils.TASK_JOB_ID_NAME, jobEntity.getId().toString())
-                                .item(AlarmUtils.MESSAGE_NAME,
-                                        MessageFormat.format("Job executor destroy failed, jobId={0}, message={1}",
-                                                lockedEntity.getId(), e.getMessage()))
-                                .build();
-                        AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTOR_DESTROY_FAILED, eventMessage);
+                        AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTOR_DESTROY_FAILED,
+                                MessageFormat.format("Job executor destroy failed, jobId={0}, message={1}",
+                                        lockedEntity.getId(), e.getMessage()));
                     }
                     throw new TaskRuntimeException(e);
                 }

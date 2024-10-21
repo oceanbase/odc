@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.task.schedule.daemon;
 
 import java.text.MessageFormat;
-import java.util.Map;
 
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
@@ -78,7 +77,6 @@ public class CheckRunningJob implements Job {
         log.info("Start to handle heartbeat timeout job, jobId={}.", jobEntity.getId());
         TaskFrameworkService taskFrameworkService = getConfiguration().getTaskFrameworkService();
         JobEntity a = taskFrameworkService.findWithPessimisticLock(jobEntity.getId());
-
         if (a.getStatus() != JobStatus.RUNNING) {
             log.warn("Current job is not RUNNING, abort continue, jobId={}.", a.getId());
             return;
@@ -111,13 +109,8 @@ public class CheckRunningJob implements Job {
                             "Heart timeout and set job to status FAILED.");
             if (rows > 0) {
                 log.info("Set job status to FAILED accomplished, jobId={}, oldStatus={}.", a.getId(), a.getStatus());
-                Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
-                        .item(AlarmUtils.ORGANIZATION_NAME, jobEntity.getOrganizationId().toString())
-                        .item(AlarmUtils.TASK_JOB_ID_NAME, jobEntity.getId().toString())
-                        .item(AlarmUtils.MESSAGE_NAME,
-                                MessageFormat.format("Job running failed due to heart timeout, jobId={0}", a.getId()))
-                        .build();
-                AlarmUtils.alarm(AlarmEventNames.TASK_HEARTBEAT_TIMEOUT, eventMessage);
+                AlarmUtils.alarm(AlarmEventNames.TASK_HEARTBEAT_TIMEOUT,
+                        MessageFormat.format("Job running failed due to heart timeout, jobId={0}", a.getId()));
             } else {
                 throw new TaskRuntimeException("Set job status to FAILED failed, jobId=" + jobEntity.getId());
             }
