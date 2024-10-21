@@ -24,11 +24,11 @@ public class MeterKey {
     MeterName meterName;
     Tags tags;
 
-    public static MeterKey ofMeter(MeterName meter) {
+    public static MeterKey ofMeter(DefaultMeterName meter) {
         return new MeterKey(meter, Tags.empty());
     }
 
-    public static MeterKey ofMeter(MeterName meter, Tag... tags) {
+    public static MeterKey ofMeter(DefaultMeterName meter, Tag... tags) {
         return new MeterKey(meter, Tags.of(tags));
     }
 
@@ -38,7 +38,7 @@ public class MeterKey {
 
         private Builder() {}
 
-        public static Builder ofMeter(MeterName meter) {
+        public static Builder ofMeter(DefaultMeterName meter) {
             Builder builder = new Builder();
             builder.meterName = meter;
             builder.tags = Tags.empty();

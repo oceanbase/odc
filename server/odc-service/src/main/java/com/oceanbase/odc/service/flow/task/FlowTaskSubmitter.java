@@ -43,10 +43,10 @@ import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.task.mapper.OdcRuntimeDelegateMapper;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
+import com.oceanbase.odc.service.monitor.DefaultMeterName;
 import com.oceanbase.odc.service.monitor.MeterKey;
 import com.oceanbase.odc.service.monitor.MeterKey.Builder;
 import com.oceanbase.odc.service.monitor.MeterManager;
-import com.oceanbase.odc.service.monitor.MeterName;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -200,32 +200,35 @@ public class FlowTaskSubmitter implements JavaDelegate {
 
     private void sendStartMetric(String taskId, String taskType, String organizationId) {
         meterManager.startTimerSample(taskId,
-                getUniqueTaskMeterKey(MeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
-        meterManager.incrementCounter(getTaskMeterKey(MeterName.FLOW_TASK_START_COUNT, taskType, organizationId));
+                getUniqueTaskMeterKey(DefaultMeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
+        meterManager
+                .incrementCounter(getTaskMeterKey(DefaultMeterName.FLOW_TASK_START_COUNT, taskType, organizationId));
 
     }
 
     private void sendEndMetric(String taskId, String taskType, String organizationId) {
-        meterManager.incrementCounter(getTaskMeterKey(MeterName.FLOW_TASK_SUCCESS_COUNT, taskType, organizationId));
+        meterManager
+                .incrementCounter(getTaskMeterKey(DefaultMeterName.FLOW_TASK_SUCCESS_COUNT, taskType, organizationId));
         meterManager
                 .recordTimerSample(taskId,
-                        getUniqueTaskMeterKey(MeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
+                        getUniqueTaskMeterKey(DefaultMeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
     }
 
     private void sendFailedMetric(String taskId, String taskType, String organizationId) {
-        meterManager.incrementCounter(getTaskMeterKey(MeterName.FLOW_TASK_FAILED_COUNT, taskType, organizationId));
+        meterManager
+                .incrementCounter(getTaskMeterKey(DefaultMeterName.FLOW_TASK_FAILED_COUNT, taskType, organizationId));
         meterManager
                 .recordTimerSample(taskId,
-                        getUniqueTaskMeterKey(MeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
+                        getUniqueTaskMeterKey(DefaultMeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
     }
 
-    public MeterKey getTaskMeterKey(MeterName meterName, String taskType, String organizationId) {
+    public MeterKey getTaskMeterKey(DefaultMeterName meterName, String taskType, String organizationId) {
         return Builder.ofMeter(meterName)
                 .addTag("taskType", taskType)
                 .addTag("organizationId", organizationId).build();
     }
 
-    public MeterKey getUniqueTaskMeterKey(MeterName meterName, String uniqueKey, String taskType,
+    public MeterKey getUniqueTaskMeterKey(DefaultMeterName meterName, String uniqueKey, String taskType,
             String organizationId) {
         return Builder.ofMeter(meterName)
                 .addTag("taskType", taskType)
