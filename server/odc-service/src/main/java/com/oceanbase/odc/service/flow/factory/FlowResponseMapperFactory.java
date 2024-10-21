@@ -73,6 +73,8 @@ import com.oceanbase.odc.metadb.regulation.risklevel.RiskLevelRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.metadb.task.TaskSpecs;
+import com.oceanbase.odc.service.collaboration.project.ProjectService;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -142,7 +144,8 @@ public class FlowResponseMapperFactory {
     @Autowired
     private AuthenticationFacade authenticationFacade;
     @Autowired
-    private ProjectRepository projectRepository;
+    private ProjectService projectService;
+
     private final ConnectionMapper connectionMapper = ConnectionMapper.INSTANCE;
 
     private final RiskLevelMapper riskLevelMapper = RiskLevelMapper.INSTANCE;
@@ -330,6 +333,7 @@ public class FlowResponseMapperFactory {
                 .filter(Objects::nonNull).collect(Collectors.toSet());
         Set<Long> sourceDatabaseIdsInComparisonTask = new HashSet<>();
         Set<Long> targetDatabaseIdsInComparisonTask = new HashSet<>();
+        Map<Long, Project> id2Project = new HashMap<>();
 
         taskId2TaskEntity.values().stream()
                 .filter(task -> task.getTaskType().equals(TaskType.STRUCTURE_COMPARISON))
@@ -344,27 +348,10 @@ public class FlowResponseMapperFactory {
         if (CollectionUtils.isNotEmpty(databaseIds)) {
             id2Database = databaseService.listDatabasesByIds(databaseIds).stream()
                     .collect(Collectors.toMap(Database::getId, database -> database));
-
-            // set project name for structure comparison task
-            Set<Long> projectIds = sourceDatabaseIdsInComparisonTask.stream()
-                    .map(id2Database::get)
-                    .filter(Objects::nonNull)
-                    .map(database -> database.getProject().getId())
-                    .collect(Collectors.toSet());
-            Map<Long, ProjectEntity> id2ProjectEntity = projectRepository.findByIdIn(projectIds).stream()
-                    .collect(Collectors.toMap(ProjectEntity::getId, Function.identity()));
-
-            for (Long id : sourceDatabaseIdsInComparisonTask) {
-                Database database = id2Database.get(id);
-                if (Objects.nonNull(database) && Objects.nonNull(database.getProject())) {
-                    Long projectId = database.getProject().getId();
-                    if (Objects.nonNull(projectId)) {
-                        ProjectEntity projectEntity = Optional.ofNullable(id2ProjectEntity.get(projectId)).orElseThrow(
-                                () -> new NotFoundException(ResourceType.ODC_PROJECT, "projectId", projectId));
-                        database.getProject().setName(projectEntity.getName());
-                    }
-                }
-            }
+            Set<Long> projectIds = id2Database.values().stream().map(db -> db.getProject().getId())
+                    .filter(Objects::nonNull).collect(Collectors.toSet());
+            id2Project = projectService.listByIds(projectIds).stream()
+                    .collect(Collectors.toMap(Project::getId, project -> project, (a, b) -> a));
         }
         /**
          * find the ConnectionConfig associated with each Database
@@ -417,7 +404,9 @@ public class FlowResponseMapperFactory {
                 .getRiskLevelByRiskLevelId(
                         id -> riskLevelRepository.findById(id).map(riskLevelMapper::entityToModel).orElse(null))
                 .getCandidatesByFlowInstanceId(candidatesByFlowInstanceIds::get)
-                .getDatabaseById(id2Database::get).build();
+                .getDatabaseById(id2Database::get)
+                .getProjectById(id2Project::get)
+                .build();
     }
 
     public Map<Long, List<RoleEntity>> getUserId2Roles(@NonNull Collection<Long> userIds, boolean skipAuth) {

@@ -323,6 +323,11 @@ public class ProjectService {
         });
     }
 
+    @SkipAuthorize("odc internal usage")
+    public List<Project> listByIds(@NotEmpty Set<Long> ids) {
+        return repository.findAllById(ids).stream().map(projectMapper::entityToModel).collect(Collectors.toList());
+    }
+
     private Page<ProjectEntity> innerList(@Valid QueryProjectParams params, @NotNull Pageable pageable,
             @NotNull Predicate<UserResourceRole> predicate) {
         List<UserResourceRole> userResourceRoles =
