@@ -47,6 +47,7 @@ import com.oceanbase.odc.service.monitor.DefaultMeterName;
 import com.oceanbase.odc.service.monitor.MeterKey;
 import com.oceanbase.odc.service.monitor.MeterKey.Builder;
 import com.oceanbase.odc.service.monitor.MeterManager;
+import com.oceanbase.odc.service.monitor.MeterName;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -222,13 +223,13 @@ public class FlowTaskSubmitter implements JavaDelegate {
                         getUniqueTaskMeterKey(DefaultMeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
     }
 
-    public MeterKey getTaskMeterKey(DefaultMeterName meterName, String taskType, String organizationId) {
+    public MeterKey getTaskMeterKey(MeterName meterName, String taskType, String organizationId) {
         return Builder.ofMeter(meterName)
                 .addTag("taskType", taskType)
                 .addTag("organizationId", organizationId).build();
     }
 
-    public MeterKey getUniqueTaskMeterKey(DefaultMeterName meterName, String uniqueKey, String taskType,
+    public MeterKey getUniqueTaskMeterKey(MeterName meterName, String uniqueKey, String taskType,
             String organizationId) {
         return Builder.ofMeter(meterName)
                 .addTag("taskType", taskType)

@@ -38,7 +38,7 @@ public class MeterKey {
 
         private Builder() {}
 
-        public static Builder ofMeter(DefaultMeterName meter) {
+        public static Builder ofMeter(MeterName meter) {
             Builder builder = new Builder();
             builder.meterName = meter;
             builder.tags = Tags.empty();
