@@ -55,6 +55,14 @@ public class JobRepositoryTest extends ServiceTestEnv {
         Assert.assertTrue(rows > 0);
     }
 
+    @Test
+    public void updateResultJson() {
+        JobEntity currentJob = createJobEntity();
+        String resultJson = "test";
+        int rows = jobRepository.updateResultJson(resultJson, currentJob.getId());
+        Assert.assertTrue(rows > 0);
+    }
+
     private JobEntity createJobEntity() {
         JobEntity entity = new JobEntity();
         entity.setJobClass(DatabaseChangeTask.class.getCanonicalName());
