@@ -26,7 +26,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
@@ -77,7 +76,6 @@ public class DBPLModifyHelper {
     public static final String OB_VERSION_SUPPORT_MULTIPLE_SAME_TRIGGERS = "4.2";
     public static final int OBTAIN_LOCK_TIME = 3;
     @Autowired
-    @Lazy
     private ConnectConsoleService connectConsoleService;
     @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
