@@ -147,6 +147,7 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
         index.setIndexOptions(getIndexOptions(ctx.index_using_algorithm(), ctx.opt_index_options()));
         index.setSpatial(ctx.SPATIAL() != null);
         index.setFullText(ctx.FULLTEXT() != null);
+        index.setVector(ctx.VECTOR() != null);
         if (ctx.partition_option() != null) {
             index.setPartition(new MySQLPartitionFactory(ctx.partition_option()).generate());
         } else if (ctx.auto_partition_option() != null) {

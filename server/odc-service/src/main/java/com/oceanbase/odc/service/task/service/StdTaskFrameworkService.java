@@ -368,6 +368,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         try {
             String executorEndpoint = executorEndpointManager.getExecutorEndpoint(je);
             DefaultTaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
+
             if (je.getRunMode().isK8s() && MapUtils.isEmpty(result.getLogMetadata())) {
                 log.info("Refresh log failed due to log have not uploaded,  jobId={}, currentStatus={}", je.getId(),
                         je.getStatus());
@@ -379,6 +380,10 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             } else if (StringUtils.equalsIgnoreCase("LogicalDatabaseChange", je.getJobType())) {
                 logicalDBChangeResultProcessor.process(result);
             }
+
+            // If the task is immediately stopped, its resultJson field would NOT be updated. So before changing
+            // the task status, update the task results first.
+            updateTaskResult(result, je);
             return true;
         } catch (Exception exception) {
             log.warn("Refresh log meta failed,errorMsg={}", exception.getMessage());
@@ -396,6 +401,10 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
         String executorEndpoint = executorEndpointManager.getExecutorEndpoint(je);
         DefaultTaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
+        if (result.getStatus() == JobStatus.PREPARING) {
+            log.info("Job is preparing, ignore refresh, jobId={}, currentStatus={}", id, result.getStatus());
+            return;
+        }
         DefaultTaskResult previous = JsonUtils.fromJson(je.getResultJson(), DefaultTaskResult.class);
 
         if (!updateHeartbeatTime(id)) {
