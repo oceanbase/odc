@@ -27,6 +27,7 @@ import com.oceanbase.odc.service.common.model.ResourceSql;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SidUtils;
+import com.oceanbase.odc.service.db.DBPLModifyHelper;
 import com.oceanbase.odc.service.db.DBPLService;
 import com.oceanbase.odc.service.db.model.CallFunctionReq;
 import com.oceanbase.odc.service.db.model.CallFunctionResp;
@@ -34,6 +35,8 @@ import com.oceanbase.odc.service.db.model.CallProcedureReq;
 import com.oceanbase.odc.service.db.model.CallProcedureResp;
 import com.oceanbase.odc.service.db.model.CompileResult;
 import com.oceanbase.odc.service.db.model.DBMSOutput;
+import com.oceanbase.odc.service.db.model.EditPLReq;
+import com.oceanbase.odc.service.db.model.EditPLResp;
 import com.oceanbase.odc.service.db.model.PLIdentity;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.state.model.StateName;
@@ -50,6 +53,8 @@ public class DBPLController {
     private DBPLService plService;
     @Autowired
     private ConnectSessionService sessionService;
+    @Autowired
+    private DBPLModifyHelper dBPLmodifyHelper;
 
     @ApiOperation(value = "compile", notes = "compile a pl object")
     @RequestMapping(value = "/compile/{sid}", method = RequestMethod.POST)
@@ -108,6 +113,14 @@ public class DBPLController {
         DBPLObjectIdentity identity = this.plService.parsePLNameType(
                 this.sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), ddl.getSql());
         return Responses.ok(PLIdentity.of(identity.getType(), identity.getName()));
+    }
+
+    @ApiOperation(value = "editPL", notes = "edit DDL of a pl object")
+    @RequestMapping(value = "/editPL/{sid}", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
+    public SuccessResponse<EditPLResp> editPL(@PathVariable String sid, @RequestBody EditPLReq editPLReq)
+            throws Exception {
+        return Responses.ok(this.dBPLmodifyHelper.editPL(SidUtils.getSessionId(sid), editPLReq));
     }
 
 }
