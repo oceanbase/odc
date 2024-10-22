@@ -389,8 +389,9 @@ public class DBPLService {
     private Long getDatabaseIdByConnectionSession(@NonNull ConnectionSession session) {
         ConnectionConfig connConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
         String schemaName = ConnectionSessionUtil.getCurrentSchema(session);
-        DatabaseEntity databaseEntity = databaseRepository.findByConnectionIdAndName(connConfig.getId(), schemaName)
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "name", schemaName));
+        DatabaseEntity databaseEntity =
+                databaseRepository.findByConnectionIdAndNameAndExisted(connConfig.getId(), schemaName, true)
+                        .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "name", schemaName));
         return databaseEntity.getId();
     }
 
