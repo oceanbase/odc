@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.task;
 
 import java.util.Map;
 
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 
@@ -62,7 +63,7 @@ public interface Task<RESULT> {
      * 
      * @return {@link JobStatus}
      */
-    JobStatus getStatus();
+    TaskStatus getStatus();
 
     /**
      * Get task result
