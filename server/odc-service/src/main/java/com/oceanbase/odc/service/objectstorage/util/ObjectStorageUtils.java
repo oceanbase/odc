@@ -24,10 +24,10 @@ import java.util.List;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.flow.task.model.SizeAwareInputStream;
+import com.oceanbase.odc.service.objectstorage.ObjectStorageHandler;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.objectstorage.model.StorageObject;
-import com.oceanbase.odc.service.task.executor.server.ObjectStorageHandler;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;

@@ -32,7 +32,7 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execut
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionResultWrapper;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalDBChangeExecutionUnit;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
-import com.oceanbase.odc.service.task.executor.task.TaskResult;
+import com.oceanbase.odc.service.task.executor.TaskResult;
 
 import lombok.extern.slf4j.Slf4j;
 

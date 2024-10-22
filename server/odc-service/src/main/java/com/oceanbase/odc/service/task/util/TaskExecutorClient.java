@@ -28,8 +28,7 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.schedule.ScheduleLogProperties;
 import com.oceanbase.odc.service.task.constants.JobExecutorUrls;
 import com.oceanbase.odc.service.task.exception.JobException;
-import com.oceanbase.odc.service.task.executor.server.ExecutorRequestHandler;
-import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
+import com.oceanbase.odc.service.task.executor.DefaultTaskResult;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
@@ -38,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * task-executor api calling encapsulation <br>
- * see @{@link JobExecutorUrls} @{@link ExecutorRequestHandler}
+ * see @{@link JobExecutorUrls}
  */
 @Slf4j
 @Component

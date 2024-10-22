@@ -78,6 +78,7 @@ public class JobEntity implements Serializable {
     @Column(name = "execution_times", nullable = false)
     private Integer executionTimes;
 
+    // can parse to resource id
     @Column(name = "executor_identifier")
     private String executorIdentifier;
 
@@ -125,5 +126,4 @@ public class JobEntity implements Serializable {
     @Generated(GenerationTime.ALWAYS)
     @Column(name = "update_time", insertable = false, updatable = false)
     private Date updateTime;
-
 }
