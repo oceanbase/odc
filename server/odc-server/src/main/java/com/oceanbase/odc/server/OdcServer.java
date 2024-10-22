@@ -46,6 +46,7 @@ import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.authority.interceptor.MethodAuthorizedPostProcessor;
 import com.oceanbase.odc.migrate.AbstractMetaDBMigrate;
+import com.oceanbase.odc.service.common.ConditionOnServer;
 import com.oceanbase.odc.service.config.SystemConfigBootstrap;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
@@ -125,6 +126,7 @@ public class OdcServer {
 
     @Profile({"!clientMode"})
     @Bean
+    @ConditionOnServer
     public MethodAuthorizedPostProcessor authorizedMethodProcessor(ApplicationContext applicationContext) {
         return new MethodAuthorizedPostProcessor(applicationContext);
     }
