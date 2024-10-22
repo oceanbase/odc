@@ -15,10 +15,8 @@
  */
 package com.oceanbase.odc.service.db;
 
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
@@ -30,32 +28,23 @@ import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
-import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
-import com.oceanbase.odc.core.shared.constant.LimitMetric;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
-import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
-import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
-import com.oceanbase.odc.core.sql.split.OffsetString;
-import com.oceanbase.odc.service.common.util.SqlUtils;
+import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.model.EditPLReq;
 import com.oceanbase.odc.service.db.model.EditPLResp;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
-import com.oceanbase.odc.service.session.SessionProperties;
-import com.oceanbase.odc.service.session.interceptor.SqlCheckInterceptor;
-import com.oceanbase.odc.service.session.interceptor.SqlConsoleInterceptor;
-import com.oceanbase.odc.service.session.interceptor.SqlExecuteInterceptorService;
-import com.oceanbase.odc.service.session.model.AsyncExecuteContext;
+import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.session.model.AsyncExecuteResultResp;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
+import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.NonNull;
@@ -80,61 +69,78 @@ public class DBPLModifyHelper {
     @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
     @Autowired
-    private SessionProperties sessionProperties;
-    @Autowired
-    private SqlExecuteInterceptorService sqlInterceptService;
+    private ConnectSessionService sessionService;
 
-    public EditPLResp editPL(@NotNull ConnectionSession connectionSession, @NotNull @Valid EditPLReq editPLReq,
-            boolean needSqlRuleCheck)
-            throws InterruptedException {
-        long maxSqlLength = sessionProperties.getMaxSqlLength();
-        if (maxSqlLength > 0) {
-            PreConditions.lessThanOrEqualTo("sqlLength", LimitMetric.SQL_LENGTH,
-                    StringUtils.length(editPLReq.getSql()), maxSqlLength);
-        }
-        EditPLResp editPLResp = adaptSqlIntercept(editPLReq, connectionSession, needSqlRuleCheck);
-        if (editPLResp.isShouldIntercepted()) {
-            return editPLResp;
-        }
+    public EditPLResp editPL(@NotNull String sessionId, @NotNull @Valid EditPLReq editPLReq)
+            throws Exception {
         DBObjectType plType = editPLReq.getPlType();
         switch (plType) {
             case PROCEDURE:
-                return executeWrappedEditPL(connectionSession, editPLReq, editPLResp, DBObjectType.PROCEDURE);
-            case TRIGGER:
-                return executeWrappedEditPL(connectionSession, editPLReq, editPLResp, DBObjectType.TRIGGER);
+                return executeWrappedEditPL(sessionId, editPLReq, DBObjectType.PROCEDURE, ODC_TEMPORARY_PROCEDURE);
             case FUNCTION:
-                if (VersionUtils.isLessThan(ConnectionSessionUtil.getVersion(connectionSession),
+                return executeWrappedEditPL(sessionId, editPLReq, DBObjectType.FUNCTION, ODC_TEMPORARY_FUNCTION);
+            case TRIGGER:
+                if (VersionUtils.isLessThan(
+                        ConnectionSessionUtil.getVersion(sessionService.nullSafeGet(sessionId, true)),
                         OB_VERSION_SUPPORT_MULTIPLE_SAME_TRIGGERS)) {
                     throw new BadRequestException(
                             "editing trigger in mysql mode is not supported in ob version less than "
                                     + OB_VERSION_SUPPORT_MULTIPLE_SAME_TRIGGERS);
                 }
-                return executeWrappedEditPL(connectionSession, editPLReq, editPLResp, DBObjectType.FUNCTION);
+                return executeWrappedEditPL(sessionId, editPLReq, DBObjectType.TRIGGER, ODC_TEMPORARY_TRIGGER);
             default:
                 throw new IllegalArgumentException(
                         String.format("the pl type %s of editing procedure is not supported", plType));
         }
     }
 
-    private EditPLResp executeWrappedEditPL(ConnectionSession connectionSession, EditPLReq editPLReq,
-            EditPLResp editPLResp,
-            DBObjectType plType) throws InterruptedException {
+    private EditPLResp executeWrappedEditPL(String sessionId, EditPLReq editPLReq,
+            DBObjectType plType, String tempPlName) throws Exception {
         String plName = editPLReq.getPlName();
         String editPLSql = editPLReq.getSql();
-        String tempPLSql = editPLSql.replaceFirst(plName, ODC_TEMPORARY_PROCEDURE);
-        SyncJdbcExecutor syncJdbcExecutor = connectionSession.getSyncJdbcExecutor(
-                ConnectionSessionConstants.CONSOLE_DS_KEY);
+        String tempPLSql = editPLSql.replaceFirst(plName, tempPlName);
+        StringBuilder wrappedSqlBuilder = new StringBuilder();
+        wrappedSqlBuilder.append("DELIMITER $$\n")
+                .append(tempPLSql).append(" $$\n")
+                .append("drop ").append(plType).append(" if exists ").append(tempPlName).append(" $$\n")
+                .append("drop ").append(plType).append(" if exists ").append(plName).append(" $$\n")
+                .append(editPLSql).append(" $$\n")
+                .append("DELIMITER ;");
+        String wrappedSql = wrappedSqlBuilder.toString();
+        SqlAsyncExecuteReq sqlAsyncExecuteReq = new SqlAsyncExecuteReq();
+        sqlAsyncExecuteReq.setSql(wrappedSql);
+        sqlAsyncExecuteReq.setSplit(true);
+        sqlAsyncExecuteReq.setContinueExecutionOnError(false);
+        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
         Lock editPLLock = obtainEditPLLock(connectionSession, plType);
         if (!editPLLock.tryLock(OBTAIN_LOCK_TIME, TimeUnit.SECONDS)) {
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
         }
         try {
-            syncJdbcExecutor.execute(tempPLSql);
-            String dropTempPLSql = "drop " + plType + " if exists " + ODC_TEMPORARY_PROCEDURE;
-            syncJdbcExecutor.execute(dropTempPLSql);
-            String dropPLSql = "drop " + plType + " if exists " + plName;
-            syncJdbcExecutor.execute(dropPLSql);
-            syncJdbcExecutor.execute(editPLSql);
+            SqlAsyncExecuteResp sqlAsyncExecuteResp = connectConsoleService.streamExecute(sessionId, sqlAsyncExecuteReq,
+                    true);
+            EditPLResp editPLResp = new EditPLResp();
+            editPLResp.setWrappedSql(wrappedSql);
+            editPLResp.setSqls(sqlAsyncExecuteResp.getSqls());
+            editPLResp.setUnauthorizedDBResources(sqlAsyncExecuteResp.getUnauthorizedDBResources());
+            editPLResp.setViolatedRules(sqlAsyncExecuteResp.getViolatedRules());
+            if (sqlAsyncExecuteResp.getRequestId() == null) {
+                editPLResp.setShouldIntercepted(true);
+                return editPLResp;
+            }
+            AsyncExecuteResultResp moreResults;
+            List<SqlExecuteResult> results = new ArrayList<>();
+            do {
+                moreResults = connectConsoleService.getMoreResults(sessionId,
+                        sqlAsyncExecuteResp.getRequestId());
+                results.addAll(moreResults.getResults());
+            } while (!moreResults.isFinished());
+            for (SqlExecuteResult result : results) {
+                if (result.getStatus() != SqlExecuteStatus.SUCCESS) {
+                    editPLResp.setFailMessage(result.getTrack());
+                    return editPLResp;
+                }
+            }
             return editPLResp;
         } finally {
             editPLLock.unlock();
@@ -157,36 +163,5 @@ public class DBPLModifyHelper {
                         String.format("Unsupported pl type %s for dataSourceId %d", plType, dataSourceId));
         }
         return jdbcLockRegistry.obtain(lockKeyString);
-    }
-
-    private EditPLResp adaptSqlIntercept(@NotNull EditPLReq editPLReq, @NotNull ConnectionSession connectionSession,
-            boolean needSqlRuleCheck) {
-        SqlAsyncExecuteReq sqlAsyncExecuteReq = new SqlAsyncExecuteReq();
-        sqlAsyncExecuteReq.setSql(editPLReq.getSql());
-        sqlAsyncExecuteReq.setSplit(false);
-        List<OffsetString> sqls = sqlAsyncExecuteReq.ifSplitSqls()
-                ? SqlUtils.splitWithOffset(connectionSession, sqlAsyncExecuteReq.getSql(),
-                        sessionProperties.isOracleRemoveCommentPrefix())
-                : Collections.singletonList(new OffsetString(0, sqlAsyncExecuteReq.getSql()));
-        List<SqlTuple> sqlTuples = connectConsoleService.generateSqlTuple(sqls, connectionSession, sqlAsyncExecuteReq);
-        SqlAsyncExecuteResp response = SqlAsyncExecuteResp.newSqlAsyncExecuteResp(sqlTuples);
-        Map<String, Object> context = new HashMap<>();
-        context.put(SqlCheckInterceptor.NEED_SQL_CHECK_KEY, needSqlRuleCheck);
-        context.put(SqlConsoleInterceptor.NEED_SQL_CONSOLE_CHECK, needSqlRuleCheck);
-        AsyncExecuteContext executeContext = new AsyncExecuteContext(sqlTuples, context);
-        EditPLResp editPLResp = new EditPLResp();
-        try {
-            boolean shouldIntercepted =
-                    !sqlInterceptService.preHandle(sqlAsyncExecuteReq, response, connectionSession, executeContext);
-            editPLResp.setViolatedRules(response.getViolatedRules());
-            editPLResp.setSqls(response.getSqls());
-            editPLResp.setUnauthorizedDBResources(response.getUnauthorizedDBResources());
-            if (shouldIntercepted) {
-                editPLResp.setShouldIntercepted(true);
-            }
-        } catch (Exception e) {
-            // eat exception
-        }
-        return editPLResp;
     }
 }

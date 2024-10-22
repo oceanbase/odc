@@ -31,8 +31,16 @@ import lombok.Data;
  */
 @Data
 public class EditPLResp {
+    // if pre-check is not successful ,sql confirmation window needs to display wrapped Sql instead of
+    // the original sql.Because what really executes is wrapped Sql
+    private String WrappedSql;
+    // if shouldIntercepted is true，it indicates sql pre-check does not pass. sql confirmation window
+    // needs to be opened
     private boolean shouldIntercepted;
     private List<Rule> violatedRules;
     private List<SqlTuplesWithViolation> sqls;
     private List<UnauthorizedDBResource> unauthorizedDBResources;
+    // if none, the modification succeeded.If not none, the modification failed.it indicates the error
+    // message
+    private String failMessage;
 }

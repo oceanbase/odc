@@ -119,9 +119,8 @@ public class DBPLController {
     @RequestMapping(value = "/editPL/{sid}", method = RequestMethod.POST)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public SuccessResponse<EditPLResp> editPL(@PathVariable String sid, @RequestBody EditPLReq editPLReq)
-            throws InterruptedException {
-        return Responses.ok(this.dBPLmodifyHelper.editPL(
-                this.sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), editPLReq, true));
+            throws Exception {
+        return Responses.ok(this.dBPLmodifyHelper.editPL(SidUtils.getSessionId(sid), editPLReq));
     }
 
 }

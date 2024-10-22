@@ -16,13 +16,17 @@
 package com.oceanbase.odc.service.db;
 
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.jdbc.BadSqlGrammarException;
 
 import com.oceanbase.odc.ServiceTestEnv;
@@ -32,10 +36,13 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
+import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.db.model.EditPLReq;
 import com.oceanbase.odc.service.db.model.EditPLResp;
+import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 /**
@@ -49,6 +56,9 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
     private static final String ODC_TEST_FUNCTION = "ODC_TEST_FUNCTION";
     private static final String ODC_TEST_TRIGGER = "ODC_TEST_TRIGGER";
     private static final String ODC_TEST_TRIGGER_TABLE = "ODC_TEST_TRIGGER_TABLE";
+
+    @MockBean
+    private ConnectSessionService sessionService;
 
     @Autowired
     private DBPLModifyHelper dbplModifyHelper;
@@ -109,6 +119,16 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
         executeDropPLSql(DBObjectType.TABLE, ODC_TEST_TRIGGER_TABLE);
     }
 
+    @Before
+    public void mock() {
+        ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        SqlCommentProcessor sqlCommentProcessor = new SqlCommentProcessor(DialectType.OB_MYSQL, true, true, true);
+        testConnectionSession.setAttribute(ConnectionSessionConstants.SQL_COMMENT_PROCESSOR_KEY, sqlCommentProcessor);
+        String sessionId = testConnectionSession.getId();
+        Mockito.when(sessionService.nullSafeGet(sessionId, true)).thenReturn(testConnectionSession);
+        Mockito.when(sessionService.nullSafeGet(sessionId)).thenReturn(testConnectionSession);
+    }
+
     @Test
     public void editProcedureForOBMysql_normal_successResult() throws Exception {
         ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
@@ -119,7 +139,8 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
         EditPLResp editPLResp = executeEditPL(testConnectionSession, editTestProcedure, ODC_TEST_PROCEDURE,
                 DBObjectType.PROCEDURE);
         assertNotNull(editPLResp);
-        Assert.assertFalse(editPLResp.isShouldIntercepted());
+        assertFalse(editPLResp.isShouldIntercepted());
+        assertNull(editPLResp.getFailMessage());
     }
 
 
@@ -138,33 +159,27 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
                 + "BEGIN\n"
                 + "    SET square1 = num1 * num1;\n"
                 + "END";
-        assertThrows(BadSqlGrammarException.class,
-                () -> executeEditPL(testConnectionSession, editTestProcedure, ODC_TEST_PROCEDURE,
-                        DBObjectType.PROCEDURE));
+        EditPLResp editPLResp = executeEditPL(testConnectionSession, editTestProcedure, ODC_TEST_PROCEDURE,
+                DBObjectType.PROCEDURE);
+        assertNotNull(editPLResp);
+        assertFalse(editPLResp.isShouldIntercepted());
+        assertNotNull(editPLResp.getFailMessage());
         executeDropPLSql(DBObjectType.PROCEDURE, DBPLModifyHelper.ODC_TEMPORARY_PROCEDURE);
     }
 
     @Test
     public void editFunctionForOBMysql_normal_successResult() throws Exception {
         ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
-        SyncJdbcExecutor syncJdbcExecutor = testConnectionSession.getSyncJdbcExecutor(
-                ConnectionSessionConstants.CONSOLE_DS_KEY);
         String editTestFunction = "CREATE FUNCTION " + ODC_TEST_FUNCTION + "(num1 INT) \n"
                 + "RETURNS INT\n"
                 + "BEGIN\n"
                 + "    RETURN num1 * num1 * num1;\n"
                 + "END";
-        if (VersionUtils.isLessThan(ConnectionSessionUtil.getVersion(testConnectionSession),
-                DBPLModifyHelper.OB_VERSION_SUPPORT_MULTIPLE_SAME_TRIGGERS)) {
-            assertThrows(BadRequestException.class,
-                    () -> executeEditPL(testConnectionSession, editTestFunction, ODC_TEST_FUNCTION,
-                            DBObjectType.FUNCTION));
-        } else {
-            EditPLResp editPLResp = executeEditPL(testConnectionSession, editTestFunction, ODC_TEST_FUNCTION,
-                    DBObjectType.FUNCTION);
-            assertNotNull(editPLResp);
-            Assert.assertFalse(editPLResp.isShouldIntercepted());
-        }
+        EditPLResp editPLResp = executeEditPL(testConnectionSession, editTestFunction, ODC_TEST_FUNCTION,
+                DBObjectType.FUNCTION);
+        assertNotNull(editPLResp);
+        assertFalse(editPLResp.isShouldIntercepted());
+        assertNull(editPLResp.getFailMessage());
     }
 
     @Test
@@ -184,83 +199,81 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
                 + "BEGIN\n"
                 + "    RETURN num1 * num1 * num1;\n"
                 + "END";
-        if (VersionUtils.isLessThan(ConnectionSessionUtil.getVersion(testConnectionSession),
-                DBPLModifyHelper.OB_VERSION_SUPPORT_MULTIPLE_SAME_TRIGGERS)) {
-            assertThrows(BadRequestException.class,
-                    () -> executeEditPL(testConnectionSession, editTestFunction, ODC_TEST_FUNCTION,
-                            DBObjectType.FUNCTION));
-        } else {
-            assertThrows(BadSqlGrammarException.class,
-                    () -> executeEditPL(testConnectionSession, editTestFunction, ODC_TEST_FUNCTION,
-                            DBObjectType.FUNCTION));
-        }
+        EditPLResp editPLResp = executeEditPL(testConnectionSession, editTestFunction, ODC_TEST_FUNCTION,
+                DBObjectType.FUNCTION);
+        assertNotNull(editPLResp);
+        assertFalse(editPLResp.isShouldIntercepted());
+        assertNotNull(editPLResp.getFailMessage());
         executeDropPLSql(DBObjectType.FUNCTION, DBPLModifyHelper.ODC_TEMPORARY_FUNCTION);
     }
 
     @Test
     public void editTriggerForOBMysql_normal_successResult() throws Exception {
         ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
-        if (VersionUtils.isLessThan(ConnectionSessionUtil.getVersion(testConnectionSession),
-                DBPLModifyHelper.OB_VERSION_SUPPORT_MULTIPLE_SAME_TRIGGERS)) {
-            return;
-        }
-        SyncJdbcExecutor syncJdbcExecutor = testConnectionSession.getSyncJdbcExecutor(
-                ConnectionSessionConstants.CONSOLE_DS_KEY);
         String editTestTrigger = "CREATE TRIGGER " + ODC_TEST_TRIGGER + "\n"
                 + "BEFORE INSERT ON " + ODC_TEST_TRIGGER_TABLE + "\n"
                 + "FOR EACH ROW\n"
                 + "BEGIN\n"
                 + "    SET NEW.value = NEW.value * 2;\n"
                 + "END";
-
-        EditPLResp editPLResp = executeEditPL(testConnectionSession, editTestTrigger, ODC_TEST_TRIGGER,
-                DBObjectType.TRIGGER);
-        assertNotNull(editPLResp);
-        Assert.assertFalse(editPLResp.isShouldIntercepted());
+        if (VersionUtils.isLessThan(ConnectionSessionUtil.getVersion(testConnectionSession),
+                DBPLModifyHelper.OB_VERSION_SUPPORT_MULTIPLE_SAME_TRIGGERS)) {
+            assertThrows(BadRequestException.class,
+                    () -> executeEditPL(testConnectionSession, editTestTrigger, ODC_TEST_TRIGGER,
+                            DBObjectType.TRIGGER));
+        } else {
+            EditPLResp editPLResp = executeEditPL(testConnectionSession, editTestTrigger, ODC_TEST_TRIGGER,
+                    DBObjectType.TRIGGER);
+            assertNotNull(editPLResp);
+            assertFalse(editPLResp.isShouldIntercepted());
+            assertNull(editPLResp.getFailMessage());
+        }
     }
 
     @Test
     public void editTriggerForOBMysql_odcTempTriggerHaveExisted_failResult() throws Exception {
         ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
-        if (VersionUtils.isLessThanOrEqualsTo(ConnectionSessionUtil.getVersion(testConnectionSession), "4.2")) {
-            return;
-        }
         SyncJdbcExecutor syncJdbcExecutor = testConnectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY);
-        String dropTestTrigger =
-                "DROP TRIGGER IF EXISTS " + DBPLModifyHelper.ODC_TEMPORARY_TRIGGER;
-        syncJdbcExecutor.execute(dropTestTrigger);
         String createODCTempTrigger =
-                "CREATE TRIGGER " + DBPLModifyHelper.ODC_TEMPORARY_TRIGGER
-                        + "BEFORE INSERT ON " + ODC_TEST_TRIGGER_TABLE + "\n"
+                "CREATE TRIGGER " + DBPLModifyHelper.ODC_TEMPORARY_TRIGGER + "\n"
+                        + "BEFORE UPDATE ON " + ODC_TEST_TRIGGER_TABLE + "\n"
                         + "FOR EACH ROW\n"
                         + "BEGIN\n"
-                        + "    SET NEW.value = NEW.value * 1;\n"
+                        + "    SET NEW.value = NEW.value * 2;\n"
                         + "END";
         syncJdbcExecutor.execute(createODCTempTrigger);
         String editTestTrigger =
-                "CREATE TRIGGER " + DBPLModifyHelper.ODC_TEMPORARY_TRIGGER + "\n"
+                "CREATE TRIGGER " + ODC_TEST_TRIGGER + "\n"
                         + "BEFORE INSERT ON " + ODC_TEST_TRIGGER_TABLE + "\n"
                         + "FOR EACH ROW\n"
                         + "BEGIN\n"
                         + "    SET NEW.value = NEW.value * 2;\n"
                         + "END";
 
-        assertThrows(BadSqlGrammarException.class,
-                () -> executeEditPL(testConnectionSession, editTestTrigger, ODC_TEST_TRIGGER,
-                        DBObjectType.TRIGGER));
+        if (VersionUtils.isLessThan(ConnectionSessionUtil.getVersion(testConnectionSession),
+                DBPLModifyHelper.OB_VERSION_SUPPORT_MULTIPLE_SAME_TRIGGERS)) {
+            assertThrows(BadRequestException.class,
+                    () -> executeEditPL(testConnectionSession, editTestTrigger, ODC_TEST_TRIGGER,
+                            DBObjectType.TRIGGER));
+        } else {
+            assertThrows(BadSqlGrammarException.class,
+                    () -> executeEditPL(testConnectionSession, editTestTrigger, ODC_TEST_TRIGGER,
+                            DBObjectType.TRIGGER));
+        }
         executeDropPLSql(DBObjectType.TRIGGER, DBPLModifyHelper.ODC_TEMPORARY_TRIGGER);
+        executeDropPLSql(DBObjectType.TABLE, ODC_TEST_TRIGGER_TABLE);
     }
 
 
     private EditPLResp executeEditPL(ConnectionSession testConnectionSession, String editTestPL, String plName,
             DBObjectType plType)
-            throws InterruptedException {
+            throws Exception {
         EditPLReq editPLReq = new EditPLReq();
         editPLReq.setSql(editTestPL);
         editPLReq.setPlType(plType);
         editPLReq.setPlName(plName);
-        return dbplModifyHelper.editPL(testConnectionSession, editPLReq, false);
+        return dbplModifyHelper.editPL(testConnectionSession.getId(), editPLReq);
     }
 
     private static void executeDropPLSql(DBObjectType plType, String plName) {
