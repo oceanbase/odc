@@ -407,8 +407,8 @@ public class FlowInstanceService {
     }
 
     public Page<FlowInstanceEntity> listAll(@NotNull Pageable pageable, @NotNull QueryFlowInstanceParams params) {
-        if (Objects.nonNull(params.getProjectId())) {
-            projectPermissionValidator.checkProjectRole(params.getProjectId(), ResourceRoleName.all());
+        if (Objects.nonNull(params.getProjectIds())) {
+            projectPermissionValidator.checkProjectRole(params.getProjectIds(), ResourceRoleName.all());
         }
         if (params.getParentInstanceId() != null) {
             // TODO 4.1.3 自动运行模块改造完成后剥离
@@ -432,9 +432,8 @@ public class FlowInstanceService {
             Specification<FlowInstanceEntity> specification =
                     Specification.where(FlowInstanceSpecs.idIn(flowInstanceIds))
                             .and(FlowInstanceSpecs.organizationIdEquals(authenticationFacade.currentOrganizationId()));
-            // TODO Remove the checker after the SQL console development is completed
-            if (params.getProjectId() != null) {
-                specification = specification.and(FlowInstanceSpecs.projectIdEquals(params.getProjectId()));
+            if (CollectionUtils.isNotEmpty(params.getProjectIds())) {
+                specification = specification.and(FlowInstanceSpecs.projectIdIn(params.getProjectIds()));
             }
             return flowInstanceRepository.findAll(specification, pageable);
         }
@@ -482,75 +481,31 @@ public class FlowInstanceService {
             specification = specification.and(FlowInstanceViewSpecs.taskTypeIn(types));
         }
 
-        Set<String> resourceRoleIdentifiers = userService.getCurrentUserResourceRoleIdentifiers();
+        if (CollectionUtils.isNotEmpty(params.getProjectIds())) {
+            specification = specification.and(FlowInstanceViewSpecs.projectIdIn(params.getProjectIds()));
+        } else {
+            specification =
+                    specification.and(FlowInstanceViewSpecs.projectIdIn(userService.getCurrentUserJoinedProjectIds()));
+        }
+
         if (params.getContainsAll()) {
-            // does not join any project
-            if (CollectionUtils.isEmpty(resourceRoleIdentifiers)) {
-                specification =
-                        specification.and(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId()));
-                return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
-            }
-            // find by project id
-            if (Objects.nonNull(params.getProjectId())) {
-                specification = specification.and(FlowInstanceViewSpecs.projectIdEquals(params.getProjectId()));
-                // if other project roles, show current user's created, waiting for approval and approved/rejected
-                // tickets
-                if (!projectPermissionValidator.hasProjectRole(params.getProjectId(),
-                        Collections.singletonList(ResourceRoleName.OWNER))) {
-                    specification = specification.and(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(
-                            resourceRoleIdentifiers, authenticationFacade.currentUserId(),
-                            FlowNodeStatus.getExecutingAndFinalStatuses()));
-                }
-                // if project owner, show all tickets of the project
-            } else {
-                // find tickets related to all projects that the current user joins in
-                Map<Long, Set<ResourceRoleName>> currentUserProjectId2ResourceRoleNames =
-                        resourceRoleService.getProjectId2ResourceRoleNames();
-                Set<Long> ownerProjectIds = currentUserProjectId2ResourceRoleNames.entrySet().stream()
-                        .filter(entry -> entry.getValue().contains(ResourceRoleName.OWNER))
-                        .map(Entry::getKey)
-                        .collect(Collectors.toSet());
-                Set<Long> otherRoleProjectIds = new HashSet<>(currentUserProjectId2ResourceRoleNames.keySet());
-                otherRoleProjectIds.removeAll(ownerProjectIds);
-
-
-                Specification<FlowInstanceViewEntity> ownerSpecification =
-                        Specification.where(FlowInstanceViewSpecs.projectIdIn(ownerProjectIds));
-
-                Specification<FlowInstanceViewEntity> otherRoleSpecification =
-                        Specification.where(FlowInstanceViewSpecs.projectIdIn(otherRoleProjectIds))
-                                .and(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(
-                                        resourceRoleIdentifiers, authenticationFacade.currentUserId(),
-                                        FlowNodeStatus.getExecutingAndFinalStatuses()));
-
-                if (CollectionUtils.isEmpty(ownerProjectIds)) {
-                    specification = specification.and(otherRoleSpecification);
-                } else if (CollectionUtils.isEmpty(otherRoleProjectIds)) {
-                    specification = specification.and(ownerSpecification);
-                } else {
-                    specification = specification.and(ownerSpecification.or(otherRoleSpecification));
-                }
-            }
             return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
         }
-        if (!params.getApproveByCurrentUser() && params.getCreatedByCurrentUser()) {
+        if (params.getCreatedByCurrentUser()) {
             // created by current user
-            specification = specification.and(FlowInstanceViewSpecs.projectIdEquals(params.getProjectId()))
-                    .and(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId()));
-            return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
-        } else if (params.getApproveByCurrentUser() && !params.getCreatedByCurrentUser()) {
+            specification =
+                specification.and(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId()));
+        }
+        if (params.getApproveByCurrentUser()) {
+            Set<String> resourceRoleIdentifiers = userService.getCurrentUserResourceRoleIdentifiers();
+            // does not join any project, so there does not exist any tickets to approve
             if (CollectionUtils.isEmpty(resourceRoleIdentifiers)) {
                 return Page.empty();
             }
-            // approving by current user
-            specification =
-                    specification.and(FlowInstanceViewSpecs.projectIdEquals(params.getProjectId()))
-                            .and(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(
-                                    resourceRoleIdentifiers, null, FlowNodeStatus.getExecutingStatuses()));
-            return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
-        } else {
-            throw new UnsupportedOperationException("Unsupported list flow instance query");
+            specification = specification.and(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(
+                            resourceRoleIdentifiers, null, FlowNodeStatus.getExecutingStatuses()));
         }
+        return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
     }
 
     public List<FlowInstanceEntity> listByIds(@NonNull Collection<Long> ids) {
@@ -569,11 +524,6 @@ public class FlowInstanceService {
     public FlowInstanceDetailResp cancel(@NotNull Long id, Boolean skipAuth) {
         FlowInstance flowInstance = mapFlowInstance(id, flowInst -> flowInst, skipAuth);
         return cancel(flowInstance, skipAuth);
-    }
-
-    public FlowInstanceDetailResp cancelNotCheckPermission(@NotNull Long id) {
-        FlowInstance flowInstance = mapFlowInstance(id, flowInst -> flowInst, false);
-        return cancel(flowInstance, false);
     }
 
     public Map<Long, FlowStatus> getStatus(Set<Long> ids) {

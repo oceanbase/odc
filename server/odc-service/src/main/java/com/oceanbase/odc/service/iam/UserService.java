@@ -81,6 +81,7 @@ import com.oceanbase.odc.core.shared.constant.UserType;
 import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.iam.LastSuccessLoginHistory;
@@ -470,6 +471,10 @@ public class UserService {
         long currentUserId = authenticationFacade.currentUserId();
         long currentOrganizationId = authenticationFacade.currentOrganizationId();
         return resourceRoleService.getResourceRoleIdentifiersByUserId(currentOrganizationId, currentUserId);
+    }
+
+    public Set<Long> getCurrentUserJoinedProjectIds() {
+        throw new NotImplementedException();
     }
 
     private void acquirePermissions(@NonNull Collection<User> users) {
