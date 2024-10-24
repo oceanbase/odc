@@ -24,7 +24,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.dlm.DLMService;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
-import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 
 import lombok.extern.slf4j.Slf4j;
@@ -41,9 +40,6 @@ public class DLMResultProcessor implements ResultProcessor {
 
     @Autowired
     private DLMService dlmService;
-
-    @Autowired
-    private ScheduleTaskService taskService;
 
     @Override
     public void process(TaskResult result) {

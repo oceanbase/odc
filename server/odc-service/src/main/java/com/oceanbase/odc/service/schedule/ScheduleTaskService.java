@@ -265,6 +265,10 @@ public class ScheduleTaskService {
         scheduleTaskRepository.update(entity);
     }
 
+    public void updateResultJson(Long id, String resultJson) {
+        scheduleTaskRepository.updateTaskResult(id, resultJson);
+    }
+
 
     public Page<ScheduleTask> list(Pageable pageable, Long scheduleId) {
         return listEntity(pageable, scheduleId).map(scheduleTaskMapper::entityToModel);

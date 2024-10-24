@@ -20,10 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.event.AbstractEventListener;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
-import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
@@ -42,8 +40,6 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
     @Autowired
     private ScheduleTaskService scheduleTaskService;
     @Autowired
-    private TaskService taskService;
-    @Autowired
     private TaskFrameworkService stdTaskFrameworkService;
 
     @Override
@@ -52,12 +48,11 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
         JobIdentity identity = taskResult.getJobIdentity();
         JobEntity jobEntity = stdTaskFrameworkService.find(identity.getId());
         scheduleTaskService.findByJobId(jobEntity.getId())
-                .ifPresent(taskEntity -> updateScheduleTaskStatus(taskEntity.getId(),
-                        taskResult.getStatus().convertTaskStatus()));
+                .ifPresent(taskEntity -> updateResult(taskEntity.getId(), taskResult.getResultJson()));
     }
 
-    private void updateScheduleTaskStatus(Long id, TaskStatus status) {
-        scheduleTaskService.updateStatusById(id, status);
-        log.debug("Update scheduleTask status to {} successfully, scheduleTaskId={}", status, id);
+    private void updateResult(Long id, String resultJson) {
+        scheduleTaskService.updateResultJson(id, resultJson);
+        log.info("Update scheduleTask resultJson successfully, scheduleTaskId={}", id);
     }
 }
