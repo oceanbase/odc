@@ -260,13 +260,13 @@ public class ScheduleTaskService {
         scheduleTaskRepository.updateStatusById(id, status);
     }
 
+    public void updateStatusById(Long id, TaskStatus newStatus, List<String> previousStatus) {
+        scheduleTaskRepository.updateStatusById(id, newStatus, previousStatus);
+    }
+
     public void update(ScheduleTask scheduleTask) {
         ScheduleTaskEntity entity = scheduleTaskMapper.modelToEntity(scheduleTask);
         scheduleTaskRepository.update(entity);
-    }
-
-    public void updateResultJson(Long id, String resultJson) {
-        scheduleTaskRepository.updateTaskResult(id, resultJson);
     }
 
 
