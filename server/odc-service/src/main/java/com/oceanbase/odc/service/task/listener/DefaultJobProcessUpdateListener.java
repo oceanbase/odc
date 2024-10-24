@@ -53,6 +53,6 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
 
     private void updateResult(Long id, String resultJson) {
         scheduleTaskService.updateResultJson(id, resultJson);
-        log.info("Update scheduleTask resultJson successfully, scheduleTaskId={}", id);
+        log.debug("Update scheduleTask resultJson successfully, scheduleTaskId={}", id);
     }
 }
