@@ -260,8 +260,8 @@ public class ScheduleTaskService {
         scheduleTaskRepository.updateStatusById(id, status);
     }
 
-    public void updateStatusById(Long id, TaskStatus newStatus, List<String> previousStatus) {
-        scheduleTaskRepository.updateStatusById(id, newStatus, previousStatus);
+    public int updateStatusById(Long id, TaskStatus newStatus, List<String> previousStatus) {
+        return scheduleTaskRepository.updateStatusById(id, newStatus, previousStatus);
     }
 
     public void update(ScheduleTask scheduleTask) {

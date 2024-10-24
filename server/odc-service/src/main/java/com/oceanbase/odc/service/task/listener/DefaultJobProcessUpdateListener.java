@@ -60,9 +60,15 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
     }
 
     private void updateScheduleTaskStatus(Long id, TaskStatus status, TaskStatus previousStatus) {
-        scheduleTaskService.updateStatusById(id, status, Collections.singletonList(previousStatus.name()));
-        log.info("Update scheduleTask status from {} to {} successfully, scheduleTaskId={}", previousStatus, status,
-                id);
+        int i = scheduleTaskService.updateStatusById(id, status, Collections.singletonList(previousStatus.name()));
+        if (i > 0) {
+            log.info("Update scheduleTask status from {} to {} successfully, scheduleTaskId={}", previousStatus, status,
+                    id);
+        } else {
+            log.warn("Update scheduleTask status from {} to {} failed, scheduleTaskId={}", previousStatus, status,
+                    id);
+        }
+
     }
 
 }
