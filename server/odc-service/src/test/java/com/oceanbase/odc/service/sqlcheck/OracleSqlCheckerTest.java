@@ -1221,7 +1221,7 @@ public class OracleSqlCheckerTest {
                 null, Collections.singletonList(new TruncateTableExists()));
         List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
-        SqlCheckRuleType type = SqlCheckRuleType.TRUNCATE_TBLE_EXISTS;
+        SqlCheckRuleType type = SqlCheckRuleType.TRUNCATE_TABLE_EXISTS;
         CheckViolation c1 = new CheckViolation(sqls[1], 1, 0, 0, 17, type, new Object[] {});
 
         List<CheckViolation> expect = Collections.singletonList(c1);
