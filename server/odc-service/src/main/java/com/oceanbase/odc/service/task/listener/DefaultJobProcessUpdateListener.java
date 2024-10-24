@@ -53,7 +53,7 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
         JobEntity jobEntity = stdTaskFrameworkService.find(identity.getId());
         scheduleTaskService.findByJobId(jobEntity.getId())
                 .ifPresent(taskEntity -> updateScheduleTaskStatus(taskEntity.getId(),
-                        taskResult.getStatus().convertTaskStatus()));
+                        taskResult.getStatus()));
     }
 
     private void updateScheduleTaskStatus(Long id, TaskStatus status) {

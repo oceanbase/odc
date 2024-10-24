@@ -21,12 +21,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.Task;
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.TaskMonitor;
 import com.oceanbase.odc.service.task.util.CloudObjectStorageServiceBuilder;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -44,7 +44,7 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private JobContext context;
     private Map<String, String> jobParameters;
-    private volatile JobStatus status = JobStatus.PREPARING;
+    private volatile TaskStatus status = TaskStatus.PREPARING;
     private CloudObjectStorageService cloudObjectStorageService;
 
     @Getter
@@ -68,16 +68,16 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
         this.taskMonitor = new TaskMonitor(this, cloudObjectStorageService);
         try {
             doInit(context);
-            updateStatus(JobStatus.RUNNING);
+            updateStatus(TaskStatus.RUNNING);
             taskMonitor.monitor();
             if (doStart(context)) {
-                updateStatus(JobStatus.DONE);
+                updateStatus(TaskStatus.DONE);
             } else {
-                updateStatus(JobStatus.FAILED);
+                updateStatus(TaskStatus.FAILED);
             }
         } catch (Throwable e) {
             log.warn("Task failed, id={}.", getJobId(), e);
-            updateStatus(JobStatus.FAILED);
+            updateStatus(TaskStatus.FAILED);
         } finally {
             close();
         }
@@ -91,7 +91,7 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
             } else {
                 doStop();
                 // doRefresh cannot execute if update status to 'canceled'.
-                updateStatus(JobStatus.CANCELING);
+                updateStatus(TaskStatus.CANCELED);
             }
             return true;
         } catch (Throwable e) {
@@ -145,7 +145,7 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
     }
 
     @Override
-    public JobStatus getStatus() {
+    public TaskStatus getStatus() {
         return status;
     }
 
@@ -154,7 +154,7 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
         return context;
     }
 
-    protected void updateStatus(JobStatus status) {
+    protected void updateStatus(TaskStatus status) {
         log.info("Update task status, id={}, status={}.", getJobId(), status);
         this.status = status;
     }
