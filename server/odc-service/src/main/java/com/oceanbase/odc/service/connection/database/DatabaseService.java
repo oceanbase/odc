@@ -831,8 +831,9 @@ public class DatabaseService {
     @Transactional(rollbackFor = Exception.class)
     public void refreshExpiredPendingDBObjectStatus() {
         Date syncDate = new Date(System.currentTimeMillis() - this.globalSearchProperties.getMaxPendingMillis());
-        int affectRows = this.databaseRepository.setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeBefore(
-                DBObjectSyncStatus.INITIALIZED, DBObjectSyncStatus.PENDING, syncDate);
+        int affectRows =
+                this.databaseRepository.setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeIsNullOrBefore(
+                        DBObjectSyncStatus.INITIALIZED, DBObjectSyncStatus.PENDING, syncDate);
         log.info("Refresh outdated pending objects status, syncDate={}, affectRows={}", syncDate, affectRows);
     }
 
