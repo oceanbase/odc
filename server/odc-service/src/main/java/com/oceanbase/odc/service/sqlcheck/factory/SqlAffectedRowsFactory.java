@@ -24,10 +24,12 @@ import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLAffectedRowsExceedLimit;
+import com.oceanbase.odc.service.sqlcheck.rule.OBOracleAffectedRowsExceedLimit;
 
 import lombok.NonNull;
 
 public class SqlAffectedRowsFactory implements SqlCheckRuleFactory {
+    public static final long DEFAULT_MAX_SQL_AFFECTED_ROWS = 1000L;
 
     private final JdbcOperations jdbc;
 
@@ -43,9 +45,22 @@ public class SqlAffectedRowsFactory implements SqlCheckRuleFactory {
     @Override
     public SqlCheckRule generate(@NonNull DialectType dialectType, Map<String, Object> parameters) {
         String key = getParameterNameKey("allowed-max-sql-affected-count");
-        if (parameters == null || parameters.isEmpty() || parameters.get(key) == null) {
-            return new MySQLAffectedRowsExceedLimit(1000L, dialectType, jdbc);
+        switch (dialectType) {
+            case OB_ORACLE:
+                if (parameters == null || parameters.isEmpty() || parameters.get(key) == null) {
+                    return new OBOracleAffectedRowsExceedLimit(DEFAULT_MAX_SQL_AFFECTED_ROWS, dialectType, jdbc);
+                }
+                return new OBOracleAffectedRowsExceedLimit(Long.valueOf(parameters.get(key).toString()), dialectType,
+                        jdbc);
+            case MYSQL:
+            case OB_MYSQL:
+                if (parameters == null || parameters.isEmpty() || parameters.get(key) == null) {
+                    return new MySQLAffectedRowsExceedLimit(DEFAULT_MAX_SQL_AFFECTED_ROWS, dialectType, jdbc);
+                }
+                return new MySQLAffectedRowsExceedLimit(Long.valueOf(parameters.get(key).toString()), dialectType,
+                        jdbc);
+            default:
+                throw new IllegalArgumentException("Unsupported dialect type: " + dialectType);
         }
-        return new MySQLAffectedRowsExceedLimit(Long.valueOf(parameters.get(key).toString()), dialectType, jdbc);
     }
 }
