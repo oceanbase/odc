@@ -24,7 +24,7 @@ import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLAffectedRowsExceedLimit;
-import com.oceanbase.odc.service.sqlcheck.rule.OBOracleAffectedRowsExceedLimit;
+import com.oceanbase.odc.service.sqlcheck.rule.OracleAffectedRowsExceedLimit;
 
 import lombok.NonNull;
 
@@ -46,11 +46,12 @@ public class SqlAffectedRowsFactory implements SqlCheckRuleFactory {
     public SqlCheckRule generate(@NonNull DialectType dialectType, Map<String, Object> parameters) {
         String key = getParameterNameKey("allowed-max-sql-affected-count");
         switch (dialectType) {
+            case ORACLE:
             case OB_ORACLE:
                 if (parameters == null || parameters.isEmpty() || parameters.get(key) == null) {
-                    return new OBOracleAffectedRowsExceedLimit(DEFAULT_MAX_SQL_AFFECTED_ROWS, dialectType, jdbc);
+                    return new OracleAffectedRowsExceedLimit(DEFAULT_MAX_SQL_AFFECTED_ROWS, dialectType, jdbc);
                 }
-                return new OBOracleAffectedRowsExceedLimit(Long.valueOf(parameters.get(key).toString()), dialectType,
+                return new OracleAffectedRowsExceedLimit(Long.valueOf(parameters.get(key).toString()), dialectType,
                         jdbc);
             case MYSQL:
             case OB_MYSQL:
