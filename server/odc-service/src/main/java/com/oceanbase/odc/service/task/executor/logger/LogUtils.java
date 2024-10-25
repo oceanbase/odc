@@ -50,7 +50,7 @@ public class LogUtils {
     public static String getLatestLogContent(String file, Long fetchMaxLine, Long fetchMaxByteSize) {
         File logFile = new File(file);
         if (!logFile.exists()) {
-            return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {file});
+            return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {logFile.getAbsoluteFile()});
         }
         return getLatestLogContent(logFile, fetchMaxLine, fetchMaxByteSize);
     }
