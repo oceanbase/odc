@@ -829,7 +829,7 @@ public class ScheduleService {
 
     public String getFullLogDownloadUrl(Long scheduleId, Long scheduleTaskId) {
         nullSafeGetByIdWithCheckPermission(scheduleId, false);
-        scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleId, scheduleTaskId);
+        scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
         return scheduledTaskLoggerService.getFullLogDownloadUrl(scheduleId, scheduleTaskId, OdcTaskLogLevel.ALL);
     }
 
@@ -839,7 +839,7 @@ public class ScheduleService {
 
     public String getLog(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel logLevel) {
         nullSafeGetByIdWithCheckPermission(scheduleId, false);
-        scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleId, scheduleTaskId);
+        scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
         return scheduledTaskLoggerService.getLogContent(scheduleId, scheduleTaskId, logLevel);
     }
 
@@ -849,7 +849,7 @@ public class ScheduleService {
 
     public InputStreamResource downloadLog(Long scheduleId, Long scheduleTaskId) {
         nullSafeGetByIdWithCheckPermission(scheduleId);
-        scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleId, scheduleTaskId);
+        scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
         return scheduledTaskLoggerService.downloadLog(scheduleId, scheduleTaskId, OdcTaskLogLevel.ALL);
     }
 
