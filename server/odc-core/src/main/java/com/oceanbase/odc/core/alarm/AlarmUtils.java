@@ -32,6 +32,7 @@ public final class AlarmUtils {
     public static final String MESSAGE_NAME = "Message";
     public static final String ALARM_TARGET_NAME = "AlarmTarget";
     public static final String ALARM_FIRE_ERROR_NAME = "AlarmFireError";
+    public static final String FAILED_REASON_NAME = "FailedReason";
     /**
      * TaskFramework alarm message names
      */
