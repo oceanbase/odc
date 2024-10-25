@@ -732,18 +732,6 @@ public class FlowInstanceService {
         return taskService.detail(taskId);
     }
 
-
-    private <T> T mapFlowInstanceWithProjectPermission(@NonNull Long flowInstanceId, Function<FlowInstance, T> mapper,
-            Predicate<FlowInstance> predicate) {
-        return mapFlowInstance(flowInstanceId, mapper, flowInstance -> {
-            if (!Objects.equals(authenticationFacade.currentUserId(), flowInstance.getCreatorId())
-                    && !predicate.test(flowInstance)) {
-                throw new AccessDeniedException();
-            }
-            permissionValidator.checkCurrentOrganization(flowInstance);
-        });
-    }
-
     private void checkCreateFlowInstancePermission(CreateFlowInstanceReq req) {
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             return;
