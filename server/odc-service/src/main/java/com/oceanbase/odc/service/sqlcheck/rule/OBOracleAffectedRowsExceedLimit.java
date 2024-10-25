@@ -112,27 +112,41 @@ public class OBOracleAffectedRowsExceedLimit extends BaseAffectedRowsExceedLimit
          */
         try {
             List<String> queryResults = jdbc.query(explainSql, (rs, rowNum) -> rs.getString("Query Plan"));
-            for (int rowNum = 0; rowNum < queryResults.size(); rowNum++) {
+            long estRowsValue = 0;
+            for (int rowNum = 3; rowNum < queryResults.size(); rowNum++) {
                 String resultRow = queryResults.get(rowNum);
-                if (rowNum > 2) {
-                    // Find the first non-null value in the column 'EST.ROWS'
-                    long estRowsValue = getEstRowsValue(resultRow);
-                    return estRowsValue;
+                estRowsValue = getEstRowsValue(resultRow);
+                if (estRowsValue != 0) {
+                    break;
                 }
             }
+            return estRowsValue;
         } catch (Exception e) {
-            log.warn("OBMySQL mode: Error in execute " + explainSql + " failed. ", e);
+            log.warn("OBOracle mode: Error executing " + explainSql + ": ", e);
             return -1;
         }
-        return 0;
     }
 
     private long getEstRowsValue(String singleRow) {
         String[] parts = singleRow.split("\\|");
-        if (parts.length > 4) {
+        if (parts.length > 5) {
             String value = parts[4].trim();
-            return Long.parseLong(value);
+            return parseLong(value);
         }
         return 0;
+    }
+
+    /**
+     * Safely parse a long value.
+     *
+     * @param value string to parse
+     * @return parsed long or 0 if parsing fails
+     */
+    private long parseLong(String value) {
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 }
