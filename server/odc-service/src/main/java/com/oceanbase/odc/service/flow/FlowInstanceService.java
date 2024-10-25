@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -73,6 +74,7 @@ import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
@@ -257,6 +259,8 @@ public class FlowInstanceService {
     private EnvironmentRepository environmentRepository;
     @Autowired
     private EnvironmentService environmentService;
+    @Autowired
+    private FlowPermissionHelper flowPermissionHelper;
 
     private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
     private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
@@ -494,7 +498,7 @@ public class FlowInstanceService {
         if (params.getCreatedByCurrentUser()) {
             // created by current user
             specification =
-                specification.and(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId()));
+                    specification.and(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId()));
         }
         if (params.getApproveByCurrentUser()) {
             Set<String> resourceRoleIdentifiers = userService.getCurrentUserResourceRoleIdentifiers();
@@ -503,7 +507,7 @@ public class FlowInstanceService {
                 return Page.empty();
             }
             specification = specification.and(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(
-                            resourceRoleIdentifiers, null, FlowNodeStatus.getExecutingStatuses()));
+                    resourceRoleIdentifiers, null, FlowNodeStatus.getExecutingStatuses()));
         }
         return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
     }
@@ -513,16 +517,16 @@ public class FlowInstanceService {
     }
 
     public FlowInstanceDetailResp detail(@NotNull Long id) {
-        return mapFlowInstance(id, flowInstance -> {
+        return mapFlowInstanceWithReadPermission(id, flowInstance -> {
             FlowInstanceMapper instanceMapper = mapperFactory.generateMapperByInstance(flowInstance, false);
             FlowNodeInstanceMapper nodeInstanceMapper = mapperFactory.generateNodeMapperByInstance(flowInstance, false);
             return instanceMapper.map(flowInstance, nodeInstanceMapper);
-        }, false);
+        });
     }
 
     @Transactional(rollbackFor = Exception.class)
     public FlowInstanceDetailResp cancel(@NotNull Long id, Boolean skipAuth) {
-        FlowInstance flowInstance = mapFlowInstance(id, flowInst -> flowInst, skipAuth);
+        FlowInstance flowInstance = mapFlowInstanceWithWritePermission(id, flowInst -> flowInst);
         return cancel(flowInstance, skipAuth);
     }
 
@@ -681,28 +685,35 @@ public class FlowInstanceService {
         return FlowInstanceDetailResp.withIdAndType(id, getTaskByFlowInstanceId(id).getTaskType());
     }
 
-    public <T> T mapFlowInstance(@NonNull Long flowInstanceId, Function<FlowInstance, T> function, Boolean skipAuth) {
+    public <T> T mapFlowInstance(@NonNull Long flowInstanceId, Function<FlowInstance, T> mapper,
+            Consumer<FlowInstance> checkAuth) {
         Optional<FlowInstance> optional = flowFactory.getFlowInstance(flowInstanceId);
         FlowInstance flowInstance =
                 optional.orElseThrow(() -> new NotFoundException(ResourceType.ODC_FLOW_INSTANCE, "id", flowInstanceId));
         try {
-            if (!skipAuth) {
-                boolean isProjectOwner = flowInstance.getProjectId() != null && projectPermissionValidator
-                        .hasProjectRole(flowInstance.getProjectId(), Collections.singletonList(ResourceRoleName.OWNER));
-                if (!Objects.equals(authenticationFacade.currentUserId(), flowInstance.getCreatorId())
-                        && !isProjectOwner) {
-                    List<UserTaskInstanceEntity> entities = approvalPermissionService.getApprovableApprovalInstances();
-                    Set<Long> flowInstanceIds = entities.stream().map(UserTaskInstanceEntity::getFlowInstanceId)
-                            .collect(Collectors.toSet());
-                    PreConditions.validExists(ResourceType.ODC_FLOW_INSTANCE, "id", flowInstanceId,
-                            () -> flowInstanceIds.contains(flowInstanceId));
-                }
-                permissionValidator.checkCurrentOrganization(flowInstance);
+            if (checkAuth != null) {
+                checkAuth.accept(flowInstance);
             }
-            return function.apply(flowInstance);
+            return mapper.apply(flowInstance);
         } finally {
             flowInstance.dealloc();
         }
+    }
+
+    public <T> T mapFlowInstanceWithReadPermission(@NonNull Long flowInstanceId, Function<FlowInstance, T> mapper) {
+        return mapFlowInstance(flowInstanceId, mapper, flowPermissionHelper.withProjectMemberCheck());
+    }
+
+    public <T> T mapFlowInstanceWithWritePermission(@NonNull Long flowInstanceId, Function<FlowInstance, T> mapper) {
+        return mapFlowInstance(flowInstanceId, mapper, flowPermissionHelper.withProjectOwnerCheck());
+    }
+
+    public <T> T mapFlowInstanceWithApprovalPermission(@NonNull Long flowInstanceId, Function<FlowInstance, T> mapper) {
+        return mapFlowInstance(flowInstanceId, mapper, flowPermissionHelper.withApprovableCheck());
+    }
+
+    public <T> T mapFlowInstanceWithoutPermissionCheck(@NonNull Long flowInstanceId, Function<FlowInstance, T> mapper) {
+        return mapFlowInstance(flowInstanceId, mapper, flowPermissionHelper.skipCheck());
     }
 
     public TaskEntity getTaskByFlowInstanceId(Long id) {
@@ -719,6 +730,18 @@ public class FlowInstanceService {
         Verify.singleton(taskIds, "Multi task for one instance is not allowed, id " + id);
         Long taskId = taskIds.iterator().next();
         return taskService.detail(taskId);
+    }
+
+
+    private <T> T mapFlowInstanceWithProjectPermission(@NonNull Long flowInstanceId, Function<FlowInstance, T> mapper,
+            Predicate<FlowInstance> predicate) {
+        return mapFlowInstance(flowInstanceId, mapper, flowInstance -> {
+            if (!Objects.equals(authenticationFacade.currentUserId(), flowInstance.getCreatorId())
+                    && !predicate.test(flowInstance)) {
+                throw new AccessDeniedException();
+            }
+            permissionValidator.checkCurrentOrganization(flowInstance);
+        });
     }
 
     private void checkCreateFlowInstancePermission(CreateFlowInstanceReq req) {
@@ -1036,24 +1059,22 @@ public class FlowInstanceService {
     private void completeApprovalInstance(@NonNull Long flowInstanceId,
             @NonNull Consumer<FlowApprovalInstance> consumer, Boolean skipAuth) {
         List<FlowApprovalInstance> instances =
-                mapFlowInstance(flowInstanceId, flowInstance -> flowInstance.filterInstanceNode(instance -> {
-                    if (instance.getNodeType() != FlowNodeType.APPROVAL_TASK) {
-                        return false;
-                    }
-                    return instance.getStatus() == FlowNodeStatus.EXECUTING
-                            || instance.getStatus() == FlowNodeStatus.WAIT_FOR_CONFIRM;
-                }).stream().map(instance -> {
-                    Verify.verify(instance instanceof FlowApprovalInstance, "FlowApprovalInstance's type is illegal");
-                    return (FlowApprovalInstance) instance;
-                }).collect(Collectors.toList()), skipAuth);
+                mapFlowInstanceWithApprovalPermission(flowInstanceId,
+                        flowInstance -> flowInstance.filterInstanceNode(instance -> {
+                            if (instance.getNodeType() != FlowNodeType.APPROVAL_TASK) {
+                                return false;
+                            }
+                            return instance.getStatus() == FlowNodeStatus.EXECUTING
+                                    || instance.getStatus() == FlowNodeStatus.WAIT_FOR_CONFIRM;
+                        }).stream().map(instance -> {
+                            Verify.verify(instance instanceof FlowApprovalInstance,
+                                    "FlowApprovalInstance's type is illegal");
+                            return (FlowApprovalInstance) instance;
+                        }).collect(Collectors.toList()));
         PreConditions.validExists(ResourceType.ODC_FLOW_APPROVAL_INSTANCE,
                 "flowInstanceId", flowInstanceId, () -> instances.size() > 0);
         Verify.singleton(instances, "ApprovalInstance");
         FlowApprovalInstance target = instances.get(0);
-        if (!skipAuth) {
-            PreConditions.validExists(ResourceType.ODC_FLOW_INSTANCE, "id", flowInstanceId,
-                    () -> approvalPermissionService.isApprovable(target.getId()));
-        }
         Verify.verify(target.isPresentOnThisMachine(), "Approval instance is not on this machine");
         consumer.accept(target);
     }
