@@ -47,7 +47,6 @@ import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.jpa.SpecificationUtil;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.security.SensitiveDataUtils;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -81,6 +80,7 @@ import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
 import cn.hutool.core.text.CharSequenceUtil;
+import cn.hutool.core.util.StrUtil;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -326,21 +326,20 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         if (rows > 0) {
             taskResultPublisherExecutor
                     .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(taskResult)));
-
             if (publisher != null && taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
                 taskResultPublisherExecutor.execute(() -> publisher
                         .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
-                taskResult.getErrorMessage();
                 if (taskResult.getStatus() == JobStatus.FAILED) {
                     Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
-                            .item(AlarmUtils.ORGANIZATION_NAME, je.getOrganizationId().toString())
+                            .item(AlarmUtils.ORGANIZATION_NAME, Optional.ofNullable(je.getOrganizationId()).map(
+                                    Object::toString).orElse(StrUtil.EMPTY))
                             .item(AlarmUtils.TASK_JOB_ID_NAME, je.getId().toString())
                             .item(AlarmUtils.MESSAGE_NAME,
-                                    MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}, message={2}",
-                                            taskResult.getJobIdentity().getId(),
-                                            SensitiveDataUtils.mask(taskResult.getResultJson()),
-                                            CharSequenceUtil.nullToDefault(taskResult.getErrorMessage(),
-                                                    CharSequenceUtil.EMPTY)))
+                                    MessageFormat.format("Job execution failed, jobId={0}",
+                                            taskResult.getJobIdentity().getId()))
+                            .item(AlarmUtils.FAILED_REASON_NAME,
+                                    CharSequenceUtil.nullToDefault(taskResult.getErrorMessage(),
+                                            CharSequenceUtil.EMPTY))
                             .build();
                     AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED, eventMessage);
                 }
@@ -432,14 +431,14 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             // TODO maybe we can destroy the pod there.
             if (result.getStatus() == JobStatus.FAILED) {
                 Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
-                        .item(AlarmUtils.ORGANIZATION_NAME, je.getOrganizationId().toString())
+                        .item(AlarmUtils.ORGANIZATION_NAME, Optional.ofNullable(je.getOrganizationId()).map(
+                                Object::toString).orElse(StrUtil.EMPTY))
                         .item(AlarmUtils.TASK_JOB_ID_NAME, je.getId().toString())
                         .item(AlarmUtils.MESSAGE_NAME,
-                                MessageFormat.format("Job execution failed, jobId={0}, resultJson={1}, message={2}",
-                                        result.getJobIdentity().getId(),
-                                        SensitiveDataUtils.mask(result.getResultJson()),
-                                        CharSequenceUtil.nullToDefault(result.getErrorMessage(),
-                                                CharSequenceUtil.EMPTY)))
+                                MessageFormat.format("Job execution failed, jobId={0}",
+                                        result.getJobIdentity().getId()))
+                        .item(AlarmUtils.FAILED_REASON_NAME, CharSequenceUtil.nullToDefault(result.getErrorMessage(),
+                                CharSequenceUtil.EMPTY))
                         .build();
                 AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED, eventMessage);
             }

@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.task.schedule.daemon;
 
 import java.text.MessageFormat;
 import java.util.Map;
+import java.util.Optional;
 
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
@@ -37,6 +38,7 @@ import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -82,7 +84,9 @@ public class DestroyExecutorJob implements Job {
                     if (e.getMessage() != null &&
                             !e.getMessage().startsWith(JobConstants.ODC_EXECUTOR_CANNOT_BE_DESTROYED)) {
                         Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
-                                .item(AlarmUtils.ORGANIZATION_NAME, jobEntity.getOrganizationId().toString())
+                                .item(AlarmUtils.ORGANIZATION_NAME,
+                                        Optional.ofNullable(jobEntity.getOrganizationId()).map(
+                                                Object::toString).orElse(StrUtil.EMPTY))
                                 .item(AlarmUtils.TASK_JOB_ID_NAME, jobEntity.getId().toString())
                                 .item(AlarmUtils.MESSAGE_NAME,
                                         MessageFormat.format("Job executor destroy failed, jobId={0}, message={1}",
