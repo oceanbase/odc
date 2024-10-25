@@ -73,7 +73,7 @@ public class DBPLModifyHelper {
 
     public EditPLResp editPL(@NotNull String sessionId, @NotNull @Valid EditPLReq editPLReq)
             throws Exception {
-        DBObjectType plType = editPLReq.getPlType();
+        DBObjectType plType = editPLReq.getObjectType();
         switch (plType) {
             case PROCEDURE:
                 return executeWrappedEditPL(sessionId, editPLReq, DBObjectType.PROCEDURE, ODC_TEMPORARY_PROCEDURE);
@@ -96,7 +96,7 @@ public class DBPLModifyHelper {
 
     private EditPLResp executeWrappedEditPL(String sessionId, EditPLReq editPLReq,
             DBObjectType plType, String tempPlName) throws Exception {
-        String plName = editPLReq.getPlName();
+        String plName = editPLReq.getObjectName();
         String editPLSql = editPLReq.getSql();
         String tempPLSql = editPLSql.replaceFirst(plName, tempPlName);
         StringBuilder wrappedSqlBuilder = new StringBuilder();
@@ -137,7 +137,7 @@ public class DBPLModifyHelper {
             } while (!moreResults.isFinished());
             for (SqlExecuteResult result : results) {
                 if (result.getStatus() != SqlExecuteStatus.SUCCESS) {
-                    editPLResp.setFailMessage(result.getTrack());
+                    editPLResp.setErrorMessage(result.getTrack());
                     return editPLResp;
                 }
             }

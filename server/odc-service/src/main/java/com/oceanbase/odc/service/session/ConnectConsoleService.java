@@ -466,7 +466,7 @@ public class ConnectConsoleService {
      * Rewrite sqls, will do <br>
      * 1. add ODC_INTERNAL_ROWID query column
      */
-    public List<SqlTuple> generateSqlTuple(List<OffsetString> sqls, ConnectionSession session,
+    private List<SqlTuple> generateSqlTuple(List<OffsetString> sqls, ConnectionSession session,
             SqlAsyncExecuteReq request) {
         return sqls.stream().filter(s -> StringUtils.isNotBlank(s.getStr())).map(sql -> {
             TraceWatch traceWatch = new TraceWatch("SQL-EXEC");

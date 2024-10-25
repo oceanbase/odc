@@ -33,7 +33,7 @@ public class EditPLReq {
     @NotBlank
     private String sql;
     @NotBlank
-    private String plName;
+    private String objectName;
     @NotNull
-    private DBObjectType plType;
+    private DBObjectType objectType;
 }

@@ -140,7 +140,7 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
                 DBObjectType.PROCEDURE);
         assertNotNull(editPLResp);
         assertFalse(editPLResp.isShouldIntercepted());
-        assertNull(editPLResp.getFailMessage());
+        assertNull(editPLResp.getErrorMessage());
     }
 
 
@@ -163,7 +163,7 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
                 DBObjectType.PROCEDURE);
         assertNotNull(editPLResp);
         assertFalse(editPLResp.isShouldIntercepted());
-        assertNotNull(editPLResp.getFailMessage());
+        assertNotNull(editPLResp.getErrorMessage());
         executeDropPLSql(DBObjectType.PROCEDURE, DBPLModifyHelper.ODC_TEMPORARY_PROCEDURE);
     }
 
@@ -179,7 +179,7 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
                 DBObjectType.FUNCTION);
         assertNotNull(editPLResp);
         assertFalse(editPLResp.isShouldIntercepted());
-        assertNull(editPLResp.getFailMessage());
+        assertNull(editPLResp.getErrorMessage());
     }
 
     @Test
@@ -203,7 +203,7 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
                 DBObjectType.FUNCTION);
         assertNotNull(editPLResp);
         assertFalse(editPLResp.isShouldIntercepted());
-        assertNotNull(editPLResp.getFailMessage());
+        assertNotNull(editPLResp.getErrorMessage());
         executeDropPLSql(DBObjectType.FUNCTION, DBPLModifyHelper.ODC_TEMPORARY_FUNCTION);
     }
 
@@ -226,7 +226,7 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
                     DBObjectType.TRIGGER);
             assertNotNull(editPLResp);
             assertFalse(editPLResp.isShouldIntercepted());
-            assertNull(editPLResp.getFailMessage());
+            assertNull(editPLResp.getErrorMessage());
         }
     }
 
@@ -271,8 +271,8 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
             throws Exception {
         EditPLReq editPLReq = new EditPLReq();
         editPLReq.setSql(editTestPL);
-        editPLReq.setPlType(plType);
-        editPLReq.setPlName(plName);
+        editPLReq.setObjectType(plType);
+        editPLReq.setObjectName(plName);
         return dbplModifyHelper.editPL(testConnectionSession.getId(), editPLReq);
     }
 
