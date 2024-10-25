@@ -68,19 +68,17 @@ public class OracleAffectedRowsExceedLimit extends BaseAffectedRowsExceedLimit {
             String originalSql = statement.getText();
             try {
                 if (this.jdbcOperations == null) {
-                    log.warn("JdbcOperations is null, please check your connection");
-                    return -1;
+                    throw new IllegalStateException("JdbcOperations is null, please check your connection");
                 } else {
                     switch (this.dialectType) {
                         case ORACLE:
                             affectedRows = getOracleAffectedRows(originalSql, this.jdbcOperations);
                             break;
                         case OB_ORACLE:
-                            affectedRows = getOBOracleAffectedRows(originalSql, this.jdbcOperations);
+                            affectedRows = getOBAffectedRows(originalSql, this.jdbcOperations);
                             break;
                         default:
-                            log.warn("Unsupported dialect type: {}", this.dialectType);
-                            break;
+                            throw new UnsupportedOperationException("Unsupported dialect type: " + this.dialectType);
                     }
                 }
             } catch (Exception e) {
@@ -116,79 +114,15 @@ public class OracleAffectedRowsExceedLimit extends BaseAffectedRowsExceedLimit {
         String getPlanSql =
                 "SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY('PLAN_TABLE', '" + ODC_TEMP_EXPLAIN_STATEMENT_ID + "', 'ALL'))";
         List<String> queryResults = jdbcOperations.query(getPlanSql, (rs, rowNum) -> rs.getString("PLAN_TABLE_OUTPUT"));
-        long estRowsValue = 0;
+        long estRowsValue = -1;
         for (int rowNum = 5; rowNum < queryResults.size(); rowNum++) {
             String resultRow = queryResults.get(rowNum);
             estRowsValue = getEstRowsValue(resultRow);
-            if (estRowsValue != 0) {
+            if (estRowsValue != -1) {
                 break;
             }
         }
         return estRowsValue;
     }
 
-
-
-    /**
-     * OBOracle execute 'explain' statement
-     *
-     * @param originalSql target sql
-     * @param jdbcOperations jdbc Object
-     * @return affected rows
-     */
-    private long getOBOracleAffectedRows(String originalSql, JdbcOperations jdbcOperations) {
-        /**
-         * obclient [SYS]> explain select * from all_users;
-         * +-------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-         * | Query Plan |
-         * +-------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-         * | ================================================ | | |ID|OPERATOR |NAME|EST.ROWS|EST.TIME(us)|
-         * | | ------------------------------------------------ | | |0 |TABLE RANGE SCAN|B |18 |5 | | |
-         * ================================================ | | Outputs & filters: | |
-         * ------------------------------------- | | 0 - output([B.USER_NAME], [B.USER_ID],
-         * [cast(B.GMT_CREATE, DATE(0, 0))], [cast('NO', VARCHAR2(3 BYTE))], [cast('N', VARCHAR2(1 BYTE))],
-         * [cast('NO', VARCHAR2(3 | | BYTE))], [cast('USING_NLS_COMP', VARCHAR2(100 BYTE))], [cast('NO',
-         * VARCHAR2(3 BYTE))], [cast('NO', VARCHAR2(3 BYTE))]), filter([B.TYPE = 0], [B.TENANT_ID | | =
-         * EFFECTIVE_TENANT_ID()]) | | access([B.TENANT_ID], [B.USER_ID], [B.TYPE], [B.USER_NAME],
-         * [B.GMT_CREATE]), partitions(p0) | | is_index_back=false, is_global_index=false,
-         * filter_before_indexback[false,false], | | range_key([B.TENANT_ID], [B.USER_ID]), range(1004,MIN ;
-         * 1004,MAX), | | range_cond([B.TENANT_ID = EFFECTIVE_TENANT_ID()]) |
-         * +-------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-         * 14 rows in set (0.007 sec)
-         */
-        String explainSql = "EXPLAIN " + originalSql;
-        List<String> queryResults = jdbcOperations.query(explainSql, (rs, rowNum) -> rs.getString("Query Plan"));
-        long estRowsValue = 0;
-        for (int rowNum = 3; rowNum < queryResults.size(); rowNum++) {
-            String resultRow = queryResults.get(rowNum);
-            estRowsValue = getEstRowsValue(resultRow);
-            if (estRowsValue != 0) {
-                break;
-            }
-        }
-        return estRowsValue;
-    }
-
-    private long getEstRowsValue(String singleRow) {
-        String[] parts = singleRow.split("\\|");
-        if (parts.length > 5) {
-            String value = parts[4].trim();
-            return parseLong(value);
-        }
-        return 0;
-    }
-
-    /**
-     * Safely parse a long value.
-     *
-     * @param value string to parse
-     * @return parsed long or 0 if parsing fails
-     */
-    private long parseLong(String value) {
-        try {
-            return Long.parseLong(value);
-        } catch (NumberFormatException e) {
-            return 0;
-        }
-    }
 }

@@ -16,11 +16,9 @@
 
 package com.oceanbase.odc.service.sqlcheck.rule;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -76,8 +74,7 @@ public class MySQLAffectedRowsExceedLimit extends BaseAffectedRowsExceedLimit {
             String explainSql = "EXPLAIN " + statement.getText();
             try {
                 if (this.jdbcOperations == null) {
-                    log.warn("JdbcOperations is null, please check your connection");
-                    return -1;
+                    throw new IllegalStateException("JdbcOperations is null, please check your connection");
                 } else {
                     switch (this.dialectType) {
                         case MYSQL:
@@ -86,11 +83,10 @@ public class MySQLAffectedRowsExceedLimit extends BaseAffectedRowsExceedLimit {
                                     : getMySqlAffectedRowsByExplain(explainSql, this.jdbcOperations);
                             break;
                         case OB_MYSQL:
-                            affectedRows = getOBMySqlAffectedRows(explainSql, this.jdbcOperations);
+                            affectedRows = getOBAffectedRows(statement.getText(), this.jdbcOperations);
                             break;
                         default:
-                            log.warn("Unsupported dialect type: {}", this.dialectType);
-                            break;
+                            throw new UnsupportedOperationException("Unsupported dialect type: " + this.dialectType);
                     }
                 }
             } catch (Exception e) {
@@ -161,73 +157,6 @@ public class MySQLAffectedRowsExceedLimit extends BaseAffectedRowsExceedLimit {
             log.warn("MySQL mode: Error in execute " + explainSql + " failed. ", e);
             return -1;
         }
-    }
-
-    /**
-     * OBMySQL execute 'explain' statement
-     *
-     * @param explainSql target sql
-     * @param jdbc jdbc Object
-     * @return affected rows
-     */
-    private long getOBMySqlAffectedRows(String explainSql, JdbcOperations jdbc) {
-        /**
-         * <pre>
-         *
-         *     explain result (json):
-         *
-         *     ==================================================    --rowNum = 1
-         *     |ID|OPERATOR          |NAME|EST.ROWS|EST.TIME(us)|    --rowNum = 2
-         *     0 |DISTRIBUTED UPDATE|    |1       |37          |     --rowNum = 3
-         *     1 |└─TABLE GET       |user|1       |5           |     --rowNum = 4
-         *     ==================================================    --rowNum = 5
-         *     ...
-         *
-         * </pre>
-         */
-        try {
-            AtomicBoolean ifFindAffectedRow = new AtomicBoolean(false);
-            List<String> queryResults = jdbc.query(explainSql, (rs, rowNum) -> rs.getString("Query Plan"));
-            List<Long> resultSet = new ArrayList<>();
-            for (int rowNum = 0; rowNum < queryResults.size(); rowNum++) {
-                String resultRow = queryResults.get(rowNum);
-                if (!ifFindAffectedRow.get() && rowNum > 2) {
-                    // Find the first non-null value in the column 'EST.ROWS'
-                    long estRowsValue = getEstRowsValue(resultRow);
-                    if (estRowsValue != 0) {
-                        ifFindAffectedRow.set(true);
-                        resultSet.add(estRowsValue);
-                    }
-                }
-                resultSet.add(null);
-            }
-
-            Long firstNonNullResult = resultSet.stream()
-                    .filter(Objects::nonNull)
-                    .findFirst()
-                    .orElse(null);
-
-            return firstNonNullResult != null ? firstNonNullResult : 0;
-
-        } catch (Exception e) {
-            log.warn("OBMySQL mode: Error in execute " + explainSql + " failed. ", e);
-            return -1;
-        }
-    }
-
-    /**
-     * parse explain result set
-     *
-     * @param singleRow row
-     * @return affected rows
-     */
-    private long getEstRowsValue(String singleRow) {
-        String[] parts = singleRow.split("\\|");
-        if (parts.length > 4) {
-            String value = parts[4].trim();
-            return Long.parseLong(value);
-        }
-        return 0;
     }
 
 }
