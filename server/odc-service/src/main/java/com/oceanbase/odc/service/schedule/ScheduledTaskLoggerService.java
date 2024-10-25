@@ -160,10 +160,11 @@ public class ScheduledTaskLoggerService {
         }
     }
 
+    @SneakyThrows
     private void consumeLogFromTaskFramework(Long jobId, OdcTaskLogLevel level,
             Consumer<File> logFileConsumer,
             Consumer<String> logContentConsumer,
-            Consumer<ExecutorIdentifier> jobDispatcherConsumer) throws IOException {
+            Consumer<ExecutorIdentifier> jobDispatcherConsumer) {
         JobEntity jobEntity = taskFrameworkService.find(jobId);
         PreConditions.notNull(jobEntity, "job not found by id " + jobId);
         if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
