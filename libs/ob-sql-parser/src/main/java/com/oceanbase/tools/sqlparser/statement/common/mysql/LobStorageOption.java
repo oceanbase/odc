@@ -15,57 +15,47 @@
  */
 package com.oceanbase.tools.sqlparser.statement.common.mysql;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
-import com.oceanbase.tools.sqlparser.statement.common.DataType;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 
 /**
- * @Author: Lebie
- * @Date: 2024/10/14 17:14
- * @Description: []
+ * {@link LobStorageOption}
+ *
+ * @author yh263208
+ * @date 2024-10-25 15:29
+ * @since ODC_release_4.3.2
  */
 @Getter
-@Setter
 @EqualsAndHashCode(callSuper = false)
-public class VectorType extends BaseStatement implements DataType {
+public class LobStorageOption extends BaseStatement {
 
-    private final String typeName;
-    private final Integer dimension;
+    private final String columnName;
+    private final List<String> lobChunkSizes;
 
-    public VectorType(@NonNull ParserRuleContext context,
-            @NonNull String typeName, @NonNull Integer dimension) {
+    public LobStorageOption(@NonNull ParserRuleContext context,
+            @NonNull String columnName, @NonNull List<String> lobChunkSizes) {
         super(context);
-        this.typeName = typeName;
-        this.dimension = dimension;
+        this.columnName = columnName;
+        this.lobChunkSizes = lobChunkSizes;
     }
 
-    public VectorType(@NonNull String typeName, @NonNull Integer dimension) {
-        this.typeName = typeName;
-        this.dimension = dimension;
-    }
-
-    @Override
-    public String getName() {
-        return this.typeName;
-    }
-
-    @Override
-    public List<String> getArguments() {
-        return Collections.singletonList(String.valueOf(this.dimension));
+    public LobStorageOption(@NonNull String columnName, @NonNull List<String> lobChunkSizes) {
+        this.columnName = columnName;
+        this.lobChunkSizes = lobChunkSizes;
     }
 
     @Override
     public String toString() {
-        return getName() + "(" + this.dimension + ")";
+        String lobChunkSize = this.lobChunkSizes.stream().map(s -> "CHUNK " + s).collect(Collectors.joining(" "));
+        return "JSON(" + this.columnName + ")" + " STORE AS (" + lobChunkSize + ")";
     }
 
 }

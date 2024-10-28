@@ -223,6 +223,23 @@ public class MySQLExpressionFactoryTest {
     }
 
     @Test
+    public void generate_matchNaturalModeWithQueryExpansion_generateSucceed() {
+        ExprContext context = getExprContext(
+                "match(col,tab.col,chz.tab.col) against ('abc' IN NATURAL LANGUAGE MODE WITH QUERY EXPANSION)");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        params.add(new ExpressionParam(new ColumnReference(null, null, "col")));
+        params.add(new ExpressionParam(new ColumnReference(null, "tab", "col")));
+        params.add(new ExpressionParam(new ColumnReference("chz", "tab", "col")));
+        FullTextSearch expect = new FullTextSearch(params, "'abc'");
+        expect.setWithQueryExpansion(true);
+        expect.setSearchMode(TextSearchMode.NATURAL_LANGUAGE_MODE);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_matchBooleanMode_generateSucceed() {
         ExprContext context = getExprContext("match(col,tab.col,chz.tab.col) against ('abc' IN BOOLEAN MODE)");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
@@ -335,6 +352,28 @@ public class MySQLExpressionFactoryTest {
         params.add(new ExpressionParam(new NullExpression()));
 
         FunctionCall expect = new FunctionCall("_st_asmvt", params);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_lastRefreshScn_generateFunctionCallSucceed() {
+        ExprContext context = getExprContext("last_refresh_scn(123)");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        FunctionCall expect = new FunctionCall("last_refresh_scn",
+                Collections.singletonList(new ExpressionParam(new ConstExpression("123"))));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_sumOpnsize_generateFunctionCallSucceed() {
+        ExprContext context = getExprContext("sum_Opnsize(123)");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        FunctionCall expect = new FunctionCall("sum_Opnsize",
+                Collections.singletonList(new ExpressionParam(new ConstExpression("123"))));
         Assert.assertEquals(expect, actual);
     }
 
@@ -453,7 +492,7 @@ public class MySQLExpressionFactoryTest {
 
     @Test
     public void generate_castAsChar_generateFunctionCallSucceed() {
-        ExprContext context = getExprContext("cast('abc' as character(15) binary)");
+        ExprContext context = getExprContext("cast('abc' as character(15) binary array)");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
 
@@ -462,6 +501,7 @@ public class MySQLExpressionFactoryTest {
         CharacterType type = new CharacterType("character", new BigDecimal(15));
         type.setBinary(true);
         p.addOption(type);
+        p.addOption(new ConstExpression("array"));
         params.add(p);
         FunctionCall expect = new FunctionCall("cast", params);
         Assert.assertEquals(expect, actual);
@@ -753,6 +793,91 @@ public class MySQLExpressionFactoryTest {
         params.add(new ExpressionParam(new ConstExpression("3")));
         params.add(new ExpressionParam(new ConstExpression("4")));
         FunctionCall expect = new FunctionCall("WEIGHT_STRING", params);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_jsonQueryExpr_generateFunctionCallSucceed() {
+        ExprContext context = getExprContext("JSON_QUERY('123', _utf8 'abc')");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        params.add(new ExpressionParam(new ConstExpression("'123'")));
+        params.add(new ExpressionParam(new ConstExpression("_utf8 'abc'")));
+        FunctionCall expect = new FunctionCall("JSON_QUERY", params);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_jsonQueryExprFullOpts_generateFunctionCallSucceed() {
+        ExprContext context = getExprContext("JSON_QUERY('123', _utf8 'abc' " +
+                "returning double " +
+                "TRUNCATE " +
+                "allow scalars " +
+                "pretty " +
+                "ASCII " +
+                "with conditional array wrapper " +
+                "asis " +
+                "empty on empty empty array on error_p error_p on mismatch " +
+                "MULTIVALUE)");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        params.add(new ExpressionParam(new ConstExpression("'123'")));
+        params.add(new ExpressionParam(new ConstExpression("_utf8 'abc'")));
+        FunctionCall expect = new FunctionCall("JSON_QUERY", params);
+        expect.addOption(new NumberType("double", null, null));
+        expect.addOption(new ConstExpression("TRUNCATE"));
+        expect.addOption(new ConstExpression("allow scalars"));
+        expect.addOption(new ConstExpression("pretty"));
+        expect.addOption(new ConstExpression("ASCII"));
+        expect.addOption(new ConstExpression("with conditional array wrapper"));
+        expect.addOption(new ConstExpression("asis"));
+        JsonOnOption jsonOnOption = new JsonOnOption();
+        jsonOnOption.setOnEmpty(new ConstExpression("empty"));
+        jsonOnOption.setOnError(new ConstExpression("empty array"));
+        jsonOnOption.setOnMismatches(Collections.singletonList(
+                new JsonOnOption.OnMismatch(new ConstExpression("error_p"), null)));
+        expect.addOption(jsonOnOption);
+        expect.addOption(new ConstExpression("MULTIVALUE"));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_jsonQueryExprFullOpts1_generateFunctionCallSucceed() {
+        ExprContext context = getExprContext("JSON_QUERY('123', _utf8 'abc' " +
+                "returning double " +
+                "TRUNCATE " +
+                "disallow scalars " +
+                "pretty " +
+                "ASCII " +
+                "with conditional array wrapper " +
+                "asis " +
+                "error_p on empty empty object on error_p dot on mismatch " +
+                "MULTIVALUE)");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        params.add(new ExpressionParam(new ConstExpression("'123'")));
+        params.add(new ExpressionParam(new ConstExpression("_utf8 'abc'")));
+        FunctionCall expect = new FunctionCall("JSON_QUERY", params);
+        expect.addOption(new NumberType("double", null, null));
+        expect.addOption(new ConstExpression("TRUNCATE"));
+        expect.addOption(new ConstExpression("disallow scalars"));
+        expect.addOption(new ConstExpression("pretty"));
+        expect.addOption(new ConstExpression("ASCII"));
+        expect.addOption(new ConstExpression("with conditional array wrapper"));
+        expect.addOption(new ConstExpression("asis"));
+        JsonOnOption jsonOnOption = new JsonOnOption();
+        jsonOnOption.setOnEmpty(new ConstExpression("error_p"));
+        jsonOnOption.setOnError(new ConstExpression("empty object"));
+        jsonOnOption.setOnMismatches(Collections.singletonList(
+                new JsonOnOption.OnMismatch(new ConstExpression("dot"), null)));
+        expect.addOption(jsonOnOption);
+        expect.addOption(new ConstExpression("MULTIVALUE"));
         Assert.assertEquals(expect, actual);
     }
 
@@ -1426,6 +1551,20 @@ public class MySQLExpressionFactoryTest {
         List<FunctionParam> params = new ArrayList<>();
         params.add(new ExpressionParam(new ColumnReference(null, null, "vector1")));
         params.add(new ExpressionParam(new ColumnReference(null, null, "vector2")));
+        FunctionCall expected = new FunctionCall("VECTOR_DISTANCE", params);
+        Assert.assertEquals(expected, actual);
+    }
+
+    @Test
+    public void generate_vectorDistanceExpr1_Succeed() {
+        ExprContext context = getExprContext("VECTOR_DISTANCE(vector1, vector2, COSINE)");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        params.add(new ExpressionParam(new ColumnReference(null, null, "vector1")));
+        params.add(new ExpressionParam(new ColumnReference(null, null, "vector2")));
+        params.add(new ExpressionParam(new ConstExpression("COSINE")));
         FunctionCall expected = new FunctionCall("VECTOR_DISTANCE", params);
         Assert.assertEquals(expected, actual);
     }

@@ -15,10 +15,7 @@
  */
 package com.oceanbase.tools.sqlparser.adapter;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
@@ -295,6 +292,21 @@ public class MySQLFromReferenceFactoryTest {
 
         NameReference expect = new NameReference("mysql", "tab", null);
         expect.setPartitionUsage(new PartitionUsage(PartitionType.PARTITION, Arrays.asList("col1", "col2")));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_nameRefWithExternalPartition_generateNameRefSucceed() {
+        Table_referenceContext context = getTableReferenceContext(
+                "select a from mysql.tab partition (col1=@@global.lalal, col2='aaa')");
+        StatementFactory<FromReference> factory = new MySQLFromReferenceFactory(context);
+        FromReference actual = factory.generate();
+
+        NameReference expect = new NameReference("mysql", "tab", null);
+        Map<String, Expression> partitionMap = new HashMap<>();
+        partitionMap.put("col1", new ConstExpression("@@global.lalal"));
+        partitionMap.put("col2", new ConstExpression("'aaa'"));
+        expect.setPartitionUsage(new PartitionUsage(PartitionType.PARTITION, partitionMap));
         Assert.assertEquals(expect, actual);
     }
 

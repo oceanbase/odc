@@ -90,7 +90,7 @@ public class MySQLDataTypeFactory extends OBParserBaseVisitor<DataType> implemen
         if (ctx.STRING_VALUE() != null) {
             return new GeneralDataType(ctx, ctx.STRING_VALUE().getText(), null);
         } else if (ctx.data_type() != null) {
-            return new ArrayType(visitData_type(ctx.data_type()));
+            return new ArrayType(ctx, visitData_type(ctx.data_type()));
         }
         return visitChildren(ctx);
     }

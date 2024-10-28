@@ -16,10 +16,7 @@
 package com.oceanbase.tools.sqlparser.adapter;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
@@ -83,6 +80,36 @@ public class MySQLTableElementFactoryTest {
 
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         ColumnDefinition expect = new ColumnDefinition(new ColumnReference(null, "tb", "col"), dataType);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_serialColumnDef_generateSuccees() {
+        StatementFactory<TableElement> factory =
+                new MySQLTableElementFactory(getTableElementContext("tb.col serial"));
+        ColumnDefinition actual = (ColumnDefinition) factory.generate();
+
+        ColumnDefinition expect = new ColumnDefinition(new ColumnReference(null, "tb", "col"), null);
+        expect.setSerial(true);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_columnDefWithForeignKeyIndexName_succeed() {
+        StatementFactory<TableElement> factory = new MySQLTableElementFactory(getTableElementContext(
+                "tb.col varchar(64) references a.b (col2, col3) match simple on delete cascade on update set default"));
+        TableElement actual = factory.generate();
+
+        DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
+        ColumnDefinition expect = new ColumnDefinition(new ColumnReference(null, "tb", "col"), dataType);
+
+        ColumnReference r1 = new ColumnReference(null, null, "col2");
+        ColumnReference r2 = new ColumnReference(null, null, "col3");
+        ForeignReference reference = new ForeignReference("a", "b", Arrays.asList(r1, r2));
+        reference.setDeleteOption(OnOption.CASCADE);
+        reference.setUpdateOption(OnOption.SET_DEFAULT);
+        reference.setMatchOption(MatchOption.SIMPLE);
+        expect.setForeignReference(reference);
         Assert.assertEquals(expect, actual);
     }
 
@@ -201,9 +228,24 @@ public class MySQLTableElementFactoryTest {
     }
 
     @Test
+    public void generate_columnDefDefaultExpr1_generateSuccees() {
+        StatementFactory<TableElement> factory =
+                new MySQLTableElementFactory(getTableElementContext("tb.col varchar(64) default (1) chunk '123'"));
+        ColumnDefinition actual = (ColumnDefinition) factory.generate();
+
+        DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
+        ColumnDefinition expect = new ColumnDefinition(new ColumnReference(null, "tb", "col"), dataType);
+        ColumnAttributes attributes = new ColumnAttributes();
+        attributes.setDefaultValue(new ConstExpression("1"));
+        attributes.setLobChunkSize("'123'");
+        expect.setColumnAttributes(attributes);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_columnDefKey_generateSuccees() {
         StatementFactory<TableElement> factory =
-                new MySQLTableElementFactory(getTableElementContext("tb.col varchar(64) key"));
+                new MySQLTableElementFactory(getTableElementContext("tb.col varchar(64) key chunk 123"));
         ColumnDefinition actual = (ColumnDefinition) factory.generate();
 
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
@@ -212,6 +254,7 @@ public class MySQLTableElementFactoryTest {
         InLineConstraint constraint = new InLineConstraint(null, null);
         constraint.setPrimaryKey(true);
         attributes.setConstraints(Collections.singletonList(constraint));
+        attributes.setLobChunkSize("123");
         expect.setColumnAttributes(attributes);
         Assert.assertEquals(expect, actual);
     }
@@ -219,7 +262,8 @@ public class MySQLTableElementFactoryTest {
     @Test
     public void generate_columnDefOrigDefaultExpr_generateSuccees() {
         StatementFactory<TableElement> factory = new MySQLTableElementFactory(
-                getTableElementContext("tb.col varchar(64) orig_default current_timestamp(1)"));
+                getTableElementContext(
+                        "tb.col varchar(64) orig_default current_timestamp(1) column_format default storage disk"));
         ColumnDefinition actual = (ColumnDefinition) factory.generate();
 
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
@@ -228,6 +272,8 @@ public class MySQLTableElementFactoryTest {
         FunctionCall expr = new FunctionCall("current_timestamp",
                 Collections.singletonList(new ExpressionParam(new ConstExpression("1"))));
         attributes.setOrigDefault(expr);
+        attributes.setColumnFormat("default");
+        attributes.setStorage("disk");
         expect.setColumnAttributes(attributes);
         Assert.assertEquals(expect, actual);
     }
@@ -1118,8 +1164,13 @@ public class MySQLTableElementFactoryTest {
         TableElement actual = factory.generate();
         OutOfLineIndex expected = new OutOfLineIndex("idx1",
                 Collections.singletonList(new SortColumn(new ColumnReference(null, null, "c2"))));
-        expected.setIndexOptions(new IndexOptions());
+        IndexOptions indexOptions = new IndexOptions();
+        expected.setIndexOptions(indexOptions);
         expected.setVector(true);
+        Map<String, String> params = new HashMap<>();
+        params.put("distance", "L2");
+        params.put("type", "hnsw");
+        indexOptions.setVectorIndexParams(params);
         Assert.assertEquals(expected, actual);
     }
 

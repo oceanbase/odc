@@ -17,6 +17,7 @@ package com.oceanbase.tools.sqlparser.statement.alter.table;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -26,6 +27,7 @@ import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
+import com.oceanbase.tools.sqlparser.statement.common.mysql.LobStorageOption;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.ConstraintState;
 import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineConstraint;
@@ -100,6 +102,9 @@ public class AlterTableAction extends BaseStatement {
     private List<String> dropPartitionNames;
     private List<String> dropSubPartitionNames;
     private List<PartitionElement> addPartitionElements;
+    private Map<String, Expression> addExternalTablePartition;
+    private String externalTableLocation;
+    private boolean dropExternalTablePartition;
     @Setter(AccessLevel.NONE)
     private RelationFactor addSubPartitionElementTo;
     @Setter(AccessLevel.NONE)
@@ -147,9 +152,17 @@ public class AlterTableAction extends BaseStatement {
     private String renameToSubPartitionName;
     private List<ColumnGroupElement> addColumnGroupElements;
     private List<ColumnGroupElement> dropColumnGroupElements;
+    private String exchangePartitionName;
+    private RelationFactor exchangePartitionTargetTable;
+    private LobStorageOption lobStorageOption;
 
     public AlterTableAction(@NonNull ParserRuleContext context) {
         super(context);
+    }
+
+    public void setExchangePartition(@NonNull String partitionName, @NonNull RelationFactor targetTable) {
+        this.exchangePartitionName = partitionName;
+        this.exchangePartitionTargetTable = targetTable;
     }
 
     public void setDropColumn(@NonNull ColumnReference dropColumn,
@@ -249,6 +262,9 @@ public class AlterTableAction extends BaseStatement {
                                 .map(ColumnDefinition::toString)
                                 .collect(Collectors.joining(",")))
                         .append(")");
+                if (this.lobStorageOption != null) {
+                    builder.append(" ").append(this.lobStorageOption);
+                }
             }
         }
         if (CollectionUtils.isNotEmpty(this.dropColumns)) {
@@ -410,6 +426,10 @@ public class AlterTableAction extends BaseStatement {
         if (Boolean.TRUE.equals(this.removePartitioning)) {
             builder.append(" REMOVE PARTITIONING");
         }
+        if (this.exchangePartitionTargetTable != null && this.exchangePartitionName != null) {
+            builder.append(" EXCHANGE PARTITION ").append(this.exchangePartitionName)
+                    .append(" WITH TABLE ").append(this.exchangePartitionTargetTable).append(" WITHOUT VALIDATION");
+        }
         if (addColumnGroupElements != null) {
             builder.append(" ADD COLUMN GROUP(")
                     .append(addColumnGroupElements.stream().map(ColumnGroupElement::toString)
@@ -421,6 +441,16 @@ public class AlterTableAction extends BaseStatement {
                     .append(dropColumnGroupElements.stream().map(ColumnGroupElement::toString)
                             .collect(Collectors.joining(",")))
                     .append(")");
+        }
+        if (this.dropExternalTablePartition) {
+            builder.append(" DROP PARTITION");
+        }
+        if (this.addExternalTablePartition != null) {
+            builder.append(" ADD PARTITION(").append(this.addExternalTablePartition.entrySet().stream()
+                    .map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(", "))).append(")");
+        }
+        if (this.externalTableLocation != null) {
+            builder.append(" LOCATION ").append(this.externalTableLocation);
         }
         return builder.length() == 0 ? "" : builder.substring(1);
     }
@@ -453,7 +483,7 @@ public class AlterTableAction extends BaseStatement {
 
         @Override
         public String toString() {
-            return this.isSetDefault() ? "SET DEFAULT" + this.defaultValue : "DROP DEFAULT";
+            return this.isSetDefault() ? "SET DEFAULT (" + this.defaultValue + ")" : "DROP DEFAULT";
         }
     }
 

@@ -16,6 +16,7 @@
 package com.oceanbase.tools.sqlparser.statement.createtable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -66,6 +67,8 @@ public class IndexOptions extends BaseOptions {
     private Boolean reverse;
     private List<ColumnReference> storing;
     private List<ColumnReference> ctxcat;
+    private Integer keyBlockSize;
+    private Map<String, String> vectorIndexParams;
 
     public IndexOptions(@NonNull ParserRuleContext context) {
         super(context);
@@ -148,6 +151,13 @@ public class IndexOptions extends BaseOptions {
         }
         if (this.tableSpace != null) {
             builder.append(" TABLESPACE ").append(this.tableSpace);
+        }
+        if (this.keyBlockSize != null) {
+            builder.append(" KEY_BLOCK_SIZE ").append(this.keyBlockSize);
+        }
+        if (this.vectorIndexParams != null) {
+            builder.append(" WITH (").append(this.vectorIndexParams.entrySet().stream()
+                    .map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(", "))).append(")");
         }
         return builder.length() == 0 ? "" : builder.substring(1);
     }
