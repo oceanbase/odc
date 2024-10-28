@@ -63,7 +63,7 @@ public class DBPLModifyHelper {
     public static final String ODC_TEMPORARY_TRIGGER = "_ODC_TEMPORARY_TRIGGER";
     public static final String ODC_TEMPORARY_FUNCTION = "_ODC_TEMPORARY_FUNCTION";
     public static final String OB_VERSION_SUPPORT_MULTIPLE_SAME_TRIGGERS = "4.2";
-    public static final int OBTAIN_LOCK_TIME = 3;
+    public static final int LOCK_TIMEOUT_SECONDS = 3;
     @Autowired
     private ConnectConsoleService connectConsoleService;
     @Autowired
@@ -113,7 +113,7 @@ public class DBPLModifyHelper {
         sqlAsyncExecuteReq.setContinueExecutionOnError(false);
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
         Lock editPLLock = obtainEditPLLock(connectionSession, plType);
-        if (!editPLLock.tryLock(OBTAIN_LOCK_TIME, TimeUnit.SECONDS)) {
+        if (!editPLLock.tryLock(LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
         }
         try {
