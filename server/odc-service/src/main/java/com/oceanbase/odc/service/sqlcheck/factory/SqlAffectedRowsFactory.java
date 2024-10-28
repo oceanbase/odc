@@ -45,20 +45,18 @@ public class SqlAffectedRowsFactory implements SqlCheckRuleFactory {
     @Override
     public SqlCheckRule generate(@NonNull DialectType dialectType, Map<String, Object> parameters) {
         String key = getParameterNameKey("allowed-max-sql-affected-count");
+        long maxSqlAffectedRows = DEFAULT_MAX_SQL_AFFECTED_ROWS;
+        if (parameters != null && !parameters.isEmpty() && parameters.get(key) != null) {
+            maxSqlAffectedRows = Long.valueOf(parameters.get(key).toString());
+        }
         switch (dialectType) {
             case ORACLE:
             case OB_ORACLE:
-                if (parameters == null || parameters.isEmpty() || parameters.get(key) == null) {
-                    return new OracleAffectedRowsExceedLimit(DEFAULT_MAX_SQL_AFFECTED_ROWS, dialectType, jdbc);
-                }
-                return new OracleAffectedRowsExceedLimit(Long.valueOf(parameters.get(key).toString()), dialectType,
+                return new OracleAffectedRowsExceedLimit(maxSqlAffectedRows, dialectType,
                         jdbc);
             case MYSQL:
             case OB_MYSQL:
-                if (parameters == null || parameters.isEmpty() || parameters.get(key) == null) {
-                    return new MySQLAffectedRowsExceedLimit(DEFAULT_MAX_SQL_AFFECTED_ROWS, dialectType, jdbc);
-                }
-                return new MySQLAffectedRowsExceedLimit(Long.valueOf(parameters.get(key).toString()), dialectType,
+                return new MySQLAffectedRowsExceedLimit(maxSqlAffectedRows, dialectType,
                         jdbc);
             default:
                 throw new IllegalArgumentException("Unsupported dialect type: " + dialectType);

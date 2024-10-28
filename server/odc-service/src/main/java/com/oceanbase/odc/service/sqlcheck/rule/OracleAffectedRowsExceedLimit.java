@@ -91,22 +91,28 @@ public class OracleAffectedRowsExceedLimit extends BaseAffectedRowsExceedLimit {
 
     private long getOracleAffectedRows(String originalSql, JdbcOperations jdbcOperations) {
         /**
-         * Plan hash value: 775918519
+         * <pre>
+         *     Plan hash value: 775918519
          *
-         * ------------------------------------------------------------------- | Id | Operation | Name |
-         * Rows | Cost (%CPU)| Time | ------------------------------------------------------------------- |
-         * 0 | DELETE STATEMENT | | 9 | 3 (0)| 00:00:01 | | 1 | DELETE | T1 | | | | | 2 | TABLE ACCESS FULL|
-         * T1 | 9 | 3 (0)| 00:00:01 | -------------------------------------------------------------------
+         * -------------------------------------------------------------------
+         * | Id  | Operation          | Name | Rows  | Cost (%CPU)| Time     |
+         * -------------------------------------------------------------------
+         * |   0 | DELETE STATEMENT   |      |    11 |     3   (0)| 00:00:01 |
+         * |   1 |  DELETE            | T1   |       |            |          |
+         * |   2 |   TABLE ACCESS FULL| T1   |    11 |     3   (0)| 00:00:01 |
+         * -------------------------------------------------------------------
          *
          * Query Block Name / Object Alias (identified by operation id):
          * -------------------------------------------------------------
          *
-         * 1 - DEL$1 2 - DEL$1 / T1@DEL$1
+         *    1 - DEL$1
+         *    2 - DEL$1 / T1@DEL$1
          *
          * Column Projection Information (identified by operation id):
          * -----------------------------------------------------------
          *
-         * 2 - "T1".ROWID[ROWID,10]
+         *    2 - "T1".ROWID[ROWID,10]
+         * </pre>
          */
         String SetPlanSql =
                 "EXPLAIN PLAN SET STATEMENT_ID = '" + ODC_TEMP_EXPLAIN_STATEMENT_ID + "' FOR " + originalSql;
