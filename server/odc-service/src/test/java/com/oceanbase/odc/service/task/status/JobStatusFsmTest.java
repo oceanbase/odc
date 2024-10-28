@@ -34,8 +34,8 @@ public class JobStatusFsmTest {
         // check remaining
         checkStatusRemain(TaskStatus.RUNNING);
         checkStatusRemain(TaskStatus.PREPARING);
-        checkStatusRemain(TaskStatus.CANCELED);
         // check transfer
+        checkStatusTransfer(TaskStatus.CANCELED, JobStatus.CANCELED);
         checkStatusTransfer(TaskStatus.DONE, JobStatus.DONE);
         checkStatusTransfer(TaskStatus.FAILED, JobStatus.FAILED);
         checkStatusTransfer(TaskStatus.ABNORMAL, JobStatus.FAILED);

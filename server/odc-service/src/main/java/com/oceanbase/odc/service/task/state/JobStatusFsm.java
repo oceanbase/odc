@@ -35,12 +35,14 @@ public class JobStatusFsm {
     public JobStatus determinateJobStatus(JobStatus currentStatus, TaskStatus taskStatus) {
         switch (taskStatus) {
             // prepare is task init status, job should expected in running status
+            // running Job status is expected, if job = canceling, outside may set to cancel when task timeout
             case PREPARING:
                 // running meaning task has running normally, job should expected in running status
             case RUNNING:
-                // if task status is canceled, it must be canceled by job who owns it
-            case CANCELED:
                 return currentStatus;
+            // if task status is canceled, it must be canceled by job who owns it
+            case CANCELED:
+                return JobStatus.CANCELED;
             // any task failed will cause the failed status of job
             case ABNORMAL:
             case FAILED:
