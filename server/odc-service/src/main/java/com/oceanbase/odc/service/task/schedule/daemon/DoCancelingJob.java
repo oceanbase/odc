@@ -73,6 +73,15 @@ public class DoCancelingJob implements Job {
                             lockedEntity.getId(), lockedEntity.getStatus());
                     return;
                 }
+                JobStatus currentStatus = taskFrameworkService.find(lockedEntity.getId()).getStatus();
+                if (currentStatus.isTerminated()) {
+                    // the job terminated before we update it to CANCELED
+                    log.info("Job is already terminated, jobId={},currentStatus={}", lockedEntity.getId(),
+                            currentStatus);
+                    getConfiguration().getEventPublisher().publishEvent(
+                            new JobTerminateEvent(JobIdentity.of(lockedEntity.getId()), currentStatus));
+                    return;
+                }
                 // For transaction atomic, first update to CANCELED, then stop remote job in executor,
                 // if stop remote failed, transaction will be rollback
                 int rows = getConfiguration().getTaskFrameworkService()

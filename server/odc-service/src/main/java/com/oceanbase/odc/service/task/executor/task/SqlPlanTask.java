@@ -15,22 +15,29 @@
  */
 package com.oceanbase.odc.service.task.executor.task;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.SequenceInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.StatementCallback;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.CSVUtils;
+import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -48,11 +55,12 @@ import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
-import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
+import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
+import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.schedule.job.PublishSqlPlanJobReq;
@@ -63,6 +71,8 @@ import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanTaskResult;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
+import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.tools.dbbrowser.parser.ParserUtil;
 import com.oceanbase.tools.dbbrowser.parser.constant.GeneralSqlType;
@@ -75,6 +85,10 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
 
     private PublishSqlPlanJobReq parameters;
 
+    private long taskId;
+
+    private InputStream sqlInputStream;
+
     private ConnectionSession connectionSession;
 
     private SyncJdbcExecutor executor;
@@ -82,6 +96,8 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
     private SqlPlanTaskResult result;
 
     private volatile boolean canceled = false;
+
+    private volatile boolean aborted = false;
 
     private File resultJsonFile;
 
@@ -98,6 +114,11 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         this.result = new SqlPlanTaskResult();
         this.parameters = JobUtils.fromJson(getJobParameters().get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
                 PublishSqlPlanJobReq.class);
+        JobContext jobContext = getJobContext();
+        Map<String, String> jobProperties = jobContext.getJobProperties();
+        this.taskId = jobContext.getJobIdentity().getId();
+        this.result.setRegion(JobPropertiesUtils.getRegionName(jobProperties));
+        this.result.setCloudProvider(JobPropertiesUtils.getCloudProvider(jobProperties));
         this.connectionSession = generateSession();
         this.executor = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
         long timeoutUs = TimeUnit.MILLISECONDS.toMicros(parameters.getTimeoutMillis());
@@ -117,52 +138,109 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
 
     @Override
     protected boolean doStart(JobContext context) throws Exception {
-        String sqlContent = parameters.getSqlContent();
-        log.info("sql content={}", sqlContent);
-        // todo: Download the attachment that needs to execute SQL from OSS
-        SqlCommentProcessor processor = ConnectionSessionUtil.getSqlCommentProcessor(connectionSession);
-
-        List<OffsetString> offsetStringList = processor.split(new StringBuffer(), sqlContent);
-        result.setTotalStatements(offsetStringList.size());
-
-        for (int i = 0; i <= offsetStringList.size() - 1; i++) {
-            OffsetString offsetString = offsetStringList.get(i);
-            // The retry statement will write the result into the buffer, while executing a new SQL command will
-            // clear the buffer.
-            queryResultSetBuffer.clear();
-            String sql = offsetString.getStr();
-            try {
-                boolean success = executeSqlWithRetries(sql);
-                // write all result into json file
-                appendResultToJsonFile(i == 0, i == offsetStringList.size() - 1);
-                // write result rows into csv file
-                writeCsvFiles(i + 1);
-                if (success) {
-                    result.incrementSucceedStatements();
-                } else {
-                    result.incrementFailedStatements();
-                    // only write failed record into error records file
-                    addErrorRecordsToFile(i + 1, sql);
-                }
-            } catch (Exception e) {
-                result.incrementFailedStatements();
-                addErrorRecordsToFile(i + 1, sql);
-                if (parameters.getErrorStrategy() == TaskErrorStrategy.ABORT) {
-                    canceled = true;
+        try {
+            int index = 0;
+            initSqlInputStream();
+            SqlStatementIterator sqlIterator =
+                    SqlUtils.iterator(connectionSession, sqlInputStream, StandardCharsets.UTF_8);
+            while (sqlIterator.hasNext()) {
+                if (canceled) {
+                    log.info("Accept cancel task request, taskId={}", taskId);
                     break;
                 }
-                log.warn("Sql task execution failed, will continue to execute next statement.", e);
+                String sql = sqlIterator.next().getStr();
+                index++;
+                // The retry statement will write the result into the buffer, while executing a new SQL command will
+                // clear the buffer.
+                queryResultSetBuffer.clear();
+                try {
+                    boolean success = executeSqlWithRetries(sql);
+                    // write all result into json file
+                    appendResultToJsonFile(index == 1, !sqlIterator.hasNext());
+                    // write result rows into csv file
+                    writeCsvFiles(index);
+                    if (success) {
+                        result.incrementSucceedStatements();
+                    } else {
+                        log.info("execute sql failed, sql={}", sql);
+                        result.incrementFailedStatements();
+                        // only write failed record into error records file
+                        addErrorRecordsToFile(index, sql);
+                        if (parameters.getErrorStrategy() == TaskErrorStrategy.ABORT) {
+                            aborted = true;
+                            break;
+                        }
+                    }
+                } catch (Exception e) {
+                    log.info("execute sql failed, sql={}", sql);
+                    result.incrementFailedStatements();
+                    addErrorRecordsToFile(index, sql);
+                    if (parameters.getErrorStrategy() == TaskErrorStrategy.ABORT) {
+                        aborted = true;
+                        break;
+                    }
+                    log.warn("Sql task execution failed, will continue to execute next statement.", e);
+                }
             }
-        }
-        log.info("The sql plan task execute finished,result={}", result);
+            result.setTotalStatements(index);
 
-        // all sql execute csv file list write to zip file
-        writeZipFile();
-        // upload file to OSS, also contains error record where is non-null
-        upload();
-        return true;
+            // all sql execute csv file list write to zip file
+            writeZipFile();
+            // upload file to OSS, also contains error record where is non-null
+            upload();
+
+            if (aborted) {
+                throw new JobException("There exists error sql, and the task is aborted");
+            }
+
+            log.info("The sql plan task execute finished, report statistics:total={}, succeed={}, failed={}",
+                    result.getTotalStatements(), result.getSucceedStatements(), result.getFailedStatements());
+            return true;
+        } finally {
+            tryCloseInputStream();
+        }
     }
 
+    private void initSqlInputStream() {
+        if (CollectionUtils.isEmpty(parameters.getSqlObjectIds()) && StringUtils.isBlank(parameters.getSqlContent())) {
+            throw new UnexpectedException("Sql content and sql object id can not be null at the same time.");
+        }
+        this.sqlInputStream = new ByteArrayInputStream(new byte[0]);
+
+        if (StringUtils.isNotBlank(parameters.getSqlContent())) {
+            byte[] bytes = parameters.getSqlContent().getBytes();
+            this.sqlInputStream = new ByteArrayInputStream(bytes);
+            return;
+        }
+
+        CloudObjectStorageService cloudObjectStorageService = getCloudObjectStorageService();
+        if (Objects.isNull(cloudObjectStorageService) || !cloudObjectStorageService.supported()) {
+            log.warn("Cloud object storage service not supported.");
+            throw new UnexpectedException("Cloud object storage service not supported");
+        }
+
+        for (String sqlObjectId : parameters.getSqlObjectIds()) {
+            try {
+                BufferedInputStream current =
+                        new BufferedInputStream(cloudObjectStorageService.getObject(sqlObjectId));
+                // remove UTF-8 BOM if exists
+                current.mark(3);
+                byte[] byteSql = new byte[3];
+                if (current.read(byteSql) >= 3 && byteSql[0] == (byte) 0xef && byteSql[1] == (byte) 0xbb
+                        && byteSql[2] == (byte) 0xbf) {
+                    current.reset();
+                    current.skip(3);
+                } else {
+                    current.reset();
+                }
+                sqlInputStream = new SequenceInputStream(sqlInputStream, current);
+            } catch (IOException e) {
+                log.warn("Parsing sql script file failed, objectName={}, errorReason={}", sqlObjectId,
+                        ExceptionUtils.getSimpleReason(e));
+                throw new InternalServerError("load database change task file failed", e);
+            }
+        }
+    }
 
 
     @Override
@@ -189,10 +267,10 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
     }
 
     private boolean executeSqlWithRetries(String sql) {
-        OdcStatementCallBack statementCallback = getOdcStatementCallBack(sql);
-        GeneralSqlType sqlType = parseSqlType(sql);
         int executeTime = 0;
+        GeneralSqlType sqlType = parseSqlType(sql);
         while (executeTime <= parameters.getRetryTimes() && !canceled) {
+            OdcStatementCallBack statementCallback = getOdcStatementCallBack(sql);
             try {
                 List<JdbcGeneralResult> results =
                         executor.execute((StatementCallback<List<JdbcGeneralResult>>) stmt -> {
@@ -206,6 +284,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                     SqlExecuteResult executeResult = new SqlExecuteResult(result);
                     if (sqlType == GeneralSqlType.DQL) {
                         // todo: weather need data masking
+                        log.info("Success execute DQL sql, result={}", executeResult.getRows());
                     }
                     queryResultSetBuffer.add(executeResult);
 
@@ -214,8 +293,9 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                         log.warn("Error occurs when executing sql={}, error message={}", sql,
                                 executeResult.getTrack());
                         return false;
+                    } else {
+                        return true;
                     }
-                    log.info("Success execute DQL sql, result={}", executeResult.getRows());
                 }
             } catch (Exception e) {
                 if (executeTime < parameters.getRetryTimes()) {
@@ -250,6 +330,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         }
         SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(), true, true);
         ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
+        ConnectionSessionUtil.getSqlCommentProcessor(connectionSession).setDelimiter(parameters.getDelimiter());
         return connectionSession;
     }
 
@@ -259,7 +340,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             String fileName = StringUtils.uuid();
             String filePath = String.format("%s/%s.json", fileRootDir, fileName);
             this.resultJsonFile = new File(filePath);
-            this.zipFileRootPath = String.format("%s/%s.zip", fileRootDir, StringUtils.uuid());
+            this.zipFileRootPath = String.format("%s/%s", fileRootDir, StringUtils.uuid());
         } catch (Exception e) {
             throw new InternalServerError("create sql plan task file dir failed", e);
         }
@@ -294,6 +375,17 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         if (connectionSession != null && !connectionSession.isExpired()) {
             try {
                 connectionSession.expire();
+            } catch (Exception e) {
+                // eat exception
+            }
+        }
+    }
+
+    private void tryCloseInputStream() {
+        log.info("Close sql input stream.");
+        if (Objects.nonNull(sqlInputStream)) {
+            try {
+                sqlInputStream.close();
             } catch (Exception e) {
                 // eat exception
             }
@@ -349,8 +441,9 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             String jsonString = JsonUtils.prettyToJson(csvFileMappers);
             File file = new File(String.format("%s/csv_execute_result.json", zipFileRootPath));
             FileUtils.writeStringToFile(file, jsonString, StandardCharsets.UTF_8, true);
-            OdcFileUtil.zip(zipFileRootPath, String.format("%s.zip", zipFileRootPath));
-            log.info("sql plan task result set was saved as local zip file, file name={}", file.getName());
+            String zipFileName = String.format("%s.zip", zipFileRootPath);
+            OdcFileUtil.zip(zipFileRootPath, zipFileName);
+            log.info("sql plan task result set was saved as local zip file, file name={}", zipFileName);
             FileUtils.deleteDirectory(new File(zipFileRootPath));
         } catch (IOException ex) {
             throw new UnexpectedException("build zip file failed");
@@ -363,7 +456,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         this.result.setCsvResultSetZipDownloadUrl(uploadToOSS(zipFilePath));
 
         // upload sql execute json file
-        this.result.setSqlExecuteJsonFileDownloadUrl(uploadToOSS(resultJsonFile.getAbsolutePath()));
+        this.result.setSqlExecuteJsonFileDownloadUrl(uploadToOSS(resultJsonFile.getPath()));
 
         // upload error record
         if (errorRecordPath != null) {
@@ -380,11 +473,10 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             try {
                 String objectName = cloudObjectStorageService.upload(file.getName(), file);
                 ossAddress = String.valueOf(cloudObjectStorageService.generateDownloadUrl(objectName));
-                log.info("upload sql plan task result file to OSS, file name={}", file.getName());
+                log.info("Upload sql plan task result to cloud object storage successfully, objectName={}", objectName);
             } catch (Exception exception) {
-                log.warn("upload sql plan task result file to OSS, file name={}", file.getName());
                 throw new RuntimeException(String.format(
-                        "upload sql plan task result file to OSS, file name: %s", file.getName()),
+                        "failed to upload sql plan task result file to OSS, file name: %s", file.getName()),
                         exception.getCause());
             } finally {
                 OdcFileUtil.deleteFiles(file);

@@ -23,6 +23,7 @@ import java.util.List;
 import com.oceanbase.odc.service.objectstorage.cloud.client.CloudException;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadResult;
+import com.oceanbase.odc.service.objectstorage.cloud.model.CopyObjectResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectsRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectsResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.GetObjectRequest;
@@ -63,6 +64,9 @@ public interface CloudObjectStorage {
         return putObject(bucketName, key, file, null);
     }
 
+    CopyObjectResult copyObject(String bucketName, String from, String to)
+            throws CloudException;
+
     DeleteObjectsResult deleteObjects(DeleteObjectsRequest request) throws CloudException;
 
     boolean doesObjectExist(String bucketName, String key) throws CloudException;
@@ -74,6 +78,9 @@ public interface CloudObjectStorage {
     ObjectMetadata getObjectMetadata(String bucketName, String key) throws CloudException;
 
     URL generatePresignedUrl(String bucketName, String key, Date expiration) throws CloudException;
+
+    URL generatePresignedUrlWithCustomFileName(String bucketName, String key, Date expiration,
+            String customFileName) throws CloudException;
 
     URL generatePresignedPutUrl(String bucketName, String key, Date expiration) throws CloudException;
 

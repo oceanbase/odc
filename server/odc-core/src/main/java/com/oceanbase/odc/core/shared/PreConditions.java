@@ -46,7 +46,6 @@ import com.oceanbase.odc.core.shared.exception.OverLimitException;
  * @version : PreConditions.java, v 0.1 2021-03-19 20:17
  */
 public class PreConditions {
-
     public static <T> T notNull(final T obj, String parameterName) {
         return notNull(obj, parameterName, String.format("parameter %s may not be null", parameterName));
     }

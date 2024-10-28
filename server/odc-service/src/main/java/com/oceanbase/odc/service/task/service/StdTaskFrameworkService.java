@@ -20,8 +20,10 @@ import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
@@ -73,6 +75,7 @@ import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.listener.DefaultJobProcessUpdateEvent;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.processor.DLMResultProcessor;
+import com.oceanbase.odc.service.task.processor.LoadDataResultProcessor;
 import com.oceanbase.odc.service.task.processor.LogicalDBChangeResultProcessor;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -125,6 +128,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     private DLMResultProcessor dlmResultProcessor;
     @Autowired
     private LogicalDBChangeResultProcessor logicalDBChangeResultProcessor;
+    @Autowired
+    private LoadDataResultProcessor loadDataResultProcessor;
 
     @Override
     public JobEntity find(Long id) {
@@ -366,6 +371,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         try {
             String executorEndpoint = executorEndpointManager.getExecutorEndpoint(je);
             DefaultTaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
+
             if (je.getRunMode().isK8s() && MapUtils.isEmpty(result.getLogMetadata())) {
                 log.info("Refresh log failed due to log have not uploaded,  jobId={}, currentStatus={}", je.getId(),
                         je.getStatus());
@@ -376,6 +382,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 dlmResultProcessor.process(result);
             } else if (StringUtils.equalsIgnoreCase("LogicalDatabaseChange", je.getJobType())) {
                 logicalDBChangeResultProcessor.process(result);
+            } else if (StringUtils.equalsIgnoreCase("LOAD_DATA", je.getJobType())) {
+                loadDataResultProcessor.process(result);
             }
             return true;
         } catch (Exception exception) {
@@ -394,6 +402,10 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
         String executorEndpoint = executorEndpointManager.getExecutorEndpoint(je);
         DefaultTaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
+        if (result.getStatus() == JobStatus.PREPARING) {
+            log.info("Job is preparing, ignore refresh, jobId={}, currentStatus={}", id, result.getStatus());
+            return;
+        }
         DefaultTaskResult previous = JsonUtils.fromJson(je.getResultJson(), DefaultTaskResult.class);
 
         if (!updateHeartbeatTime(id)) {
@@ -650,6 +662,14 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     public Optional<String> findByJobIdAndAttributeKey(Long jobId, String attributeKey) {
         JobAttributeEntity attributeEntity = jobAttributeRepository.findByJobIdAndAttributeKey(jobId, attributeKey);
         return Objects.isNull(attributeEntity) ? Optional.empty() : Optional.of(attributeEntity.getAttributeValue());
+    }
+
+    @Override
+    public Map<String, String> getJobAttributes(Long jobId) {
+        List<JobAttributeEntity> attributeEntityList = jobAttributeRepository.findByJobId(jobId);
+        return attributeEntityList.stream().collect(Collectors.toMap(
+                JobAttributeEntity::getAttributeKey,
+                JobAttributeEntity::getAttributeValue));
     }
 
 }
