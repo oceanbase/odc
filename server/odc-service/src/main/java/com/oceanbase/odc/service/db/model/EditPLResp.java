@@ -36,7 +36,7 @@ public class EditPLResp {
     private String wrappedSql;
     // if shouldIntercepted is true，it indicates sql pre-check does not pass. sql confirmation window
     // needs to be opened
-    private boolean shouldIntercepted;
+    private boolean approvalRequired;
     private List<Rule> violatedRules;
     private List<SqlTuplesWithViolation> sqls;
     private List<UnauthorizedDBResource> unauthorizedDBResources;

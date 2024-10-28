@@ -124,8 +124,8 @@ public class DBPLModifyHelper {
             editPLResp.setSqls(sqlAsyncExecuteResp.getSqls());
             editPLResp.setUnauthorizedDBResources(sqlAsyncExecuteResp.getUnauthorizedDBResources());
             editPLResp.setViolatedRules(sqlAsyncExecuteResp.getViolatedRules());
-            if (sqlAsyncExecuteResp.getRequestId() == null) {
-                editPLResp.setShouldIntercepted(true);
+            editPLResp.setApprovalRequired(sqlAsyncExecuteResp.isApprovalRequired());
+            if (editPLResp.isApprovalRequired()) {
                 return editPLResp;
             }
             AsyncExecuteResultResp moreResults;

@@ -139,7 +139,7 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
         EditPLResp editPLResp = executeEditPL(testConnectionSession, editTestProcedure, ODC_TEST_PROCEDURE,
                 DBObjectType.PROCEDURE);
         assertNotNull(editPLResp);
-        assertFalse(editPLResp.isShouldIntercepted());
+        assertFalse(editPLResp.isApprovalRequired());
         assertNull(editPLResp.getErrorMessage());
     }
 
@@ -162,7 +162,7 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
         EditPLResp editPLResp = executeEditPL(testConnectionSession, editTestProcedure, ODC_TEST_PROCEDURE,
                 DBObjectType.PROCEDURE);
         assertNotNull(editPLResp);
-        assertFalse(editPLResp.isShouldIntercepted());
+        assertFalse(editPLResp.isApprovalRequired());
         assertNotNull(editPLResp.getErrorMessage());
         executeDropPLSql(DBObjectType.PROCEDURE, DBPLModifyHelper.ODC_TEMPORARY_PROCEDURE);
     }
@@ -178,7 +178,7 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
         EditPLResp editPLResp = executeEditPL(testConnectionSession, editTestFunction, ODC_TEST_FUNCTION,
                 DBObjectType.FUNCTION);
         assertNotNull(editPLResp);
-        assertFalse(editPLResp.isShouldIntercepted());
+        assertFalse(editPLResp.isApprovalRequired());
         assertNull(editPLResp.getErrorMessage());
     }
 
@@ -202,7 +202,7 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
         EditPLResp editPLResp = executeEditPL(testConnectionSession, editTestFunction, ODC_TEST_FUNCTION,
                 DBObjectType.FUNCTION);
         assertNotNull(editPLResp);
-        assertFalse(editPLResp.isShouldIntercepted());
+        assertFalse(editPLResp.isApprovalRequired());
         assertNotNull(editPLResp.getErrorMessage());
         executeDropPLSql(DBObjectType.FUNCTION, DBPLModifyHelper.ODC_TEMPORARY_FUNCTION);
     }
@@ -225,7 +225,7 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
             EditPLResp editPLResp = executeEditPL(testConnectionSession, editTestTrigger, ODC_TEST_TRIGGER,
                     DBObjectType.TRIGGER);
             assertNotNull(editPLResp);
-            assertFalse(editPLResp.isShouldIntercepted());
+            assertFalse(editPLResp.isApprovalRequired());
             assertNull(editPLResp.getErrorMessage());
         }
     }
