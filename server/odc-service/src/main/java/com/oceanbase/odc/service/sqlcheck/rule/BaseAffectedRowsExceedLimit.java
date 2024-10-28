@@ -99,15 +99,15 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
          */
         String explainSql = "EXPLAIN " + originalSql;
         List<String> queryResults = jdbcOperations.query(explainSql, (rs, rowNum) -> rs.getString("Query Plan"));
-        long maxEstRowsValue = 0;
+        long estRowsValue = 0;
         for (int rowNum = 3; rowNum < queryResults.size(); rowNum++) {
             String resultRow = queryResults.get(rowNum);
-            long estRowsValue = getEstRowsValue(resultRow);
-            if (estRowsValue > maxEstRowsValue) {
-                maxEstRowsValue = estRowsValue;
+            estRowsValue = getEstRowsValue(resultRow);
+            if (estRowsValue != 0) {
+                break;
             }
         }
-        return maxEstRowsValue;
+        return estRowsValue;
     }
 
     public long getEstRowsValue(String singleRow) {
