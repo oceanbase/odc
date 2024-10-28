@@ -38,7 +38,7 @@ public class LockUserInterceptorTest {
         Assert.assertEquals(lockUserInterceptor.processLockUsers(Collections.emptyList()), Collections.emptyList());
         Assert.assertEquals(
                 lockUserInterceptor.processLockUsers(
-                        Arrays.asList("user1", "user2@", "user3@%", "user4@'%'", "user5@'%", "user6@%'", "@'%'")),
-                Arrays.asList("user1", "user2@", "user3", "user4", "user5@'%", "user6@%'", ""));
+                        Arrays.asList("user1", "user2@", "user3@'%'", "user4@'127.0.0.1'")),
+                Arrays.asList("user1", "user2@", "user2", "user3@'%'", "user3", "user4@'127.0.0.1'", "user4"));
     }
 }

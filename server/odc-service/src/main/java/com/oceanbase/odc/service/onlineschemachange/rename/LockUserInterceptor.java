@@ -67,7 +67,7 @@ public class LockUserInterceptor implements RenameTableInterceptor {
         // filter users is unlocked and to lock them
         shouldBeLockedUsers = oscDBAccessor.listUsers(processLockUsers(parameters.getLockUsers()))
                 .stream().filter(dbUser -> dbUser.getAccountLocked() == DBAccountLockType.UNLOCKED)
-                .map(DBUser::getName)
+                .map(DBUser::getNameWithHost)
                 .collect(Collectors.toList());
 
         if (CollectionUtils.isEmpty(shouldBeLockedUsers)) {
@@ -88,23 +88,20 @@ public class LockUserInterceptor implements RenameTableInterceptor {
             log.info("lock users is empty");
             return ret;
         }
-        String[] trimSuffix = new String[] {"@'%'", "@%"};
         for (String lockUser : lockUsers) {
-            tryTrimSuffix(lockUser, trimSuffix, ret::add);
+            tryTrimSuffix(lockUser, ret::add);
         }
         return ret;
     }
 
-    protected void tryTrimSuffix(String rawString, String[] trimSuffix, Consumer<String> stringConsumer) {
-        for (String suffix : trimSuffix) {
-            if (StringUtils.endsWith(rawString, suffix)) {
-                // any match will return
-                stringConsumer.accept(rawString.substring(0, rawString.length() - suffix.length()));
-                return;
-            }
-        }
-        // nothing matched, return raw string
+    protected void tryTrimSuffix(String rawString, Consumer<String> stringConsumer) {
+        // raw string is accepted
         stringConsumer.accept(rawString);
+        int suffixIndex = StringUtils.lastIndexOf(rawString, '@');
+        if (suffixIndex == -1) {
+            return;
+        }
+        stringConsumer.accept(rawString.substring(0, suffixIndex));
     }
 
     @Override
@@ -129,7 +126,8 @@ public class LockUserInterceptor implements RenameTableInterceptor {
 
     private void lockUserAndKillSession(Integer lockTableTimeOutSeconds, List<String> lockUsers) {
         batchExecuteLockUser(lockUsers);
-        dbSessionManageFacade.killAllSessions(connSession, getSessionFilter(lockUsers), lockTableTimeOutSeconds);
+        dbSessionManageFacade.killAllSessions(connSession, getSessionFilter(processLockUsers(lockUsers)),
+                lockTableTimeOutSeconds);
     }
 
     private void batchExecuteLockUser(List<String> users) {
