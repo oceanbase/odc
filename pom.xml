@@ -45,7 +45,7 @@
 
         <!-- dependency version -->
         <springframework.version>5.3.26</springframework.version>
-        <spring-security.version>5.7.12</spring-security.version>
+        <spring-security.version>5.7.13</spring-security.version>
         <spring-integration.version>5.5.18</spring-integration.version>
         <springboot.version>2.7.12</springboot.version>
         <hibernate.jpamodelgen.version>5.6.3.Final</hibernate.jpamodelgen.version>
