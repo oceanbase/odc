@@ -156,7 +156,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         if (CollectionUtils.isEmpty(list)) {
             return;
         }
-
+        log.info("kill sessions = [{}]", list);
         ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             // max kill 1024 sessions by once and filter current session

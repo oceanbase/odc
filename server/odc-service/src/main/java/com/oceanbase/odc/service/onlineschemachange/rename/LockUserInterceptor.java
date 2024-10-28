@@ -15,7 +15,9 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.rename;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -63,15 +65,46 @@ public class LockUserInterceptor implements RenameTableInterceptor {
 
         OscDBAccessor oscDBAccessor = new OscDBAccessorFactory().generate(connSession);
         // filter users is unlocked and to lock them
-        shouldBeLockedUsers = oscDBAccessor.listUsers(parameters.getLockUsers())
+        shouldBeLockedUsers = oscDBAccessor.listUsers(processLockUsers(parameters.getLockUsers()))
                 .stream().filter(dbUser -> dbUser.getAccountLocked() == DBAccountLockType.UNLOCKED)
-                .map(DBUser::getNameWithHost)
+                .map(DBUser::getName)
                 .collect(Collectors.toList());
 
         if (CollectionUtils.isEmpty(shouldBeLockedUsers)) {
             return;
         }
         lockUserAndKillSession(parameters.getLockTableTimeOutSeconds(), shouldBeLockedUsers);
+    }
+
+    /**
+     * trim user suffix like '@'%''
+     * 
+     * @param lockUsers
+     * @return
+     */
+    protected List<String> processLockUsers(List<String> lockUsers) {
+        List<String> ret = new ArrayList<>();
+        if (CollectionUtils.isEmpty(lockUsers)) {
+            log.info("lock users is empty");
+            return ret;
+        }
+        String[] trimSuffix = new String[] {"@'%'", "@%"};
+        for (String lockUser : lockUsers) {
+            tryTrimSuffix(lockUser, trimSuffix, ret::add);
+        }
+        return ret;
+    }
+
+    protected void tryTrimSuffix(String rawString, String[] trimSuffix, Consumer<String> stringConsumer) {
+        for (String suffix : trimSuffix) {
+            if (StringUtils.endsWith(rawString, suffix)) {
+                // any match will return
+                stringConsumer.accept(rawString.substring(0, rawString.length() - suffix.length()));
+                return;
+            }
+        }
+        // nothing matched, return raw string
+        stringConsumer.accept(rawString);
     }
 
     @Override
