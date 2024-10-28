@@ -55,3 +55,4 @@ maven/
 venv/
 **/local-unit-test.properties
 **/integration-test.properties
+**/oss_temp_dir/

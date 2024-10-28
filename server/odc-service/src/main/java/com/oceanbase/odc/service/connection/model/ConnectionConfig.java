@@ -70,8 +70,12 @@ public class ConnectionConfig
     private static final long serialVersionUID = -7198204983655038981L;
     private static final String SESSION_INIT_SCRIPT_KEY = "SESSION_INIT_SCRIPT";
     private static final String JDBC_URL_PARAMETERS_KEY = "JDBC_URL_PARAMETERS";
-    private static final String CLOUD_PROVIDER = "CloudProvider";
+    private static final String CLOUD_PROVIDER = "cloudProvider";
     private static final String REGION = "region";
+    private static final String OB_INSTANCE_NICK_NAME = "instanceNickName";
+    private static final String OB_TENANT_NICK_NAME = "tenantNickName";
+    private static final String DSS_DATA_SOURCE_ID = "dssDatasourceId";
+
     /**
      * 连接ID，对应 /api/v1 的 sid 字段，注意这里和使用连接时的 sid 概念是不一样的，之前版本未区分，另外之前是 String 类型，现在统一为 Long 类型
      */
@@ -547,6 +551,30 @@ public class ConnectionConfig
             return null;
         }
         Object o = attributes.get(REGION);
+        return o == null ? null : o.toString();
+    }
+
+    public String getInstanceNickName() {
+        if (this.attributes == null) {
+            return null;
+        }
+        Object o = attributes.get(OB_INSTANCE_NICK_NAME);
+        return o == null ? null : o.toString();
+    }
+
+    public String getTenantNickName() {
+        if (this.attributes == null) {
+            return null;
+        }
+        Object o = attributes.get(OB_TENANT_NICK_NAME);
+        return o == null ? null : o.toString();
+    }
+
+    public String getDssDataSourceId() {
+        if (this.attributes == null) {
+            return null;
+        }
+        Object o = attributes.get(DSS_DATA_SOURCE_ID);
         return o == null ? null : o.toString();
     }
 

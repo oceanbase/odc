@@ -56,6 +56,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskListOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
+import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -159,7 +160,6 @@ public class ScheduleController {
     }
 
 
-    // list all schedule task by schedule type, type can not be null, currently only for sql plan
     @RequestMapping(value = "/tasks", method = RequestMethod.GET)
     public PaginatedResponse<ScheduleTaskListOverview> listAllTask(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
@@ -248,8 +248,9 @@ public class ScheduleController {
             @RequestParam(required = false, name = "startTime") Date startTime,
             @RequestParam(required = false, name = "endTime") Date endTime,
             @RequestParam(required = false, name = "creator") String creator,
-            @RequestParam(required = false, name = "projectId") Long projectId) {
-
+            @RequestParam(required = false, name = "projectUniqueIdentifier") String projectUniqueIdentifier,
+            @RequestParam(required = false, name = "projectId") Long projectId,
+            @RequestParam(required = false, name = "triggerStrategy") TriggerStrategy triggerStrategy) {
         QueryScheduleParams req = QueryScheduleParams.builder()
                 .id(id)
                 .name(name)
@@ -263,6 +264,8 @@ public class ScheduleController {
                 .endTime(endTime)
                 .creator(creator)
                 .projectId(projectId)
+                .projectUniqueIdentifier(projectUniqueIdentifier)
+                .triggerStrategy(triggerStrategy)
                 .build();
 
         return Responses.paginated(scheduleService.listScheduleOverview(pageable, req));

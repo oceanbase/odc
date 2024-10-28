@@ -64,6 +64,7 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
             // permission to access it.
             Database sourceDb = databaseService.detail(parameters.getSourceDatabaseId());
             Database targetDb = databaseService.detail(parameters.getTargetDataBaseId());
+            supportDataArchivingLink(sourceDb.getDataSource(), targetDb.getDataSource());
             ConnectionConfig sourceDs = sourceDb.getDataSource();
             sourceDs.setDefaultSchema(sourceDb.getName());
             ConnectionSessionFactory sourceSessionFactory = new DefaultConnectSessionFactory(sourceDs);
@@ -89,7 +90,6 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
                 String targetDbVersion =
                         targetSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
                                 targetInformation::getDBVersion);
-                supportDataArchivingLink(sourceDbType, sourceDbVersion, targetDbType, targetDbVersion);
                 if (!parameters.getSyncTableStructure().isEmpty()) {
                     boolean supportedSyncTableStructure = DLMTableStructureSynchronizer.isSupportedSyncTableStructure(
                             sourceDbType, sourceDbVersion, targetDbType, targetDbVersion);
@@ -110,29 +110,6 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
                 targetSession.expire();
             }
             log.info("Data archive preprocessing has been completed.");
-        }
-    }
-
-    private void supportDataArchivingLink(DialectType sourceDbType, String sourceDbVersion, DialectType targetDbType,
-            String targetDbVersion) {
-        if (sourceDbType == DialectType.OB_MYSQL) {
-            if (targetDbType != DialectType.OB_MYSQL && targetDbType != DialectType.MYSQL) {
-                throw new UnsupportedException(
-                        String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
-            }
-        }
-        // Cannot supports archive from mysql to ob.
-        if (sourceDbType == DialectType.MYSQL) {
-            if (targetDbType != DialectType.OB_MYSQL && targetDbType != DialectType.MYSQL) {
-                throw new UnsupportedException(
-                        String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
-            }
-        }
-        if (sourceDbType.isOracle()) {
-            if (!targetDbType.isOracle()) {
-                throw new UnsupportedException(
-                        String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
-            }
         }
     }
 

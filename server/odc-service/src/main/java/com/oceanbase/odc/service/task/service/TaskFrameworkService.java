@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.task.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -85,6 +86,8 @@ public interface TaskFrameworkService {
     int updateStatusToFailedWhenHeartTimeout(Long id, int heartTimeoutSeconds, String description);
 
     Optional<String> findByJobIdAndAttributeKey(Long jobId, String attributeKey);
+
+    Map<String, String> getJobAttributes(Long jobId);
 
     boolean isJobFinished(Long id);
 }

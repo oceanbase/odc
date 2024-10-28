@@ -29,6 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.oceanbase.odc.common.util.ObjectUtil;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobServerUrls;
@@ -180,6 +181,7 @@ public class TaskMonitor {
         uploadLogFileToCloudStorage(finalResult);
 
         Map<String, String> latestLogMeta = finalResult.getLogMetadata();
+        log.info("Task id: {}, latest log meta: {}", getJobId(), latestLogMeta);
         if (latestLogMeta != null) {
             this.logMetadata.putAll(latestLogMeta);
         }
@@ -212,11 +214,16 @@ public class TaskMonitor {
     }
 
     private void uploadLogFileToCloudStorage(DefaultTaskResult finalResult) {
+        Map<String, String> logMap = finalResult.getLogMetadata();
         if (cloudObjectStorageService != null && cloudObjectStorageService.supported()
                 && JobUtils.isK8sRunModeOfEnv()) {
-            finalResult.setLogMetadata(new LogBizImpl().uploadLogFileToCloudStorage(finalResult.getJobIdentity(),
-                    cloudObjectStorageService));
+            logMap = new LogBizImpl().uploadLogFileToCloudStorage(finalResult.getJobIdentity(),
+                    cloudObjectStorageService);
+        } else {
+            logMap.put(JobAttributeKeyConstants.LOG_STORAGE_FAILED_REASON,
+                    "cloudObjectStorageService is null or not supported");
         }
+        finalResult.setLogMetadata(logMap);
     }
 
     private void reportTaskResultWithRetry(DefaultTaskResult result, int retries) {

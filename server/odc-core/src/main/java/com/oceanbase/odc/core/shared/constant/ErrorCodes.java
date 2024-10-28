@@ -117,6 +117,7 @@ public enum ErrorCodes implements ErrorCode {
     LogicalTableExpressionNotPositiveStep,
     LogicalTableExpressionRangeStartGreaterThanEnd,
     LogicalTableExpressionNotValidIntegerRange,
+    TenantConnectionAddressNotFind,
 
     // File
     FileWriteFailed,
@@ -219,6 +220,7 @@ public enum ErrorCodes implements ErrorCode {
     ExternalOssError,
     ExternalVpcError,
     ExternalUrlNotAllowed,
+    CloudServiceError,
 
     /**
      * ob operation
@@ -298,8 +300,19 @@ public enum ErrorCodes implements ErrorCode {
     /**
      * Permission management
      */
-    GrantPermissionFailed;
+    GrantPermissionFailed,
 
+
+    /**
+     * version conflict
+     */
+    WorksheetEditVersionConflict,
+
+    /**
+     * workspace
+     */
+    WorkspaceDatabaseUserTypeMustBeAdmin,
+    ;
 
     @Override
     public String code() {

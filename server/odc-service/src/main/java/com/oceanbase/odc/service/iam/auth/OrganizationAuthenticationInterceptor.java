@@ -30,10 +30,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.config.CommonSecurityProperties;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
+import com.oceanbase.odc.service.collaboration.project.ProjectService;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.UserService;
@@ -89,6 +92,8 @@ public class OrganizationAuthenticationInterceptor implements HandlerInterceptor
     private VerticalPermissionValidator verticalPermissionValidator;
     @Autowired
     private UserService userService;
+    @Autowired
+    private ProjectService projectService;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
@@ -111,6 +116,13 @@ public class OrganizationAuthenticationInterceptor implements HandlerInterceptor
         String actual = request.getParameter("currentOrganizationId");
         if (StringUtils.isEmpty(actual)) {
             actual = request.getHeader("currentOrganizationId");
+        }
+        if (StringUtils.isEmpty(actual) && StringUtils.isNotEmpty(TraceContextHolder.getProjectId())) {
+            String obProjectId = TraceContextHolder.getProjectId();
+            Project project = projectService.getByIdentifier(obProjectId);
+            if (project != null) {
+                actual = project.getOrganizationId().toString();
+            }
         }
         if (StringUtils.isEmpty(actual)) {
             log.info(

@@ -13,6 +13,7 @@ mvn_extra_args=$@
 
 # read environment variables
 fetch_from_oss_flag=${FETCH_FROM_OSS:-"0"}
+build_libs_flag=${BUILD_LIBS:-"1"}
 
 if ! source $(dirname "$0")/functions.sh; then
     echo "source functions.sh failed"
@@ -23,7 +24,15 @@ function build_rpm_without_sqlconsole() {
     log_info "maven build jar start"
     echo "mvn_extra_args:" "${mvn_extra_args[@]}"
 
-    maven_install_libs "${mvn_extra_args[@]}"
+    if [ "${build_libs_flag}" == "1" ]; then
+        if ! maven_install_libs "${mvn_extra_args[@]}"; then
+            log_error "maven build libs failed"
+            return 2
+        fi
+    else
+        log_info "skip maven build libs"
+    fi
+
     if ! maven_build_jar "${mvn_extra_args[@]}"; then
         log_error "maven build jar failed"
         return 4
