@@ -33,6 +33,7 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Bit_exprContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.ExprContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.PredicateContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Single_row_functionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Xml_functionContext;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Expression.ReferenceOperator;
@@ -1610,6 +1611,41 @@ public class OracleExpressionFactoryTest {
     }
 
     @Test
+    public void generate_spatialCellid_generateSucceed() {
+        Single_row_functionContext context = getSingleRowFunctionContext("spatial_cellid('aaa')");
+        OracleExpressionFactory factory = new OracleExpressionFactory();
+        Expression actual = factory.visit(context);
+
+        FunctionCall expect = new FunctionCall("spatial_cellid",
+                Collections.singletonList(new ExpressionParam(new ConstExpression("'aaa'"))));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_spatialMbr_generateSucceed() {
+        Single_row_functionContext context = getSingleRowFunctionContext("spatial_mbr('aaa')");
+        OracleExpressionFactory factory = new OracleExpressionFactory();
+        Expression actual = factory.visit(context);
+
+        FunctionCall expect = new FunctionCall("spatial_mbr",
+                Collections.singletonList(new ExpressionParam(new ConstExpression("'aaa'"))));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_sdoRelate_generateSucceed() {
+        Single_row_functionContext context = getSingleRowFunctionContext("sdo_relate('aaa', 123, 456)");
+        OracleExpressionFactory factory = new OracleExpressionFactory();
+        Expression actual = factory.visit(context);
+
+        FunctionCall expect = new FunctionCall("sdo_relate", Arrays.asList(
+                new ExpressionParam(new ConstExpression("'aaa'")),
+                new ExpressionParam(new ConstExpression("123")),
+                new ExpressionParam(new ConstExpression("456"))));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_deleteXml_generateSucceed() {
         Xml_functionContext context = getXmlExprContext("deletexml(1,2,3)");
         OracleExpressionFactory factory = new OracleExpressionFactory();
@@ -2928,6 +2964,14 @@ public class OracleExpressionFactoryTest {
         OBParser parser = new OBParser(tokens);
         parser.setErrorHandler(new BailErrorStrategy());
         return parser.expr();
+    }
+
+    private Single_row_functionContext getSingleRowFunctionContext(String expr) {
+        OBLexer lexer = new OBLexer(CharStreams.fromString(expr));
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        OBParser parser = new OBParser(tokens);
+        parser.setErrorHandler(new BailErrorStrategy());
+        return parser.single_row_function();
     }
 
     private Xml_functionContext getXmlExprContext(String expr) {

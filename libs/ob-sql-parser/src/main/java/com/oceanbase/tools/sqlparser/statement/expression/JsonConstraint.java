@@ -38,6 +38,12 @@ import lombok.Setter;
 @EqualsAndHashCode(callSuper = true)
 public class JsonConstraint extends BaseExpression {
 
+    private boolean truncate;
+    private boolean pretty;
+    private boolean ascii;
+    private boolean asis;
+    private boolean multiValue;
+    private JsonOnOption onOption;
     private StrictMode strictMode;
     private ScalarsMode scalarsMode;
     private UniqueMode uniqueMode;
@@ -61,18 +67,36 @@ public class JsonConstraint extends BaseExpression {
 
     @Override
     protected String doToString() {
-        StringBuilder builder = new StringBuilder("JSON");
+        StringBuilder builder = new StringBuilder();
         if (this.strictMode != null) {
             builder.append(" ").append(this.strictMode.name());
         }
+        if (this.truncate) {
+            builder.append(" TRUNCATE");
+        }
         if (this.scalarsMode != null) {
             builder.append(" ").append(this.scalarsMode.name().replace("_", " "));
+        }
+        if (this.pretty) {
+            builder.append(" PRETTY");
+        }
+        if (this.ascii) {
+            builder.append(" ASCII");
         }
         if (this.uniqueMode != null) {
             builder.append(" ").append(this.uniqueMode.name().replace("_", " "));
         }
         if (this.wrapperMode != null) {
             builder.append(" ").append(this.wrapperMode.name().replace("_", " "));
+        }
+        if (this.asis) {
+            builder.append(" ASIS");
+        }
+        if (this.onOption != null) {
+            builder.append(" ").append(this.onOption);
+        }
+        if (this.multiValue) {
+            builder.append(" MULTIVALUE");
         }
         return builder.toString();
     }

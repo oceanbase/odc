@@ -4463,10 +4463,19 @@ vec_index_param_value
     ;
 
 json_query_expr
-    : JSON_QUERY LeftParen simple_expr Comma complex_string_literal (RETURNING cast_data_type)? TRUNCATE? ((ALLOW SCALARS) | (DISALLOW SCALARS))? PRETTY? ASCII? opt_json_query_expr_wrapper? ASIS? opt_json_query_expr_on? MULTIVALUE? RightParen
+    : JSON_QUERY LeftParen simple_expr Comma complex_string_literal (RETURNING cast_data_type)? json_query_opt RightParen
     ;
 
-opt_json_query_expr_wrapper
+json_query_opt
+    : TRUNCATE? scalars_opt? PRETTY? ASCII? wrapper_opts? ASIS? json_query_on_opt? MULTIVALUE?
+    ;
+
+scalars_opt
+    : ALLOW SCALARS
+    | DISALLOW SCALARS
+    ;
+
+wrapper_opts
     : WITHOUT WRAPPER
     | WITHOUT ARRAY WRAPPER
     | WITH WRAPPER
@@ -4477,7 +4486,7 @@ opt_json_query_expr_wrapper
     | WITH CONDITIONAL ARRAY WRAPPER
     ;
 
-opt_json_query_expr_on
+json_query_on_opt
     : on_empty_query
     | on_error_query
     | on_mismatch_query
@@ -4507,10 +4516,14 @@ on_empty_query
     ;
 
 json_value_expr
-    : JSON_VALUE LeftParen simple_expr Comma complex_string_literal (RETURNING cast_data_type)? TRUNCATE? ASCII? opt_json_value_expr_on? RightParen
+    : JSON_VALUE LeftParen simple_expr Comma complex_string_literal (RETURNING cast_data_type)? json_value_opt  RightParen
     ;
 
-opt_json_value_expr_on
+json_value_opt
+    : TRUNCATE? ASCII? json_value_on_opt?
+    ;
+
+json_value_on_opt
     : on_empty
     | on_error
     | on_empty on_error

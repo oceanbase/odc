@@ -16,10 +16,7 @@
 
 package com.oceanbase.tools.sqlparser.adapter;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
@@ -81,6 +78,44 @@ public class OracleInsertFactoryTest {
         insertTable.setValues(values);
         Insert expect = new Insert(Collections.singletonList(insertTable), null);
         Assert.assertEquals(actual, expect);
+    }
+
+    @Test
+    public void generate_simpleInsertWithPartition_succeed() {
+        StatementFactory<Insert> factory = new OracleInsertFactory(
+                getInsertContext("insert into a.b partition(col='111', col2=121) alias values(1,default)"));
+        Insert actual = factory.generate();
+
+        RelationFactor factor = new RelationFactor("b");
+        factor.setSchema("a");
+        InsertTable insertTable = new InsertTable(factor);
+        Map<String, Expression> parti = new HashMap<>();
+        parti.put("col", new ConstExpression("'111'"));
+        parti.put("col2", new ConstExpression("121"));
+        insertTable.setPartitionUsage(new PartitionUsage(PartitionType.PARTITION, parti));
+        insertTable.setAlias("alias");
+        List<List<Expression>> values = new ArrayList<>();
+        values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("default")));
+        insertTable.setValues(values);
+        Insert expect = new Insert(Collections.singletonList(insertTable), null);
+        Assert.assertEquals(actual, expect);
+    }
+
+    @Test
+    public void generate_overwriteInsert_succeed() {
+        StatementFactory<Insert> factory = new OracleInsertFactory(
+                getInsertContext("insert overwrite a.b values(1,default)"));
+        Insert actual = factory.generate();
+
+        RelationFactor factor = new RelationFactor("b");
+        factor.setSchema("a");
+        InsertTable insertTable = new InsertTable(factor);
+        List<List<Expression>> values = new ArrayList<>();
+        values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("default")));
+        insertTable.setValues(values);
+        Insert expect = new Insert(Collections.singletonList(insertTable), null);
+        expect.setOverwrite(true);
+        Assert.assertEquals(expect, actual);
     }
 
     @Test

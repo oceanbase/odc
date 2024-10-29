@@ -81,6 +81,9 @@ public class Insert extends BaseStatement {
         this.ignore = target.ignore;
         this.onDuplicateKeyUpdateColumns = target.onDuplicateKeyUpdateColumns;
         this.tableInsert = target.tableInsert;
+        this.overwrite = target.overwrite;
+        this.highPriority = target.highPriority;
+        this.lowPriority = target.lowPriority;
         this.conditionalInsert = target.conditionalInsert;
     }
 

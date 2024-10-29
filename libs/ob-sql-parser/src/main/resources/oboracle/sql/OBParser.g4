@@ -1590,9 +1590,7 @@ table_option
     | PATTERN COMP_EQ? STRING_VALUE
     | PARTITION_TYPE COMP_EQ? USER_SPECIFIED
     | MICRO_INDEX_CLUSTERED COMP_EQ? BOOL_VALUE
-    | AUTO_REFRESH COMP_EQ? OFF
-    | AUTO_REFRESH COMP_EQ? IMMEDIATE
-    | AUTO_REFRESH COMP_EQ? INTERVAL
+    | AUTO_REFRESH COMP_EQ? (OFF|IMMEDIATE|INTERVAL)
     ;
 
 parallel_option
@@ -1923,7 +1921,11 @@ external_properties_list
     ;
 
 external_properties
-    : ((((ACCESSID|ACCESSKEY)|(ACCESSTYPE|TYPE))|((ENDPOINT|STSTOKEN)|(PROJECT_NAME|SCHEMA_NAME)))|((COMPRESSION_CODE|QUOTA_NAME)|TABLE_NAME)) COMP_EQ STRING_VALUE
+    :  external_properties_key COMP_EQ STRING_VALUE
+    ;
+
+external_properties_key
+    : ((((ACCESSID|ACCESSKEY)|(ACCESSTYPE|TYPE))|((ENDPOINT|STSTOKEN)|(PROJECT_NAME|SCHEMA_NAME)))|((COMPRESSION_CODE|QUOTA_NAME)|TABLE_NAME))
     ;
 
 external_file_format_list
@@ -2892,12 +2894,11 @@ table_subquery
 
 use_partition
     : (PARTITION|SUBPARTITION) LeftParen name_list RightParen
-    | PARTITION LeftParen external_table_partitions RightParen
+    | PARTITION LeftParen external_table_partitions? RightParen
     ;
 
 external_table_partitions
     : external_table_partition
-    | empty
     | external_table_partitions Comma external_table_partition
     ;
 
@@ -3704,14 +3705,17 @@ alter_index_option_oracle
 
 alter_table_stmt
     : ALTER EXTERNAL? TABLE relation_factor alter_table_actions
-    | ALTER TABLE relation_factor alter_column_group_option
-    | ALTER EXTERNAL TABLE relation_factor ADD PARTITION LeftParen add_external_table_partition_actions RightParen LOCATION STRING_VALUE
-    | ALTER EXTERNAL TABLE relation_factor DROP PARTITION LOCATION STRING_VALUE
+    | ALTER TABLE relation_factor alter_column_group_action
+    | ALTER EXTERNAL TABLE relation_factor alter_external_table_action
+    ;
+
+alter_external_table_action
+    : ADD PARTITION LeftParen add_external_table_partition_actions? RightParen LOCATION STRING_VALUE
+    | DROP PARTITION LOCATION STRING_VALUE
     ;
 
 add_external_table_partition_actions
     : add_external_table_partition_action
-    | empty
     | add_external_table_partition_actions Comma add_external_table_partition_action
     ;
 
@@ -3815,7 +3819,7 @@ visibility_option
     | INVISIBLE
     ;
 
-alter_column_group_option
+alter_column_group_action
     : (ADD|DROP) COLUMN GROUP LeftParen column_group_list RightParen
     ;
 

@@ -51,11 +51,14 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Dot_notation_fun_sysConte
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Dot_notation_pathContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Dot_notation_path_obj_access_refContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Entry_opContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Environment_id_functionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Evalname_exprContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.ExprContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Extract_functionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Func_access_refContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Func_paramContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Func_param_with_assignContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Hierarchical_functionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.In_exprContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Insert_child_xmlContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Is_json_constrainContext;
@@ -87,6 +90,7 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Json_value_on_error_respo
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Json_value_on_optContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Json_value_on_responseContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Nstring_length_iContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Numeric_functionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Obj_access_refContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Obj_access_ref_normalContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Opt_js_value_returning_typeContext;
@@ -103,9 +107,12 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.PredicateContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Regular_entry_objContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Relation_nameContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Scalars_optContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Sdo_relate_exprContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Signed_literalContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Simple_exprContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Single_row_functionContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Spatial_cellid_exprContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Spatial_mbr_exprContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Special_func_exprContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.String_length_iContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Table_element_access_listContext;
@@ -797,7 +804,13 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
             setWrapperMode(constraint, ctx.wrapper_opts());
             fCall.addOption(constraint);
         }
+        if (ctx.ASIS() != null) {
+            fCall.addOption(new ConstExpression(ctx.ASIS()));
+        }
         fCall.addOption(getJsonOnOption(ctx.json_query_on_opt()));
+        if (ctx.MULTIVALUE() != null) {
+            fCall.addOption(new ConstExpression(ctx.MULTIVALUE()));
+        }
         return fCall;
     }
 
@@ -1280,85 +1293,112 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
     }
 
     @Override
-    public Expression visitSingle_row_function(Single_row_functionContext ctx) {
+    public Expression visitNumeric_function(Numeric_functionContext ctx) {
+        return new FunctionCall(ctx, ctx.MOD().getText(), ctx.bit_expr().stream()
+                .map(e -> new ExpressionParam(visit(e))).collect(Collectors.toList()));
+    }
+
+    @Override
+    public Expression visitCharacter_function(Character_functionContext ctx) {
         String funcName = null;
         List<Statement> functionOpts = new ArrayList<>();
         List<FunctionParam> params = new ArrayList<>();
-        if (ctx.numeric_function() != null) {
-            funcName = ctx.numeric_function().MOD().getText();
-            params.addAll(ctx.numeric_function().bit_expr().stream()
-                    .map(e -> new ExpressionParam(visit(e))).collect(Collectors.toList()));
-        } else if (ctx.character_function() != null) {
-            Character_functionContext characterFunc = ctx.character_function();
-            if (characterFunc.TRANSLATE() != null) {
-                funcName = characterFunc.TRANSLATE().getText();
-            } else if (characterFunc.TRIM() != null) {
-                funcName = characterFunc.TRIM().getText();
-            } else if (characterFunc.ASCII() != null) {
-                funcName = characterFunc.ASCII().getText();
-            }
-            if (characterFunc.parameterized_trim() != null) {
-                Parameterized_trimContext trim = characterFunc.parameterized_trim();
-                FunctionParam param = new ExpressionParam(visit(trim.bit_expr(0)));
-                if (trim.bit_expr(1) != null) {
-                    param.addOption(visit(trim.bit_expr(1)));
-                }
-                params.add(param);
-                for (int i = 0; i < trim.getChildCount(); i++) {
-                    ParseTree p = trim.getChild(i);
-                    if (p instanceof TerminalNode) {
-                        functionOpts.add(new ConstExpression((TerminalNode) p));
-                    } else {
-                        break;
-                    }
-                }
-            } else {
-                params.addAll(characterFunc.bit_expr().stream().map(e -> new ExpressionParam(visit(e)))
-                        .collect(Collectors.toList()));
-                if (params.size() > 0) {
-                    params.get(params.size() - 1).addOption(new ConstExpression(characterFunc.translate_charset()));
-                }
-            }
-        } else if (ctx.extract_function() != null) {
-            funcName = ctx.extract_function().EXTRACT().getText();
-            FunctionParam p = new ExpressionParam(new ConstExpression(ctx.extract_function().date_unit_for_extract()));
-            p.addOption(visit(ctx.extract_function().bit_expr()));
-            params.add(p);
-        } else if (ctx.conversion_function() != null) {
-            Conversion_functionContext fCtx = ctx.conversion_function();
-            if (fCtx.CAST() != null) {
-                funcName = fCtx.CAST().getText();
-                FunctionParam functionParam = new ExpressionParam(visit(fCtx.bit_expr()));
-                functionParam.addOption(new OracleDataTypeFactory(fCtx.cast_data_type()).generate());
-                params.add(functionParam);
-            } else {
-                funcName = fCtx.TREAT().getText();
-                FunctionParam functionParam = new ExpressionParam(visit(fCtx.bit_expr()));
-                functionParam.addOption(new OracleDataTypeFactory(fCtx.treat_data_type()).generate());
-                params.add(functionParam);
-            }
-        } else if (ctx.hierarchical_function() != null) {
-            funcName = ctx.hierarchical_function().SYS_CONNECT_BY_PATH().getText();
-            params.addAll(ctx.hierarchical_function().bit_expr().stream().map(e -> new ExpressionParam(visit(e)))
-                    .collect(Collectors.toList()));
-        } else if (ctx.environment_id_function() != null) {
-            funcName = ctx.environment_id_function().getText();
-        } else if (ctx.xml_function() != null) {
-            Expression fCall = visit(ctx.xml_function());
-            if (ctx.obj_access_ref_normal() != null) {
-                fCall.reference(visit(ctx.obj_access_ref_normal()), ReferenceOperator.DOT);
-            } else if (ctx.table_element_access_list() != null) {
-                visitTableElementAccessList(fCall, ctx.table_element_access_list());
-            }
-            return fCall;
-        } else if (ctx.json_function() != null) {
-            return visit(ctx.json_function());
+        if (ctx.TRANSLATE() != null) {
+            funcName = ctx.TRANSLATE().getText();
+        } else if (ctx.TRIM() != null) {
+            funcName = ctx.TRIM().getText();
+        } else if (ctx.ASCII() != null) {
+            funcName = ctx.ASCII().getText();
         }
         if (funcName == null) {
             throw new IllegalStateException("Missing function name");
         }
+        if (ctx.parameterized_trim() != null) {
+            Parameterized_trimContext trim = ctx.parameterized_trim();
+            FunctionParam param = new ExpressionParam(visit(trim.bit_expr(0)));
+            if (trim.bit_expr(1) != null) {
+                param.addOption(visit(trim.bit_expr(1)));
+            }
+            params.add(param);
+            for (int i = 0; i < trim.getChildCount(); i++) {
+                ParseTree p = trim.getChild(i);
+                if (p instanceof TerminalNode) {
+                    functionOpts.add(new ConstExpression((TerminalNode) p));
+                } else {
+                    break;
+                }
+            }
+        } else {
+            params.addAll(ctx.bit_expr().stream().map(e -> new ExpressionParam(visit(e)))
+                    .collect(Collectors.toList()));
+            if (params.size() > 0) {
+                params.get(params.size() - 1).addOption(new ConstExpression(ctx.translate_charset()));
+            }
+        }
         FunctionCall fCall = new FunctionCall(ctx, funcName, params);
         functionOpts.forEach(fCall::addOption);
+        return fCall;
+    }
+
+    @Override
+    public Expression visitExtract_function(Extract_functionContext ctx) {
+        FunctionParam p = new ExpressionParam(new ConstExpression(ctx.date_unit_for_extract()));
+        p.addOption(visit(ctx.bit_expr()));
+        return new FunctionCall(ctx, ctx.EXTRACT().getText(), Collections.singletonList(p));
+    }
+
+    @Override
+    public Expression visitConversion_function(Conversion_functionContext ctx) {
+        if (ctx.CAST() != null) {
+            FunctionParam functionParam = new ExpressionParam(visit(ctx.bit_expr()));
+            functionParam.addOption(new OracleDataTypeFactory(ctx.cast_data_type()).generate());
+            return new FunctionCall(ctx, ctx.CAST().getText(), Collections.singletonList(functionParam));
+        }
+        FunctionParam functionParam = new ExpressionParam(visit(ctx.bit_expr()));
+        functionParam.addOption(new OracleDataTypeFactory(ctx.treat_data_type()).generate());
+        return new FunctionCall(ctx, ctx.TREAT().getText(), Collections.singletonList(functionParam));
+    }
+
+    @Override
+    public Expression visitHierarchical_function(Hierarchical_functionContext ctx) {
+        return new FunctionCall(ctx, ctx.SYS_CONNECT_BY_PATH().getText(), ctx.bit_expr()
+                .stream().map(e -> new ExpressionParam(visit(e))).collect(Collectors.toList()));
+    }
+
+    @Override
+    public Expression visitEnvironment_id_function(Environment_id_functionContext ctx) {
+        return new FunctionCall(ctx, ctx.getText(), Collections.emptyList());
+    }
+
+    @Override
+    public Expression visitSpatial_cellid_expr(Spatial_cellid_exprContext ctx) {
+        return new FunctionCall(ctx, ctx.SPATIAL_CELLID().getText(),
+                Collections.singletonList(new ExpressionParam(visit(ctx.bit_expr()))));
+    }
+
+    @Override
+    public Expression visitSpatial_mbr_expr(Spatial_mbr_exprContext ctx) {
+        return new FunctionCall(ctx, ctx.SPATIAL_MBR().getText(),
+                Collections.singletonList(new ExpressionParam(visit(ctx.bit_expr()))));
+    }
+
+    @Override
+    public Expression visitSdo_relate_expr(Sdo_relate_exprContext ctx) {
+        return new FunctionCall(ctx, ctx.SDO_RELATE().getText(), ctx.bit_expr()
+                .stream().map(e -> new ExpressionParam(visit(e))).collect(Collectors.toList()));
+    }
+
+    @Override
+    public Expression visitSingle_row_function(Single_row_functionContext ctx) {
+        if (ctx.xml_function() == null) {
+            return visitChildren(ctx);
+        }
+        Expression fCall = visit(ctx.xml_function());
+        if (ctx.obj_access_ref_normal() != null) {
+            fCall.reference(visit(ctx.obj_access_ref_normal()), ReferenceOperator.DOT);
+        } else if (ctx.table_element_access_list() != null) {
+            visitTableElementAccessList(fCall, ctx.table_element_access_list());
+        }
         return fCall;
     }
 
@@ -1452,6 +1492,9 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
             funcName = ctx.VALUES() == null ? ctx.DEFAULT().getText() : ctx.VALUES().getText();
             StatementFactory<ColumnReference> factory = new OracleColumnRefFactory(ctx.column_definition_ref());
             params.add(new ExpressionParam(factory.generate()));
+        } else if (ctx.LAST_REFRESH_SCN() != null) {
+            funcName = ctx.LAST_REFRESH_SCN().getText();
+            params.add(new ExpressionParam(new ConstExpression(ctx.INTNUM())));
         } else {
             funcName = ctx.getChild(0).getText();
             params.add(new ExpressionParam(visit(ctx.bit_expr(0))));
