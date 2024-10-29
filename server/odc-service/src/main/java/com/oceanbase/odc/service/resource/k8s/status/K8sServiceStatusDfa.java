@@ -75,7 +75,7 @@ public class K8sServiceStatusDfa extends AbstractDfa<ResourceState, K8sService> 
 
     @Override
     protected void onStateTransfer(ResourceState currentState, ResourceState nextState, K8sService k8sService) {
-        log.info("The state has been changed, currentState={}, nextState={}", currentState, nextState);
+        log.debug("The state has been changed, currentState={}, nextState={}", currentState, nextState);
     }
 
 }
