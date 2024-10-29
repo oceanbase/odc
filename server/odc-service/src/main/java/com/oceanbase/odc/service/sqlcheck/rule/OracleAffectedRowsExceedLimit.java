@@ -66,24 +66,18 @@ public class OracleAffectedRowsExceedLimit extends BaseAffectedRowsExceedLimit {
         long affectedRows = 0;
         if (statement instanceof Update || statement instanceof Delete || statement instanceof Insert) {
             String originalSql = statement.getText();
-            try {
-                if (this.jdbcOperations == null) {
-                    throw new IllegalStateException("JdbcOperations is null, please check your connection");
-                } else {
-                    switch (this.dialectType) {
-                        case ORACLE:
-                            affectedRows = getOracleAffectedRows(originalSql, this.jdbcOperations);
-                            break;
-                        case OB_ORACLE:
-                            affectedRows = getOBAffectedRows(originalSql, this.jdbcOperations);
-                            break;
-                        default:
-                            throw new UnsupportedOperationException("Unsupported dialect type: " + this.dialectType);
-                    }
-                }
-            } catch (Exception e) {
-                log.warn("Error in calling getAffectedRows method", e);
-                affectedRows = -1;
+            if (this.jdbcOperations == null) {
+                throw new IllegalStateException("JdbcOperations is null, please check your connection");
+            }
+            switch (this.dialectType) {
+                case ORACLE:
+                    affectedRows = getOracleAffectedRows(originalSql, this.jdbcOperations);
+                    break;
+                case OB_ORACLE:
+                    affectedRows = getOBAffectedRows(originalSql, this.jdbcOperations);
+                    break;
+                default:
+                    throw new UnsupportedOperationException("Unsupported dialect type: " + this.dialectType);
             }
         }
         return affectedRows;

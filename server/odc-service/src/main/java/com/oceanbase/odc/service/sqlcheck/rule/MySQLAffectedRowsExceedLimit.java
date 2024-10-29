@@ -72,26 +72,20 @@ public class MySQLAffectedRowsExceedLimit extends BaseAffectedRowsExceedLimit {
         long affectedRows = 0;
         if (statement instanceof Update || statement instanceof Delete || statement instanceof Insert) {
             String explainSql = "EXPLAIN " + statement.getText();
-            try {
-                if (this.jdbcOperations == null) {
-                    throw new IllegalStateException("JdbcOperations is null, please check your connection");
-                } else {
-                    switch (this.dialectType) {
-                        case MYSQL:
-                            affectedRows = (statement instanceof Insert)
-                                    ? getMySqlAffectedRowsByCount((Insert) statement)
-                                    : getMySqlAffectedRowsByExplain(explainSql, this.jdbcOperations);
-                            break;
-                        case OB_MYSQL:
-                            affectedRows = getOBAffectedRows(statement.getText(), this.jdbcOperations);
-                            break;
-                        default:
-                            throw new UnsupportedOperationException("Unsupported dialect type: " + this.dialectType);
-                    }
-                }
-            } catch (Exception e) {
-                log.warn("Error in calling getAffectedRows method", e);
-                affectedRows = -1;
+            if (this.jdbcOperations == null) {
+                throw new IllegalStateException("JdbcOperations is null, please check your connection");
+            }
+            switch (this.dialectType) {
+                case MYSQL:
+                    affectedRows = (statement instanceof Insert)
+                            ? getMySqlAffectedRowsByCount((Insert) statement)
+                            : getMySqlAffectedRowsByExplain(explainSql, this.jdbcOperations);
+                    break;
+                case OB_MYSQL:
+                    affectedRows = getOBAffectedRows(statement.getText(), this.jdbcOperations);
+                    break;
+                default:
+                    throw new UnsupportedOperationException("Unsupported dialect type: " + this.dialectType);
             }
         }
         return affectedRows;
