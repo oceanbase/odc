@@ -666,6 +666,11 @@ public class ConnectionService {
                         throw new UnexpectedException("Failed to update database project id", e);
                     }
                 }
+                // if ConnectionConfig's environmentId changed, update databases' environmentId either.
+                if (Objects.nonNull(saved.getEnvironmentId()) && Objects.nonNull(updated.getEnvironmentId())
+                        && saved.getEnvironmentId().compareTo(updated.getEnvironmentId()) != 0) {
+                    databaseService.updateEnvironmentIdByConnectionId(updated.getEnvironmentId(), updated.getId());
+                }
                 return updated;
             } catch (Exception ex) {
                 status.setRollbackOnly();
