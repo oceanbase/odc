@@ -83,6 +83,7 @@ import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.listener.DefaultJobProcessUpdateEvent;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.processor.DLMResultProcessor;
+import com.oceanbase.odc.service.task.processor.LoadDataResultProcessor;
 import com.oceanbase.odc.service.task.processor.LogicalDBChangeResultProcessor;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -139,6 +140,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     private DLMResultProcessor dlmResultProcessor;
     @Autowired
     private LogicalDBChangeResultProcessor logicalDBChangeResultProcessor;
+    @Autowired
+    private LoadDataResultProcessor loadDataResultProcessor;
 
     @Override
     public JobEntity find(Long id) {
@@ -390,6 +393,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         try {
             String executorEndpoint = executorEndpointManager.getExecutorEndpoint(je);
             DefaultTaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
+
             if (je.getRunMode().isK8s() && MapUtils.isEmpty(result.getLogMetadata())) {
                 log.info("Refresh log failed due to log have not uploaded,  jobId={}, currentStatus={}", je.getId(),
                         je.getStatus());
@@ -400,6 +404,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 dlmResultProcessor.process(result);
             } else if (StringUtils.equalsIgnoreCase("LogicalDatabaseChange", je.getJobType())) {
                 logicalDBChangeResultProcessor.process(result);
+            } else if (StringUtils.equalsIgnoreCase("LOAD_DATA", je.getJobType())) {
+                loadDataResultProcessor.process(result);
             }
             return true;
         } catch (Exception exception) {
@@ -418,6 +424,10 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
         String executorEndpoint = executorEndpointManager.getExecutorEndpoint(je);
         DefaultTaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
+        if (result.getStatus() == JobStatus.PREPARING) {
+            log.info("Job is preparing, ignore refresh, jobId={}, currentStatus={}", id, result.getStatus());
+            return;
+        }
         DefaultTaskResult previous = JsonUtils.fromJson(je.getResultJson(), DefaultTaskResult.class);
 
         if (!updateHeartbeatTime(id)) {

@@ -179,6 +179,7 @@ public class TaskMonitor {
         uploadLogFileToCloudStorage(finalResult);
 
         Map<String, String> latestLogMeta = finalResult.getLogMetadata();
+        log.info("Task id: {}, latest log meta: {}", getJobId(), latestLogMeta);
         if (latestLogMeta != null) {
             this.logMetadata.putAll(latestLogMeta);
         }
