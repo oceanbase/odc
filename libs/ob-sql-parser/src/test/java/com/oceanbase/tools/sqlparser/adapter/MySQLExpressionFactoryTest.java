@@ -802,7 +802,7 @@ public class MySQLExpressionFactoryTest {
                 "allow scalars " +
                 "pretty " +
                 "ASCII " +
-                "with conditional array wrapper " +
+                "with unconditional array wrapper " +
                 "asis " +
                 "empty on empty empty array on error_p error_p on mismatch " +
                 "MULTIVALUE)");
@@ -820,7 +820,7 @@ public class MySQLExpressionFactoryTest {
         jsonOpt.setPretty(true);
         jsonOpt.setAscii(true);
         jsonOpt.setMultiValue(true);
-        jsonOpt.setWrapperMode(JsonConstraint.WrapperMode.WITH_CONDITIONAL_ARRAY_WRAPPER);
+        jsonOpt.setWrapperMode(JsonConstraint.WrapperMode.WITH_UNCONDITIONAL_ARRAY_WRAPPER);
         jsonOpt.setAsis(true);
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnEmpty(new ConstExpression("empty"));
@@ -828,6 +828,120 @@ public class MySQLExpressionFactoryTest {
         jsonOnOption.setOnMismatches(Collections.singletonList(
                 new JsonOnOption.OnMismatch(new ConstExpression("error_p"), null)));
         jsonOpt.setOnOption(jsonOnOption);
+        expect.addOption(jsonOpt);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_jsonQueryExpr1_generateFunctionCallSucceed() {
+        ExprContext context = getExprContext("JSON_QUERY('123', _utf8 'abc' " +
+                "returning double " +
+                "with array wrapper)");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        params.add(new ExpressionParam(new ConstExpression("'123'")));
+        params.add(new ExpressionParam(new ConstExpression("_utf8 'abc'")));
+        FunctionCall expect = new FunctionCall("JSON_QUERY", params);
+        expect.addOption(new NumberType("double", null, null));
+        JsonConstraint jsonOpt = new JsonConstraint();
+        jsonOpt.setWrapperMode(JsonConstraint.WrapperMode.WITH_ARRAY_WRAPPER);
+        expect.addOption(jsonOpt);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_jsonQueryExpr2_generateFunctionCallSucceed() {
+        ExprContext context = getExprContext("JSON_QUERY('123', _utf8 'abc' " +
+                "returning double " +
+                "with conditional wrapper)");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        params.add(new ExpressionParam(new ConstExpression("'123'")));
+        params.add(new ExpressionParam(new ConstExpression("_utf8 'abc'")));
+        FunctionCall expect = new FunctionCall("JSON_QUERY", params);
+        expect.addOption(new NumberType("double", null, null));
+        JsonConstraint jsonOpt = new JsonConstraint();
+        jsonOpt.setWrapperMode(JsonConstraint.WrapperMode.WITH_CONDITIONAL_WRAPPER);
+        expect.addOption(jsonOpt);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_jsonQueryExpr3_generateFunctionCallSucceed() {
+        ExprContext context = getExprContext("JSON_QUERY('123', _utf8 'abc' " +
+                "returning double " +
+                "with unconditional wrapper)");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        params.add(new ExpressionParam(new ConstExpression("'123'")));
+        params.add(new ExpressionParam(new ConstExpression("_utf8 'abc'")));
+        FunctionCall expect = new FunctionCall("JSON_QUERY", params);
+        expect.addOption(new NumberType("double", null, null));
+        JsonConstraint jsonOpt = new JsonConstraint();
+        jsonOpt.setWrapperMode(JsonConstraint.WrapperMode.WITH_UNCONDITIONAL_WRAPPER);
+        expect.addOption(jsonOpt);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_jsonQueryExpr4_generateFunctionCallSucceed() {
+        ExprContext context = getExprContext("JSON_QUERY('123', _utf8 'abc' " +
+                "returning double " +
+                "with wrapper)");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        params.add(new ExpressionParam(new ConstExpression("'123'")));
+        params.add(new ExpressionParam(new ConstExpression("_utf8 'abc'")));
+        FunctionCall expect = new FunctionCall("JSON_QUERY", params);
+        expect.addOption(new NumberType("double", null, null));
+        JsonConstraint jsonOpt = new JsonConstraint();
+        jsonOpt.setWrapperMode(JsonConstraint.WrapperMode.WITH_WRAPPER);
+        expect.addOption(jsonOpt);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_jsonQueryExpr5_generateFunctionCallSucceed() {
+        ExprContext context = getExprContext("JSON_QUERY('123', _utf8 'abc' " +
+                "returning double " +
+                "without wrapper)");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        params.add(new ExpressionParam(new ConstExpression("'123'")));
+        params.add(new ExpressionParam(new ConstExpression("_utf8 'abc'")));
+        FunctionCall expect = new FunctionCall("JSON_QUERY", params);
+        expect.addOption(new NumberType("double", null, null));
+        JsonConstraint jsonOpt = new JsonConstraint();
+        jsonOpt.setWrapperMode(JsonConstraint.WrapperMode.WITHOUT_WRAPPER);
+        expect.addOption(jsonOpt);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_jsonQueryExpr6_generateFunctionCallSucceed() {
+        ExprContext context = getExprContext("JSON_QUERY('123', _utf8 'abc' " +
+                "returning double " +
+                "without array wrapper)");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        params.add(new ExpressionParam(new ConstExpression("'123'")));
+        params.add(new ExpressionParam(new ConstExpression("_utf8 'abc'")));
+        FunctionCall expect = new FunctionCall("JSON_QUERY", params);
+        expect.addOption(new NumberType("double", null, null));
+        JsonConstraint jsonOpt = new JsonConstraint();
+        jsonOpt.setWrapperMode(JsonConstraint.WrapperMode.WITHOUT_ARRAY_WRAPPER);
         expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
