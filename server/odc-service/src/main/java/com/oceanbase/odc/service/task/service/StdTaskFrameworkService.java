@@ -75,6 +75,7 @@ import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.listener.DefaultJobProcessUpdateEvent;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.processor.DLMResultProcessor;
+import com.oceanbase.odc.service.task.processor.LoadDataResultProcessor;
 import com.oceanbase.odc.service.task.processor.LogicalDBChangeResultProcessor;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -127,6 +128,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     private DLMResultProcessor dlmResultProcessor;
     @Autowired
     private LogicalDBChangeResultProcessor logicalDBChangeResultProcessor;
+    @Autowired
+    private LoadDataResultProcessor loadDataResultProcessor;
 
     @Override
     public JobEntity find(Long id) {
@@ -379,11 +382,9 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 dlmResultProcessor.process(result);
             } else if (StringUtils.equalsIgnoreCase("LogicalDatabaseChange", je.getJobType())) {
                 logicalDBChangeResultProcessor.process(result);
+            } else if (StringUtils.equalsIgnoreCase("LOAD_DATA", je.getJobType())) {
+                loadDataResultProcessor.process(result);
             }
-
-            // If the task is immediately stopped, its resultJson field would NOT be updated. So before changing
-            // the task status, update the task results first.
-            updateTaskResult(result, je);
             return true;
         } catch (Exception exception) {
             log.warn("Refresh log meta failed,errorMsg={}", exception.getMessage());
