@@ -37,6 +37,7 @@ public class QueryScheduleTaskParams {
     private Date startTime;
     private Date endTime;
     private String creator;
+    private Set<Long> creatorIds;
     private Long projectId;
     private Set<Long> projectIds;
     private Long organizationId;

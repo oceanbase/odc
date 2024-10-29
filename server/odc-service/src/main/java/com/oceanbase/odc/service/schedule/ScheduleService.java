@@ -811,6 +811,14 @@ public class ScheduleService {
         if (params.getDataSourceIds() == null) {
             params.setDataSourceIds(new HashSet<>());
         }
+        if (StringUtils.isNotBlank(params.getCreator())) {
+            Set<Long> creatorIds = userService.getUsersByFuzzyNameWithoutPermissionCheck(
+                    params.getCreator()).stream().map(User::getId).collect(Collectors.toSet());
+            if (creatorIds.isEmpty()) {
+                return Page.empty();
+            }
+            params.setCreatorIds(creatorIds);
+        }
         if (StringUtils.isNotEmpty(params.getClusterId())) {
             List<Long> datasourceIdsByCluster = connectionService.innerListIdByOrganizationIdAndClusterId(
                     authenticationFacade.currentOrganizationId(), params.getClusterId());
@@ -845,7 +853,7 @@ public class ScheduleService {
                 .dataSourceIds(params.getDataSourceIds())
                 .databaseName(params.getDatabaseName())
                 .type(params.getScheduleType())
-                .creator(params.getCreator())
+                .creatorIds(params.getCreatorIds())
                 .projectId(params.getProjectId())
                 .organizationId(authenticationFacade.currentOrganizationId())
                 .build();
