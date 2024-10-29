@@ -704,16 +704,16 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             fCall.addOption(new MySQLDataTypeFactory(ctx.cast_data_type()).generate());
         }
         if (ctx.json_query_opt() != null) {
-            JsonConstraint jsonOpt = new JsonConstraint(ctx.json_query_opt());
+            JsonOption jsonOpt = new JsonOption(ctx.json_query_opt());
             fCall.addOption(jsonOpt);
             if (ctx.json_query_opt().TRUNCATE() != null) {
                 jsonOpt.setTruncate(true);
             }
             if (ctx.json_query_opt().scalars_opt() != null) {
                 if (ctx.json_query_opt().scalars_opt().ALLOW() != null) {
-                    jsonOpt.setScalarsMode(JsonConstraint.ScalarsMode.ALLOW_SCALARS);
+                    jsonOpt.setScalarsMode(JsonOption.ScalarsMode.ALLOW_SCALARS);
                 } else {
-                    jsonOpt.setScalarsMode(JsonConstraint.ScalarsMode.DISALLOW_SCALARS);
+                    jsonOpt.setScalarsMode(JsonOption.ScalarsMode.DISALLOW_SCALARS);
                 }
             }
             if (ctx.json_query_opt().PRETTY() != null) {
@@ -759,7 +759,7 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             fCall.addOption(new MySQLDataTypeFactory(ctx.cast_data_type()).generate());
         }
         if (ctx.json_value_opt() != null) {
-            JsonConstraint jsonOpt = new JsonConstraint(ctx.json_value_opt());
+            JsonOption jsonOpt = new JsonOption(ctx.json_value_opt());
             fCall.addOption(jsonOpt);
             if (ctx.json_value_opt().TRUNCATE() != null) {
                 jsonOpt.setTruncate(true);
@@ -1069,7 +1069,11 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             param.addOption(new ConstExpression(ctx.collation().collation_name()));
         }
         param.addOption(visit(ctx.literal()));
-        param.addOption(getJsonOnOption(ctx.opt_value_on_empty_or_error_or_mismatch()));
+        if (ctx.opt_value_on_empty_or_error_or_mismatch() != null) {
+            JsonOption jsonOpt = new JsonOption(ctx.opt_value_on_empty_or_error_or_mismatch());
+            param.addOption(jsonOpt);
+            jsonOpt.setOnOption(getJsonOnOption(ctx.opt_value_on_empty_or_error_or_mismatch()));
+        }
         return param;
     }
 
@@ -1110,33 +1114,33 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
         return null;
     }
 
-    private void setWrapperMode(JsonConstraint c, Wrapper_optsContext ctx) {
+    private void setWrapperMode(JsonOption c, Wrapper_optsContext ctx) {
         if (ctx == null) {
             return;
         }
         if (ctx.WITH() != null) {
             if (ctx.ARRAY() != null) {
                 if (ctx.CONDITIONAL() != null) {
-                    c.setWrapperMode(JsonConstraint.WrapperMode.WITH_CONDITIONAL_ARRAY_WRAPPER);
+                    c.setWrapperMode(JsonOption.WrapperMode.WITH_CONDITIONAL_ARRAY_WRAPPER);
                 } else if (ctx.UNCONDITIONAL() != null) {
-                    c.setWrapperMode(JsonConstraint.WrapperMode.WITH_UNCONDITIONAL_ARRAY_WRAPPER);
+                    c.setWrapperMode(JsonOption.WrapperMode.WITH_UNCONDITIONAL_ARRAY_WRAPPER);
                 } else {
-                    c.setWrapperMode(JsonConstraint.WrapperMode.WITH_ARRAY_WRAPPER);
+                    c.setWrapperMode(JsonOption.WrapperMode.WITH_ARRAY_WRAPPER);
                 }
             } else {
                 if (ctx.CONDITIONAL() != null) {
-                    c.setWrapperMode(JsonConstraint.WrapperMode.WITH_CONDITIONAL_WRAPPER);
+                    c.setWrapperMode(JsonOption.WrapperMode.WITH_CONDITIONAL_WRAPPER);
                 } else if (ctx.UNCONDITIONAL() != null) {
-                    c.setWrapperMode(JsonConstraint.WrapperMode.WITH_UNCONDITIONAL_WRAPPER);
+                    c.setWrapperMode(JsonOption.WrapperMode.WITH_UNCONDITIONAL_WRAPPER);
                 } else {
-                    c.setWrapperMode(JsonConstraint.WrapperMode.WITH_WRAPPER);
+                    c.setWrapperMode(JsonOption.WrapperMode.WITH_WRAPPER);
                 }
             }
         } else {
             if (ctx.ARRAY() != null) {
-                c.setWrapperMode(JsonConstraint.WrapperMode.WITHOUT_ARRAY_WRAPPER);
+                c.setWrapperMode(JsonOption.WrapperMode.WITHOUT_ARRAY_WRAPPER);
             } else {
-                c.setWrapperMode(JsonConstraint.WrapperMode.WITHOUT_WRAPPER);
+                c.setWrapperMode(JsonOption.WrapperMode.WITHOUT_WRAPPER);
             }
         }
     }

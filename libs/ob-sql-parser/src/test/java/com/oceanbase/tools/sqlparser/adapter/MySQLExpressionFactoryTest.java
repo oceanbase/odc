@@ -790,7 +790,7 @@ public class MySQLExpressionFactoryTest {
         params.add(new ExpressionParam(new ConstExpression("'123'")));
         params.add(new ExpressionParam(new ConstExpression("_utf8 'abc'")));
         FunctionCall expect = new FunctionCall("JSON_QUERY", params);
-        expect.addOption(new JsonConstraint());
+        expect.addOption(new JsonOption());
         Assert.assertEquals(expect, actual);
     }
 
@@ -814,13 +814,13 @@ public class MySQLExpressionFactoryTest {
         params.add(new ExpressionParam(new ConstExpression("_utf8 'abc'")));
         FunctionCall expect = new FunctionCall("JSON_QUERY", params);
         expect.addOption(new NumberType("double", null, null));
-        JsonConstraint jsonOpt = new JsonConstraint();
+        JsonOption jsonOpt = new JsonOption();
         jsonOpt.setTruncate(true);
-        jsonOpt.setScalarsMode(JsonConstraint.ScalarsMode.ALLOW_SCALARS);
+        jsonOpt.setScalarsMode(JsonOption.ScalarsMode.ALLOW_SCALARS);
         jsonOpt.setPretty(true);
         jsonOpt.setAscii(true);
         jsonOpt.setMultiValue(true);
-        jsonOpt.setWrapperMode(JsonConstraint.WrapperMode.WITH_UNCONDITIONAL_ARRAY_WRAPPER);
+        jsonOpt.setWrapperMode(JsonOption.WrapperMode.WITH_UNCONDITIONAL_ARRAY_WRAPPER);
         jsonOpt.setAsis(true);
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnEmpty(new ConstExpression("empty"));
@@ -845,8 +845,8 @@ public class MySQLExpressionFactoryTest {
         params.add(new ExpressionParam(new ConstExpression("_utf8 'abc'")));
         FunctionCall expect = new FunctionCall("JSON_QUERY", params);
         expect.addOption(new NumberType("double", null, null));
-        JsonConstraint jsonOpt = new JsonConstraint();
-        jsonOpt.setWrapperMode(JsonConstraint.WrapperMode.WITH_ARRAY_WRAPPER);
+        JsonOption jsonOpt = new JsonOption();
+        jsonOpt.setWrapperMode(JsonOption.WrapperMode.WITH_ARRAY_WRAPPER);
         expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
@@ -864,8 +864,8 @@ public class MySQLExpressionFactoryTest {
         params.add(new ExpressionParam(new ConstExpression("_utf8 'abc'")));
         FunctionCall expect = new FunctionCall("JSON_QUERY", params);
         expect.addOption(new NumberType("double", null, null));
-        JsonConstraint jsonOpt = new JsonConstraint();
-        jsonOpt.setWrapperMode(JsonConstraint.WrapperMode.WITH_CONDITIONAL_WRAPPER);
+        JsonOption jsonOpt = new JsonOption();
+        jsonOpt.setWrapperMode(JsonOption.WrapperMode.WITH_CONDITIONAL_WRAPPER);
         expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
@@ -883,8 +883,8 @@ public class MySQLExpressionFactoryTest {
         params.add(new ExpressionParam(new ConstExpression("_utf8 'abc'")));
         FunctionCall expect = new FunctionCall("JSON_QUERY", params);
         expect.addOption(new NumberType("double", null, null));
-        JsonConstraint jsonOpt = new JsonConstraint();
-        jsonOpt.setWrapperMode(JsonConstraint.WrapperMode.WITH_UNCONDITIONAL_WRAPPER);
+        JsonOption jsonOpt = new JsonOption();
+        jsonOpt.setWrapperMode(JsonOption.WrapperMode.WITH_UNCONDITIONAL_WRAPPER);
         expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
@@ -902,8 +902,8 @@ public class MySQLExpressionFactoryTest {
         params.add(new ExpressionParam(new ConstExpression("_utf8 'abc'")));
         FunctionCall expect = new FunctionCall("JSON_QUERY", params);
         expect.addOption(new NumberType("double", null, null));
-        JsonConstraint jsonOpt = new JsonConstraint();
-        jsonOpt.setWrapperMode(JsonConstraint.WrapperMode.WITH_WRAPPER);
+        JsonOption jsonOpt = new JsonOption();
+        jsonOpt.setWrapperMode(JsonOption.WrapperMode.WITH_WRAPPER);
         expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
@@ -921,8 +921,8 @@ public class MySQLExpressionFactoryTest {
         params.add(new ExpressionParam(new ConstExpression("_utf8 'abc'")));
         FunctionCall expect = new FunctionCall("JSON_QUERY", params);
         expect.addOption(new NumberType("double", null, null));
-        JsonConstraint jsonOpt = new JsonConstraint();
-        jsonOpt.setWrapperMode(JsonConstraint.WrapperMode.WITHOUT_WRAPPER);
+        JsonOption jsonOpt = new JsonOption();
+        jsonOpt.setWrapperMode(JsonOption.WrapperMode.WITHOUT_WRAPPER);
         expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
@@ -940,8 +940,8 @@ public class MySQLExpressionFactoryTest {
         params.add(new ExpressionParam(new ConstExpression("_utf8 'abc'")));
         FunctionCall expect = new FunctionCall("JSON_QUERY", params);
         expect.addOption(new NumberType("double", null, null));
-        JsonConstraint jsonOpt = new JsonConstraint();
-        jsonOpt.setWrapperMode(JsonConstraint.WrapperMode.WITHOUT_ARRAY_WRAPPER);
+        JsonOption jsonOpt = new JsonOption();
+        jsonOpt.setWrapperMode(JsonOption.WrapperMode.WITHOUT_ARRAY_WRAPPER);
         expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
@@ -966,12 +966,12 @@ public class MySQLExpressionFactoryTest {
         params.add(new ExpressionParam(new ConstExpression("_utf8 'abc'")));
         FunctionCall expect = new FunctionCall("JSON_QUERY", params);
         expect.addOption(new NumberType("double", null, null));
-        JsonConstraint jsonOpt = new JsonConstraint();
+        JsonOption jsonOpt = new JsonOption();
         jsonOpt.setTruncate(true);
-        jsonOpt.setScalarsMode(JsonConstraint.ScalarsMode.DISALLOW_SCALARS);
+        jsonOpt.setScalarsMode(JsonOption.ScalarsMode.DISALLOW_SCALARS);
         jsonOpt.setPretty(true);
         jsonOpt.setAscii(true);
-        jsonOpt.setWrapperMode(JsonConstraint.WrapperMode.WITH_CONDITIONAL_ARRAY_WRAPPER);
+        jsonOpt.setWrapperMode(JsonOption.WrapperMode.WITH_CONDITIONAL_ARRAY_WRAPPER);
         jsonOpt.setAsis(true);
         jsonOpt.setMultiValue(true);
         JsonOnOption jsonOnOption = new JsonOnOption();
@@ -996,7 +996,7 @@ public class MySQLExpressionFactoryTest {
         params.add(p);
         FunctionCall expect = new FunctionCall("JSON_VALUE", params);
         expect.addOption(new NumberType("double", null, null));
-        JsonConstraint jsonOpt = new JsonConstraint();
+        JsonOption jsonOpt = new JsonOption();
         jsonOpt.setTruncate(true);
         jsonOpt.setAscii(true);
         expect.addOption(jsonOpt);
@@ -1016,7 +1016,7 @@ public class MySQLExpressionFactoryTest {
         params.add(p);
         FunctionCall expect = new FunctionCall("JSON_VALUE", params);
         expect.addOption(new NumberType("double", null, null));
-        JsonConstraint jsonOpt = new JsonConstraint();
+        JsonOption jsonOpt = new JsonOption();
         jsonOpt.setTruncate(true);
         jsonOpt.setAscii(true);
         JsonOnOption jsonOnOption = new JsonOnOption();
@@ -1039,7 +1039,7 @@ public class MySQLExpressionFactoryTest {
         params.add(p);
         FunctionCall expect = new FunctionCall("JSON_VALUE", params);
         expect.addOption(new NumberType("double", null, null));
-        JsonConstraint jsonOpt = new JsonConstraint();
+        JsonOption jsonOpt = new JsonOption();
         jsonOpt.setTruncate(true);
         jsonOpt.setAscii(true);
         JsonOnOption jsonOnOption = new JsonOnOption();
@@ -1062,7 +1062,7 @@ public class MySQLExpressionFactoryTest {
         params.add(p);
         FunctionCall expect = new FunctionCall("JSON_VALUE", params);
         expect.addOption(new NumberType("double", null, null));
-        JsonConstraint jsonOpt = new JsonConstraint();
+        JsonOption jsonOpt = new JsonOption();
         jsonOpt.setTruncate(true);
         jsonOpt.setAscii(true);
         JsonOnOption jsonOnOption = new JsonOnOption();
@@ -1085,7 +1085,7 @@ public class MySQLExpressionFactoryTest {
         params.add(p);
         FunctionCall expect = new FunctionCall("JSON_VALUE", params);
         expect.addOption(new NumberType("double", null, null));
-        expect.addOption(new JsonConstraint());
+        expect.addOption(new JsonOption());
         Assert.assertEquals(expect, actual);
     }
 

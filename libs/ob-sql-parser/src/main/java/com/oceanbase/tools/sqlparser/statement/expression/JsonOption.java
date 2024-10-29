@@ -26,7 +26,7 @@ import lombok.NonNull;
 import lombok.Setter;
 
 /**
- * {@link JsonConstraint}
+ * {@link JsonOption}
  *
  * @author yh263208
  * @date 2023-09-26 15:09
@@ -36,7 +36,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class JsonConstraint extends BaseExpression {
+public class JsonOption extends BaseExpression {
 
     private boolean truncate;
     private boolean pretty;
@@ -49,19 +49,19 @@ public class JsonConstraint extends BaseExpression {
     private UniqueMode uniqueMode;
     private WrapperMode wrapperMode;
 
-    public JsonConstraint(@NonNull ParserRuleContext context) {
+    public JsonOption(@NonNull ParserRuleContext context) {
         super(context);
     }
 
-    public JsonConstraint(@NonNull TerminalNode terminalNode) {
+    public JsonOption(@NonNull TerminalNode terminalNode) {
         super(terminalNode);
     }
 
-    public JsonConstraint(@NonNull TerminalNode beginNode, @NonNull ParserRuleContext endRule) {
+    public JsonOption(@NonNull TerminalNode beginNode, @NonNull ParserRuleContext endRule) {
         super(beginNode, endRule);
     }
 
-    public JsonConstraint(@NonNull ParserRuleContext beginRule, @NonNull ParserRuleContext endRule) {
+    public JsonOption(@NonNull ParserRuleContext beginRule, @NonNull ParserRuleContext endRule) {
         super(beginRule, endRule);
     }
 

@@ -4583,7 +4583,11 @@ date_unit_for_extract
     ;
 
 json_mergepatch_expr
-    : JSON_MERGEPATCH LeftParen bit_expr Comma bit_expr js_mp_return_clause? opt_json_mergepatch json_mergepatch_on_error? RightParen
+    : JSON_MERGEPATCH LeftParen bit_expr Comma bit_expr js_mp_return_clause? json_mergepatch_opt RightParen
+    ;
+
+json_mergepatch_opt
+    : opt_json_mergepatch json_mergepatch_on_error?
     ;
 
 json_mergepatch_on_error
@@ -4627,7 +4631,11 @@ js_array_return_clause
     ;
 
 json_value_expr
-    : JSON_VALUE LeftParen js_doc_expr Comma js_literal opt_js_value_returning_type TRUNCATE? ASCII? json_value_on_opt? RightParen
+    : JSON_VALUE LeftParen js_doc_expr Comma js_literal opt_js_value_returning_type json_value_opt RightParen
+    ;
+
+json_value_opt
+    : TRUNCATE? ASCII? json_value_on_opt?
     ;
 
 json_equal_expr
@@ -4739,7 +4747,11 @@ json_exists_response_type
     ;
 
 json_query_expr
-    : JSON_QUERY LeftParen js_doc_expr Comma js_literal (RETURNING js_query_return_type)? TRUNCATE? scalars_opt? PRETTY? ASCII? wrapper_opts? ASIS? json_query_on_opt? MULTIVALUE? RightParen
+    : JSON_QUERY LeftParen js_doc_expr Comma js_literal (RETURNING js_query_return_type)? json_query_opt RightParen
+    ;
+
+json_query_opt
+    : TRUNCATE? scalars_opt? PRETTY? ASCII? wrapper_opts? ASIS? json_query_on_opt? MULTIVALUE?
     ;
 
 json_query_on_opt
