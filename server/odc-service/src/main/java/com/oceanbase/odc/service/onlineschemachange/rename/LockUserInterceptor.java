@@ -15,7 +15,9 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.rename;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -26,7 +28,6 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.model.OdcDBSession;
-import com.oceanbase.odc.service.onlineschemachange.ddl.DBAccountLockType;
 import com.oceanbase.odc.service.onlineschemachange.ddl.DBUser;
 import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessor;
 import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessorFactory;
@@ -63,15 +64,39 @@ public class LockUserInterceptor implements RenameTableInterceptor {
 
         OscDBAccessor oscDBAccessor = new OscDBAccessorFactory().generate(connSession);
         // filter users is unlocked and to lock them
-        shouldBeLockedUsers = oscDBAccessor.listUsers(parameters.getLockUsers())
-                .stream().filter(dbUser -> dbUser.getAccountLocked() == DBAccountLockType.UNLOCKED)
+        shouldBeLockedUsers = oscDBAccessor.listUsers(processLockUsers(parameters.getLockUsers()))
+                .stream()
                 .map(DBUser::getNameWithHost)
                 .collect(Collectors.toList());
+        lockUserAndKillSession(parameters.getLockTableTimeOutSeconds(), shouldBeLockedUsers);
+    }
 
-        if (CollectionUtils.isEmpty(shouldBeLockedUsers)) {
+    /**
+     * trim user suffix like '@'%''
+     * 
+     * @param lockUsers
+     * @return
+     */
+    protected List<String> processLockUsers(List<String> lockUsers) {
+        List<String> ret = new ArrayList<>();
+        if (CollectionUtils.isEmpty(lockUsers)) {
+            log.info("lock users is empty");
+            return ret;
+        }
+        for (String lockUser : lockUsers) {
+            tryTrimSuffix(lockUser, ret::add);
+        }
+        return ret;
+    }
+
+    protected void tryTrimSuffix(String rawString, Consumer<String> stringConsumer) {
+        // raw string is accepted
+        stringConsumer.accept(rawString);
+        int suffixIndex = StringUtils.lastIndexOf(rawString, '@');
+        if (suffixIndex == -1) {
             return;
         }
-        lockUserAndKillSession(parameters.getLockTableTimeOutSeconds(), shouldBeLockedUsers);
+        stringConsumer.accept(rawString.substring(0, suffixIndex));
     }
 
     @Override
@@ -96,7 +121,8 @@ public class LockUserInterceptor implements RenameTableInterceptor {
 
     private void lockUserAndKillSession(Integer lockTableTimeOutSeconds, List<String> lockUsers) {
         batchExecuteLockUser(lockUsers);
-        dbSessionManageFacade.killAllSessions(connSession, getSessionFilter(lockUsers), lockTableTimeOutSeconds);
+        dbSessionManageFacade.killAllSessions(connSession, getSessionFilter(processLockUsers(lockUsers)),
+                lockTableTimeOutSeconds);
     }
 
     private void batchExecuteLockUser(List<String> users) {
