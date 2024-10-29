@@ -19,6 +19,7 @@ package com.oceanbase.odc.service.task.schedule;
 import java.text.MessageFormat;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.quartz.CronTrigger;
@@ -59,6 +60,7 @@ import com.oceanbase.odc.service.task.schedule.daemon.StartPreparingJob;
 import com.oceanbase.odc.service.task.service.JobRunnable;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -173,9 +175,9 @@ public class StdJobScheduler implements JobScheduler {
             configuration.getJobDispatcher().stop(JobIdentity.of(jobEntity.getId()));
         } catch (JobException e) {
             log.warn("Stop job occur error: ", e);
-
             Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
-                    .item(AlarmUtils.ORGANIZATION_NAME, jobEntity.getOrganizationId().toString())
+                    .item(AlarmUtils.ORGANIZATION_NAME, Optional.ofNullable(jobEntity.getOrganizationId()).map(
+                            Object::toString).orElse(StrUtil.EMPTY))
                     .item(AlarmUtils.TASK_JOB_ID_NAME, jobId.toString())
                     .item(AlarmUtils.MESSAGE_NAME,
                             MessageFormat.format("Cancel job failed, jobId={0}, message={1}", jobEntity.getId(),

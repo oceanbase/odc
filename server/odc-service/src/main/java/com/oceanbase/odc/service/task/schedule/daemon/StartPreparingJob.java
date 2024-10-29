@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.task.schedule.daemon;
 
 import java.text.MessageFormat;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.quartz.DisallowConcurrentExecution;
@@ -44,6 +45,7 @@ import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -112,7 +114,8 @@ public class StartPreparingJob implements Job {
                     getConfiguration().getJobDispatcher().start(jc);
                 } catch (JobException e) {
                     Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
-                            .item(AlarmUtils.ORGANIZATION_NAME, jobEntity.getOrganizationId().toString())
+                            .item(AlarmUtils.ORGANIZATION_NAME, Optional.ofNullable(jobEntity.getOrganizationId()).map(
+                                    Object::toString).orElse(StrUtil.EMPTY))
                             .item(AlarmUtils.TASK_JOB_ID_NAME, jobEntity.getId().toString())
                             .item(AlarmUtils.MESSAGE_NAME,
                                     MessageFormat.format("Start job failed, jobId={0}, message={1}",

@@ -89,10 +89,10 @@ public class OdcServer {
             log.info("Task executor exit.");
             return;
         }
-        AlarmUtils.alarm(SERVER_RESTART, LocalDateTime.now().toString());
         initEnv();
         System.setProperty("spring.cloud.bootstrap.enabled", "true");
         PluginSpringApplication.run(OdcServer.class, args);
+        AlarmUtils.alarm(SERVER_RESTART, LocalDateTime.now().toString());
     }
 
     private static void initEnv() {
