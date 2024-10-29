@@ -78,20 +78,34 @@ public class RulesetController {
         return Responses.success(ruleService.update(rulesetId, ruleId, rule));
     }
 
+    /**
+     * 列出指定规则集中的规则
+     *
+     * @param rulesetId             规则集ID
+     * @param ruleTypes             规则类型列表
+     * @param subTypes              子类型列表
+     * @param supportedDialectTypes 支持的方言类型列表
+     * @return 规则列表响应
+     */
     @ApiOperation(value = "listRules", notes = "list rules")
     @RequestMapping(value = "/{rulesetId:[\\d]+}/rules", method = RequestMethod.GET)
     public ListResponse<Rule> listRules(@PathVariable Long rulesetId,
-            @RequestParam(name = "types", required = false) List<RuleType> ruleTypes,
-            @RequestParam(name = "subTypes", required = false) List<String> subTypes,
-            @RequestParam(name = "supportedDialectTypes", required = false) List<String> supportedDialectTypes) {
+        @RequestParam(name = "types", required = false) List<RuleType> ruleTypes,
+        @RequestParam(name = "subTypes", required = false) List<String> subTypes,
+        @RequestParam(name = "supportedDialectTypes", required = false) List<String> supportedDialectTypes) {
+        // 创建元数据标签和对应值的映射
         Map<MetadataLabel, List<String>> labels = new HashMap<>();
+        // 如果子类型列表不为空，则将其添加到元数据标签和对应值的映射中
         if (CollectionUtils.isNotEmpty(subTypes)) {
             labels.put(MetadataLabel.SUB_TYPE, subTypes);
         }
+        // 如果支持的方言类型列表不为空，则将其添加到元数据标签和对应值的映射中
         if (CollectionUtils.isNotEmpty(supportedDialectTypes)) {
             labels.put(MetadataLabel.SUPPORTED_DIALECT_TYPE, supportedDialectTypes);
         }
+        // 创建查询规则元数据的参数对象
         QueryRuleMetadataParams params = QueryRuleMetadataParams.builder().ruleTypes(ruleTypes).labels(labels).build();
+        // 调用规则服务的列表方法，获取规则列表，并将其封装为响应对象返回
         return Responses.list(ruleService.list(rulesetId, params));
     }
 

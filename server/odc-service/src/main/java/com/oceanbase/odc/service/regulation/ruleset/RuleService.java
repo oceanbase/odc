@@ -239,25 +239,37 @@ public class RuleService {
         return rules;
     }
 
-
+    /**
+     * 根据规则集ID和查询规则元数据参数列表，获取规则列表
+     *
+     * @param rulesetId 规则集ID
+     * @param params    查询规则元数据参数列表
+     * @return 规则列表
+     */
     private List<Rule> internalList(@NonNull Long rulesetId, @NonNull QueryRuleMetadataParams params) {
+        // 根据类型（SQL_CHECK或SQL_CONSOLE）从regulation_rule_metadata表中查处得规则元数据列表
         List<RuleMetadata> ruleMetadatas = metadataService.list(params);
         if (CollectionUtils.isEmpty(ruleMetadatas)) {
             return Collections.emptyList();
         }
+        // 根据id从表regulation_ruleset中获取规则结果集
         Ruleset ruleset = rulesetService.detail(rulesetId);
+        // 根据规则集名称从表regulation_default_rule_applying获取默认规则应用实体列表，并按照规则元数据ID分组
         Map<Long, List<DefaultRuleApplyingEntity>> metadataId2DefaultRuleApplying =
-                defaultRuleApplyingRepository.findByRulesetName(ruleset.getName()).stream()
-                        .collect(Collectors.groupingBy(DefaultRuleApplyingEntity::getRuleMetadataId));
+            defaultRuleApplyingRepository.findByRulesetName(ruleset.getName()).stream()
+                .collect(Collectors.groupingBy(DefaultRuleApplyingEntity::getRuleMetadataId));
         List<Rule> rules = new ArrayList<>();
+        // 从表regulation_rule_applying获取
         Map<Long, List<RuleApplyingEntity>> metadataId2RuleApplying =
-                ruleApplyingRepository
-                        .findByOrganizationIdAndRulesetId(authenticationFacade.currentOrganizationId(), rulesetId)
-                        .stream()
-                        .collect(Collectors.groupingBy(RuleApplyingEntity::getRuleMetadataId));
+            ruleApplyingRepository
+                .findByOrganizationIdAndRulesetId(authenticationFacade.currentOrganizationId(), rulesetId)
+                .stream()
+                .collect(Collectors.groupingBy(RuleApplyingEntity::getRuleMetadataId));
 
         // user-defined ruleset, just use user-defined rule values
+        // 如果规则集是用户自定义的，则只使用用户定义的规则值
         if (!ruleset.getBuiltin()) {
+            // 如果规则集是内置的，则合并默认规则值和用户定义的规则值
             ruleMetadatas.forEach(metadata -> {
                 RuleApplyingEntity userDefinedRuleApplying = metadataId2RuleApplying.get(metadata.getId()).get(0);
                 Verify.notNull(userDefinedRuleApplying, "userDefinedRuleApplying");
@@ -269,22 +281,32 @@ public class RuleService {
             return rules;
         }
         // builtin ruleset, merge default rule values and user-defined rule values
+        // 如果规则集是内置的，则合并默认规则值和用户定义的规则值
+        // 遍历规则元数据列表
         ruleMetadatas.forEach(metadata -> {
+            // 如果默认规则应用列表中不包含当前元数据的ID，则抛出异常
             if (!metadataId2DefaultRuleApplying.containsKey(metadata.getId())) {
                 throw new UnexpectedException("default rule applying not found, ruleMetadataId = " + metadata.getId());
             }
+            // 获取默认规则应用列表
             List<DefaultRuleApplyingEntity> defaultApplyings = metadataId2DefaultRuleApplying.get(metadata.getId());
+            // 确保默认规则应用列表长度为1
             Verify.equals(1, defaultApplyings.size(), "defaultRuleApplyingEntity");
             RuleApplyingEntity merged;
+            // 如果规则应用列表中不包含当前元数据的ID，则使用默认规则应用实体进行合并
             if (!metadataId2RuleApplying.containsKey(metadata.getId())) {
                 merged = RuleApplyingEntity.merge(defaultApplyings.get(0), Optional.empty());
             } else {
+                // 否则使用默认规则应用实体和规则应用实体进行合并
                 merged = RuleApplyingEntity.merge(defaultApplyings.get(0),
-                        Optional.of(metadataId2RuleApplying.get(metadata.getId()).get(0)));
+                    Optional.of(metadataId2RuleApplying.get(metadata.getId()).get(0)));
             }
+            // 将合并后的规则应用实体转换为规则模型
             Rule rule = entityToModel(merged);
+            // 设置规则集ID和元数据
             rule.setRulesetId(rulesetId);
             rule.setMetadata(metadata);
+            // 将规则添加到规则列表中
             rules.add(rule);
         });
         return rules;

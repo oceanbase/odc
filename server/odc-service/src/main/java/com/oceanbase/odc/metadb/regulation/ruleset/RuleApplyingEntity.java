@@ -80,10 +80,20 @@ public class RuleApplyingEntity {
     @Column(name = "properties_json", nullable = false)
     private String propertiesJson;
 
+    /**
+     * 合并规则应用实体对象
+     *
+     * @param defaultRuleApplyingEntity 默认的规则应用实体对象
+     * @param ruleApplyingEntityOpt     可选的规则应用实体对象
+     * @return 合并后的规则应用实体对象
+     */
     public static RuleApplyingEntity merge(DefaultRuleApplyingEntity defaultRuleApplyingEntity,
-            Optional<RuleApplyingEntity> ruleApplyingEntityOpt) {
+        Optional<RuleApplyingEntity> ruleApplyingEntityOpt) {
+        // 如果可选的规则应用实体对象不存在
         if (!ruleApplyingEntityOpt.isPresent()) {
+            // 创建一个新的规则应用实体对象
             RuleApplyingEntity entity = new RuleApplyingEntity();
+            // 设置新对象的属性值为默认对象的属性值
             entity.setId(defaultRuleApplyingEntity.getId());
             entity.setEnabled(defaultRuleApplyingEntity.getEnabled());
             entity.setRuleMetadataId(defaultRuleApplyingEntity.getRuleMetadataId());
@@ -92,10 +102,14 @@ public class RuleApplyingEntity {
             entity.setLevel(defaultRuleApplyingEntity.getLevel());
             entity.setCreateTime(defaultRuleApplyingEntity.getCreateTime());
             entity.setUpdateTime(defaultRuleApplyingEntity.getUpdateTime());
+            // 返回新的规则应用实体对象
             return entity;
         }
+        // 深拷贝可选的规则应用实体对象到新的规则应用实体对象中
         RuleApplyingEntity entity = ObjectUtil.deepCopy(ruleApplyingEntityOpt.get(), RuleApplyingEntity.class);
+        // 设置新对象的属性值为默认对象的属性值
         entity.setId(defaultRuleApplyingEntity.getId());
+        // 返回新的规则应用实体对象
         return entity;
     }
 }
