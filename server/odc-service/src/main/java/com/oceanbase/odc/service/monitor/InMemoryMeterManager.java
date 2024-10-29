@@ -56,19 +56,21 @@ public class InMemoryMeterManager implements MeterManager, InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        registerGauge(MeterKey.ofMeter(MeterName.METER_COUNTER_HOLDER_COUNT), this.COUNTER_MAP::size);
-        registerGauge(MeterKey.ofMeter(MeterName.METER_TIMER_HOLDER_COUNT), this.TIMER_SAMPLE_MAP::size);
+        registerGauge(MeterKey.ofMeter(DefaultMeterName.METER_COUNTER_HOLDER_COUNT), this.COUNTER_MAP::size);
+        registerGauge(MeterKey.ofMeter(DefaultMeterName.METER_TIMER_HOLDER_COUNT), this.TIMER_SAMPLE_MAP::size);
         overCounterMaxCounter =
-                registerCounter(MeterKey.ofMeter(MeterName.METER_OVER_MAX_REGISTER_COUNT, Tag.of("meter", "counter")));
+                registerCounter(MeterKey.ofMeter(
+                        DefaultMeterName.METER_OVER_MAX_REGISTER_COUNT, Tag.of("meter", "counter")));
         overTimmerMaxCounter =
-                registerCounter(MeterKey.ofMeter(MeterName.METER_OVER_MAX_REGISTER_COUNT, Tag.of("meter", "timer")));
+                registerCounter(
+                        MeterKey.ofMeter(DefaultMeterName.METER_OVER_MAX_REGISTER_COUNT, Tag.of("meter", "timer")));
     }
 
 
     public boolean registerGauge(MeterKey meterKey, Supplier<Number> f) {
         MeterName meterName = meterKey.getMeterName();
         Iterable<Tag> tags = meterKey.getTags();
-        Gauge.Builder<Supplier<Number>> builder = Gauge.builder(meterName.getMeterName(), f)
+        Gauge.Builder<Supplier<Number>> builder = Gauge.builder(meterName.getName(), f)
                 .description(meterName.getDescription());
         for (Tag tag : tags) {
             builder.tag(tag.getKey(), tag.getValue());
@@ -100,7 +102,7 @@ public class InMemoryMeterManager implements MeterManager, InitializingBean {
 
 
     public Counter registerCounter(MeterKey meterKey) {
-        Builder builder = Counter.builder(meterKey.getMeterName().getMeterName())
+        Builder builder = Counter.builder(meterKey.getMeterName().getName())
                 .description(meterKey.getMeterName().getDescription());
         for (Tag tag : meterKey.getTags()) {
             builder.tag(tag.getKey(), tag.getValue());
@@ -145,7 +147,7 @@ public class InMemoryMeterManager implements MeterManager, InitializingBean {
                 return false;
             }
             Iterable<Tag> tags = meterKey.getTags();
-            Timer.Builder builder = Timer.builder(meterKey.getMeterName().getMeterName())
+            Timer.Builder builder = Timer.builder(meterKey.getMeterName().getName())
                     .description(meterKey.getMeterName().getDescription());
             for (Tag tag : tags) {
                 builder.tag(tag.getKey(), tag.getValue());

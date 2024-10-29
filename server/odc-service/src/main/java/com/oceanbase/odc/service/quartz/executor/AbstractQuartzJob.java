@@ -15,11 +15,11 @@
  */
 package com.oceanbase.odc.service.quartz.executor;
 
-import static com.oceanbase.odc.service.monitor.MeterName.SCHEDULE_FAILED_COUNT;
-import static com.oceanbase.odc.service.monitor.MeterName.SCHEDULE_INTERRUPTED_COUNT;
-import static com.oceanbase.odc.service.monitor.MeterName.SCHEDULE_START_COUNT;
-import static com.oceanbase.odc.service.monitor.MeterName.SCHEDULE_SUCCESS_COUNT;
-import static com.oceanbase.odc.service.monitor.MeterName.SCHEDULE_TASK_DURATION;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.SCHEDULE_FAILED_COUNT;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.SCHEDULE_INTERRUPTED_COUNT;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.SCHEDULE_START_COUNT;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.SCHEDULE_SUCCESS_COUNT;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.SCHEDULE_TASK_DURATION;
 
 import org.quartz.InterruptableJob;
 import org.quartz.JobExecutionContext;
@@ -29,9 +29,9 @@ import org.quartz.UnableToInterruptJobException;
 
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
+import com.oceanbase.odc.service.monitor.DefaultMeterName;
 import com.oceanbase.odc.service.monitor.MeterKey;
 import com.oceanbase.odc.service.monitor.MeterManager;
-import com.oceanbase.odc.service.monitor.MeterName;
 import com.oceanbase.odc.service.schedule.job.DataArchiveDeleteJob;
 import com.oceanbase.odc.service.schedule.job.DataArchiveJob;
 import com.oceanbase.odc.service.schedule.job.DataArchiveRollbackJob;
@@ -148,7 +148,7 @@ public abstract class AbstractQuartzJob implements InterruptableJob {
     }
 
 
-    public MeterKey getMeterKey(MeterName meterName, String taskType) {
+    public MeterKey getMeterKey(DefaultMeterName meterName, String taskType) {
         return MeterKey.ofMeter(meterName, Tag.of("taskType", taskType));
     }
 }
