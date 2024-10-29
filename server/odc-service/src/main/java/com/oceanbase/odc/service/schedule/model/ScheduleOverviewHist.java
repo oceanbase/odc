@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.Set;
 
 import com.oceanbase.odc.common.i18n.Internationalizable;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.model.InnerUser;
 
 import lombok.Data;
@@ -50,5 +51,7 @@ public class ScheduleOverviewHist {
 
     @Internationalizable
     private String description;
+
+    private Project project;
 
 }
