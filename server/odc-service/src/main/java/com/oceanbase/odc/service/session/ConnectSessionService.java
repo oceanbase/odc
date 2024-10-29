@@ -421,7 +421,7 @@ public class ConnectSessionService {
         return DBSessionResp.builder()
                 .settings(settingsService.getSessionSettings(connectionSession))
                 .session(dbSessionService.currentSession(connectionSession))
-                .killCurrrentQuerySupported(dbSessionManageFacade.supportKillConsoleQuery(connectionSession))
+                .killCurrentQuerySupported(dbSessionManageFacade.supportKillConsoleQuery(connectionSession))
                 .build();
     }
 

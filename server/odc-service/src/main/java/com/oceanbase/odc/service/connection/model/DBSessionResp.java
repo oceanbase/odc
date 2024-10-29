@@ -35,5 +35,5 @@ import lombok.NoArgsConstructor;
 public class DBSessionResp {
     private DBSession session;
     private SessionSettings settings;
-    private boolean killCurrrentQuerySupported;
+    private boolean killCurrentQuerySupported;
 }
