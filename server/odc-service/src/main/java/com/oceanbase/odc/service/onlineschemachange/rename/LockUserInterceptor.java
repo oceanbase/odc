@@ -28,7 +28,6 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.model.OdcDBSession;
-import com.oceanbase.odc.service.onlineschemachange.ddl.DBAccountLockType;
 import com.oceanbase.odc.service.onlineschemachange.ddl.DBUser;
 import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessor;
 import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessorFactory;
@@ -66,13 +65,9 @@ public class LockUserInterceptor implements RenameTableInterceptor {
         OscDBAccessor oscDBAccessor = new OscDBAccessorFactory().generate(connSession);
         // filter users is unlocked and to lock them
         shouldBeLockedUsers = oscDBAccessor.listUsers(processLockUsers(parameters.getLockUsers()))
-                .stream().filter(dbUser -> dbUser.getAccountLocked() == DBAccountLockType.UNLOCKED)
+                .stream()
                 .map(DBUser::getNameWithHost)
                 .collect(Collectors.toList());
-
-        if (CollectionUtils.isEmpty(shouldBeLockedUsers)) {
-            return;
-        }
         lockUserAndKillSession(parameters.getLockTableTimeOutSeconds(), shouldBeLockedUsers);
     }
 
