@@ -109,7 +109,7 @@ public class DBPLModifyHelper {
                 .append("drop ").append(plType).append(" if exists ").append(tempPlName).append(" $$\n")
                 .append("drop ").append(plType).append(" if exists ").append(plName).append(" $$\n")
                 .append(editPLSql).append(" $$\n")
-                .append("DELIMITER "+delimiter);
+                .append("DELIMITER " + delimiter);
         String wrappedSql = wrappedSqlBuilder.toString();
         SqlAsyncExecuteReq sqlAsyncExecuteReq = new SqlAsyncExecuteReq();
         sqlAsyncExecuteReq.setSql(wrappedSql);
