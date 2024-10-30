@@ -36,6 +36,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
+import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.model.EditPLReq;
 import com.oceanbase.odc.service.db.model.EditPLResp;
@@ -100,18 +101,21 @@ public class DBPLModifyHelper {
         String editPLSql = editPLReq.getSql();
         String tempPLSql = editPLSql.replaceFirst(plName, tempPlName);
         StringBuilder wrappedSqlBuilder = new StringBuilder();
+        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
+        SqlCommentProcessor processor = ConnectionSessionUtil.getSqlCommentProcessor(connectionSession);
+        String delimiter = processor.getDelimiter();
         wrappedSqlBuilder.append("DELIMITER $$\n")
                 .append(tempPLSql).append(" $$\n")
                 .append("drop ").append(plType).append(" if exists ").append(tempPlName).append(" $$\n")
                 .append("drop ").append(plType).append(" if exists ").append(plName).append(" $$\n")
                 .append(editPLSql).append(" $$\n")
-                .append("DELIMITER ;");
+                .append("DELIMITER "+delimiter);
         String wrappedSql = wrappedSqlBuilder.toString();
         SqlAsyncExecuteReq sqlAsyncExecuteReq = new SqlAsyncExecuteReq();
         sqlAsyncExecuteReq.setSql(wrappedSql);
         sqlAsyncExecuteReq.setSplit(true);
         sqlAsyncExecuteReq.setContinueExecutionOnError(false);
-        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
+
         Lock editPLLock = obtainEditPLLock(connectionSession, plType);
         if (!editPLLock.tryLock(LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
@@ -151,17 +155,6 @@ public class DBPLModifyHelper {
         ConnectionConfig connConfig =
                 (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
         Long dataSourceId = connConfig.getId();
-        String lockKeyString;
-        switch (plType) {
-            case PROCEDURE:
-            case FUNCTION:
-            case TRIGGER:
-                lockKeyString = String.format("%s-%d", plType, dataSourceId);
-                break;
-            default:
-                throw new IllegalArgumentException(
-                        String.format("Unsupported pl type %s for dataSourceId %d", plType, dataSourceId));
-        }
-        return jdbcLockRegistry.obtain(lockKeyString);
+        return jdbcLockRegistry.obtain(String.format("%s-%d", plType, dataSourceId));
     }
 }
