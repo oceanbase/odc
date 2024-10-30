@@ -714,7 +714,7 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
                 this.dbObjectType = DBObjectType.TABLE;
                 break;
             case "COLUMN":
-                this.dbObjectType = DBObjectType.COLUMN; // 添加列的处理
+                this.dbObjectType = DBObjectType.COLUMN;
                 break;
             case "VIEW":
                 this.dbObjectType = DBObjectType.VIEW;
