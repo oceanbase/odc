@@ -87,7 +87,7 @@ public class CloudResourceConfigurations {
             return generateCloudClient(objectStorageConfiguration, () -> getPublicOss(objectStorageConfiguration));
         }
 
-        public CloudClient generateInternalCloudClient(ObjectStorageConfiguration objectStorageConfiguration) {
+        public CloudClient generateCloudClient(ObjectStorageConfiguration objectStorageConfiguration) {
             return generateCloudClient(objectStorageConfiguration, () -> getInternalOss(objectStorageConfiguration));
         }
 

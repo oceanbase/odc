@@ -31,7 +31,7 @@ public class CloudObjectStorageServiceBuilder {
         CloudClient publicCloudClient =
                 new CloudResourceConfigurations.CloudClientBuilder().generatePublicCloudClient(storageConfig);
         CloudClient interalCloudClient =
-                new CloudResourceConfigurations.CloudClientBuilder().generateInternalCloudClient(storageConfig);
+                new CloudResourceConfigurations.CloudClientBuilder().generateCloudClient(storageConfig);
         return new CloudObjectStorageService(publicCloudClient, interalCloudClient, storageConfig);
     }
 }
