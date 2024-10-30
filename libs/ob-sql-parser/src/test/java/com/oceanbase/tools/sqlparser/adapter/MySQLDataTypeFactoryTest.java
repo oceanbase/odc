@@ -34,7 +34,9 @@ import com.oceanbase.tools.sqlparser.statement.common.DataType;
 import com.oceanbase.tools.sqlparser.statement.common.GeneralDataType;
 import com.oceanbase.tools.sqlparser.statement.common.NumberType;
 import com.oceanbase.tools.sqlparser.statement.common.TimestampType;
+import com.oceanbase.tools.sqlparser.statement.common.mysql.ArrayType;
 import com.oceanbase.tools.sqlparser.statement.common.mysql.CollectionType;
+import com.oceanbase.tools.sqlparser.statement.common.mysql.VectorType;
 
 /**
  * Test cases for {@link MySQLDataTypeFactoryTest}
@@ -293,6 +295,64 @@ public class MySQLDataTypeFactoryTest {
         expect.setCharset("utf8");
         Assert.assertEquals(expect, actual);
     }
+
+    @Test
+    public void generate_VectorType_Succeed() {
+        StatementFactory<DataType> factory = new MySQLDataTypeFactory(getDataTypeContext("vector(12)"));
+        DataType actual = factory.generate();
+
+        DataType expect = new VectorType("vector", 12);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_RoaringbitmapType_Succeed() {
+        StatementFactory<DataType> factory = new MySQLDataTypeFactory(getDataTypeContext("roaringbitmap"));
+        DataType actual = factory.generate();
+
+        DataType expect = new GeneralDataType("roaringbitmap", null);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_ArrayType_Succeed() {
+        StatementFactory<DataType> factory = new MySQLDataTypeFactory(getDataTypeContext("array(varchar(32))"));
+        DataType actual = factory.generate();
+        CharacterType characterType = new CharacterType("varchar", new BigDecimal("32"));
+        DataType expect = new ArrayType(characterType);
+        Assert.assertEquals(expect, actual);
+    }
+
+
+    @Test
+    public void generate_ArrayTypePGCompatible_Succeed() {
+        StatementFactory<DataType> factory = new MySQLDataTypeFactory(getDataTypeContext("varchar(32)[]"));
+        DataType actual = factory.generate();
+        CharacterType characterType = new CharacterType("varchar", new BigDecimal("32"));
+        DataType expect = new ArrayType(characterType);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_ArrayTypeNestedPGCompatible_Succeed() {
+        StatementFactory<DataType> factory = new MySQLDataTypeFactory(getDataTypeContext("array(array(varchar(32)))"));
+        DataType actual = factory.generate();
+        CharacterType characterType = new CharacterType("varchar", new BigDecimal("32"));
+        ArrayType nested = new ArrayType(characterType);
+        DataType expect = new ArrayType(nested);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_ArrayTypePGNested_Succeed() {
+        StatementFactory<DataType> factory = new MySQLDataTypeFactory(getDataTypeContext("varchar(32)[][]"));
+        DataType actual = factory.generate();
+        CharacterType characterType = new CharacterType("varchar", new BigDecimal("32"));
+        ArrayType nested = new ArrayType(characterType);
+        DataType expect = new ArrayType(nested);
+        Assert.assertEquals(expect, actual);
+    }
+
 
     private Data_typeContext getDataTypeContext(String type) {
         OBLexer lexer = new OBLexer(CharStreams.fromString(type));

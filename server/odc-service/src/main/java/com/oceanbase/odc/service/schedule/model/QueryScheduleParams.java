@@ -48,5 +48,6 @@ public class QueryScheduleParams {
     private String databaseName;
     private String tenantId;
     private String clusterId;
+    private TriggerStrategy triggerStrategy;
 
 }
