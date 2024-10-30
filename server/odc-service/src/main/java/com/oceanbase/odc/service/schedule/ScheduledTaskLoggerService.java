@@ -47,16 +47,13 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfigur
 import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
-import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
-import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.JobCredentialProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
-import com.oceanbase.odc.service.task.util.CloudObjectStorageServiceBuilder;
 import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
@@ -105,6 +102,9 @@ public class ScheduledTaskLoggerService {
     @Autowired
     private JobCredentialProvider jobCredentialProvider;
 
+    @Autowired
+    private CloudObjectStorageService cloudObjectStorageService;
+
     private final ConcurrentHashMap<ObjectStorageConfiguration, CloudObjectStorageService> cloudObjectServiceMap =
             new ConcurrentHashMap<>();
 
@@ -138,7 +138,6 @@ public class ScheduledTaskLoggerService {
             JobEntity jobEntity = taskFrameworkService.find(jobId);
             PreConditions.notNull(jobEntity, "job not found by id " + jobId);
             if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
-                CloudObjectStorageService cloudObjectStorageService = getCloudObjectStorageService(jobEntity);
                 if (!cloudObjectStorageService.supported()) {
                     return StrUtil.EMPTY;
                 }
@@ -167,11 +166,9 @@ public class ScheduledTaskLoggerService {
         JobEntity jobEntity = taskFrameworkService.find(jobId);
         PreConditions.notNull(jobEntity, "job not found by id " + jobId);
         if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
-            CloudObjectStorageService cloudObjectStorageService = getCloudObjectStorageService(jobEntity);
             if (!cloudObjectStorageService.supported()) {
                 throw new RuntimeException("CloudObjectStorageService is not supported.");
             }
-
             String attributeKey = OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
                     : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
             Optional<String> objId = taskFrameworkService.findByJobIdAndAttributeKey(jobId, attributeKey);
@@ -312,13 +309,5 @@ public class ScheduledTaskLoggerService {
             log.warn("forward request to download scheduled task log failed, host={}, port={}", host, port, e);
             throw e;
         }
-    }
-
-    private CloudObjectStorageService getCloudObjectStorageService(JobEntity jobEntity) {
-        JobContext jobContext = new DefaultJobContextBuilder().build(jobEntity);
-        ObjectStorageConfiguration objectStorageConfiguration = jobCredentialProvider.getCloudObjectStorageCredential(
-                jobContext);
-        return cloudObjectServiceMap.computeIfAbsent(objectStorageConfiguration,
-                k -> CloudObjectStorageServiceBuilder.build(objectStorageConfiguration));
     }
 }
