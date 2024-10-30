@@ -16,7 +16,10 @@
 package com.oceanbase.odc.service.onlineschemachange;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,6 +33,8 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.flow.task.model.OnlineSchemaChangeTaskResult;
+import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
+import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepName;
 import com.oceanbase.odc.service.task.TaskService;
 
 /**
@@ -98,6 +103,45 @@ public class OnlineSchemaChangeFlowableTaskTest {
         // check update result json
         Assert.assertEquals(onlineSchemaChangeTaskResult.getTasks().size(), 1);
         Assert.assertEquals(onlineSchemaChangeTaskResult.getTasks().get(0).getId().longValue(), 1024);
+    }
+
+    @Test
+    public void testScheduleTasksUpdateHint() {
+        MockOSCFlowTask mockOSCFlowTask = new MockOSCFlowTask();
+        List<ScheduleTaskEntity> scheduleTaskEntities = Arrays.asList(
+                createScheduleTaskEntity(1, true, OmsStepName.FULL_TRANSFER.name()),
+                createScheduleTaskEntity(2, false, OmsStepName.INCR_TRANSFER.name()),
+                createScheduleTaskEntity(3, false, null));
+        OnlineSchemaChangeFlowableTask.ScheduleTasksUpdateHint scheduleTasksUpdateHint =
+                mockOSCFlowTask.getScheduleTasksUpdateHint(scheduleTaskEntities);
+        Assert.assertEquals(scheduleTasksUpdateHint.getEnableManualSwapTableFlagCounts(), 1);
+        Assert.assertEquals(scheduleTasksUpdateHint.getTaskStepsMap().size(), 2);
+        Assert.assertEquals(scheduleTasksUpdateHint.getTaskStepsMap().get(1L), OmsStepName.FULL_TRANSFER.name());
+        Assert.assertEquals(scheduleTasksUpdateHint.getTaskStepsMap().get(2L), OmsStepName.INCR_TRANSFER.name());
+
+        Assert.assertFalse(scheduleTasksUpdateHint.hasDiff(scheduleTasksUpdateHint));
+
+        Assert.assertTrue(
+                scheduleTasksUpdateHint.hasDiff(new OnlineSchemaChangeFlowableTask.ScheduleTasksUpdateHint(0)));
+        Assert.assertTrue(scheduleTasksUpdateHint.hasDiff(new OnlineSchemaChangeFlowableTask.ScheduleTasksUpdateHint(1,
+                Collections.singletonMap(1L, OmsStepName.FULL_TRANSFER.name()))));
+        Map<Long, String> muted = new HashMap<>(scheduleTasksUpdateHint.getTaskStepsMap());
+        muted.put(2L, OmsStepName.APP_SWITCH.name());
+        Assert.assertTrue(
+                scheduleTasksUpdateHint.hasDiff(new OnlineSchemaChangeFlowableTask.ScheduleTasksUpdateHint(1, muted)));
+    }
+
+    private ScheduleTaskEntity createScheduleTaskEntity(long id, boolean manualSwapTableEnabled, String stepName) {
+        ScheduleTaskEntity scheduleTask = new ScheduleTaskEntity();
+        scheduleTask.setId(id);
+        OnlineSchemaChangeScheduleTaskResult scheduleTaskResult1 = new OnlineSchemaChangeScheduleTaskResult();
+        scheduleTaskResult1.setManualSwapTableEnabled(manualSwapTableEnabled);
+        scheduleTaskResult1.setCurrentStep(stepName);
+        if (null != stepName) {
+            scheduleTask.setResultJson(JsonUtils.toJson(scheduleTaskResult1));
+        }
+        scheduleTask.setStatus(TaskStatus.RUNNING);
+        return scheduleTask;
     }
 
     private static final class MockOSCFlowTask extends OnlineSchemaChangeFlowableTask {

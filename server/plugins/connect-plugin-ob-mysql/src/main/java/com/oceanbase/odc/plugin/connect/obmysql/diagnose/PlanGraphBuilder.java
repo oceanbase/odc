@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -120,14 +121,16 @@ public class PlanGraphBuilder {
         // parse access predicates
         if (StringUtils.isNotEmpty(record.getAccessPredicates())) {
             Map<String, List<String>> access = parsePredicates(record.getAccessPredicates(), parameters);
-            operator.setAttribute("Access predicates",
-                    singletonList(String.join(",", access.get("access"))));
+            if (access.containsKey("access") && Objects.nonNull(access.get("access"))) {
+                operator.setAttribute("Access predicates", singletonList(String.join(",", access.get("access"))));
+            }
         }
         // parse filter predicates
         if (StringUtils.isNotEmpty(record.getFilterPredicates())) {
             Map<String, List<String>> filter = parsePredicates(record.getFilterPredicates(), parameters);
-            operator.setAttribute("Filter predicates",
-                    singletonList(String.join(" AND ", filter.get("filter"))));
+            if (filter.containsKey("filter") && Objects.nonNull(filter.get("filter"))) {
+                operator.setAttribute("Filter predicates", singletonList(String.join(" AND ", filter.get("filter"))));
+            }
         }
         // parse special predicates
         if (StringUtils.isNotEmpty(record.getSpecialPredicates())) {

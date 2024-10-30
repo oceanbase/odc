@@ -134,9 +134,8 @@ public class TableService {
     }
 
     private void generateListAndSyncDBTablesByTableType(QueryTableParams params, Database database,
-            ConnectionConfig dataSource,
-            List<Table> tables,
-            Connection conn, DBObjectType tableType, TableExtensionPoint tableExtension) throws InterruptedException {
+            ConnectionConfig dataSource, List<Table> tables, Connection conn, DBObjectType tableType,
+            TableExtensionPoint tableExtension) throws InterruptedException {
         Set<String> latestTableNames = tableExtension.list(conn, database.getName(), tableType)
                 .stream().map(DBObjectIdentity::getName).collect(Collectors.toCollection(LinkedHashSet::new));
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
@@ -175,9 +174,14 @@ public class TableService {
         }
     }
 
+    // sync normal table
+    public void syncDBTables(@NotNull Connection connection, @NotNull Database database,
+            @NotNull DialectType dialectType) throws InterruptedException {
+        syncDBTables(connection, database, dialectType, dbTableSyncer);
+    }
+
     private void syncDBTables(@NotNull Connection connection, @NotNull Database database,
-            @NotNull DialectType dialectType,
-            @NotNull DBSchemaSyncer syncer) throws InterruptedException {
+            @NotNull DialectType dialectType, @NotNull DBSchemaSyncer syncer) throws InterruptedException {
         Lock lock = lockRegistry
                 .obtain(dbSchemaSyncService.getSyncDBObjectLockKey(database.getDataSource().getId(), database.getId()));
         if (!lock.tryLock(3, TimeUnit.SECONDS)) {

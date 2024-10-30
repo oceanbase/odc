@@ -24,6 +24,7 @@ import com.oceanbase.odc.core.authority.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
@@ -91,5 +92,10 @@ public class DefaultAuthenticationFacade implements AuthenticationFacade {
         long organizationId = currentOrganizationId();
         return organizationRepository.findById(organizationId).map(Organization::ofEntity).orElseThrow(
                 () -> new NotFoundException(ResourceType.ODC_ORGANIZATION, "organizationId", organizationId));
+    }
+
+    @Override
+    public long currentProjectId() throws AccessDeniedException {
+        throw new UnsupportedException("currentProjectId not supported");
     }
 }

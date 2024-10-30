@@ -596,13 +596,24 @@ public class ConnectionService {
 
     @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public ConnectionConfig update(@NotNull Long id, @NotNull @Valid ConnectionConfig connection) {
+        return updateConnectionConfig(id, connection, true);
+    }
+
+    public ConnectionConfig updateWithoutPermissionCheck(@NotNull Long id,
+            @NotNull @Valid ConnectionConfig connection) {
+        return updateConnectionConfig(id, connection, false);
+    }
+
+    private ConnectionConfig updateConnectionConfig(Long id, ConnectionConfig connection, boolean needCheckPermission) {
         ConnectionConfig config = txTemplate.execute(status -> {
             try {
                 environmentAdapter.adaptConfig(connection);
                 connectionSSLAdaptor.adapt(connection);
                 ConnectionConfig saved = internalGet(id);
                 connectionValidator.validateForUpdate(connection, saved);
-                checkProjectOperable(connection.getProjectId());
+                if (needCheckPermission) {
+                    checkProjectOperable(connection.getProjectId());
+                }
                 if (StringUtils.isBlank(connection.getSysTenantUsername())) {
                     // sys 用户没有设的情况下，相应地，密码要设置为空
                     connection.setSysTenantPassword("");
@@ -654,6 +665,11 @@ public class ConnectionService {
                     } catch (InterruptedException e) {
                         throw new UnexpectedException("Failed to update database project id", e);
                     }
+                }
+                // if ConnectionConfig's environmentId changed, update databases' environmentId either.
+                if (Objects.nonNull(saved.getEnvironmentId()) && Objects.nonNull(updated.getEnvironmentId())
+                        && saved.getEnvironmentId().compareTo(updated.getEnvironmentId()) != 0) {
+                    databaseService.updateEnvironmentIdByConnectionId(updated.getEnvironmentId(), updated.getId());
                 }
                 return updated;
             } catch (Exception ex) {
@@ -806,6 +822,11 @@ public class ConnectionService {
             IOUtils.read(input, buffer);
             return new ByteArrayDataResult(DATASOURCE_TEMPLATE_FILE_NAME, buffer);
         }
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public List<ConnectionConfig> listSkipPermissionCheck(@NotNull QueryConnectionParams params) {
+        return innerList(params, Pageable.unpaged()).toList();
     }
 
     private Page<ConnectionConfig> innerList(@NotNull QueryConnectionParams params, @NotNull Pageable pageable) {

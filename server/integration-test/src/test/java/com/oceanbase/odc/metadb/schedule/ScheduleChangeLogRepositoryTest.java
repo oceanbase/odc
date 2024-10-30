@@ -46,6 +46,16 @@ public class ScheduleChangeLogRepositoryTest extends ServiceTestEnv {
     }
 
     @Test
+    public void findByFlowInstanceId() {
+        ScheduleChangeLogEntity entity = create();
+        Optional<ScheduleChangeLogEntity> scheduleChangeLogOptional =
+                repository.findByFlowInstanceId(entity.getFlowInstanceId());
+        Assert.isTrue(scheduleChangeLogOptional.isPresent());
+        Assert.equals(entity.getScheduleId(), scheduleChangeLogOptional.get().getScheduleId());
+        delete(entity);
+    }
+
+    @Test
     public void findByIdAndScheduleId() {
         ScheduleChangeLogEntity entity = create();
         Optional<ScheduleChangeLogEntity> optional =
@@ -60,6 +70,7 @@ public class ScheduleChangeLogRepositoryTest extends ServiceTestEnv {
         entity.setType(OperationType.CREATE);
         entity.setScheduleId(1L);
         entity.setStatus(ScheduleChangeStatus.PREPARING);
+        entity.setFlowInstanceId(33L);
         return repository.save(entity);
     }
 

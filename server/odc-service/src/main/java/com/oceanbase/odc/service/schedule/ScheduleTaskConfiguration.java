@@ -22,7 +22,7 @@ import org.springframework.context.annotation.Configuration;
 import com.oceanbase.odc.service.schedule.alarm.DefaultScheduleAlarmClient;
 import com.oceanbase.odc.service.schedule.alarm.ScheduleAlarmClient;
 import com.oceanbase.odc.service.schedule.flowtask.ApprovalFlowClient;
-import com.oceanbase.odc.service.schedule.flowtask.DefaultApprovalFlowClient;
+import com.oceanbase.odc.service.schedule.flowtask.NoApprovalFlowClient;
 
 /**
  * @Author：tinker
@@ -37,7 +37,7 @@ public class ScheduleTaskConfiguration {
     @Bean
     @ConditionalOnMissingBean(ApprovalFlowClient.class)
     public ApprovalFlowClient approvalFlowService() {
-        return new DefaultApprovalFlowClient();
+        return new NoApprovalFlowClient();
     }
 
     @Bean

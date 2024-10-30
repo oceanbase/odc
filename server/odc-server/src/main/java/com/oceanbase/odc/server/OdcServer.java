@@ -19,7 +19,6 @@ import static com.oceanbase.odc.core.alarm.AlarmEventNames.SERVER_RESTART;
 
 import java.time.LocalDateTime;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 
 import javax.validation.Validation;
@@ -46,9 +45,6 @@ import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.authority.interceptor.MethodAuthorizedPostProcessor;
 import com.oceanbase.odc.migrate.AbstractMetaDBMigrate;
 import com.oceanbase.odc.service.config.SystemConfigBootstrap;
-import com.oceanbase.odc.service.task.constants.JobConstants;
-import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
-import com.oceanbase.odc.service.task.executor.TaskApplication;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -80,13 +76,6 @@ public class OdcServer {
      * @param args
      */
     public static void main(String[] args) {
-        if (Objects.equals(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_BOOT_MODE),
-                JobConstants.ODC_BOOT_MODE_EXECUTOR)) {
-            log.info("ODC start as task executor mode");
-            new TaskApplication().run(args);
-            log.info("Task executor exit.");
-            return;
-        }
         AlarmUtils.alarm(SERVER_RESTART, LocalDateTime.now().toString());
         initEnv();
         System.setProperty("spring.cloud.bootstrap.enabled", "true");

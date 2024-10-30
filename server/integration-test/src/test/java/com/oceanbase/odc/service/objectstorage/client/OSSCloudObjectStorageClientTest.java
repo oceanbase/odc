@@ -96,9 +96,11 @@ public class OSSCloudObjectStorageClientTest {
         objectName = CloudObjectStorageUtil.generateObjectName(null, UUID.randomUUID().toString(),
                 CloudObjectStorageConstants.ODC_SERVER_PREFIX, "fileName");
         ossObjectStorageClient.putObject(objectName, new File(TEST_FILE_PATH), new ObjectTagging());
-        String downloadUrl = ossObjectStorageClient.generateDownloadUrl(objectName, 1000L).toString();
+        String customFileName = "customFileName";
+        String downloadUrl = ossObjectStorageClient.generateDownloadUrl(objectName, 1000L, customFileName).toString();
         tempFile = createFileWithParent(TEST_DOWNLOAD_FILE);
         downloadFromUrlToFile(new URL(downloadUrl), tempFile);
+        Assert.assertTrue(downloadUrl.contains(customFileName));
         Assert.assertEquals("test0001", readFirstLine(tempFile));
     }
 

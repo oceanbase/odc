@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.task.processor;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,11 +29,10 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseChangeService;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionResult;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionStatus;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionResultWrapper;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalDBChangeExecutionUnit;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
-import com.oceanbase.odc.service.task.executor.task.TaskResult;
+import com.oceanbase.odc.service.task.executor.TaskResult;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -88,11 +86,8 @@ public class LogicalDBChangeResultProcessor implements ResultProcessor {
     }
 
     private TaskStatus getTaskStatus(Collection<ExecutionResult<SqlExecutionResultWrapper>> results) {
-        Set<ExecutionStatus> statuses = results.stream().map(ExecutionResult::getStatus).collect(Collectors.toSet());
         if (results.stream().allMatch(ExecutionResult::isCompleted)) {
             return TaskStatus.DONE;
-        } else if (statuses.contains(ExecutionStatus.FAILED)) {
-            return TaskStatus.FAILED;
         } else {
             return TaskStatus.RUNNING;
         }

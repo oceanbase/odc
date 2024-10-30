@@ -16,22 +16,16 @@
 
 package com.oceanbase.odc.service.task.listener;
 
-import java.util.Optional;
+import java.util.Collections;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriComponents;
 
 import com.oceanbase.odc.common.event.AbstractEventListener;
-import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.metadb.task.TaskEntity;
-import com.oceanbase.odc.service.common.util.UrlUtils;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
-import com.oceanbase.odc.service.schedule.model.ScheduleTask;
-import com.oceanbase.odc.service.task.TaskService;
-import com.oceanbase.odc.service.task.executor.task.TaskResult;
-import com.oceanbase.odc.service.task.model.ExecutorInfo;
+import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
@@ -49,8 +43,6 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
     @Autowired
     private ScheduleTaskService scheduleTaskService;
     @Autowired
-    private TaskService taskService;
-    @Autowired
     private TaskFrameworkService stdTaskFrameworkService;
 
     @Override
@@ -58,44 +50,24 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
         TaskResult taskResult = event.getTaskResult();
         JobIdentity identity = taskResult.getJobIdentity();
         JobEntity jobEntity = stdTaskFrameworkService.find(identity.getId());
-
-        Optional<ScheduleTask> scheduleTaskEntityOptional = scheduleTaskService.findByJobId(jobEntity.getId());
-        if (scheduleTaskEntityOptional.isPresent()) {
-            updateScheduleTask(taskResult, scheduleTaskEntityOptional.get());
-            return;
-        }
-        Optional<TaskEntity> taskEntityOptional = taskService.findByJobId(jobEntity.getId());
-        taskEntityOptional.ifPresent(taskEntity -> updateTask(taskResult, taskEntity));
-    }
-
-    private void updateScheduleTask(TaskResult taskResult, ScheduleTask taskEntity) {
-        taskEntity.setProgressPercentage(taskResult.getProgress());
-        taskEntity.setStatus(taskResult.getStatus().convertTaskStatus());
-        taskEntity.setResultJson(taskResult.getResultJson());
-        if (taskResult.getExecutorEndpoint() != null) {
-            UriComponents uc = UrlUtils.getUriComponents(taskResult.getExecutorEndpoint());
-            ExecutorInfo executorInfo = new ExecutorInfo();
-            executorInfo.setHost(uc.getHost());
-            executorInfo.setPort(uc.getPort());
-            taskEntity.setExecutor(JsonUtils.toJson(executorInfo));
-        }
-        scheduleTaskService.update(taskEntity);
-        log.debug("Update scheduleTask successfully, scheduleTaskId={}.", taskEntity.getId());
-    }
-
-    private void updateTask(TaskResult taskResult, TaskEntity taskEntity) {
-        taskEntity.setProgressPercentage(taskResult.getProgress());
-        taskEntity.setStatus(taskResult.getStatus().convertTaskStatus());
-        taskEntity.setResultJson(taskResult.getResultJson());
-        if (taskResult.getExecutorEndpoint() != null) {
-            UriComponents uc = UrlUtils.getUriComponents(taskResult.getExecutorEndpoint());
-            ExecutorInfo executorInfo = new ExecutorInfo();
-            executorInfo.setHost(uc.getHost());
-            executorInfo.setPort(uc.getPort());
-            taskEntity.setExecutor(JsonUtils.toJson(executorInfo));
-        }
-        taskService.update(taskEntity);
-        log.debug("Update taskTask successfully, taskId={}.", taskEntity.getId());
+        scheduleTaskService.findByJobId(jobEntity.getId())
+                .ifPresent(taskEntity -> {
+                    if (taskEntity.getStatus() == TaskStatus.PREPARING) {
+                        updateScheduleTaskStatus(taskEntity.getId(), TaskStatus.RUNNING, TaskStatus.PREPARING);
+                    }
+                });
 
     }
+
+    private void updateScheduleTaskStatus(Long id, TaskStatus status, TaskStatus previousStatus) {
+        int i = scheduleTaskService.updateStatusById(id, status, Collections.singletonList(previousStatus.name()));
+        if (i > 0) {
+            log.info("Update scheduleTask status from {} to {} successfully, scheduleTaskId={}", previousStatus, status,
+                    id);
+        } else {
+            log.warn("Update scheduleTask status from {} to {} failed, scheduleTaskId={}", previousStatus, status,
+                    id);
+        }
+    }
+
 }

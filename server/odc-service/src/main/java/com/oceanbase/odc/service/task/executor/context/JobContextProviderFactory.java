@@ -16,14 +16,23 @@
 
 package com.oceanbase.odc.service.task.executor.context;
 
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
+
+import lombok.NonNull;
+
 /**
  * @author gaoda.xy
  * @date 2023/11/23 13:55
  */
 public class JobContextProviderFactory {
 
-    public static JobContextProvider create() {
-        return new DefaultJobContextProvider();
+    public static JobContextProvider create(@NonNull String taskRunMode) {
+        if (taskRunMode.equalsIgnoreCase(TaskRunMode.PROCESS.name())) {
+            return new ProcessJobContextProvider();
+        } else if (taskRunMode.equalsIgnoreCase(TaskRunMode.K8S.name())) {
+            return new K8sJobContextProvider();
+        } else {
+            throw new RuntimeException("Unsupported task run mode: " + taskRunMode);
+        }
     }
-
 }

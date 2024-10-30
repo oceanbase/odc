@@ -105,6 +105,7 @@ public class CreateGhostTableAction implements Action<OscActionContext, OscActio
         }
         log.info("Successfully created new table, ddl: {}", finalTableDdl);
         validateColumnDifferent(taskParam, session);
+        oscContext.getScheduleTaskRepository().updateTaskParameters(scheduleTaskId, JsonUtils.toJson(taskParam));
     }
 
     private void validateColumnDifferent(OnlineSchemaChangeScheduleTaskParameters taskParam,

@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -58,14 +59,18 @@ public class DataDeletePreprocessor extends AbstractDlmPreprocessor {
             // Throw exception when the specified database does not exist or the current user does not have
             // permission to access it.
             // if check before delete, need verify target database.
+            Database sourceDb = databaseService.detail(parameters.getDatabaseId());
             if (parameters.getNeedCheckBeforeDelete()) {
                 if (Objects.isNull(parameters.getTargetDatabaseId())) {
                     throw new IllegalArgumentException("target database id can not be null");
                 }
                 Database targetDb = databaseService.detail(parameters.getTargetDatabaseId());
+                supportDataArchivingLink(sourceDb.getDataSource(), targetDb.getDataSource());
             }
-            Database sourceDb = databaseService.detail(parameters.getDatabaseId());
             ConnectionConfig dataSource = sourceDb.getDataSource();
+            if (!parameters.getDeleteByUniqueKey() && dataSource.getDialectType().isOceanbase()) {
+                throw new UnsupportedException("Delete by non-primary is not supported in oceanbase.");
+            }
             dataSource.setDefaultSchema(sourceDb.getName());
             ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
             ConnectionSession connectionSession = connectionSessionFactory.generateSession();
@@ -90,6 +95,9 @@ public class DataDeletePreprocessor extends AbstractDlmPreprocessor {
                 .setWriteThreadCount(dlmConfiguration.getSingleTaskThreadPoolSize() - parameters.getReadThreadCount());
         parameters.setScanBatchSize(dlmConfiguration.getDefaultScanBatchSize());
         parameters.setQueryTimeout(dlmConfiguration.getTaskConnectionQueryTimeout());
+        if (parameters.getShardingStrategy() == null) {
+            parameters.setShardingStrategy(dlmConfiguration.getShardingStrategy());
+        }
     }
 
 }

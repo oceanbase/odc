@@ -88,4 +88,12 @@ public interface AuthenticationFacade {
      * @throws AccessDeniedException if not login
      */
     Organization currentOrganization() throws AccessDeniedException;
+
+    /**
+     * current projectId of login user
+     * 
+     * @return project id
+     * @throws AccessDeniedException
+     */
+    long currentProjectId() throws AccessDeniedException;
 }

@@ -15,14 +15,21 @@
  */
 package com.oceanbase.odc.service.task.caller;
 
+import java.io.File;
+import java.nio.charset.Charset;
 import java.util.Map;
 
+import org.apache.commons.io.FileUtils;
+
+import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskMonitorMode;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
+import com.oceanbase.odc.service.task.resource.PodConfig;
 import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
@@ -33,10 +40,32 @@ import com.oceanbase.odc.service.task.util.JobUtils;
  */
 public class JobCallerBuilder {
 
-    public static JobCaller buildProcessCaller(JobContext context) {
-        Map<String, String> environments = new JobEnvironmentFactory().build(context, TaskRunMode.PROCESS);
+    /**
+     * build process caller with given env
+     * 
+     * @param context
+     * @param environments env for process builder
+     * @return
+     */
+    public static JobCaller buildProcessCaller(JobContext context, Map<String, String> environments) {
         JobUtils.encryptEnvironments(environments);
-
+        /**
+         * write JobContext to file in case of exceeding the environments size limit; set the file path in
+         * the environment instead
+         */
+        String jobContextFilePath = JobUtils.getExecutorDataPath() + "/" + StringUtils.uuid() + ".enc";
+        try {
+            FileUtils.writeStringToFile(new File(jobContextFilePath),
+                    JobUtils.encrypt(environments.get(JobEnvKeyConstants.ENCRYPT_KEY),
+                            environments.get(JobEnvKeyConstants.ENCRYPT_SALT), JobUtils.toJson(context)),
+                    Charset.defaultCharset());
+        } catch (Exception ex) {
+            FileUtils.deleteQuietly(new File(jobContextFilePath));
+            throw new RuntimeException("Failed to write job context to file: " + jobContextFilePath, ex);
+        }
+        environments.put(JobEnvKeyConstants.ODC_JOB_CONTEXT_FILE_PATH,
+                JobUtils.encrypt(environments.get(JobEnvKeyConstants.ENCRYPT_KEY),
+                        environments.get(JobEnvKeyConstants.ENCRYPT_SALT), jobContextFilePath));
         ProcessConfig config = new ProcessConfig();
         config.setEnvironments(environments);
 
@@ -48,11 +77,14 @@ public class JobCallerBuilder {
         return new ProcessJobCaller(config);
     }
 
-    public static JobCaller buildK8sJobCaller(K8sJobClient k8sJobClient, PodConfig podConfig, JobContext context) {
+    /**
+     * build k8s start env
+     * 
+     * @param context
+     * @return
+     */
+    public static Map<String, String> buildK8sEnv(JobContext context) {
         Map<String, String> environments = new JobEnvironmentFactory().build(context, TaskRunMode.K8S);
-
-        // common environment variables
-        environments.put(JobEnvKeyConstants.ODC_LOG_DIRECTORY, podConfig.getMountPath());
 
         Map<String, String> jobProperties = context.getJobProperties();
 
@@ -77,11 +109,18 @@ public class JobCallerBuilder {
         environments.put(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_PREFIX, jasyptProperties.getPrefix());
         environments.put(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_SUFFIX, jasyptProperties.getSuffix());
         environments.put(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_SALT, jasyptProperties.getSalt());
+        return environments;
+    }
 
+    public static JobCaller buildK8sJobCaller(PodConfig podConfig, JobContext context,
+            ResourceManager resourceManager) {
+        Map<String, String> environments = buildK8sEnv(context);
+        // common environment variables
+        environments.put(JobEnvKeyConstants.ODC_LOG_DIRECTORY, podConfig.getMountPath());
         // do encryption for sensitive information
         JobUtils.encryptEnvironments(environments);
 
         podConfig.setEnvironments(environments);
-        return new K8sJobCaller(k8sJobClient, podConfig);
+        return new K8sJobCaller(podConfig, resourceManager);
     }
 }

@@ -52,14 +52,19 @@ public interface JobCaller {
      */
     void modify(JobIdentity ji, String jobParametersJson) throws JobException;
 
+    /**
+     * complete the job, process should be quit resource can be released as well
+     * 
+     * @param ji
+     * @throws JobException
+     */
+    void finish(JobIdentity ji) throws JobException;
 
     /**
-     * destroy a odc job executor
-     *
-     * @param ji job identity
-     * @throws JobException throws JobException when stop job failed
+     * if job can be finished
+     * 
+     * @param ji
+     * @return false is job/resource in unknown state
      */
-    void destroy(JobIdentity ji) throws JobException;
-
-    boolean canBeDestroy(JobIdentity ji);
+    boolean canBeFinish(JobIdentity ji);
 }
