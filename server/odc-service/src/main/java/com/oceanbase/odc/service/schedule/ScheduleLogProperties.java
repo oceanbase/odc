@@ -26,6 +26,7 @@ import lombok.Data;
 @RefreshScope
 @Data
 public class ScheduleLogProperties {
+
     /**
      * This is a root path that stores all flow task instance log file and schedule task log file
      */

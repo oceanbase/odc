@@ -19,6 +19,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +56,8 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.table.model.QueryTableParams;
 import com.oceanbase.odc.service.connection.table.model.Table;
 import com.oceanbase.odc.service.db.schema.DBSchemaSyncService;
+import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncer;
+import com.oceanbase.odc.service.db.schema.syncer.object.DBExternalTableSyncer;
 import com.oceanbase.odc.service.db.schema.syncer.object.DBTableSyncer;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
@@ -88,6 +92,9 @@ public class TableService {
     private DBTableSyncer dbTableSyncer;
 
     @Autowired
+    private DBExternalTableSyncer dbExternalTableSyncer;
+
+    @Autowired
     private JdbcLockRegistry lockRegistry;
 
     @Autowired
@@ -99,38 +106,82 @@ public class TableService {
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("permission check inside")
     public List<Table> list(@NonNull @Valid QueryTableParams params) throws SQLException, InterruptedException {
+        List<DBObjectType> types = params.getTypes();
+        if (CollectionUtils.isEmpty(types)) {
+            return Collections.emptyList();
+        }
         Database database = databaseService.detail(params.getDatabaseId());
         ConnectionConfig dataSource = database.getDataSource();
         OBConsoleDataSourceFactory factory = new OBConsoleDataSourceFactory(dataSource, true);
+        List<Table> tables = new ArrayList<>();
         try (SingleConnectionDataSource ds = (SingleConnectionDataSource) factory.getDataSource();
                 Connection conn = ds.getConnection()) {
-            TableExtensionPoint point = SchemaPluginUtil.getTableExtension(dataSource.getDialectType());
-            Set<String> latestTableNames = point.list(conn, database.getName())
-                    .stream().map(DBObjectIdentity::getName).collect(Collectors.toCollection(LinkedHashSet::new));
-            if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
-                return latestTableNames.stream().map(tableName -> {
-                    Table table = new Table();
-                    table.setName(tableName);
-                    table.setAuthorizedPermissionTypes(new HashSet<>(DatabasePermissionType.all()));
-                    return table;
-                }).collect(Collectors.toList());
+            TableExtensionPoint tableExtension = SchemaPluginUtil.getTableExtension(dataSource.getDialectType());
+            if (tableExtension == null) {
+                throw new UnsupportedOperationException("the dialect " + dataSource.getDialectType()
+                        + " doesn't support the database object type " + DBObjectType.TABLE);
             }
-            List<DBObjectEntity> tables =
-                    dbObjectRepository.findByDatabaseIdAndTypeOrderByNameAsc(params.getDatabaseId(),
-                            DBObjectType.TABLE);
-            Set<String> existTableNames = tables.stream().map(DBObjectEntity::getName).collect(Collectors.toSet());
-            if (latestTableNames.size() != existTableNames.size() || !existTableNames.containsAll(latestTableNames)) {
-                syncDBTables(conn, database, dataSource.getDialectType());
-                tables = dbObjectRepository.findByDatabaseIdAndTypeOrderByNameAsc(params.getDatabaseId(),
-                        DBObjectType.TABLE);
+            if (types.contains(DBObjectType.TABLE)) {
+                generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn, DBObjectType.TABLE,
+                        tableExtension);
             }
-            return entitiesToModels(tables, database, params.getIncludePermittedAction());
+            if (types.contains(DBObjectType.EXTERNAL_TABLE)) {
+                generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn,
+                        DBObjectType.EXTERNAL_TABLE, tableExtension);
+            }
+            return tables;
         }
     }
 
-    @SkipAuthorize("permission check inside")
-    public void syncDBTables(Connection connection, Database database, DialectType dialectType)
-            throws InterruptedException {
+    private void generateListAndSyncDBTablesByTableType(QueryTableParams params, Database database,
+            ConnectionConfig dataSource, List<Table> tables, Connection conn, DBObjectType tableType,
+            TableExtensionPoint tableExtension) throws InterruptedException {
+        Set<String> latestTableNames = tableExtension.list(conn, database.getName(), tableType)
+                .stream().map(DBObjectIdentity::getName).collect(Collectors.toCollection(LinkedHashSet::new));
+        if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
+            tables.addAll(latestTableNames.stream().map(tableName -> {
+                Table table = new Table();
+                table.setName(tableName);
+                table.setAuthorizedPermissionTypes(new HashSet<>(DatabasePermissionType.all()));
+                table.setType(tableType);
+                return table;
+            }).collect(Collectors.toList()));
+        } else {
+            List<DBObjectEntity> existTables =
+                    dbObjectRepository.findByDatabaseIdAndTypeOrderByNameAsc(params.getDatabaseId(),
+                            tableType);
+            Set<String> existTableNames =
+                    existTables.stream().map(DBObjectEntity::getName).collect(Collectors.toSet());
+            if (latestTableNames.size() != existTableNames.size()
+                    || !existTableNames.containsAll(latestTableNames)) {
+                syncDBTables(conn, database, dataSource.getDialectType(), getSyncerByTableType(tableType));
+                existTables =
+                        dbObjectRepository.findByDatabaseIdAndTypeOrderByNameAsc(params.getDatabaseId(),
+                                tableType);
+            }
+            tables.addAll(entitiesToModels(existTables, database, params.getIncludePermittedAction()));
+        }
+    }
+
+    private DBSchemaSyncer getSyncerByTableType(@NotNull DBObjectType tableType) {
+        switch (tableType) {
+            case TABLE:
+                return dbTableSyncer;
+            case EXTERNAL_TABLE:
+                return dbExternalTableSyncer;
+            default:
+                throw new IllegalArgumentException("Unsupported table type: " + tableType);
+        }
+    }
+
+    // sync normal table
+    public void syncDBTables(@NotNull Connection connection, @NotNull Database database,
+            @NotNull DialectType dialectType) throws InterruptedException {
+        syncDBTables(connection, database, dialectType, dbTableSyncer);
+    }
+
+    private void syncDBTables(@NotNull Connection connection, @NotNull Database database,
+            @NotNull DialectType dialectType, @NotNull DBSchemaSyncer syncer) throws InterruptedException {
         Lock lock = lockRegistry
                 .obtain(dbSchemaSyncService.getSyncDBObjectLockKey(database.getDataSource().getId(), database.getId()));
         if (!lock.tryLock(3, TimeUnit.SECONDS)) {
@@ -138,8 +189,8 @@ public class TableService {
                     new Object[] {ResourceType.ODC_TABLE.getLocalizedMessage()}, "Can not acquire jdbc lock");
         }
         try {
-            if (dbTableSyncer.supports(dialectType)) {
-                dbTableSyncer.sync(connection, database, dialectType);
+            if (syncer.supports(dialectType)) {
+                syncer.sync(connection, database, dialectType);
             } else {
                 throw new UnsupportedException("Unsupported dialect type: " + dialectType);
             }
@@ -164,6 +215,7 @@ public class TableService {
             table.setCreateTime(entity.getCreateTime());
             table.setUpdateTime(entity.getUpdateTime());
             table.setOrganizationId(entity.getOrganizationId());
+            table.setType(entity.getType());
             if (includePermittedAction) {
                 table.setAuthorizedPermissionTypes(id2Types.get(entity.getId()));
             }

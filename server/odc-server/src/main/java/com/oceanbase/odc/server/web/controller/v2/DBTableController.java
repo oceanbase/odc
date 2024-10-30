@@ -40,6 +40,7 @@ import com.oceanbase.odc.service.partitionplan.model.PartitionPlanDBTable;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.state.model.StateName;
 import com.oceanbase.odc.service.state.model.StatefulRoute;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBSchema;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
@@ -74,11 +75,12 @@ public class DBTableController {
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<DBTable> getTable(@PathVariable String sessionId,
             @PathVariable(required = false) String databaseName,
-            @PathVariable String tableName) {
+            @PathVariable String tableName,
+            @RequestParam(required = false, name = "type", defaultValue = "TABLE") DBObjectType type) {
         Base64.Decoder decoder = Base64.getDecoder();
         tableName = new String(decoder.decode(tableName));
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
-        return Responses.success(tableService.getTable(session, databaseName, tableName));
+        return Responses.success(tableService.getTable(session, databaseName, tableName, type));
     }
 
     @PostMapping(value = {"/{sessionId}/databases/{databaseName}/tables/generateCreateTableDDL",

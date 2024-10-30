@@ -21,6 +21,7 @@ import javax.validation.constraints.NotNull;
 
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
+import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
 
 import lombok.Data;
 
@@ -51,6 +52,8 @@ public class DataDeleteParameters implements ScheduleTaskParameters {
     private RateLimitConfiguration rateLimit;
 
     private Boolean deleteByUniqueKey = true;
+
+    private ShardingStrategy shardingStrategy;
 
     private Boolean needCheckBeforeDelete = false;
 

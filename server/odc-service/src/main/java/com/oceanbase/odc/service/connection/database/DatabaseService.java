@@ -123,7 +123,7 @@ import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
-import com.oceanbase.odc.service.task.runtime.PreCheckTaskParameters.AuthorizedDatabase;
+import com.oceanbase.odc.service.task.base.precheck.PreCheckTaskParameters.AuthorizedDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 
 import lombok.NonNull;
@@ -522,6 +522,10 @@ public class DatabaseService {
         }
     }
 
+    public int updateEnvironmentIdByConnectionId(@NotNull Long environmentId, @NotNull Long connectionId) {
+        return databaseRepository.setEnvironmentIdByConnectionId(environmentId, connectionId);
+    }
+
     private void syncTeamDataSources(ConnectionConfig connection) {
         Long currentProjectId = connection.getProjectId();
         boolean blockExcludeSchemas = dbSchemaSyncProperties.isBlockExclusionsWhenSyncDbToProject();
@@ -827,8 +831,9 @@ public class DatabaseService {
     @Transactional(rollbackFor = Exception.class)
     public void refreshExpiredPendingDBObjectStatus() {
         Date syncDate = new Date(System.currentTimeMillis() - this.globalSearchProperties.getMaxPendingMillis());
-        int affectRows = this.databaseRepository.setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeBefore(
-                DBObjectSyncStatus.INITIALIZED, DBObjectSyncStatus.PENDING, syncDate);
+        int affectRows =
+                this.databaseRepository.setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeIsNullOrBefore(
+                        DBObjectSyncStatus.INITIALIZED, DBObjectSyncStatus.PENDING, syncDate);
         log.info("Refresh outdated pending objects status, syncDate={}, affectRows={}", syncDate, affectRows);
     }
 

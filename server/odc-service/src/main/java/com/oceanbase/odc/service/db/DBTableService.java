@@ -49,6 +49,7 @@ import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.sqlparser.statement.Statement;
@@ -88,11 +89,18 @@ public class DBTableService {
     }
 
     public DBTable getTable(@NotNull ConnectionSession connectionSession, String schemaName,
-            @NotBlank String tableName) {
+            @NotBlank String tableName, @NotNull DBObjectType type) {
         DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
-        PreConditions.validExists(ResourceType.OB_TABLE, "tableName", tableName,
-                () -> schemaAccessor.showTables(schemaName).stream().filter(name -> name.equals(tableName))
-                        .collect(Collectors.toList()).size() > 0);
+        if (type == DBObjectType.TABLE) {
+            PreConditions.validExists(ResourceType.OB_TABLE, "tableName", tableName,
+                    () -> schemaAccessor.showTables(schemaName).stream().filter(name -> name.equals(tableName))
+                            .collect(Collectors.toList()).size() > 0);
+        }
+        if (type == DBObjectType.EXTERNAL_TABLE) {
+            PreConditions.validExists(ResourceType.OB_TABLE, "tableName", tableName,
+                    () -> schemaAccessor.showExternalTables(schemaName).stream().filter(name -> name.equals(tableName))
+                            .collect(Collectors.toList()).size() > 0);
+        }
         try {
             return connectionSession.getSyncJdbcExecutor(
                     ConnectionSessionConstants.BACKEND_DS_KEY)
@@ -116,7 +124,7 @@ public class DBTableService {
     public List<DBTable> listTables(@NotNull ConnectionSession connectionSession, String schemaName) {
         return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<List<DBObjectIdentity>>) con -> getTableExtensionPoint(connectionSession)
-                        .list(con, schemaName))
+                        .list(con, schemaName, DBObjectType.TABLE))
                 .stream().map(item -> {
                     DBTable table = new DBTable();
                     table.setName(item.getName());

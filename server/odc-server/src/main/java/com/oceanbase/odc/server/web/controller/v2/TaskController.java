@@ -26,10 +26,10 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
-import com.oceanbase.odc.service.task.executor.server.HeartbeatRequest;
-import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
-import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnReq;
-import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnResp;
+import com.oceanbase.odc.service.task.base.databasechange.QuerySensitiveColumnReq;
+import com.oceanbase.odc.service.task.base.databasechange.QuerySensitiveColumnResp;
+import com.oceanbase.odc.service.task.executor.DefaultTaskResult;
+import com.oceanbase.odc.service.task.executor.HeartbeatRequest;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import io.swagger.annotations.ApiOperation;

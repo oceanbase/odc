@@ -20,12 +20,15 @@ import java.util.List;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
+import com.oceanbase.odc.service.onlineschemachange.OscTableUtil;
 import com.oceanbase.odc.service.onlineschemachange.exception.OmsException;
 import com.oceanbase.odc.service.onlineschemachange.fsm.Action;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
@@ -52,7 +55,7 @@ public class OmsCleanResourcesAction implements Action<OscActionContext, OscActi
     private final OmsProjectOpenApiService projectOpenApiService;
 
     private final List<TaskStatus> expectedTaskStatus = Lists.newArrayList(TaskStatus.DONE, TaskStatus.FAILED,
-            TaskStatus.CANCELED, TaskStatus.RUNNING);
+            TaskStatus.CANCELED, TaskStatus.RUNNING, TaskStatus.ABNORMAL);
 
     public OmsCleanResourcesAction(@NonNull OmsProjectOpenApiService omsProjectOpenApiService) {
         this.projectOpenApiService = omsProjectOpenApiService;
@@ -68,11 +71,36 @@ public class OmsCleanResourcesAction implements Action<OscActionContext, OscActi
         boolean released = checkAndReleaseProject(taskParameters.getOmsProjectId(), taskParameters.getUid());
         if (!released) {
             // try release again
-            log.info("OCS: release OMS project failed, try it again. OMS project ID {}, uid {}",
+            log.info("OCS: release OMS project failed, try it again. OMS project ID={}, uid={}",
                     taskParameters.getOmsProjectId(), taskParameters.getUid());
             return new OscActionResult(OscStates.CLEAN_RESOURCE.getState(), null, OscStates.CLEAN_RESOURCE.getState());
         }
+        if (!tryDropNewTable(context)) {
+            // try drop ghost table again
+            return new OscActionResult(OscStates.CLEAN_RESOURCE.getState(), null, OscStates.CLEAN_RESOURCE.getState());
+        }
         return determinateNextState(scheduleTask, context.getSchedule());
+    }
+
+    protected boolean tryDropNewTable(OscActionContext context) {
+        ConnectionSession connectionSession = null;
+        OnlineSchemaChangeScheduleTaskParameters taskParam = context.getTaskParameter();
+        String databaseName = taskParam.getDatabaseName();
+        String tableName = taskParam.getNewTableNameUnwrapped();
+        boolean succeed;
+        try {
+            connectionSession = context.getConnectionProvider().createConnectionSession();
+            OscTableUtil.dropNewTableIfExits(databaseName, tableName, connectionSession);
+            succeed = true;
+        } catch (Throwable e) {
+            log.warn("osc: drop table = {}.{} failed", databaseName, tableName, e);
+            succeed = false;
+        } finally {
+            if (connectionSession != null) {
+                connectionSession.expire();
+            }
+        }
+        return succeed;
     }
 
     @VisibleForTesting
@@ -84,7 +112,7 @@ public class OmsCleanResourcesAction implements Action<OscActionContext, OscActi
         }
         // if task state is in cancel state, stop and transfer to complete state
         if (scheduleTask.getStatus() == TaskStatus.CANCELED) {
-            log.info("Because task is canceled, so delete quartz job {}", scheduleId);
+            log.info("Because task is canceled, so delete quartz job={}", scheduleId);
             // cancel as complete
             return new OscActionResult(OscStates.CLEAN_RESOURCE.getState(), null, OscStates.COMPLETE.getState());
         }
@@ -96,7 +124,7 @@ public class OmsCleanResourcesAction implements Action<OscActionContext, OscActi
             // try schedule next task
             return new OscActionResult(OscStates.CLEAN_RESOURCE.getState(), null, OscStates.YIELD_CONTEXT.getState());
         } else {
-            log.info("Because error strategy is abort, so delete quartz job {}", scheduleId);
+            log.info("Because error strategy is abort, so delete quartz job={}", scheduleId);
             // not continue for remain state, transfer to complete state
             return new OscActionResult(OscStates.CLEAN_RESOURCE.getState(), null, OscStates.COMPLETE.getState());
         }
@@ -110,7 +138,7 @@ public class OmsCleanResourcesAction implements Action<OscActionContext, OscActi
         OmsProjectControlRequest controlRequest = new OmsProjectControlRequest();
         controlRequest.setId(omsProjectId);
         controlRequest.setUid(uid);
-        log.info("Oms project {} has not released, try to release it.", omsProjectId);
+        log.info("Oms project={} has not released, try to release it.", omsProjectId);
         return checkAndReleaseProject(controlRequest);
     }
 
@@ -126,16 +154,16 @@ public class OmsCleanResourcesAction implements Action<OscActionContext, OscActi
         try {
             OmsProjectProgressResponse progressResponse = projectOpenApiService.describeProjectProgress(controlRequest);
             released = progressResponse.getStatus().isProjectDestroyed();
-        } catch (OmsException e) {
+        } catch (Throwable e) {
             // representative project has been deleted when message contain "GHANA-PROJECT000001"
             // or "project is not exists",
-            if (e.getMessage() != null && e.getMessage().contains("GHANA-PROJECT000001")) {
+            if (e instanceof OmsException && StringUtils.containsIgnoreCase(e.getMessage(), "GHANA-PROJECT000001")) {
                 released = true;
             }
         }
 
         if (!released) {
-            log.info("Oms project {} has not released, try to release it.", projectControl.getId());
+            log.info("Oms project={} has not released, try to release it.", projectControl.getId());
             doReleaseOmsResource(controlRequest);
         }
         return released;
@@ -153,9 +181,9 @@ public class OmsCleanResourcesAction implements Action<OscActionContext, OscActi
                 projectOpenApiService.stopProject(projectControlRequest);
             }
             projectOpenApiService.releaseProject(projectControlRequest);
-            log.info("Release oms project, id {}", projectControlRequest.getId());
+            log.info("Release oms project, id={}", projectControlRequest.getId());
         } catch (Throwable ex) {
-            log.warn("Failed to release oms project, id {}, occur error {}", projectControlRequest.getId(),
+            log.warn("Failed to release oms project, id={}, occur error={}", projectControlRequest.getId(),
                     ex.getMessage());
         }
     }

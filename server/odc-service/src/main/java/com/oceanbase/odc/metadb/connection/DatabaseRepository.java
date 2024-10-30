@@ -32,7 +32,7 @@ import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 
 public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
         JpaSpecificationExecutor<DatabaseEntity> {
-    Optional<DatabaseEntity> findByConnectionIdAndName(Long connectionId, String name);
+    Optional<DatabaseEntity> findByConnectionIdAndNameAndExisted(Long connectionId, String name, Boolean existed);
 
     List<DatabaseEntity> findByConnectionId(Long connectionId);
 
@@ -74,9 +74,10 @@ public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
     @Modifying
     @Transactional
     @Query(value = "update connect_database t set t.object_sync_status = :#{#status.name()} "
-            + "where t.object_sync_status = :#{#originalStatus.name()} and t.object_last_sync_time < :syncTime",
-            nativeQuery = true)
-    int setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeBefore(@Param("status") DBObjectSyncStatus status,
+            + "where t.object_sync_status = :#{#originalStatus.name()} "
+            + "and (t.object_last_sync_time < :syncTime or t.object_last_sync_time is null)", nativeQuery = true)
+    int setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeIsNullOrBefore(
+            @Param("status") DBObjectSyncStatus status,
             @Param("originalStatus") DBObjectSyncStatus originalStatus, @Param("syncTime") Date syncTime);
 
     @Modifying
@@ -103,5 +104,12 @@ public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
     @Query(value = "update connect_database t set t.project_id = null where t.project_id = :projectId",
             nativeQuery = true)
     int setProjectIdToNull(@Param("projectId") Long projectId);
+
+    @Modifying
+    @Transactional
+    @Query(value = "update connect_database t set t.environment_id = :environmentId where t.connection_id = :connectionId",
+            nativeQuery = true)
+    int setEnvironmentIdByConnectionId(@Param("environmentId") Long environmentId,
+            @Param("connectionId") Long connectionId);
 
 }

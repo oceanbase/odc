@@ -25,7 +25,7 @@ import lombok.ToString;
 
 /**
  * location of the resource
- * 
+ *
  * @author longpeng.zlp
  * @date 2024/9/4 10:42
  */

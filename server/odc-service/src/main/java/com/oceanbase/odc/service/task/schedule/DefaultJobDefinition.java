@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.task.schedule;
 
 import java.util.Map;
 
-import com.oceanbase.odc.service.task.executor.task.Task;
+import com.oceanbase.odc.service.task.Task;
 
 import lombok.Builder;
 import lombok.Data;

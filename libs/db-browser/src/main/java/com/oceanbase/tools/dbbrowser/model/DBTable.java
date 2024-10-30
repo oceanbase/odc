@@ -58,6 +58,8 @@ public class DBTable implements DBObject, DBObjectWarningDescriptor {
 
     private String warning;
 
+    private DBObjectType type;
+
     @Data
     public static class DBTableOptions {
         private String charsetName;

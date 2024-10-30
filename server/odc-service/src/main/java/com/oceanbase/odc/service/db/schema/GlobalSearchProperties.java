@@ -40,12 +40,12 @@ public class GlobalSearchProperties {
     @Value("${odc.database.schema.global-search.max-pending-hours:1}")
     private long maxPendingHours;
 
+    public long getMaxPendingHours() {
+        return this.maxPendingHours <= 0 ? 1 : this.maxPendingHours;
+    }
+
     public long getMaxPendingMillis() {
-        long maxPendingHours = this.maxPendingHours;
-        if (this.maxPendingHours <= 0) {
-            maxPendingHours = 1;
-        }
-        return TimeUnit.MILLISECONDS.convert(this.maxPendingHours, TimeUnit.HOURS);
+        return TimeUnit.MILLISECONDS.convert(getMaxPendingHours(), TimeUnit.HOURS);
     }
 
 }
