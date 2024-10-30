@@ -27,6 +27,7 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -73,14 +74,11 @@ public class DoCancelingJob implements Job {
                             lockedEntity.getId(), lockedEntity.getStatus());
                     return;
                 }
-                JobStatus currentStatus = taskFrameworkService.find(lockedEntity.getId()).getStatus();
-                if (currentStatus.isTerminated()) {
-                    // the job terminated before we update it to CANCELED
-                    log.info("Job is already terminated, jobId={},currentStatus={}", lockedEntity.getId(),
-                            currentStatus);
-                    getConfiguration().getEventPublisher().publishEvent(
-                            new JobTerminateEvent(JobIdentity.of(lockedEntity.getId()), currentStatus));
-                    return;
+                // mark resource as released
+                if (TaskRunMode.K8S == lockedEntity.getRunMode()) {
+                    ResourceManagerUtil.markResourceReleased(lockedEntity, lockedEntity.getExecutorIdentifier(),
+                            getConfiguration().getResourceManager());
+                    log.info("DoCancelingJob release resource for job = {}", jobEntity);
                 }
                 // For transaction atomic, first update to CANCELED, then stop remote job in executor,
                 // if stop remote failed, transaction will be rollback
