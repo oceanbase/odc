@@ -159,4 +159,16 @@ public class MysqlModePLParserListener extends PLParserBaseListener implements B
         varibale.setVarType(type);
         this.varibaleList.add(varibale);
     }
+
+    @Override
+    public void enterCall_sp_stmt(PLParser.Call_sp_stmtContext ctx) {
+        this.sqlType = SqlType.CALL;
+        this.dbObjectType = DBObjectType.OTHERS;
+    }
+
+    @Override
+    public void enterSp_call_name(PLParser.Sp_call_nameContext ctx) {
+        this.sqlType = SqlType.CALL;
+        this.dbObjectType = DBObjectType.OTHERS;
+    }
 }

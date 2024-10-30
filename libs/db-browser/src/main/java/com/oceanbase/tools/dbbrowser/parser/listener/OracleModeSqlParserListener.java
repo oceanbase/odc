@@ -700,4 +700,62 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
         this.dbObjectType = DBObjectType.OTHERS;
     }
 
+    @Override
+    public void enterSet_comment_stmt(OBParser.Set_comment_stmtContext ctx) {
+        // comment on xxx
+        setSqlType(SqlType.COMMENT);
+        ParseTree child = null;
+        if (ctx.getChildCount() >= 3) {
+            child = ctx.getChild(2);
+        }
+        String sqlType = child != null ? child.getText() : "";
+        switch (sqlType) {
+            case "TABLE":
+                this.dbObjectType = DBObjectType.TABLE;
+                break;
+            case "COLUMN":
+                this.dbObjectType = DBObjectType.COLUMN; // 添加列的处理
+                break;
+            case "VIEW":
+                this.dbObjectType = DBObjectType.VIEW;
+                break;
+            case "SEQUENCE":
+                this.dbObjectType = DBObjectType.SEQUENCE;
+                break;
+            case "PROCEDURE":
+                this.dbObjectType = DBObjectType.PROCEDURE;
+                break;
+            case "FUNCTION":
+                this.dbObjectType = DBObjectType.FUNCTION;
+                break;
+            case "PACKAGE":
+                this.dbObjectType = DBObjectType.PACKAGE;
+                break;
+            case "TRIGGER":
+                this.dbObjectType = DBObjectType.TRIGGER;
+                break;
+            case "INDEX":
+                this.dbObjectType = DBObjectType.INDEX;
+                break;
+            case "SCHEMA":
+                this.dbObjectType = DBObjectType.SCHEMA;
+                break;
+            case "TYPE":
+                this.dbObjectType = DBObjectType.TYPE;
+                break;
+            case "DATABASE":
+                this.dbObjectType = DBObjectType.DATABASE;
+                break;
+            default:
+                this.dbObjectType = DBObjectType.OTHERS;
+                break;
+        }
+    }
+
+    @Override
+    public void enterCall_stmt(OBParser.Call_stmtContext ctx) {
+        setSqlType(SqlType.CALL);
+        this.dbObjectType = DBObjectType.OTHERS;
+    }
+
 }

@@ -15,6 +15,8 @@
  */
 package com.oceanbase.tools.dbbrowser.parser.constant;
 
+import org.omg.CORBA.UNKNOWN;
+
 /**
  * Created by mogao.zj
  */
@@ -38,6 +40,8 @@ public enum SqlType {
     ALTER,
     TRUNCATE,
     CREATE,
+    CALL,
+    COMMENT,
     OTHERS,
     UNKNOWN
 }
