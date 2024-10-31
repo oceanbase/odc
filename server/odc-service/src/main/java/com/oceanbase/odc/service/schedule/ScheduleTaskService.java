@@ -275,7 +275,10 @@ public class ScheduleTaskService {
     public Page<ScheduleTaskEntity> listEntity(Pageable pageable,
             QueryScheduleTaskParams params) {
         Specification<ScheduleTaskEntity> specification =
-                Specification.where(ScheduleTaskSpecs.jobNameIn(params.getScheduleIds()))
+                Specification
+                        .where(ScheduleTaskSpecs
+                                .jobNameIn(params.getScheduleIds().stream().map(Object::toString).collect(
+                                        Collectors.toSet())))
                         .and(ScheduleTaskSpecs.idEquals(params.getId()))
                         .and(ScheduleTaskSpecs.statusIn(params.getStatuses()))
                         .and(ScheduleTaskSpecs.fireTimeLate(params.getStartTime()))
