@@ -19,7 +19,6 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -45,6 +44,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -72,6 +72,8 @@ import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
@@ -741,24 +743,20 @@ public class ScheduleService {
             }
             params.setCreatorIds(creatorIds);
         }
-        if (params.getDataSourceIds() == null) {
-            params.setDataSourceIds(new HashSet<>());
-        }
-        if (StringUtils.isNotEmpty(params.getClusterId())) {
-            List<Long> datasourceIdsByCluster = connectionService.innerListIdByOrganizationIdAndClusterId(
-                    authenticationFacade.currentOrganizationId(), params.getClusterId());
-            if (datasourceIdsByCluster.isEmpty()) {
+        if (!CollectionUtils.isEmpty(params.getDataSourceIds()) || StringUtils.isNotEmpty(params.getClusterId())
+                || StringUtils.isNotEmpty(params.getTenantId())) {
+            QueryConnectionParams datasourceParams = QueryConnectionParams.builder()
+                    .ids(params.getDataSourceIds())
+                    .clusterNames(Collections.singletonList(params.getClusterId()))
+                    .tenantNames(Collections.singletonList(params.getTenantId()))
+                    .build();
+            Set<Long> datasourceIds = connectionService.listSkipPermissionCheck(datasourceParams).stream().map(
+                    ConnectionConfig::getId).collect(
+                            Collectors.toSet());
+            if (datasourceIds.isEmpty()) {
                 return Page.empty();
             }
-            params.getDataSourceIds().addAll(datasourceIdsByCluster);
-        }
-        if (StringUtils.isNotEmpty(params.getTenantId())) {
-            List<Long> datasourceIdsByTenantId = connectionService.innerListIdByOrganizationIdAndTenantId(
-                    authenticationFacade.currentOrganizationId(), params.getTenantId());
-            if (datasourceIdsByTenantId.isEmpty()) {
-                return Page.empty();
-            }
-            params.getDataSourceIds().addAll(datasourceIdsByTenantId);
+            params.setDataSourceIds(datasourceIds);
         }
         // load project by unique identifier if project id is null
         if (params.getProjectId() == null && StringUtils.isNotEmpty(params.getProjectUniqueIdentifier())) {
