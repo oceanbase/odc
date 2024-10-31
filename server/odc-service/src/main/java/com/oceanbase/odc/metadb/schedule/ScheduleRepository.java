@@ -28,6 +28,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
@@ -60,6 +61,9 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
     int getEnabledScheduleCountByProjectId(@Param("projectId") Long projectId);
 
     default Page<ScheduleEntity> find(@NotNull Pageable pageable, @NotNull QueryScheduleParams params) {
+        if (!StringUtils.isNumeric(params.getId())) {
+            return Page.empty();
+        }
         Specification<ScheduleEntity> specification = Specification
                 .where(OdcJpaRepository.between(ScheduleEntity_.createTime, params.getStartTime(), params.getEndTime()))
                 .and(OdcJpaRepository.in(ScheduleEntity_.dataSourceId, params.getDataSourceIds()))
@@ -73,20 +77,5 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
                 .and(OdcJpaRepository.like(ScheduleEntity_.name, params.getName()))
                 .and(OdcJpaRepository.eq(ScheduleEntity_.organizationId, params.getOrganizationId()));
         return findAll(specification, pageable);
-    }
-
-    default List<ScheduleEntity> find(@NotNull QueryScheduleParams params) {
-        Specification<ScheduleEntity> specification = Specification
-                .where(OdcJpaRepository.between(ScheduleEntity_.createTime, params.getStartTime(), params.getEndTime()))
-                .and(OdcJpaRepository.in(ScheduleEntity_.dataSourceId, params.getDataSourceIds()))
-                .and(OdcJpaRepository.eq(ScheduleEntity_.databaseName, params.getDatabaseName()))
-                .and(OdcJpaRepository.eq(ScheduleEntity_.type, params.getType()))
-                .and(OdcJpaRepository.in(ScheduleEntity_.projectId, params.getProjectIds()))
-                .and(OdcJpaRepository.eq(ScheduleEntity_.id, params.getId()))
-                .and(OdcJpaRepository.notEq(ScheduleEntity_.status, ScheduleStatus.DELETED))
-                .and(OdcJpaRepository.in(ScheduleEntity_.creatorId, params.getCreatorIds()))
-                .and(OdcJpaRepository.like(ScheduleEntity_.name, params.getName()))
-                .and(OdcJpaRepository.eq(ScheduleEntity_.organizationId, params.getOrganizationId()));
-        return findAll(specification);
     }
 }

@@ -808,45 +808,6 @@ public class ScheduleService {
     public Page<ScheduleTaskListOverview> listScheduleTaskOverviewByScheduleType(@NotNull Pageable pageable,
             @NotNull QueryScheduleTaskParams params) {
         log.info("List schedule task overview req, params={}", params);
-        if (params.getDataSourceIds() == null) {
-            params.setDataSourceIds(new HashSet<>());
-        }
-        if (StringUtils.isNotBlank(params.getCreator())) {
-            Set<Long> creatorIds = userService.getUsersByFuzzyNameWithoutPermissionCheck(
-                    params.getCreator()).stream().map(User::getId).collect(Collectors.toSet());
-            if (creatorIds.isEmpty()) {
-                return Page.empty();
-            }
-            params.setCreatorIds(creatorIds);
-        }
-        if (StringUtils.isNotEmpty(params.getClusterId())) {
-            List<Long> datasourceIdsByCluster = connectionService.innerListIdByOrganizationIdAndClusterId(
-                    authenticationFacade.currentOrganizationId(), params.getClusterId());
-            if (datasourceIdsByCluster.isEmpty()) {
-                return Page.empty();
-            }
-            params.getDataSourceIds().addAll(datasourceIdsByCluster);
-        }
-        if (StringUtils.isNotEmpty(params.getTenantId())) {
-            List<Long> datasourceIdsByTenantId = connectionService.innerListIdByOrganizationIdAndTenantId(
-                    authenticationFacade.currentOrganizationId(), params.getTenantId());
-            if (datasourceIdsByTenantId.isEmpty()) {
-                return Page.empty();
-            }
-            params.getDataSourceIds().addAll(datasourceIdsByTenantId);
-        }
-
-        if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
-            Set<Long> projectIds = params.getProjectId() == null
-                    ? projectService.getMemberProjectIds(authenticationFacade.currentUserId())
-                    : Collections.singleton(params.getProjectId());
-            if (projectIds.isEmpty()) {
-                return Page.empty();
-            }
-            params.setProjectIds(projectIds);
-        }
-        params.setOrganizationId(authenticationFacade.currentOrganizationId());
-
         QueryScheduleParams scheduleParams = QueryScheduleParams.builder()
                 .id(params.getScheduleId())
                 .name(params.getScheduleName())
@@ -857,10 +818,8 @@ public class ScheduleService {
                 .projectId(params.getProjectId())
                 .organizationId(authenticationFacade.currentOrganizationId())
                 .build();
-
-        List<Schedule> scheduleList = scheduleRepository.find(scheduleParams).stream()
-                .map(scheduleMapper::entityToModel)
-                .collect(Collectors.toList());
+        List<Schedule> scheduleList = scheduleRepository.find(Pageable.unpaged(), scheduleParams).getContent().stream()
+                .map(scheduleMapper::entityToModel).collect(Collectors.toList());
         if (scheduleList.isEmpty()) {
             return Page.empty();
         }

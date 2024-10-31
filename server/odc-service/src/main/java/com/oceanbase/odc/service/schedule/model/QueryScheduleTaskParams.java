@@ -28,7 +28,7 @@ import lombok.Data;
 @Builder
 public class QueryScheduleTaskParams {
     private Long id;
-    private Long scheduleId;
+    private String scheduleId;
     private List<Schedule> schedules;
     private String scheduleName;
     private Set<Long> dataSourceIds;
