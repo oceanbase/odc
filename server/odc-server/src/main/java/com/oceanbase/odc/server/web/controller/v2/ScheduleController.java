@@ -153,7 +153,7 @@ public class ScheduleController {
     }
 
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks", method = RequestMethod.GET)
-    public PaginatedResponse<ScheduleTaskOverview> listTask(
+    public PaginatedResponse<ScheduleTaskOverview> listScheduleTaskForSchedule(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
             @PathVariable Long scheduleId) {
         return Responses.paginated(scheduleService.listScheduleTaskOverview(pageable, scheduleId));
@@ -161,7 +161,7 @@ public class ScheduleController {
 
 
     @RequestMapping(value = "/tasks", method = RequestMethod.GET)
-    public PaginatedResponse<ScheduleTaskListOverview> listAllTask(
+    public PaginatedResponse<ScheduleTaskListOverview> listScheduleTask(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
             @RequestParam(required = false, name = "dataSourceId") Set<Long> datasourceIds,
             @RequestParam(required = false, name = "databaseName") String databaseName,
@@ -193,7 +193,7 @@ public class ScheduleController {
                 .projectId(projectId)
                 .build();
 
-        return Responses.paginated(scheduleService.listScheduleTaskOverviewByScheduleType(pageable, req));
+        return Responses.paginated(scheduleService.listScheduleTaskListOverview(pageable, req));
     }
 
     // schedule

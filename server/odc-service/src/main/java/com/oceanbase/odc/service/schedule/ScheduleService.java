@@ -66,6 +66,7 @@ import com.oceanbase.odc.metadb.schedule.LatestTaskMappingEntity;
 import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
@@ -805,7 +806,7 @@ public class ScheduleService {
         return scheduleTaskService.getScheduleTaskListResp(pageable, scheduleId);
     }
 
-    public Page<ScheduleTaskListOverview> listScheduleTaskOverviewByScheduleType(@NotNull Pageable pageable,
+    public Page<ScheduleTaskListOverview> listScheduleTaskListOverview(@NotNull Pageable pageable,
             @NotNull QueryScheduleTaskParams params) {
         log.info("List schedule task overview req, params={}", params);
         QueryScheduleParams scheduleParams = QueryScheduleParams.builder()
@@ -818,14 +819,16 @@ public class ScheduleService {
                 .projectId(params.getProjectId())
                 .organizationId(authenticationFacade.currentOrganizationId())
                 .build();
-        List<Schedule> scheduleList = scheduleRepository.find(Pageable.unpaged(), scheduleParams).getContent().stream()
-                .map(scheduleMapper::entityToModel).collect(Collectors.toList());
-        if (scheduleList.isEmpty()) {
+        Set<Long> scheduleIds = scheduleRepository.find(Pageable.unpaged(), scheduleParams).getContent()
+                .stream().map(ScheduleEntity::getId).collect(Collectors.toSet());
+        if (scheduleIds.isEmpty()) {
             return Page.empty();
         }
-        params.setSchedules(scheduleList);
-
-        return scheduleTaskService.getConditionalScheduleTaskListResp(pageable, params);
+        params.setScheduleIds(scheduleIds);
+        Page<ScheduleTaskEntity> returnValue = scheduleTaskService.listEntity(pageable, params);
+        Map<Long, ScheduleTaskListOverview> taskId2Overview =
+                scheduleResponseMapperFactory.generateScheduleTaskOverviewListMapper(returnValue.getContent());
+        return returnValue.map(o -> taskId2Overview.get(o.getId()));
     }
 
     public List<String> getAsyncDownloadUrl(Long id, List<String> objectIds) {
