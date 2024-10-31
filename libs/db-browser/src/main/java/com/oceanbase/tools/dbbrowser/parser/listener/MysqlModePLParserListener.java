@@ -166,9 +166,4 @@ public class MysqlModePLParserListener extends PLParserBaseListener implements B
         this.dbObjectType = DBObjectType.OTHERS;
     }
 
-    @Override
-    public void enterSp_call_name(PLParser.Sp_call_nameContext ctx) {
-        this.sqlType = SqlType.CALL;
-        this.dbObjectType = DBObjectType.OTHERS;
-    }
 }

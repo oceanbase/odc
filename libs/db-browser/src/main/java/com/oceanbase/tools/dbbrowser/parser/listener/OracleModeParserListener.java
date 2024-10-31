@@ -438,16 +438,6 @@ public class OracleModeParserListener extends PlSqlParserBaseListener implements
         doRecord(SqlType.CALL, DBObjectType.OTHERS, null);
     }
 
-    @Override
-    public void enterFunction_call(PlSqlParser.Function_callContext ctx) {
-        doRecord(SqlType.CALL, DBObjectType.FUNCTION, ctx.routine_name().getText());
-    }
-
-    @Override
-    public void enterProcedure_call(PlSqlParser.Procedure_callContext ctx) {
-        doRecord(SqlType.CALL, DBObjectType.PROCEDURE, ctx.routine_name().getText());
-    }
-
     private void doRecord(SqlType sqlType, DBObjectType dbObjectType, String rawPlName) {
         if (Objects.nonNull(sqlType) && Objects.isNull(this.sqlType)) {
             this.sqlType = sqlType;

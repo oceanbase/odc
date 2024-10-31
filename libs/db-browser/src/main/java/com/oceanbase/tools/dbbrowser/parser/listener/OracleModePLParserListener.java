@@ -556,12 +556,6 @@ public class OracleModePLParserListener extends PLParserBaseListener implements 
     }
 
     @Override
-    public void enterInner_call_stmt(PLParser.Inner_call_stmtContext ctx) {
-        this.sqlType = sqlType.CALL;
-        this.dbObjectType = DBObjectType.OTHERS;
-    }
-
-    @Override
     public void enterCall_spec(PLParser.Call_specContext ctx) {
         this.sqlType = sqlType.CALL;
         this.dbObjectType = DBObjectType.OTHERS;
