@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.task.executor;
 
 import java.util.Map;
 
-import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
@@ -29,7 +29,7 @@ public interface TaskResult {
 
     JobIdentity getJobIdentity();
 
-    JobStatus getStatus();
+    TaskStatus getStatus();
 
     String getResultJson();
 

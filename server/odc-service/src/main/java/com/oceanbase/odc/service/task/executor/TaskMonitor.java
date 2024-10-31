@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.odc.common.util.ObjectUtil;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.task.base.BaseTask;
@@ -34,7 +35,6 @@ import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobServerUrls;
-import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
@@ -226,7 +226,7 @@ public class TaskMonitor {
     }
 
     private void reportTaskResultWithRetry(DefaultTaskResult result, int retries) {
-        if (result.getStatus() == JobStatus.DONE) {
+        if (result.getStatus() == TaskStatus.DONE) {
             result.setProgress(100.0);
         }
         int retryTimes = 0;
