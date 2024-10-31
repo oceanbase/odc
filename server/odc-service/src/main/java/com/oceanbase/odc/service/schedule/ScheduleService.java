@@ -70,6 +70,7 @@ import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
@@ -81,7 +82,6 @@ import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
@@ -500,31 +500,39 @@ public class ScheduleService {
         scheduleRepository.updateStatusById(scheduleConfig.getId(), ScheduleStatus.TERMINATED);
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    public void innerTerminate(Long scheduleId) throws SchedulerException {
+        ScheduleEntity schedule = nullSafeGetById(scheduleId);
+        JobKey jobKey = QuartzKeyGenerator.generateJobKey(schedule);
+        quartzJobService.deleteJob(jobKey);
+        scheduleRepository.updateStatusById(schedule.getId(), ScheduleStatus.TERMINATED);
+    }
+
     /**
      * The method detects whether the database required for scheduled task operation exists. It returns
      * true and terminates the scheduled task if the database does not exist. If the database exists, it
      * returns false.
      */
     public boolean vetoJobExecution(Long scheduleId) {
-        Optional<ScheduleEntity> scheduleEntityOptional = scheduleRepository.findById(scheduleId);
-        if (scheduleEntityOptional.isPresent()) {
-            ScheduleEntity entity = scheduleEntityOptional.get();
-            boolean isInvalid = isInvalidSchedule(entity);
-            if (isInvalid) {
-                try {
-                    log.info(
-                            "The project or database for scheduled task operation does not exist, and the schedule is being terminated, scheduleId={}",
-                            scheduleId);
-                    terminate(entity);
-                } catch (Exception e) {
-                    log.warn("Terminate schedule failed,scheduleId={}", scheduleId);
-                }
-            }
-            // concurrent is not allowed
-            return isInvalid || hasExecutingTask(scheduleId);
+        Schedule schedule = null;
+        boolean isValidSchedule;
+        try {
+            schedule = nullSafeGetModelById(scheduleId);
+            isValidSchedule = isValidSchedule(schedule);
+        } catch (NotFoundException e) {
+            isValidSchedule = false;
         }
-        // terminate if schedule not found or invalid.
-        return true;
+        // terminate invalid schedule
+        if (!isValidSchedule) {
+            try {
+                innerTerminate(scheduleId);
+            } catch (Exception e) {
+                log.warn("Terminate invalid schedule failed,scheduleId={}", scheduleId);
+            }
+            return true;
+        }
+        // skip execution if concurrent scheduling is not allowed
+        return !schedule.getAllowConcurrent() && hasExecutingTask(scheduleId);
 
     }
 
@@ -545,24 +553,38 @@ public class ScheduleService {
         return false;
     }
 
-    private boolean isInvalidSchedule(ScheduleEntity schedule) {
-        Optional<Organization> organization = organizationService.get(schedule.getOrganizationId());
-        // ignore individual space
-        if (organization.isPresent() && organization.get().getType() == OrganizationType.INDIVIDUAL) {
+    private boolean isValidSchedule(Schedule schedule) {
+
+        if (schedule.getStatus() != ScheduleStatus.ENABLED) {
             return false;
         }
-
-        try {
-            // project archived.
-            if (projectService.nullSafeGet(schedule.getProjectId()).getArchived()) {
-                return true;
+        // check project
+        if (schedule.getProjectId() != null) {
+            try {
+                // The project is invalid or archived
+                if (projectService.nullSafeGet(schedule.getProjectId()).getArchived()) {
+                    return false;
+                }
+            } catch (NotFoundException e) {
+                return false;
             }
-        } catch (NotFoundException e) {
-            // project not found.
-            return true;
+        }
+        // check database
+        if (schedule.getDatabaseId() != null) {
+            try {
+                Database database = databaseService.getBasicSkipPermissionCheck(
+                        schedule.getDatabaseId());
+                // The database is invalid or does not belong to the current project
+                if (!database.getExisted() || !Objects.equals(database.getProject().getId(), schedule.getProjectId())) {
+                    return false;
+                }
+            } catch (NotFoundException e) {
+                // database not found.
+                return false;
+            }
         }
         // schedule is valid.
-        return false;
+        return true;
     }
 
     public void stopTask(Long scheduleId, Long scheduleTaskId) {
