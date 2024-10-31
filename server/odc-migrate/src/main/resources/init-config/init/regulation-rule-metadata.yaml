@@ -108,6 +108,7 @@
             - TRUNCATE
             - CALL
             - COMMENT
+            - SET_SESSION
             - OTHERS
         candidates:
             - UPDATE
@@ -131,6 +132,7 @@
             - TRUNCATE
             - CALL
             - COMMENT
+            - SET_SESSION
             - OTHERS
 - id: 5
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-execute-sqls.name}

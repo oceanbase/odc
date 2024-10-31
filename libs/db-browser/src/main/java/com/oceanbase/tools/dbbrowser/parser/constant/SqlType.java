@@ -40,6 +40,7 @@ public enum SqlType {
     CREATE,
     CALL,
     COMMENT,
+    SET_SESSION,
     OTHERS,
     UNKNOWN
 }
