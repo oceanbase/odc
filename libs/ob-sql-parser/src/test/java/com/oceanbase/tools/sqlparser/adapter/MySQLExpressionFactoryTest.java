@@ -833,6 +833,54 @@ public class MySQLExpressionFactoryTest {
     }
 
     @Test
+    public void generate_jsonQueryExprFullOpts2_generateFunctionCallSucceed() {
+        ExprContext context = getExprContext("JSON_QUERY('123', _utf8 'abc' " +
+                "returning double " +
+                "empty array on empty empty array on error_p error_p on mismatch)");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        params.add(new ExpressionParam(new ConstExpression("'123'")));
+        params.add(new ExpressionParam(new ConstExpression("_utf8 'abc'")));
+        FunctionCall expect = new FunctionCall("JSON_QUERY", params);
+        expect.addOption(new NumberType("double", null, null));
+        JsonOption jsonOpt = new JsonOption();
+        JsonOnOption jsonOnOption = new JsonOnOption();
+        jsonOnOption.setOnEmpty(new ConstExpression("empty array"));
+        jsonOnOption.setOnError(new ConstExpression("empty array"));
+        jsonOnOption.setOnMismatches(Collections.singletonList(
+                new JsonOnOption.OnMismatch(new ConstExpression("error_p"), null)));
+        jsonOpt.setOnOption(jsonOnOption);
+        expect.addOption(jsonOpt);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_jsonQueryExprFullOpts4_generateFunctionCallSucceed() {
+        ExprContext context = getExprContext("JSON_QUERY('123', _utf8 'abc' " +
+                "returning double " +
+                "empty object on empty empty array on error_p error_p on mismatch)");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        params.add(new ExpressionParam(new ConstExpression("'123'")));
+        params.add(new ExpressionParam(new ConstExpression("_utf8 'abc'")));
+        FunctionCall expect = new FunctionCall("JSON_QUERY", params);
+        expect.addOption(new NumberType("double", null, null));
+        JsonOption jsonOpt = new JsonOption();
+        JsonOnOption jsonOnOption = new JsonOnOption();
+        jsonOnOption.setOnEmpty(new ConstExpression("empty object"));
+        jsonOnOption.setOnError(new ConstExpression("empty array"));
+        jsonOnOption.setOnMismatches(Collections.singletonList(
+                new JsonOnOption.OnMismatch(new ConstExpression("error_p"), null)));
+        jsonOpt.setOnOption(jsonOnOption);
+        expect.addOption(jsonOpt);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_jsonQueryExpr1_generateFunctionCallSucceed() {
         ExprContext context = getExprContext("JSON_QUERY('123', _utf8 'abc' " +
                 "returning double " +

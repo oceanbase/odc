@@ -990,13 +990,13 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
         if (ctx.opt_response_query() != null) {
             jsonOnOption.setOnEmpty(visit(ctx.opt_response_query()));
         } else if (ctx.EMPTY().size() == 2) {
-            TerminalNode endNode = ctx.EMPTY(1);
+            TerminalNode endNode = ctx.EMPTY(0);
             if (ctx.ARRAY() != null) {
                 endNode = ctx.ARRAY();
             } else if (ctx.OBJECT() != null) {
                 endNode = ctx.OBJECT();
             }
-            jsonOnOption.setOnEmpty(new ConstExpression(ctx.EMPTY(1), endNode));
+            jsonOnOption.setOnEmpty(new ConstExpression(ctx.EMPTY(0), endNode));
         }
     }
 

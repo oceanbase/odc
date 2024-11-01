@@ -708,7 +708,7 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
             Opt_json_object_clauseContext oCtx = ctx.opt_json_object_content().opt_json_object_clause();
             JsonOption jsonOpt = null;
             if (oCtx.STRICT() != null || oCtx.json_obj_unique_key() != null) {
-                jsonOpt = getJsonConstraint(oCtx.STRICT(), oCtx.json_obj_unique_key());
+                jsonOpt = getJsonOption(oCtx.STRICT(), oCtx.json_obj_unique_key());
             }
             if (oCtx.js_on_null() != null) {
                 if (jsonOpt == null) {
@@ -730,15 +730,15 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
                 fCall.addOption(jsonOpt);
             }
         } else if (ctx.opt_json_object_content().STRICT() != null) {
-            fCall.addOption(getJsonConstraint(ctx.opt_json_object_content().STRICT(),
+            fCall.addOption(getJsonOption(ctx.opt_json_object_content().STRICT(),
                     ctx.opt_json_object_content().json_obj_unique_key()));
         } else {
-            fCall.addOption(getJsonConstraint(null, ctx.opt_json_object_content().json_obj_unique_key()));
+            fCall.addOption(getJsonOption(null, ctx.opt_json_object_content().json_obj_unique_key()));
         }
         return fCall;
     }
 
-    private JsonOption getJsonConstraint(TerminalNode strict, Json_obj_unique_keyContext ctx) {
+    private JsonOption getJsonOption(TerminalNode strict, Json_obj_unique_keyContext ctx) {
         JsonOption jc;
         if (strict != null && ctx != null) {
             jc = new JsonOption(strict, ctx);
@@ -2067,7 +2067,7 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
         }
         JsonOption jsonOpt = null;
         if (ctx.STRICT() != null || ctx.json_obj_unique_key() != null) {
-            jsonOpt = getJsonConstraint(ctx.STRICT(), ctx.json_obj_unique_key());
+            jsonOpt = getJsonOption(ctx.STRICT(), ctx.json_obj_unique_key());
         }
         if (ctx.js_agg_on_null() != null) {
             if (jsonOpt == null) {
