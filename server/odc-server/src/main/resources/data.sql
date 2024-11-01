@@ -850,4 +850,4 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
  -- v4.3.3
  --
  INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('server.servlet.session.cookie.secure',
-  'false', 'Enable secure cookie or not, default value false, may change to true if use HTTPS protocol to access ODC') ON DUPLICATE KEY UPDATE `id`=`id`;
+  'true', 'Enable secure cookie or not, default value true') ON DUPLICATE KEY UPDATE `id`=`id`;
