@@ -713,6 +713,7 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.datatransfer.use-server-prep-stmts', 'true', '导入导出是否开启 ps 协议，默认为开启' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.datatransfer.cursor-fetch-size', '20', '导出时游标的 fetch size，默认为 20，最大值为 1000' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.datatransfer.internal-download-import-file-timeout-millis', '300', 'The HTTP timeout for downloading imported files from other nodes. 5 minutes by default' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.data-security.masking.enabled', 'true', '是否开启数据脱敏，默认为开启' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.partition-plan.schedule-cron', '0 0 * * * ?', '默认调度周期：每天 0 点' ) ON DUPLICATE KEY UPDATE `id` = `id`;
