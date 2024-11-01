@@ -45,6 +45,11 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
+    /**
+     * ODC allows importing up to 2 GB of files. We estimate a 5-minute timeout based on transmission
+     * rate of 10 MB/s.
+     */
+    private static final int DEFAULT_GET_IMPORT_FILE_TIMEOUT_SECONDS = 300;
 
     @Autowired
     private DataTransferService dataTransferService;
@@ -86,7 +91,8 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
             /**
              * 导入任务不在当前机器上，需要进行 {@code HTTP GET} 获取导入文件
              */
-            odcInternalFileService.getExternalImportFiles(taskEntity, submitter, config.getImportFileName());
+            odcInternalFileService.getExternalImportFiles(taskEntity, submitter, config.getImportFileName(),
+                    DEFAULT_GET_IMPORT_FILE_TIMEOUT_SECONDS);
         }
         config.setExecutionTimeoutSeconds(taskEntity.getExecutionExpirationIntervalSeconds());
         context = dataTransferService.create(taskId + "", config);
