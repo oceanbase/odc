@@ -13,29 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.executor;
+package com.oceanbase.odc.service.db.model;
 
-import java.util.Map;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+
+import lombok.Data;
 
 /**
- * @author yaobin
- * @date 2023-11-29
- * @since 4.2.4
+ * @description:
+ * @author: zijia.cj
+ * @date: 2024/10/18 13:00
+ * @since: 4.3.3
  */
-public interface TaskResult {
-
-    JobIdentity getJobIdentity();
-
-    TaskStatus getStatus();
-
-    String getResultJson();
-
-    String getExecutorEndpoint();
-
-    double getProgress();
-
-    Map<String, String> getLogMetadata();
+@Data
+public class EditPLReq {
+    @NotBlank
+    private String sql;
+    @NotBlank
+    private String objectName;
+    @NotNull
+    private DBObjectType objectType;
 }

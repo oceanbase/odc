@@ -56,7 +56,6 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
                         updateScheduleTaskStatus(taskEntity.getId(), TaskStatus.RUNNING, TaskStatus.PREPARING);
                     }
                 });
-
     }
 
     private void updateScheduleTaskStatus(Long id, TaskStatus status, TaskStatus previousStatus) {

@@ -449,6 +449,8 @@
   appliedDialectTypes:
     - 'OB_MYSQL'
     - 'MYSQL'
+    - 'OB_ORACLE'
+    - 'ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.allowed-max-sql-affected-count}":1000}'
 - enabled: 1
   level: 0
@@ -950,6 +952,8 @@
   appliedDialectTypes:
     - 'OB_MYSQL'
     - 'MYSQL'
+    - 'OB_ORACLE'
+    - 'ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.allowed-max-sql-affected-count}":10000}'
 - enabled: 1
   level: 0
@@ -1451,6 +1455,8 @@
   appliedDialectTypes:
     - 'OB_MYSQL'
     - 'MYSQL'
+    - 'OB_ORACLE'
+    - 'ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.allowed-max-sql-affected-count}":1000}'
 - enabled: 1
   level: 1
@@ -1942,6 +1948,8 @@
   appliedDialectTypes:
     - 'OB_MYSQL'
     - 'MYSQL'
+    - 'OB_ORACLE'
+    - 'ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.allowed-max-sql-affected-count}":1000}'
 - enabled: 1
   level: 1

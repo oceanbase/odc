@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.task.executor;
 
 import java.util.Map;
 
-import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 import lombok.Data;
@@ -32,7 +32,7 @@ public class DefaultTaskResult implements TaskResult {
 
     private JobIdentity jobIdentity;
 
-    private JobStatus status;
+    private TaskStatus status;
 
     private String resultJson;
 

@@ -287,6 +287,7 @@ public class ConnectConsoleService {
                 .collect(Collectors.toList());
         try {
             if (!sqlInterceptService.preHandle(request, response, connectionSession, executeContext)) {
+                response.setApprovalRequired(true);
                 return response;
             }
         } finally {
@@ -620,5 +621,4 @@ public class ConnectConsoleService {
         }
         return queryLimit;
     }
-
 }
