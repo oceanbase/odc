@@ -118,17 +118,40 @@ public class OnlineSchemaChangeFlowableTaskTest {
         Assert.assertEquals(scheduleTasksUpdateHint.getTaskStepsMap().size(), 2);
         Assert.assertEquals(scheduleTasksUpdateHint.getTaskStepsMap().get(1L), OmsStepName.FULL_TRANSFER.name());
         Assert.assertEquals(scheduleTasksUpdateHint.getTaskStepsMap().get(2L), OmsStepName.INCR_TRANSFER.name());
-
+        Assert.assertEquals(scheduleTasksUpdateHint.getTaskStatusMap().get(2L), TaskStatus.RUNNING.name());
+        Map<Long, String> taskMap = new HashMap() {
+            {
+                put(1L, TaskStatus.RUNNING.name());
+                put(2L, TaskStatus.RUNNING.name());
+                put(3L, TaskStatus.RUNNING.name());
+            }
+        };
         Assert.assertFalse(scheduleTasksUpdateHint.hasDiff(scheduleTasksUpdateHint));
 
         Assert.assertTrue(
                 scheduleTasksUpdateHint.hasDiff(new OnlineSchemaChangeFlowableTask.ScheduleTasksUpdateHint(0)));
         Assert.assertTrue(scheduleTasksUpdateHint.hasDiff(new OnlineSchemaChangeFlowableTask.ScheduleTasksUpdateHint(1,
-                Collections.singletonMap(1L, OmsStepName.FULL_TRANSFER.name()))));
+                Collections.singletonMap(1L, OmsStepName.FULL_TRANSFER.name()), taskMap)));
         Map<Long, String> muted = new HashMap<>(scheduleTasksUpdateHint.getTaskStepsMap());
         muted.put(2L, OmsStepName.APP_SWITCH.name());
         Assert.assertTrue(
-                scheduleTasksUpdateHint.hasDiff(new OnlineSchemaChangeFlowableTask.ScheduleTasksUpdateHint(1, muted)));
+                scheduleTasksUpdateHint
+                        .hasDiff(new OnlineSchemaChangeFlowableTask.ScheduleTasksUpdateHint(1, muted, taskMap)));
+        Assert.assertFalse(
+                scheduleTasksUpdateHint.hasDiff(new OnlineSchemaChangeFlowableTask.ScheduleTasksUpdateHint(
+                        scheduleTasksUpdateHint.getEnableManualSwapTableFlagCounts(),
+                        scheduleTasksUpdateHint.getTaskStepsMap(), taskMap)));
+        Assert.assertTrue(
+                scheduleTasksUpdateHint.hasDiff(new OnlineSchemaChangeFlowableTask.ScheduleTasksUpdateHint(
+                        scheduleTasksUpdateHint.getEnableManualSwapTableFlagCounts(),
+                        scheduleTasksUpdateHint.getTaskStepsMap(), new HashMap() {
+                            {
+                                put(1L, TaskStatus.RUNNING.name());
+                                put(2L, TaskStatus.RUNNING.name());
+                                put(3L, TaskStatus.FAILED.name());
+                            }
+                        })));
+
     }
 
     private ScheduleTaskEntity createScheduleTaskEntity(long id, boolean manualSwapTableEnabled, String stepName) {

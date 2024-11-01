@@ -239,6 +239,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         }
         int ret = 0;
         Map<Long, String> taskAndStep = new HashMap<>();
+        Map<Long, String> taskAndStatus = new HashMap<>();
         for (ScheduleTaskEntity task : tasks) {
             // check current
             OnlineSchemaChangeScheduleTaskResult result = JsonUtils.fromJson(task.getResultJson(),
@@ -254,8 +255,9 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
                     return v + onlineSchemaChangeScheduleTaskParameters.getState();
                 });
             }
+            taskAndStatus.put(task.getId(), task.getStatus().name());
         }
-        return new ScheduleTasksUpdateHint(ret, taskAndStep);
+        return new ScheduleTasksUpdateHint(ret, taskAndStep, taskAndStatus);
     }
 
     protected double getProgressPercentage(Iterable<ScheduleTaskEntity> tasks) {
@@ -423,11 +425,16 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
      */
     protected static final class ScheduleTasksUpdateHint {
         private final int enableManualSwapTableFlagCounts;
+        // oms steps map
         private final Map<Long, String> taskStepsMap = new HashMap<>();
+        // task status map
+        private final Map<Long, String> taskStatusMap = new HashMap<>();
 
-        protected ScheduleTasksUpdateHint(int enableManualSwapTableFlagCounts, Map<Long, String> taskStepsMap) {
+        protected ScheduleTasksUpdateHint(int enableManualSwapTableFlagCounts, Map<Long, String> taskStepsMap,
+                Map<Long, String> taskStatusMap) {
             this.enableManualSwapTableFlagCounts = enableManualSwapTableFlagCounts;
             this.taskStepsMap.putAll(taskStepsMap);
+            this.taskStatusMap.putAll(taskStatusMap);
         }
 
         protected ScheduleTasksUpdateHint(int enableManualSwapTableFlagCounts) {
@@ -439,12 +446,21 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
             if (other.enableManualSwapTableFlagCounts != this.enableManualSwapTableFlagCounts) {
                 return true;
             }
-            if (taskStepsMap.size() != other.taskStepsMap.size()) {
+            // steps change
+            if (mapHasDiff(taskStepsMap, other.taskStepsMap)) {
                 return true;
             }
-            for (Long scheduleTaskId : taskStepsMap.keySet()) {
-                if (!StringUtils.equalsIgnoreCase(taskStepsMap.get(scheduleTaskId),
-                        other.taskStepsMap.get(scheduleTaskId))) {
+            // status change
+            return mapHasDiff(taskStatusMap, other.taskStatusMap);
+        }
+
+        protected boolean mapHasDiff(Map<Long, String> src, Map<Long, String> dst) {
+            if (src.size() != dst.size()) {
+                return true;
+            }
+            for (Long scheduleTaskId : src.keySet()) {
+                if (!StringUtils.equalsIgnoreCase(src.get(scheduleTaskId),
+                        dst.get(scheduleTaskId))) {
                     return true;
                 }
             }
@@ -459,6 +475,11 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         @VisibleForTesting
         public Map<Long, String> getTaskStepsMap() {
             return taskStepsMap;
+        }
+
+        @VisibleForTesting
+        public Map<Long, String> getTaskStatusMap() {
+            return taskStatusMap;
         }
     }
 }

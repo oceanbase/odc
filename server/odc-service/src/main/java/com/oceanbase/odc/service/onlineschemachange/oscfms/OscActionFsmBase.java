@@ -210,6 +210,8 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
         ScheduleTaskEntity scheduleTaskEntity = scheduleTaskService.nullSafeGetById(schedulerTaskID);
         OnlineSchemaChangeScheduleTaskParameters parameters = JsonUtils.fromJson(scheduleTaskEntity.getParametersJson(),
                 OnlineSchemaChangeScheduleTaskParameters.class);
+        OnlineSchemaChangeParameters onlineSchemaChangeParameters =
+                parseOnlineSchemaChangeParameters(scheduleEntity.getJobParametersJson());
         String currentState = parameters.getState();
         // first yield, jump to create table state to decrease wait time
         if (StringUtils.equals(currentState, OscStates.YIELD_CONTEXT.getState())) {
@@ -219,7 +221,8 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
             // recover current state
             scheduleTaskRepository.updateStatusById(schedulerTaskID, TaskStatus.RUNNING);
         }
-        actionScheduler.submitFMSScheduler(scheduleEntity, schedulerTaskID);
+        actionScheduler.submitFMSScheduler(scheduleEntity, schedulerTaskID,
+                onlineSchemaChangeParameters.getFlowTaskID());
     }
 
     /**
@@ -411,7 +414,7 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
                     new DefaultConnectSessionFactory(connectionConfig).generateSession();
             ConnectionSessionUtil.setCurrentSchema(connectionSession,
                     dbName);
-            return new DefaultConnectSessionFactory(connectionConfig).generateSession();
+            return connectionSession;
         }
     }
 }
