@@ -1,0 +1,185 @@
+/*
+ * Copyright (c) 2023 OceanBase.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.oceanbase.odc.service.resourceprioritysorting;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import javax.persistence.PersistenceException;
+
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.stereotype.Service;
+
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
+import com.oceanbase.odc.metadb.resourceprioritysorting.PrioritySortingEntity;
+import com.oceanbase.odc.metadb.resourceprioritysorting.PrioritySortingRepository;
+import com.oceanbase.odc.service.resourceprioritysorting.model.SortedResourceId;
+import com.oceanbase.odc.service.resourceprioritysorting.model.SortedResourceType;
+
+/**
+ * @author keyang
+ * @date 2024/11/01
+ * @since 4.3.2
+ */
+@Service
+public class PrioritySortingService {
+    private static final Integer STEP = 2 ^ 16;
+    private static final Integer MAX_RETRY_COUNT = 5;
+
+    @Autowired
+    private PrioritySortingRepository prioritySortingRepository;
+
+    public PrioritySortingEntity add(SortedResourceId sortedResourceId) {
+        PreConditions.notNull(sortedResourceId, "sortedResourceId");
+        Optional<Long> maxPriorityOptional =
+                prioritySortingRepository.maxPriorityInSortedResourceType(sortedResourceId);
+        Long priority = maxPriorityOptional.orElse(0L) + STEP;
+
+        PrioritySortingEntity prioritySortingEntity = PrioritySortingEntity.builder()
+                .resourceType(sortedResourceId.getResourceType())
+                .resourceId(sortedResourceId.getResourceId())
+                .sortedResourceType(sortedResourceId.getSortedResourceType())
+                .sortedResourceId(sortedResourceId.getSortedResourceId())
+                .priority(priority)
+                .build();
+
+        uniqueConstraintViolationRetry(() -> {
+            prioritySortingRepository.save(prioritySortingEntity);
+            prioritySortingEntity.setPriority(priority + STEP);
+        });
+
+        return prioritySortingEntity;
+
+    }
+
+    public Page<PrioritySortingEntity> pageInSortedResourceType(SortedResourceType sortedResourceType,
+            Integer pageNum, Integer pageSize) {
+        PreConditions.notNull(sortedResourceType, "sortedResourceType");
+        PreConditions.notNull(pageNum, "pageNum");
+        PreConditions.notNull(pageSize, "pageSize");
+        return prioritySortingRepository.pageBySortedResourceTypeAndSortByPriorityDesc(
+                sortedResourceType, pageNum, pageSize);
+    }
+
+    public void dragBefore(SortedResourceType sortedResourceType, Long sortedResourceId,
+            Long beforeSortedResourceId) {
+        PreConditions.notNull(sortedResourceType, "sortedResourceType");
+        PreConditions.notNull(sortedResourceId, "sortedResourceId");
+        List<Long> sortedResourceIds = new ArrayList<>();
+        sortedResourceIds.add(sortedResourceId);
+        if (beforeSortedResourceId != null) {
+            sortedResourceIds.add(beforeSortedResourceId);
+        }
+        List<PrioritySortingEntity> entities =
+                prioritySortingRepository.listBySortedResourceIds(sortedResourceType, sortedResourceIds);
+        Map<Long, PrioritySortingEntity> idToEntityMap = entities.stream().collect(
+                Collectors.toMap(PrioritySortingEntity::getSortedResourceId, Function.identity()));
+        assertSortedResourceExist(sortedResourceType, sortedResourceId, idToEntityMap);
+        if (beforeSortedResourceId != null) {
+            assertSortedResourceExist(sortedResourceType, beforeSortedResourceId, idToEntityMap);
+        }
+        PrioritySortingEntity sortedResourceEntity = idToEntityMap.get(sortedResourceId);
+        PrioritySortingEntity beforeSortedResourceEntity = idToEntityMap.get(beforeSortedResourceId);
+        uniqueConstraintViolationRetry(
+                () -> doDragBefore(sortedResourceType, sortedResourceEntity, beforeSortedResourceEntity));
+    }
+
+    private void doDragBefore(SortedResourceType sortedResourceType, PrioritySortingEntity sortedResourceEntity,
+            PrioritySortingEntity beforeSortedResourceEntity) {
+        Long startPriority = beforeSortedResourceEntity == null ? 0L : beforeSortedResourceEntity.getPriority();
+        Long candidatePriority = calculatePriority(sortedResourceType, startPriority);
+        if (startPriority.equals(candidatePriority)) {
+            // no more priority value assigned to the dragged resource, reset all priority values in resource
+            resetPriorityInResource(sortedResourceType, sortedResourceEntity.getSortedResourceId(),
+                    beforeSortedResourceEntity == null ? null : beforeSortedResourceEntity.getSortedResourceId());
+            return;
+        }
+        sortedResourceEntity.setPriority(candidatePriority);
+        prioritySortingRepository.save(sortedResourceEntity);
+    }
+
+    private void resetPriorityInResource(SortedResourceType sortedResourceType, Long sortedResourceId,
+            Long beforeSortedResourceId) {
+        // TODO
+        // Lock all sorted resources in resource
+        // Reset all priority values in resource
+        // save all sorted resources in resource
+    }
+
+    private Long calculatePriority(SortedResourceType sortedResourceType, Long startPriority) {
+        Long candidateEndPriority = startPriority + STEP;
+        Optional<PrioritySortingEntity> entityOptional =
+                prioritySortingRepository.getFirstBySortedResourceTypeBetweenPriorityWithPriorityAsc(sortedResourceType,
+                        startPriority, candidateEndPriority);
+        candidateEndPriority = entityOptional.map(PrioritySortingEntity::getPriority).orElse(candidateEndPriority);
+        return (candidateEndPriority + startPriority) / 2;
+    }
+
+    private void assertSortedResourceExist(
+            SortedResourceType sortedResourceType, Long sortedResourceId,
+            Map<Long, PrioritySortingEntity> idToEntityMap) {
+        if (idToEntityMap.containsKey(sortedResourceId)) {
+            return;
+        }
+        Optional<ResourceType> resourceTypeOptional =
+                ResourceType.getByName(sortedResourceType.getSortedResourceType());
+        throw new BadRequestException(ErrorCodes.NotFound,
+                new Object[] {
+                        resourceTypeOptional.map(ResourceType::getLocalizedMessage)
+                                .orElse(sortedResourceType.getSortedResourceType()),
+                        "sortedResourceId", sortedResourceId},
+                "can't find sortedResourceId:" + sortedResourceId + " in sortedResourceType:" + sortedResourceType);
+    }
+
+    private boolean isUniqueConstraintViolation(Exception ex) {
+        if (!(ex instanceof PersistenceException)) {
+            return false;
+        }
+
+        Throwable cause = ex;
+        while (cause != null) {
+            if (cause instanceof ConstraintViolationException) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
+    }
+
+    private void uniqueConstraintViolationRetry(Runnable r) {
+        int retry = 1;
+        while (true) {
+            try {
+                r.run();
+                break;
+            } catch (Exception e) {
+                retry++;
+                if (!isUniqueConstraintViolation(e) || retry >= MAX_RETRY_COUNT) {
+                    throw e;
+                }
+            }
+        }
+    }
+}
