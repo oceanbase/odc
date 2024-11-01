@@ -26,7 +26,7 @@ import lombok.NonNull;
 import lombok.Setter;
 
 /**
- * {@link JsonConstraint}
+ * {@link JsonOption}
  *
  * @author yh263208
  * @date 2023-09-26 15:09
@@ -36,43 +36,67 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class JsonConstraint extends BaseExpression {
+public class JsonOption extends BaseExpression {
 
+    private boolean truncate;
+    private boolean pretty;
+    private boolean ascii;
+    private boolean asis;
+    private boolean multiValue;
+    private JsonOnOption onOption;
     private StrictMode strictMode;
     private ScalarsMode scalarsMode;
     private UniqueMode uniqueMode;
     private WrapperMode wrapperMode;
 
-    public JsonConstraint(@NonNull ParserRuleContext context) {
+    public JsonOption(@NonNull ParserRuleContext context) {
         super(context);
     }
 
-    public JsonConstraint(@NonNull TerminalNode terminalNode) {
+    public JsonOption(@NonNull TerminalNode terminalNode) {
         super(terminalNode);
     }
 
-    public JsonConstraint(@NonNull TerminalNode beginNode, @NonNull ParserRuleContext endRule) {
+    public JsonOption(@NonNull TerminalNode beginNode, @NonNull ParserRuleContext endRule) {
         super(beginNode, endRule);
     }
 
-    public JsonConstraint(@NonNull ParserRuleContext beginRule, @NonNull ParserRuleContext endRule) {
+    public JsonOption(@NonNull ParserRuleContext beginRule, @NonNull ParserRuleContext endRule) {
         super(beginRule, endRule);
     }
 
     @Override
     protected String doToString() {
-        StringBuilder builder = new StringBuilder("JSON");
+        StringBuilder builder = new StringBuilder();
         if (this.strictMode != null) {
             builder.append(" ").append(this.strictMode.name());
         }
+        if (this.truncate) {
+            builder.append(" TRUNCATE");
+        }
         if (this.scalarsMode != null) {
             builder.append(" ").append(this.scalarsMode.name().replace("_", " "));
+        }
+        if (this.pretty) {
+            builder.append(" PRETTY");
+        }
+        if (this.ascii) {
+            builder.append(" ASCII");
         }
         if (this.uniqueMode != null) {
             builder.append(" ").append(this.uniqueMode.name().replace("_", " "));
         }
         if (this.wrapperMode != null) {
             builder.append(" ").append(this.wrapperMode.name().replace("_", " "));
+        }
+        if (this.asis) {
+            builder.append(" ASIS");
+        }
+        if (this.onOption != null) {
+            builder.append(" ").append(this.onOption);
+        }
+        if (this.multiValue) {
+            builder.append(" MULTIVALUE");
         }
         return builder.toString();
     }

@@ -54,14 +54,16 @@ public class SelectBody extends BaseExpression {
     private List<WithTable> with = new ArrayList<>();
     private boolean recursive;
     private List<GroupBy> groupBy = new ArrayList<>();
-    boolean withRollUp;
-    boolean withCheckOption;
+    private boolean withRollUp;
+    private boolean withCheckOption;
+    private boolean approximate;
     private List<Window> windows = new ArrayList<>();
     private Fetch fetch;
     private Limit limit;
     private ForUpdate forUpdate;
     private OrderBy orderBy;
     private boolean lockInShareMode;
+
     private RelatedSelectBody relatedSelect;
     private final List<List<Expression>> values;
     private final List<FromReference> froms;
@@ -92,6 +94,7 @@ public class SelectBody extends BaseExpression {
         this.with = other.with;
         this.recursive = other.recursive;
         this.groupBy = other.groupBy;
+        this.lockInShareMode = other.lockInShareMode;
         this.withRollUp = other.withRollUp;
         this.withCheckOption = other.withCheckOption;
         this.windows = other.windows;
@@ -102,6 +105,7 @@ public class SelectBody extends BaseExpression {
         this.froms = other.froms;
         this.selectItems = other.selectItems;
         this.forUpdate = other.forUpdate;
+        this.approximate = other.approximate;
         this.values = other.values;
     }
 
@@ -181,6 +185,9 @@ public class SelectBody extends BaseExpression {
         }
         if (this.orderBy != null) {
             builder.append(" ").append(this.orderBy.toString());
+        }
+        if (this.approximate) {
+            builder.append(" APPROXIMATE");
         }
         if (this.fetch != null) {
             builder.append(" ").append(this.fetch.toString());

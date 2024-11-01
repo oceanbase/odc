@@ -39,6 +39,7 @@ import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
 import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.common.DataType;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
+import com.oceanbase.tools.sqlparser.statement.common.mysql.LobStorageOption;
 import com.oceanbase.tools.sqlparser.statement.common.mysql.VectorType;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnAttributes;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
@@ -135,6 +136,23 @@ public class MySQLCreateTableFactoryTest {
         CreateTable actual = factory.generate();
 
         CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
+        NameReference from = new NameReference(null, "tab", null);
+        SelectBody selectBody =
+                new SelectBody(Collections.singletonList(new Projection()), Collections.singletonList(from));
+        Select select = new Select(selectBody);
+        expect.setAs(select);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_createTableAsSelectIgnore_generateSucceed() {
+        Create_table_stmtContext context =
+                getCreateTableContext("create table any_schema.abcd ignore as select * from tab");
+        StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
+        CreateTable actual = factory.generate();
+
+        CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
+        expect.setIgnore(true);
         NameReference from = new NameReference(null, "tab", null);
         SelectBody selectBody =
                 new SelectBody(Collections.singletonList(new Projection()), Collections.singletonList(from));
@@ -365,18 +383,60 @@ public class MySQLCreateTableFactoryTest {
 
     @Test
     public void generate_formatTableOp_succeed() {
-        Create_table_stmtContext context = getCreateTableContext(
-                "create table any_schema.abcd (id varchar(64)) kv_attributes='12' format=(ENCODING='aaaa',LINE_DELIMITER=123,"
-                        + "SKIP_HEADER=12,"
-                        + "EMPTY_FIELD_AS_NULL=true,NULL_IF_EXETERNAL=(1,2,3))");
+        Create_table_stmtContext context = getCreateTableContext("create table any_schema.abcd (id varchar(64)) "
+                + "kv_attributes='12' "
+                + "key_block_size=456 "
+                + "AUTO_INCREMENT_CACHE_SIZE=667 "
+                + "partition_type=USER_SPECIFIED "
+                + "properties=(ACCESSID='abcd', PROJECT_NAME='ooop') "
+                + "json(col) store as (chunk 'aas' chunk 123) "
+                + "micro_index_clustered=true "
+                + "auto_refresh=OFF "
+                + "max_rows=123445 "
+                + "min_rows=9879 "
+                + "password='asdasd' "
+                + "pack_keys=default "
+                + "connection='asasdasd' "
+                + "data directory='ooopi' "
+                + "index directory='indxasdasd' "
+                + "encryption='asdasdasdas' "
+                + "stats_auto_recalc=default "
+                + "stats_persistent=default "
+                + "stats_sample_pages=3345 "
+                + "union=(col1, col2) "
+                + "insert_method=FIRST "
+                + "format=(ENCODING='aaaa',LINE_DELIMITER=123,SKIP_HEADER=12,EMPTY_FIELD_AS_NULL=true," +
+                "NULL_IF_EXETERNAL=(1,2,3),COMPRESSION=col3)");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
-
         CreateTable expect = new CreateTable(context, getRelationFactor("any_schema", "abcd"));
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
         TableOptions tableOptions = new TableOptions();
+        tableOptions.setAutoIncrementCacheSize(667);
+        tableOptions.setDataDirectory("'ooopi'");
+        tableOptions.setIndexDirectory("'indxasdasd'");
+        tableOptions.setStatsAutoRecalc("default");
+        tableOptions.setStatsPersistent("default");
+        tableOptions.setStatsSamplePages("3345");
+        tableOptions.setUnion(Arrays.asList(new RelationFactor("col1"), new RelationFactor("col2")));
+        tableOptions.setInsertMethod("FIRST");
+        tableOptions.setEncryption("'asdasdasdas'");
+        tableOptions.setPartitionType("USER_SPECIFIED");
+        Map<String, String> externalProperties = new HashMap<>();
+        externalProperties.put("ACCESSID", "'abcd'");
+        externalProperties.put("PROJECT_NAME", "'ooop'");
+        tableOptions.setExternalProperties(externalProperties);
+        LobStorageOption storageOption = new LobStorageOption("col", Arrays.asList("'aas'", "123"));
+        tableOptions.setMicroIndexClustered(true);
+        tableOptions.setLobStorageOption(storageOption);
+        tableOptions.setAutoRefresh("OFF");
+        tableOptions.setMaxRows(123445);
+        tableOptions.setMinRows(9879);
+        tableOptions.setPassword("'asdasd'");
+        tableOptions.setPackKeys("default");
+        tableOptions.setConnection("'asasdasd'");
         Map<String, Expression> map = new HashMap<>();
         map.put("ENCODING", new ConstExpression("'aaaa'"));
         map.put("EMPTY_FIELD_AS_NULL", new BoolValue(true));
@@ -386,8 +446,13 @@ public class MySQLCreateTableFactoryTest {
         es.addExpression(new ConstExpression("2"));
         es.addExpression(new ConstExpression("3"));
         map.put("NULL_IF_EXETERNAL", es);
+        map.put("COMPRESSION", new ConstExpression("col3"));
         map.put("LINE_DELIMITER", new ConstExpression("123"));
+        tableOptions.setKeyBlockSize(456);
+
         tableOptions.setFormat(map);
+        tableOptions.setKeyBlockSize(456);
+        tableOptions.setAutoIncrementCacheSize(667);
         tableOptions.setKvAttributes("'12'");
         expect.setTableOptions(tableOptions);
         Assert.assertEquals(expect, actual);
@@ -507,7 +572,12 @@ public class MySQLCreateTableFactoryTest {
         SortColumn indexColumn = new SortColumn(new ColumnReference(null, null, "c1"));
         OutOfLineIndex index = new OutOfLineIndex("idx1", Collections.singletonList(indexColumn));
         index.setVector(true);
-        index.setIndexOptions(new IndexOptions());
+        IndexOptions indexOptions = new IndexOptions();
+        index.setIndexOptions(indexOptions);
+        Map<String, String> params = new HashMap<>();
+        params.put("distance", "L2");
+        params.put("type", "hnsw");
+        indexOptions.setVectorIndexParams(params);
         expect.setTableElements(
                 Arrays.asList(new ColumnDefinition(new ColumnReference(null, null, "c1"), dataType), index));
         Assert.assertEquals(expect, actual);
@@ -534,4 +604,5 @@ public class MySQLCreateTableFactoryTest {
         relationFactor.setSchema(schema);
         return relationFactor;
     }
+
 }

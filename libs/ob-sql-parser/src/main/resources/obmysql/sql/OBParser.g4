@@ -323,11 +323,6 @@ simple_expr
     | LeftBracket expr_list RightBracket
     ;
 
-search_expr
-    : expr_const
-    | func_expr
-    ;
-
 expr
     : (NOT|USER_VARIABLE SET_VAR) expr
     | LeftParen expr RightParen
@@ -1025,11 +1020,6 @@ reference_action
     | SET DEFAULT
     ;
 
-opt_match_option
-    : MATCH match_action
-    | empty
-    ;
-
 match_action
     : SIMPLE
     | FULL
@@ -1037,8 +1027,8 @@ match_action
     ;
 
 column_definition
-    : column_definition_ref data_type opt_column_attribute_list? (REFERENCES relation_factor LeftParen column_name_list RightParen opt_match_option opt_reference_option_list)? (FIRST | (BEFORE column_name) | (AFTER column_name))?
-    | column_definition_ref data_type (GENERATED opt_generated_option_list)? AS LeftParen expr RightParen (VIRTUAL | STORED)? opt_generated_column_attribute_list? (REFERENCES relation_factor LeftParen column_name_list RightParen opt_match_option opt_reference_option_list)? (FIRST | (BEFORE column_name) | (AFTER column_name))?
+    : column_definition_ref data_type opt_column_attribute_list? references_clause? (FIRST | (BEFORE column_name) | (AFTER column_name))?
+    | column_definition_ref data_type (GENERATED opt_generated_option_list)? AS LeftParen expr RightParen (VIRTUAL | STORED)? opt_generated_column_attribute_list? references_clause? (FIRST | (BEFORE column_name) | (AFTER column_name))?
     | column_definition_ref SERIAL opt_column_attribute_list? (FIRST | (BEFORE column_name) | (AFTER column_name))?
     ;
 
@@ -1283,8 +1273,8 @@ column_attribute
     | COLLATE collation_name
     | SKIP_INDEX LeftParen (skip_index_type | (opt_skip_index_type_list Comma skip_index_type))? RightParen
     | lob_chunk_size
-    | COLUMN_FORMAT (DEFAULT|FIXED|DYNAMIC)
-    | STORAGE (DEFAULT|DISK|MEMORY)
+    | COLUMN_FORMAT col_attri_value=(DEFAULT|FIXED|DYNAMIC)
+    | STORAGE col_attri_value=(DEFAULT|DISK|MEMORY)
     ;
 
 now_or_signed_literal
@@ -1359,7 +1349,6 @@ table_option
     | AUTO_INCREMENT_CACHE_SIZE COMP_EQ? INTNUM
     | PARTITION_TYPE COMP_EQ? USER_SPECIFIED
     | PROPERTIES COMP_EQ? LeftParen external_properties_list RightParen
-
     | lob_storage_clause
     | MICRO_INDEX_CLUSTERED COMP_EQ? BOOL_VALUE
     | AUTO_REFRESH COMP_EQ? (OFF|IMMEDIATE|INTERVAL)
@@ -1672,7 +1661,11 @@ external_properties_list
     ;
 
 external_properties
-    : ((((ACCESSID|ACCESSKEY)|(ACCESSTYPE|TYPE))|((ENDPOINT|STSTOKEN)|(PROJECT_NAME|SCHEMA_NAME)))|((COMPRESSION_CODE|QUOTA_NAME)|TABLE_NAME)) COMP_EQ STRING_VALUE
+    : external_properties_key COMP_EQ STRING_VALUE
+    ;
+
+external_properties_key
+    : ((((ACCESSID|ACCESSKEY)|(ACCESSTYPE|TYPE))|((ENDPOINT|STSTOKEN)|(PROJECT_NAME|SCHEMA_NAME)))|((COMPRESSION_CODE|QUOTA_NAME)|TABLE_NAME))
     ;
 
 external_file_format_list
@@ -2026,7 +2019,6 @@ expr_or_default
 select_stmt
     : with_clause? (select_no_parens into_clause? |select_with_parens)
     ;
-
 
 select_with_parens
     : LeftParen with_clause? (select_no_parens |select_with_parens) RightParen
@@ -3488,14 +3480,17 @@ rename_table_action
 
 alter_table_stmt
     : ALTER EXTERNAL? TABLE relation_factor alter_table_actions?
-    | ALTER TABLE relation_factor alter_column_group_option
-    | ALTER EXTERNAL TABLE relation_factor ADD PARTITION LeftParen add_external_table_partition_actions RightParen LOCATION STRING_VALUE
-    | ALTER EXTERNAL TABLE relation_factor DROP PARTITION LOCATION STRING_VALUE
+    | ALTER TABLE relation_factor alter_column_group_action
+    | ALTER EXTERNAL TABLE relation_factor alter_external_table_action
+    ;
+
+alter_external_table_action
+    : ADD PARTITION LeftParen add_external_table_partition_actions? RightParen LOCATION STRING_VALUE
+    | DROP PARTITION LOCATION STRING_VALUE
     ;
 
 add_external_table_partition_actions
     : add_external_table_partition_action
-    | empty
     | add_external_table_partition_actions Comma add_external_table_partition_action
     ;
 
@@ -3585,13 +3580,13 @@ visibility_option
     | INVISIBLE
     ;
 
-alter_column_group_option
+alter_column_group_action
     : (ADD|DROP) COLUMN GROUP LeftParen column_group_list RightParen
     ;
 
 alter_column_option
     : ADD COLUMN? column_definition
-    | ADD COLUMN? LeftParen column_definition_list RightParen
+    | ADD COLUMN? LeftParen column_definition_list RightParen lob_storage_clause?
     | DROP column_definition_ref (CASCADE | RESTRICT)?
     | DROP COLUMN column_definition_ref (CASCADE | RESTRICT)?
     | ALTER COLUMN? column_definition_ref alter_column_behavior
@@ -4468,7 +4463,39 @@ vec_index_param_value
     ;
 
 json_query_expr
-    : JSON_QUERY LeftParen simple_expr Comma complex_string_literal (RETURNING cast_data_type)? TRUNCATE? ((ALLOW SCALARS) | (DISALLOW SCALARS))? PRETTY? ASCII? ((WITHOUT WRAPPER) | (WITHOUT ARRAY WRAPPER) | (WITH WRAPPER) | (WITH ARRAY WRAPPER) | (WITH UNCONDITIONAL WRAPPER) | (WITH CONDITIONAL WRAPPER) | (WITH UNCONDITIONAL ARRAY WRAPPER) | (WITH CONDITIONAL ARRAY WRAPPER))? ASIS? (on_empty_query | on_error_query | on_mismatch_query | (on_error_query on_empty_query) | (on_empty_query on_error_query) | (on_error_query on_mismatch_query) | (on_empty_query on_mismatch_query) | (on_error_query on_empty_query on_mismatch_query) | (on_empty_query on_error_query on_mismatch_query))? MULTIVALUE? RightParen
+    : JSON_QUERY LeftParen simple_expr Comma complex_string_literal (RETURNING cast_data_type)? json_query_opt RightParen
+    ;
+
+json_query_opt
+    : TRUNCATE? scalars_opt? PRETTY? ASCII? wrapper_opts? ASIS? json_query_on_opt? MULTIVALUE?
+    ;
+
+scalars_opt
+    : ALLOW SCALARS
+    | DISALLOW SCALARS
+    ;
+
+wrapper_opts
+    : WITHOUT WRAPPER
+    | WITHOUT ARRAY WRAPPER
+    | WITH WRAPPER
+    | WITH ARRAY WRAPPER
+    | WITH UNCONDITIONAL WRAPPER
+    | WITH CONDITIONAL WRAPPER
+    | WITH UNCONDITIONAL ARRAY WRAPPER
+    | WITH CONDITIONAL ARRAY WRAPPER
+    ;
+
+json_query_on_opt
+    : on_empty_query
+    | on_error_query
+    | on_mismatch_query
+    | on_error_query on_empty_query
+    | on_empty_query on_error_query
+    | on_error_query on_mismatch_query
+    | on_empty_query on_mismatch_query
+    | on_error_query on_empty_query on_mismatch_query
+    | on_empty_query on_error_query on_mismatch_query
     ;
 
 opt_response_query
@@ -4489,7 +4516,17 @@ on_empty_query
     ;
 
 json_value_expr
-    : JSON_VALUE LeftParen simple_expr Comma complex_string_literal (RETURNING cast_data_type)? TRUNCATE? ASCII? (on_empty | on_error | (on_empty on_error))? RightParen
+    : JSON_VALUE LeftParen simple_expr Comma complex_string_literal (RETURNING cast_data_type)? json_value_opt  RightParen
+    ;
+
+json_value_opt
+    : TRUNCATE? ASCII? json_value_on_opt?
+    ;
+
+json_value_on_opt
+    : on_empty
+    | on_error
+    | on_empty on_error
     ;
 
 opt_on_empty_or_error

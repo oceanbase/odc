@@ -15,7 +15,9 @@
  */
 package com.oceanbase.tools.sqlparser.adapter.mysql;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
@@ -61,6 +63,8 @@ public class MySQLIndexOptionsFactory extends OBParserBaseVisitor<IndexOptions>
                 indexOptions.setGlobal(false);
             } else if (option.BLOCK_SIZE() != null) {
                 indexOptions.setBlockSize(getInteger(option));
+            } else if (option.KEY_BLOCK_SIZE() != null) {
+                indexOptions.setKeyBlockSize(getInteger(option));
             } else if (option.DATA_TABLE_ID() != null) {
                 indexOptions.setDataTableId(getInteger(option));
             } else if (option.INDEX_TABLE_ID() != null) {
@@ -79,6 +83,11 @@ public class MySQLIndexOptionsFactory extends OBParserBaseVisitor<IndexOptions>
                 indexOptions.setWithParser(option.STRING_VALUE().getText());
             } else if (option.WITH() != null && option.ROWID() != null) {
                 indexOptions.setWithRowId(true);
+            } else if (option.WITH() != null && option.vec_index_params() != null) {
+                Map<String, String> params = new HashMap<>();
+                option.vec_index_params().vec_index_param()
+                        .forEach(i -> params.put(i.relation_name().getText(), i.vec_index_param_value().getText()));
+                indexOptions.setVectorIndexParams(params);
             } else if (option.index_using_algorithm() != null) {
                 indexOptions.merge(visit(option.index_using_algorithm()));
             } else if (option.visibility_option() != null) {
