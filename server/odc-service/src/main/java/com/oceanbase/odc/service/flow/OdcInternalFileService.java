@@ -82,7 +82,7 @@ public class OdcInternalFileService {
     }
 
     public void getExternalImportFiles(TaskEntity taskEntity, ExecutorInfo creatorInfo, List<String> importFileNames,
-            int requestTimeoutSeconds) throws Exception {
+            int requestTimeoutMillis) throws Exception {
         String checkString = String.valueOf(taskEntity.getId())
                 + taskEntity.getCreatorId()
                 + taskEntity.getCreateTime()
@@ -97,9 +97,9 @@ public class OdcInternalFileService {
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             HttpGet httpGet = new HttpGet();
             RequestConfig config = RequestConfig.custom()
-                    .setConnectTimeout(requestTimeoutSeconds)
-                    .setConnectionRequestTimeout(requestTimeoutSeconds)
-                    .setSocketTimeout(requestTimeoutSeconds)
+                    .setConnectTimeout(requestTimeoutMillis)
+                    .setConnectionRequestTimeout(requestTimeoutMillis)
+                    .setSocketTimeout(requestTimeoutMillis)
                     .build();
             httpGet.setConfig(config);
             for (String fileName : importFileNames) {
