@@ -780,13 +780,6 @@ public class ScheduleService {
         Page<ScheduleEntity> returnValue = scheduleRepository.find(pageable, params);
         List<ScheduleEntity> schedules = returnValue.getContent();
 
-        if (params.getTriggerStrategy() != null) {
-            schedules = schedules.stream().filter(schedule -> {
-                TriggerConfig triggerConfig = JsonUtils.fromJson(schedule.getTriggerConfigJson(), TriggerConfig.class);
-                return triggerConfig.getTriggerStrategy().equals(params.getTriggerStrategy());
-            }).collect(Collectors.toList());
-        }
-
         Map<Long, ScheduleOverview> id2Overview =
                 scheduleResponseMapperFactory.generateScheduleOverviewListMapper(schedules);
 

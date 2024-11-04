@@ -79,7 +79,7 @@ public class ScheduleEntity implements Serializable {
     private ScheduleType type;
     @Column(name = "job_parameters_json", nullable = false)
     private String jobParametersJson;
-    @Column(name = "trigger_config_json", nullable = false)
+    @Column(name = "trigger_config_json", columnDefinition = "json", nullable = false)
     private String triggerConfigJson;
 
     @Column(name = "description")
