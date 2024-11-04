@@ -735,6 +735,9 @@ public class ScheduleService {
     public Page<ScheduleOverview> listScheduleOverview(@NotNull Pageable pageable,
             @NotNull QueryScheduleParams params) {
         log.info("List schedule overview req:{}", params);
+        if (StringUtils.isNotEmpty(params.getId()) && !StringUtils.isNumeric(params.getId())) {
+            return Page.empty();
+        }
         if (StringUtils.isNotBlank(params.getCreator())) {
             Set<Long> creatorIds = userService.getUsersByFuzzyNameWithoutPermissionCheck(
                     params.getCreator()).stream().map(User::getId).collect(Collectors.toSet());
@@ -800,6 +803,9 @@ public class ScheduleService {
     public Page<ScheduleTaskListOverview> listScheduleTaskListOverview(@NotNull Pageable pageable,
             @NotNull QueryScheduleTaskParams params) {
         log.info("List schedule task overview req, params={}", params);
+        if (StringUtils.isNotEmpty(params.getId()) && !StringUtils.isNumeric(params.getId())) {
+            return Page.empty();
+        }
         QueryScheduleParams scheduleParams = QueryScheduleParams.builder()
                 .id(params.getScheduleId())
                 .name(params.getScheduleName())
