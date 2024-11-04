@@ -27,7 +27,7 @@ import lombok.Data;
 @Data
 @Builder
 public class QueryScheduleTaskParams {
-    private Long id;
+    private String id;
     // it will be merged into scheduleIds when it is not null
     private String scheduleId;
     private String scheduleName;

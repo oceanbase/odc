@@ -166,7 +166,7 @@ public class ScheduleController {
             @RequestParam(required = false, name = "databaseName") String databaseName,
             @RequestParam(required = false, name = "tenantId") String tenantId,
             @RequestParam(required = false, name = "clusterId") String clusterId,
-            @RequestParam(required = false, name = "id") Long id,
+            @RequestParam(required = false, name = "id") String id,
             @RequestParam(required = false, name = "scheduleId") String scheduleId,
             @RequestParam(required = false, name = "scheduleName") String scheduleName,
             @RequestParam(required = false, name = "status") List<TaskStatus> status,
