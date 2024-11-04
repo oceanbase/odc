@@ -20,7 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 import com.oceanbase.odc.service.iam.auth.local.AbstractTestLoginAuthenticationFilter;
 import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
 
-public class OAuth2AbstractTestLoginAuthenticationFilter extends AbstractTestLoginAuthenticationFilter {
+public class OAuth2TestLoginAuthenticationFilter extends AbstractTestLoginAuthenticationFilter {
 
     @Override
     protected Boolean isTestRequest(HttpServletRequest request) {

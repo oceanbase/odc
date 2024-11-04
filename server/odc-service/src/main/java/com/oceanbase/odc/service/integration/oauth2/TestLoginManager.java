@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotBlank;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.saml2.Saml2RelyingPartyProperties.Registration.Acs;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.stereotype.Service;
 
@@ -49,6 +50,7 @@ import com.oceanbase.odc.service.integration.model.IntegrationType;
 import com.oceanbase.odc.service.integration.model.LdapContextHolder;
 import com.oceanbase.odc.service.integration.model.LdapContextHolder.LdapContext;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
+import com.oceanbase.odc.service.integration.saml.AddableRelyingPartyRegistrationRepository;
 import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 
 import lombok.extern.slf4j.Slf4j;
@@ -59,8 +61,14 @@ import lombok.extern.slf4j.Slf4j;
 public class TestLoginManager {
 
     public static final String REGISTRATION_ID_URI_VARIABLE_NAME = "registrationId";
-    public static final AntPathRequestMatcher authorizationRequestMatcher = new AntPathRequestMatcher(
+    public static final AntPathRequestMatcher oAuth2AuthorizationRequestMatcher = new AntPathRequestMatcher(
             "/login/oauth2/code" + "/{" + REGISTRATION_ID_URI_VARIABLE_NAME + "}");
+    /**
+     * @see Acs#getEntityId()
+     */
+    public static final AntPathRequestMatcher samlAuthorizationRequestMatcher =
+            new AntPathRequestMatcher("{baseUrl}/login/saml2/sso/{registrationId}");
+
     private static final AntPathRequestMatcher LDAP_REQUEST_MATCHER =
             new AntPathRequestMatcher("/api/v2/iam/ldap/login", "POST");
     public final Cache<String, String> testLoginInfoCache =
@@ -80,25 +88,57 @@ public class TestLoginManager {
     @Autowired
     private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
 
+    @Autowired(required = false)
+    private AddableRelyingPartyRegistrationRepository addableRelyingPartyRegistrationRepository;
+
     @SkipAuthorize
     public static boolean isOAuthTestLoginRequest(HttpServletRequest request) {
-        String registrationId = resolveRegistrationId(request);
+        String registrationId = resolveOauthRegistrationId(request);
         if (registrationId == null) {
             return false;
         }
         return "test".equals(parseRegistrationName(registrationId));
     }
 
-    private static String resolveRegistrationId(HttpServletRequest request) {
-        if (authorizationRequestMatcher.matches(request)) {
-            return authorizationRequestMatcher.matcher(request).getVariables()
+    private static String resolveOauthRegistrationId(HttpServletRequest request) {
+        if (oAuth2AuthorizationRequestMatcher.matches(request)) {
+            return oAuth2AuthorizationRequestMatcher.matcher(request).getVariables()
                     .get(REGISTRATION_ID_URI_VARIABLE_NAME);
         }
         return null;
     }
 
     @SkipAuthorize
-    public void saveOauth2TestIdIfNeed(@NotBlank String loginInfo) {
+    public static boolean isSamlTestLoginRequest(HttpServletRequest request) {
+        String registrationId = resolveSamlRegistrationId(request);
+        if (registrationId == null) {
+            return false;
+        }
+        return "test".equals(parseRegistrationName(registrationId));
+    }
+
+    private static String resolveSamlRegistrationId(HttpServletRequest request) {
+        if (samlAuthorizationRequestMatcher.matches(request)) {
+            return samlAuthorizationRequestMatcher.matcher(request).getVariables()
+                    .get(REGISTRATION_ID_URI_VARIABLE_NAME);
+        }
+        return null;
+    }
+
+    public void saveSamlInfoIfNeed(String info) {
+        HttpServletRequest currentRequest = WebRequestUtils.getCurrentRequest();
+        Verify.notNull(currentRequest, "currentRequest");
+        if (!isSamlTestLoginRequest(currentRequest)) {
+            return;
+        }
+        String testId = WebRequestUtils.getStringValueFromParameterOrAttribute(currentRequest,
+                OdcConstants.TEST_LOGIN_ID_PARAM);
+        Verify.notNull(testId, "testId");
+        testLoginInfoCache.put(testId, info);
+    }
+
+    @SkipAuthorize
+    public void saveOauth2InfoIfNeed(@NotBlank String loginInfo) {
         HttpServletRequest currentRequest = WebRequestUtils.getCurrentRequest();
         Verify.notNull(currentRequest, "currentRequest");
         if (!isOAuthTestLoginRequest(currentRequest)) {
@@ -121,7 +161,7 @@ public class TestLoginManager {
     @PreAuthenticate(actions = "create", resourceType = "ODC_INTEGRATION", isForAll = true)
     public SSOTestInfo getSSOTestInfo(IntegrationConfig config, String type) {
         SSOIntegrationConfig ssoConfig = SSOIntegrationConfig.of(config, authenticationFacade.currentOrganizationId());
-        Verify.verify(ssoConfig.isOauth2OrOidc() || ssoConfig.isLdap(), "not support sso type");
+        Verify.verify(ssoConfig.isOauth2OrOidc() || ssoConfig.isLdap() || ssoConfig.isSaml(), "not support sso type");
         if (config.getEncryption().getSecret() == null) {
             Optional<IntegrationEntity> integration = integrationService.findByTypeAndOrganizationIdAndName(
                     IntegrationType.SSO, authenticationFacade.currentOrganizationId(), config.getName());
@@ -146,6 +186,13 @@ public class TestLoginManager {
             }
             ldapConfigRegistrationManager.addTestConfig(ssoConfig);
             testRegistrationId = ssoConfig.resolveRegistrationId();
+        } else if (ssoConfig.isSaml()) {
+            if (addableRelyingPartyRegistrationRepository == null) {
+                throw new UnsupportedOperationException("add test sso is not support");
+            }
+            redirectUrl = UrlUtils.appendQueryParameter(ssoConfig.resolveLoginRedirectUrl(),
+                    TEST_LOGIN_ID_PARAM, testId);
+            addableRelyingPartyRegistrationRepository.addTestConfig(ssoConfig);
         }
         return new SSOTestInfo(redirectUrl, testId, testRegistrationId);
     }
@@ -186,6 +233,16 @@ public class TestLoginManager {
         }
     }
 
+    public void abortIfSamlTestLogin() {
+        HttpServletRequest currentRequest = WebRequestUtils.getCurrentRequest();
+        if (currentRequest == null) {
+            return;
+        }
+        if (isOAuthTestLoginRequest(currentRequest) && "info".equals(currentRequest.getParameter("type"))) {
+            throw new TestLoginTerminateException();
+        }
+    }
+
     @SkipAuthorize
     public LdapContext loadLdapContext(HttpServletRequest request) {
         boolean isLdapLogin = LDAP_REQUEST_MATCHER.matches(request);
@@ -204,5 +261,4 @@ public class TestLoginManager {
         LdapContextHolder.setParameter(ldapContext);
         return ldapContext;
     }
-
 }

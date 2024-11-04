@@ -78,7 +78,7 @@ public class OAuth2SecurityConfigureHelper {
                 .oidcUserService(oidcUserService);
 
         http.addFilterBefore(
-                new OAuth2AbstractTestLoginAuthenticationFilter(),
+                new OAuth2TestLoginAuthenticationFilter(),
                 OAuth2LoginAuthenticationFilter.class);
     }
 }

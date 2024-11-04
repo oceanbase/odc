@@ -39,16 +39,16 @@ import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
 @SkipAuthorize("odc internal usage")
 public class WebInfoAdapter implements InfoAdapter {
 
-    @Value("${odc.iam.password-login-enabled:true}")
-    private Boolean passwordLoginEnabled;
     @Value("${odc.iam.auth.type}")
     protected Set<String> authType;
+    @Autowired
+    protected IntegrationService integrationService;
+    @Value("${odc.iam.password-login-enabled:true}")
+    private Boolean passwordLoginEnabled;
     @Value("${odc.help.supportGroupQRCodeUrl:#{null}}")
     private String supportGroupQRCodeUrl;
     @Autowired
     private PlaysiteOpenApiProperties alipayOpenApiProperties;
-    @Autowired
-    protected IntegrationService integrationService;
     @Autowired
     private BuildProperties buildProperties;
 
@@ -66,7 +66,7 @@ public class WebInfoAdapter implements InfoAdapter {
             return alipayOpenApiProperties.getObOfficialLoginUrl();
         } else if (authType.contains("local")) {
             SSOIntegrationConfig sSoClientRegistration = integrationService.getSSoIntegrationConfig();
-            if (sSoClientRegistration == null || !sSoClientRegistration.isOauth2OrOidc()) {
+            if (sSoClientRegistration == null) {
                 return null;
             }
             return sSoClientRegistration.resolveLoginRedirectUrl();
