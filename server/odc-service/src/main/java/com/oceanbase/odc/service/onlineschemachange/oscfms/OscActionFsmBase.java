@@ -210,6 +210,8 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
         ScheduleTaskEntity scheduleTaskEntity = scheduleTaskService.nullSafeGetById(schedulerTaskID);
         OnlineSchemaChangeScheduleTaskParameters parameters = JsonUtils.fromJson(scheduleTaskEntity.getParametersJson(),
                 OnlineSchemaChangeScheduleTaskParameters.class);
+        OnlineSchemaChangeParameters onlineSchemaChangeParameters =
+                parseOnlineSchemaChangeParameters(scheduleEntity.getJobParametersJson());
         String currentState = parameters.getState();
         // first yield, jump to create table state to decrease wait time
         if (StringUtils.equals(currentState, OscStates.YIELD_CONTEXT.getState())) {
@@ -219,7 +221,8 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
             // recover current state
             scheduleTaskRepository.updateStatusById(schedulerTaskID, TaskStatus.RUNNING);
         }
-        actionScheduler.submitFMSScheduler(scheduleEntity, schedulerTaskID);
+        actionScheduler.submitFMSScheduler(scheduleEntity, schedulerTaskID,
+                onlineSchemaChangeParameters.getFlowTaskID());
     }
 
     /**
@@ -234,7 +237,7 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
         Long scheduleId = context.getSchedule().getId();
         Long scheduleTaskId = scheduleTask.getId();
         Duration between = Duration.between(scheduleTask.getCreateTime().toInstant(), Instant.now());
-        log.info("Schedule id={} to check schedule task status with schedule task id={}", scheduleId, scheduleTaskId);
+        log.debug("Schedule id={} to check schedule task status with schedule task id={}", scheduleId, scheduleTaskId);
 
         if (between.toMillis() / 1000 > oscTaskExpiredAfterSeconds) {
             // schedule to clean resource
@@ -411,7 +414,7 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
                     new DefaultConnectSessionFactory(connectionConfig).generateSession();
             ConnectionSessionUtil.setCurrentSchema(connectionSession,
                     dbName);
-            return new DefaultConnectSessionFactory(connectionConfig).generateSession();
+            return connectionSession;
         }
     }
 }
