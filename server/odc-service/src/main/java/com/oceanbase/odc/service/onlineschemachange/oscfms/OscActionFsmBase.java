@@ -237,7 +237,7 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
         Long scheduleId = context.getSchedule().getId();
         Long scheduleTaskId = scheduleTask.getId();
         Duration between = Duration.between(scheduleTask.getCreateTime().toInstant(), Instant.now());
-        log.info("Schedule id={} to check schedule task status with schedule task id={}", scheduleId, scheduleTaskId);
+        log.debug("Schedule id={} to check schedule task status with schedule task id={}", scheduleId, scheduleTaskId);
 
         if (between.toMillis() / 1000 > oscTaskExpiredAfterSeconds) {
             // schedule to clean resource
