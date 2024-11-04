@@ -27,6 +27,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.integration.IntegrationService;
+import com.oceanbase.odc.service.integration.SSOCredential;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.oauth2.Oauth2StateManager;
 import com.oceanbase.odc.service.integration.oauth2.SSOTestInfo;
@@ -43,6 +45,9 @@ public class SSOController {
 
     @Autowired
     private Oauth2StateManager oauth2StateManager;
+
+    @Autowired
+    private IntegrationService integrationService;
 
     @PostMapping(value = "/test/start")
     public SuccessResponse<SSOTestInfo> addTestClientRegistration(@RequestBody IntegrationConfig config,
@@ -66,6 +71,11 @@ public class SSOController {
     @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#state")
     public SuccessResponse<Map<String, String>> getTestClientInfo(@RequestParam String state) {
         return Responses.ok(oauth2StateManager.getStateParameters(state));
+    }
+
+    @GetMapping("/credential")
+    public SuccessResponse<SSOCredential> generateSSOCredential() {
+        return Responses.ok(integrationService.generateSSOCredential());
     }
 
 }
