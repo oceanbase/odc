@@ -61,9 +61,6 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
     int getEnabledScheduleCountByProjectId(@Param("projectId") Long projectId);
 
     default Page<ScheduleEntity> find(@NotNull Pageable pageable, @NotNull QueryScheduleParams params) {
-        if (!StringUtils.isNumeric(params.getId())) {
-            return Page.empty();
-        }
         Specification<ScheduleEntity> specification = Specification
                 .where(OdcJpaRepository.between(ScheduleEntity_.createTime, params.getStartTime(), params.getEndTime()))
                 .and(OdcJpaRepository.in(ScheduleEntity_.dataSourceId, params.getDataSourceIds()))
