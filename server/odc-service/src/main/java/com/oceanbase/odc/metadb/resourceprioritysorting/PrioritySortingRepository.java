@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import javax.persistence.LockModeType;
 import javax.transaction.Transactional;
 
 import org.springframework.data.domain.Page;
@@ -27,6 +28,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -57,6 +59,13 @@ public interface PrioritySortingRepository extends OdcJpaRepository<PrioritySort
             + " AND c.sortedResourceType = :#{#params.sortedResourceType}"
             + " AND c.sortedResourceId = :#{#params.sortedResourceId}")
     Optional<PrioritySortingEntity> findBySortedResourceId(@Param("params") SortedResourceId sortedResourceId);
+
+    @Query("SELECT c.* from PrioritySortingEntity c WHERE"
+            + " c.resourceType = :#{#params.resourceType} AND c.resourceId = :#{#params.resourceId}"
+            + " AND c.sortedResourceType = :#{#params.sortedResourceType}")
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    List<PrioritySortingEntity> listAllInSortedResourceTypeWithWriteLock(
+            @Param("params") SortedResourceType sortedResourceType);
 
     @Query("SELECT c.* from PrioritySortingEntity c WHERE"
             + " c.resourceType = :#{#params.resourceType} AND c.resourceId = :#{#params.resourceId}"
