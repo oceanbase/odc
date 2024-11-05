@@ -486,10 +486,15 @@ public class FlowInstanceService {
         if (CollectionUtils.isNotEmpty(params.getProjectIds())) {
             specification = specification.and(FlowInstanceViewSpecs.projectIdIn(params.getProjectIds()));
         } else {
+            Set<Long> joinedProjectIds = userService.getCurrentUserJoinedProjectIds();
+            // if the user does not join any projects in team space, then return empty directly
+            if (CollectionUtils.isEmpty(joinedProjectIds)
+                    && authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
+                return Page.empty();
+            }
             specification =
                     specification.and(FlowInstanceViewSpecs.projectIdIn(userService.getCurrentUserJoinedProjectIds()));
         }
-
         if (params.getContainsAll()) {
             return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
         }
