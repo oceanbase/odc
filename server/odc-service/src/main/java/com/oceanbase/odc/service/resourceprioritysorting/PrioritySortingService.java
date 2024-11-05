@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.resourceprioritysorting;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +53,8 @@ import com.oceanbase.odc.service.resourceprioritysorting.model.SortedResourceTyp
 public class PrioritySortingService {
     private static final Long STEP = 2L ^ 16;
     private static final Integer MAX_RETRY_COUNT = 3;
+    private static final String PRIORITY_UNIQUE_INDEX_NAME =
+            "uk_resource_priority_sorting_res_sorted_res_type_priority";
 
     @Autowired
     private PrioritySortingRepository prioritySortingRepository;
@@ -92,7 +95,7 @@ public class PrioritySortingService {
         }
         PrioritySortingEntity sortedResourceEntity = idToEntityMap.get(draggedSortedResourceId);
         PrioritySortingEntity afterSortedResourceEntity = idToEntityMap.get(prevSortedResourceId);
-        uniqueConstraintViolationRetry(
+        uniquePriorityConstraintViolationRetry(
                 () -> doDragAfter(sortedResourceType, sortedResourceEntity, afterSortedResourceEntity));
     }
 
@@ -104,6 +107,20 @@ public class PrioritySortingService {
         return prioritySortingRepository.pageBySortedResourceTypeAndSortByPriorityDesc(
                 sortedResourceType, pageNum, pageSize);
     }
+
+    public void batchDeleteBySortedResources(SortedResourceType sortedResourceType,
+            Collection<Long> sortedResourceIds) {
+        PreConditions.notNull(sortedResourceType, "sortedResourceType");
+        PreConditions.notEmpty(sortedResourceIds, "sortedResourceIds");
+        prioritySortingRepository.bathDeleteBySortedResources(sortedResourceType, sortedResourceIds);
+    }
+
+    public void deleteByResource(String resourceType, Long resourceId) {
+        PreConditions.notBlank(resourceType, "resourceType");
+        PreConditions.notNull(resourceId, "resourceId");
+        prioritySortingRepository.deleteByResourceTypeAndResourceId(resourceType, resourceId);
+    }
+
 
     private void doDragAfter(SortedResourceType sortedResourceType, PrioritySortingEntity draggedSortedResourceEntity,
             PrioritySortingEntity afterSortedResourceEntity) {
@@ -167,7 +184,7 @@ public class PrioritySortingService {
                 .priority(priority)
                 .build();
 
-        uniqueConstraintViolationRetry(() -> {
+        uniquePriorityConstraintViolationRetry(() -> {
             prioritySortingRepository.save(prioritySortingEntity);
             prioritySortingEntity.setPriority(priority + STEP);
         });
@@ -301,14 +318,15 @@ public class PrioritySortingService {
                 "Already exist sortedResourceId:" + sortedResourceId + " in sortedResourceType:" + sortedResourceType);
     }
 
-    private boolean isUniqueConstraintViolation(Exception ex) {
+    private boolean isPriorityUniqueConstraintViolation(Exception ex) {
         if (!(ex instanceof PersistenceException)) {
             return false;
         }
 
         Throwable cause = ex;
         while (cause != null) {
-            if (cause instanceof ConstraintViolationException) {
+            if (cause instanceof ConstraintViolationException
+                    && cause.getMessage().contains(PRIORITY_UNIQUE_INDEX_NAME)) {
                 return true;
             }
             cause = cause.getCause();
@@ -316,7 +334,7 @@ public class PrioritySortingService {
         return false;
     }
 
-    private void uniqueConstraintViolationRetry(Runnable r) {
+    private void uniquePriorityConstraintViolationRetry(Runnable r) {
         int retry = 1;
         while (true) {
             try {
@@ -324,7 +342,7 @@ public class PrioritySortingService {
                 break;
             } catch (Exception e) {
                 retry++;
-                if (!isUniqueConstraintViolation(e) || retry >= MAX_RETRY_COUNT) {
+                if (!isPriorityUniqueConstraintViolation(e) || retry >= MAX_RETRY_COUNT) {
                     throw e;
                 }
             }
