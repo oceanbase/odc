@@ -521,6 +521,9 @@ public class ScheduleService {
             isValidSchedule = isValidSchedule(schedule);
         } catch (NotFoundException e) {
             isValidSchedule = false;
+        } catch (Exception e) {
+            log.warn("Get schedule failed,task will be executed,scheduleId={}", scheduleId, e);
+            return false;
         }
         // terminate invalid schedule
         if (!isValidSchedule) {
