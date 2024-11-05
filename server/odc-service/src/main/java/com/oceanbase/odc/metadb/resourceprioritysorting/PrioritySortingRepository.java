@@ -70,12 +70,18 @@ public interface PrioritySortingRepository extends OdcJpaRepository<PrioritySort
     @Query("SELECT c.* from PrioritySortingEntity c WHERE"
             + " c.resourceType = :#{#params.resourceType} AND c.resourceId = :#{#params.resourceId}"
             + " AND c.sortedResourceType = :#{#params.sortedResourceType}"
-            + " AND c.priority < :endPriority AND c.priority < :startPriority"
-            + " ORDER BY c.priority ASC limit 1")
-    Optional<PrioritySortingEntity> getFirstBySortedResourceTypeBetweenPriorityWithPriorityAsc(
+            + " AND c.priority < :priority ORDER BY c.priority DESC limit 1")
+    Optional<PrioritySortingEntity> maxPriorityInSortedResourceTypeLessThanPriority(
             @Param("params") SortedResourceType sortedResourceType,
-            @Param("startPriority") Long startPriority,
-            @Param("endPriority") Long endPriority);
+            @Param("priority") Long priority);
+
+    @Query("SELECT c.priority from PrioritySortingEntity c WHERE"
+            + " c.resourceType = :#{#params.resourceType} AND c.resourceId = :#{#params.resourceId}"
+            + " AND c.sortedResourceType = :#{#params.sortedResourceType}"
+            + " ORDER BY c.priority desc limit 1")
+    Optional<PrioritySortingEntity> maxPriorityInSortedResourceType(
+            @Param("params") SortedResourceType sortedResourceType);
+
 
     @Query("SELECT c.* from PrioritySortingEntity c WHERE"
             + " c.resourceType = :#{#params.resourceType} AND c.resourceId = :#{#params.resourceId}"
@@ -84,12 +90,6 @@ public interface PrioritySortingRepository extends OdcJpaRepository<PrioritySort
     List<PrioritySortingEntity> listBySortedResourceIds(
             @Param("params") SortedResourceType sortedResourceType,
             @Param("sortedResourceIds") Collection<Long> sortedResourceIds);
-
-    @Query("SELECT c.priority from PrioritySortingEntity c WHERE"
-            + " c.resourceType = :#{#params.resourceType} AND c.resourceId = :#{#params.resourceId}"
-            + " AND c.sortedResourceType = :#{#params.sortedResourceType}"
-            + " ORDER BY c.priority desc limit 1")
-    Optional<Long> maxPriorityInSortedResourceType(@Param("params") SortedResourceType sortedResourceType);
 
     @Modifying
     @Transactional
