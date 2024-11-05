@@ -90,6 +90,7 @@ import com.oceanbase.odc.service.integration.model.ApprovalProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
+import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
 import com.oceanbase.odc.service.regulation.risklevel.RiskLevelMapper;
 
 import lombok.NonNull;
@@ -326,25 +327,19 @@ public class FlowResponseMapperFactory {
         Set<Long> databaseIds = taskId2TaskEntity.values().stream()
                 .map(TaskEntity::getDatabaseId)
                 .filter(Objects::nonNull).collect(Collectors.toSet());
-        Set<Long> sourceDatabaseIdsInComparisonTask = new HashSet<>();
-        Set<Long> targetDatabaseIdsInComparisonTask = new HashSet<>();
-        Map<Long, Project> id2Project = new HashMap<>();
 
-        taskId2TaskEntity.values().stream()
-                .filter(task -> task.getTaskType().equals(TaskType.STRUCTURE_COMPARISON))
-                .forEach(task -> {
-                    DBStructureComparisonParameter parameter = JsonUtils.fromJson(
-                            task.getParametersJson(), DBStructureComparisonParameter.class);
-                    sourceDatabaseIdsInComparisonTask.add(parameter.getSourceDatabaseId());
-                    targetDatabaseIdsInComparisonTask.add(parameter.getTargetDatabaseId());
-                });
-        databaseIds.addAll(targetDatabaseIdsInComparisonTask);
+        databaseIds.addAll(collectDBStructureComparisonDatabaseIds(taskId2TaskEntity));
+        Set<Long> projectIds = new HashSet<>();
+        Map<Long, Project> id2Project = new HashMap<>();
 
         if (CollectionUtils.isNotEmpty(databaseIds)) {
             id2Database = databaseService.listDatabasesByIds(databaseIds).stream()
                     .collect(Collectors.toMap(Database::getId, database -> database));
-            Set<Long> projectIds = id2Database.values().stream().map(db -> db.getProject().getId())
-                    .filter(Objects::nonNull).collect(Collectors.toSet());
+            projectIds.addAll(id2Database.values().stream().map(db -> db.getProject().getId())
+                    .filter(Objects::nonNull).collect(Collectors.toSet()));
+        }
+        projectIds.addAll(collectApplyProjectIds(taskId2TaskEntity));
+        if (CollectionUtils.isNotEmpty(projectIds)) {
             id2Project = projectService.listByIds(projectIds).stream()
                     .collect(Collectors.toMap(Project::getId, project -> project, (a, b) -> a));
         }
@@ -457,4 +452,31 @@ public class FlowResponseMapperFactory {
         return connectionRepository.findAll(specification);
     }
 
+    private Set<Long> collectDBStructureComparisonDatabaseIds(Map<Long, TaskEntity> taskId2TaskEntity) {
+        Set<Long> targetDatabaseIdsInComparisonTask = new HashSet<>();
+        taskId2TaskEntity.values().stream()
+                .filter(task -> task.getTaskType().equals(TaskType.STRUCTURE_COMPARISON))
+                .forEach(task -> {
+                    DBStructureComparisonParameter parameter = JsonUtils.fromJson(
+                            task.getParametersJson(), DBStructureComparisonParameter.class);
+                    targetDatabaseIdsInComparisonTask.add(parameter.getTargetDatabaseId());
+                });
+        return targetDatabaseIdsInComparisonTask;
+    }
+
+    private Set<Long> collectApplyProjectIds(Map<Long, TaskEntity> taskId2TaskEntity) {
+        Set<Long> applyProjectIds = taskId2TaskEntity.values().stream()
+                .filter(task -> task.getTaskType() == TaskType.APPLY_PROJECT_PERMISSION)
+                .map(task -> {
+                    ApplyProjectParameter parameter =
+                            JsonUtils.fromJson(task.getParametersJson(), ApplyProjectParameter.class);
+                    if (Objects.nonNull(parameter) && Objects.nonNull(parameter.getProject())) {
+                        return parameter.getProject().getId();
+                    }
+                    return null;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        return applyProjectIds;
+    }
 }
