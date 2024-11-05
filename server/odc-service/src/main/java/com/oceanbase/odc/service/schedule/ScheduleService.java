@@ -67,6 +67,7 @@ import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
@@ -144,6 +145,9 @@ import lombok.extern.slf4j.Slf4j;
 public class ScheduleService {
     @Autowired
     private ScheduleRepository scheduleRepository;
+
+    @Autowired
+    private ScheduleTaskRepository scheduleTaskRepository;
     @Autowired
     private AuthenticationFacade authenticationFacade;
     @Autowired
@@ -822,7 +826,7 @@ public class ScheduleService {
             return Page.empty();
         }
         params.setScheduleIds(scheduleIds);
-        Page<ScheduleTaskEntity> returnValue = scheduleTaskService.listEntity(pageable, params);
+        Page<ScheduleTaskEntity> returnValue = scheduleTaskRepository.find(pageable, params);
         Map<Long, ScheduleTaskListOverview> taskId2Overview =
                 scheduleResponseMapperFactory.generateScheduleTaskOverviewListMapper(returnValue.getContent());
         return returnValue.map(o -> taskId2Overview.get(o.getId()));

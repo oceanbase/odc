@@ -191,6 +191,9 @@ public class ScheduleResponseMapperFactory {
 
     public Map<Long, ScheduleTaskListOverview> generateScheduleTaskOverviewListMapper(
             Collection<ScheduleTaskEntity> taskEntities) {
+        if (taskEntities.isEmpty()) {
+            return Collections.emptyMap();
+        }
 
         Set<Long> scheduleIds = taskEntities.stream().map(o -> Long.parseLong(o.getJobName())).collect(
                 Collectors.toSet());
