@@ -86,18 +86,31 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
         }
     }
 
+    /**
+     * 处理 SQL 异步执行请求
+     *
+     * @param request  SQL 异步执行请求
+     * @param response SQL 异步执行响应
+     * @param session  数据库连接会话
+     * @param context  上下文信息
+     * @return 是否允许执行
+     */
     private boolean handle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
-            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
+        @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
+        // 获取规则集 ID
         Long ruleSetId = ConnectionSessionUtil.getRuleSetId(session);
+        // 如果规则集 ID 为空或者是个人团队，则直接返回 true
         if (Objects.isNull(ruleSetId) || isIndividualTeam()) {
             return true;
         }
+        // 如果不需要 SQL 控制台检查，则直接返回 true
         if (Objects.equals(Boolean.FALSE, context.get(NEED_SQL_CONSOLE_CHECK))) {
             return true;
         }
 
+        // 获取最大返回行数限制
         Optional<Integer> queryLimit = sqlConsoleRuleService.getProperties(ruleSetId, SqlConsoleRules.MAX_RETURN_ROWS,
-                session.getDialectType(), Integer.class);
+            session.getDialectType(), Integer.class);
         queryLimit.ifPresent(limit -> {
             if (Objects.isNull(request.getQueryLimit()) || request.getQueryLimit() > limit) {
                 request.setQueryLimit(limit);
@@ -105,35 +118,40 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
         });
         AtomicBoolean allowExecute = new AtomicBoolean(true);
 
+        // 获取 SQL 元组列表
         List<SqlTuple> sqlTuples = response.getSqls().stream().map(SqlTuplesWithViolation::getSqlTuple)
-                .collect(Collectors.toList());
+            .collect(Collectors.toList());
+        // 获取最大执行 SQL 数量限制
         Optional<Integer> maxSqlSize = sqlConsoleRuleService.getProperties(ruleSetId, SqlConsoleRules.MAX_EXECUTE_SQLS,
-                session.getDialectType(), Integer.class);
+            session.getDialectType(), Integer.class);
         AtomicReference<Rule> maxSqlSizeRule = new AtomicReference<>();
         if (maxSqlSize.isPresent()) {
+            // 如果 SQL 元组数量超过最大执行 SQL 数量限制，则添加违反规则
             if (sqlTuples.size() > maxSqlSize.get()) {
                 ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.MAX_EXECUTE_SQLS.getRuleName())
-                        .ifPresent(rule -> {
-                            maxSqlSizeRule.set(new Rule());
-                            RuleViolation violation = new RuleViolation();
-                            violation.setLevel(rule.getLevel());
-                            violation.setLocalizedMessage(SqlConsoleRules.MAX_EXECUTE_SQLS
-                                    .getLocalizedMessage(new Object[] {rule.getProperties()
-                                            .get(rule.getMetadata().getPropertyMetadatas().get(0).getName())
-                                            .toString()}));
-                            maxSqlSizeRule.get().setViolation(violation);
-                        });
+                    .ifPresent(rule -> {
+                        maxSqlSizeRule.set(new Rule());
+                        RuleViolation violation = new RuleViolation();
+                        violation.setLevel(rule.getLevel());
+                        violation.setLocalizedMessage(SqlConsoleRules.MAX_EXECUTE_SQLS
+                            .getLocalizedMessage(new Object[] {rule.getProperties()
+                                                                   .get(rule.getMetadata().getPropertyMetadatas().get(0)
+                                                                       .getName())
+                                                                   .toString()}));
+                        maxSqlSizeRule.get().setViolation(violation);
+                    });
                 allowExecute.set(false);
             }
         }
         Map<String, BasicResult> sqlId2BasicResult = new HashMap<>();
+        // 确定 SQL 类型
         sqlTuples.forEach(sql -> sqlId2BasicResult.putIfAbsent(
-                sql.getSqlId(), determineSqlType(sql, session.getDialectType())));
+            sql.getSqlId(), determineSqlType(sql, session.getDialectType())));
 
         boolean forbiddenToCreatePl =
-                sqlConsoleRuleService.isForbidden(SqlConsoleRules.NOT_ALLOWED_CREATE_PL, session);
+            sqlConsoleRuleService.isForbidden(SqlConsoleRules.NOT_ALLOWED_CREATE_PL, session);
         Optional<List<String>> allowSqlTypesOpt = sqlConsoleRuleService.getListProperties(ruleSetId,
-                SqlConsoleRules.ALLOW_SQL_TYPES, session.getDialectType(), String.class);
+            SqlConsoleRules.ALLOW_SQL_TYPES, session.getDialectType(), String.class);
 
         for (int i = 0; i < response.getSqls().size(); i++) {
             SqlTuplesWithViolation item = response.getSqls().get(i);
@@ -149,18 +167,18 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
             BasicResult parseResult = sqlId2BasicResult.get(item.getSqlTuple().getSqlId());
             if (parseResult.isPlDdl() && forbiddenToCreatePl) {
                 ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.NOT_ALLOWED_CREATE_PL.getRuleName())
-                        .ifPresent(rule -> {
-                            Rule violationRule = new Rule();
-                            RuleViolation violation = new RuleViolation();
-                            violation.setLevel(rule.getLevel());
-                            violation.setLocalizedMessage(
-                                    SqlConsoleRules.NOT_ALLOWED_CREATE_PL.getLocalizedMessage(null));
-                            violation.setOffset(item.getSqlTuple().getOffset());
-                            violation.setStart(0);
-                            violation.setStop(item.getSqlTuple().getOriginalSql().length());
-                            violationRule.setViolation(violation);
-                            violatedRules.add(violationRule);
-                        });
+                    .ifPresent(rule -> {
+                        Rule violationRule = new Rule();
+                        RuleViolation violation = new RuleViolation();
+                        violation.setLevel(rule.getLevel());
+                        violation.setLocalizedMessage(
+                            SqlConsoleRules.NOT_ALLOWED_CREATE_PL.getLocalizedMessage(null));
+                        violation.setOffset(item.getSqlTuple().getOffset());
+                        violation.setStart(0);
+                        violation.setStop(item.getSqlTuple().getOriginalSql().length());
+                        violationRule.setViolation(violation);
+                        violatedRules.add(violationRule);
+                    });
                 allowExecute.set(false);
             }
             if (allowSqlTypesOpt.isPresent()) {
@@ -172,21 +190,22 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
                 }
                 if (!allowSqlTypesOpt.get().contains(parseResult.getSqlType().name())) {
                     ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.ALLOW_SQL_TYPES.getRuleName())
-                            .ifPresent(rule -> {
-                                Rule violationRule = new Rule();
-                                RuleViolation violation = new RuleViolation();
-                                violation.setLevel(rule.getLevel());
-                                violation.setLocalizedMessage(SqlConsoleRules.ALLOW_SQL_TYPES
-                                        .getLocalizedMessage(new Object[] {rule.getProperties()
-                                                .get(rule.getMetadata().getPropertyMetadatas().get(0).getName())
-                                                .toString()}));
-                                violation.setOffset(item.getSqlTuple().getOffset());
-                                violation.setStart(0);
-                                violation.setStop(item.getSqlTuple().getOriginalSql().length());
-                                violationRule.setLevel(rule.getLevel());
-                                violationRule.setViolation(violation);
-                                violatedRules.add(violationRule);
-                            });
+                        .ifPresent(rule -> {
+                            Rule violationRule = new Rule();
+                            RuleViolation violation = new RuleViolation();
+                            violation.setLevel(rule.getLevel());
+                            violation.setLocalizedMessage(SqlConsoleRules.ALLOW_SQL_TYPES
+                                .getLocalizedMessage(new Object[] {rule.getProperties()
+                                                                       .get(rule.getMetadata().getPropertyMetadatas()
+                                                                           .get(0).getName())
+                                                                       .toString()}));
+                            violation.setOffset(item.getSqlTuple().getOffset());
+                            violation.setStart(0);
+                            violation.setStop(item.getSqlTuple().getOriginalSql().length());
+                            violationRule.setLevel(rule.getLevel());
+                            violationRule.setViolation(violation);
+                            violatedRules.add(violationRule);
+                        });
                     allowExecute.set(false);
                 }
             }
@@ -226,21 +245,34 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
         return authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL;
     }
 
+    /**
+     * 确定SQL类型
+     *
+     * @param sqlTuple    SQL元组
+     * @param dialectType 方言类型
+     * @return BasicResult基本结果
+     */
     private BasicResult determineSqlType(@NonNull SqlTuple sqlTuple, @NonNull DialectType dialectType) {
         BasicResult basicResult;
         try {
+            // 获取抽象语法树
             AbstractSyntaxTree ast = sqlTuple.getAst();
+            // 如果抽象语法树为空，则初始化抽象语法树
             if (ast == null) {
                 sqlTuple.initAst(AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0));
                 ast = sqlTuple.getAst();
             }
+            // 获取解析结果
             basicResult = ast.getParseResult();
         } catch (Exception e) {
+            // 如果出现异常，则创建一个未知类型的BasicResult对象
             basicResult = new BasicResult(SqlType.UNKNOWN);
+            // 如果异常是语法错误异常，则设置语法错误标志
             if (e instanceof SyntaxErrorException) {
                 basicResult.setSyntaxError(true);
             }
         }
+        // 如果BasicResult对象的SQL类型为空或未知，则将其设置为其他类型
         if (Objects.isNull(basicResult.getSqlType()) || basicResult.getSqlType() == SqlType.UNKNOWN) {
             basicResult.setSqlType(SqlType.OTHERS);
         }
