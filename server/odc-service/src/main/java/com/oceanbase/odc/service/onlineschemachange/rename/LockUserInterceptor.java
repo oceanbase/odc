@@ -53,7 +53,7 @@ public class LockUserInterceptor implements RenameTableInterceptor {
             DBSessionManageFacade dbSessionManageFacade) {
         this.connSession = connSession;
         this.dbSessionManageFacade = dbSessionManageFacade;
-        this.jdbcOperations = connSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
+        this.jdbcOperations = connSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
     }
 
     @Override

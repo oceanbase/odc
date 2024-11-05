@@ -120,7 +120,7 @@ public abstract class BaseForeignKeyHandler implements ForeignKeyHandler {
     protected abstract List<DBTableReferencedInfo> getTableConstraintByReferenced(String schemaName, String tableName);
 
     protected SyncJdbcExecutor getSyncJdbcExecutor() {
-        return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
+        return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
     }
 
     @Setter
