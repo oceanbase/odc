@@ -19,7 +19,6 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -45,6 +44,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -66,11 +66,15 @@ import com.oceanbase.odc.metadb.schedule.LatestTaskMappingEntity;
 import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
@@ -141,6 +145,9 @@ import lombok.extern.slf4j.Slf4j;
 public class ScheduleService {
     @Autowired
     private ScheduleRepository scheduleRepository;
+
+    @Autowired
+    private ScheduleTaskRepository scheduleTaskRepository;
     @Autowired
     private AuthenticationFacade authenticationFacade;
     @Autowired
@@ -732,6 +739,9 @@ public class ScheduleService {
     public Page<ScheduleOverview> listScheduleOverview(@NotNull Pageable pageable,
             @NotNull QueryScheduleParams params) {
         log.info("List schedule overview req:{}", params);
+        if (StringUtils.isNotEmpty(params.getId()) && !StringUtils.isNumeric(params.getId())) {
+            return Page.empty();
+        }
         if (StringUtils.isNotBlank(params.getCreator())) {
             Set<Long> creatorIds = userService.getUsersByFuzzyNameWithoutPermissionCheck(
                     params.getCreator()).stream().map(User::getId).collect(Collectors.toSet());
@@ -740,24 +750,20 @@ public class ScheduleService {
             }
             params.setCreatorIds(creatorIds);
         }
-        if (params.getDataSourceIds() == null) {
-            params.setDataSourceIds(new HashSet<>());
-        }
-        if (StringUtils.isNotEmpty(params.getClusterId())) {
-            List<Long> datasourceIdsByCluster = connectionService.innerListIdByOrganizationIdAndClusterId(
-                    authenticationFacade.currentOrganizationId(), params.getClusterId());
-            if (datasourceIdsByCluster.isEmpty()) {
+        if (!CollectionUtils.isEmpty(params.getDataSourceIds()) || StringUtils.isNotEmpty(params.getClusterId())
+                || StringUtils.isNotEmpty(params.getTenantId())) {
+            QueryConnectionParams datasourceParams = QueryConnectionParams.builder()
+                    .ids(params.getDataSourceIds())
+                    .clusterNames(Collections.singletonList(params.getClusterId()))
+                    .tenantNames(Collections.singletonList(params.getTenantId()))
+                    .build();
+            Set<Long> datasourceIds = connectionService.listSkipPermissionCheck(datasourceParams).stream().map(
+                    ConnectionConfig::getId).collect(
+                            Collectors.toSet());
+            if (datasourceIds.isEmpty()) {
                 return Page.empty();
             }
-            params.getDataSourceIds().addAll(datasourceIdsByCluster);
-        }
-        if (StringUtils.isNotEmpty(params.getTenantId())) {
-            List<Long> datasourceIdsByTenantId = connectionService.innerListIdByOrganizationIdAndTenantId(
-                    authenticationFacade.currentOrganizationId(), params.getTenantId());
-            if (datasourceIdsByTenantId.isEmpty()) {
-                return Page.empty();
-            }
-            params.getDataSourceIds().addAll(datasourceIdsByTenantId);
+            params.setDataSourceIds(datasourceIds);
         }
         // load project by unique identifier if project id is null
         if (params.getProjectId() == null && StringUtils.isNotEmpty(params.getProjectUniqueIdentifier())) {
@@ -781,13 +787,6 @@ public class ScheduleService {
         Page<ScheduleEntity> returnValue = scheduleRepository.find(pageable, params);
         List<ScheduleEntity> schedules = returnValue.getContent();
 
-        if (params.getTriggerStrategy() != null) {
-            schedules = schedules.stream().filter(schedule -> {
-                TriggerConfig triggerConfig = JsonUtils.fromJson(schedule.getTriggerConfigJson(), TriggerConfig.class);
-                return triggerConfig.getTriggerStrategy().equals(params.getTriggerStrategy());
-            }).collect(Collectors.toList());
-        }
-
         Map<Long, ScheduleOverview> id2Overview =
                 scheduleResponseMapperFactory.generateScheduleOverviewListMapper(schedules);
 
@@ -805,48 +804,12 @@ public class ScheduleService {
         return scheduleTaskService.getScheduleTaskListResp(pageable, scheduleId);
     }
 
-    public Page<ScheduleTaskListOverview> listScheduleTaskOverviewByScheduleType(@NotNull Pageable pageable,
+    public Page<ScheduleTaskListOverview> listScheduleTaskListOverview(@NotNull Pageable pageable,
             @NotNull QueryScheduleTaskParams params) {
         log.info("List schedule task overview req, params={}", params);
-        if (params.getDataSourceIds() == null) {
-            params.setDataSourceIds(new HashSet<>());
+        if (StringUtils.isNotEmpty(params.getId()) && !StringUtils.isNumeric(params.getId())) {
+            return Page.empty();
         }
-        if (StringUtils.isNotBlank(params.getCreator())) {
-            Set<Long> creatorIds = userService.getUsersByFuzzyNameWithoutPermissionCheck(
-                    params.getCreator()).stream().map(User::getId).collect(Collectors.toSet());
-            if (creatorIds.isEmpty()) {
-                return Page.empty();
-            }
-            params.setCreatorIds(creatorIds);
-        }
-        if (StringUtils.isNotEmpty(params.getClusterId())) {
-            List<Long> datasourceIdsByCluster = connectionService.innerListIdByOrganizationIdAndClusterId(
-                    authenticationFacade.currentOrganizationId(), params.getClusterId());
-            if (datasourceIdsByCluster.isEmpty()) {
-                return Page.empty();
-            }
-            params.getDataSourceIds().addAll(datasourceIdsByCluster);
-        }
-        if (StringUtils.isNotEmpty(params.getTenantId())) {
-            List<Long> datasourceIdsByTenantId = connectionService.innerListIdByOrganizationIdAndTenantId(
-                    authenticationFacade.currentOrganizationId(), params.getTenantId());
-            if (datasourceIdsByTenantId.isEmpty()) {
-                return Page.empty();
-            }
-            params.getDataSourceIds().addAll(datasourceIdsByTenantId);
-        }
-
-        if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
-            Set<Long> projectIds = params.getProjectId() == null
-                    ? projectService.getMemberProjectIds(authenticationFacade.currentUserId())
-                    : Collections.singleton(params.getProjectId());
-            if (projectIds.isEmpty()) {
-                return Page.empty();
-            }
-            params.setProjectIds(projectIds);
-        }
-        params.setOrganizationId(authenticationFacade.currentOrganizationId());
-
         QueryScheduleParams scheduleParams = QueryScheduleParams.builder()
                 .id(params.getScheduleId())
                 .name(params.getScheduleName())
@@ -857,16 +820,16 @@ public class ScheduleService {
                 .projectId(params.getProjectId())
                 .organizationId(authenticationFacade.currentOrganizationId())
                 .build();
-
-        List<Schedule> scheduleList = scheduleRepository.find(scheduleParams).stream()
-                .map(scheduleMapper::entityToModel)
-                .collect(Collectors.toList());
-        if (scheduleList.isEmpty()) {
+        Set<Long> scheduleIds = scheduleRepository.find(Pageable.unpaged(), scheduleParams).getContent()
+                .stream().map(ScheduleEntity::getId).collect(Collectors.toSet());
+        if (scheduleIds.isEmpty()) {
             return Page.empty();
         }
-        params.setSchedules(scheduleList);
-
-        return scheduleTaskService.getConditionalScheduleTaskListResp(pageable, params);
+        params.setScheduleIds(scheduleIds);
+        Page<ScheduleTaskEntity> returnValue = scheduleTaskRepository.find(pageable, params);
+        Map<Long, ScheduleTaskListOverview> taskId2Overview =
+                scheduleResponseMapperFactory.generateScheduleTaskOverviewListMapper(returnValue.getContent());
+        return returnValue.map(o -> taskId2Overview.get(o.getId()));
     }
 
     public List<String> getAsyncDownloadUrl(Long id, List<String> objectIds) {

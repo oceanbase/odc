@@ -33,7 +33,7 @@ import lombok.Data;
 public class QueryScheduleParams {
 
     private Set<Long> dataSourceIds;
-    private Long id;
+    private String id;
     private String name;
     private List<ScheduleStatus> statuses;
     private ScheduleType type;
@@ -48,6 +48,6 @@ public class QueryScheduleParams {
     private String databaseName;
     private String tenantId;
     private String clusterId;
-    private TriggerStrategy triggerStrategy;
+    private String triggerStrategy;
 
 }

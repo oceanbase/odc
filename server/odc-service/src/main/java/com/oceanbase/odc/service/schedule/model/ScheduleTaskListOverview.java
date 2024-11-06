@@ -18,29 +18,21 @@ package com.oceanbase.odc.service.schedule.model;
 import java.util.Date;
 import java.util.Map;
 
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.common.model.InnerUser;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class ScheduleTaskListOverview {
+public class ScheduleTaskListOverview extends ScheduleTaskOverview {
 
-    private Long id;
 
     private String scheduleId;
 
     private String scheduleName;
 
     private InnerUser creator;
-
-    private ScheduleTaskType type;
-
-    private TaskStatus status;
-
-    private Date createTime;
-
-    private Date updateTime;
 
     private Date lastExecutionTime;
 
