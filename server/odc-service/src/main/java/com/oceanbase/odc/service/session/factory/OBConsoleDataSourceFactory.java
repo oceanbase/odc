@@ -74,7 +74,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     private String serviceName;
     protected UserRole userRole;
     private String catalogName;
-    private boolean autoConnect;
+    private boolean autoReConnect;
     private Map<String, String> parameters;
     protected final ConnectionConfig connectionConfig;
     private final Boolean autoCommit;
@@ -93,7 +93,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     }
 
     public OBConsoleDataSourceFactory(@NonNull ConnectionConfig connectionConfig,
-            Boolean autoCommit, boolean initConnection, boolean autoConnect) {
+            Boolean autoCommit, boolean initConnection, boolean autoReConnect) {
         this.autoCommit = autoCommit;
         this.connectionConfig = connectionConfig;
         this.initConnection = initConnection;
@@ -107,7 +107,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         this.userRole = connectionConfig.getUserRole();
         this.catalogName = connectionConfig.getCatalogName();
         this.parameters = getJdbcParams(connectionConfig);
-        this.autoConnect = autoConnect;
+        this.autoReConnect = autoReConnect;
         this.connectionExtensionPoint = ConnectionPluginUtil.getConnectionExtension(connectionConfig.getDialectType());
     }
 
@@ -195,7 +195,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     @Override
     public DataSource getDataSource() {
         String jdbcUrl = getJdbcUrl();
-        SingleConnectionDataSource dataSource = new SingleConnectionDataSource(autoConnect);
+        SingleConnectionDataSource dataSource = new SingleConnectionDataSource(autoReConnect);
         dataSource.setEventPublisher(eventPublisher);
         dataSource.setUrl(jdbcUrl);
         dataSource.setUsername(username);

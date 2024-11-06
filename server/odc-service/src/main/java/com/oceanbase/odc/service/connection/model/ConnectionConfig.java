@@ -343,9 +343,6 @@ public class ConnectionConfig
     @JsonProperty(access = Access.READ_ONLY)
     private Date dbObjectLastSyncTime;
 
-    @JsonIgnore
-    private boolean autoConnect;
-
     /**
      * 连接类型，可选值 CONNECT_TYPE_CLOUD/CONNECT_TYPE_OB 。只读参数
      *
