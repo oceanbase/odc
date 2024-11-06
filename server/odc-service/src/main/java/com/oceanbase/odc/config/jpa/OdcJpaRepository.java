@@ -117,13 +117,6 @@ public interface OdcJpaRepository<T, ID extends Serializable>
         return (root, query, cb) -> cb.isNotNull(root.get(attr));
     }
 
-    static <T> Specification<T> jsonFieldEq(SingularAttribute<T, ?> attr, String jsonPath, Object value) {
-        String path = "$." + jsonPath;
-        return isNullOrEmpty(value) ? null
-                : (root, query, cb) -> cb
-                        .equal(cb.function("JSON_EXTRACT", String.class, root.get(attr), cb.literal(path)), value);
-    }
-
     static <T> Specification<T> eq(SingularAttribute<T, ?> attr, Object value) {
         return isNullOrEmpty(value) ? null : (root, query, cb) -> cb.equal(root.get(attr), value);
     }

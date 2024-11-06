@@ -71,8 +71,6 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
                 .and(OdcJpaRepository.notEq(ScheduleEntity_.status, ScheduleStatus.DELETED))
                 .and(OdcJpaRepository.in(ScheduleEntity_.creatorId, params.getCreatorIds()))
                 .and(OdcJpaRepository.like(ScheduleEntity_.name, params.getName()))
-                .and(OdcJpaRepository.jsonFieldEq(ScheduleEntity_.triggerConfigJson, "triggerStrategy",
-                        params.getTriggerStrategy()))
                 .and(OdcJpaRepository.eq(ScheduleEntity_.organizationId, params.getOrganizationId()));
         return findAll(specification, pageable);
     }
