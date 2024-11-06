@@ -72,13 +72,14 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
     private final TaskManagerFactory<SqlExecuteTaskManager> taskManagerFactory;
     private final Boolean autoCommit;
     private final EventPublisher eventPublisher;
+    private final boolean autoReconnect;
     @Setter
     private long sessionTimeoutMillis;
     @Setter
     private ConnectionSessionIdGenerator<CreateSessionReq> idGenerator;
 
     public DefaultConnectSessionFactory(@NonNull ConnectionConfig connectionConfig,
-            Boolean autoCommit, TaskManagerFactory<SqlExecuteTaskManager> taskManagerFactory) {
+            Boolean autoCommit, TaskManagerFactory<SqlExecuteTaskManager> taskManagerFactory, boolean autoReconnect) {
         this.sessionTimeoutMillis = TimeUnit.MILLISECONDS.convert(
                 ConnectionSessionConstants.SESSION_EXPIRATION_TIME_SECONDS, TimeUnit.SECONDS);
         this.connectionConfig = connectionConfig;
@@ -86,10 +87,16 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
         this.autoCommit = autoCommit == null || autoCommit;
         this.eventPublisher = new LocalEventPublisher();
         this.idGenerator = new DefaultConnectSessionIdGenerator();
+        this.autoReconnect = autoReconnect;
+    }
+
+    public DefaultConnectSessionFactory(@NonNull ConnectionConfig connectionConfig,
+            Boolean autoCommit, TaskManagerFactory<SqlExecuteTaskManager> taskManagerFactory) {
+        this(connectionConfig, autoCommit, taskManagerFactory, true);
     }
 
     public DefaultConnectSessionFactory(@NonNull ConnectionConfig connectionConfig) {
-        this(connectionConfig, null, null);
+        this(connectionConfig, null, null, true);
     }
 
     @Override
@@ -103,7 +110,8 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
     }
 
     private void registerConsoleDataSource(ConnectionSession session) {
-        OBConsoleDataSourceFactory dataSourceFactory = new OBConsoleDataSourceFactory(connectionConfig, autoCommit);
+        OBConsoleDataSourceFactory dataSourceFactory =
+                new OBConsoleDataSourceFactory(connectionConfig, autoCommit, true, autoReconnect);
         try {
             JdbcUrlParser urlParser = ConnectionPluginUtil
                     .getConnectionExtension(connectionConfig.getDialectType())

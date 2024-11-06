@@ -30,7 +30,7 @@ public class OscDBAccessorFactory {
     public OscDBAccessor generate(ConnectionSession connSession) {
 
         SyncJdbcExecutor syncJdbcExecutor = connSession.getSyncJdbcExecutor(
-                ConnectionSessionConstants.BACKEND_DS_KEY);
+                ConnectionSessionConstants.CONSOLE_DS_KEY);
         return connSession.getDialectType().isOracle() ? new OscOBOracleAccessor(syncJdbcExecutor)
                 : new OscOBMySqlAccessor(syncJdbcExecutor);
     }

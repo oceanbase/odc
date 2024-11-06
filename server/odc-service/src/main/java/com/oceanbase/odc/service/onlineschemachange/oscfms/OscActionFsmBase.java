@@ -411,7 +411,7 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
         public ConnectionSession createConnectionSession() {
             ConnectionConfig connectionConfig = connectionConfig();
             ConnectionSession connectionSession =
-                    new DefaultConnectSessionFactory(connectionConfig).generateSession();
+                    new DefaultConnectSessionFactory(connectionConfig, null, null, false).generateSession();
             ConnectionSessionUtil.setCurrentSchema(connectionSession,
                     dbName);
             return connectionSession;
