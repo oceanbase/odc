@@ -410,6 +410,7 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
         @Override
         public ConnectionSession createConnectionSession() {
             ConnectionConfig connectionConfig = connectionConfig();
+            connectionConfig.setAutoConnect(false);
             ConnectionSession connectionSession =
                     new DefaultConnectSessionFactory(connectionConfig).generateSession();
             ConnectionSessionUtil.setCurrentSchema(connectionSession,

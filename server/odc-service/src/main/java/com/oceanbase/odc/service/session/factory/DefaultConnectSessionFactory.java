@@ -103,7 +103,8 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
     }
 
     private void registerConsoleDataSource(ConnectionSession session) {
-        OBConsoleDataSourceFactory dataSourceFactory = new OBConsoleDataSourceFactory(connectionConfig, autoCommit);
+        OBConsoleDataSourceFactory dataSourceFactory =
+                new OBConsoleDataSourceFactory(connectionConfig, autoCommit, true, connectionConfig.isAutoConnect());
         try {
             JdbcUrlParser urlParser = ConnectionPluginUtil
                     .getConnectionExtension(connectionConfig.getDialectType())
