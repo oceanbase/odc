@@ -666,9 +666,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Override
     public Map<String, String> getJobAttributes(Long jobId) {
         List<JobAttributeEntity> attributeEntityList = jobAttributeRepository.findByJobId(jobId);
-        if (attributeEntityList == null) {
-            return Collections.emptyMap();
-        }
         return attributeEntityList.stream().collect(Collectors.toMap(
                 JobAttributeEntity::getAttributeKey,
                 JobAttributeEntity::getAttributeValue));

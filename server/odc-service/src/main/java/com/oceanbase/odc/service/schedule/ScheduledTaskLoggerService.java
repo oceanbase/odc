@@ -156,7 +156,7 @@ public class ScheduledTaskLoggerService {
             return String.format(DOWNLOAD_LOG_URL_PATTERN, scheduleId, scheduleTaskId);
         } catch (Exception e) {
             log.warn("get download log url failed, scheduleId={}, scheduleTaskId={}", scheduleId, scheduleTaskId, e);
-            return StrUtil.EMPTY;
+            throw new RuntimeException("get download log url failed, scheduleId=" + scheduleId, e);
         }
     }
 
