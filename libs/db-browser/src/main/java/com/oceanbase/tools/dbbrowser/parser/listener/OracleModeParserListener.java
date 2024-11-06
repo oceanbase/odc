@@ -418,26 +418,6 @@ public class OracleModeParserListener extends PlSqlParserBaseListener implements
         doRecord(SqlType.ROLLBACK, DBObjectType.OTHERS, null);
     }
 
-    @Override
-    public void enterComment_on_column(PlSqlParser.Comment_on_columnContext ctx) {
-        doRecord(SqlType.COMMENT, DBObjectType.COLUMN, null);
-    }
-
-    @Override
-    public void enterComment_on_table(PlSqlParser.Comment_on_tableContext ctx) {
-        doRecord(SqlType.COMMENT, DBObjectType.TABLE, null);
-    }
-
-    @Override
-    public void enterComment_on_materialized(PlSqlParser.Comment_on_materializedContext ctx) {
-        doRecord(SqlType.COMMENT, DBObjectType.OTHERS, null);
-    }
-
-    @Override
-    public void enterCall_spec(PlSqlParser.Call_specContext ctx) {
-        doRecord(SqlType.CALL, DBObjectType.OTHERS, null);
-    }
-
     private void doRecord(SqlType sqlType, DBObjectType dbObjectType, String rawPlName) {
         if (Objects.nonNull(sqlType) && Objects.isNull(this.sqlType)) {
             this.sqlType = sqlType;
