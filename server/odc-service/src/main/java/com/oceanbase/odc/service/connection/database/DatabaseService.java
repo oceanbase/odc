@@ -91,6 +91,7 @@ import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.collaboration.project.model.QueryProjectParams;
 import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.connection.ConnectionSyncHistoryService;
 import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
@@ -101,6 +102,8 @@ import com.oceanbase.odc.service.connection.database.model.ModifyDatabaseOwnerRe
 import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.model.ConnectionSyncErrorReason;
+import com.oceanbase.odc.service.connection.model.ConnectionSyncResult;
 import com.oceanbase.odc.service.db.DBSchemaService;
 import com.oceanbase.odc.service.db.schema.DBSchemaSyncTaskManager;
 import com.oceanbase.odc.service.db.schema.GlobalSearchProperties;
@@ -219,6 +222,9 @@ public class DatabaseService {
 
     @Autowired
     private MeterManager meterManager;
+
+    @Autowired
+    private ConnectionSyncHistoryService connectionSyncHistoryService;
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
@@ -492,12 +498,14 @@ public class DatabaseService {
     @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public Boolean syncDataSourceSchemas(@NonNull Long dataSourceId) throws InterruptedException {
         Boolean res = internalSyncDataSourceSchemas(dataSourceId);
-        try {
-            refreshExpiredPendingDBObjectStatus();
-            dbSchemaSyncTaskManager
-                    .submitTaskByDataSource(connectionService.getBasicWithoutPermissionCheck(dataSourceId));
-        } catch (Exception e) {
-            log.warn("Failed to submit sync database schema task for datasource id={}", dataSourceId, e);
+        if (res) {
+            try {
+                refreshExpiredPendingDBObjectStatus();
+                dbSchemaSyncTaskManager
+                        .submitTaskByDataSource(connectionService.getBasicWithoutPermissionCheck(dataSourceId));
+            } catch (Exception e) {
+                log.warn("Failed to submit sync database schema task for datasource id={}", dataSourceId, e);
+            }
         }
         return res;
     }
@@ -624,14 +632,20 @@ public class DatabaseService {
                         "update connect_database set table_count=?, collation_name=?, charset_name=?, project_id=? where id = ?";
                 jdbcTemplate.batchUpdate(update, toUpdate);
             }
+            connectionSyncHistoryService.upsert(connection.getId(), ConnectionSyncResult.SUCCESS, null, null);
         } catch (ExecutionException | InterruptedException | TimeoutException e) {
-            log.warn("Failed to obtain the connection, errorMessage={}", e.getMessage());
+            String errorMessage = e.getMessage();
             Throwable rootCause = e.getCause();
-            if (rootCause instanceof SQLException) {
+            ConnectionSyncErrorReason failedReason = ConnectionSyncErrorReason.UNKNOWN;
+            log.warn("Failed to obtain the connection, errorMessage={}", errorMessage);
+            if (rootCause instanceof SQLException
+                    && StringUtils.containsIgnoreCase(errorMessage, "cluster not exist")) {
+                failedReason = ConnectionSyncErrorReason.CLUSTER_NOT_EXIST;
                 deleteDatabaseIfClusterNotExists((SQLException) rootCause,
                         connection.getId(), "update connect_database set is_existed = 0 where connection_id=?");
-                throw new IllegalStateException(rootCause);
             }
+            connectionSyncHistoryService.upsert(connection.getId(), ConnectionSyncResult.FAILURE, failedReason,
+                    rootCause.getMessage());
         } finally {
             try {
                 executorService.shutdownNow();
@@ -716,13 +730,18 @@ public class DatabaseService {
                 jdbcTemplate.batchUpdate("delete from connect_database where id = ?", toDelete);
             }
         } catch (ExecutionException | InterruptedException | TimeoutException e) {
-            log.warn("Failed to obtain the connection, errorMessage={}", e.getMessage());
+            String errorMessage = e.getMessage();
             Throwable rootCause = e.getCause();
-            if (rootCause instanceof SQLException) {
+            ConnectionSyncErrorReason failedReason = ConnectionSyncErrorReason.UNKNOWN;
+            log.warn("Failed to obtain the connection, errorMessage={}", errorMessage);
+            if (rootCause instanceof SQLException
+                    && StringUtils.containsIgnoreCase(errorMessage, "cluster not exist")) {
+                failedReason = ConnectionSyncErrorReason.CLUSTER_NOT_EXIST;
                 deleteDatabaseIfClusterNotExists((SQLException) rootCause,
                         connection.getId(), "delete from connect_database where connection_id=?");
-                throw new IllegalStateException(rootCause);
             }
+            connectionSyncHistoryService.upsert(connection.getId(), ConnectionSyncResult.FAILURE, failedReason,
+                    rootCause.getMessage());
         } finally {
             try {
                 executorService.shutdownNow();
