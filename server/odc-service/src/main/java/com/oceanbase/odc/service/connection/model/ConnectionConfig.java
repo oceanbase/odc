@@ -64,7 +64,7 @@ import lombok.ToString;
  */
 @Data
 @ToString(exclude = {"salt", "password", "sysTenantPassword", "readonlyPassword",
-        "passwordEncrypted", "sysTenantPasswordEncrypted", "readonlyPasswordEncrypted", "sslFileEntry", "autoConnect"})
+        "passwordEncrypted", "sysTenantPasswordEncrypted", "readonlyPasswordEncrypted", "sslFileEntry"})
 public class ConnectionConfig
         implements SecurityResource, OrganizationIsolated, CloudConnectionConfig, SSLConnectionConfig, Serializable {
     private static final long serialVersionUID = -7198204983655038981L;
@@ -343,6 +343,7 @@ public class ConnectionConfig
     @JsonProperty(access = Access.READ_ONLY)
     private Date dbObjectLastSyncTime;
 
+    @JsonIgnore
     private boolean autoConnect;
 
     /**
