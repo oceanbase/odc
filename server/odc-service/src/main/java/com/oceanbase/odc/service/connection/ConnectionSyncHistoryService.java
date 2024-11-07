@@ -45,6 +45,7 @@ public class ConnectionSyncHistoryService {
 
     @Transactional(rollbackFor = Exception.class)
     public void upsert(@NonNull Long connectionId, @NonNull ConnectionSyncResult syncResult,
+            @NonNull Long organizationId,
             ConnectionSyncErrorReason errorReason, String errorMessage) {
         Optional<ConnectionSyncHistoryEntity> historyEntityOpt =
                 connectionSyncHistoryRepository.findByConnectionId(connectionId);
@@ -54,6 +55,7 @@ public class ConnectionSyncHistoryService {
         } else {
             historyEntity = new ConnectionSyncHistoryEntity();
             historyEntity.setConnectionId(connectionId);
+            historyEntity.setOrganizationId(organizationId);
         }
         historyEntity.setLastSyncResult(syncResult);
         historyEntity.setLastSyncTime(new Date(System.currentTimeMillis()));

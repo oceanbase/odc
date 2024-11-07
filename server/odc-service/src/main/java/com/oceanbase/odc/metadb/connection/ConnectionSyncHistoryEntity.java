@@ -56,6 +56,9 @@ public class ConnectionSyncHistoryEntity {
     @Column(name = "update_time", insertable = false, updatable = false)
     private Date updateTime;
 
+    @Column(name = "organization_id", updatable = false)
+    private Long organizationId;
+
     @Column(name = "connection_id", updatable = false)
     private Long connectionId;
 
@@ -66,6 +69,7 @@ public class ConnectionSyncHistoryEntity {
     @Column(name = "last_sync_time")
     private Date lastSyncTime;
 
+    @Enumerated(value = EnumType.STRING)
     @Column(name = "last_sync_error_reason")
     private ConnectionSyncErrorReason lastSyncErrorReason;
 

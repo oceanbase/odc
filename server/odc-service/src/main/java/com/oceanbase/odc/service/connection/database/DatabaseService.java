@@ -494,7 +494,6 @@ public class DatabaseService {
         return true;
     }
 
-    @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public Boolean syncDataSourceSchemas(@NonNull Long dataSourceId) throws InterruptedException {
         Boolean res = internalSyncDataSourceSchemas(dataSourceId);
@@ -566,6 +565,7 @@ public class DatabaseService {
                     if (blockExcludeSchemas && excludeSchemas.contains(database.getName())) {
                         entity.setProjectId(null);
                     }
+                    entity.setLastSyncTime(new Date(System.currentTimeMillis()));
                     return entity;
                 }).collect(Collectors.toList());
             }
@@ -598,25 +598,27 @@ public class DatabaseService {
                             database.getTableCount(),
                             database.getExisted(),
                             database.getObjectSyncStatus().name(),
-                            database.getConnectType().name()
+                            database.getConnectType().name(),
+                            database.getLastSyncTime()
                     }).collect(Collectors.toList());
 
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
             if (CollectionUtils.isNotEmpty(toAdd)) {
                 jdbcTemplate.batchUpdate(
-                        "insert into connect_database(database_id, organization_id, name, project_id, connection_id, environment_id, sync_status, charset_name, collation_name, table_count, is_existed, object_sync_status, connect_type) values(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        "insert into connect_database(database_id, organization_id, name, project_id, connection_id, environment_id, sync_status, charset_name, collation_name, table_count, is_existed, object_sync_status, connect_type, last_sync_time) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                         toAdd);
             }
             List<Object[]> toDelete = existedDatabasesInDb.stream()
                     .filter(database -> !latestDatabaseNames.contains(database.getName()))
                     .map(database -> new Object[] {getProjectId(database, currentProjectId, excludeSchemas),
-                            database.getId()})
+                            new Date(System.currentTimeMillis()), database.getId()})
                     .collect(Collectors.toList());
             /**
              * just set existed to false if the database has been dropped instead of deleting it directly
              */
             if (!CollectionUtils.isEmpty(toDelete)) {
-                String deleteSql = "update connect_database set is_existed = 0, project_id=? where id = ?";
+                String deleteSql =
+                        "update connect_database set is_existed = 0, project_id=?, last_sync_time=? where id = ?";
                 jdbcTemplate.batchUpdate(deleteSql, toDelete);
             }
             List<Object[]> toUpdate = existedDatabasesInDb.stream()
@@ -624,15 +626,17 @@ public class DatabaseService {
                     .map(database -> {
                         DatabaseEntity latest = latestDatabaseName2Database.get(database.getName()).get(0);
                         return new Object[] {latest.getTableCount(), latest.getCollationName(), latest.getCharsetName(),
-                                getProjectId(database, currentProjectId, excludeSchemas), database.getId()};
+                                getProjectId(database, currentProjectId, excludeSchemas), latest.getLastSyncTime(),
+                                database.getId()};
                     })
                     .collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(toUpdate)) {
                 String update =
-                        "update connect_database set table_count=?, collation_name=?, charset_name=?, project_id=? where id = ?";
+                        "update connect_database set table_count=?, collation_name=?, charset_name=?, project_id=?, last_sync_time=? where id = ?";
                 jdbcTemplate.batchUpdate(update, toUpdate);
             }
-            connectionSyncHistoryService.upsert(connection.getId(), ConnectionSyncResult.SUCCESS, null, null);
+            connectionSyncHistoryService.upsert(connection.getId(), ConnectionSyncResult.SUCCESS,
+                    connection.getOrganizationId(), null, null);
         } catch (ExecutionException | InterruptedException | TimeoutException e) {
             String errorMessage = e.getMessage();
             Throwable rootCause = e.getCause();
@@ -644,7 +648,8 @@ public class DatabaseService {
                 deleteDatabaseIfClusterNotExists((SQLException) rootCause,
                         connection.getId(), "update connect_database set is_existed = 0 where connection_id=?");
             }
-            connectionSyncHistoryService.upsert(connection.getId(), ConnectionSyncResult.FAILURE, failedReason,
+            connectionSyncHistoryService.upsert(connection.getId(), ConnectionSyncResult.FAILURE,
+                    connection.getOrganizationId(), failedReason,
                     rootCause.getMessage());
         } finally {
             try {
@@ -710,14 +715,15 @@ public class DatabaseService {
                             connection.getEnvironmentId(),
                             DatabaseSyncStatus.SUCCEEDED.name(),
                             DBObjectSyncStatus.INITIALIZED.name(),
-                            connection.getType().name()
+                            connection.getType().name(),
+                            new Date(System.currentTimeMillis())
                     })
                     .collect(Collectors.toList());
 
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
             if (CollectionUtils.isNotEmpty(toAdd)) {
                 jdbcTemplate.batchUpdate(
-                        "insert into connect_database(database_id, organization_id, name, connection_id, environment_id, sync_status, object_sync_status, connect_type) values(?,?,?,?,?,?,?,?)",
+                        "insert into connect_database(database_id, organization_id, name, connection_id, environment_id, sync_status, object_sync_status, connect_type, last_sync_time) values(?,?,?,?,?,?,?,?,?)",
                         toAdd);
             }
 
@@ -729,6 +735,8 @@ public class DatabaseService {
             if (!CollectionUtils.isEmpty(toDelete)) {
                 jdbcTemplate.batchUpdate("delete from connect_database where id = ?", toDelete);
             }
+            connectionSyncHistoryService.upsert(connection.getId(), ConnectionSyncResult.SUCCESS,
+                    connection.getOrganizationId(), null, null);
         } catch (ExecutionException | InterruptedException | TimeoutException e) {
             String errorMessage = e.getMessage();
             Throwable rootCause = e.getCause();
@@ -740,7 +748,8 @@ public class DatabaseService {
                 deleteDatabaseIfClusterNotExists((SQLException) rootCause,
                         connection.getId(), "delete from connect_database where connection_id=?");
             }
-            connectionSyncHistoryService.upsert(connection.getId(), ConnectionSyncResult.FAILURE, failedReason,
+            connectionSyncHistoryService.upsert(connection.getId(), ConnectionSyncResult.FAILURE,
+                    connection.getOrganizationId(), failedReason,
                     rootCause.getMessage());
         } finally {
             try {
