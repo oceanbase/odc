@@ -34,6 +34,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class DBSessionResp {
     private DBSession session;
-
     private SessionSettings settings;
+    private boolean killCurrentQuerySupported;
 }

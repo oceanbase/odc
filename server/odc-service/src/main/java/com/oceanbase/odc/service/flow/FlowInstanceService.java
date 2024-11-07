@@ -154,6 +154,9 @@ import com.oceanbase.odc.service.integration.model.ApprovalProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
+import com.oceanbase.odc.service.monitor.DefaultMeterName;
+import com.oceanbase.odc.service.monitor.MeterKey;
+import com.oceanbase.odc.service.monitor.MeterManager;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
@@ -175,6 +178,7 @@ import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
+import io.micrometer.core.instrument.Tag;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -257,12 +261,14 @@ public class FlowInstanceService {
     private EnvironmentRepository environmentRepository;
     @Autowired
     private EnvironmentService environmentService;
+    @Autowired
+    private MeterManager meterManager;
 
-    private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
-    private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
     private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
     private static final String ODC_SITE_URL = "odc.site.url";
     private static final int MAX_APPLY_DATABASE_SIZE = 10;
+    private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
+    private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
 
     @PostConstruct
     public void init() {
@@ -943,6 +949,9 @@ public class FlowInstanceService {
         }
         log.info("New flow instance succeeded, instanceId={}, flowInstanceReq={}",
                 flowInstance.getId(), flowInstanceReq);
+        MeterKey meterKey = MeterKey.ofMeter(DefaultMeterName.FLOW_CREATED_COUNT,
+                Tag.of("organizationId", flowInstance.getOrganizationId().toString()));
+        meterManager.incrementCounter(meterKey);
         return FlowInstanceDetailResp.withIdAndType(flowInstance.getId(), flowInstanceReq.getTaskType());
     }
 

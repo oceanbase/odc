@@ -21,13 +21,13 @@ import java.util.Map;
 
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
-import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
+import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeContextHolder;
 import com.oceanbase.odc.service.onlineschemachange.ddl.DdlConstants;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.schedule.ScheduleService;
@@ -51,10 +51,10 @@ public class ActionScheduler {
     @Autowired
     private QuartzJobService quartzJobService;
 
-    public void submitFMSScheduler(ScheduleEntity scheduleEntity, Long scheduleTaskId) {
+    public void submitFMSScheduler(ScheduleEntity scheduleEntity, Long scheduleTaskId, Long taskID) {
         Long scheduleId = scheduleEntity.getId();
         JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleId, JobType.ONLINE_SCHEMA_CHANGE_COMPLETE);
-        Map<String, Object> triggerData = getStringObjectMap(scheduleTaskId);
+        Map<String, Object> triggerData = getStringObjectMap(scheduleTaskId, scheduleEntity, taskID);
         try {
             if (quartzJobService.checkExists(jobKey)) {
                 scheduleService.innerUpdateTriggerData(scheduleId, triggerData);
@@ -85,10 +85,15 @@ public class ActionScheduler {
         }
     }
 
-    private static Map<String, Object> getStringObjectMap(Long scheduleTaskId) {
+    private static Map<String, Object> getStringObjectMap(Long scheduleTaskId, ScheduleEntity scheduleEntity,
+            Long taskID) {
         Map<String, Object> dataMap = new HashMap<>(2);
         dataMap.put(OdcConstants.SCHEDULE_TASK_ID, scheduleTaskId);
-        dataMap.put(DdlConstants.MDC_CONTEXT, JsonUtils.toJson(MDC.getCopyOfContextMap()));
+        Map<String, String> mdcContext = new HashMap<>();
+        mdcContext.put(OnlineSchemaChangeContextHolder.TASK_WORK_SPACE, String.valueOf(scheduleEntity.getCreatorId()));
+        mdcContext.put(OdcConstants.ORGANIZATION_ID, String.valueOf(scheduleEntity.getOrganizationId()));
+        mdcContext.put(OnlineSchemaChangeContextHolder.TASK_ID, String.valueOf(taskID));
+        dataMap.put(DdlConstants.MDC_CONTEXT, JsonUtils.toJson(mdcContext));
         return dataMap;
     }
 }

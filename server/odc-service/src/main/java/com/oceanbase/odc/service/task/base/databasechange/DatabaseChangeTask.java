@@ -91,6 +91,7 @@ import com.oceanbase.odc.service.session.OdcStatementCallBack;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.initializer.ConsoleTimeoutInitializer;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
+import com.oceanbase.odc.service.task.TaskContext;
 import com.oceanbase.odc.service.task.base.BaseTask;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
@@ -185,7 +186,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected boolean doStart(JobContext context) throws JobException {
+    protected boolean doStart(JobContext context, TaskContext taskContext) throws JobException {
         try {
             int index = 0;
             while (sqlIterator.hasNext()) {
@@ -243,6 +244,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
                         aborted = true;
                         break;
                     }
+                    taskContext.getExceptionListener().onException(e);
                 }
             }
             writeZipFile();

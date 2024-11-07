@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.dummy;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.oceanbase.odc.service.task.TaskContext;
 import com.oceanbase.odc.service.task.base.BaseTask;
 import com.oceanbase.odc.service.task.caller.JobContext;
 
@@ -48,7 +49,7 @@ public class DummyTask extends BaseTask<String> {
     protected void doInit(JobContext context) throws Exception {}
 
     @Override
-    protected boolean doStart(JobContext context) throws Exception {
+    protected boolean doStart(JobContext context, TaskContext taskContext) throws Exception {
         while (!stopped.get() && loopCount.get() < maxLoopCount) {
             Thread.sleep(1000);
             log.info("dummy task loop for to {}", loopCount.get());

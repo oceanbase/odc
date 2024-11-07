@@ -58,10 +58,11 @@ public abstract class BaseForeignKeyHandler implements ForeignKeyHandler {
          * Old child table reference to a parent a table, will cause a new parent table can't execute dml.
          * So we remove foreign key from old child table
          */
-        List<DBTableConstraint> dbTableConstraints = DBSchemaAccessors.create(connectionSession)
-                .listTableConstraints(schemaName, tableName)
-                .stream().filter(a -> a.getType() == DBConstraintType.FOREIGN_KEY)
-                .collect(Collectors.toList());
+        List<DBTableConstraint> dbTableConstraints =
+                DBSchemaAccessors.create(connectionSession, ConnectionSessionConstants.CONSOLE_DS_KEY)
+                        .listTableConstraints(schemaName, tableName)
+                        .stream().filter(a -> a.getType() == DBConstraintType.FOREIGN_KEY)
+                        .collect(Collectors.toList());
         if (CollectionUtils.isEmpty(dbTableConstraints)) {
             return;
         }
@@ -84,7 +85,8 @@ public abstract class BaseForeignKeyHandler implements ForeignKeyHandler {
         if (CollectionUtils.isEmpty(referencedConstraint)) {
             return;
         }
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
+        DBSchemaAccessor accessor =
+                DBSchemaAccessors.create(connectionSession, ConnectionSessionConstants.CONSOLE_DS_KEY);
         referencedConstraint.forEach(constraint -> {
             doAlterTableForeignKeyReference(schemaName, oldTableName, newTableName, accessor, constraint);
         });
@@ -120,7 +122,7 @@ public abstract class BaseForeignKeyHandler implements ForeignKeyHandler {
     protected abstract List<DBTableReferencedInfo> getTableConstraintByReferenced(String schemaName, String tableName);
 
     protected SyncJdbcExecutor getSyncJdbcExecutor() {
-        return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
+        return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
     }
 
     @Setter

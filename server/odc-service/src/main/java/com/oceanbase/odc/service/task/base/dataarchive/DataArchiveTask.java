@@ -35,6 +35,7 @@ import com.oceanbase.odc.service.dlm.model.DlmTableUnitParameters;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.schedule.job.DLMJobReq;
 import com.oceanbase.odc.service.schedule.model.DlmTableUnitStatistic;
+import com.oceanbase.odc.service.task.TaskContext;
 import com.oceanbase.odc.service.task.base.BaseTask;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
@@ -70,7 +71,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
     }
 
     @Override
-    protected boolean doStart(JobContext context) throws Exception {
+    protected boolean doStart(JobContext context, TaskContext taskContext) throws Exception {
 
         jobStore.setJobParameters(getJobParameters());
         DLMJobReq parameters =
@@ -85,6 +86,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
             jobStore.setDlmTableUnits(result);
         } catch (Exception e) {
             log.warn("Get dlm job failed!", e);
+            taskContext.getExceptionListener().onException(e);
             return false;
         }
         Set<String> dlmTableUnitIds = result.keySet();
@@ -136,6 +138,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
                     finishTableUnit(dlmTableUnitId, TaskStatus.CANCELED);
                 } else {
                     finishTableUnit(dlmTableUnitId, TaskStatus.FAILED);
+                    taskContext.getExceptionListener().onException(e);
                 }
             }
         }

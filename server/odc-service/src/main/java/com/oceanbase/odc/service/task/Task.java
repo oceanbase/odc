@@ -32,7 +32,7 @@ public interface Task<RESULT> {
     /**
      * Start current task. This method will be called by TaskExecutor for fire a task
      */
-    void start(JobContext context);
+    void start(TaskContext taskContext);
 
     /**
      * Stop current task. This method will be called TaskExecutor for stop a task

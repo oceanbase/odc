@@ -114,6 +114,8 @@ public class ConnectionSessionConstants {
     public static final String BACKEND_DS_KEY = "BACKEND-DATASOURCE";
     public static final String CONNECTION_RESET_KEY = "CONSOLE_SESSION_RESET";
     public static final String CONNECTION_KILLQUERY_KEY = "CONNECTION_KILLQUERY_KEY";
+    public static final String CONNECTION_CLIENTINFO_KEY = "CONNECTION_CLIENTINFO_KEY";
+
 
     /**
      * Column meta info accessor stored in connectionSession

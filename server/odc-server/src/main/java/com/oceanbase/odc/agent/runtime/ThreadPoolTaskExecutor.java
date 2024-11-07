@@ -27,7 +27,9 @@ import java.util.concurrent.TimeoutException;
 import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
+import com.oceanbase.odc.service.task.ExceptionListener;
 import com.oceanbase.odc.service.task.Task;
+import com.oceanbase.odc.service.task.TaskContext;
 import com.oceanbase.odc.service.task.base.BaseTask;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.executor.TraceDecoratorThreadFactory;
@@ -68,9 +70,20 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
         }
         Future<?> future = executor.submit(() -> {
             try {
-                task.start(jc);
+                task.start(new TaskContext() {
+                    @Override
+                    public ExceptionListener getExceptionListener() {
+                        return task;
+                    }
+
+                    @Override
+                    public JobContext getJobContext() {
+                        return jc;
+                    }
+                });
             } catch (Exception e) {
                 log.error("Task start failed, jobIdentity={}.", jobIdentity.getId(), e);
+                task.onException(e);
             }
         });
         futures.put(jobIdentity, future);

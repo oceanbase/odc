@@ -82,9 +82,7 @@ import com.oceanbase.odc.service.task.executor.HeartbeatRequest;
 import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.listener.DefaultJobProcessUpdateEvent;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
-import com.oceanbase.odc.service.task.processor.DLMResultProcessor;
-import com.oceanbase.odc.service.task.processor.LoadDataResultProcessor;
-import com.oceanbase.odc.service.task.processor.LogicalDBChangeResultProcessor;
+import com.oceanbase.odc.service.task.processor.result.ResultProcessor;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.state.JobStatusFsm;
@@ -92,6 +90,8 @@ import com.oceanbase.odc.service.task.util.JobDateUtils;
 import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
+import cn.hutool.core.text.CharSequenceUtil;
+import cn.hutool.core.util.StrUtil;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -137,15 +137,10 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     private TaskExecutorClient taskExecutorClient;
     @Autowired
     private ExecutorEndpointManager executorEndpointManager;
-    @Autowired
-    private DLMResultProcessor dlmResultProcessor;
-    @Autowired
-    private LogicalDBChangeResultProcessor logicalDBChangeResultProcessor;
-    @Autowired
-    private LoadDataResultProcessor loadDataResultProcessor;
-
     // default impl
     private JobStatusFsm jobStatusFsm = new JobStatusFsm();
+    @Autowired
+    private List<ResultProcessor> resultProcessors;
 
     @Override
     public JobEntity find(Long id) {
@@ -381,11 +376,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             return;
         }
         log.info("Progress changed, will update result, jobId={}, currentProgress={}", id, result.getProgress());
-        if ("DLM".equals(je.getJobType())) {
-            dlmResultProcessor.process(result);
-        } else if (StringUtils.equalsIgnoreCase("LogicalDatabaseChange", je.getJobType())) {
-            logicalDBChangeResultProcessor.process(result);
-        }
+        handleTaskResult(je.getJobType(), result);
         saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
 
         if (result.getStatus().isTerminated() && MapUtils.isEmpty(result.getLogMetadata())) {
@@ -414,9 +405,18 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
             // TODO maybe we can destroy the pod there.
             if (result.getStatus() == TaskStatus.FAILED) {
-                AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED,
-                        MessageFormat.format("Job execution failed, jobId={0}",
-                                result.getJobIdentity().getId()));
+                Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                        .item(AlarmUtils.ORGANIZATION_NAME, Optional.ofNullable(jobEntity.getOrganizationId()).map(
+                                Object::toString).orElse(StrUtil.EMPTY))
+                        .item(AlarmUtils.TASK_JOB_ID_NAME, String.valueOf(jobEntity.getId()))
+                        .item(AlarmUtils.MESSAGE_NAME,
+                                MessageFormat.format("Job execution failed, jobId={0}",
+                                        result.getJobIdentity().getId()))
+                        .item(AlarmUtils.FAILED_REASON_NAME,
+                                CharSequenceUtil.nullToDefault(result.getErrorMessage(),
+                                        CharSequenceUtil.EMPTY))
+                        .build();
+                AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED, eventMessage);
             }
         }
     }
@@ -434,7 +434,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
-    public boolean refreshLogMeta(Long id) {
+    public boolean refreshLogMetaForCancelJob(Long id) {
         JobEntity je = find(id);
         // CANCELING is also a state within the running phase
         if (JobStatus.RUNNING != je.getStatus() && JobStatus.CANCELING != je.getStatus()) {
@@ -451,14 +451,11 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                         je.getStatus());
                 return false;
             }
+            // force update result json once
+            // TODO(tianke): move this logic to event listener
+            jobRepository.updateResultJson(JsonUtils.toJson(result), result.getJobIdentity().getId());
             saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
-            if ("DLM".equals(je.getJobType())) {
-                dlmResultProcessor.process(result);
-            } else if (StringUtils.equalsIgnoreCase("LogicalDatabaseChange", je.getJobType())) {
-                logicalDBChangeResultProcessor.process(result);
-            } else if (StringUtils.equalsIgnoreCase("LOAD_DATA", je.getJobType())) {
-                loadDataResultProcessor.process(result);
-            }
+            handleTaskResult(je.getJobType(), result);
             return true;
         } catch (Exception exception) {
             log.warn("Refresh log meta failed,errorMsg={}", exception.getMessage());
@@ -516,11 +513,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     private int updateTaskResult(TaskResult taskResult, JobEntity currentJob, JobStatus expectedStatus) {
         JobEntity jse = new JobEntity();
-        if ("DLM".equals(currentJob.getJobType())) {
-            dlmResultProcessor.process(taskResult);
-        } else if (StringUtils.equalsIgnoreCase("LogicalDatabaseChange", currentJob.getJobType())) {
-            logicalDBChangeResultProcessor.process(taskResult);
-        }
+        handleTaskResult(currentJob.getJobType(), taskResult);
         jse.setResultJson(taskResult.getResultJson());
         jse.setStatus(expectedStatus);
         jse.setProgressPercentage(taskResult.getProgress());
@@ -695,4 +688,11 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 JobAttributeEntity::getAttributeValue));
     }
 
+    private void handleTaskResult(String jobType, TaskResult taskResult) {
+        for (ResultProcessor processor : resultProcessors) {
+            if (processor.interested(jobType)) {
+                processor.process(taskResult);
+            }
+        }
+    }
 }
