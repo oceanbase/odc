@@ -113,7 +113,7 @@ public interface ConnectionConfigRepository
             "WHERE cc.visible_scope = 'ORGANIZATION' AND ("
             + " OR csh.last_sync_result = 'SUCCESS'"
             + " OR csh.last_sync_error_reason IS NULL"
-            + " OR csh.last_sync_error_reason != 'CLUSTER_NOT_EXIST')",
+            + " OR csh.last_sync_error_reason != 'CLUSTER_NOT_EXISTS')",
             nativeQuery = true)
     List<ConnectionEntity> findSyncableConnections();
 
@@ -122,7 +122,7 @@ public interface ConnectionConfigRepository
             "WHERE cc.organization_id IN (:organizationIds) AND cc.visible_scope = 'ORGANIZATION' AND ("
             + " csh.last_sync_result = 'SUCCESS'"
             + " OR csh.last_sync_error_reason IS NULL"
-            + " OR csh.last_sync_error_reason != 'CLUSTER_NOT_EXIST')",
+            + " OR csh.last_sync_error_reason != 'CLUSTER_NOT_EXISTS')",
             nativeQuery = true)
     List<ConnectionEntity> findSyncableConnectionsByOrganizationIdIn(
             @Param("organizationIds") Collection<Long> organizationIds);

@@ -16,6 +16,6 @@
 package com.oceanbase.odc.service.connection.model;
 
 public enum ConnectionSyncErrorReason {
-    CLUSTER_NOT_EXIST,
+    CLUSTER_NOT_EXISTS,
     UNKNOWN,
 }

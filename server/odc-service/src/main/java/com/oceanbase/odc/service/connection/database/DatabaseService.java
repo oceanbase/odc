@@ -644,7 +644,7 @@ public class DatabaseService {
             log.warn("Failed to obtain the connection, errorMessage={}", errorMessage);
             if (rootCause instanceof SQLException
                     && StringUtils.containsIgnoreCase(errorMessage, "cluster not exist")) {
-                failedReason = ConnectionSyncErrorReason.CLUSTER_NOT_EXIST;
+                failedReason = ConnectionSyncErrorReason.CLUSTER_NOT_EXISTS;
                 deleteDatabaseIfClusterNotExists((SQLException) rootCause,
                         connection.getId(), "update connect_database set is_existed = 0 where connection_id=?");
             }
@@ -744,7 +744,7 @@ public class DatabaseService {
             log.warn("Failed to obtain the connection, errorMessage={}", errorMessage);
             if (rootCause instanceof SQLException
                     && StringUtils.containsIgnoreCase(errorMessage, "cluster not exist")) {
-                failedReason = ConnectionSyncErrorReason.CLUSTER_NOT_EXIST;
+                failedReason = ConnectionSyncErrorReason.CLUSTER_NOT_EXISTS;
                 deleteDatabaseIfClusterNotExists((SQLException) rootCause,
                         connection.getId(), "delete from connect_database where connection_id=?");
             }
