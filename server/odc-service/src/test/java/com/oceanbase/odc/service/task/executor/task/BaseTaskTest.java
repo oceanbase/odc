@@ -26,10 +26,13 @@ import org.mockito.Mockito;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.task.ExceptionListener;
 import com.oceanbase.odc.service.task.TaskContext;
+import com.oceanbase.odc.service.task.base.BaseTask;
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
-import com.oceanbase.odc.service.task.executor.server.TaskMonitor;
+import com.oceanbase.odc.service.task.executor.DefaultTaskResult;
+import com.oceanbase.odc.service.task.executor.DefaultTaskResultBuilder;
+import com.oceanbase.odc.service.task.executor.TaskMonitor;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
