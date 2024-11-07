@@ -350,6 +350,43 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         handleTaskResultInner(je, taskResult);
     }
 
+    private void doRefreshResult(Long id) throws JobException {
+        JobEntity je = find(id);
+        // CANCELING is also a state within the running phase
+        if (JobStatus.RUNNING != je.getStatus()) {
+            log.info("Job is not running, ignore refresh, jobId={}, currentStatus={}", id, je.getStatus());
+            return;
+        }
+
+        String executorEndpoint = executorEndpointManager.getExecutorEndpoint(je);
+        DefaultTaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
+        if (result.getStatus() == TaskStatus.PREPARING) {
+            log.info("Job is preparing, ignore refresh, jobId={}, currentStatus={}", id, result.getStatus());
+            return;
+        }
+        DefaultTaskResult previous = JsonUtils.fromJson(je.getResultJson(), DefaultTaskResult.class);
+
+        if (!updateHeartbeatTime(id)) {
+            log.warn("Update lastHeartbeatTime failed, the job may finished or deleted already, jobId={}", id);
+            return;
+        }
+        if (!result.progressChanged(previous)) {
+            log.info("Progress not changed, skip update result to metadb, jobId={}, currentProgress={}",
+                    id, result.getProgress());
+            return;
+        }
+        log.info("Progress changed, will update result, jobId={}, currentProgress={}", id, result.getProgress());
+        handleTaskResult(je.getJobType(), result);
+        saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
+
+        if (result.getStatus().isTerminated() && MapUtils.isEmpty(result.getLogMetadata())) {
+            log.info("Job is finished but log have not uploaded, continue monitor result, jobId={}, currentStatus={}",
+                    je.getId(), je.getStatus());
+            return;
+        }
+        handleTaskResultInner(je, result);
+    }
+
     protected void handleTaskResultInner(JobEntity jobEntity, TaskResult result) {
         JobStatus expectedJobStatus = jobStatusFsm.determinateJobStatus(jobEntity.getStatus(), result.getStatus());
         int rows = updateTaskResult(result, jobEntity, expectedJobStatus);
@@ -433,43 +470,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             ResourceID resourceID = ResourceIDUtil.getResourceID(executorIdentifier, jobEntity);
             resourceManager.release(resourceID);
         }
-    }
-
-    private void doRefreshResult(Long id) throws JobException {
-        JobEntity je = find(id);
-        // CANCELING is also a state within the running phase
-        if (JobStatus.RUNNING != je.getStatus()) {
-            log.info("Job is not running, ignore refresh, jobId={}, currentStatus={}", id, je.getStatus());
-            return;
-        }
-
-        String executorEndpoint = executorEndpointManager.getExecutorEndpoint(je);
-        DefaultTaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
-        if (result.getStatus() == TaskStatus.PREPARING) {
-            log.info("Job is preparing, ignore refresh, jobId={}, currentStatus={}", id, result.getStatus());
-            return;
-        }
-        DefaultTaskResult previous = JsonUtils.fromJson(je.getResultJson(), DefaultTaskResult.class);
-
-        if (!updateHeartbeatTime(id)) {
-            log.warn("Update lastHeartbeatTime failed, the job may finished or deleted already, jobId={}", id);
-            return;
-        }
-        if (!result.progressChanged(previous)) {
-            log.info("Progress not changed, skip update result to metadb, jobId={}, currentProgress={}",
-                    id, result.getProgress());
-            return;
-        }
-        log.info("Progress changed, will update result, jobId={}, currentProgress={}", id, result.getProgress());
-        handleTaskResult(je.getJobType(), result);
-        saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
-
-        if (result.getStatus().isTerminated() && MapUtils.isEmpty(result.getLogMetadata())) {
-            log.info("Job is finished but log have not uploaded, continue monitor result, jobId={}, currentStatus={}",
-                    je.getId(), je.getStatus());
-            return;
-        }
-        handleTaskResultInner(je, result);
     }
 
     private boolean updateHeartbeatTime(Long id) {
