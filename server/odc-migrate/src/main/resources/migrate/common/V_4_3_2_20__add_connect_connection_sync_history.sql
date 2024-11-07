@@ -8,5 +8,6 @@ create table if not exists connect_connection_sync_history(
   `last_sync_time` datetime NOT NULL COMMENT 'last sync time of the sync',
   `last_sync_error_reason` varchar(128) DEFAULT NULL COMMENT 'last error reason of the sync; null if sync succeeded',
   `last_sync_error_message` mediumtext DEFAULT NULL COMMENT 'last error message of the sync; null if sync succeeded',
+  CONSTRAINT `pk_connect_connection_sync_history_id` PRIMARY KEY (`id`),
   constraint `uk_connection_sync_record_connection_id` unique key(`connection_id`)
 );
