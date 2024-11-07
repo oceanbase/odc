@@ -16,13 +16,11 @@
 package com.oceanbase.odc.service.db.schema.syncer.object;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -32,7 +30,7 @@ import com.oceanbase.odc.metadb.iam.PermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.table.TableService;
+import com.oceanbase.odc.service.feature.VersionDiffConfigService;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
@@ -54,9 +52,9 @@ public class DBExternalTableSyncer extends AbstractDBObjectSyncer<TableExtension
 
     @Autowired
     private UserPermissionRepository userPermissionRepository;
+
     @Autowired
-    @Lazy
-    private TableService tableService;
+    private VersionDiffConfigService versionDiffConfigService;
 
     @Override
     protected void preDelete(@NonNull Set<Long> toBeDeletedIds) {
@@ -69,15 +67,8 @@ public class DBExternalTableSyncer extends AbstractDBObjectSyncer<TableExtension
 
     @Override
     public boolean supports(@NonNull DialectType dialectType, @NonNull Connection connection) {
-        boolean externalTableSupported;
-        try {
-            externalTableSupported = tableService.checkExternalTableSupported(dialectType, connection);
-        } catch (SQLException e) {
-            log.warn("checkSupportObtainExternalTableList failed, dialectType:{}, connection:{}", dialectType,
-                    connection);
-            return false;
-        }
-        return externalTableSupported && getExtensionPoint(dialectType) != null;
+        return versionDiffConfigService.isExternalTableSupported(dialectType, connection)
+                && getExtensionPoint(dialectType) != null;
     }
 
     @Override

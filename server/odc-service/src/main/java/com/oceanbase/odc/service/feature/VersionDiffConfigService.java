@@ -15,9 +15,11 @@
  */
 package com.oceanbase.odc.service.feature;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.stereotype.Service;
@@ -31,10 +33,12 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.metadb.feature.VersionDiffConfigDAO;
+import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.feature.model.DataTypeUnit;
 import com.oceanbase.odc.service.feature.model.VersionDiffConfig;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 
 import lombok.Data;
 import lombok.NonNull;
@@ -48,6 +52,7 @@ public class VersionDiffConfigService {
     private static final String SUPPORT_PROCEDURE = "support_procedure";
     private static final String SUPPORT_FUNCTION = "support_function";
     private static final String SUPPORT_PL_DEBUG = "support_pl_debug";
+    private static final String SUPPORT_EXTERNAL_TABLE = "support_external_table";
     private static final String COLUMN_DATA_TYPE = "column_data_type";
     private static final String ARM_OB_PREFIX = "aarch64";
     private static final String ARM_OB_SUPPORT_PL_DEBUG_MIN_VERSION = "3.2.3";
@@ -133,6 +138,23 @@ public class VersionDiffConfigService {
             }
         }
         return obSupportList;
+    }
+
+    public boolean isExternalTableSupported(@NonNull DialectType dialectType, @NonNull Connection conn) {
+        VersionDiffConfig config = new VersionDiffConfig();
+        config.setDbMode(dialectType.name());
+        config.setConfigKey(SUPPORT_EXTERNAL_TABLE);
+        List<VersionDiffConfig> list = versionDiffConfigDAO.query(config);
+        String minVersion = CollectionUtils.isNotEmpty(list) ? list.get(0).getMinVersion() : null;
+        InformationExtensionPoint point =
+                ConnectionPluginUtil.getInformationExtension(dialectType);
+        String databaseProductVersion = point.getDBVersion(conn);
+        if ((dialectType == DialectType.OB_MYSQL || dialectType == DialectType.OB_ORACLE)
+                && minVersion != null
+                && VersionUtils.isGreaterThanOrEqualsTo(databaseProductVersion, minVersion)) {
+            return true;
+        }
+        return false;
     }
 
     private boolean isHourFormat(ConnectionSession connectionSession) {
