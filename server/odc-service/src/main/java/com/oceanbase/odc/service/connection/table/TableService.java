@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
+import javax.annotation.PostConstruct;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
@@ -39,6 +40,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -49,6 +51,7 @@ import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
+import com.oceanbase.odc.metadb.feature.VersionDiffConfigDAO;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -59,6 +62,7 @@ import com.oceanbase.odc.service.db.schema.DBSchemaSyncService;
 import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncer;
 import com.oceanbase.odc.service.db.schema.syncer.object.DBExternalTableSyncer;
 import com.oceanbase.odc.service.db.schema.syncer.object.DBTableSyncer;
+import com.oceanbase.odc.service.feature.model.VersionDiffConfig;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
@@ -78,6 +82,12 @@ import lombok.NonNull;
 @Service
 @Validated
 public class TableService {
+    private static final String SUPPORT_EXTERNAL_TABLE = "support_external_table";
+    private String OB_MYSQL_SUPPORT_EXTERNAL_TABLE_VERSION;
+    private String OB_ORACLE_SUPPORT_EXTERNAL_TABLE_VERSION;
+
+    @Autowired
+    private VersionDiffConfigDAO versionDiffConfigDAO;
 
     @Autowired
     private DatabaseService databaseService;
@@ -103,6 +113,12 @@ public class TableService {
     @Autowired
     private DBResourcePermissionHelper dbResourcePermissionHelper;
 
+    @PostConstruct
+    public void init() {
+        OB_MYSQL_SUPPORT_EXTERNAL_TABLE_VERSION = initDBSupportExternalTableVersion(DialectType.OB_MYSQL);
+        OB_ORACLE_SUPPORT_EXTERNAL_TABLE_VERSION = initDBSupportExternalTableVersion(DialectType.OB_ORACLE);
+    }
+
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("permission check inside")
     public List<Table> list(@NonNull @Valid QueryTableParams params) throws SQLException, InterruptedException {
@@ -126,11 +142,29 @@ public class TableService {
                         tableExtension);
             }
             if (types.contains(DBObjectType.EXTERNAL_TABLE)) {
-                generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn,
-                        DBObjectType.EXTERNAL_TABLE, tableExtension);
+                if (checkExternalTableSupported(dataSource.getDialectType(), conn)) {
+                    generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn,
+                            DBObjectType.EXTERNAL_TABLE, tableExtension);
+                }
             }
-            return tables;
         }
+        return tables;
+    }
+
+    @SkipAuthorize("permission check inside")
+    public boolean checkExternalTableSupported(@NonNull DialectType dialectType, @NonNull Connection conn)
+            throws SQLException {
+        String databaseProductVersion = conn.getMetaData().getDatabaseProductVersion();
+        if ((dialectType == DialectType.OB_MYSQL.OB_MYSQL && OB_MYSQL_SUPPORT_EXTERNAL_TABLE_VERSION != null
+                && VersionUtils.isGreaterThanOrEqualsTo(
+                        databaseProductVersion, OB_MYSQL_SUPPORT_EXTERNAL_TABLE_VERSION))
+                || (dialectType == DialectType.OB_ORACLE.OB_ORACLE && OB_ORACLE_SUPPORT_EXTERNAL_TABLE_VERSION != null
+                        && VersionUtils.isGreaterThanOrEqualsTo(
+                                databaseProductVersion, OB_ORACLE_SUPPORT_EXTERNAL_TABLE_VERSION))) {
+            return true;
+        }
+        return false;
+
     }
 
     private void generateListAndSyncDBTablesByTableType(QueryTableParams params, Database database,
@@ -189,7 +223,7 @@ public class TableService {
                     new Object[] {ResourceType.ODC_TABLE.getLocalizedMessage()}, "Can not acquire jdbc lock");
         }
         try {
-            if (syncer.supports(dialectType)) {
+            if (syncer.supports(dialectType, connection)) {
                 syncer.sync(connection, database, dialectType);
             } else {
                 throw new UnsupportedException("Unsupported dialect type: " + dialectType);
@@ -222,6 +256,19 @@ public class TableService {
             tables.add(table);
         }
         return tables;
+    }
+
+    private String initDBSupportExternalTableVersion(@NonNull DialectType dialectType) {
+        VersionDiffConfig config = new VersionDiffConfig();
+        config.setDbMode(dialectType.name());
+        List<VersionDiffConfig> list = versionDiffConfigDAO.query(config);
+        for (VersionDiffConfig versionDiffConfig : list) {
+            if (SUPPORT_EXTERNAL_TABLE.equalsIgnoreCase(versionDiffConfig.getConfigKey())
+                    && "true".equalsIgnoreCase(versionDiffConfig.getConfigValue())) {
+                return versionDiffConfig.getMinVersion();
+            }
+        }
+        return null;
     }
 
 }

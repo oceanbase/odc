@@ -16,23 +16,28 @@
 package com.oceanbase.odc.service.db.schema.syncer.object;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.metadb.iam.PermissionEntity;
 import com.oceanbase.odc.metadb.iam.PermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.table.TableService;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @description:
@@ -41,6 +46,7 @@ import lombok.NonNull;
  * @since: 4.3.3
  */
 @Component
+@Slf4j
 public class DBExternalTableSyncer extends AbstractDBObjectSyncer<TableExtensionPoint> {
 
     @Autowired
@@ -48,6 +54,9 @@ public class DBExternalTableSyncer extends AbstractDBObjectSyncer<TableExtension
 
     @Autowired
     private UserPermissionRepository userPermissionRepository;
+    @Autowired
+    @Lazy
+    private TableService tableService;
 
     @Override
     protected void preDelete(@NonNull Set<Long> toBeDeletedIds) {
@@ -56,6 +65,19 @@ public class DBExternalTableSyncer extends AbstractDBObjectSyncer<TableExtension
         Set<Long> permissionIds = permissions.stream().map(PermissionEntity::getId).collect(Collectors.toSet());
         permissionRepository.deleteByIds(permissionIds);
         userPermissionRepository.deleteByPermissionIds(permissionIds);
+    }
+
+    @Override
+    public boolean supports(@NonNull DialectType dialectType, @NonNull Connection connection) {
+        boolean externalTableSupported;
+        try {
+            externalTableSupported = tableService.checkExternalTableSupported(dialectType, connection);
+        } catch (SQLException e) {
+            log.warn("checkSupportObtainExternalTableList failed, dialectType:{}, connection:{}", dialectType,
+                    connection);
+            return false;
+        }
+        return externalTableSupported && getExtensionPoint(dialectType) != null;
     }
 
     @Override
