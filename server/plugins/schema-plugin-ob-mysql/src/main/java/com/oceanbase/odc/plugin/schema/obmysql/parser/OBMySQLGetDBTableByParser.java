@@ -193,12 +193,19 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
         throw new UnsupportedOperationException("Not supported yet");
     }
 
+    /**
+     * 获取数据库表的分区信息
+     *
+     * @return DBTablePartition对象，包含表的分区信息
+     */
     @Override
     public DBTablePartition getPartition() {
+        // 创建DBTablePartition对象和子分区对象
         DBTablePartition partition = new DBTablePartition();
         DBTablePartition subPartition = new DBTablePartition();
         partition.setSubpartition(subPartition);
 
+        // 设置分区选项和子分区选项
         DBTablePartitionOption partitionOption = new DBTablePartitionOption();
         partitionOption.setType(DBTablePartitionType.NOT_PARTITIONED);
         partition.setPartitionOption(partitionOption);
@@ -206,19 +213,23 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
         subPartitionOption.setType(DBTablePartitionType.NOT_PARTITIONED);
         subPartition.setPartitionOption(subPartitionOption);
 
+        // 初始化分区定义列表和子分区定义列表
         List<DBTablePartitionDefinition> partitionDefinitions = new ArrayList<>();
         partition.setPartitionDefinitions(partitionDefinitions);
         List<DBTablePartitionDefinition> subPartitionDefinitions = new ArrayList<>();
         subPartition.setPartitionDefinitions(subPartitionDefinitions);
 
+        // 如果createTableStmt为空，则设置警告信息并返回partition对象
         if (Objects.isNull(createTableStmt)) {
             partition.setWarning("Failed to parse table ddl");
             return partition;
         }
+        // 获取分区语句
         Partition partitionStmt = createTableStmt.getPartition();
         if (Objects.isNull(partitionStmt)) {
             return partition;
         }
+        // 根据不同的分区类型解析分区语句
         if (partitionStmt instanceof HashPartition) {
             parseHashPartitionStmt((HashPartition) partitionStmt, partition);
         } else if (partitionStmt instanceof KeyPartition) {
@@ -234,28 +245,30 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
          * partition types
          */
         if (Objects.nonNull(partition.getPartitionOption().getType())
-                && partition.getPartitionOption().getType().supportExpression()
-                && StringUtils.isBlank(partition.getPartitionOption().getExpression())) {
+            && partition.getPartitionOption().getType().supportExpression()
+            && StringUtils.isBlank(partition.getPartitionOption().getExpression())) {
             List<String> columnNames = partition.getPartitionOption().getColumnNames();
             if (!columnNames.isEmpty()) {
                 partition.getPartitionOption().setExpression(String.join(", ", columnNames));
             }
         }
+        // 如果子分区选项为空，则直接返回partition对象
         if (partitionStmt.getSubPartitionOption() == null) {
             return partition;
         }
         // TODO 目前 ODC 仅支持 HASH/KEY 二级分区, 其它类型后续需补充
+        // 设置子分区模板
         partition.setSubpartitionTemplated(partitionStmt.getSubPartitionOption().getTemplates() != null);
         SubPartitionOption subOption = partitionStmt.getSubPartitionOption();
         String type = partitionStmt.getSubPartitionOption().getType();
         if ("key".equals(type.toLowerCase())) {
             subPartitionOption.setType(DBTablePartitionType.KEY);
             subPartitionOption.setColumnNames(subOption.getSubPartitionTargets() == null ? null
-                    : subOption.getSubPartitionTargets().stream().map(item -> removeIdentifiers(item.getText()))
-                            .collect(Collectors.toList()));
+                : subOption.getSubPartitionTargets().stream().map(item -> removeIdentifiers(item.getText()))
+                    .collect(Collectors.toList()));
             subPartitionOption
-                    .setPartitionsNum(partition.getSubpartitionTemplated() ? subOption.getTemplates().size()
-                            : partitionStmt.getPartitionElements().get(0).getSubPartitionElements().size());
+                .setPartitionsNum(partition.getSubpartitionTemplated() ? subOption.getTemplates().size()
+                    : partitionStmt.getPartitionElements().get(0).getSubPartitionElements().size());
         } else if ("hash".equals(type.toLowerCase())) {
             subPartitionOption.setType(DBTablePartitionType.HASH);
             Expression expression = subOption.getSubPartitionTargets().get(0);
@@ -265,8 +278,8 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
                 subPartitionOption.setExpression(expression.getText());
             }
             subPartitionOption
-                    .setPartitionsNum(partition.getSubpartitionTemplated() ? subOption.getTemplates().size()
-                            : partitionStmt.getPartitionElements().get(0).getSubPartitionElements().size());
+                .setPartitionsNum(partition.getSubpartitionTemplated() ? subOption.getTemplates().size()
+                    : partitionStmt.getPartitionElements().get(0).getSubPartitionElements().size());
         } else {
             partition.setWarning("Only support HASH/KEY subpartition currently");
         }
