@@ -1183,4 +1183,32 @@ public class PLParserTest {
         Assert.assertEquals(SqlType.ROLLBACK, actual.getSqlType());
     }
 
+    @Test
+    public void parseOracle_commentOnTable_getSqlTypeSucceed() {
+        ParseOraclePLResult actual = PLParser.parseOracle("comment on table a is 'xxx'");
+        Assert.assertEquals(DBObjectType.TABLE, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.COMMENT, actual.getSqlType());
+    }
+
+    @Test
+    public void parseOracle_commentOnColumn_getSqlTypeSucceed() {
+        ParseOraclePLResult actual = PLParser.parseOracle("comment on column a is 'xxx'");
+        Assert.assertEquals(DBObjectType.COLUMN, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.COMMENT, actual.getSqlType());
+    }
+
+    @Test
+    public void parseOracle_commentOnMaterialized_getSqlTypeSucceed() {
+        ParseOraclePLResult actual = PLParser.parseOracle("comment on materialized a is 'xxx'");
+        Assert.assertEquals(DBObjectType.OTHERS, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.COMMENT, actual.getSqlType());
+    }
+
+    @Test
+    public void parseOracle_callProcedure_getSqlTypeSucceed() {
+        ParseOraclePLResult actual = PLParser.parseOracle("call name()");
+        Assert.assertEquals(DBObjectType.PROCEDURE, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.CALL, actual.getSqlType());
+    }
+
 }

@@ -434,8 +434,8 @@ public class OracleModeParserListener extends PlSqlParserBaseListener implements
     }
 
     @Override
-    public void enterCall_spec(PlSqlParser.Call_specContext ctx) {
-        doRecord(SqlType.CALL, DBObjectType.OTHERS, null);
+    public void enterProcedure_call(PlSqlParser.Procedure_callContext ctx) {
+        doRecord(SqlType.CALL, DBObjectType.PROCEDURE, null);
     }
 
     private void doRecord(SqlType sqlType, DBObjectType dbObjectType, String rawPlName) {
