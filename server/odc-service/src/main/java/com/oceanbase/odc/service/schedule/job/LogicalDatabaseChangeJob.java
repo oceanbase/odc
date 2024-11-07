@@ -35,9 +35,10 @@ import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.LogicalDatabaseChangeParameters;
 import com.oceanbase.odc.service.schedule.model.PublishLogicalDatabaseChangeReq;
+import com.oceanbase.odc.service.task.base.logicdatabasechange.LogicalDatabaseChangeTask;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
-import com.oceanbase.odc.service.task.executor.task.LogicalDatabaseChangeTask;
+import com.oceanbase.odc.service.task.executor.task.TaskDescription;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
@@ -133,7 +134,7 @@ public class LogicalDatabaseChangeJob implements OdcJob {
         jobProperties.putAll(singleJobProperties.toJobProperties());
 
         DefaultJobDefinition jobDefinition = DefaultJobDefinition.builder().jobClass(LogicalDatabaseChangeTask.class)
-                .jobType("LogicalDatabaseChange")
+                .jobType(TaskDescription.LOGICAL_DATABASE_CHANGE.getType())
                 .jobParameters(jobData)
                 .jobProperties(jobProperties)
                 .build();

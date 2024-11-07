@@ -45,6 +45,7 @@ public class OutOfLineIndex extends BaseStatement implements TableElement {
     private Partition partition;
     private boolean fullText;
     private boolean spatial;
+    private boolean vector;
     private final String indexName;
     private final List<SortColumn> columns;
     private List<ColumnGroupElement> columnGroupElements;
@@ -68,6 +69,8 @@ public class OutOfLineIndex extends BaseStatement implements TableElement {
             builder = new StringBuilder("FULLTEXT KEY");
         } else if (this.spatial) {
             builder = new StringBuilder("SPATIAL KEY");
+        } else if (this.vector) {
+            builder = new StringBuilder("VECTOR KEY");
         } else {
             builder = new StringBuilder("INDEX");
         }

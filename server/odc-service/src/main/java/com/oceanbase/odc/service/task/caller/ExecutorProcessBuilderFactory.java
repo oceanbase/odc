@@ -43,15 +43,18 @@ public class ExecutorProcessBuilderFactory {
         commands.add("-D" + JobUtils.generateExecutorSelectorOnProcess(executorName));
         commands.addAll(jvmOptions(processConfig, jobId));
         if (ODC_SERVER_EXECUTABLE_JAR.matcher(runtimeMxBean.getClassPath()).matches()) {
-            // start odc executor by java -jar
-            commands.add("-jar");
+            // start odc executor by java -cp
+            commands.add("-cp");
             // set jar package file name in commands
             commands.add(runtimeMxBean.getClassPath());
+            commands.add("-Dloader.main=" + JobConstants.ODC_AGENT_CLASS_NAME);
+            commands.add("org.springframework.boot.loader.PropertiesLauncher");
         } else {
             // start odc executor by java -classpath
-            commands.add("-classpath");
+            commands.add("-cp");
             commands.add(runtimeMxBean.getClassPath());
-            commands.add(JobConstants.ODC_SERVER_CLASS_NAME);
+            commands.add(JobConstants.ODC_AGENT_CLASS_NAME);
+            // commands.add("org.springframework.boot.loader.PropertiesLauncher");
         }
         pb.command(commands);
         pb.directory(new File("."));

@@ -69,8 +69,7 @@ public class MySQLCreateTableFactory extends OBParserBaseVisitor<CreateTable> im
             createTable.setIfNotExists(true);
         }
         createTable.setUserVariable(factor.getUserVariable());
-        RelationFactor likeFactor = MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor(1));
-        createTable.setLikeTable(likeFactor);
+        createTable.setLikeTable(MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor(1)));
         return createTable;
     }
 
@@ -86,7 +85,6 @@ public class MySQLCreateTableFactory extends OBParserBaseVisitor<CreateTable> im
                 createTable.setTemporary(true);
             }
         }
-
         if (ctx.IF() != null && ctx.not() != null && ctx.EXISTS() != null) {
             createTable.setIfNotExists(true);
         }
@@ -111,6 +109,10 @@ public class MySQLCreateTableFactory extends OBParserBaseVisitor<CreateTable> im
                     .column_group_list().column_group_element().stream()
                     .map(c -> new MySQLColumnGroupElementFactory(c).generate()).collect(Collectors.toList());
             createTable.setColumnGroupElements(columnGroupElements);
+        }
+        if (ctx.ignore_or_replace() != null) {
+            createTable.setIgnore(ctx.ignore_or_replace().IGNORE() != null);
+            createTable.setReplace(ctx.ignore_or_replace().REPLACE() != null);
         }
         return createTable;
     }

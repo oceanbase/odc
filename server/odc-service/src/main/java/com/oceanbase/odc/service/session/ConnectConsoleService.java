@@ -287,6 +287,7 @@ public class ConnectConsoleService {
                 .collect(Collectors.toList());
         try {
             if (!sqlInterceptService.preHandle(request, response, connectionSession, executeContext)) {
+                response.setApprovalRequired(true);
                 return response;
             }
         } finally {
@@ -500,7 +501,7 @@ public class ConnectConsoleService {
     public boolean killCurrentQuery(@NotNull String sessionId) {
         ConnectionSession session = this.sessionService.nullSafeGet(sessionId);
         ConnectionSessionUtil.setConsoleSessionKillQueryFlag(session, true);
-        return this.dbSessionManageFacade.killCurrentQuery(session);
+        return this.dbSessionManageFacade.killConsoleQuery(session);
     }
 
     @SkipAuthorize
@@ -620,5 +621,4 @@ public class ConnectConsoleService {
         }
         return queryLimit;
     }
-
 }

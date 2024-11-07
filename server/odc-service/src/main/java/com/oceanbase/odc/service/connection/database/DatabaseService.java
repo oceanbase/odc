@@ -56,6 +56,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.common.event.LocalEventPublisher;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.permission.Permission;
 import com.oceanbase.odc.core.authority.util.Authenticated;
@@ -113,6 +114,8 @@ import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.model.UserResourceRole;
+import com.oceanbase.odc.service.monitor.MeterManager;
+import com.oceanbase.odc.service.monitor.datasource.GetConnectionFailedEventListener;
 import com.oceanbase.odc.service.onlineschemachange.ddl.DBUser;
 import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessor;
 import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessorFactory;
@@ -123,7 +126,7 @@ import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
-import com.oceanbase.odc.service.task.runtime.PreCheckTaskParameters.AuthorizedDatabase;
+import com.oceanbase.odc.service.task.base.precheck.PreCheckTaskParameters.AuthorizedDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 
 import lombok.NonNull;
@@ -213,6 +216,9 @@ public class DatabaseService {
 
     @Autowired
     private GlobalSearchProperties globalSearchProperties;
+
+    @Autowired
+    private MeterManager meterManager;
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
@@ -522,11 +528,15 @@ public class DatabaseService {
         }
     }
 
+    public int updateEnvironmentIdByConnectionId(@NotNull Long environmentId, @NotNull Long connectionId) {
+        return databaseRepository.setEnvironmentIdByConnectionId(environmentId, connectionId);
+    }
+
     private void syncTeamDataSources(ConnectionConfig connection) {
         Long currentProjectId = connection.getProjectId();
         boolean blockExcludeSchemas = dbSchemaSyncProperties.isBlockExclusionsWhenSyncDbToProject();
         List<String> excludeSchemas = dbSchemaSyncProperties.getExcludeSchemas(connection.getDialectType());
-        DataSource teamDataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
+        DataSource teamDataSource = getDataSourceFactory(connection).getDataSource();
         ExecutorService executorService = Executors.newFixedThreadPool(1);
         Future<List<DatabaseEntity>> future = executorService.submit(() -> {
             try (Connection conn = teamDataSource.getConnection()) {
@@ -638,6 +648,14 @@ public class DatabaseService {
         }
     }
 
+    private OBConsoleDataSourceFactory getDataSourceFactory(ConnectionConfig connection) {
+        OBConsoleDataSourceFactory obConsoleDataSourceFactory = new OBConsoleDataSourceFactory(connection, true, false);
+        LocalEventPublisher localEventPublisher = new LocalEventPublisher();
+        localEventPublisher.addEventListener(new GetConnectionFailedEventListener(meterManager));
+        obConsoleDataSourceFactory.setEventPublisher(localEventPublisher);
+        return obConsoleDataSourceFactory;
+    }
+
     private Long getProjectId(DatabaseEntity database, Long currentProjectId, List<String> blockedDatabaseNames) {
         Long projectId;
         if (currentProjectId != null) {
@@ -653,7 +671,7 @@ public class DatabaseService {
     }
 
     private void syncIndividualDataSources(ConnectionConfig connection) {
-        DataSource individualDataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
+        DataSource individualDataSource = getDataSourceFactory(connection).getDataSource();
         ExecutorService executorService = Executors.newFixedThreadPool(1);
         Future<Set<String>> future = executorService.submit(() -> {
             try (Connection conn = individualDataSource.getConnection()) {
@@ -827,8 +845,9 @@ public class DatabaseService {
     @Transactional(rollbackFor = Exception.class)
     public void refreshExpiredPendingDBObjectStatus() {
         Date syncDate = new Date(System.currentTimeMillis() - this.globalSearchProperties.getMaxPendingMillis());
-        int affectRows = this.databaseRepository.setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeBefore(
-                DBObjectSyncStatus.INITIALIZED, DBObjectSyncStatus.PENDING, syncDate);
+        int affectRows =
+                this.databaseRepository.setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeIsNullOrBefore(
+                        DBObjectSyncStatus.INITIALIZED, DBObjectSyncStatus.PENDING, syncDate);
         log.info("Refresh outdated pending objects status, syncDate={}, affectRows={}", syncDate, affectRows);
     }
 

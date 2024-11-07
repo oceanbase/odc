@@ -72,6 +72,7 @@ import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
@@ -83,7 +84,6 @@ import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
@@ -304,9 +304,11 @@ public class ScheduleService {
                 throw new IllegalStateException("Update schedule is not allowed.");
             }
             if (req.getOperationType() == OperationType.DELETE
-                    && targetSchedule.getStatus() != ScheduleStatus.TERMINATED) {
+                    && targetSchedule.getStatus() != ScheduleStatus.TERMINATED
+                    && targetSchedule.getStatus() != ScheduleStatus.COMPLETED) {
                 log.warn("Delete schedule is not allowed,status={}", targetSchedule.getStatus());
-                throw new IllegalStateException("Delete schedule is not allowed, only can delete terminated schedule.");
+                throw new IllegalStateException(
+                        "Delete schedule is not allowed, only can delete terminated schedule or finished schedule.");
             }
         }
 
@@ -502,31 +504,42 @@ public class ScheduleService {
         scheduleRepository.updateStatusById(scheduleConfig.getId(), ScheduleStatus.TERMINATED);
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    public void innerTerminate(Long scheduleId) throws SchedulerException {
+        ScheduleEntity schedule = nullSafeGetById(scheduleId);
+        JobKey jobKey = QuartzKeyGenerator.generateJobKey(schedule);
+        quartzJobService.deleteJob(jobKey);
+        scheduleRepository.updateStatusById(schedule.getId(), ScheduleStatus.TERMINATED);
+    }
+
     /**
      * The method detects whether the database required for scheduled task operation exists. It returns
      * true and terminates the scheduled task if the database does not exist. If the database exists, it
      * returns false.
      */
     public boolean vetoJobExecution(Long scheduleId) {
-        Optional<ScheduleEntity> scheduleEntityOptional = scheduleRepository.findById(scheduleId);
-        if (scheduleEntityOptional.isPresent()) {
-            ScheduleEntity entity = scheduleEntityOptional.get();
-            boolean isInvalid = isInvalidSchedule(entity);
-            if (isInvalid) {
-                try {
-                    log.info(
-                            "The project or database for scheduled task operation does not exist, and the schedule is being terminated, scheduleId={}",
-                            scheduleId);
-                    terminate(entity);
-                } catch (Exception e) {
-                    log.warn("Terminate schedule failed,scheduleId={}", scheduleId);
-                }
-            }
-            // concurrent is not allowed
-            return isInvalid || hasExecutingTask(scheduleId);
+        Schedule schedule = null;
+        boolean isValidSchedule;
+        try {
+            schedule = nullSafeGetModelById(scheduleId);
+            isValidSchedule = isValidSchedule(schedule);
+        } catch (NotFoundException e) {
+            isValidSchedule = false;
+        } catch (Exception e) {
+            log.warn("Get schedule failed,task will be executed,scheduleId={}", scheduleId, e);
+            return false;
         }
-        // terminate if schedule not found or invalid.
-        return true;
+        // terminate invalid schedule
+        if (!isValidSchedule) {
+            try {
+                innerTerminate(scheduleId);
+            } catch (Exception e) {
+                log.warn("Terminate invalid schedule failed,scheduleId={}", scheduleId);
+            }
+            return true;
+        }
+        // skip execution if concurrent scheduling is not allowed
+        return !schedule.getAllowConcurrent() && hasExecutingTask(scheduleId);
 
     }
 
@@ -547,24 +560,38 @@ public class ScheduleService {
         return false;
     }
 
-    private boolean isInvalidSchedule(ScheduleEntity schedule) {
-        Optional<Organization> organization = organizationService.get(schedule.getOrganizationId());
-        // ignore individual space
-        if (organization.isPresent() && organization.get().getType() == OrganizationType.INDIVIDUAL) {
+    private boolean isValidSchedule(Schedule schedule) {
+
+        if (schedule.getStatus() != ScheduleStatus.ENABLED) {
             return false;
         }
-
-        try {
-            // project archived.
-            if (projectService.nullSafeGet(schedule.getProjectId()).getArchived()) {
-                return true;
+        // check project
+        if (schedule.getProjectId() != null) {
+            try {
+                // The project is invalid or archived
+                if (projectService.nullSafeGet(schedule.getProjectId()).getArchived()) {
+                    return false;
+                }
+            } catch (NotFoundException e) {
+                return false;
             }
-        } catch (NotFoundException e) {
-            // project not found.
-            return true;
+        }
+        // check database
+        if (schedule.getDatabaseId() != null) {
+            try {
+                Database database = databaseService.getBasicSkipPermissionCheck(
+                        schedule.getDatabaseId());
+                // The database is invalid or does not belong to the current project
+                if (!database.getExisted() || !Objects.equals(database.getProject().getId(), schedule.getProjectId())) {
+                    return false;
+                }
+            } catch (NotFoundException e) {
+                // database not found.
+                return false;
+            }
         }
         // schedule is valid.
-        return false;
+        return true;
     }
 
     public void stopTask(Long scheduleId, Long scheduleTaskId) {
@@ -587,6 +614,7 @@ public class ScheduleService {
      * @param scheduleId the task must belong to a valid schedule,so this param is not be null.
      * @param scheduleTaskId the task uid. Start a paused or pending task.
      */
+    @Transactional(rollbackFor = Exception.class)
     public void startTask(Long scheduleId, Long scheduleTaskId) {
         nullSafeGetByIdWithCheckPermission(scheduleId, true);
         Lock lock = jdbcLockRegistry.obtain(getScheduleTaskLockKey(scheduleTaskId));
@@ -732,16 +760,32 @@ public class ScheduleService {
     public Page<ScheduleOverview> listScheduleOverview(@NotNull Pageable pageable,
             @NotNull QueryScheduleParams params) {
         log.info("List schedule overview req:{}", params);
+        if (StringUtils.isNotBlank(params.getCreator())) {
+            Set<Long> creatorIds = userService.getUsersByFuzzyNameWithoutPermissionCheck(
+                    params.getCreator()).stream().map(User::getId).collect(Collectors.toSet());
+            if (creatorIds.isEmpty()) {
+                return Page.empty();
+            }
+            params.setCreatorIds(creatorIds);
+        }
         if (params.getDataSourceIds() == null) {
             params.setDataSourceIds(new HashSet<>());
         }
         if (StringUtils.isNotEmpty(params.getClusterId())) {
-            params.getDataSourceIds().addAll(connectionService.innerListIdByOrganizationIdAndClusterId(
-                    authenticationFacade.currentOrganizationId(), params.getClusterId()));
+            List<Long> datasourceIdsByCluster = connectionService.innerListIdByOrganizationIdAndClusterId(
+                    authenticationFacade.currentOrganizationId(), params.getClusterId());
+            if (datasourceIdsByCluster.isEmpty()) {
+                return Page.empty();
+            }
+            params.getDataSourceIds().addAll(datasourceIdsByCluster);
         }
         if (StringUtils.isNotEmpty(params.getTenantId())) {
-            params.getDataSourceIds().addAll(connectionService.innerListIdByOrganizationIdAndTenantId(
-                    authenticationFacade.currentOrganizationId(), params.getTenantId()));
+            List<Long> datasourceIdsByTenantId = connectionService.innerListIdByOrganizationIdAndTenantId(
+                    authenticationFacade.currentOrganizationId(), params.getTenantId());
+            if (datasourceIdsByTenantId.isEmpty()) {
+                return Page.empty();
+            }
+            params.getDataSourceIds().addAll(datasourceIdsByTenantId);
         }
         // load project by unique identifier if project id is null
         if (params.getProjectId() == null && StringUtils.isNotEmpty(params.getProjectUniqueIdentifier())) {
@@ -763,8 +807,17 @@ public class ScheduleService {
 
         params.setOrganizationId(authenticationFacade.currentOrganizationId());
         Page<ScheduleEntity> returnValue = scheduleRepository.find(pageable, params);
+        List<ScheduleEntity> schedules = returnValue.getContent();
+
+        if (params.getTriggerStrategy() != null) {
+            schedules = schedules.stream().filter(schedule -> {
+                TriggerConfig triggerConfig = JsonUtils.fromJson(schedule.getTriggerConfigJson(), TriggerConfig.class);
+                return triggerConfig.getTriggerStrategy().equals(params.getTriggerStrategy());
+            }).collect(Collectors.toList());
+        }
+
         Map<Long, ScheduleOverview> id2Overview =
-                scheduleResponseMapperFactory.generateScheduleOverviewListMapper(returnValue.getContent());
+                scheduleResponseMapperFactory.generateScheduleOverviewListMapper(schedules);
 
         return returnValue.map(o -> id2Overview.get(o.getId()));
     }
@@ -787,12 +840,20 @@ public class ScheduleService {
             params.setDataSourceIds(new HashSet<>());
         }
         if (StringUtils.isNotEmpty(params.getClusterId())) {
-            params.getDataSourceIds().addAll(connectionService.innerListIdByOrganizationIdAndClusterId(
-                    authenticationFacade.currentOrganizationId(), params.getClusterId()));
+            List<Long> datasourceIdsByCluster = connectionService.innerListIdByOrganizationIdAndClusterId(
+                    authenticationFacade.currentOrganizationId(), params.getClusterId());
+            if (datasourceIdsByCluster.isEmpty()) {
+                return Page.empty();
+            }
+            params.getDataSourceIds().addAll(datasourceIdsByCluster);
         }
         if (StringUtils.isNotEmpty(params.getTenantId())) {
-            params.getDataSourceIds().addAll(connectionService.innerListIdByOrganizationIdAndTenantId(
-                    authenticationFacade.currentOrganizationId(), params.getTenantId()));
+            List<Long> datasourceIdsByTenantId = connectionService.innerListIdByOrganizationIdAndTenantId(
+                    authenticationFacade.currentOrganizationId(), params.getTenantId());
+            if (datasourceIdsByTenantId.isEmpty()) {
+                return Page.empty();
+            }
+            params.getDataSourceIds().addAll(datasourceIdsByTenantId);
         }
 
         if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {

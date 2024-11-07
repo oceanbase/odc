@@ -44,15 +44,19 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Int_type_iContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Json_type_iContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Number_type_iContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Precision_int_numContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Roaringbitmap_type_iContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.String_length_iContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Text_type_iContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Vector_type_iContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
 import com.oceanbase.tools.sqlparser.statement.common.DataType;
 import com.oceanbase.tools.sqlparser.statement.common.GeneralDataType;
 import com.oceanbase.tools.sqlparser.statement.common.NumberType;
 import com.oceanbase.tools.sqlparser.statement.common.TimestampType;
+import com.oceanbase.tools.sqlparser.statement.common.mysql.ArrayType;
 import com.oceanbase.tools.sqlparser.statement.common.mysql.CollectionType;
+import com.oceanbase.tools.sqlparser.statement.common.mysql.VectorType;
 
 import lombok.NonNull;
 
@@ -85,6 +89,8 @@ public class MySQLDataTypeFactory extends OBParserBaseVisitor<DataType> implemen
     public DataType visitData_type(Data_typeContext ctx) {
         if (ctx.STRING_VALUE() != null) {
             return new GeneralDataType(ctx, ctx.STRING_VALUE().getText(), null);
+        } else if (ctx.data_type() != null) {
+            return new ArrayType(ctx, visitData_type(ctx.data_type()));
         }
         return visitChildren(ctx);
     }
@@ -281,6 +287,16 @@ public class MySQLDataTypeFactory extends OBParserBaseVisitor<DataType> implemen
             type.setCollation(ctx.collation().collation_name().getText());
         }
         return type;
+    }
+
+    @Override
+    public DataType visitVector_type_i(Vector_type_iContext ctx) {
+        return new VectorType(ctx, ctx.VECTOR().getText(), Integer.valueOf(ctx.INTNUM().getText()));
+    }
+
+    @Override
+    public DataType visitRoaringbitmap_type_i(Roaringbitmap_type_iContext ctx) {
+        return new GeneralDataType(ctx, ctx.ROARINGBITMAP().getText(), null);
     }
 
     private void setNumberTypeOptions(NumberType numberType, TerminalNode unsigned,

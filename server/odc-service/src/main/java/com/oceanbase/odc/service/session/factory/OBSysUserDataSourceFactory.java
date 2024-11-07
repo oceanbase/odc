@@ -99,7 +99,7 @@ public class OBSysUserDataSourceFactory implements DataSourceFactory {
     protected String getJdbcUrl() {
         return connectionExtensionPoint
                 .generateJdbcUrl(new JdbcUrlProperty(this.connectionConfig.getHost(), this.connectionConfig.getPort(),
-                        connectionConfig.getDefaultSchema(), JDBC_URL_PARAMS));
+                        null, JDBC_URL_PARAMS));
     }
 
 }

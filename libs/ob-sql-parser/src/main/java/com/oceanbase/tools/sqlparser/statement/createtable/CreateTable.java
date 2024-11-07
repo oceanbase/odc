@@ -46,6 +46,8 @@ import lombok.Setter;
 public class CreateTable extends BaseStatement {
 
     private RelationFactor relation;
+    private boolean ignore;
+    private boolean replace;
     private String userVariable;
     private boolean global;
     private boolean temporary;
@@ -177,6 +179,12 @@ public class CreateTable extends BaseStatement {
                     .append(columnGroupElements.stream()
                             .map(ColumnGroupElement::toString).collect(Collectors.joining(",")))
                     .append(")");
+        }
+        if (this.ignore) {
+            builder.append(" IGNORE");
+        }
+        if (this.replace) {
+            builder.append(" REPLACE");
         }
         if (this.as != null) {
             builder.append(" AS ").append(this.as);

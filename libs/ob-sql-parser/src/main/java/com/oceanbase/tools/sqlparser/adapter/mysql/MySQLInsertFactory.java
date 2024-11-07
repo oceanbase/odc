@@ -67,6 +67,14 @@ public class MySQLInsertFactory extends OBParserBaseVisitor<Insert> implements S
         if (ctx.IGNORE() != null) {
             insert.setIgnore(true);
         }
+        if (ctx.HIGH_PRIORITY() != null) {
+            insert.setHighPriority(true);
+        } else if (ctx.LOW_PRIORITY() != null) {
+            insert.setLowPriority(true);
+        }
+        if (ctx.OVERWRITE() != null) {
+            insert.setOverwrite(true);
+        }
         if (ctx.update_asgn_list() != null) {
             insert.setOnDuplicateKeyUpdateColumns(getSetColumns(ctx.update_asgn_list()));
         }
@@ -79,7 +87,7 @@ public class MySQLInsertFactory extends OBParserBaseVisitor<Insert> implements S
                 .getRelationFactor(ctx.dml_table_name().relation_factor()));
         if (ctx.dml_table_name().use_partition() != null) {
             insertTable.setPartitionUsage(MySQLFromReferenceFactory
-                    .visitPartitonUsage(ctx.dml_table_name().use_partition()));
+                    .visitPartitionUsage(ctx.dml_table_name().use_partition()));
         }
         if (ctx.column_list() != null) {
             insertTable.setColumns(ctx.column_list().column_definition_ref().stream()

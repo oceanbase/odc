@@ -17,6 +17,7 @@
 package com.oceanbase.odc.plugin.connect.oracle;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Objects;
@@ -25,6 +26,7 @@ import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.plugin.connect.model.DBClientInfo;
 import com.oceanbase.odc.plugin.connect.oboracle.OBOracleSessionExtension;
 
 import lombok.NonNull;
@@ -97,4 +99,20 @@ public class OracleSessionExtension extends OBOracleSessionExtension {
         }
         return String.format("alter %s set %s=%s", variableScope, variableName, variableValue);
     }
+
+    @Override
+    public boolean setClientInfo(Connection connection, DBClientInfo clientInfo) {
+        String SET_MODULE_TEMPLATE =
+                "BEGIN DBMS_APPLICATION_INFO.SET_MODULE(module_name => ?, action_name => ?); END;";
+        try (PreparedStatement pstmt = connection.prepareStatement(SET_MODULE_TEMPLATE)) {
+            pstmt.setString(1, clientInfo.getModule());
+            pstmt.setString(2, clientInfo.getAction());
+            pstmt.execute();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+
 }

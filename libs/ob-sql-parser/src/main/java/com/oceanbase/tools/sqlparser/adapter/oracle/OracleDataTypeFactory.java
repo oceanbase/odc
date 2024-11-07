@@ -255,6 +255,8 @@ public class OracleDataTypeFactory extends OBParserBaseVisitor<DataType> impleme
     public DataType visitTreat_data_type(Treat_data_typeContext ctx) {
         if (ctx.JSON() != null) {
             return new GeneralDataType(ctx, ctx.JSON().getText(), null);
+        } else if (ctx.obj_access_ref_cast() != null) {
+            return new GeneralDataType(ctx, ctx.obj_access_ref_cast().getText(), null);
         }
         return visitChildren(ctx);
     }

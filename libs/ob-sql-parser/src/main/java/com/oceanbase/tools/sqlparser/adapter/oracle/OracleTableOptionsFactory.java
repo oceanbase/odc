@@ -160,12 +160,32 @@ public class OracleTableOptionsFactory extends OBParserBaseVisitor<TableOptions>
                             .map(ex -> new OracleExpressionFactory(ex).generate())
                             .collect(Collectors.toList());
                     value = new CollectionExpression(e.expr_list(), exprs);
+                } else if (e.compression_name() != null) {
+                    value = new ConstExpression(e.compression_name());
                 }
                 formatMap.put(e.format_key.getText().toUpperCase(), value);
             });
             target.setFormat(formatMap);
         } else if (ctx.PATTERN() != null) {
             target.setPattern(ctx.STRING_VALUE().getText());
+        } else if (ctx.PROPERTIES() != null) {
+            Map<String, String> externalProperties = new HashMap<>();
+            ctx.external_properties_list().external_properties().forEach(e -> {
+                externalProperties.put(e.external_properties_key().getText(), e.STRING_VALUE().getText());
+            });
+            target.setExternalProperties(externalProperties);
+        } else if (ctx.PARTITION_TYPE() != null) {
+            target.setPartitionType(ctx.USER_SPECIFIED().getText());
+        } else if (ctx.MICRO_INDEX_CLUSTERED() != null) {
+            target.setMicroIndexClustered(Boolean.valueOf(ctx.BOOL_VALUE().getText()));
+        } else if (ctx.AUTO_REFRESH() != null) {
+            if (ctx.OFF() != null) {
+                target.setAutoRefresh(ctx.OFF().getText());
+            } else if (ctx.IMMEDIATE() != null) {
+                target.setAutoRefresh(ctx.IMMEDIATE().getText());
+            } else if (ctx.INTERVAL() != null) {
+                target.setAutoRefresh(ctx.INTERVAL().getText());
+            }
         }
         return target;
     }

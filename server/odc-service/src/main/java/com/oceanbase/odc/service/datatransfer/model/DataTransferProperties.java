@@ -31,4 +31,6 @@ public class DataTransferProperties {
 
     private boolean useServerPrepStmts;
 
+    private int internalDownloadImportFileTimeoutMillis;
+
 }

@@ -19,6 +19,324 @@ lexer grammar OBLexer;
 public boolean inRangeOperator = false;
 }
 
+// the below is what's new in OB 4.3.3.0
+UnderlineUTF8MB3
+    : ('_' U T F '8' M B '3')
+    ;
+
+UnderlineASCII
+    : ('_' A S C I I )
+    ;
+
+UnderlineTIS620
+    : ('_' T I S '6''2''0')
+    ;
+
+ROLE
+    : R O L E
+    ;
+
+JSON_QUERY
+    : J S O N '_' Q U E R Y
+    ;
+
+QUOTA_NAME
+    : Q U O T A '_' N A M E
+    ;
+
+PQ_DISTINCT
+    : P Q '_' D I S T I N C T
+    ;
+
+ADMIN
+    : A D M I N
+    ;
+
+ALLOW
+    : A L L O W
+    ;
+
+NO_MV_REWRITE
+    : N O '_' M V '_' R E W R I T E
+    ;
+
+EUCLIDEAN
+    : E U C L I D E A N
+    ;
+
+STSTOKEN
+    : S T S T O K E N
+    ;
+
+REWRITE
+    : R E W R I T E
+    ;
+
+NO_COALESCE_AGGR
+    : N O '_' C O A L E S C E '_' A G G R
+    ;
+
+VECTOR_DISTANCE
+    : V E C T O R '_' D I S T A N C E
+    ;
+
+PARTITION_TYPE
+    : P A R T I T I O N '_' T Y P E
+    ;
+
+DOT
+    : D O T
+    ;
+
+TASK_ID
+    : T A S K '_' I D
+    ;
+
+COMPUTATION
+    : C O M P U T A T I O N
+    ;
+
+MANHATTAN
+    : M A N H A T T A N
+    ;
+
+AUTO_REFRESH
+    : A U T O '_' R E F R E S H
+    ;
+
+ARRAY
+    : A R R A Y
+    ;
+
+SINGLE
+    : S I N G L E
+    ;
+
+SHARED_STORAGE_DEST
+    : S H A R E D '_' S T O R A G E '_' D E S T
+    ;
+
+DISALLOW
+    : D I S A L L O W
+    ;
+
+UnderlineST_ASMVT
+    : '_' S T '_' A S M V T
+    ;
+
+WITH_PULLUP
+    : W I T H '_' P U L L U P
+    ;
+
+NO_DECORRELATE
+    : N O '_' D E C O R R E L A T E
+    ;
+
+CONDITIONAL
+    : C O N D I T I O N A L
+    ;
+
+WO_PULLUP
+    : W O '_' P U L L U P
+    ;
+
+RB_AND_AGG
+    : R B '_' A N D '_' A G G
+    ;
+
+COMPRESSION_CODE
+    : C O M P R E S S I O N '_' C O D E
+    ;
+
+FILE_BLOCK_SIZE
+    : F I L E '_' B L O C K '_' S I Z E
+    ;
+
+APPROXIMATE
+    : A P P R O X I M A T E
+    ;
+
+MAX_NET_BANDWIDTH
+    : M A X '_' N E T '_' B A N D W I D T H
+    ;
+
+MULTIVALUE
+    : M U L T I V A L U E
+    ;
+
+SHARED_STORAGE_INFO
+    : S H A R E D '_' S T O R A G E '_' I N F O
+    ;
+
+RB_OR_AGG
+    : R B '_' O R '_' A G G
+    ;
+
+DATA_SOURCE
+    : D A T A '_' S O U R C E
+    ;
+
+PROJECT_NAME
+    : P R O J E C T '_' N A M E
+    ;
+
+VECTOR
+    : V E C T O R
+    ;
+
+ENDPOINT
+    : E N D P O I N T
+    ;
+
+DATA_DISK_SIZE
+    : D A T A '_' D I S K '_' S I Z E
+    ;
+
+BUFFER_SIZE
+    : B U F F E R '_' S I Z E
+    ;
+
+PROPERTIES
+    : P R O P E R T I E S
+    ;
+
+ATTRIBUTE
+    : A T T R I B U T E
+    ;
+
+ASIS
+    : A S I S
+    ;
+
+SCALARS
+    : S C A L A R S
+    ;
+
+USER_SPECIFIED
+    : U S E R '_' S P E C I F I E D
+    ;
+
+ACCESS_INFO
+    : A C C E S S '_' I N F O
+    ;
+
+ROARINGBITMAP
+    : R O A R I N G B I T M A P
+    ;
+
+VALIDATION
+    : V A L I D A T I O N
+    ;
+
+COSINE
+    : C O S I N E
+    ;
+
+DECORRELATE
+    : D E C O R R E L A T E
+    ;
+
+SUM_OPNSIZE
+    : S U M '_' O P N S I Z E
+    ;
+
+ACCESSKEY
+    : A C C E S S K E Y
+    ;
+
+MICRO_INDEX_CLUSTERED
+    : M I C R O '_' I N D E X '_' C L U S T E R E D
+    ;
+
+AUTO_INCREMENT_CACHE_SIZE
+    : A U T O '_' I N C R E M E N T '_' C A C H E '_' S I Z E
+    ;
+
+ACCESSTYPE
+    : A C C E S S T Y P E
+    ;
+
+PQ_GBY
+    : P Q '_' G B Y
+    ;
+
+EXTERNAL_STORAGE_DEST
+    : E X T E R N A L '_' S T O R A G E '_' D E S T
+    ;
+
+OVERWRITE
+    : O V E R W R I T E
+    ;
+
+MV_REWRITE
+    : M V '_' R E W R I T E
+    ;
+
+LAST_REFRESH_SCN
+    : L A S T '_' R E F R E S H '_' S C N
+    ;
+
+COALESCE_AGGR
+    : C O A L E S C E '_' A G G R
+    ;
+
+RESOURCE_GROUP
+    : R E S O U R C E '_' G R O U P
+    ;
+
+WITHOUT
+    : W I T H O U T
+    ;
+
+MAX_FILE_SIZE
+    : M A X '_' F I L E '_' S I Z E
+    ;
+
+APPROX
+    : A P P R O X
+    ;
+
+MISMATCH
+    : M I S M A T C H
+    ;
+
+SS_MICRO_CACHE
+    : S S '_' M I C R O '_' C A C H E
+    ;
+
+OPTIMIZER_COSTS
+    : O P T I M I Z E R '_' C O S T S
+    ;
+
+PAXOS_REPLICA_NUM
+    : P A X O S '_' R E P L I C A '_' N U M
+    ;
+
+ACCESSID
+    : A C C E S S I D
+    ;
+
+UNCONDITIONAL
+    : U N C O N D I T I O N A L
+    ;
+
+NET_BANDWIDTH_WEIGHT
+    : N E T '_' B A N D W I D T H '_' W E I G H T
+    ;
+
+RB_BUILD_AGG
+    : R B '_' B U I L D '_' A G G
+    ;
+
+LeftBracket
+    : '['
+    ;
+
+RightBracket
+    : ']'
+    ;
+// the above is what's new in OB 4.3.3.0
+
 ACCESS
     : ( A C C E S S )
     ;

@@ -60,6 +60,20 @@ public class OracleCreateIndexFactoryTest {
     }
 
     @Test
+    public void generate_createMdSysIndex_succeed() {
+        StatementFactory<CreateIndex> factory = new OracleCreateIndexFactory(
+                getCreateIdxContext("create index abc on tb (col, col1) indextype is mdsys.spatial_index "));
+        CreateIndex actual = factory.generate();
+
+        CreateIndex expect = new CreateIndex(new RelationFactor("abc"),
+                new RelationFactor("tb"), Arrays.asList(
+                        new SortColumn(new RelationReference("col", null)),
+                        new SortColumn(new RelationReference("col1", null))));
+        expect.setMdSysDotSpatialIndex(true);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_createUniqueIndex_succeed() {
         StatementFactory<CreateIndex> factory = new OracleCreateIndexFactory(
                 getCreateIdxContext("create unique index chz.abc@oakasda! on piaoyue.tb@uasid! (col, col1)"));

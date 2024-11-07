@@ -16,12 +16,17 @@
 package com.oceanbase.tools.sqlparser.adapter.oracle;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.External_table_partitionsContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Name_listContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Use_partitionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParserBaseVisitor;
+import com.oceanbase.tools.sqlparser.statement.Expression;
+import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
 import com.oceanbase.tools.sqlparser.statement.select.PartitionType;
 import com.oceanbase.tools.sqlparser.statement.select.PartitionUsage;
 
@@ -54,9 +59,24 @@ public class OraclePartitionUsageFactory extends OBParserBaseVisitor<PartitionUs
         if (ctx.SUBPARTITION() != null) {
             type = PartitionType.SUB_PARTITION;
         }
-        List<String> nameList = new ArrayList<>();
-        visitNameList(ctx.name_list(), nameList);
-        return new PartitionUsage(ctx, type, nameList);
+        if (ctx.name_list() != null) {
+            List<String> nameList = new ArrayList<>();
+            visitNameList(ctx.name_list(), nameList);
+            return new PartitionUsage(ctx, type, nameList);
+        }
+        Map<String, Expression> externalTablePartition = new HashMap<>();
+        visitExternalTablePartitions(ctx.external_table_partitions(), externalTablePartition);
+        return new PartitionUsage(ctx, type, externalTablePartition);
+    }
+
+    private void visitExternalTablePartitions(External_table_partitionsContext ctx,
+            Map<String, Expression> externalTablePartition) {
+        if (ctx == null) {
+            return;
+        }
+        externalTablePartition.put(ctx.external_table_partition().relation_name().getText(),
+                new ConstExpression(ctx.external_table_partition().expr_const()));
+        visitExternalTablePartitions(ctx.external_table_partitions(), externalTablePartition);
     }
 
     private void visitNameList(Name_listContext ctx, List<String> nameList) {

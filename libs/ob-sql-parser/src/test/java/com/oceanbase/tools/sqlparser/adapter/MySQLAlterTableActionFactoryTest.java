@@ -35,6 +35,7 @@ import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction.Alte
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
 import com.oceanbase.tools.sqlparser.statement.common.GeneralDataType;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
+import com.oceanbase.tools.sqlparser.statement.common.mysql.LobStorageOption;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.ConstraintState;
 import com.oceanbase.tools.sqlparser.statement.createtable.HashPartition;
@@ -148,6 +149,23 @@ public class MySQLAlterTableActionFactoryTest {
     }
 
     @Test
+    public void generate_addColumnsWithLobStorage_succeed() {
+        StatementFactory<AlterTableAction> factory = new MySQLAlterTableActionFactory(
+                getActionContext("add (id varchar(64), id1 blob) json(col) store as (chunk 'aas' chunk 123)"));
+        AlterTableAction actual = factory.generate();
+
+        AlterTableAction expect = new AlterTableAction();
+        CharacterType t1 = new CharacterType("varchar", new BigDecimal("64"));
+        ColumnDefinition d1 = new ColumnDefinition(new ColumnReference(null, null, "id"), t1);
+        GeneralDataType t2 = new GeneralDataType("blob", null);
+        ColumnDefinition d2 = new ColumnDefinition(new ColumnReference(null, null, "id1"), t2);
+        expect.setAddColumns(Arrays.asList(d1, d2));
+        LobStorageOption storageOption = new LobStorageOption("col", Arrays.asList("'aas'", "123"));
+        expect.setLobStorageOption(storageOption);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_dropColumnCascade_succeed() {
         StatementFactory<AlterTableAction> factory = new MySQLAlterTableActionFactory(
                 getActionContext("drop column id cascade"));
@@ -199,6 +217,19 @@ public class MySQLAlterTableActionFactoryTest {
     public void generate_alterColumn_succeed() {
         StatementFactory<AlterTableAction> factory = new MySQLAlterTableActionFactory(
                 getActionContext("alter column a.b set default 12"));
+        AlterTableAction actual = factory.generate();
+
+        AlterTableAction expect = new AlterTableAction();
+        AlterColumnBehavior behavior = new AlterColumnBehavior();
+        behavior.setDefaultValue(new ConstExpression("12"));
+        expect.alterColumnBehavior(new ColumnReference(null, "a", "b"), behavior);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_alterColumn1_succeed() {
+        StatementFactory<AlterTableAction> factory = new MySQLAlterTableActionFactory(
+                getActionContext("alter column a.b set default (12)"));
         AlterTableAction actual = factory.generate();
 
         AlterTableAction expect = new AlterTableAction();
@@ -639,6 +670,17 @@ public class MySQLAlterTableActionFactoryTest {
 
         AlterTableAction expect = new AlterTableAction();
         expect.setDropForeignKeyName("abcd");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_exchangePartition_succeed() {
+        StatementFactory<AlterTableAction> factory = new MySQLAlterTableActionFactory(
+                getActionContext("exchange partition p1 with table tbl without validation"));
+        AlterTableAction actual = factory.generate();
+
+        AlterTableAction expect = new AlterTableAction();
+        expect.setExchangePartition("p1", new RelationFactor("tbl"));
         Assert.assertEquals(expect, actual);
     }
 

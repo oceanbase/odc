@@ -165,7 +165,11 @@ public class OracleFromReferenceFactory extends OBParserBaseVisitor<FromReferenc
         if (ctx.tbl_name() != null) {
             return visit(ctx.tbl_name());
         } else if (ctx.table_subquery() != null) {
-            return visit(ctx.table_subquery());
+            ExpressionReference reference = (ExpressionReference) visit(ctx.table_subquery());
+            if (ctx.LATERAL() != null) {
+                reference.setLateral(true);
+            }
+            return reference;
         } else if (ctx.table_reference() != null) {
             return visit(ctx.table_reference());
         } else if (ctx.simple_expr() != null) {

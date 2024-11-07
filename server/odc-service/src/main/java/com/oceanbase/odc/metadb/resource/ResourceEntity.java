@@ -37,7 +37,7 @@ import lombok.ToString;
 
 /**
  * resource table definition for task
- * 
+ *
  * @author longpeng.zlp
  * @date 2024/8/14 17:37
  */

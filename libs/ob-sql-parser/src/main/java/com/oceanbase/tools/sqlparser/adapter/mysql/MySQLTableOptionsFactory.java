@@ -16,6 +16,7 @@
 package com.oceanbase.tools.sqlparser.adapter.mysql;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,12 +25,14 @@ import java.util.stream.Collectors;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Lob_storage_clauseContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Parallel_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Table_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Table_option_listContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Table_option_list_space_seperatedContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.Expression;
+import com.oceanbase.tools.sqlparser.statement.common.mysql.LobStorageOption;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
 import com.oceanbase.tools.sqlparser.statement.expression.BoolValue;
 import com.oceanbase.tools.sqlparser.statement.expression.CollectionExpression;
@@ -172,6 +175,8 @@ public class MySQLTableOptionsFactory extends OBParserBaseVisitor<TableOptions>
                             .map(ex -> new MySQLExpressionFactory(ex).generate())
                             .collect(Collectors.toList());
                     value = new CollectionExpression(e.expr_list(), exprs);
+                } else if (e.compression_name() != null) {
+                    value = new ConstExpression(e.compression_name());
                 }
                 formatMap.put(e.format_key.getText().toUpperCase(), value);
             });
@@ -187,6 +192,60 @@ public class MySQLTableOptionsFactory extends OBParserBaseVisitor<TableOptions>
             target.setDefaultLobInRowThreshold(Integer.valueOf(ctx.INTNUM().getText()));
         } else if (ctx.LOB_INROW_THRESHOLD() != null) {
             target.setLobInRowThreshold(Integer.valueOf(ctx.INTNUM().getText()));
+        } else if (ctx.KEY_BLOCK_SIZE() != null) {
+            target.setKeyBlockSize(Integer.valueOf(ctx.INTNUM().getText()));
+        } else if (ctx.AUTO_INCREMENT_CACHE_SIZE() != null) {
+            target.setAutoIncrementCacheSize(Integer.valueOf(ctx.INTNUM().getText()));
+        } else if (ctx.PARTITION_TYPE() != null) {
+            target.setPartitionType(ctx.USER_SPECIFIED().getText());
+        } else if (ctx.PROPERTIES() != null) {
+            Map<String, String> externalProperties = new HashMap<>();
+            ctx.external_properties_list().external_properties().forEach(e -> {
+                externalProperties.put(e.external_properties_key().getText(), e.STRING_VALUE().getText());
+            });
+            target.setExternalProperties(externalProperties);
+        } else if (ctx.lob_storage_clause() != null) {
+            target.setLobStorageOption(getLobStorageOption(ctx.lob_storage_clause()));
+        } else if (ctx.MICRO_INDEX_CLUSTERED() != null) {
+            target.setMicroIndexClustered(Boolean.valueOf(ctx.BOOL_VALUE().getText()));
+        } else if (ctx.AUTO_REFRESH() != null) {
+            if (ctx.OFF() != null) {
+                target.setAutoRefresh(ctx.OFF().getText());
+            } else if (ctx.IMMEDIATE() != null) {
+                target.setAutoRefresh(ctx.IMMEDIATE().getText());
+            } else if (ctx.INTERVAL() != null) {
+                target.setAutoRefresh(ctx.INTERVAL().getText());
+            }
+        } else if (ctx.MIN_ROWS() != null) {
+            target.setMinRows(Integer.valueOf(ctx.INTNUM().getText()));
+        } else if (ctx.MAX_ROWS() != null) {
+            target.setMaxRows(Integer.valueOf(ctx.INTNUM().getText()));
+        } else if (ctx.PASSWORD() != null) {
+            target.setPassword(ctx.STRING_VALUE().getText());
+        } else if (ctx.PACK_KEYS() != null) {
+            target.setPackKeys(ctx.INTNUM() != null ? ctx.INTNUM().getText() : ctx.DEFAULT().getText());
+        } else if (ctx.CONNECTION() != null) {
+            target.setConnection(ctx.STRING_VALUE().getText());
+        } else if (ctx.DATA() != null && ctx.DIRECTORY() != null) {
+            target.setDataDirectory(ctx.STRING_VALUE().getText());
+        } else if (ctx.INDEX() != null && ctx.DIRECTORY() != null) {
+            target.setIndexDirectory(ctx.STRING_VALUE().getText());
+        } else if (ctx.ENCRYPTION() != null) {
+            target.setEncryption(ctx.STRING_VALUE().getText());
+        } else if (ctx.STATS_AUTO_RECALC() != null) {
+            target.setStatsAutoRecalc(ctx.INTNUM() != null ? ctx.INTNUM().getText() : ctx.DEFAULT().getText());
+        } else if (ctx.STATS_PERSISTENT() != null) {
+            target.setStatsPersistent(ctx.INTNUM() != null ? ctx.INTNUM().getText() : ctx.DEFAULT().getText());
+        } else if (ctx.STATS_SAMPLE_PAGES() != null) {
+            target.setStatsSamplePages(ctx.INTNUM() != null ? ctx.INTNUM().getText() : ctx.DEFAULT().getText());
+        } else if (ctx.UNION() != null) {
+            target.setUnion(Collections.emptyList());
+            if (ctx.table_list() != null) {
+                target.setUnion(ctx.table_list().relation_factor().stream()
+                        .map(MySQLFromReferenceFactory::getRelationFactor).collect(Collectors.toList()));
+            }
+        } else if (ctx.INSERT_METHOD() != null) {
+            target.setInsertMethod(ctx.merge_insert_types().getText());
         }
         return target;
     }
@@ -200,6 +259,17 @@ public class MySQLTableOptionsFactory extends OBParserBaseVisitor<TableOptions>
             tableOptions.setParallel(Integer.valueOf(ctx.INTNUM().getText()));
         }
         return tableOptions;
+    }
+
+    public static LobStorageOption getLobStorageOption(Lob_storage_clauseContext ctx) {
+        List<String> lobStorageSizes = ctx.lob_storage_parameters().lob_storage_parameter()
+                .stream().map(i -> {
+                    if (i.lob_chunk_size().INTNUM() != null) {
+                        return i.lob_chunk_size().INTNUM().getText();
+                    }
+                    return i.lob_chunk_size().STRING_VALUE().getText();
+                }).collect(Collectors.toList());
+        return new LobStorageOption(ctx, ctx.column_name().getText(), lobStorageSizes);
     }
 
 }

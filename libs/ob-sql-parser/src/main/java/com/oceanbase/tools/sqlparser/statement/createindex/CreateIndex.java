@@ -46,12 +46,14 @@ public class CreateIndex extends BaseStatement {
 
     private boolean fullText;
     private boolean spatial;
+    private boolean vector;
     private boolean unique;
     private boolean ifNotExists;
     private RelationFactor on;
     private RelationFactor relation;
     private IndexOptions indexOptions;
     private Partition partition;
+    private boolean mdSysDotSpatialIndex;
     private final List<SortColumn> columns;
     private List<ColumnGroupElement> columnGroupElements;
 
@@ -80,6 +82,9 @@ public class CreateIndex extends BaseStatement {
         if (this.fullText) {
             builder.append(" FULLTEXT");
         }
+        if (this.vector) {
+            builder.append(" VECTOR");
+        }
         if (this.spatial) {
             builder.append(" SPATIAL");
         }
@@ -92,6 +97,9 @@ public class CreateIndex extends BaseStatement {
                 .append(" (\n\t").append(this.columns.stream()
                         .map(SortColumn::toString).collect(Collectors.joining(",\n\t")))
                 .append("\n)");
+        if (this.mdSysDotSpatialIndex) {
+            builder.append(" INDEXTYPE IS MDSYS.SPATIAL_INDEX");
+        }
         if (this.indexOptions != null) {
             builder.append(" ").append(this.indexOptions);
         }

@@ -92,7 +92,7 @@ public abstract class BaseOmsClient implements OmsClient {
     @VisibleForTesting
     protected <T> OmsApiReturnResult<T> resolveResponseEntity(ClientRequestParams requestParams,
             ResponseEntity<String> responseEntity, TypeReference<OmsApiReturnResult<T>> typeReference) {
-        log.info("process oms request [{}] with response [{}]", requestParams, responseEntity.getBody());
+        log.info("process oms request [{}] with response [{}]", url + "/" + requestParams, responseEntity.getBody());
         if (responseEntity.getStatusCode() != HttpStatus.OK) {
             if (responseEntity.getStatusCode() == HttpStatus.REQUEST_TIMEOUT) {
                 throw new OmsException(ErrorCodes.Timeout, responseEntity.toString(), null,
