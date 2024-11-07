@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.feature;
 
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,12 +32,10 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.metadb.feature.VersionDiffConfigDAO;
-import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.feature.model.DataTypeUnit;
 import com.oceanbase.odc.service.feature.model.VersionDiffConfig;
-import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 
 import lombok.Data;
 import lombok.NonNull;
@@ -140,18 +137,15 @@ public class VersionDiffConfigService {
         return obSupportList;
     }
 
-    public boolean isExternalTableSupported(@NonNull DialectType dialectType, @NonNull Connection conn) {
+    public boolean isExternalTableSupported(@NonNull DialectType dialectType, @NonNull String versionNumber) {
         VersionDiffConfig config = new VersionDiffConfig();
         config.setDbMode(dialectType.name());
         config.setConfigKey(SUPPORT_EXTERNAL_TABLE);
         List<VersionDiffConfig> list = versionDiffConfigDAO.query(config);
         String minVersion = CollectionUtils.isNotEmpty(list) ? list.get(0).getMinVersion() : null;
-        InformationExtensionPoint point =
-                ConnectionPluginUtil.getInformationExtension(dialectType);
-        String databaseProductVersion = point.getDBVersion(conn);
         if ((dialectType == DialectType.OB_MYSQL || dialectType == DialectType.OB_ORACLE)
                 && minVersion != null
-                && VersionUtils.isGreaterThanOrEqualsTo(databaseProductVersion, minVersion)) {
+                && VersionUtils.isGreaterThanOrEqualsTo(versionNumber, minVersion)) {
             return true;
         }
         return false;

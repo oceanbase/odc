@@ -49,6 +49,7 @@ import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
+import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -63,6 +64,7 @@ import com.oceanbase.odc.service.feature.VersionDiffConfigService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
@@ -130,7 +132,11 @@ public class TableService {
                         tableExtension);
             }
             if (types.contains(DBObjectType.EXTERNAL_TABLE)) {
-                if (versionDiffConfigService.isExternalTableSupported(dataSource.getDialectType(), conn)) {
+                InformationExtensionPoint point =
+                        ConnectionPluginUtil.getInformationExtension(dataSource.getDialectType());
+                String databaseProductVersion = point.getDBVersion(conn);
+                if (versionDiffConfigService.isExternalTableSupported(dataSource.getDialectType(),
+                        databaseProductVersion)) {
                     generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn,
                             DBObjectType.EXTERNAL_TABLE, tableExtension);
                 }

@@ -28,9 +28,11 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.metadb.iam.PermissionEntity;
 import com.oceanbase.odc.metadb.iam.PermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
+import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.feature.VersionDiffConfigService;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
@@ -68,7 +70,10 @@ public class DBExternalTableSyncer extends AbstractDBObjectSyncer<TableExtension
     @Override
     public boolean supports(@NonNull DialectType dialectType, @NonNull Connection connection) {
         try {
-            return versionDiffConfigService.isExternalTableSupported(dialectType, connection)
+            InformationExtensionPoint point =
+                    ConnectionPluginUtil.getInformationExtension(dialectType);
+            String databaseProductVersion = point.getDBVersion(connection);
+            return versionDiffConfigService.isExternalTableSupported(dialectType, databaseProductVersion)
                     && getExtensionPoint(dialectType) != null;
         } catch (Exception e) {
             log.warn("check external table support failed", e);
