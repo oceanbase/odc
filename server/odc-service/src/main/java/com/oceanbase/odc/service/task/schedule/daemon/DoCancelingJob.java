@@ -68,7 +68,7 @@ public class DoCancelingJob implements Job {
         getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
             JobEntity lockedEntity = taskFrameworkService.findWithPessimisticLock(jobEntity.getId());
             if (lockedEntity.getStatus() == JobStatus.CANCELING) {
-                if (!configuration.getTaskFrameworkService().refreshLogMeta(lockedEntity.getId())) {
+                if (!configuration.getTaskFrameworkService().refreshLogMetaForCancelJob(lockedEntity.getId())) {
                     log.info(
                             "Job is canceling but log have not uploaded, continue monitor result, jobId={}, currentStatus={}",
                             lockedEntity.getId(), lockedEntity.getStatus());

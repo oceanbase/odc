@@ -43,7 +43,7 @@ public interface TaskFrameworkService {
 
     void refreshResult(Long id);
 
-    boolean refreshLogMeta(Long id);
+    boolean refreshLogMetaForCancelJob(Long id);
 
     void handleHeart(HeartbeatRequest heart);
 

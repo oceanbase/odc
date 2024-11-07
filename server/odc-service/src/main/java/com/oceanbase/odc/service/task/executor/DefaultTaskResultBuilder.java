@@ -36,4 +36,8 @@ public class DefaultTaskResultBuilder {
         return result;
     }
 
+    public static void assignErrorMessage(DefaultTaskResult result, BaseTask<?> task) {
+        Throwable e = task.getError();
+        result.setErrorMessage(null == e ? null : e.getMessage());
+    }
 }

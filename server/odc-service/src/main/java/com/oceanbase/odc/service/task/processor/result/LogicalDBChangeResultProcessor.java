@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.processor;
+package com.oceanbase.odc.service.task.processor.result;
 
 import java.util.Collection;
 import java.util.List;
@@ -33,6 +33,7 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.Sq
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalDBChangeExecutionUnit;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.executor.TaskResult;
+import com.oceanbase.odc.service.task.processor.matcher.LogicalDBChangeProcessorMatcher;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,12 +44,12 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class LogicalDBChangeResultProcessor implements ResultProcessor {
+public class LogicalDBChangeResultProcessor extends LogicalDBChangeProcessorMatcher implements ResultProcessor {
     @Autowired
-    private LogicalDatabaseChangeService logicalDatabaseChangeService;
+    protected LogicalDatabaseChangeService logicalDatabaseChangeService;
 
     @Autowired
-    private ScheduleTaskService taskService;
+    protected ScheduleTaskService taskService;
 
     @Override
     public void process(TaskResult result) {

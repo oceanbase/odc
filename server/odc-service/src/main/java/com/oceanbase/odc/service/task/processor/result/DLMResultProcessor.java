@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.processor;
+package com.oceanbase.odc.service.task.processor.result;
 
 import java.util.List;
 
@@ -24,7 +24,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.dlm.DLMService;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
+import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.executor.TaskResult;
+import com.oceanbase.odc.service.task.processor.matcher.DLMProcessorMatcher;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,10 +38,13 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
-public class DLMResultProcessor implements ResultProcessor {
+public class DLMResultProcessor extends DLMProcessorMatcher implements ResultProcessor {
 
     @Autowired
-    private DLMService dlmService;
+    protected DLMService dlmService;
+
+    @Autowired
+    protected ScheduleTaskService taskService;
 
     @Override
     public void process(TaskResult result) {

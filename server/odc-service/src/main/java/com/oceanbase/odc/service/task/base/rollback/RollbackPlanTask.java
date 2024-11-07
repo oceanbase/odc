@@ -47,6 +47,7 @@ import com.oceanbase.odc.service.rollbackplan.RollbackGeneratorFactory;
 import com.oceanbase.odc.service.rollbackplan.UnsupportedSqlTypeForRollbackPlanException;
 import com.oceanbase.odc.service.rollbackplan.model.RollbackPlan;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+import com.oceanbase.odc.service.task.TaskContext;
 import com.oceanbase.odc.service.task.base.BaseTask;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
@@ -83,7 +84,7 @@ public class RollbackPlanTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected boolean doStart(JobContext context) throws Exception {
+    protected boolean doStart(JobContext context, TaskContext taskContext) throws Exception {
         try {
             long startTimeMills = System.currentTimeMillis();
             ConnectionConfig connectionConfig = parameters.getConnectionConfig();
@@ -155,6 +156,7 @@ public class RollbackPlanTask extends BaseTask<FlowTaskResult> {
             }
         } catch (Exception e) {
             rollbackPlanTaskResult = RollbackPlanTaskResult.fail(e.getMessage());
+            taskContext.getExceptionListener().onException(e);
             throw e;
         } finally {
             tryCloseInputStream();

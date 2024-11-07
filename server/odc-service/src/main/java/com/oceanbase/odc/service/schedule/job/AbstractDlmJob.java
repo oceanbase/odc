@@ -36,6 +36,7 @@ import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.task.base.dataarchive.DataArchiveTask;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
+import com.oceanbase.odc.service.task.executor.task.TaskDescription;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
@@ -120,7 +121,7 @@ public abstract class AbstractDlmJob implements OdcJob {
         jobProperties.putAll(singleJobProperties.toJobProperties());
 
         DefaultJobDefinition jobDefinition = DefaultJobDefinition.builder().jobClass(DataArchiveTask.class)
-                .jobType("DLM")
+                .jobType(TaskDescription.DLM.getType())
                 .jobParameters(jobData)
                 .jobProperties(jobProperties)
                 .build();

@@ -84,7 +84,7 @@ public class CreateGhostTableAction implements Action<OscActionContext, OscActio
             ConnectionSession session, Long scheduleTaskId, OscActionContext oscContext) throws SQLException {
         // drop is required, cause the following sql may failed, and we do retry from the beginning
         OscTableUtil.dropNewTableIfExits(taskParam.getDatabaseName(), taskParam.getNewTableNameUnwrapped(), session);
-        SyncJdbcExecutor executor = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
+        SyncJdbcExecutor executor = session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
         String finalTableDdl;
         executor.execute(taskParam.getNewTableCreateDdl());
         if (CollectionUtils.isNotEmpty(taskParam.getSqlsToBeExecuted())) {

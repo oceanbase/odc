@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.task.schedule.daemon;
 
 import java.text.MessageFormat;
+import java.util.Map;
 
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
@@ -79,9 +80,14 @@ public class DestroyResourceJob implements Job {
                 log.warn("DestroyResourceJob destroy resource = {} failed", resourceEntity, e);
                 if (e.getMessage() != null &&
                         !e.getMessage().startsWith(JobConstants.ODC_EXECUTOR_CANNOT_BE_DESTROYED)) {
-                    AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTOR_DESTROY_FAILED,
-                            MessageFormat.format("Job executor destroy failed, resource={0}, message={1}",
-                                    resourceEntity, e.getMessage()));
+                    Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                            .item(AlarmUtils.ORGANIZATION_NAME, AlarmUtils.ODC_RESOURCE)
+                            .item(AlarmUtils.RESOURCE_ID_NAME, String.valueOf(resourceEntity.getId()))
+                            .item(AlarmUtils.MESSAGE_NAME,
+                                    MessageFormat.format("Job resource destroy failed, resourceID={0}, message={1}",
+                                            resourceEntity.getId(), e.getMessage()))
+                            .build();
+                    AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTOR_DESTROY_FAILED, eventMessage);
                 }
                 throw new TaskRuntimeException(e);
             }

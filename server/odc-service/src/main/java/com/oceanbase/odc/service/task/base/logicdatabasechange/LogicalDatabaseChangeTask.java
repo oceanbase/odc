@@ -52,6 +52,7 @@ import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalD
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalTableResp;
 import com.oceanbase.odc.service.schedule.model.PublishLogicalDatabaseChangeReq;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
+import com.oceanbase.odc.service.task.TaskContext;
 import com.oceanbase.odc.service.task.base.BaseTask;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
@@ -85,7 +86,7 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
     }
 
     @Override
-    protected boolean doStart(JobContext context) throws Exception {
+    protected boolean doStart(JobContext context, TaskContext taskContext) throws Exception {
         try {
             DialectType dialectType = taskParameters.getLogicalDatabaseResp().getDialectType();
             DetailLogicalDatabaseResp detailLogicalDatabaseResp = taskParameters.getLogicalDatabaseResp();
@@ -177,6 +178,7 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
             this.executionGroupContext = executorEngine.execute(executionGroups);
         } catch (Exception ex) {
             log.warn("start logical database change task failed, ", ex);
+            taskContext.getExceptionListener().onException(ex);
             return false;
         }
         while (!Thread.currentThread().isInterrupted()) {
@@ -186,6 +188,7 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
             }
             if (CollectionUtils.isNotEmpty(this.executionGroupContext.getThrowables())) {
                 log.warn("logical database change task failed, ", this.executionGroupContext.getThrowables());
+                taskContext.getExceptionListener().onException(this.executionGroupContext.getThrowables().get(0));
                 return false;
             }
             try {
