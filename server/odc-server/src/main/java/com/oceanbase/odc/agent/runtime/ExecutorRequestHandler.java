@@ -25,12 +25,9 @@ import com.oceanbase.odc.common.util.ObjectUtil;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.UrlUtils;
-import com.oceanbase.odc.service.task.Task;
-import com.oceanbase.odc.service.task.base.BaseTask;
 import com.oceanbase.odc.service.task.constants.JobExecutorUrls;
 import com.oceanbase.odc.service.task.executor.DefaultTaskResult;
 import com.oceanbase.odc.service.task.executor.DefaultTaskResultBuilder;
-import com.oceanbase.odc.service.task.executor.TaskMonitor;
 import com.oceanbase.odc.service.task.executor.logger.LogBiz;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
@@ -89,21 +86,21 @@ public class ExecutorRequestHandler {
             matcher = modifyParametersPattern.matcher(path);
             if (matcher.find()) {
                 JobIdentity ji = getJobIdentity(matcher);
-                Task<?> task = ThreadPoolTaskExecutor.getInstance().getTask(ji);
-                boolean result = task.modify(JobUtils.fromJsonToMap(requestData));
+                TaskRuntimeInfo runtimeInfo = ThreadPoolTaskExecutor.getInstance().getTaskRuntimeInfo(ji);
+                boolean result = runtimeInfo.getTask().modify(JobUtils.fromJsonToMap(requestData));
                 return Responses.ok(result);
             }
 
             matcher = getResultPattern.matcher(path);
             if (matcher.find()) {
                 JobIdentity ji = getJobIdentity(matcher);
-                BaseTask<?> task = ThreadPoolTaskExecutor.getInstance().getTask(ji);
-                TaskMonitor taskMonitor = task.getTaskMonitor();
-                DefaultTaskResult result = DefaultTaskResultBuilder.build(task);
+                TaskRuntimeInfo runtimeInfo = ThreadPoolTaskExecutor.getInstance().getTaskRuntimeInfo(ji);
+                TaskMonitor taskMonitor = runtimeInfo.getTaskMonitor();
+                DefaultTaskResult result = DefaultTaskResultBuilder.build(runtimeInfo.getTask());
                 if (taskMonitor != null && MapUtils.isNotEmpty(taskMonitor.getLogMetadata())) {
                     result.setLogMetadata(taskMonitor.getLogMetadata());
                     // assign final error message
-                    DefaultTaskResultBuilder.assignErrorMessage(result, task);
+                    DefaultTaskResultBuilder.assignErrorMessage(result, taskMonitor.getError());
                     taskMonitor.markLogMetaCollected();
                     log.info("Task log metadata collected, ji={}.", ji.getId());
                 }

@@ -83,6 +83,7 @@ public class DestroyResourceJob implements Job {
                     Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
                             .item(AlarmUtils.ORGANIZATION_NAME, AlarmUtils.ODC_RESOURCE)
                             .item(AlarmUtils.RESOURCE_ID_NAME, String.valueOf(resourceEntity.getId()))
+                            .item(AlarmUtils.RESOURCE_TYPE, resourceEntity.getResourceType())
                             .item(AlarmUtils.MESSAGE_NAME,
                                     MessageFormat.format("Job resource destroy failed, resourceID={0}, message={1}",
                                             resourceEntity.getId(), e.getMessage()))
@@ -94,7 +95,6 @@ public class DestroyResourceJob implements Job {
             log.info("Job destroy resource succeed, resource={}", resourceEntity);
         });
     }
-
 
     private JobConfiguration getConfiguration() {
         return configuration;

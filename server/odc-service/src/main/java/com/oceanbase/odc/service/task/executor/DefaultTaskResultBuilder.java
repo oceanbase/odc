@@ -16,7 +16,7 @@
 package com.oceanbase.odc.service.task.executor;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.service.task.base.BaseTask;
+import com.oceanbase.odc.service.task.Task;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**
@@ -26,7 +26,7 @@ import com.oceanbase.odc.service.task.util.JobUtils;
  */
 public class DefaultTaskResultBuilder {
 
-    public static DefaultTaskResult build(BaseTask<?> task) {
+    public static DefaultTaskResult build(Task<?> task) {
         DefaultTaskResult result = new DefaultTaskResult();
         result.setResultJson(JsonUtils.toJson(task.getTaskResult()));
         result.setStatus(task.getStatus());
@@ -36,8 +36,7 @@ public class DefaultTaskResultBuilder {
         return result;
     }
 
-    public static void assignErrorMessage(DefaultTaskResult result, BaseTask<?> task) {
-        Throwable e = task.getError();
+    public static void assignErrorMessage(DefaultTaskResult result, Throwable e) {
         result.setErrorMessage(null == e ? null : e.getMessage());
     }
 }

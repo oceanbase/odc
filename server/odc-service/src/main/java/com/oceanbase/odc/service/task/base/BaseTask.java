@@ -15,26 +15,19 @@
  */
 package com.oceanbase.odc.service.task.base;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
-import com.oceanbase.odc.service.task.ExceptionListener;
 import com.oceanbase.odc.service.task.Task;
 import com.oceanbase.odc.service.task.TaskContext;
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.executor.TaskMonitor;
-import com.oceanbase.odc.service.task.util.CloudObjectStorageServiceBuilder;
-import com.oceanbase.odc.service.task.util.JobUtils;
 
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -42,40 +35,26 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2023/11/22 20:16
  */
 @Slf4j
-public abstract class BaseTask<RESULT> implements Task<RESULT>, ExceptionListener {
+public abstract class BaseTask<RESULT> implements Task<RESULT> {
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
-    private JobContext context;
-    private Map<String, String> jobParameters;
+    protected TaskContext context;
+    private DefaultJobContext jobContext;
     private volatile TaskStatus status = TaskStatus.PREPARING;
-    private CloudObjectStorageService cloudObjectStorageService;
-    // only save latest exception if any
-    // it will be cleaned if been fetched
-    protected AtomicReference<Throwable> latestException = new AtomicReference<>();
 
-    @Getter
-    private TaskMonitor taskMonitor;
 
     @Override
     public void start(TaskContext taskContext) {
-        this.context = taskContext.getJobContext();
-        log.info("Start task, id={}.", context.getJobIdentity().getId());
-
-        this.jobParameters = Collections.unmodifiableMap(context.getJobParameters());
-        log.info("Init task parameters success, id={}.", context.getJobIdentity().getId());
+        this.context = taskContext;
+        jobContext = copyJobContext(taskContext);
+        log.info("Start task, id={}.", jobContext.getJobIdentity().getId());
+        log.info("Init task parameters success, id={}.", jobContext.getJobIdentity().getId());
 
         try {
-            initCloudObjectStorageService();
-        } catch (Exception e) {
-            log.warn("Init cloud object storage service failed, id={}.", getJobId(), e);
-        }
-
-        this.taskMonitor = createTaskMonitor();
-        try {
-            doInit(context);
+            doInit(jobContext);
             updateStatus(TaskStatus.RUNNING);
-            taskMonitor.monitor();
-            if (doStart(context, taskContext)) {
+            context.getTaskEventListener().onTaskStart(this);
+            if (doStart(jobContext, taskContext)) {
                 updateStatus(TaskStatus.DONE);
             } else {
                 updateStatus(TaskStatus.FAILED);
@@ -87,10 +66,6 @@ public abstract class BaseTask<RESULT> implements Task<RESULT>, ExceptionListene
         } finally {
             close();
         }
-    }
-
-    protected TaskMonitor createTaskMonitor() {
-        return new TaskMonitor(this, cloudObjectStorageService);
     }
 
     @Override
@@ -122,9 +97,7 @@ public abstract class BaseTask<RESULT> implements Task<RESULT>, ExceptionListene
             log.warn("Task is already finished, cannot modify parameters, id={}", getJobId());
             return false;
         }
-        DefaultJobContext ctx = (DefaultJobContext) getJobContext();
-        ctx.setJobParameters(jobParameters);
-        this.jobParameters = Collections.unmodifiableMap(jobParameters);
+        jobContext.setJobParameters(Collections.unmodifiableMap(jobParameters));
         try {
             afterModifiedJobParameters();
         } catch (Exception e) {
@@ -133,10 +106,6 @@ public abstract class BaseTask<RESULT> implements Task<RESULT>, ExceptionListene
         return true;
     }
 
-    private void initCloudObjectStorageService() {
-        Optional<ObjectStorageConfiguration> storageConfig = JobUtils.getObjectStorageConfiguration();
-        storageConfig.ifPresent(osc -> this.cloudObjectStorageService = CloudObjectStorageServiceBuilder.build(osc));
-    }
 
     private void close() {
         if (closed.compareAndSet(false, true)) {
@@ -146,12 +115,10 @@ public abstract class BaseTask<RESULT> implements Task<RESULT>, ExceptionListene
                 // do nothing
             }
             log.info("Task completed, id={}, status={}.", getJobId(), getStatus());
-            taskMonitor.finalWork();
+            if (null != context) {
+                context.getTaskEventListener().onTaskFinalize(this);
+            }
         }
-    }
-
-    protected CloudObjectStorageService getCloudObjectStorageService() {
-        return cloudObjectStorageService;
     }
 
     @Override
@@ -161,7 +128,7 @@ public abstract class BaseTask<RESULT> implements Task<RESULT>, ExceptionListene
 
     @Override
     public JobContext getJobContext() {
-        return context;
+        return jobContext;
     }
 
     protected void updateStatus(TaskStatus status) {
@@ -170,7 +137,7 @@ public abstract class BaseTask<RESULT> implements Task<RESULT>, ExceptionListene
     }
 
     protected Map<String, String> getJobParameters() {
-        return this.jobParameters;
+        return jobContext.getJobParameters();
     }
 
     private Long getJobId() {
@@ -197,14 +164,21 @@ public abstract class BaseTask<RESULT> implements Task<RESULT>, ExceptionListene
         // do nothing
     }
 
-    public Throwable getError() {
-        Throwable e = latestException.getAndSet(null);
-        log.info("retrieve exception = {}", null == e ? null : e.getMessage());
-        return e;
-    }
-
-    public void onException(Throwable e) {
-        log.info("found exception", e);
-        this.latestException.set(e);
+    // deep copy job context
+    protected DefaultJobContext copyJobContext(TaskContext taskContext) {
+        DefaultJobContext ret = new DefaultJobContext();
+        JobContext src = taskContext.getJobContext();
+        ret.setJobIdentity(src.getJobIdentity());
+        if (null != src.getJobProperties()) {
+            ret.setJobProperties(new HashMap<>(src.getJobProperties()));
+        }
+        if (null != src.getJobParameters()) {
+            ret.setJobParameters(Collections.unmodifiableMap(new HashMap<>(src.getJobParameters())));
+        }
+        ret.setJobClass(src.getJobClass());
+        if (null != src.getHostUrls()) {
+            ret.setHostUrls(new ArrayList<>(src.getHostUrls()));
+        }
+        return ret;
     }
 }

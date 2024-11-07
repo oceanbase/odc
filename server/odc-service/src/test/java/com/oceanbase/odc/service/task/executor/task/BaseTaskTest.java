@@ -24,15 +24,16 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.task.ExceptionListener;
 import com.oceanbase.odc.service.task.TaskContext;
+import com.oceanbase.odc.service.task.TaskEventListener;
 import com.oceanbase.odc.service.task.base.BaseTask;
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.executor.DefaultTaskResult;
 import com.oceanbase.odc.service.task.executor.DefaultTaskResultBuilder;
-import com.oceanbase.odc.service.task.executor.TaskMonitor;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
@@ -61,19 +62,30 @@ public class BaseTaskTest {
                 SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_EXECUTOR_PORT);
             }).thenReturn("9099");
             DummyBaseTask dummyBaseTask = new DummyBaseTask(false);
+            DummyErrorListener dummyErrorListener = new DummyErrorListener();
             dummyBaseTask.start(new TaskContext() {
                 @Override
                 public ExceptionListener getExceptionListener() {
-                    return dummyBaseTask;
+                    return dummyErrorListener;
                 }
 
                 @Override
                 public JobContext getJobContext() {
                     return jobContext;
                 }
+
+                @Override
+                public TaskEventListener getTaskEventListener() {
+                    return Mockito.mock(TaskEventListener.class);
+                }
+
+                @Override
+                public CloudObjectStorageService getSharedStorage() {
+                    return Mockito.mock(CloudObjectStorageService.class);
+                }
             });
             DefaultTaskResult taskResult = DefaultTaskResultBuilder.build(dummyBaseTask);
-            DefaultTaskResultBuilder.assignErrorMessage(taskResult, dummyBaseTask);
+            DefaultTaskResultBuilder.assignErrorMessage(taskResult, dummyErrorListener.error);
             Assert.assertNull(taskResult.getErrorMessage());
         }
     }
@@ -85,20 +97,40 @@ public class BaseTaskTest {
                 SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_EXECUTOR_PORT);
             }).thenReturn("9099");
             DummyBaseTask dummyBaseTask = new DummyBaseTask(true);
+            DummyErrorListener dummyErrorListener = new DummyErrorListener();
             dummyBaseTask.start(new TaskContext() {
                 @Override
                 public ExceptionListener getExceptionListener() {
-                    return dummyBaseTask;
+                    return dummyErrorListener;
                 }
 
                 @Override
                 public JobContext getJobContext() {
                     return jobContext;
                 }
+
+                @Override
+                public TaskEventListener getTaskEventListener() {
+                    return Mockito.mock(TaskEventListener.class);
+                }
+
+                @Override
+                public CloudObjectStorageService getSharedStorage() {
+                    return Mockito.mock(CloudObjectStorageService.class);
+                }
             });
             DefaultTaskResult taskResult = DefaultTaskResultBuilder.build(dummyBaseTask);
-            DefaultTaskResultBuilder.assignErrorMessage(taskResult, dummyBaseTask);
+            DefaultTaskResultBuilder.assignErrorMessage(taskResult, dummyErrorListener.error);
             Assert.assertEquals(taskResult.getErrorMessage(), "exception should be thrown");
+        }
+    }
+
+    private static final class DummyErrorListener implements ExceptionListener {
+        private Throwable error;
+
+        @Override
+        public void onException(Throwable e) {
+            this.error = e;
         }
     }
 
@@ -118,10 +150,6 @@ public class BaseTaskTest {
                 throw new IllegalStateException("exception should be thrown");
             }
             return true;
-        }
-
-        protected TaskMonitor createTaskMonitor() {
-            return Mockito.mock(TaskMonitor.class);
         }
 
         @Override

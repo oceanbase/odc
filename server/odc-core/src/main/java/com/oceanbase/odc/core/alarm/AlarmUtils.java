@@ -39,6 +39,7 @@ public final class AlarmUtils {
      */
     public static final String TASK_JOB_ID_NAME = "JobId";
     public static final String RESOURCE_ID_NAME = "ResourceID";
+    public static final String RESOURCE_TYPE = "ResourceType";
     public static final String TASK_TYPE_NAME = "TaskType";
     public static final String SCHEDULE_ID_NAME = "ScheduleId";
     public static final Collection<String> TASK_FRAMEWORK_ALARM_DIGEST_NAMES =

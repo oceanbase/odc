@@ -141,7 +141,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
     private long taskId;
 
     @Override
-    protected void doInit(JobContext context) {
+    protected void doInit(JobContext jobContext) {
         taskId = getJobContext().getJobIdentity().getId();
         log.info("Initiating database change task, taskId={}", taskId);
         this.parameters = JobUtils.fromJson(getJobParameters().get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
@@ -162,7 +162,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
             try {
                 SizeAwareInputStream sizeAwareInputStream =
                         ObjectStorageUtils.loadObjectsForTask(this.parameters.getSqlFileObjectMetadatas(),
-                                getCloudObjectStorageService(), JobUtils.getExecutorDataPath(), -1);
+                                this.context.getSharedStorage(), JobUtils.getExecutorDataPath(), -1);
                 sqlTotalBytes += sizeAwareInputStream.getTotalBytes();
                 sqlInputStream = sizeAwareInputStream.getInputStream();
             } catch (IOException exception) {
@@ -429,7 +429,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
             OdcFileUtil.zip(String.format(zipFileRootPath), String.format("%s.zip", zipFileRootPath));
             log.info("Database change task result set was saved as local zip file, file name={}", zipFileId);
             // Public cloud scenario, need to upload files to OSS
-            CloudObjectStorageService cloudObjectStorageService = getCloudObjectStorageService();
+            CloudObjectStorageService cloudObjectStorageService = context.getSharedStorage();
             if (Objects.nonNull(cloudObjectStorageService) && cloudObjectStorageService.supported()) {
                 File tempZipFile = new File(String.format("%s.zip", zipFileRootPath));
                 try {

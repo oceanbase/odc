@@ -197,7 +197,7 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
         List<ObjectMetadata> objectMetadataList = this.parameters.getSqlFileObjectMetadatas();
         if (Objects.nonNull(params) && CollectionUtils.isNotEmpty(objectMetadataList)) {
             this.uploadFileInputStream = ObjectStorageUtils.loadObjectsForTask(objectMetadataList,
-                    getCloudObjectStorageService(), JobUtils.getExecutorDataPath(), -1).getInputStream();
+                    context.getSharedStorage(), JobUtils.getExecutorDataPath(), -1).getInputStream();
             this.uploadFileSqlIterator = SqlUtils.iterator(this.parameters.getConnectionConfig().getDialectType(),
                     params.getDelimiter(), this.uploadFileInputStream, StandardCharsets.UTF_8);
         }
