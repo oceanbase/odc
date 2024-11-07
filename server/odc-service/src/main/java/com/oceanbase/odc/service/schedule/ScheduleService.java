@@ -592,6 +592,7 @@ public class ScheduleService {
 
     public void stopTask(Long scheduleId, Long scheduleTaskId) {
         nullSafeGetByIdWithCheckPermission(scheduleId, true);
+        scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
         Lock lock = jdbcLockRegistry.obtain(getScheduleTaskLockKey(scheduleTaskId));
         try {
             if (!lock.tryLock(10, TimeUnit.SECONDS)) {
@@ -612,6 +613,7 @@ public class ScheduleService {
      */
     public void startTask(Long scheduleId, Long scheduleTaskId) {
         nullSafeGetByIdWithCheckPermission(scheduleId, true);
+        scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
         Lock lock = jdbcLockRegistry.obtain(getScheduleTaskLockKey(scheduleTaskId));
         try {
             if (!lock.tryLock(10, TimeUnit.SECONDS)) {
@@ -628,6 +630,7 @@ public class ScheduleService {
 
     public void rollbackTask(Long scheduleId, Long scheduleTaskId) {
         Schedule schedule = nullSafeGetByIdWithCheckPermission(scheduleId, true);
+        scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
         if (schedule.getType() != ScheduleType.DATA_ARCHIVE) {
             throw new UnsupportedException();
         }
@@ -854,6 +857,7 @@ public class ScheduleService {
 
     public String getFullLogDownloadUrl(Long scheduleId, Long scheduleTaskId) {
         nullSafeGetByIdWithCheckPermission(scheduleId, false);
+        scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
         return scheduledTaskLoggerService.getFullLogDownloadUrl(scheduleId, scheduleTaskId, OdcTaskLogLevel.ALL);
     }
 
@@ -863,16 +867,18 @@ public class ScheduleService {
 
     public String getLog(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel logLevel) {
         nullSafeGetByIdWithCheckPermission(scheduleId, false);
-        return scheduledTaskLoggerService.getLogContent(scheduleTaskId, logLevel);
+        scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
+        return scheduledTaskLoggerService.getLogContent(scheduleId, scheduleTaskId, logLevel);
     }
 
     public String getLogWithoutPermission(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel logLevel) {
-        return scheduledTaskLoggerService.getLogContent(scheduleTaskId, logLevel);
+        return scheduledTaskLoggerService.getLogContent(scheduleId, scheduleTaskId, logLevel);
     }
 
     public InputStreamResource downloadLog(Long scheduleId, Long scheduleTaskId) {
         nullSafeGetByIdWithCheckPermission(scheduleId);
-        return scheduledTaskLoggerService.downloadLog(scheduleTaskId, OdcTaskLogLevel.ALL);
+        scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
+        return scheduledTaskLoggerService.downloadLog(scheduleId, scheduleTaskId, OdcTaskLogLevel.ALL);
     }
 
     public Schedule nullSafeGetByIdWithCheckPermission(Long id) {
