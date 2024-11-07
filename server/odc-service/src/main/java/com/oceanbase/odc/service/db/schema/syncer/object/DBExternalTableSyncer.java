@@ -67,8 +67,13 @@ public class DBExternalTableSyncer extends AbstractDBObjectSyncer<TableExtension
 
     @Override
     public boolean supports(@NonNull DialectType dialectType, @NonNull Connection connection) {
-        return versionDiffConfigService.isExternalTableSupported(dialectType, connection)
-                && getExtensionPoint(dialectType) != null;
+        try {
+            return versionDiffConfigService.isExternalTableSupported(dialectType, connection)
+                    && getExtensionPoint(dialectType) != null;
+        } catch (Exception e) {
+            log.warn("check external table support failed", e);
+            return false;
+        }
     }
 
     @Override
