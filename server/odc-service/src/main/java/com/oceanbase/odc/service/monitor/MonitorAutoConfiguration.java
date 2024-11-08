@@ -127,6 +127,11 @@ public class MonitorAutoConfiguration {
         }
 
         @Override
+        public boolean incrementCounter(MeterKey meterKey, double amount) {
+            return false;
+        }
+
+        @Override
         public boolean startTimerSample(String sampleKey, MeterKey meterKey) {
             return false;
         }

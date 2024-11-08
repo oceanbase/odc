@@ -15,22 +15,28 @@
  */
 package com.oceanbase.odc.service.monitor.datasource;
 
-import com.oceanbase.odc.common.event.AbstractEventListener;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
 import com.oceanbase.odc.core.datasource.event.GetConnectionFailedEvent;
 
-import lombok.extern.slf4j.Slf4j;
+final class EventStore {
 
-@Slf4j
-public class GetConnectionFailedEventListener extends AbstractEventListener<GetConnectionFailedEvent> {
+    private final BlockingQueue<GetConnectionFailedEvent> eventQueue;
 
-    final static EventStore eventStore = new EventStore(10000);
-
-    @Override
-    public void onEvent(GetConnectionFailedEvent event) {
-        boolean offer = eventStore.offer(event);
-        if (!offer) {
-            log.error("Can't offer GetConnectionFailedEvent");
-        }
+    public EventStore(int size) {
+        eventQueue = new LinkedBlockingQueue<>(size);
     }
 
+    public boolean offer(GetConnectionFailedEvent event) {
+        return eventQueue.offer(event);
+    }
+
+    public List<GetConnectionFailedEvent> eventDrainTo(int size) {
+        List<GetConnectionFailedEvent> events = new ArrayList<>();
+        eventQueue.drainTo(events, size);
+        return events;
+    }
 }
