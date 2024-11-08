@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
@@ -659,6 +660,14 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 processor.process(taskResult);
             }
         }
+    }
+
+    @Override
+    public Map<String, String> getJobAttributes(Long jobId) {
+        List<JobAttributeEntity> attributeEntityList = jobAttributeRepository.findByJobId(jobId);
+        return attributeEntityList.stream().collect(Collectors.toMap(
+                JobAttributeEntity::getAttributeKey,
+                JobAttributeEntity::getAttributeValue));
     }
 
 }
