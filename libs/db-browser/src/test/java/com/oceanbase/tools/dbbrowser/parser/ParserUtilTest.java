@@ -330,6 +330,22 @@ public class ParserUtilTest {
     }
 
     @Test
+    public void test_oracle_alterSession() {
+        String sql = "alter SESSION set ob_query_timeout=6000000000;";
+        BasicResult result = ParserUtil.parseOracleType(sql);
+        Assert.assertEquals(SqlType.SET_SESSION, result.getSqlType());
+        Assert.assertEquals(DBObjectType.SESSION_VARIABLE, result.getDbObjectType());
+    }
+
+    @Test
+    public void test_oracle_setSession() {
+        String sql = "set SESSION ob_query_timeout=6000000000;";
+        BasicResult result = ParserUtil.parseOracleType(sql);
+        Assert.assertEquals(SqlType.SET_SESSION, result.getSqlType());
+        Assert.assertEquals(DBObjectType.SESSION_VARIABLE, result.getDbObjectType());
+    }
+
+    @Test
     public void test_oracle_comment_on_table() {
         String sql = "comment on table t is 'abc'";
         BasicResult result = ParserUtil.parseOracleType(sql);

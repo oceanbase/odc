@@ -327,4 +327,18 @@ public class SqlParserTest {
         Assert.assertEquals(SqlType.SET, actual.getSqlType());
     }
 
+    @Test
+    public void parseOracle_alterSession_getSqlTypeSucceed() {
+        ParseSqlResult actual = SqlParser.parseOracle("alter SESSION set ob_query_timeout=6000000000;");
+        Assert.assertEquals(SqlType.SET_SESSION, actual.getSqlType());
+        Assert.assertEquals(DBObjectType.SESSION_VARIABLE, actual.getDbObjectType());
+    }
+
+    @Test
+    public void parseOracle_setSession_getSqlTypeSucceed() {
+        ParseSqlResult actual = SqlParser.parseOracle("set SESSION ob_query_timeout=6000000000;");
+        Assert.assertEquals(SqlType.SET_SESSION, actual.getSqlType());
+        Assert.assertEquals(DBObjectType.SESSION_VARIABLE, actual.getDbObjectType());
+    }
+
 }
