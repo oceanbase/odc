@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.resourcehistory;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -66,6 +67,18 @@ public class ResourceLastAccessService {
         }
         resourceLastAccessRepository.save(entity);
         return entity;
+    }
+
+    public int batchDeleteResourceIds(Long organizationId, Long projectId, ResourceType resourceType,
+            Collection<Long> resourceIds) {
+        PreConditions.notNull(organizationId, "organizationId");
+        PreConditions.notNull(projectId, "projectId");
+        PreConditions.notNull(resourceType, "resourceType");
+        PreConditions.notEmpty(resourceIds, "resourceIds");
+        return resourceLastAccessRepository.deleteByOrganizationIdAndProjectIdAndResourceTypeAndResourceIdIn(
+                organizationId, projectId,
+                resourceType.name(),
+                resourceIds);
     }
 
     public Optional<ResourceLastAccessEntity> detail(Long organizationId, Long projectId,
