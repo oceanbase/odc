@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.executor;
+package com.oceanbase.odc.agent.runtime;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.task.Task;
+import com.oceanbase.odc.service.task.executor.DefaultTaskResult;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**
@@ -26,10 +27,11 @@ import com.oceanbase.odc.service.task.util.JobUtils;
  */
 public class DefaultTaskResultBuilder {
 
-    public static DefaultTaskResult build(Task<?> task) {
+    public static DefaultTaskResult build(TaskContainer<?> taskContainer) {
         DefaultTaskResult result = new DefaultTaskResult();
+        Task<?> task = taskContainer.getTask();
         result.setResultJson(JsonUtils.toJson(task.getTaskResult()));
-        result.setStatus(task.getStatus());
+        result.setStatus(taskContainer.getStatus());
         result.setProgress(task.getProgress());
         result.setJobIdentity(task.getJobContext().getJobIdentity());
         result.setExecutorEndpoint(JobUtils.getExecutorPoint());

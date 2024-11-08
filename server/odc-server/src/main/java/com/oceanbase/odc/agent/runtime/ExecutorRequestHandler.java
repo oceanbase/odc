@@ -27,7 +27,6 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.UrlUtils;
 import com.oceanbase.odc.service.task.constants.JobExecutorUrls;
 import com.oceanbase.odc.service.task.executor.DefaultTaskResult;
-import com.oceanbase.odc.service.task.executor.DefaultTaskResultBuilder;
 import com.oceanbase.odc.service.task.executor.logger.LogBiz;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
@@ -87,7 +86,7 @@ public class ExecutorRequestHandler {
             if (matcher.find()) {
                 JobIdentity ji = getJobIdentity(matcher);
                 TaskRuntimeInfo runtimeInfo = ThreadPoolTaskExecutor.getInstance().getTaskRuntimeInfo(ji);
-                boolean result = runtimeInfo.getTask().modify(JobUtils.fromJsonToMap(requestData));
+                boolean result = runtimeInfo.getTaskContainer().modify(JobUtils.fromJsonToMap(requestData));
                 return Responses.ok(result);
             }
 
@@ -96,11 +95,11 @@ public class ExecutorRequestHandler {
                 JobIdentity ji = getJobIdentity(matcher);
                 TaskRuntimeInfo runtimeInfo = ThreadPoolTaskExecutor.getInstance().getTaskRuntimeInfo(ji);
                 TaskMonitor taskMonitor = runtimeInfo.getTaskMonitor();
-                DefaultTaskResult result = DefaultTaskResultBuilder.build(runtimeInfo.getTask());
+                DefaultTaskResult result = DefaultTaskResultBuilder.build(runtimeInfo.getTaskContainer());
                 if (taskMonitor != null && MapUtils.isNotEmpty(taskMonitor.getLogMetadata())) {
                     result.setLogMetadata(taskMonitor.getLogMetadata());
                     // assign final error message
-                    DefaultTaskResultBuilder.assignErrorMessage(result, taskMonitor.getError());
+                    DefaultTaskResultBuilder.assignErrorMessage(result, runtimeInfo.getTaskContainer().getError());
                     taskMonitor.markLogMetaCollected();
                     log.info("Task log metadata collected, ji={}.", ji.getId());
                 }

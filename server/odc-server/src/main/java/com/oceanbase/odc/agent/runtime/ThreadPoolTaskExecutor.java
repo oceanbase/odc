@@ -30,10 +30,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
-import com.oceanbase.odc.service.task.ExceptionListener;
 import com.oceanbase.odc.service.task.Task;
-import com.oceanbase.odc.service.task.TaskContext;
-import com.oceanbase.odc.service.task.TaskEventListener;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.executor.TaskReporter;
 import com.oceanbase.odc.service.task.executor.TraceDecoratorThreadFactory;
@@ -75,63 +72,17 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
         }
         // init cloud objet storage service and task monitor
         CloudObjectStorageService cloudObjectStorageService = buildCloudStorageService(jc);
-        TaskMonitor taskMonitor = new TaskMonitor(task, new TaskReporter(jc.getHostUrls()), cloudObjectStorageService);
-
+        TaskReporter taskReporter = new TaskReporter(jc.getHostUrls());
+        TaskContainer<?> taskContainer = new TaskContainer<>(jc, cloudObjectStorageService, taskReporter, task);
         Future<?> future = executor.submit(() -> {
             try {
-                task.start(new TaskContext() {
-                    @Override
-                    public ExceptionListener getExceptionListener() {
-                        return taskMonitor;
-                    }
-
-                    @Override
-                    public JobContext getJobContext() {
-                        return jc;
-                    }
-
-                    @Override
-                    public TaskEventListener getTaskEventListener() {
-                        return taskEventListener(taskMonitor);
-                    }
-
-                    @Override
-                    public CloudObjectStorageService getSharedStorage() {
-                        return cloudObjectStorageService;
-                    }
-                });
+                taskContainer.runTask();
             } catch (Exception e) {
                 log.error("Task start failed, jobIdentity={}.", jobIdentity.getId(), e);
-                taskMonitor.onException(e);
+                taskContainer.onException(e);
             }
         });
-        tasks.put(jobIdentity, new TaskRuntimeInfo(task, future, taskMonitor));
-    }
-
-    /**
-     * build task event listener
-     *
-     * @param taskMonitor
-     * @return
-     */
-    private TaskEventListener taskEventListener(TaskMonitor taskMonitor) {
-        return new TaskEventListener() {
-            @Override
-            public void onTaskStart(Task<?> task) {
-                taskMonitor.monitor();
-            }
-
-            @Override
-            public void onTaskStop(Task<?> task) {}
-
-            @Override
-            public void onTaskModify(Task<?> task) {}
-
-            @Override
-            public void onTaskFinalize(Task<?> task) {
-                taskMonitor.finalWork();
-            }
-        };
+        tasks.put(jobIdentity, new TaskRuntimeInfo(taskContainer, future, taskContainer.getTaskMonitor()));
     }
 
     /**
@@ -156,7 +107,7 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
     @Override
     public boolean cancel(JobIdentity ji) {
         TaskRuntimeInfo runtimeInfo = getTaskRuntimeInfo(ji);
-        Task<?> task = runtimeInfo.getTask();
+        TaskContainer<?> task = runtimeInfo.getTaskContainer();
         Future<Boolean> stopFuture = executor.submit(task::stop);
         boolean result = false;
         try {

@@ -23,23 +23,19 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.oceanbase.odc.common.util.ObjectUtil;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.odc.service.task.ExceptionListener;
 import com.oceanbase.odc.service.task.Task;
 import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobServerUrls;
 import com.oceanbase.odc.service.task.executor.DefaultTaskResult;
-import com.oceanbase.odc.service.task.executor.DefaultTaskResultBuilder;
 import com.oceanbase.odc.service.task.executor.HeartbeatRequest;
 import com.oceanbase.odc.service.task.executor.TaskReporter;
 import com.oceanbase.odc.service.task.executor.TraceDecoratorThreadFactory;
@@ -54,25 +50,22 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.4
  */
 @Slf4j
-public class TaskMonitor implements ExceptionListener {
+public class TaskMonitor {
 
     private static final int REPORT_RESULT_RETRY_TIMES = Integer.MAX_VALUE;
     private static final long WAIT_AFTER_LOG_METADATA_COLLECT_MILLS = 5000L;
     private final TaskReporter reporter;
-    private final Task<?> task;
+    private final TaskContainer<?> taskContainer;
     private final CloudObjectStorageService cloudObjectStorageService;
     private volatile long startTimeMilliSeconds;
     private ScheduledExecutorService reportScheduledExecutor;
     private ScheduledExecutorService heartScheduledExecutor;
     private Map<String, String> logMetadata = new HashMap<>();
     private AtomicLong logMetaCollectedMillis = new AtomicLong(0L);
-    // only save latest exception if any
-    // it will be cleaned if been fetched
-    protected AtomicReference<Throwable> latestException = new AtomicReference<>();
 
-    public TaskMonitor(Task<?> task, TaskReporter taskReporter,
+    public TaskMonitor(TaskContainer<?> task, TaskReporter taskReporter,
             CloudObjectStorageService cloudObjectStorageService) {
-        this.task = task;
+        this.taskContainer = task;
         this.reporter = taskReporter;
         this.cloudObjectStorageService = cloudObjectStorageService;
     }
@@ -94,9 +87,9 @@ public class TaskMonitor implements ExceptionListener {
                 new TraceDecoratorThreadFactory(new TaskThreadFactory(("Task-Monitor-Job-" + getJobId())));
         this.reportScheduledExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
         reportScheduledExecutor.scheduleAtFixedRate(() -> {
-            if (isTimeout() && !getTask().getStatus().isTerminated()) {
+            if (isTimeout() && !getTaskContainer().getStatus().isTerminated()) {
                 log.info("Task timeout, try stop, jobId={}", getJobId());
-                getTask().stop();
+                getTaskContainer().stop();
             }
             try {
                 if (JobUtils.getExecutorPort().isPresent()) {
@@ -151,17 +144,16 @@ public class TaskMonitor implements ExceptionListener {
         if (JobUtils.isReportDisabled()) {
             return;
         }
-        DefaultTaskResult taskResult = DefaultTaskResultBuilder.build(getTask());
-        DefaultTaskResult copiedResult = ObjectUtil.deepCopy(taskResult, DefaultTaskResult.class);
-        if (copiedResult.getStatus().isTerminated()) {
+        DefaultTaskResult taskResult = DefaultTaskResultBuilder.build(getTaskContainer());
+        if (taskResult.getStatus().isTerminated()) {
             log.info("job {} status {} is terminate, monitor report be ignored.",
-                    copiedResult.getJobIdentity().getId(), copiedResult.getStatus());
+                    taskResult.getJobIdentity().getId(), taskResult.getStatus());
             return;
         }
 
-        getReporter().report(JobServerUrls.TASK_UPLOAD_RESULT, copiedResult);
+        getReporter().report(JobServerUrls.TASK_UPLOAD_RESULT, taskResult);
         log.info("Report task info, id: {}, status: {}, progress: {}%, result: {}", getJobId(),
-                copiedResult.getStatus(), String.format("%.2f", copiedResult.getProgress()), getTask().getTaskResult());
+                taskResult.getStatus(), String.format("%.2f", taskResult.getProgress()), getTask().getTaskResult());
     }
 
     @VisibleForTesting
@@ -184,7 +176,7 @@ public class TaskMonitor implements ExceptionListener {
     @VisibleForTesting
     protected void doFinal() {
 
-        DefaultTaskResult finalResult = DefaultTaskResultBuilder.build(getTask());
+        DefaultTaskResult finalResult = DefaultTaskResultBuilder.build(getTaskContainer());
         // Report final result
         log.info("Task id: {}, finished with status: {}, start to report final result", getJobId(),
                 finalResult.getStatus());
@@ -203,7 +195,7 @@ public class TaskMonitor implements ExceptionListener {
 
         if (JobUtils.isReportEnabled()) {
             // assign error for last report
-            DefaultTaskResultBuilder.assignErrorMessage(finalResult, getError());
+            DefaultTaskResultBuilder.assignErrorMessage(finalResult, taskContainer.getError());
             // Report finish signal to task server
             reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES,
                     JobConstants.REPORT_TASK_INFO_INTERVAL_SECONDS);
@@ -281,11 +273,12 @@ public class TaskMonitor implements ExceptionListener {
         return request;
     }
 
-    private Task<?> getTask() {
-        return task;
+    private TaskContainer<?> getTaskContainer() {
+        return taskContainer;
     }
 
-    private TaskReporter getReporter() {
+    @VisibleForTesting
+    protected TaskReporter getReporter() {
         return reporter;
     }
 
@@ -293,14 +286,7 @@ public class TaskMonitor implements ExceptionListener {
         return getTask().getJobContext().getJobIdentity().getId();
     }
 
-    public Throwable getError() {
-        Throwable e = latestException.getAndSet(null);
-        log.info("retrieve exception = {}", null == e ? null : e.getMessage());
-        return e;
-    }
-
-    public void onException(Throwable e) {
-        log.info("found exception", e);
-        this.latestException.set(e);
+    private Task<?> getTask() {
+        return getTaskContainer().getTask();
     }
 }
