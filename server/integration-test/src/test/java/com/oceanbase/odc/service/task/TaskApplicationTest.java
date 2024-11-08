@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.agent.TaskApplication;
+import com.oceanbase.odc.agent.runtime.TaskRuntimeInfo;
 import com.oceanbase.odc.agent.runtime.ThreadPoolTaskExecutor;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
@@ -79,7 +80,8 @@ public class TaskApplicationTest extends BaseJobTest {
 
         try {
             Thread.sleep(60 * 1000L);
-            Task<?> task = ThreadPoolTaskExecutor.getInstance().getTask(ji);
+            TaskRuntimeInfo taskRuntimeInfo = ThreadPoolTaskExecutor.getInstance().getTaskRuntimeInfo(ji);
+            Task<?> task = taskRuntimeInfo.getTask();
             Assert.assertSame(JobStatus.DONE, task.getStatus());
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

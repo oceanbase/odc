@@ -15,41 +15,41 @@
  */
 package com.oceanbase.odc.service.task;
 
-import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.odc.service.task.caller.JobContext;
-
 /**
- * context for task runtime
+ * listen task event
  * 
  * @author longpeng.zlp
- * @date 2024/10/10 17:39
+ * @date 2024/10/24 11:51
  */
-public interface TaskContext {
+public interface TaskEventListener {
     /**
-     * provide exception listener
+     * call when task start called
      * 
-     * @return
+     * @param task
      */
-    ExceptionListener getExceptionListener();
+    void onTaskStart(Task<?> task);
+
 
     /**
-     * provide job context
+     * call when task stop called
      * 
-     * @return
+     * @param task
      */
-    JobContext getJobContext();
+    void onTaskStop(Task<?> task);
+
 
     /**
-     * provide task event listener
-     *
-     * @return
+     * call when task modify called
+     * 
+     * @param task
      */
-    TaskEventListener getTaskEventListener();
+    void onTaskModify(Task<?> task);
 
     /**
-     * get shared storage for task upload or download file
-     *
-     * @return
+     * call when task final closed
+     * 
+     * @param task
      */
-    CloudObjectStorageService getSharedStorage();
+    void onTaskFinalize(Task<?> task);
+
 }

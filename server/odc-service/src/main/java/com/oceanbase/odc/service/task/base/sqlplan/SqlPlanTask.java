@@ -215,7 +215,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
             return;
         }
 
-        CloudObjectStorageService cloudObjectStorageService = getCloudObjectStorageService();
+        CloudObjectStorageService cloudObjectStorageService = context.getSharedStorage();
         if (Objects.isNull(cloudObjectStorageService) || !cloudObjectStorageService.supported()) {
             log.warn("Cloud object storage service not supported.");
             throw new UnexpectedException("Cloud object storage service not supported");
@@ -468,7 +468,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
 
     private String uploadToOSS(String filePath) {
         // Public cloud scenario, need to upload files to OSS
-        CloudObjectStorageService cloudObjectStorageService = getCloudObjectStorageService();
+        CloudObjectStorageService cloudObjectStorageService = context.getSharedStorage();
         if (Objects.nonNull(cloudObjectStorageService) && cloudObjectStorageService.supported()) {
             File file = new File(filePath);
             String ossAddress;

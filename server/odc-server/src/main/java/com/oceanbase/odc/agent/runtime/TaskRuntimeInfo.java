@@ -15,20 +15,19 @@
  */
 package com.oceanbase.odc.agent.runtime;
 
+import java.util.concurrent.Future;
+
 import com.oceanbase.odc.service.task.Task;
-import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
+
+import lombok.Data;
 
 /**
- * @author gaoda.xy
- * @date 2023/11/24 11:18
+ * @author longpeng.zlp
+ * @date 2024/10/24 14:32
  */
-public interface TaskExecutor {
-
-    void execute(Task<?> task, JobContext jc);
-
-    boolean cancel(JobIdentity ji);
-
-    TaskRuntimeInfo getTaskRuntimeInfo(JobIdentity ji);
-
+@Data
+public class TaskRuntimeInfo {
+    private final Task<?> task;
+    private final Future<?> future;
+    private final TaskMonitor taskMonitor;
 }

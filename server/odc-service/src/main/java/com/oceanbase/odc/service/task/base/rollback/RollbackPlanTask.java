@@ -200,7 +200,7 @@ public class RollbackPlanTask extends BaseTask<FlowTaskResult> {
         if (CollectionUtils.isNotEmpty(objectMetadataList)) {
             this.uploadFileInputStream =
                     ObjectStorageUtils
-                            .loadObjectsForTask(objectMetadataList, getCloudObjectStorageService(),
+                            .loadObjectsForTask(objectMetadataList, context.getSharedStorage(),
                                     JobUtils.getExecutorDataPath(),
                                     parameters.getRollbackProperties().getMaxRollbackContentSizeBytes())
                             .getInputStream();
@@ -223,7 +223,7 @@ public class RollbackPlanTask extends BaseTask<FlowTaskResult> {
                 String resultFileId = StringUtils.uuid();
                 String filePath = String.format("%s/%s.sql", resultFileRootPath, resultFileId);
                 FileUtils.writeStringToFile(new File(filePath), rollbackResult, StandardCharsets.UTF_8);
-                CloudObjectStorageService cloudObjectStorageService = getCloudObjectStorageService();
+                CloudObjectStorageService cloudObjectStorageService = context.getSharedStorage();
                 if (Objects.nonNull(cloudObjectStorageService) && cloudObjectStorageService.supported()) {
                     File tempFile = new File(filePath);
                     try {
