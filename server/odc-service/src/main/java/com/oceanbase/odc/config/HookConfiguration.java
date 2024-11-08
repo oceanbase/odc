@@ -147,7 +147,7 @@ public class HookConfiguration {
                         .collect(Collectors.toMap(ProjectEntity::getId, p -> p));
 
         Map<Long, Set<ResourceRoleName>> projectId2ResourceRoleNames =
-                resourceRoleService.getProjectId2ResourceRoleNames(userId).entrySet().stream()
+                resourceRoleService.getProjectId2ResourceRoleNames(userId, organizationId).entrySet().stream()
                         .filter(e -> e.getValue().contains(ResourceRoleName.OWNER)
                                 || e.getValue().contains(ResourceRoleName.DBA))
                         .filter(e -> id2Project.containsKey(e.getKey()))

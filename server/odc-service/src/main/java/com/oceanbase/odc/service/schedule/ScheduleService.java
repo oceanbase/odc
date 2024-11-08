@@ -45,6 +45,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -738,13 +739,15 @@ public class ScheduleService {
                     params.getCreator()).stream().map(User::getId).collect(Collectors.toSet()));
         }
         if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
-            Set<Long> projectIds = params.getProjectId() == null
-                    ? projectService.getMemberProjectIds(authenticationFacade.currentUserId())
-                    : Collections.singleton(params.getProjectId());
-            if (projectIds.isEmpty()) {
+            Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
+            if (CollectionUtils.isEmpty(joinedProjectIds)) {
                 return Page.empty();
             }
-            params.setProjectIds(projectIds);
+            if (CollectionUtils.isEmpty(params.getProjectIds())) {
+                params.setProjectIds(joinedProjectIds);
+            } else {
+                params.getProjectIds().retainAll(joinedProjectIds);
+            }
         }
         params.setOrganizationId(authenticationFacade.currentOrganizationId());
         Page<ScheduleEntity> returnValue = scheduleRepository.find(pageable, params);

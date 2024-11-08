@@ -262,6 +262,8 @@ public class FlowInstanceService {
     @Autowired
     private EnvironmentService environmentService;
     @Autowired
+    private FlowPermissionHelper flowPermissionHelper;
+    @Autowired
     private MeterManager meterManager;
 
     private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
@@ -413,8 +415,8 @@ public class FlowInstanceService {
     }
 
     public Page<FlowInstanceEntity> listAll(@NotNull Pageable pageable, @NotNull QueryFlowInstanceParams params) {
-        if (Objects.nonNull(params.getProjectId())) {
-            projectPermissionValidator.checkProjectRole(params.getProjectId(), ResourceRoleName.all());
+        if (Objects.nonNull(params.getProjectIds())) {
+            projectPermissionValidator.checkProjectRole(params.getProjectIds(), ResourceRoleName.all());
         }
         if (params.getParentInstanceId() != null) {
             // TODO 4.1.3 自动运行模块改造完成后剥离
@@ -438,9 +440,8 @@ public class FlowInstanceService {
             Specification<FlowInstanceEntity> specification =
                     Specification.where(FlowInstanceSpecs.idIn(flowInstanceIds))
                             .and(FlowInstanceSpecs.organizationIdEquals(authenticationFacade.currentOrganizationId()));
-            // TODO Remove the checker after the SQL console development is completed
-            if (params.getProjectId() != null) {
-                specification = specification.and(FlowInstanceSpecs.projectIdEquals(params.getProjectId()));
+            if (CollectionUtils.isNotEmpty(params.getProjectIds())) {
+                specification = specification.and(FlowInstanceSpecs.projectIdIn(params.getProjectIds()));
             }
             return flowInstanceRepository.findAll(specification, pageable);
         }
@@ -488,75 +489,36 @@ public class FlowInstanceService {
             specification = specification.and(FlowInstanceViewSpecs.taskTypeIn(types));
         }
 
-        Set<String> resourceRoleIdentifiers = userService.getCurrentUserResourceRoleIdentifiers();
+        if (CollectionUtils.isNotEmpty(params.getProjectIds())) {
+            specification = specification.and(FlowInstanceViewSpecs.projectIdIn(params.getProjectIds()));
+        } else {
+            Set<Long> joinedProjectIds = userService.getCurrentUserJoinedProjectIds();
+            // if the user does not join any projects in team space, then return empty directly
+            if (CollectionUtils.isEmpty(joinedProjectIds)
+                    && authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
+                return Page.empty();
+            }
+            specification =
+                    specification.and(FlowInstanceViewSpecs.projectIdIn(userService.getCurrentUserJoinedProjectIds()));
+        }
         if (params.getContainsAll()) {
-            // does not join any project
-            if (CollectionUtils.isEmpty(resourceRoleIdentifiers)) {
-                specification =
-                        specification.and(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId()));
-                return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
-            }
-            // find by project id
-            if (Objects.nonNull(params.getProjectId())) {
-                specification = specification.and(FlowInstanceViewSpecs.projectIdEquals(params.getProjectId()));
-                // if other project roles, show current user's created, waiting for approval and approved/rejected
-                // tickets
-                if (!projectPermissionValidator.hasProjectRole(params.getProjectId(),
-                        Collections.singletonList(ResourceRoleName.OWNER))) {
-                    specification = specification.and(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(
-                            resourceRoleIdentifiers, authenticationFacade.currentUserId(),
-                            FlowNodeStatus.getExecutingAndFinalStatuses()));
-                }
-                // if project owner, show all tickets of the project
-            } else {
-                // find tickets related to all projects that the current user joins in
-                Map<Long, Set<ResourceRoleName>> currentUserProjectId2ResourceRoleNames =
-                        resourceRoleService.getProjectId2ResourceRoleNames();
-                Set<Long> ownerProjectIds = currentUserProjectId2ResourceRoleNames.entrySet().stream()
-                        .filter(entry -> entry.getValue().contains(ResourceRoleName.OWNER))
-                        .map(Entry::getKey)
-                        .collect(Collectors.toSet());
-                Set<Long> otherRoleProjectIds = new HashSet<>(currentUserProjectId2ResourceRoleNames.keySet());
-                otherRoleProjectIds.removeAll(ownerProjectIds);
-
-
-                Specification<FlowInstanceViewEntity> ownerSpecification =
-                        Specification.where(FlowInstanceViewSpecs.projectIdIn(ownerProjectIds));
-
-                Specification<FlowInstanceViewEntity> otherRoleSpecification =
-                        Specification.where(FlowInstanceViewSpecs.projectIdIn(otherRoleProjectIds))
-                                .and(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(
-                                        resourceRoleIdentifiers, authenticationFacade.currentUserId(),
-                                        FlowNodeStatus.getExecutingAndFinalStatuses()));
-
-                if (CollectionUtils.isEmpty(ownerProjectIds)) {
-                    specification = specification.and(otherRoleSpecification);
-                } else if (CollectionUtils.isEmpty(otherRoleProjectIds)) {
-                    specification = specification.and(ownerSpecification);
-                } else {
-                    specification = specification.and(ownerSpecification.or(otherRoleSpecification));
-                }
-            }
             return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
         }
-        if (!params.getApproveByCurrentUser() && params.getCreatedByCurrentUser()) {
+        if (params.getCreatedByCurrentUser()) {
             // created by current user
-            specification = specification.and(FlowInstanceViewSpecs.projectIdEquals(params.getProjectId()))
-                    .and(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId()));
-            return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
-        } else if (params.getApproveByCurrentUser() && !params.getCreatedByCurrentUser()) {
+            specification =
+                    specification.and(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId()));
+        }
+        if (params.getApproveByCurrentUser()) {
+            Set<String> resourceRoleIdentifiers = userService.getCurrentUserResourceRoleIdentifiers();
+            // does not join any project, so there does not exist any tickets to approve
             if (CollectionUtils.isEmpty(resourceRoleIdentifiers)) {
                 return Page.empty();
             }
-            // approving by current user
-            specification =
-                    specification.and(FlowInstanceViewSpecs.projectIdEquals(params.getProjectId()))
-                            .and(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(
-                                    resourceRoleIdentifiers, null, FlowNodeStatus.getExecutingStatuses()));
-            return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
-        } else {
-            throw new UnsupportedOperationException("Unsupported list flow instance query");
+            specification = specification.and(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(
+                    resourceRoleIdentifiers, null, FlowNodeStatus.getExecutingStatuses()));
         }
+        return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
     }
 
     public List<FlowInstanceEntity> listByIds(@NonNull Collection<Long> ids) {
@@ -564,22 +526,17 @@ public class FlowInstanceService {
     }
 
     public FlowInstanceDetailResp detail(@NotNull Long id) {
-        return mapFlowInstance(id, flowInstance -> {
+        return mapFlowInstanceWithReadPermission(id, flowInstance -> {
             FlowInstanceMapper instanceMapper = mapperFactory.generateMapperByInstance(flowInstance, false);
             FlowNodeInstanceMapper nodeInstanceMapper = mapperFactory.generateNodeMapperByInstance(flowInstance, false);
             return instanceMapper.map(flowInstance, nodeInstanceMapper);
-        }, false);
+        });
     }
 
     @Transactional(rollbackFor = Exception.class)
     public FlowInstanceDetailResp cancel(@NotNull Long id, Boolean skipAuth) {
-        FlowInstance flowInstance = mapFlowInstance(id, flowInst -> flowInst, skipAuth);
+        FlowInstance flowInstance = mapFlowInstanceWithWritePermission(id, flowInst -> flowInst);
         return cancel(flowInstance, skipAuth);
-    }
-
-    public FlowInstanceDetailResp cancelNotCheckPermission(@NotNull Long id) {
-        FlowInstance flowInstance = mapFlowInstance(id, flowInst -> flowInst, false);
-        return cancel(flowInstance, false);
     }
 
     public Map<Long, FlowStatus> getStatus(Set<Long> ids) {
@@ -737,28 +694,35 @@ public class FlowInstanceService {
         return FlowInstanceDetailResp.withIdAndType(id, getTaskByFlowInstanceId(id).getTaskType());
     }
 
-    public <T> T mapFlowInstance(@NonNull Long flowInstanceId, Function<FlowInstance, T> function, Boolean skipAuth) {
+    public <T> T mapFlowInstance(@NonNull Long flowInstanceId, Function<FlowInstance, T> mapper,
+            Consumer<FlowInstance> checkAuth) {
         Optional<FlowInstance> optional = flowFactory.getFlowInstance(flowInstanceId);
         FlowInstance flowInstance =
                 optional.orElseThrow(() -> new NotFoundException(ResourceType.ODC_FLOW_INSTANCE, "id", flowInstanceId));
         try {
-            if (!skipAuth) {
-                boolean isProjectOwner = flowInstance.getProjectId() != null && projectPermissionValidator
-                        .hasProjectRole(flowInstance.getProjectId(), Collections.singletonList(ResourceRoleName.OWNER));
-                if (!Objects.equals(authenticationFacade.currentUserId(), flowInstance.getCreatorId())
-                        && !isProjectOwner) {
-                    List<UserTaskInstanceEntity> entities = approvalPermissionService.getApprovableApprovalInstances();
-                    Set<Long> flowInstanceIds = entities.stream().map(UserTaskInstanceEntity::getFlowInstanceId)
-                            .collect(Collectors.toSet());
-                    PreConditions.validExists(ResourceType.ODC_FLOW_INSTANCE, "id", flowInstanceId,
-                            () -> flowInstanceIds.contains(flowInstanceId));
-                }
-                permissionValidator.checkCurrentOrganization(flowInstance);
+            if (checkAuth != null) {
+                checkAuth.accept(flowInstance);
             }
-            return function.apply(flowInstance);
+            return mapper.apply(flowInstance);
         } finally {
             flowInstance.dealloc();
         }
+    }
+
+    public <T> T mapFlowInstanceWithReadPermission(@NonNull Long flowInstanceId, Function<FlowInstance, T> mapper) {
+        return mapFlowInstance(flowInstanceId, mapper, flowPermissionHelper.withProjectMemberCheck());
+    }
+
+    public <T> T mapFlowInstanceWithWritePermission(@NonNull Long flowInstanceId, Function<FlowInstance, T> mapper) {
+        return mapFlowInstance(flowInstanceId, mapper, flowPermissionHelper.withProjectOwnerCheck());
+    }
+
+    public <T> T mapFlowInstanceWithApprovalPermission(@NonNull Long flowInstanceId, Function<FlowInstance, T> mapper) {
+        return mapFlowInstance(flowInstanceId, mapper, flowPermissionHelper.withApprovableCheck());
+    }
+
+    public <T> T mapFlowInstanceWithoutPermissionCheck(@NonNull Long flowInstanceId, Function<FlowInstance, T> mapper) {
+        return mapFlowInstance(flowInstanceId, mapper, flowPermissionHelper.skipCheck());
     }
 
     public TaskEntity getTaskByFlowInstanceId(Long id) {
@@ -1095,24 +1059,22 @@ public class FlowInstanceService {
     private void completeApprovalInstance(@NonNull Long flowInstanceId,
             @NonNull Consumer<FlowApprovalInstance> consumer, Boolean skipAuth) {
         List<FlowApprovalInstance> instances =
-                mapFlowInstance(flowInstanceId, flowInstance -> flowInstance.filterInstanceNode(instance -> {
-                    if (instance.getNodeType() != FlowNodeType.APPROVAL_TASK) {
-                        return false;
-                    }
-                    return instance.getStatus() == FlowNodeStatus.EXECUTING
-                            || instance.getStatus() == FlowNodeStatus.WAIT_FOR_CONFIRM;
-                }).stream().map(instance -> {
-                    Verify.verify(instance instanceof FlowApprovalInstance, "FlowApprovalInstance's type is illegal");
-                    return (FlowApprovalInstance) instance;
-                }).collect(Collectors.toList()), skipAuth);
+                mapFlowInstanceWithApprovalPermission(flowInstanceId,
+                        flowInstance -> flowInstance.filterInstanceNode(instance -> {
+                            if (instance.getNodeType() != FlowNodeType.APPROVAL_TASK) {
+                                return false;
+                            }
+                            return instance.getStatus() == FlowNodeStatus.EXECUTING
+                                    || instance.getStatus() == FlowNodeStatus.WAIT_FOR_CONFIRM;
+                        }).stream().map(instance -> {
+                            Verify.verify(instance instanceof FlowApprovalInstance,
+                                    "FlowApprovalInstance's type is illegal");
+                            return (FlowApprovalInstance) instance;
+                        }).collect(Collectors.toList()));
         PreConditions.validExists(ResourceType.ODC_FLOW_APPROVAL_INSTANCE,
                 "flowInstanceId", flowInstanceId, () -> instances.size() > 0);
         Verify.singleton(instances, "ApprovalInstance");
         FlowApprovalInstance target = instances.get(0);
-        if (!skipAuth) {
-            PreConditions.validExists(ResourceType.ODC_FLOW_INSTANCE, "id", flowInstanceId,
-                    () -> approvalPermissionService.isApprovable(target.getId()));
-        }
         Verify.verify(target.isPresentOnThisMachine(), "Approval instance is not on this machine");
         consumer.accept(target);
     }

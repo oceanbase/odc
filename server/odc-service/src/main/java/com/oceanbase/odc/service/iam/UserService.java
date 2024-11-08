@@ -472,6 +472,10 @@ public class UserService {
         return resourceRoleService.getResourceRoleIdentifiersByUserId(currentOrganizationId, currentUserId);
     }
 
+    public Set<Long> getCurrentUserJoinedProjectIds() {
+        return resourceRoleService.getProjectId2ResourceRoleNames().keySet();
+    }
+
     private void acquirePermissions(@NonNull Collection<User> users) {
         List<PermissionEntity> managementPermissions = new ArrayList<>();
         List<PermissionEntity> operationPermissions = new ArrayList<>();
