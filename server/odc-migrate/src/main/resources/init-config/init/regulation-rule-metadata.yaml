@@ -106,7 +106,7 @@
             - SORT
             - DESC
             - TRUNCATE
-            - CALL
+            - CALL_PROC
             - COMMENT
             - SET_SESSION
             - OTHERS
@@ -130,7 +130,7 @@
             - SORT
             - DESC
             - TRUNCATE
-            - CALL
+            - CALL_PROC
             - COMMENT
             - SET_SESSION
             - OTHERS

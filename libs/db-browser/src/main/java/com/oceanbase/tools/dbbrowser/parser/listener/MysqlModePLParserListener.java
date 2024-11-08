@@ -162,7 +162,7 @@ public class MysqlModePLParserListener extends PLParserBaseListener implements B
 
     @Override
     public void enterCall_sp_stmt(PLParser.Call_sp_stmtContext ctx) {
-        this.sqlType = SqlType.CALL;
+        this.sqlType = SqlType.CALL_PROC;
         this.dbObjectType = DBObjectType.PROCEDURE;
     }
 

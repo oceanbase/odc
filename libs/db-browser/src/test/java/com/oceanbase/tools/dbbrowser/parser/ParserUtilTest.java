@@ -317,7 +317,7 @@ public class ParserUtilTest {
     public void test_mysql_call() {
         String sql = "call proc()";
         BasicResult result = ParserUtil.parseMysqlType(sql);
-        Assert.assertEquals(SqlType.CALL, result.getSqlType());
+        Assert.assertEquals(SqlType.CALL_PROC, result.getSqlType());
         Assert.assertEquals(DBObjectType.PROCEDURE, result.getDbObjectType());
     }
 
@@ -325,7 +325,7 @@ public class ParserUtilTest {
     public void test_oracle_call() {
         String sql = "call proc()";
         BasicResult result = ParserUtil.parseOracleType(sql);
-        Assert.assertEquals(SqlType.CALL, result.getSqlType());
+        Assert.assertEquals(SqlType.CALL_PROC, result.getSqlType());
         Assert.assertEquals(DBObjectType.PROCEDURE, result.getDbObjectType());
     }
 

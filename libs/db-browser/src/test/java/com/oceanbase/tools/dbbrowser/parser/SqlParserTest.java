@@ -302,7 +302,7 @@ public class SqlParserTest {
     public void parseOracle_call_getSqlTypeSucceed() {
         ParseSqlResult actual = SqlParser.parseOracle("call proc()");
         Assert.assertEquals(DBObjectType.PROCEDURE, actual.getDbObjectType());
-        Assert.assertEquals(SqlType.CALL, actual.getSqlType());
+        Assert.assertEquals(SqlType.CALL_PROC, actual.getSqlType());
     }
 
 

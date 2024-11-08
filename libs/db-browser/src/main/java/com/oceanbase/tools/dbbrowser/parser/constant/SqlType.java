@@ -38,7 +38,7 @@ public enum SqlType {
     ALTER,
     TRUNCATE,
     CREATE,
-    CALL,
+    CALL_PROC,
     COMMENT,
     SET_SESSION,
     OTHERS,

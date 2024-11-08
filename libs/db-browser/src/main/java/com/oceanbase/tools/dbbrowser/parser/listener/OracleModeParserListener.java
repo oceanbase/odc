@@ -68,7 +68,6 @@ import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.ParameterContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Procedure_bodyContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Procedure_nameContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Procedure_specContext;
-import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Rollback_statementContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Type_declarationContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Variable_declarationContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParserBaseListener;
@@ -436,7 +435,7 @@ public class OracleModeParserListener extends PlSqlParserBaseListener implements
     @Override
     public void enterProcedure_call(PlSqlParser.Procedure_callContext ctx) {
         if (ctx.CALL() != null) {
-            doRecord(SqlType.CALL, DBObjectType.PROCEDURE, null);
+            doRecord(SqlType.CALL_PROC, DBObjectType.PROCEDURE, null);
         }
     }
 

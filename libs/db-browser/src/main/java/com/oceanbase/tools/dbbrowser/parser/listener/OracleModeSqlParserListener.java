@@ -726,7 +726,7 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
 
     @Override
     public void enterCall_stmt(OBParser.Call_stmtContext ctx) {
-        setSqlType(SqlType.CALL);
+        setSqlType(SqlType.CALL_PROC);
         this.dbObjectType = DBObjectType.PROCEDURE;
     }
 
