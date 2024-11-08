@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.task.executor.task;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**
@@ -37,6 +38,6 @@ public class DefaultTaskResultBuilder {
 
     public static void assignErrorMessage(DefaultTaskResult result, BaseTask<?> task) {
         Throwable e = task.getError();
-        result.setErrorMessage(null == e ? null : e.getMessage());
+        result.setErrorMessage(null == e ? null : ExceptionUtils.getRootCauseReason(e));
     }
 }
