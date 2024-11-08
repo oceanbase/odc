@@ -38,6 +38,6 @@ public class DefaultTaskResultBuilder {
 
     public static void assignErrorMessage(DefaultTaskResult result, BaseTask<?> task) {
         Throwable e = task.getError();
-        result.setErrorMessage(null == e ? null : ExceptionUtils.getRootCauseReason(e,3));
+        result.setErrorMessage(null == e ? null : ExceptionUtils.getRootCauseReason(e, 3));
     }
 }
