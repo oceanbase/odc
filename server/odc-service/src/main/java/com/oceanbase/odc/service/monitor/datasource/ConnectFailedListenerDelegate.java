@@ -36,7 +36,7 @@ import com.oceanbase.odc.service.monitor.MeterManager;
 
 @Component
 @ConditionalOnProperty(value = "odc.system.monitor.actuator.enabled", havingValue = "true")
-public class ConnectFailedListenerDelegate implements InitializingBean {
+class ConnectFailedListenerDelegate implements InitializingBean {
 
     private final EventStore eventStore = GetConnectionFailedEventListener.eventStore;
     private final ScheduledExecutorService scheduledExecutorService;
