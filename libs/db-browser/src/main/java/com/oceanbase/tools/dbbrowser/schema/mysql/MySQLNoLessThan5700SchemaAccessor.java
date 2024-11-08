@@ -254,6 +254,11 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
         return false;
     }
 
+    @Override
+    public boolean syncExternalTableFiles(String schemaName, String tableName) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
     protected List<DBObjectIdentity> listBaseTables(String schemaName, String tableNameLike)
             throws DataAccessException {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();

@@ -138,6 +138,12 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
         return getTableEditor(connection).generateUpdateObjectDDL(oldTable, newTable);
     }
 
+    @Override
+    public boolean syncExternalTableFiles(Connection connection, String schemaName, String tableName) {
+        //todo
+        return true;
+    }
+
     protected DBTableEditor getTableEditor(Connection connection) {
         return DBAccessorUtil.getTableEditor(connection);
     }

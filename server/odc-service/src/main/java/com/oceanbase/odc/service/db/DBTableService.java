@@ -39,6 +39,8 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
+import com.oceanbase.odc.service.common.response.Responses;
+import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.model.GenerateTableDDLResp;
@@ -181,6 +183,12 @@ public class DBTableService {
                 .previousIdentity(TableIdentity.of(req.getPrevious().getSchemaName(), req.getPrevious().getName()))
                 .tip(checkUpdateDDL(session.getDialectType(), ddl))
                 .build();
+    }
+
+    public SuccessResponse syncExternalTableFiles(@NotNull ConnectionSession connectionSession, String schemaName,
+        @NotBlank String tableName){
+        //todo
+        return Responses.empty();
     }
 
     private String checkUpdateDDL(DialectType dialectType, String ddl) {

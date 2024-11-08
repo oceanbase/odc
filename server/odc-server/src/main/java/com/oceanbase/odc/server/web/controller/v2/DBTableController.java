@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -122,4 +123,10 @@ public class DBTableController {
         return Responses.list(this.partitionPlanService.getPartitionKeyDataTypes(sessionId, databaseId, tableName));
     }
 
+    public SuccessResponse syncExternalTableFiles(@PathVariable String sessionId,
+        @PathVariable(required = false) String databaseName,
+        @RequestParam(required = true, name = "tableName") String tableName) {
+        //return tableService.syncExternalTableFiles();
+        throw new NotImplementedException("not implemented yet");
+    }
 }

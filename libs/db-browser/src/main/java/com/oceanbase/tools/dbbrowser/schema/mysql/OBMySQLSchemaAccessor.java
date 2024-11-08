@@ -425,5 +425,11 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
+    public boolean syncExternalTableFiles(String schemaName, String tableName) {
+        //todo
+        return true;
+    }
+
+    @Override
     protected void correctColumnPrecisionIfNeed(List<DBTableColumn> tableColumns) {}
 }
