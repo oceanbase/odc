@@ -1203,4 +1203,19 @@ public class PLParserTest {
         Assert.assertEquals(DBObjectType.OTHERS, actual.getDbObjectType());
         Assert.assertEquals(SqlType.COMMENT, actual.getSqlType());
     }
+
+    @Test
+    public void parseOracle_call_getSqlTypeSucceed() {
+        ParseOraclePLResult actual = PLParser.parseOracle("call proc()");
+        Assert.assertEquals(DBObjectType.PROCEDURE, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.CALL, actual.getSqlType());
+    }
+
+    @Test
+    public void parseOBMysql_call_getSqlTypeSucceed() {
+        ParseMysqlPLResult actual = PLParser.parseObMysql("call proc()");
+        Assert.assertEquals(DBObjectType.PROCEDURE, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.CALL, actual.getSqlType());
+    }
+
 }

@@ -307,7 +307,7 @@ public class ParserUtilTest {
 
     @Test
     public void test_mysql_set() {
-        String sql = "SET time_zone = '+00:00SET time_zone = '+00:00';";
+        String sql = "SET time_zone = '+00:00';";
         BasicResult result = ParserUtil.parseMysqlType(sql);
         Assert.assertEquals(SqlType.SET, result.getSqlType());
         Assert.assertEquals(DBObjectType.SYSTEM_VARIABLE, result.getDbObjectType());
