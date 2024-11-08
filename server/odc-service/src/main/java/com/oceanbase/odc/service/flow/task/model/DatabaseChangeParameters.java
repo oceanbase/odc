@@ -42,6 +42,7 @@ public class DatabaseChangeParameters implements Serializable, TaskParameters {
     private List<String> rollbackSqlObjectIds;
     private Long timeoutMillis = 172800000L;// 2d for default
     private TaskErrorStrategy errorStrategy;
+    private boolean markAsFailedWhenAnyErrorsHappened;
     private String delimiter = ";";
     private Integer queryLimit = 1000;
     private Integer riskLevelIndex;

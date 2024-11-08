@@ -108,7 +108,8 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
         DatabaseChangeResult result;
         try {
             log.info("Async task starts, taskId={}, activityId={}", taskId, execution.getCurrentActivityId());
-            asyncTaskThread = generateOdcAsyncTaskThread(taskId, execution);
+            DatabaseChangeParameters parameters = FlowTaskUtil.getAsyncParameter(execution);
+            asyncTaskThread = generateOdcAsyncTaskThread(taskId, parameters, execution);
             taskService.start(taskId);
             TaskEntity taskEntity = taskService.detail(taskId);
             result = JsonUtils.fromJson(taskEntity.getResultJson(), DatabaseChangeResult.class);
@@ -120,7 +121,8 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
             result = asyncTaskThread.getResult();
             result.setRollbackPlanResult(rollbackPlanTaskResult);
             result.setAutoModifyTimeout(this.autoModifyTimeout);
-            if (asyncTaskThread.isAbort()) {
+            if (asyncTaskThread.isAbort()
+                    || (result.getFailCount() > 0 && parameters.isMarkAsFailedWhenAnyErrorsHappened())) {
                 isFailure = true;
                 taskService.fail(taskId, asyncTaskThread.getProgressPercentage(), result);
             } else if (asyncTaskThread.getStop()) {
@@ -186,9 +188,9 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
         }
     }
 
-    private DatabaseChangeThread generateOdcAsyncTaskThread(Long taskId, DelegateExecution execution) {
+    private DatabaseChangeThread generateOdcAsyncTaskThread(Long taskId,
+            DatabaseChangeParameters parameters, DelegateExecution execution) {
         Long creatorId = FlowTaskUtil.getTaskCreator(execution).getId();
-        DatabaseChangeParameters parameters = FlowTaskUtil.getAsyncParameter(execution);
         ConnectionConfig connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
         modifyTimeoutIfTimeConsumingSqlExists(execution, parameters, connectionConfig.getDialectType(), creatorId);
         connectionConfig.setQueryTimeoutSeconds((int) TimeUnit.MILLISECONDS.toSeconds(parameters.getTimeoutMillis()));
