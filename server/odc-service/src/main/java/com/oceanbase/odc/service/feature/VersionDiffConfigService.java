@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.feature;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.stereotype.Service;
@@ -48,6 +49,7 @@ public class VersionDiffConfigService {
     private static final String SUPPORT_PROCEDURE = "support_procedure";
     private static final String SUPPORT_FUNCTION = "support_function";
     private static final String SUPPORT_PL_DEBUG = "support_pl_debug";
+    private static final String SUPPORT_EXTERNAL_TABLE = "support_external_table";
     private static final String COLUMN_DATA_TYPE = "column_data_type";
     private static final String ARM_OB_PREFIX = "aarch64";
     private static final String ARM_OB_SUPPORT_PL_DEBUG_MIN_VERSION = "3.2.3";
@@ -133,6 +135,20 @@ public class VersionDiffConfigService {
             }
         }
         return obSupportList;
+    }
+
+    public boolean isExternalTableSupported(@NonNull DialectType dialectType, @NonNull String versionNumber) {
+        VersionDiffConfig config = new VersionDiffConfig();
+        config.setDbMode(dialectType.name());
+        config.setConfigKey(SUPPORT_EXTERNAL_TABLE);
+        List<VersionDiffConfig> list = versionDiffConfigDAO.query(config);
+        String minVersion = CollectionUtils.isNotEmpty(list) ? list.get(0).getMinVersion() : null;
+        if ((dialectType == DialectType.OB_MYSQL || dialectType == DialectType.OB_ORACLE)
+                && minVersion != null
+                && VersionUtils.isGreaterThanOrEqualsTo(versionNumber, minVersion)) {
+            return true;
+        }
+        return false;
     }
 
     private boolean isHourFormat(ConnectionSession connectionSession) {

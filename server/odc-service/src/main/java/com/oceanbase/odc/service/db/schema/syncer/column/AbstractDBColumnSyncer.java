@@ -115,7 +115,7 @@ public abstract class AbstractDBColumnSyncer<T extends ExtensionPoint> implement
     }
 
     @Override
-    public boolean supports(@NonNull DialectType dialectType) {
+    public boolean supports(@NonNull DialectType dialectType, @NonNull Connection connection) {
         return getExtensionPoint(dialectType) != null;
     }
 
