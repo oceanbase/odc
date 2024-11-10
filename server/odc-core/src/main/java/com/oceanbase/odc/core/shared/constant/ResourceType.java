@@ -102,6 +102,7 @@ public enum ResourceType implements Translatable {
     ODC_WORKSHEET,
     ODC_WORKSPACE,
     ODC_WORKFLOW_CLUSTER,
+    ODC_WORKFLOW,
 
 
     /**
