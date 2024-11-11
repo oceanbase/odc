@@ -81,7 +81,6 @@ import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
-import com.oceanbase.odc.service.flow.util.DescriptionGenerator;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.UserService;
@@ -124,6 +123,7 @@ import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.schedule.processor.ScheduleChangePreprocessor;
+import com.oceanbase.odc.service.schedule.util.ScheduleDescriptionGenerator;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.exception.JobException;
@@ -210,6 +210,9 @@ public class ScheduleService {
     @Autowired
     private ApprovalFlowClient approvalFlowService;
 
+    @Autowired
+    private ScheduleDescriptionGenerator descriptionGenerator;
+
     private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
 
     public List<FlowInstanceDetailResp> dispatchCreateSchedule(CreateFlowInstanceReq createReq) {
@@ -266,7 +269,9 @@ public class ScheduleService {
 
             entity.setName(req.getCreateScheduleReq().getName());
             entity.setProjectId(req.getProjectId());
-            DescriptionGenerator.generateScheduleDescription(req);
+            if (StringUtils.isEmpty(req.getCreateScheduleReq().getDescription())) {
+                descriptionGenerator.generateScheduleDescription(req);
+            }
             entity.setDescription(req.getCreateScheduleReq().getDescription());
             entity.setJobParametersJson(JsonUtils.toJson(req.getCreateScheduleReq().getParameters()));
             entity.setTriggerConfigJson(JsonUtils.toJson(req.getCreateScheduleReq().getTriggerConfig()));

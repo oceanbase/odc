@@ -23,6 +23,8 @@ import com.oceanbase.odc.service.schedule.alarm.DefaultScheduleAlarmClient;
 import com.oceanbase.odc.service.schedule.alarm.ScheduleAlarmClient;
 import com.oceanbase.odc.service.schedule.flowtask.ApprovalFlowClient;
 import com.oceanbase.odc.service.schedule.flowtask.NoApprovalFlowClient;
+import com.oceanbase.odc.service.schedule.util.DefaultScheduleDescriptionGenerator;
+import com.oceanbase.odc.service.schedule.util.ScheduleDescriptionGenerator;
 
 /**
  * @Author：tinker
@@ -44,5 +46,11 @@ public class ScheduleTaskConfiguration {
     @ConditionalOnMissingBean(ScheduleAlarmClient.class)
     public ScheduleAlarmClient scheduleAlarmClient() {
         return new DefaultScheduleAlarmClient();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ScheduleDescriptionGenerator.class)
+    public ScheduleDescriptionGenerator scheduleDescriptionGenerator() {
+        return new DefaultScheduleDescriptionGenerator();
     }
 }

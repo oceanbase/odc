@@ -51,16 +51,4 @@ public class DescriptionGenerator {
         }
     }
 
-    public static void generateScheduleDescription(ScheduleChangeParams req) {
-        if (StringUtils.isEmpty(req.getCreateScheduleReq().getDescription())) {
-            String environmentName = req.getEnvironmentName();
-            String connectionName = req.getConnectionName();
-            String databaseName = req.getDatabaseName();
-            String description =
-                    StringUtils.isEmpty(connectionName) ? String.format("[%s]%s", environmentName, databaseName)
-                            : String.format("[%s]%s.%s", environmentName, connectionName, databaseName);
-            req.getCreateScheduleReq().setDescription(description);
-        }
-    }
-
 }
