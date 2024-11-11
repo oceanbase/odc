@@ -31,11 +31,13 @@ import com.oceanbase.odc.core.datasource.event.GetConnectionFailedEvent;
 import com.oceanbase.odc.service.monitor.MeterKey;
 import com.oceanbase.odc.service.monitor.MeterManager;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Component
 @ConditionalOnProperty(value = "odc.system.monitor.actuator.enabled", havingValue = "true")
+@Slf4j
 class ConnectFailedListenerDelegate {
 
-    private static final Logger log = LoggerFactory.getLogger(ConnectFailedListenerDelegate.class);
     private final EventStore eventStore = GetConnectionFailedEventListener.eventStore;
 
     @Autowired
