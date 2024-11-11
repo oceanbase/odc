@@ -220,7 +220,7 @@ public class ProjectService {
     }
 
     @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA", "DEVELOPER", "SECURITY_ADMINISTRATOR", "PARTICIPANT"},
-            resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
     public Project detail(@NotNull Long id) {
         ProjectEntity entity = repository.findByIdAndOrganizationId(id, currentOrganizationId())
@@ -253,7 +253,8 @@ public class ProjectService {
         return entity.map(projectMapper::entityToModel).orElse(null);
     }
 
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
     public Project update(@NotNull Long id, @NotNull Project project) {
         ProjectEntity previous = repository.findByIdAndOrganizationId(id, currentOrganizationId())
@@ -273,7 +274,8 @@ public class ProjectService {
                 resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, saved.getId()));
     }
 
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
     public Project setArchived(Long id, @NotNull SetArchivedReq req) throws InterruptedException {
         ProjectEntity saved = setArchived(id, currentOrganizationId(), req);
@@ -346,7 +348,8 @@ public class ProjectService {
         return repository.findAll(specs, pageable);
     }
 
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
     public Project createProjectMembers(@NonNull Long id, @NotEmpty List<ProjectMember> members) {
         ProjectEntity project = repository.findByIdAndOrganizationId(id, currentOrganizationId())
@@ -379,7 +382,8 @@ public class ProjectService {
     }
 
 
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteProjectMember(@NonNull Long projectId, @NonNull Long userId) {
         if (currentUserId().longValue() == userId.longValue()) {
@@ -424,7 +428,8 @@ public class ProjectService {
         });
     }
 
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
     public boolean updateProjectMember(@NonNull Long projectId, @NonNull Long userId,
             @NonNull List<ProjectMember> members) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.core.authority.permission;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.Validate;
 
@@ -36,7 +36,7 @@ import lombok.NonNull;
 @Getter
 public class ProjectPermission implements Permission {
     private final String resourceId;
-    private final String       resourceType;
+    private final String resourceType;
     private final List<String> actions;
 
     public ProjectPermission(@NonNull SecurityResource resource, String action) {
@@ -45,7 +45,8 @@ public class ProjectPermission implements Permission {
         Validate.notNull(resourceId, "ResourceId can not be null");
         Validate.notNull(resourceType, "ResourceType can not be null");
         Validate.notEmpty(action);
-        this.actions = Arrays.asList(StringUtils.split(action, ","));
+        this.actions = Arrays.asList(StringUtils.split(action, ",")).stream().map(e -> e.trim().toUpperCase())
+                .collect(Collectors.toList());
     }
 
 
@@ -56,7 +57,7 @@ public class ProjectPermission implements Permission {
         }
         ProjectPermission that = (ProjectPermission) permission;
         return this.resourceId.equalsIgnoreCase(that.getResourceId())
-               && this.resourceType.equalsIgnoreCase(that.getResourceType())
-               && !Collections.disjoint(this.actions, that.getActions());
+                && this.resourceType.equalsIgnoreCase(that.getResourceType())
+                && !Collections.disjoint(this.actions, that.getActions());
     }
 }

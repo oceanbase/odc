@@ -797,7 +797,8 @@ public class DatabaseService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, actions = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public boolean modifyDatabasesOwners(@NotNull Long projectId, @NotNull @Valid ModifyDatabaseOwnerReq req) {
         databaseRepository.findByIdIn(req.getDatabaseIds()).forEach(database -> {
             if (!projectId.equals(database.getProjectId())) {

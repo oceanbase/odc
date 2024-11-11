@@ -131,7 +131,8 @@ public class NotificationService {
                         NotificationPolicy::getPolicyMetadataId, policy -> policy, (p1, p2) -> p1, LinkedHashMap::new));
     }
 
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public Page<Channel> listChannels(@NotNull Long projectId, @NotNull QueryChannelParams queryParams,
             @NotNull Pageable pageable) {
         Page<Channel> channels = channelRepository.find(queryParams, pageable).map(channelMapper::fromEntity);
@@ -140,13 +141,15 @@ public class NotificationService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public Channel detailChannel(@NotNull Long projectId, @NotNull Long channelId) {
         return channelMapper.fromEntityWithConfig(nullSafeGetChannel(channelId, projectId));
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public Channel createChannel(@NotNull Long projectId, @NotNull Channel channel) {
         PreConditions.notBlank(channel.getName(), "channel.name");
         PreConditions.notNull(channel.getType(), "channel.type");
@@ -166,7 +169,8 @@ public class NotificationService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public Channel updateChannel(@NotNull Long projectId, @NotNull Channel channel) {
         PreConditions.notNull(channel.getId(), "channel.id");
         validator.validate(channel.getType(), channel.getChannelConfig());
@@ -189,7 +193,8 @@ public class NotificationService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public Channel deleteChannel(@NotNull Long projectId, @NotNull Long channelId) {
         ChannelEntity entity = nullSafeGetChannel(channelId, projectId);
 
@@ -200,7 +205,8 @@ public class NotificationService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public MessageSendResult testChannel(@NotNull Long projectId, @NotNull Channel channel) {
         PreConditions.notNull(channel.getType(), "channel.type");
         PreConditions.notNull(channel.getChannelConfig(), "channel.config");
@@ -227,13 +233,15 @@ public class NotificationService {
         }
     }
 
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public Boolean existsChannel(@NotNull Long projectId, @NotBlank String channelName) {
         Optional<ChannelEntity> optional = channelRepository.findByProjectIdAndName(projectId, channelName);
         return optional.isPresent();
     }
 
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public List<NotificationPolicy> listPolicies(@NotNull Long projectId) {
         Map<Long, NotificationPolicy> policies = new LinkedHashMap<>(metaPolicies);
 
@@ -250,7 +258,8 @@ public class NotificationService {
         return new ArrayList<>(policies.values());
     }
 
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public NotificationPolicy detailPolicy(@NotNull Long projectId, @NotNull Long policyId) {
         NotificationPolicyEntity entity = nullSafeGetPolicy(policyId);
         if (!Objects.equals(projectId, entity.getProjectId())) {
@@ -263,7 +272,8 @@ public class NotificationService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public List<NotificationPolicy> batchUpdatePolicies(@NotNull Long projectId,
             @NotEmpty List<NotificationPolicy> policies) {
         List<NotificationPolicy> toBeCreated = new ArrayList<>();
@@ -282,13 +292,15 @@ public class NotificationService {
         return results;
     }
 
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public Page<Message> listMessages(@NotNull Long projectId, @NotNull QueryMessageParams queryParams,
             @NotNull Pageable pageable) {
         return messageRepository.find(queryParams, pageable).map(Message::fromEntity);
     }
 
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public Message detailMessage(@NotNull Long projectId, @NotNull Long messageId) {
         Message message = Message.fromEntity(nullSafeGetMessage(messageId));
         if (!Objects.equals(projectId, message.getProjectId())) {

@@ -123,7 +123,8 @@ public class SensitiveColumnService {
     private static final SensitiveColumnMapper mapper = SensitiveColumnMapper.INSTANCE;
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"},
+            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
             indexOfIdParam = 0)
     public List<DatabaseWithAllColumns> listColumns(@NotNull Long projectId, @NotEmpty List<Long> databaseIds) {
         checkProjectDatabases(projectId, databaseIds);
@@ -157,7 +158,8 @@ public class SensitiveColumnService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"},
+            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
             indexOfIdParam = 0)
     public Boolean exists(@NotNull Long projectId, @NotNull SensitiveColumn column) {
         PreConditions.notNull(column.getDatabase(), "database");
@@ -180,7 +182,8 @@ public class SensitiveColumnService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"},
+            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
             indexOfIdParam = 0)
     public List<SensitiveColumn> batchCreate(@NotNull Long projectId,
             @NotEmpty @Valid List<SensitiveColumn> columns) {
@@ -212,7 +215,8 @@ public class SensitiveColumnService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"},
+            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
             indexOfIdParam = 0)
     public SensitiveColumn detail(@NotNull Long projectId, @NotNull Long id) {
         SensitiveColumnEntity entity = nullSafeGet(id);
@@ -239,7 +243,8 @@ public class SensitiveColumnService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"},
+            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
             indexOfIdParam = 0)
     public List<SensitiveColumn> batchUpdate(@NotNull Long projectId, @NotEmpty List<Long> ids,
             @NotNull Long maskingAlgorithmId) {
@@ -257,7 +262,8 @@ public class SensitiveColumnService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"},
+            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
             indexOfIdParam = 0)
     public List<SensitiveColumn> batchDelete(@NotNull Long projectId, @NotEmpty List<Long> ids) {
         List<SensitiveColumnEntity> entities = batchNullSafeGet(new HashSet<>(ids));
@@ -272,7 +278,8 @@ public class SensitiveColumnService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"},
+            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
             indexOfIdParam = 0)
     public Page<SensitiveColumn> list(@NotNull Long projectId, @NotNull QuerySensitiveColumnParams params,
             Pageable pageable) {
@@ -314,7 +321,8 @@ public class SensitiveColumnService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"},
+            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
             indexOfIdParam = 0)
     public SensitiveColumnStats stats(@NotNull Long projectId) {
         SensitiveColumnStats stats = new SensitiveColumnStats();
@@ -340,7 +348,8 @@ public class SensitiveColumnService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"},
+            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
             indexOfIdParam = 0)
     public SensitiveColumn setEnabled(@NotNull Long projectId, @NotNull Long id, @NotNull Boolean enabled) {
         SensitiveColumnEntity entity = nullSafeGet(id);
@@ -355,7 +364,8 @@ public class SensitiveColumnService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"},
+            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
             indexOfIdParam = 0)
     public SensitiveColumnScanningTaskInfo startScanning(@NotNull Long projectId,
             @NotNull @Valid SensitiveColumnScanningReq req) {
@@ -386,7 +396,8 @@ public class SensitiveColumnService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"},
+            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
             indexOfIdParam = 0)
     public SensitiveColumnScanningTaskInfo getScanningResults(@NotNull Long projectId, @NotBlank String taskId) {
         SensitiveColumnScanningTaskInfo taskInfo = scanningTaskManager.get(taskId);
