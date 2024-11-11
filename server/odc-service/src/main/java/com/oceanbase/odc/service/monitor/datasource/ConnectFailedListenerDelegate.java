@@ -20,8 +20,6 @@ import static com.oceanbase.odc.service.monitor.DefaultMeterName.DATASOURCE_GET_
 import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
