@@ -18,6 +18,8 @@ package com.oceanbase.tools.dbbrowser.schema.oracle;
 import java.util.List;
 import java.util.Map;
 
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMappers;
+import com.oceanbase.tools.dbbrowser.schema.constant.StatementsFiles;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcOperations;
 
@@ -38,6 +40,7 @@ public class OBOracleBetween410And432SchemaAccessor extends OBOracleSchemaAccess
     public OBOracleBetween410And432SchemaAccessor(JdbcOperations jdbcOperations,
             OracleDataDictTableNames dataDictTableNames) {
         super(jdbcOperations, dataDictTableNames);
+        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBORACLE_4_1_x);
     }
 
     @Override
