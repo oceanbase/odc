@@ -1187,21 +1187,21 @@ public class PLParserTest {
     public void parseOracle_commentOnTable_getSqlTypeSucceed() {
         ParseOraclePLResult actual = PLParser.parseOracle("comment on table a is 'xxx'");
         Assert.assertEquals(DBObjectType.TABLE, actual.getDbObjectType());
-        Assert.assertEquals(SqlType.COMMEND_ON, actual.getSqlType());
+        Assert.assertEquals(SqlType.COMMENT_ON, actual.getSqlType());
     }
 
     @Test
     public void parseOracle_commentOnColumn_getSqlTypeSucceed() {
         ParseOraclePLResult actual = PLParser.parseOracle("comment on column a is 'xxx'");
         Assert.assertEquals(DBObjectType.COLUMN, actual.getDbObjectType());
-        Assert.assertEquals(SqlType.COMMEND_ON, actual.getSqlType());
+        Assert.assertEquals(SqlType.COMMENT_ON, actual.getSqlType());
     }
 
     @Test
     public void parseOracle_commentOnMaterialized_getSqlTypeSucceed() {
         ParseOraclePLResult actual = PLParser.parseOracle("comment on materialized a is 'xxx'");
         Assert.assertEquals(DBObjectType.OTHERS, actual.getDbObjectType());
-        Assert.assertEquals(SqlType.COMMEND_ON, actual.getSqlType());
+        Assert.assertEquals(SqlType.COMMENT_ON, actual.getSqlType());
     }
 
     @Test

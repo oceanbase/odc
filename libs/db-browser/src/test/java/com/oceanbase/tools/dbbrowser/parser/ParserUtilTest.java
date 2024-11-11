@@ -349,7 +349,7 @@ public class ParserUtilTest {
     public void test_oracle_comment_on_table() {
         String sql = "comment on table t is 'abc'";
         BasicResult result = ParserUtil.parseOracleType(sql);
-        Assert.assertEquals(SqlType.COMMEND_ON, result.getSqlType());
+        Assert.assertEquals(SqlType.COMMENT_ON, result.getSqlType());
         Assert.assertEquals(DBObjectType.TABLE, result.getDbObjectType());
     }
 
@@ -357,7 +357,7 @@ public class ParserUtilTest {
     public void test_oracle_comment_on_column() {
         String sql = "comment on column t is 'abc'";
         BasicResult result = ParserUtil.parseOracleType(sql);
-        Assert.assertEquals(SqlType.COMMEND_ON, result.getSqlType());
+        Assert.assertEquals(SqlType.COMMENT_ON, result.getSqlType());
         Assert.assertEquals(DBObjectType.COLUMN, result.getDbObjectType());
     }
 

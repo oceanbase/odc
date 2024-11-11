@@ -419,17 +419,17 @@ public class OracleModeParserListener extends PlSqlParserBaseListener implements
 
     @Override
     public void enterComment_on_column(PlSqlParser.Comment_on_columnContext ctx) {
-        doRecord(SqlType.COMMEND_ON, DBObjectType.COLUMN, null);
+        doRecord(SqlType.COMMENT_ON, DBObjectType.COLUMN, null);
     }
 
     @Override
     public void enterComment_on_table(PlSqlParser.Comment_on_tableContext ctx) {
-        doRecord(SqlType.COMMEND_ON, DBObjectType.TABLE, null);
+        doRecord(SqlType.COMMENT_ON, DBObjectType.TABLE, null);
     }
 
     @Override
     public void enterComment_on_materialized(PlSqlParser.Comment_on_materializedContext ctx) {
-        doRecord(SqlType.COMMEND_ON, DBObjectType.OTHERS, null);
+        doRecord(SqlType.COMMENT_ON, DBObjectType.OTHERS, null);
     }
 
     @Override

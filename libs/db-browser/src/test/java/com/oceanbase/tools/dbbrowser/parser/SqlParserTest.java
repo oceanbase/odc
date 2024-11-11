@@ -288,14 +288,14 @@ public class SqlParserTest {
     public void parseOracle_commentOnTable_getSqlTypeSucceed() {
         ParseSqlResult actual = SqlParser.parseOracle("comment on table a is 'xxx'");
         Assert.assertEquals(DBObjectType.TABLE, actual.getDbObjectType());
-        Assert.assertEquals(SqlType.COMMEND_ON, actual.getSqlType());
+        Assert.assertEquals(SqlType.COMMENT_ON, actual.getSqlType());
     }
 
     @Test
     public void parseOracle_commentOnColumn_getSqlTypeSucceed() {
         ParseSqlResult actual = SqlParser.parseOracle("comment on column a is 'xxx'");
         Assert.assertEquals(DBObjectType.COLUMN, actual.getDbObjectType());
-        Assert.assertEquals(SqlType.COMMEND_ON, actual.getSqlType());
+        Assert.assertEquals(SqlType.COMMENT_ON, actual.getSqlType());
     }
 
     @Test

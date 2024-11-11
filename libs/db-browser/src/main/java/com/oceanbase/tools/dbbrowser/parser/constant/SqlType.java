@@ -41,7 +41,7 @@ public enum SqlType {
     TRUNCATE,
     CREATE,
     CALL,
-    COMMEND_ON,
+    COMMENT_ON,
     OTHERS,
     UNKNOWN
 }
