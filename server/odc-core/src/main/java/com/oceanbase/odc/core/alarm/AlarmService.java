@@ -26,6 +26,7 @@ import java.util.ServiceLoader;
 
 import javax.annotation.Nullable;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.alarm.AlarmEvent.AlarmLevel;
 
 import lombok.extern.slf4j.Slf4j;
@@ -33,13 +34,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 class AlarmService {
 
-    private final List<AlarmEventListener> listeners = new ArrayList<>();
+    private List<AlarmEventListener> listeners = new ArrayList<>();
 
     public AlarmService() {
         ServiceLoader<AlarmEventListener> load = ServiceLoader.load(AlarmEventListener.class);
+        log.info("加载ServiceLoader<AlarmEventListener>， service ==> ", load);
         Iterator<AlarmEventListener> iterator = load.iterator();
         while (iterator.hasNext()) {
             AlarmEventListener next = iterator.next();
+            log.info("遍历 AlarmEventListener 中... ", next);
             log.debug("AlarmEventListener:" + next.getClass().getName() + "have been loaded");
             listeners.add(next);
         }
@@ -86,6 +89,7 @@ class AlarmService {
     }
 
     private void monitor(String eventName, Map<String, String> eventMessage, AlarmLevel level, @Nullable Throwable e) {
+
         String msg = String.format("eventName=%s, eventMessage=%s .", eventName, eventMessage);
         switch (level) {
             case INFO:
@@ -112,7 +116,9 @@ class AlarmService {
             default:
                 throw new IllegalArgumentException();
         }
-        doPublish(new AlarmEvent(eventName, eventMessage, level));
+        AlarmEvent alarmEvent = new AlarmEvent(eventName, eventMessage, level);
+        log.info("接受到了一个告警：alarmEvent={}", JsonUtils.toJson(alarmEvent));
+        doPublish(alarmEvent);
     }
 
     private void doPublish(AlarmEvent alarmEvent) {

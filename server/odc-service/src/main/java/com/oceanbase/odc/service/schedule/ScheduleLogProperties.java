@@ -41,4 +41,5 @@ public class ScheduleLogProperties {
      * unit：B
      */
     private Long maxSize = 1024L * 1024;
+
 }

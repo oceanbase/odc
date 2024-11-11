@@ -327,10 +327,12 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         if (rows > 0) {
             taskResultPublisherExecutor
                     .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(taskResult)));
-            if (publisher != null && taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
+            // if (publisher != null && taskResult.getStatus() != null && taskResult.getStatus().isTerminated())
+            // {
+            if (publisher != null && taskResult.getStatus() != null) {
                 taskResultPublisherExecutor.execute(() -> publisher
                         .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
-                if (taskResult.getStatus() == JobStatus.FAILED) {
+                if (taskResult.getStatus() == JobStatus.FAILED || taskResult.getStatus() == JobStatus.CANCELING) {
                     Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
                             .item(AlarmUtils.ORGANIZATION_NAME, Optional.ofNullable(je.getOrganizationId()).map(
                                     Object::toString).orElse(StrUtil.EMPTY))
@@ -425,12 +427,13 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         taskResultPublisherExecutor
                 .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(result)));
 
-        if (publisher != null && result.getStatus() != null && result.getStatus().isTerminated()) {
+        // if (publisher != null && result.getStatus() != null && result.getStatus().isTerminated()) {
+        if (publisher != null && result.getStatus() != null) {
             taskResultPublisherExecutor.execute(() -> publisher
                     .publishEvent(new JobTerminateEvent(result.getJobIdentity(), result.getStatus())));
 
             // TODO maybe we can destroy the pod there.
-            if (result.getStatus() == JobStatus.FAILED) {
+            if (result.getStatus() == JobStatus.FAILED || result.getStatus() == JobStatus.CANCELING) {
                 Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
                         .item(AlarmUtils.ORGANIZATION_NAME, Optional.ofNullable(je.getOrganizationId()).map(
                                 Object::toString).orElse(StrUtil.EMPTY))
