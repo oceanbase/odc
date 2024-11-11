@@ -46,7 +46,7 @@ public class DBSchemaAccessorSqlMappers {
 
     static {
         SQL_MAPPER_FILE_PATHS.addAll(Arrays.asList(
-                StatementsFiles.OBMYSQL_40X,
+                StatementsFiles.OBMYSQL_432,
                 StatementsFiles.OBMYSQL_3X,
                 StatementsFiles.OBMYSQL_2276,
                 StatementsFiles.OBMYSQL_225X,

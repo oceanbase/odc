@@ -145,8 +145,9 @@ public class SensitiveColumnService {
                         accessor.listBasicTableColumns(database.getName()), exists));
                 databaseColumn.setView2Columns(getFilteringExistColumns(database.getId(),
                         accessor.listBasicViewColumns(database.getName()), exists));
+                //todo 判断版本
                 databaseColumn.setExternalTable2Columns(getFilteringExistColumns(database.getId(),
-                    accessor.listBasicViewColumns(database.getName()),exists));
+                        accessor.listBasicExternalTableColumns(database.getName()), exists));
                 databaseColumn.setDataTypeUnits(versionDiffConfigService.getDatatypeList(session));
                 if (!databaseColumn.getTable2Columns().isEmpty() || !databaseColumn.getView2Columns().isEmpty()) {
                     databaseColumns.add(databaseColumn);

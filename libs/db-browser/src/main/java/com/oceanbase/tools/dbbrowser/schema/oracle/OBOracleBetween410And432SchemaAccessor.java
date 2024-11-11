@@ -18,11 +18,11 @@ package com.oceanbase.tools.dbbrowser.schema.oracle;
 import java.util.List;
 import java.util.Map;
 
-import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.util.OracleDataDictTableNames;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;

@@ -21,7 +21,7 @@ package com.oceanbase.tools.dbbrowser.schema.constant;
  * @Description: []
  */
 public final class StatementsFiles {
-    public static final String OBMYSQL_40X = "schema/sql/obmysql/obmysql_4_0_x.yaml";
+    public static final String OBMYSQL_432 = "schema/sql/obmysql/obmysql_4_3_2.yaml";
 
     public static final String OBMYSQL_3X = "schema/sql/obmysql/obmysql_3_x.yaml";
 

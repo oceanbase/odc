@@ -474,7 +474,7 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String viewName) {
-        throw  new UnsupportedOperationException("Not supported yet");
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override

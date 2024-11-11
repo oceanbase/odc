@@ -18,10 +18,10 @@ package com.oceanbase.tools.dbbrowser.schema.mysql;
 import java.util.List;
 import java.util.Map;
 
-import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
 /**
  * @description: applicable to OB [4.0.0,4.3.2)

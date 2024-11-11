@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import com.oceanbase.tools.dbbrowser.schema.constant.Statements;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -1098,13 +1099,15 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
 
     @Override
     public Map<String, List<DBTableColumn>> listBasicExternalTableColumns(String schemaName) {
-        //todo
-        return null;
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_TABLE_COLUMNS);
+        List<DBTableColumn> tableColumns =
+            jdbcOperations.query(sql, new Object[] {schemaName, schemaName}, listBasicColumnsRowMapper());
+        return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
     }
 
     @Override
     public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String viewName) {
-        //todo
+        // todo 没啥用
         return null;
     }
 
