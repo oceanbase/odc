@@ -425,5 +425,17 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
+    public Map<String, List<DBTableColumn>> listBasicExternalTableColumns(String schemaName) {
+        //todo
+        return null;
+    }
+
+    @Override
+    public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String viewName) {
+        //todo
+        return null;
+    }
+
+    @Override
     protected void correctColumnPrecisionIfNeed(List<DBTableColumn> tableColumns) {}
 }

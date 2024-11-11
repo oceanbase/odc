@@ -1096,6 +1096,18 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicExternalTableColumns(String schemaName) {
+        //todo
+        return null;
+    }
+
+    @Override
+    public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String viewName) {
+        //todo
+        return null;
+    }
+
     private List<String> commonShowTablesLike(String schemaName, String tableNameLike,
             @NonNull DBObjectType tableType) {
         OracleSqlBuilder sb = new OracleSqlBuilder();

@@ -16,7 +16,9 @@
 package com.oceanbase.tools.dbbrowser.schema.oracle;
 
 import java.util.List;
+import java.util.Map;
 
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcOperations;
 
@@ -91,5 +93,16 @@ public class OBOracleBetween410And432SchemaAccessor extends OBOracleSchemaAccess
         sb.append(" ORDER BY schema_name, type, name");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicExternalTableColumns(String schemaName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String viewName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
 
 }
