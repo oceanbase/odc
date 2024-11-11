@@ -1071,7 +1071,9 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
 
     @Override
     public boolean syncExternalTableFiles(String schemaName, String tableName) {
-        //todo
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("ALTER EXTERNAL TABLE ").identifier(schemaName, tableName).append(" REFRESH");
+        jdbcOperations.execute(sb.toString());
         return true;
     }
 

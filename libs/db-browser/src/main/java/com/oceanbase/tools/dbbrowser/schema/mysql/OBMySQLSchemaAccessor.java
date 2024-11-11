@@ -60,7 +60,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
-    protected static final Set<String> ESCAPE_SCHEMA_SET = new HashSet<>(3);
+    protected static final Set<String> ESCAPE_SCHEMA_SET = new HashSet<>(4);
 
     static {
         ESCAPE_SCHEMA_SET.add("PUBLIC");
@@ -426,7 +426,9 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
     @Override
     public boolean syncExternalTableFiles(String schemaName, String tableName) {
-        //todo
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append("ALTER EXTERNAL TABLE ").identifier(schemaName, tableName).append(" REFRESH");
+        jdbcOperations.execute(sb.toString());
         return true;
     }
 

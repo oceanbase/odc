@@ -140,7 +140,8 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
 
     @Override
     public boolean syncExternalTableFiles(Connection connection, String schemaName, String tableName) {
-        //todo
+        DBSchemaAccessor schemaAccessor = getSchemaAccessor(connection);
+        schemaAccessor.syncExternalTableFiles(schemaName, tableName);
         return true;
     }
 

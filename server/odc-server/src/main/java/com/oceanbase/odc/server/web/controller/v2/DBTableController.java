@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -29,7 +30,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -123,10 +123,14 @@ public class DBTableController {
         return Responses.list(this.partitionPlanService.getPartitionKeyDataTypes(sessionId, databaseId, tableName));
     }
 
+    @PutMapping(value = "/{sessionId}/databases/{databaseName}/externalTables/"
+            + "{externalTableName}/syncExternalTableFiles")
     public SuccessResponse syncExternalTableFiles(@PathVariable String sessionId,
-        @PathVariable(required = false) String databaseName,
-        @RequestParam(required = true, name = "tableName") String tableName) {
-        //return tableService.syncExternalTableFiles();
-        throw new NotImplementedException("not implemented yet");
+            @PathVariable(required = false) String databaseName,
+            @PathVariable(required = true, name = "externalTableName") String externalTableName) {
+        Base64.Decoder decoder = Base64.getDecoder();
+        externalTableName = new String(decoder.decode(externalTableName));
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        return tableService.syncExternalTableFiles(session, databaseName, externalTableName);
     }
 }

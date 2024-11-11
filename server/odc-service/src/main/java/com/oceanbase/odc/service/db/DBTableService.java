@@ -186,8 +186,15 @@ public class DBTableService {
     }
 
     public SuccessResponse syncExternalTableFiles(@NotNull ConnectionSession connectionSession, String schemaName,
-        @NotBlank String tableName){
-        //todo
+            @NotBlank String externalTableName) {
+        DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
+        PreConditions.validExists(ResourceType.OB_TABLE, "tableName", externalTableName,
+                () -> schemaAccessor.showExternalTables(schemaName).stream()
+                        .filter(name -> name.equals(externalTableName))
+                        .collect(Collectors.toList()).size() > 0);
+        connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<Boolean>) con -> getTableExtensionPoint(connectionSession)
+                        .syncExternalTableFiles(con, schemaName, externalTableName));
         return Responses.empty();
     }
 

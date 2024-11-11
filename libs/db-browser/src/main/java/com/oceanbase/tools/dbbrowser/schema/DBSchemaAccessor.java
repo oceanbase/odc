@@ -102,7 +102,7 @@ public interface DBSchemaAccessor {
     boolean isExternalTable(String schemaName, String tableName);
 
     /**
-     * Synchronize the associated files of external objects
+     * Synchronize the associated files of external table
      */
     boolean syncExternalTableFiles(String schemaName, String tableName);
 
