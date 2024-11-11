@@ -56,8 +56,11 @@ public class ProjectPermission implements Permission {
             return false;
         }
         ProjectPermission that = (ProjectPermission) permission;
-        return this.resourceId.equalsIgnoreCase(that.getResourceId())
-                && this.resourceType.equalsIgnoreCase(that.getResourceType())
-                && !Collections.disjoint(this.actions, that.getActions());
+        if (this == that) {
+            return true;
+        }
+        boolean returnVal = (this.resourceId.equals(that.resourceId) || "*".equals(this.resourceId));
+        returnVal &= (this.resourceType.equals(that.resourceType) || "*".equals(this.resourceType));
+        return returnVal && !Collections.disjoint(this.actions, that.getActions());
     }
 }
