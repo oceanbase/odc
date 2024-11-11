@@ -94,8 +94,10 @@
             - CREATE
             - DROP
             - ALTER
+            - ALTER_SESSION
             - REPLACE
             - SET
+            - SET_SESSION
             - USE_DB
             - EXPLAIN
             - SHOW
@@ -106,9 +108,8 @@
             - SORT
             - DESC
             - TRUNCATE
-            - CALL_PROC
-            - COMMENT
-            - SET_SESSION
+            - CALL
+            - COMMENT_ON
             - OTHERS
         candidates:
             - UPDATE
@@ -118,8 +119,10 @@
             - CREATE
             - DROP
             - ALTER
+            - ALTER_SESSION
             - REPLACE
             - SET
+            - SET_SESSION
             - USE_DB
             - EXPLAIN
             - SHOW
@@ -130,9 +133,8 @@
             - SORT
             - DESC
             - TRUNCATE
-            - CALL_PROC
-            - COMMENT
-            - SET_SESSION
+            - CALL
+            - COMMENT_ON
             - OTHERS
 - id: 5
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-execute-sqls.name}

@@ -704,7 +704,7 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
     @Override
     public void enterSet_comment_stmt(OBParser.Set_comment_stmtContext ctx) {
         // comment on xxx
-        setSqlType(SqlType.COMMENT);
+        setSqlType(SqlType.COMMEND_ON);
         ParseTree child = null;
         if (ctx.getChildCount() >= 3) {
             child = ctx.getChild(2);
@@ -726,7 +726,7 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
 
     @Override
     public void enterCall_stmt(OBParser.Call_stmtContext ctx) {
-        setSqlType(SqlType.CALL_PROC);
+        setSqlType(SqlType.CALL);
         this.dbObjectType = DBObjectType.PROCEDURE;
     }
 

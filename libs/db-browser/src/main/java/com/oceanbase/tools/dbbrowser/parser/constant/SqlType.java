@@ -25,6 +25,7 @@ public enum SqlType {
     REPLACE,
     UPDATE,
     SET,
+    SET_SESSION,
     USE_DB,
     EXPLAIN,
     SHOW,
@@ -36,11 +37,11 @@ public enum SqlType {
     DESC,
     DROP,
     ALTER,
+    ALTER_SESSION,
     TRUNCATE,
     CREATE,
-    CALL_PROC,
-    COMMENT,
-    SET_SESSION,
+    CALL,
+    COMMEND_ON,
     OTHERS,
     UNKNOWN
 }

@@ -557,7 +557,7 @@ public class OracleModePLParserListener extends PLParserBaseListener implements 
 
     @Override
     public void enterCall_spec(PLParser.Call_specContext ctx) {
-        this.sqlType = sqlType.CALL_PROC;
+        this.sqlType = sqlType.CALL;
         this.dbObjectType = DBObjectType.PROCEDURE;
     }
 
