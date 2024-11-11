@@ -102,7 +102,9 @@ public enum ResourceType implements Translatable {
     ODC_WORKSHEET,
     ODC_WORKSPACE,
     ODC_WORKFLOW_CLUSTER,
-
+    ODC_CHART,
+    ODC_DASHBOARD,
+    ODC_WORKFLOW,
 
     /**
      * OB Resources, with 'OB_' prefix
