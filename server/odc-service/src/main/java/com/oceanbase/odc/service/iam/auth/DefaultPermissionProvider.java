@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.iam.auth;
 import java.util.Collection;
 
 import com.oceanbase.odc.core.authority.model.SecurityResource;
+import com.oceanbase.odc.core.authority.permission.ComposedPermission;
 import com.oceanbase.odc.core.authority.permission.ConnectionPermission;
 import com.oceanbase.odc.core.authority.permission.DatabasePermission;
 import com.oceanbase.odc.core.authority.permission.Permission;
@@ -52,6 +53,14 @@ public class DefaultPermissionProvider implements PermissionProvider {
     @Override
     public Permission getPermissionByResourceRoles(SecurityResource resource, Collection<String> resourceRoles) {
         return new ResourceRoleBasedPermission(resource, String.join(",", resourceRoles));
+    }
+
+    @Override
+    public Permission getPermissionByActionsAndResourceRoles(SecurityResource resource, Collection<String> actions,
+            Collection<String> resourceRoles) {
+        return new ComposedPermission(resource,
+                (ResourceRoleBasedPermission) getPermissionByResourceRoles(resource, resourceRoles),
+                (ResourcePermission) getPermissionByActions(resource, actions));
     }
 
 }
