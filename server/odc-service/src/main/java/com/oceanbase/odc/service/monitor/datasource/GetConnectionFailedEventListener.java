@@ -29,7 +29,7 @@ public class GetConnectionFailedEventListener extends AbstractEventListener<GetC
     public void onEvent(GetConnectionFailedEvent event) {
         boolean offer = eventStore.offer(event);
         if (!offer) {
-            log.error("Can't offer GetConnectionFailedEvent");
+            log.warn("Can't offer GetConnectionFailedEvent");
         }
     }
 
