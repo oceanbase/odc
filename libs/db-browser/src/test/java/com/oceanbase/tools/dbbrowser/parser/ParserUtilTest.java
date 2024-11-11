@@ -333,7 +333,7 @@ public class ParserUtilTest {
     public void test_oracle_alterSession() {
         String sql = "alter SESSION set ob_query_timeout=6000000000;";
         BasicResult result = ParserUtil.parseOracleType(sql);
-        Assert.assertEquals(SqlType.SET_SESSION, result.getSqlType());
+        Assert.assertEquals(SqlType.ALTER_SESSION, result.getSqlType());
         Assert.assertEquals(DBObjectType.SESSION_VARIABLE, result.getDbObjectType());
     }
 
