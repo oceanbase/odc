@@ -68,9 +68,7 @@ public class ResourceLastAccessService {
             Collection<Long> resourceIds) {
         PreConditions.notEmpty(resourceIds, "resourceIds");
         return resourceLastAccessRepository.deleteByOrganizationIdAndProjectIdAndResourceTypeAndResourceIdIn(
-                organizationId, projectId,
-                resourceType.name(),
-                resourceIds);
+                organizationId, projectId, resourceType.name(), resourceIds);
     }
 
     public Optional<ResourceLastAccessEntity> detail(Long organizationId, Long projectId,
