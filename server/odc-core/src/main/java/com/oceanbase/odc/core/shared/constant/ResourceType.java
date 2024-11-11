@@ -16,7 +16,6 @@
 package com.oceanbase.odc.core.shared.constant;
 
 import java.util.Locale;
-import java.util.Optional;
 
 import org.springframework.context.i18n.LocaleContextHolder;
 
@@ -144,14 +143,5 @@ public enum ResourceType implements Translatable {
     public String getLocalizedMessage() {
         Locale locale = LocaleContextHolder.getLocale();
         return translate(null, locale);
-    }
-
-    public static Optional<ResourceType> getByName(String name) {
-        for (ResourceType value : values()) {
-            if (value.name().equals(name)) {
-                return Optional.of(value);
-            }
-        }
-        return Optional.empty();
     }
 }

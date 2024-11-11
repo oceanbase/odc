@@ -47,11 +47,6 @@ public class ResourceLastAccessService {
 
     public ResourceLastAccessEntity add(Long organizationId, Long projectId, Long userId, ResourceType resourceType,
             Long itemId, Date accessTime) {
-        PreConditions.notNull(organizationId, "organizationId");
-        PreConditions.notNull(projectId, "projectId");
-        PreConditions.notNull(userId, "userId");
-        PreConditions.notNull(resourceType, "resourceType");
-        PreConditions.notNull(itemId, "itemId");
         Optional<ResourceLastAccessEntity> entityOptional =
                 resourceLastAccessRepository.findByOrganizationIdAndProjectIdAndUserIdAndResourceTypeAndResourceId(
                         organizationId, projectId, userId,
@@ -71,9 +66,6 @@ public class ResourceLastAccessService {
 
     public int batchDeleteResourceIds(Long organizationId, Long projectId, ResourceType resourceType,
             Collection<Long> resourceIds) {
-        PreConditions.notNull(organizationId, "organizationId");
-        PreConditions.notNull(projectId, "projectId");
-        PreConditions.notNull(resourceType, "resourceType");
         PreConditions.notEmpty(resourceIds, "resourceIds");
         return resourceLastAccessRepository.deleteByOrganizationIdAndProjectIdAndResourceTypeAndResourceIdIn(
                 organizationId, projectId,
@@ -83,23 +75,12 @@ public class ResourceLastAccessService {
 
     public Optional<ResourceLastAccessEntity> detail(Long organizationId, Long projectId,
             Long userId, ResourceType resourceType, Long resourceId) {
-        PreConditions.notNull(organizationId, "organizationId");
-        PreConditions.notNull(projectId, "projectId");
-        PreConditions.notNull(userId, "userId");
-        PreConditions.notNull(resourceType, "resourceType");
-        PreConditions.notNull(resourceId, "resourceId");
         return resourceLastAccessRepository.findByOrganizationIdAndProjectIdAndUserIdAndResourceTypeAndResourceId(
                 organizationId, projectId, userId, resourceType.name(), resourceId);
     }
 
     public Page<ResourceLastAccessEntity> listLastAccessesOfUser(Long organizationId, Long projectId, Long userId,
             ResourceType resourceType, Pageable pageable) {
-        PreConditions.notNull(organizationId, "organizationId");
-        PreConditions.notNull(projectId, "projectId");
-        PreConditions.notNull(userId, "userId");
-        PreConditions.notNull(resourceType, "resourceType");
-        PreConditions.notNull(pageable, "pageable");
-
         return resourceLastAccessRepository.findByOrganizationIdAndProjectIdAndUserIdAndResourceType(organizationId,
                 projectId, userId, resourceType.name(), pageable);
     }
