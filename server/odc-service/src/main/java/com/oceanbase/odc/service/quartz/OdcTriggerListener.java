@@ -21,9 +21,9 @@ import static com.oceanbase.odc.core.alarm.AlarmEventNames.SCHEDULING_IGNORE;
 import java.util.Date;
 import java.util.Optional;
 
+import org.quartz.CronTrigger;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
-import org.quartz.SimpleTrigger;
 import org.quartz.Trigger;
 import org.quartz.listeners.TriggerListenerSupport;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,7 +72,8 @@ public class OdcTriggerListener extends TriggerListenerSupport {
     @Override
     public boolean vetoJobExecution(Trigger trigger, JobExecutionContext context) {
         boolean skipExecution = SpringContextUtil.getBean(ScheduleService.class)
-                .vetoJobExecution(Long.parseLong(context.getTrigger().getJobKey().getName()),!(trigger instanceof SimpleTrigger));
+                .vetoJobExecution(Long.parseLong(context.getTrigger().getJobKey().getName()),
+                        trigger instanceof CronTrigger);
         if (skipExecution) {
             log.warn("The job will be skipped, job key:" + trigger.getJobKey());
             ScheduleAlarmUtils.misfire(Long.parseLong(trigger.getJobKey().getName()), new Date());

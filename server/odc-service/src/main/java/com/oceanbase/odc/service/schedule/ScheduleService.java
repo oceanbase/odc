@@ -517,7 +517,7 @@ public class ScheduleService {
         Schedule schedule = null;
         boolean isValidSchedule;
         // Only perform automatic termination checks for periodic tasks
-        if(isCronTrigger) {
+        if (isCronTrigger) {
             try {
                 schedule = nullSafeGetModelById(scheduleId);
                 isValidSchedule = isValidSchedule(schedule);
