@@ -26,7 +26,6 @@ import com.oceanbase.odc.service.task.ExceptionListener;
 import com.oceanbase.odc.service.task.Task;
 import com.oceanbase.odc.service.task.TaskContext;
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.executor.TaskReporter;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2023/11/22 20:16
  */
 @Slf4j
-public final class TaskContainer<RESULT> implements ExceptionListener {
+final class TaskContainer<RESULT> implements ExceptionListener {
     // if task has been closed
     private final AtomicBoolean closed = new AtomicBoolean(false);
     // status maintained by task container

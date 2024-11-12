@@ -33,7 +33,6 @@ import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.executor.DefaultTaskResult;
-import com.oceanbase.odc.service.task.executor.TaskReporter;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**

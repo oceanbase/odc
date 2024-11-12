@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.agent;
 
+import com.oceanbase.odc.agent.runtime.TaskApplication;
 import com.oceanbase.odc.server.module.Modules;
 
 import lombok.extern.slf4j.Slf4j;

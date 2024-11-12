@@ -36,7 +36,8 @@ public interface Task<RESULT> {
     void init(TaskContext taskContext) throws Exception;
 
     /**
-     * Start current task. This method will be called by TaskExecutor for fire a task
+     * Start current task. This method will be called by TaskExecutor for fire a task This method call
+     * must be blocked until job is done or failed
      */
     boolean start() throws Exception;
 

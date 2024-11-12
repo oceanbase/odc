@@ -23,7 +23,7 @@ import com.oceanbase.odc.service.task.schedule.JobIdentity;
  * @author gaoda.xy
  * @date 2023/11/24 11:18
  */
-public interface TaskExecutor {
+interface TaskExecutor {
 
     void execute(Task<?> task, JobContext jc);
 
