@@ -546,6 +546,11 @@ public class ScheduleService {
                     scheduleTaskService.findById(optional.get().getLatestScheduleTaskId());
             TaskStatus status = null;
             if (taskEntityOptional.isPresent() && !taskEntityOptional.get().getStatus().isTerminated()) {
+                // correct the status of the task
+                if (taskEntityOptional.get().getJobId() == null) {
+                    scheduleTaskService.updateStatusById(taskEntityOptional.get().getId(), TaskStatus.FAILED);
+                    return false;
+                }
                 status = taskEntityOptional.get().getStatus();
                 log.info("Found executing task,scheduleId={},executingTaskId={},taskStatus={}", scheduleId,
                         taskEntityOptional.get().getId(), status);
