@@ -282,6 +282,7 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
         }
         Token scopeToken = ((TerminalNode) parseTree).getSymbol();
         if (scopeToken.getType() == OBLexer.GLOBAL || scopeToken.getType() == OBLexer.GLOBAL_ALIAS) {
+            sqlType = sqlType.SET_CLOBAL;
             setDbObjectType(DBObjectType.GLOBAL_VARIABLE);
         } else if (scopeToken.getType() == OBLexer.SESSION || scopeToken.getType() == OBLexer.SESSION_ALIAS) {
             sqlType = sqlType.SET_SESSION;
@@ -554,8 +555,8 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
 
     @Override
     public void enterAlter_system_stmt(Alter_system_stmtContext ctx) {
-        setSqlType(SqlType.ALTER);
-        this.dbObjectType = DBObjectType.OTHERS;
+        setSqlType(SqlType.SET_CLOBAL);
+        this.dbObjectType = DBObjectType.GLOBAL_VARIABLE;
     }
 
     @Override
@@ -602,7 +603,7 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
 
     @Override
     public void enterAlter_session_stmt(Alter_session_stmtContext ctx) {
-        setSqlType(SqlType.ALTER_SESSION);
+        setSqlType(SqlType.SET_SESSION);
         this.dbObjectType = DBObjectType.SESSION_VARIABLE;
     }
 

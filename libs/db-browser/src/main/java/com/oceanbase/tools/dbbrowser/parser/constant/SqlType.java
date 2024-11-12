@@ -15,6 +15,8 @@
  */
 package com.oceanbase.tools.dbbrowser.parser.constant;
 
+import org.omg.CORBA.UNKNOWN;
+
 /**
  * Created by mogao.zj
  */
@@ -26,6 +28,7 @@ public enum SqlType {
     UPDATE,
     SET,
     SET_SESSION,
+    SET_CLOBAL,
     USE_DB,
     EXPLAIN,
     SHOW,
@@ -37,7 +40,6 @@ public enum SqlType {
     DESC,
     DROP,
     ALTER,
-    ALTER_SESSION,
     TRUNCATE,
     CREATE,
     CALL,
