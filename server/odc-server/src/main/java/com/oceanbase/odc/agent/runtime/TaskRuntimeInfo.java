@@ -28,6 +28,4 @@ class TaskRuntimeInfo {
     private final TaskContainer<?> taskContainer;
     private Future<?> future;
     private final TaskMonitor taskMonitor;
-
-
 }

@@ -32,7 +32,6 @@ class ExitHelper {
     public static void await() {
         try {
             LATCH.await();
-            System.out.println("latch wait done");
         } catch (InterruptedException e) {
             log.warn("Await thread be interrupted and exit:", e);
         }
