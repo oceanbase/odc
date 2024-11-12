@@ -17,27 +17,48 @@ package com.oceanbase.odc.service.task.executor;
 
 import java.util.Map;
 
+import com.oceanbase.odc.common.util.MapUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
+
+import lombok.Data;
 
 /**
  * @author yaobin
  * @date 2023-11-29
  * @since 4.2.4
  */
-public interface TaskResult {
+@Data
+public class TaskResult {
 
-    JobIdentity getJobIdentity();
+    private JobIdentity jobIdentity;
 
-    TaskStatus getStatus();
+    private TaskStatus status;
 
-    String getResultJson();
+    private String resultJson;
 
-    String getExecutorEndpoint();
+    private String executorEndpoint;
 
-    String getErrorMessage();
+    private String errorMessage;
 
-    double getProgress();
+    private double progress;
 
-    Map<String, String> getLogMetadata();
+    private Map<String, String> logMetadata;
+
+    public boolean progressChanged(TaskResult previous) {
+        if (previous == null) {
+            return true;
+        }
+        if (status != previous.getStatus()) {
+            return true;
+        }
+        if (Double.compare(progress, previous.getProgress()) != 0) {
+            return true;
+        }
+        if (!MapUtils.mapEquals(logMetadata, previous.logMetadata, String::equals)) {
+            return true;
+        }
+        return !StringUtils.equals(resultJson, previous.getResultJson());
+    }
 }

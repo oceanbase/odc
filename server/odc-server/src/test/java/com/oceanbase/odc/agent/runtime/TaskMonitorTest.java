@@ -21,7 +21,7 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.odc.service.task.executor.DefaultTaskResult;
+import com.oceanbase.odc.service.task.executor.TaskResult;
 
 /**
  * @author longpeng.zlp
@@ -35,7 +35,7 @@ public class TaskMonitorTest {
         Mockito.when(taskReporter.report(ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(false);
         TaskMonitor taskMonitor = new TaskMonitor(Mockito.mock(TaskContainer.class), taskReporter, Mockito.mock(
                 CloudObjectStorageService.class));
-        Assert.assertFalse(taskMonitor.reportTaskResultWithRetry(new DefaultTaskResult(), 3, 1));
+        Assert.assertFalse(taskMonitor.reportTaskResultWithRetry(new TaskResult(), 3, 1));
     }
 
     @Test
@@ -44,6 +44,6 @@ public class TaskMonitorTest {
         Mockito.when(taskReporter.report(ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(true);
         TaskMonitor taskMonitor = new TaskMonitor(Mockito.mock(TaskContainer.class), taskReporter, Mockito.mock(
                 CloudObjectStorageService.class));
-        Assert.assertTrue(taskMonitor.reportTaskResultWithRetry(new DefaultTaskResult(), 3, 1));
+        Assert.assertTrue(taskMonitor.reportTaskResultWithRetry(new TaskResult(), 3, 1));
     }
 }

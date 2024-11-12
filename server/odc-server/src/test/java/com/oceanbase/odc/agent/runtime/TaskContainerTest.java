@@ -31,7 +31,7 @@ import com.oceanbase.odc.service.task.Task;
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
-import com.oceanbase.odc.service.task.executor.DefaultTaskResult;
+import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
@@ -63,7 +63,7 @@ public class TaskContainerTest {
             TaskContainer<?> taskContainer = buildTaskContainer(jobContext, dummyBaseTask);
             taskContainer.runTask();
             TaskReporter taskReporter = taskContainer.taskMonitor.getReporter();
-            ArgumentCaptor<DefaultTaskResult> argumentCaptor = ArgumentCaptor.forClass(DefaultTaskResult.class);
+            ArgumentCaptor<TaskResult> argumentCaptor = ArgumentCaptor.forClass(TaskResult.class);
             Mockito.verify(taskReporter).report(ArgumentMatchers.any(), argumentCaptor.capture());
             Assert.assertNull(argumentCaptor.getValue().getErrorMessage());
         }
@@ -79,8 +79,7 @@ public class TaskContainerTest {
             TaskContainer<?> taskContainer = buildTaskContainer(jobContext, dummyBaseTask);
             taskContainer.runTask();
             TaskReporter taskReporter = taskContainer.taskMonitor.getReporter();
-
-            ArgumentCaptor<DefaultTaskResult> argumentCaptor = ArgumentCaptor.forClass(DefaultTaskResult.class);
+            ArgumentCaptor<TaskResult> argumentCaptor = ArgumentCaptor.forClass(TaskResult.class);
             Mockito.verify(taskReporter).report(ArgumentMatchers.any(), argumentCaptor.capture());
             Assert.assertEquals(argumentCaptor.getValue().getErrorMessage(), "exception should be thrown");
         }

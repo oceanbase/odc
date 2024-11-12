@@ -35,8 +35,8 @@ import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobServerUrls;
-import com.oceanbase.odc.service.task.executor.DefaultTaskResult;
 import com.oceanbase.odc.service.task.executor.HeartbeatRequest;
+import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.executor.TraceDecoratorThreadFactory;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -143,7 +143,7 @@ class TaskMonitor {
         if (JobUtils.isReportDisabled()) {
             return;
         }
-        DefaultTaskResult taskResult = DefaultTaskResultBuilder.build(getTaskContainer());
+        TaskResult taskResult = DefaultTaskResultBuilder.build(getTaskContainer());
         if (taskResult.getStatus().isTerminated()) {
             log.info("job {} status {} is terminate, monitor report be ignored.",
                     taskResult.getJobIdentity().getId(), taskResult.getStatus());
@@ -175,7 +175,7 @@ class TaskMonitor {
     @VisibleForTesting
     protected void doFinal() {
 
-        DefaultTaskResult finalResult = DefaultTaskResultBuilder.build(getTaskContainer());
+        TaskResult finalResult = DefaultTaskResultBuilder.build(getTaskContainer());
         // Report final result
         log.info("Task id: {}, finished with status: {}, start to report final result", getJobId(),
                 finalResult.getStatus());
@@ -222,7 +222,7 @@ class TaskMonitor {
     }
 
     @VisibleForTesting
-    protected void uploadLogFileToCloudStorage(DefaultTaskResult finalResult) {
+    protected void uploadLogFileToCloudStorage(TaskResult finalResult) {
 
         Map<String, String> logMap = finalResult.getLogMetadata();
         Map<String, String> logMetaData = new HashMap<>();
@@ -242,7 +242,7 @@ class TaskMonitor {
     }
 
     @VisibleForTesting
-    protected boolean reportTaskResultWithRetry(DefaultTaskResult result, int retries, int retryIntervalSeconds) {
+    protected boolean reportTaskResultWithRetry(TaskResult result, int retries, int retryIntervalSeconds) {
         if (result.getStatus() == TaskStatus.DONE) {
             result.setProgress(100.0);
         }
