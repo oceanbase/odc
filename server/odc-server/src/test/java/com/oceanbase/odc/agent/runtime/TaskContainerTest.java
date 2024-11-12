@@ -28,7 +28,6 @@ import org.mockito.Mockito;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.task.Task;
-import com.oceanbase.odc.service.task.base.TaskBase;
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
@@ -50,7 +49,7 @@ public class TaskContainerTest {
         JobIdentity jobIdentity = new JobIdentity();
         jobIdentity.setId(1L);
         jobContext.setJobIdentity(jobIdentity);
-        jobContext.setJobClass(DummyTask.class.getName());
+        jobContext.setJobClass(SimpleTask.class.getName());
     }
 
 
@@ -60,7 +59,7 @@ public class TaskContainerTest {
             mockSystemUtil.when(() -> {
                 SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_EXECUTOR_PORT);
             }).thenReturn("9099");
-            DummyTask dummyBaseTask = new DummyTask(false);
+            SimpleTask dummyBaseTask = new SimpleTask(false);
             TaskContainer<?> taskContainer = buildTaskContainer(jobContext, dummyBaseTask);
             taskContainer.runTask();
             TaskReporter taskReporter = taskContainer.taskMonitor.getReporter();
@@ -76,7 +75,7 @@ public class TaskContainerTest {
             mockSystemUtil.when(() -> {
                 SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_EXECUTOR_PORT);
             }).thenReturn("9099");
-            DummyTask dummyBaseTask = new DummyTask(true);
+            SimpleTask dummyBaseTask = new SimpleTask(true);
             TaskContainer<?> taskContainer = buildTaskContainer(jobContext, dummyBaseTask);
             taskContainer.runTask();
             TaskReporter taskReporter = taskContainer.taskMonitor.getReporter();
@@ -90,7 +89,7 @@ public class TaskContainerTest {
     @Test
     public void testTaskContainerOnException() {
         TaskContainer<String> taskContainer = new TaskContainer<>(jobContext, Mockito.mock(
-                CloudObjectStorageService.class), Mockito.mock(TaskReporter.class), new DummyTask(false));
+                CloudObjectStorageService.class), Mockito.mock(TaskReporter.class), new SimpleTask(false));
         Assert.assertNull(taskContainer.getError());
         taskContainer.onException(new Throwable("error"));
         Throwable ex = taskContainer.getError();
@@ -102,40 +101,5 @@ public class TaskContainerTest {
         TaskReporter taskReporter = Mockito.mock(TaskReporter.class);
         Mockito.when(taskReporter.report(ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(true);
         return new TaskContainer<>(jobContext, Mockito.mock(CloudObjectStorageService.class), taskReporter, task);
-    }
-
-    private static final class DummyTask extends TaskBase<String> {
-        private final boolean shouldThrowException;
-
-        private DummyTask(boolean shouldThrowException) {
-            this.shouldThrowException = shouldThrowException;
-        }
-
-        @Override
-        protected void doInit(JobContext context) throws Exception {}
-
-        @Override
-        public boolean start() throws Exception {
-            if (shouldThrowException) {
-                throw new IllegalStateException("exception should be thrown");
-            }
-            return true;
-        }
-
-        @Override
-        public void stop() throws Exception {}
-
-        @Override
-        public void close() throws Exception {}
-
-        @Override
-        public double getProgress() {
-            return 100;
-        }
-
-        @Override
-        public String getTaskResult() {
-            return "res";
-        }
     }
 }
