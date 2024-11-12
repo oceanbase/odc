@@ -93,7 +93,8 @@ public class BaseTaskTest {
             });
             DefaultTaskResult taskResult = DefaultTaskResultBuilder.build(dummyBaseTask);
             DefaultTaskResultBuilder.assignErrorMessage(taskResult, dummyBaseTask);
-            Assert.assertEquals(taskResult.getErrorMessage(), " \tat com.oceanbase.odc.service.task.executor.task.BaseTask.start(BaseTask.java:76) \tat com.oceanbase.odc.service.task.executor.task.BaseTaskTest$DummyBaseTask.doStart(BaseTaskTest.java:113) java.lang.IllegalStateException: exception should be thrown");
+            Assert.assertEquals(taskResult.getErrorMessage(),
+                    " \tat com.oceanbase.odc.service.task.executor.task.BaseTask.start(BaseTask.java:76) \tat com.oceanbase.odc.service.task.executor.task.BaseTaskTest$DummyBaseTask.doStart(BaseTaskTest.java:113) java.lang.IllegalStateException: exception should be thrown");
         }
     }
 
