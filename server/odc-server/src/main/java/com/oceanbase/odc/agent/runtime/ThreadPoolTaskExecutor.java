@@ -73,6 +73,9 @@ class ThreadPoolTaskExecutor implements TaskExecutor {
         CloudObjectStorageService cloudObjectStorageService = buildCloudStorageService(jc);
         TaskReporter taskReporter = new TaskReporter(jc.getHostUrls());
         TaskContainer<?> taskContainer = new TaskContainer<>(jc, cloudObjectStorageService, taskReporter, task);
+        TaskRuntimeInfo taskRuntimeInfo = new TaskRuntimeInfo(taskContainer, taskContainer.getTaskMonitor());
+        // first put data in map, avoid concurrent thread access caused task not found exception
+        tasks.put(jobIdentity, taskRuntimeInfo);
         Future<?> future = executor.submit(() -> {
             try {
                 taskContainer.runTask();
@@ -81,7 +84,7 @@ class ThreadPoolTaskExecutor implements TaskExecutor {
                 taskContainer.onException(e);
             }
         });
-        tasks.put(jobIdentity, new TaskRuntimeInfo(taskContainer, future, taskContainer.getTaskMonitor()));
+        taskRuntimeInfo.setFuture(future);
     }
 
     /**
@@ -135,5 +138,10 @@ class ThreadPoolTaskExecutor implements TaskExecutor {
         TaskRuntimeInfo runtimeInfo = tasks.get(ji);
         PreConditions.notNull(runtimeInfo, "task", "Task not found, jobIdentity=" + ji.getId());
         return runtimeInfo;
+    }
+
+    @Override
+    public boolean taskExist(JobIdentity ji) {
+        return tasks.get(ji) != null;
     }
 }

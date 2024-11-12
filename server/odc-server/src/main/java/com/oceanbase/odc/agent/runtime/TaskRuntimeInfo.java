@@ -26,6 +26,8 @@ import lombok.Data;
 @Data
 class TaskRuntimeInfo {
     private final TaskContainer<?> taskContainer;
-    private final Future<?> future;
+    private Future<?> future;
     private final TaskMonitor taskMonitor;
+
+
 }
