@@ -301,7 +301,7 @@ public class ParserUtilTest {
     public void test_mysql_set_global() {
         String sql = "SET GLOBAL time_zone = '+00:00';";
         BasicResult result = ParserUtil.parseMysqlType(sql);
-        Assert.assertEquals(SqlType.SET_CLOBAL, result.getSqlType());
+        Assert.assertEquals(SqlType.SET_GLOBAL, result.getSqlType());
         Assert.assertEquals(DBObjectType.GLOBAL_VARIABLE, result.getDbObjectType());
     }
 
@@ -309,7 +309,7 @@ public class ParserUtilTest {
     public void test_oracle_set_global() {
         String sql = "SET GLOBAL time_zone = '+00:00';";
         BasicResult result = ParserUtil.parseMysqlType(sql);
-        Assert.assertEquals(SqlType.SET_CLOBAL, result.getSqlType());
+        Assert.assertEquals(SqlType.SET_GLOBAL, result.getSqlType());
         Assert.assertEquals(DBObjectType.GLOBAL_VARIABLE, result.getDbObjectType());
     }
 
@@ -317,7 +317,7 @@ public class ParserUtilTest {
     public void test_oracle_alter_system() {
         String sql = "ALTER SYSTEM SET time_zone = '+00:00';";
         BasicResult result = ParserUtil.parseOracleType(sql);
-        Assert.assertEquals(SqlType.SET_CLOBAL, result.getSqlType());
+        Assert.assertEquals(SqlType.SET_GLOBAL, result.getSqlType());
         Assert.assertEquals(DBObjectType.GLOBAL_VARIABLE, result.getDbObjectType());
     }
 

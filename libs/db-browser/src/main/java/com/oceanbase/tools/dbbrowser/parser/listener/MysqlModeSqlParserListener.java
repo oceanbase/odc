@@ -226,7 +226,7 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
         }
         Token scopeToken = ((TerminalNode) parseTree).getSymbol();
         if (scopeToken.getType() == OBLexer.GLOBAL || scopeToken.getType() == OBLexer.GLOBAL_ALIAS) {
-            this.sqlType = SqlType.SET_CLOBAL;
+            this.sqlType = SqlType.SET_GLOBAL;
             setDbObjectType(DBObjectType.GLOBAL_VARIABLE);
         } else if (scopeToken.getType() == OBLexer.SESSION || scopeToken.getType() == OBLexer.SESSION_ALIAS) {
             this.sqlType = SqlType.SET_SESSION;
