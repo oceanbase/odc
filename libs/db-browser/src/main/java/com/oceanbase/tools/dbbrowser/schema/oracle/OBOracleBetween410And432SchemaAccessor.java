@@ -18,13 +18,13 @@ package com.oceanbase.tools.dbbrowser.schema.oracle;
 import java.util.List;
 import java.util.Map;
 
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMappers;
-import com.oceanbase.tools.dbbrowser.schema.constant.StatementsFiles;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMappers;
+import com.oceanbase.tools.dbbrowser.schema.constant.StatementsFiles;
 import com.oceanbase.tools.dbbrowser.util.OracleDataDictTableNames;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
@@ -103,7 +103,7 @@ public class OBOracleBetween410And432SchemaAccessor extends OBOracleSchemaAccess
     }
 
     @Override
-    public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String viewName) {
+    public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String externalTableName) {
         throw new UnsupportedOperationException("not support yet");
     }
 

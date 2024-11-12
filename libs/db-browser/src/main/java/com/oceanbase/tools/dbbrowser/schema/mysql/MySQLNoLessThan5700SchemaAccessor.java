@@ -494,7 +494,7 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String viewName) {
+    public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String externalTableName) {
         throw new UnsupportedOperationException("not support yet");
     }
 

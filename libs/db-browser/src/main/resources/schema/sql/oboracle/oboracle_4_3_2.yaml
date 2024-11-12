@@ -29,7 +29,42 @@ sqls:
         FROM
           SYS.ALL_TABLES
         WHERE
-          OWNER = ?
+          OWNER = ? AND EXTERNAL='NO'
+      ) AND USER_GENERATED='YES'
+    ORDER BY
+      TABLE_NAME ASC,
+      COLUMN_ID ASC
+  list-basic-external-table-columns: |-
+    SELECT
+      OWNER,
+      TABLE_NAME,
+      COLUMN_NAME,
+      DATA_TYPE,
+      COMMENTS
+    FROM
+      SYS.ALL_TAB_COLS NATURAL JOIN SYS.ALL_COL_COMMENTS
+    WHERE
+      OWNER = ? AND TABLE_NAME = ? AND USER_GENERATED='YES'
+    ORDER BY
+      COLUMN_ID ASC
+  list-basic-schema-external-table-columns: |-
+    SELECT
+      OWNER,
+      TABLE_NAME,
+      COLUMN_NAME,
+      DATA_TYPE,
+      COMMENTS
+    FROM
+      SYS.ALL_TAB_COLS NATURAL JOIN SYS.ALL_COL_COMMENTS
+    WHERE
+      OWNER = ?
+      AND TABLE_NAME IN (
+        SELECT
+          TABLE_NAME
+        FROM
+          SYS.ALL_TABLES
+        WHERE
+          OWNER = ? AND EXTERNAL='YES'
       ) AND USER_GENERATED='YES'
     ORDER BY
       TABLE_NAME ASC,

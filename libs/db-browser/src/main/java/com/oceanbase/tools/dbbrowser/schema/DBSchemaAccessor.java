@@ -226,7 +226,7 @@ public interface DBSchemaAccessor {
     /**
      * Get all external table columns(hold only basic info) in the specified schema and view
      */
-    List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String viewName);
+    List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String externalTableName);
 
     /**
      * Get all table and view columns info (hold only basic info: schema, table and column name) in the

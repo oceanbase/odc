@@ -434,9 +434,9 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
-    public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String viewName) {
-        // todo 感觉没啥用，可以不用做
-        return null;
+    public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String externalTableName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_EXTERNAL_TABLE_COLUMNS);
+        return jdbcOperations.query(sql, new Object[] {schemaName, externalTableName}, listBasicTableColumnRowMapper());
     }
 
     @Override

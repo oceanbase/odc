@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import com.oceanbase.tools.dbbrowser.schema.constant.Statements;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -72,6 +71,7 @@ import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseOraclePLResult;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMappers;
+import com.oceanbase.tools.dbbrowser.schema.constant.Statements;
 import com.oceanbase.tools.dbbrowser.schema.constant.StatementsFiles;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.OracleDataDictTableNames;
@@ -104,7 +104,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     public OBOracleSchemaAccessor(JdbcOperations jdbcOperations,
             OracleDataDictTableNames dataDictTableNames) {
         super(jdbcOperations, dataDictTableNames);
-        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBORACLE_4_1_x);
+        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBORACLE_4_3_2);
     }
 
     @Override
@@ -1099,16 +1099,16 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
 
     @Override
     public Map<String, List<DBTableColumn>> listBasicExternalTableColumns(String schemaName) {
-        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_TABLE_COLUMNS);
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_EXTERNAL_TABLE_COLUMNS);
         List<DBTableColumn> tableColumns =
-            jdbcOperations.query(sql, new Object[] {schemaName, schemaName}, listBasicColumnsRowMapper());
+                jdbcOperations.query(sql, new Object[] {schemaName, schemaName}, listBasicColumnsRowMapper());
         return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
     }
 
     @Override
-    public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String viewName) {
-        // todo 没啥用
-        return null;
+    public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String externalTableName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_EXTERNAL_TABLE_COLUMNS);
+        return jdbcOperations.query(sql, new Object[] {schemaName, externalTableName}, listBasicColumnsRowMapper());
     }
 
     private List<String> commonShowTablesLike(String schemaName, String tableNameLike,
