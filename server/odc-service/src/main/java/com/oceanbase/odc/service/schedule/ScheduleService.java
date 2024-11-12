@@ -513,26 +513,29 @@ public class ScheduleService {
      * true and terminates the scheduled task if the database does not exist. If the database exists, it
      * returns false.
      */
-    public boolean vetoJobExecution(Long scheduleId) {
+    public boolean vetoJobExecution(Long scheduleId, boolean isCronTrigger) {
         Schedule schedule = null;
         boolean isValidSchedule;
-        try {
-            schedule = nullSafeGetModelById(scheduleId);
-            isValidSchedule = isValidSchedule(schedule);
-        } catch (NotFoundException e) {
-            isValidSchedule = false;
-        } catch (Exception e) {
-            log.warn("Get schedule failed,task will be executed,scheduleId={}", scheduleId, e);
-            return false;
-        }
-        // terminate invalid schedule
-        if (!isValidSchedule) {
+        // Only perform automatic termination checks for periodic tasks
+        if (isCronTrigger) {
             try {
-                innerTerminate(scheduleId);
+                schedule = nullSafeGetModelById(scheduleId);
+                isValidSchedule = isValidSchedule(schedule);
+            } catch (NotFoundException e) {
+                isValidSchedule = false;
             } catch (Exception e) {
-                log.warn("Terminate invalid schedule failed,scheduleId={}", scheduleId);
+                log.warn("Get schedule failed,task will be executed,scheduleId={}", scheduleId, e);
+                return false;
             }
-            return true;
+            // terminate invalid schedule
+            if (!isValidSchedule) {
+                try {
+                    innerTerminate(scheduleId);
+                } catch (Exception e) {
+                    log.warn("Terminate invalid schedule failed,scheduleId={}", scheduleId);
+                }
+                return true;
+            }
         }
         // skip execution if concurrent scheduling is not allowed
         return !schedule.getAllowConcurrent() && hasExecutingTask(scheduleId);
