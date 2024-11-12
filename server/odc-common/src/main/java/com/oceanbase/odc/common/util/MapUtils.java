@@ -129,11 +129,6 @@ public class MapUtils {
         return org.apache.commons.collections4.MapUtils.size(map);
     }
 
-
-    private int getMapSize(Map<String, String> map) {
-        return null == map ? 0 : map.size();
-    }
-
     /**
      * compare map, null map and empty map consider as equals
      * 
@@ -144,7 +139,7 @@ public class MapUtils {
      * @param equalFunction function with argument value to compare if value instance is equals
      * @return true is map is equals
      */
-    public static <Key, Value> boolean mapEquals(Map<Key, Value> src, Map<Key, Value> target,
+    public static <Key, Value> boolean isEqual(Map<Key, Value> src, Map<Key, Value> target,
             BiFunction<Value, Value, Boolean> equalFunction) {
         int currentSize = size(src);
         int targetSize = size(target);

@@ -46,7 +46,7 @@ public class TaskResult {
 
     private Map<String, String> logMetadata;
 
-    public boolean progressChanged(TaskResult previous) {
+    public boolean isProgressChanged(TaskResult previous) {
         if (previous == null) {
             return true;
         }
@@ -56,7 +56,7 @@ public class TaskResult {
         if (Double.compare(progress, previous.getProgress()) != 0) {
             return true;
         }
-        if (!MapUtils.mapEquals(logMetadata, previous.logMetadata, String::equals)) {
+        if (!MapUtils.isEqual(logMetadata, previous.logMetadata, String::equals)) {
             return true;
         }
         return !StringUtils.equals(resultJson, previous.getResultJson());

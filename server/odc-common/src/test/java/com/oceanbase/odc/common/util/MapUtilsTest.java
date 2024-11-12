@@ -100,18 +100,26 @@ public class MapUtilsTest {
     }
 
     @Test
-    public void mapEqualsTest() {
+    public void isEquals_emptyAndNull_equals() {
         // empty and null is equals
-        Assert.assertTrue(MapUtils.mapEquals(new HashMap<String, String>(), null, String::equals));
-        Assert.assertTrue(MapUtils.mapEquals(null, null, String::equals));
+        Assert.assertTrue(MapUtils.isEqual(new HashMap<String, String>(), null, String::equals));
+        Assert.assertTrue(MapUtils.isEqual(null, null, String::equals));
+    }
+
+    @Test
+    public void isEquals_differentMapSize_notEquals() {
         // size not equals
-        Assert.assertFalse(MapUtils.mapEquals(new HashMap<String, String>(), new TreeMap<String, String>() {
+        Assert.assertFalse(MapUtils.isEqual(new HashMap<String, String>(), new TreeMap<String, String>() {
             {
                 put("key1", "value1");
             }
         }, String::equals));
+    }
+
+    @Test
+    public void isEquals_sameValue_equals() {
         // value equals
-        Assert.assertTrue(MapUtils.mapEquals(new HashMap<String, String>() {
+        Assert.assertTrue(MapUtils.isEqual(new HashMap<String, String>() {
             {
                 put("key1", "value1");
             }
@@ -120,8 +128,12 @@ public class MapUtilsTest {
                 put("key1", "value1");
             }
         }, String::equals));
+    }
+
+    @Test
+    public void isEquals_differentValue_notEquals() {
         // value not equals
-        Assert.assertFalse(MapUtils.mapEquals(new HashMap<String, String>() {
+        Assert.assertFalse(MapUtils.isEqual(new HashMap<String, String>() {
             {
                 put("key1", "value1");
             }

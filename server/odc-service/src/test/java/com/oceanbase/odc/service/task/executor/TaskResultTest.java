@@ -46,20 +46,20 @@ public class TaskResultTest {
         };
 
         TaskResult result1 = createTaskResult(TaskStatus.RUNNING, 0.877, logMetadata1, "res1");
-        Assert.assertFalse(result1.progressChanged(result1));
-        Assert.assertTrue(result1.progressChanged(null));
+        Assert.assertFalse(result1.isProgressChanged(result1));
+        Assert.assertTrue(result1.isProgressChanged(null));
         // log meta changed
         TaskResult result2 = createTaskResult(TaskStatus.RUNNING, 0.877, logMetadata2, "res1");
-        Assert.assertTrue(result1.progressChanged(result2));
+        Assert.assertTrue(result1.isProgressChanged(result2));
         // statue changed
         TaskResult result3 = createTaskResult(TaskStatus.DONE, 0.877, logMetadata1, "res1");
-        Assert.assertTrue(result1.progressChanged(result3));
+        Assert.assertTrue(result1.isProgressChanged(result3));
         // result json changed
         TaskResult result4 = createTaskResult(TaskStatus.RUNNING, 0.877, logMetadata1, null);
-        Assert.assertTrue(result1.progressChanged(result4));
+        Assert.assertTrue(result1.isProgressChanged(result4));
         // result progress changed
         TaskResult result5 = createTaskResult(TaskStatus.RUNNING, 0.8774, logMetadata1, "res1");
-        Assert.assertTrue(result1.progressChanged(result5));
+        Assert.assertTrue(result1.isProgressChanged(result5));
     }
 
     private TaskResult createTaskResult(TaskStatus taskStatus, double progress, Map<String, String> logMetadata,

@@ -369,7 +369,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Update lastHeartbeatTime failed, the job may finished or deleted already, jobId={}", id);
             return;
         }
-        if (!result.progressChanged(previous)) {
+        if (!result.isProgressChanged(previous)) {
             log.info("Progress not changed, skip update result to metadb, jobId={}, currentProgress={}",
                     id, result.getProgress());
             return;
