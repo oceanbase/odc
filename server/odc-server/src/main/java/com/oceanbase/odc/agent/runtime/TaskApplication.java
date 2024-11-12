@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.agent;
+package com.oceanbase.odc.agent.runtime;
 
 import java.io.File;
 import java.net.URI;
@@ -24,10 +24,6 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 
-import com.oceanbase.odc.agent.runtime.EmbedServer;
-import com.oceanbase.odc.agent.runtime.ExitHelper;
-import com.oceanbase.odc.agent.runtime.TaskFactory;
-import com.oceanbase.odc.agent.runtime.ThreadPoolTaskExecutor;
 import com.oceanbase.odc.common.trace.TaskContextHolder;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.StringUtils;

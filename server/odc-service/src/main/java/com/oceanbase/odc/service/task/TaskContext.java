@@ -40,13 +40,6 @@ public interface TaskContext {
     JobContext getJobContext();
 
     /**
-     * provide task event listener
-     *
-     * @return
-     */
-    TaskEventListener getTaskEventListener();
-
-    /**
      * get shared storage for task upload or download file
      *
      * @return
