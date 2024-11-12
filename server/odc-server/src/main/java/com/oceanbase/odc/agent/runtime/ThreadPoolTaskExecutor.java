@@ -32,7 +32,6 @@ import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.Task;
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.executor.TaskReporter;
 import com.oceanbase.odc.service.task.executor.TraceDecoratorThreadFactory;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.util.CloudObjectStorageServiceBuilder;
@@ -47,7 +46,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2023/11/24 11:22
  */
 @Slf4j
-public class ThreadPoolTaskExecutor implements TaskExecutor {
+class ThreadPoolTaskExecutor implements TaskExecutor {
 
     private static final TaskExecutor TASK_EXECUTOR = new ThreadPoolTaskExecutor();
     private final Map<JobIdentity, TaskRuntimeInfo> tasks = new ConcurrentHashMap<>();

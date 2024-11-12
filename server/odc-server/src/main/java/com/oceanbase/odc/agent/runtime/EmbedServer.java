@@ -65,7 +65,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.4
  */
 @Slf4j
-public class EmbedServer {
+class EmbedServer {
 
     private ExecutorRequestHandler requestHandler;
     private Thread thread;

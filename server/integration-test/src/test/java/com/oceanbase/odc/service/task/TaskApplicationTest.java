@@ -24,7 +24,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import com.oceanbase.odc.TestConnectionUtil;
-import com.oceanbase.odc.agent.TaskApplication;
+import com.oceanbase.odc.agent.runtime.TaskApplication;
 import com.oceanbase.odc.agent.runtime.TaskContainer;
 import com.oceanbase.odc.agent.runtime.TaskRuntimeInfo;
 import com.oceanbase.odc.agent.runtime.ThreadPoolTaskExecutor;

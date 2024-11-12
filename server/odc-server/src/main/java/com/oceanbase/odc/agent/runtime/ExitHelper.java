@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.4
  */
 @Slf4j
-public class ExitHelper {
+class ExitHelper {
 
     private static final CountDownLatch LATCH = new CountDownLatch(1);
 

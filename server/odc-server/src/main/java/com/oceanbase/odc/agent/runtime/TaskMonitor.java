@@ -37,7 +37,6 @@ import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobServerUrls;
 import com.oceanbase.odc.service.task.executor.DefaultTaskResult;
 import com.oceanbase.odc.service.task.executor.HeartbeatRequest;
-import com.oceanbase.odc.service.task.executor.TaskReporter;
 import com.oceanbase.odc.service.task.executor.TraceDecoratorThreadFactory;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -50,7 +49,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.4
  */
 @Slf4j
-public class TaskMonitor {
+class TaskMonitor {
 
     private static final int REPORT_RESULT_RETRY_TIMES = Integer.MAX_VALUE;
     private static final long WAIT_AFTER_LOG_METADATA_COLLECT_MILLS = 5000L;

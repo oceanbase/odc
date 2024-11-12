@@ -22,7 +22,7 @@ import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
  * @author gaoda.xy
  * @date 2023/11/24 11:01
  */
-public class TaskFactory {
+class TaskFactory {
 
     public static Task<?> create(String jobClass) {
         try {

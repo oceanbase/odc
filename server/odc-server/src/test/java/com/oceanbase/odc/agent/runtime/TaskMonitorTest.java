@@ -22,7 +22,6 @@ import org.mockito.Mockito;
 
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.task.executor.DefaultTaskResult;
-import com.oceanbase.odc.service.task.executor.TaskReporter;
 
 /**
  * @author longpeng.zlp

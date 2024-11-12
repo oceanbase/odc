@@ -25,7 +25,7 @@ import com.oceanbase.odc.service.task.util.JobUtils;
  * @date 2024-01-12
  * @since 4.2.4
  */
-public class DefaultTaskResultBuilder {
+class DefaultTaskResultBuilder {
 
     public static DefaultTaskResult build(TaskContainer<?> taskContainer) {
         DefaultTaskResult result = new DefaultTaskResult();

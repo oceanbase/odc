@@ -24,7 +24,7 @@ import lombok.Data;
  * @date 2024/10/24 14:32
  */
 @Data
-public class TaskRuntimeInfo {
+class TaskRuntimeInfo {
     private final TaskContainer<?> taskContainer;
     private final Future<?> future;
     private final TaskMonitor taskMonitor;
