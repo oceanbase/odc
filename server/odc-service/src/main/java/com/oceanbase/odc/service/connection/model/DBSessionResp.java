@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.service.connection.model;
 
+import org.mapstruct.Mapper;
+import org.mapstruct.factory.Mappers;
+
 import com.oceanbase.odc.service.session.model.SessionSettings;
 import com.oceanbase.tools.dbbrowser.model.DBSession;
 
@@ -33,7 +36,25 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DBSessionResp {
-    private DBSession session;
+    private DBSessionRespDelegate session;
     private SessionSettings settings;
-    private boolean killCurrentQuerySupported;
+
+    @Mapper
+    interface DbSessionRespMapper {
+        DbSessionRespMapper INSTANCE = Mappers.getMapper(DbSessionRespMapper.class);
+
+        DBSessionRespDelegate toDBSessionStatusResp(DBSession session);
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class DBSessionRespDelegate extends DBSession {
+        private boolean killCurrentQuerySupported;
+
+        public static DBSessionRespDelegate of(DBSession session) {
+            return DbSessionRespMapper.INSTANCE.toDBSessionStatusResp(session);
+        }
+    }
+
 }
