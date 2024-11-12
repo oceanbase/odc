@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.task.service;
 
-import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -52,8 +51,6 @@ import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
-import com.oceanbase.odc.core.alarm.AlarmEventNames;
-import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -80,8 +77,6 @@ import com.oceanbase.odc.service.task.util.JobDateUtils;
 import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
-import cn.hutool.core.text.CharSequenceUtil;
-import cn.hutool.core.util.StrUtil;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -329,21 +324,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                     .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(taskResult)));
             if (publisher != null && taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
                 taskResultPublisherExecutor.execute(() -> publisher
-                        .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
-                if (taskResult.getStatus() == JobStatus.FAILED) {
-                    Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
-                            .item(AlarmUtils.ORGANIZATION_NAME, Optional.ofNullable(je.getOrganizationId()).map(
-                                    Object::toString).orElse(StrUtil.EMPTY))
-                            .item(AlarmUtils.TASK_JOB_ID_NAME, je.getId().toString())
-                            .item(AlarmUtils.MESSAGE_NAME,
-                                    MessageFormat.format("Job execution failed, jobId={0}",
-                                            taskResult.getJobIdentity().getId()))
-                            .item(AlarmUtils.FAILED_REASON_NAME,
-                                    CharSequenceUtil.nullToDefault(taskResult.getErrorMessage(),
-                                            CharSequenceUtil.EMPTY))
-                            .build();
-                    AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED, eventMessage);
-                }
+                        .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus(),
+                                taskResult.getErrorMessage())));
             }
         }
     }
@@ -427,22 +409,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
         if (publisher != null && result.getStatus() != null && result.getStatus().isTerminated()) {
             taskResultPublisherExecutor.execute(() -> publisher
-                    .publishEvent(new JobTerminateEvent(result.getJobIdentity(), result.getStatus())));
-
-            // TODO maybe we can destroy the pod there.
-            if (result.getStatus() == JobStatus.FAILED) {
-                Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
-                        .item(AlarmUtils.ORGANIZATION_NAME, Optional.ofNullable(je.getOrganizationId()).map(
-                                Object::toString).orElse(StrUtil.EMPTY))
-                        .item(AlarmUtils.TASK_JOB_ID_NAME, je.getId().toString())
-                        .item(AlarmUtils.MESSAGE_NAME,
-                                MessageFormat.format("Job execution failed, jobId={0}",
-                                        result.getJobIdentity().getId()))
-                        .item(AlarmUtils.FAILED_REASON_NAME, CharSequenceUtil.nullToDefault(result.getErrorMessage(),
-                                CharSequenceUtil.EMPTY))
-                        .build();
-                AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED, eventMessage);
-            }
+                    .publishEvent(new JobTerminateEvent(result.getJobIdentity(), result.getStatus(),
+                            result.getErrorMessage())));
         }
     }
 
