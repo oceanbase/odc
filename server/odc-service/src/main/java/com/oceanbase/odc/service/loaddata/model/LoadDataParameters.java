@@ -87,4 +87,6 @@ public class LoadDataParameters implements ScheduleTaskParameters {
      */
     private transient ObjectStorageConfiguration privateObjectStorageConfig;
     private transient ConnectionConfig connectionConfig;
+    private String creator;
+    private String dssDatasourceName;
 }

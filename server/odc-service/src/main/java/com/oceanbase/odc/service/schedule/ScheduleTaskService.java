@@ -341,6 +341,19 @@ public class ScheduleTaskService {
         });
     }
 
+    public List<ScheduleTask> list(QueryScheduleTaskParams params, Pageable pageable) {
+        Map<String, Schedule> scheduleMap = params.getSchedules().stream()
+                .collect(Collectors.toMap(schedule -> schedule.getId().toString(), Function.identity()));
+        Specification<ScheduleTaskEntity> specification =
+                Specification.where(ScheduleTaskSpecs.jobNameIn(scheduleMap.keySet()))
+                        .and(ScheduleTaskSpecs.statusIn(params.getStatuses()))
+                        .and(ScheduleTaskSpecs.fireTimeLate(params.getStartTime()))
+                        .and(ScheduleTaskSpecs.fireTimeBefore(params.getEndTime()));
+        return scheduleTaskRepository.findAll(specification, pageable).stream()
+                .map(scheduleTaskMapper::entityToModel)
+                .collect(Collectors.toList());
+    }
+
     public List<ScheduleTask> listByJobNames(Set<String> jobNames) {
         return scheduleTaskRepository.findByJobNames(jobNames).stream()
                 .map(scheduleTaskMapper::entityToModel)
