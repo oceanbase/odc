@@ -317,7 +317,7 @@ public class SqlParserTest {
     public void parseMysql_setGlobal_getSqlTypeSucceed() {
         ParseSqlResult actual = SqlParser.parseMysql("SET GLOBAL time_zone = '+00:00';");
         Assert.assertEquals(DBObjectType.GLOBAL_VARIABLE, actual.getDbObjectType());
-        Assert.assertEquals(SqlType.SET_GLOBAL, actual.getSqlType());
+        Assert.assertEquals(SqlType.SET, actual.getSqlType());
     }
 
     @Test
@@ -330,7 +330,7 @@ public class SqlParserTest {
     @Test
     public void parseOracle_alterSession_getSqlTypeSucceed() {
         ParseSqlResult actual = SqlParser.parseOracle("alter SESSION set ob_query_timeout=6000000000;");
-        Assert.assertEquals(SqlType.SET_SESSION, actual.getSqlType());
+        Assert.assertEquals(SqlType.ALTER_SESSION, actual.getSqlType());
         Assert.assertEquals(DBObjectType.SESSION_VARIABLE, actual.getDbObjectType());
     }
 
@@ -345,14 +345,14 @@ public class SqlParserTest {
     public void parseOracle_setGlobal_getSqlTypeSucceed() {
         ParseSqlResult actual = SqlParser.parseOracle("SET GLOBAL time_zone = '+00:00';");
         Assert.assertEquals(DBObjectType.GLOBAL_VARIABLE, actual.getDbObjectType());
-        Assert.assertEquals(SqlType.SET_GLOBAL, actual.getSqlType());
+        Assert.assertEquals(SqlType.SET, actual.getSqlType());
     }
 
     @Test
     public void parseOracle_alterSystem_getSqlTypeSucceed() {
         ParseSqlResult actual = SqlParser.parseOracle("alter system set time_zone = '+00:00';");
         Assert.assertEquals(DBObjectType.GLOBAL_VARIABLE, actual.getDbObjectType());
-        Assert.assertEquals(SqlType.SET_GLOBAL, actual.getSqlType());
+        Assert.assertEquals(SqlType.ALTER, actual.getSqlType());
     }
 
 

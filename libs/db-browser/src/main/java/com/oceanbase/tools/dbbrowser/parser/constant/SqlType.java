@@ -19,29 +19,39 @@ package com.oceanbase.tools.dbbrowser.parser.constant;
  * Created by mogao.zj
  */
 public enum SqlType {
-    SELECT,
-    DELETE,
-    INSERT,
-    REPLACE,
-    UPDATE,
-    SET,
-    SET_SESSION,
-    SET_GLOBAL,
-    USE_DB,
-    EXPLAIN,
-    SHOW,
-    HELP,
-    START_TRANS,
-    COMMIT,
-    ROLLBACK,
-    SORT,
-    DESC,
-    DROP,
-    ALTER,
-    TRUNCATE,
-    CREATE,
-    CALL,
-    COMMENT_ON,
-    OTHERS,
-    UNKNOWN
+    SELECT(null),
+    DELETE(null),
+    INSERT(null),
+    REPLACE(null),
+    UPDATE(null),
+    SET(null),
+    SET_SESSION(SET),
+    USE_DB(null),
+    EXPLAIN(null),
+    SHOW(null),
+    HELP(null),
+    START_TRANS(null),
+    COMMIT(null),
+    ROLLBACK(null),
+    SORT(null),
+    DESC(null),
+    DROP(null),
+    ALTER(null),
+    ALTER_SESSION(ALTER),
+    TRUNCATE(null),
+    CREATE(null),
+    CALL(null),
+    COMMENT_ON(null),
+    OTHERS(null),
+    UNKNOWN(null);
+
+    private final SqlType superType;
+
+    SqlType(SqlType superType) {
+        this.superType = superType;
+    }
+
+    public SqlType getSuperType() {
+        return superType;
+    }
 }
