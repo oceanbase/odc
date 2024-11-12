@@ -320,6 +320,7 @@ public class ParserUtilTest {
         Assert.assertEquals(SqlType.SET_CLOBAL, result.getSqlType());
         Assert.assertEquals(DBObjectType.GLOBAL_VARIABLE, result.getDbObjectType());
     }
+
     @Test
     public void test_mysql_set() {
         String sql = "SET time_zone = '+00:00';";
