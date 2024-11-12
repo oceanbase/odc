@@ -40,8 +40,8 @@ public class DBSessionResp {
     private SessionSettings settings;
 
     @Mapper
-    interface DbSessionRespMapper {
-        DbSessionRespMapper INSTANCE = Mappers.getMapper(DbSessionRespMapper.class);
+    interface DBSessionRespMapper {
+        DBSessionRespMapper INSTANCE = Mappers.getMapper(DBSessionRespMapper.class);
 
         DBSessionRespDelegate toDBSessionStatusResp(DBSession session);
     }
@@ -53,7 +53,7 @@ public class DBSessionResp {
         private boolean killCurrentQuerySupported;
 
         public static DBSessionRespDelegate of(DBSession session) {
-            return DbSessionRespMapper.INSTANCE.toDBSessionStatusResp(session);
+            return DBSessionRespMapper.INSTANCE.toDBSessionStatusResp(session);
         }
     }
 
