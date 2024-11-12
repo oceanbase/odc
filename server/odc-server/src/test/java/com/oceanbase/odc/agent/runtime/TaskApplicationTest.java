@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task;
+package com.oceanbase.odc.agent.runtime;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,24 +23,18 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import com.oceanbase.odc.TestConnectionUtil;
-import com.oceanbase.odc.agent.runtime.TaskApplication;
-import com.oceanbase.odc.agent.runtime.TaskContainer;
-import com.oceanbase.odc.agent.runtime.TaskRuntimeInfo;
-import com.oceanbase.odc.agent.runtime.ThreadPoolTaskExecutor;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.base.databasechange.DatabaseChangeTask;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobEnvironmentFactory;
+import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
@@ -55,8 +49,7 @@ import com.oceanbase.odc.service.task.util.JobUtils;
  * @date 2023-12-14
  * @since 4.2.4
  */
-@Ignore("manual run this case")
-public class TaskApplicationTest extends BaseJobTest {
+public class TaskApplicationTest {
 
     @Test
     public void test_executeDatabaseChangeTask_run() {
@@ -70,9 +63,7 @@ public class TaskApplicationTest extends BaseJobTest {
 
 
     private void setJobContextInSystemProperty(JobIdentity jobIdentity) {
-        JobDefinition jd = buildJobDefinition();
-        JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
-        Map<String, String> envMap = new JobEnvironmentFactory().build(jc, TaskRunMode.PROCESS);
+        Map<String, String> envMap = buildConfig();
         JobUtils.encryptEnvironments(envMap);
         envMap.forEach(System::setProperty);
     }
@@ -90,6 +81,27 @@ public class TaskApplicationTest extends BaseJobTest {
 
     }
 
+    private Map<String, String> buildConfig() {
+        //validNotBlank(JobEnvKeyConstants.ODC_TASK_RUN_MODE);
+        //        if (StringUtils.equalsIgnoreCase("PROCESS",
+        //                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_TASK_RUN_MODE))) {
+        //            validNotBlank(JobEnvKeyConstants.ODC_JOB_CONTEXT_FILE_PATH);
+        //        } else {
+        //            validNotBlank(JobEnvKeyConstants.ODC_JOB_CONTEXT);
+        //        }
+        //        validNotBlank(JobEnvKeyConstants.ODC_BOOT_MODE);
+        //        validNotBlank(JobEnvKeyConstants.ENCRYPT_SALT);
+        //        validNotBlank(JobEnvKeyConstants.ENCRYPT_KEY);
+        //        validNotBlank(JobEnvKeyConstants.ODC_EXECUTOR_USER_ID);
+        //        validNotBlank(JobEnvKeyConstants.ODC_LOG_DIRECTORY);
+
+        Map<String, String> ret = new HashMap<>();
+        ret.put(JobEnvKeyConstants.ODC_TASK_RUN_MODE, "PROCESS");
+        ret.put(JobEnvKeyConstants.ODC_BOOT_MODE, "TASK_EXECUTOR");
+        ret.put(JobEnvKeyConstants.ODC_EXECUTOR_USER_ID, "1");
+        ret.put(JobEnvKeyConstants.ODC_LOG_DIRECTORY, "log");
+        return ret;
+    }
 
     private void startTaskApplication() {
         new Thread(() -> new TaskApplication().run(null)).start();
@@ -104,12 +116,9 @@ public class TaskApplicationTest extends BaseJobTest {
                 parameters.getSqlContent() != null || CollectionUtils.isNotEmpty(parameters.getSqlObjectIds()),
                 ErrorCodes.BadArgument, new Object[] {"sql"}, "input sql is empty");
 
-        ConnectionConfig config = TestConnectionUtil.getTestConnectionConfig(ConnectType.OB_MYSQL);
         Map<String, String> jobData = new HashMap<>();
         jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON, JsonUtils.toJson(parameters));
-        jobData.put(JobParametersKeyConstants.CONNECTION_CONFIG, JobUtils.toJson(config));
         jobData.put(JobParametersKeyConstants.FLOW_INSTANCE_ID, exceptedTaskId + "");
-        jobData.put(JobParametersKeyConstants.CURRENT_SCHEMA, config.getDefaultSchema());
         jobData.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, 30 * 60 * 1000 + "");
         ObjectStorageConfiguration storageConfig = new ObjectStorageConfiguration();
         storageConfig.setCloudProvider(CloudProvider.NONE);
