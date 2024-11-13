@@ -74,4 +74,9 @@ public class MySQLTableExtension extends OBMySQLTableExtension {
         return DBAccessorUtil.getStatsAccessor(connection);
     }
 
+    @Override
+    public boolean syncExternalTableFiles(Connection connection, String schemaName, String tableName) {
+        throw new UnsupportedOperationException("not implemented yet");
+    }
+
 }

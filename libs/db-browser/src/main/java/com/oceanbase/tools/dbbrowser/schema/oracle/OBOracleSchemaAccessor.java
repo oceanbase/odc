@@ -1069,6 +1069,14 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 
+    @Override
+    public boolean syncExternalTableFiles(String schemaName, String tableName) {
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("ALTER EXTERNAL TABLE ").identifier(schemaName, tableName).append(" REFRESH");
+        jdbcOperations.execute(sb.toString());
+        return true;
+    }
+
     // After ob version 4.3.2, oracle model displaying table list needs to exclude external tables
     @Override
     public List<String> showTablesLike(String schemaName, String tableNameLike) {

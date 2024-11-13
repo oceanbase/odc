@@ -102,6 +102,12 @@ public interface DBSchemaAccessor {
     boolean isExternalTable(String schemaName, String tableName);
 
     /**
+     * Synchronize the associated files of external table
+     */
+    boolean syncExternalTableFiles(String schemaName, String tableName);
+
+
+    /**
      * Show all view names list in the specified schema
      */
     List<DBObjectIdentity> listViews(String schemaName);
