@@ -17,6 +17,8 @@ package com.oceanbase.odc.core.authority.permission;
 
 import java.util.List;
 
+import org.springframework.util.CollectionUtils;
+
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -39,18 +41,19 @@ public class ComposedPermission implements Permission {
             return false;
         }
         ComposedPermission composedPermission = (ComposedPermission) permission;
+        if (CollectionUtils.isEmpty(composedPermission.getPermissions())) {
+            return true;
+        }
+        if (CollectionUtils.isEmpty(this.permissions)) {
+            return false;
+        }
         for (Permission thatPermission : composedPermission.getPermissions()) {
-            boolean notImply = true;
-            for (Permission thisPermission : permissions) {
+            for (Permission thisPermission : this.permissions) {
                 if (thisPermission.implies(thatPermission)) {
-                    notImply = false;
-                    break;
+                    return true;
                 }
             }
-            if (notImply) {
-                return false;
-            }
         }
-        return true;
+        return false;
     }
 }
