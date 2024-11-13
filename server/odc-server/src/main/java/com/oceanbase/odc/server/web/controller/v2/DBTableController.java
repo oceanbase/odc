@@ -131,6 +131,7 @@ public class DBTableController {
         Base64.Decoder decoder = Base64.getDecoder();
         externalTableName = new String(decoder.decode(externalTableName));
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
-        return tableService.syncExternalTableFiles(session, databaseName, externalTableName);
+        tableService.syncExternalTableFiles(session, databaseName, externalTableName);
+        return Responses.empty();
     }
 }
