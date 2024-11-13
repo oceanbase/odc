@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.service.schedule;
 
+import static com.oceanbase.odc.core.alarm.AlarmEventNames.SCHEDULING_FAILED;
+import static com.oceanbase.odc.core.alarm.AlarmEventNames.SCHEDULING_IGNORE;
+
 import java.io.File;
 import java.util.Collections;
 import java.util.Date;
@@ -32,6 +35,7 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.compress.utils.Lists;
+import org.quartz.CronTrigger;
 import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
@@ -48,6 +52,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
@@ -513,33 +518,37 @@ public class ScheduleService {
      * true and terminates the scheduled task if the database does not exist. If the database exists, it
      * returns false.
      */
-    public boolean vetoJobExecution(Long scheduleId, boolean isCronTrigger) {
-        Schedule schedule = null;
-        boolean isValidSchedule;
+    public boolean vetoJobExecution(Trigger trigger) {
+        Long scheduleId = Long.parseLong(trigger.getJobKey().getName());
+        Schedule schedule;
+        try {
+            schedule = nullSafeGetModelById(scheduleId);
+        } catch (Exception e) {
+            log.warn("Get schedule failed,task will not be executed,scheduleId={}", scheduleId, e);
+            AlarmUtils.alarm(SCHEDULING_FAILED,
+                    "Job is misfired due to the failure to get the schedule, job key=" + trigger.getJobKey());
+            return true;
+        }
         // Only perform automatic termination checks for periodic tasks
-        if (isCronTrigger) {
-            try {
-                schedule = nullSafeGetModelById(scheduleId);
-                isValidSchedule = isValidSchedule(schedule);
-            } catch (NotFoundException e) {
-                isValidSchedule = false;
-            } catch (Exception e) {
-                log.warn("Get schedule failed,task will be executed,scheduleId={}", scheduleId, e);
-                return false;
-            }
+        if (trigger instanceof CronTrigger && !isValidSchedule(schedule)) {
             // terminate invalid schedule
-            if (!isValidSchedule) {
-                try {
-                    innerTerminate(scheduleId);
-                } catch (Exception e) {
-                    log.warn("Terminate invalid schedule failed,scheduleId={}", scheduleId);
-                }
-                return true;
+            try {
+                innerTerminate(scheduleId);
+            } catch (Exception e) {
+                log.warn("Terminate invalid schedule failed,scheduleId={}", scheduleId);
             }
+            AlarmUtils.alarm(SCHEDULING_FAILED,
+                    "Job is misfired due to the schedule is invalid, job key=" + trigger.getJobKey());
+            return true;
         }
         // skip execution if concurrent scheduling is not allowed
-        return !schedule.getAllowConcurrent() && hasExecutingTask(scheduleId);
-
+        boolean rejectExecution = !schedule.getAllowConcurrent() && hasExecutingTask(scheduleId);
+        if (rejectExecution) {
+            AlarmUtils.alarm(SCHEDULING_IGNORE,
+                    "The Job has reached its trigger time, but the previous task has not yet finished. This scheduling will be ignored, job key:"
+                            + trigger.getJobKey());
+        }
+        return rejectExecution;
     }
 
     private boolean hasExecutingTask(Long scheduleId) {
