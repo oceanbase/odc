@@ -19,6 +19,7 @@ import static com.oceanbase.odc.core.alarm.AlarmEventNames.SCHEDULING_FAILED;
 import static com.oceanbase.odc.core.alarm.AlarmEventNames.SCHEDULING_IGNORE;
 
 import java.io.File;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -525,7 +526,8 @@ public class ScheduleService {
         } catch (Exception e) {
             log.warn("Get schedule failed,task will not be executed,job key={}", trigger.getJobKey(), e);
             AlarmUtils.alarm(SCHEDULING_FAILED,
-                    "Job is misfired due to the failure to get the schedule, job key=" + trigger.getJobKey());
+                    MessageFormat.format("Job is misfired due to the failure to get the schedule, scheduleId={0}",
+                            trigger.getJobKey().getName()));
             return true;
         }
         // Only perform automatic termination checks for periodic tasks
@@ -537,15 +539,16 @@ public class ScheduleService {
                 log.warn("Terminate invalid schedule failed,scheduleId={}", schedule.getId());
             }
             AlarmUtils.alarm(SCHEDULING_FAILED,
-                    "Job is misfired due to the schedule is invalid, job key=" + trigger.getJobKey());
+                    MessageFormat.format("Job is misfired due to the schedule is invalid, scheduleId={0}",
+                            schedule.getId()));
             return true;
         }
         // skip execution if concurrent scheduling is not allowed
         boolean rejectExecution = !schedule.getAllowConcurrent() && hasExecutingTask(schedule.getId());
         if (rejectExecution) {
-            AlarmUtils.alarm(SCHEDULING_IGNORE,
-                    "The Job has reached its trigger time, but the previous task has not yet finished. This scheduling will be ignored, job key:"
-                            + trigger.getJobKey());
+            AlarmUtils.alarm(SCHEDULING_IGNORE, MessageFormat.format(
+                    "The Job has reached its trigger time, but the previous task has not yet finished. This scheduling will be ignored, scheduleId={0}",
+                    schedule.getId()));
         }
         return rejectExecution;
     }
