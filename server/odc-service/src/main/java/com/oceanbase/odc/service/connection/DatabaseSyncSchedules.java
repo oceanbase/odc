@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.connection;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +50,8 @@ public class DatabaseSyncSchedules {
         if (CollectionUtils.isEmpty(orgDataSources)) {
             return;
         }
+        Collections.shuffle(orgDataSources);
+        log.info("Start to sync datasources, size={}", orgDataSources.size());
         for (ConnectionConfig dataSource : orgDataSources) {
             try {
                 databaseSyncManager.submitSyncDataSourceTask(dataSource);
