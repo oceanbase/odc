@@ -311,7 +311,7 @@ public class SqlParserTest {
         ParseSqlResult actual = SqlParser.parseMysql("SET SESSION time_zone = '+00:00';");
         Assert.assertEquals(DBObjectType.SESSION_VARIABLE, actual.getDbObjectType());
         Assert.assertEquals(SqlType.SET_SESSION, actual.getSqlType());
-        Assert.assertEquals(SqlType.SET, actual.getSqlType().getFatherType());
+        Assert.assertEquals(SqlType.SET, actual.getSqlType().getParentType());
     }
 
     @Test
@@ -332,15 +332,15 @@ public class SqlParserTest {
     public void parseOracle_alterSession_getSqlTypeSucceed() {
         ParseSqlResult actual = SqlParser.parseOracle("alter SESSION set ob_query_timeout=6000000000;");
         Assert.assertEquals(SqlType.ALTER_SESSION, actual.getSqlType());
-        Assert.assertEquals(SqlType.ALTER, actual.getSqlType().getFatherType());
-        Assert.assertEquals(DBObjectType.SESSION_VARIABLE, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.ALTER, actual.getSqlType().getParentType());
+        Assert.assertEquals(DBObjectType.OTHERS, actual.getDbObjectType());
     }
 
     @Test
     public void parseOracle_setSession_getSqlTypeSucceed() {
         ParseSqlResult actual = SqlParser.parseOracle("set SESSION ob_query_timeout=6000000000;");
         Assert.assertEquals(SqlType.SET_SESSION, actual.getSqlType());
-        Assert.assertEquals(SqlType.SET, actual.getSqlType().getFatherType());
+        Assert.assertEquals(SqlType.SET, actual.getSqlType().getParentType());
         Assert.assertEquals(DBObjectType.SESSION_VARIABLE, actual.getDbObjectType());
     }
 
@@ -354,7 +354,7 @@ public class SqlParserTest {
     @Test
     public void parseOracle_alterSystem_getSqlTypeSucceed() {
         ParseSqlResult actual = SqlParser.parseOracle("alter system set time_zone = '+00:00';");
-        Assert.assertEquals(DBObjectType.GLOBAL_VARIABLE, actual.getDbObjectType());
+        Assert.assertEquals(DBObjectType.OTHERS, actual.getDbObjectType());
         Assert.assertEquals(SqlType.ALTER, actual.getSqlType());
     }
 

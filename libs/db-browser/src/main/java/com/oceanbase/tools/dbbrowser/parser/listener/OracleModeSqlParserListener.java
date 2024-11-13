@@ -555,7 +555,7 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
     @Override
     public void enterAlter_system_stmt(Alter_system_stmtContext ctx) {
         setSqlType(SqlType.ALTER);
-        this.dbObjectType = DBObjectType.GLOBAL_VARIABLE;
+        this.dbObjectType = DBObjectType.OTHERS;
     }
 
     @Override
@@ -603,7 +603,7 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
     @Override
     public void enterAlter_session_stmt(Alter_session_stmtContext ctx) {
         setSqlType(SqlType.ALTER_SESSION);
-        this.dbObjectType = DBObjectType.SESSION_VARIABLE;
+        this.dbObjectType = DBObjectType.OTHERS;
     }
 
     @Override
