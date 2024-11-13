@@ -294,6 +294,7 @@ public class ParserUtilTest {
         String sql = "SET SESSION time_zone = '+00:00';";
         BasicResult result = ParserUtil.parseMysqlType(sql);
         Assert.assertEquals(SqlType.SET_SESSION, result.getSqlType());
+        Assert.assertEquals(SqlType.SET, result.getSqlType().getFatherType());
         Assert.assertEquals(DBObjectType.SESSION_VARIABLE, result.getDbObjectType());
     }
 
@@ -350,6 +351,7 @@ public class ParserUtilTest {
         String sql = "alter SESSION set ob_query_timeout=6000000000;";
         BasicResult result = ParserUtil.parseOracleType(sql);
         Assert.assertEquals(SqlType.ALTER_SESSION, result.getSqlType());
+        Assert.assertEquals(SqlType.ALTER, result.getSqlType().getFatherType());
         Assert.assertEquals(DBObjectType.SESSION_VARIABLE, result.getDbObjectType());
     }
 
@@ -358,6 +360,7 @@ public class ParserUtilTest {
         String sql = "set SESSION ob_query_timeout=6000000000;";
         BasicResult result = ParserUtil.parseOracleType(sql);
         Assert.assertEquals(SqlType.SET_SESSION, result.getSqlType());
+        Assert.assertEquals(SqlType.SET, result.getSqlType().getFatherType());
         Assert.assertEquals(DBObjectType.SESSION_VARIABLE, result.getDbObjectType());
     }
 

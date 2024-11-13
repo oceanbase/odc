@@ -195,7 +195,7 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
     }
 
     private boolean isViolatedRule(Optional<List<String>> allowSqlTypesOpt, BasicResult parseResult) {
-        for (SqlType sqlType = parseResult.getSqlType(); sqlType != null; sqlType = sqlType.getSuperType()) {
+        for (SqlType sqlType = parseResult.getSqlType(); sqlType != null; sqlType = sqlType.getFatherType()) {
             if (allowSqlTypesOpt.get().contains(sqlType.name())) {
                 return false;
             }

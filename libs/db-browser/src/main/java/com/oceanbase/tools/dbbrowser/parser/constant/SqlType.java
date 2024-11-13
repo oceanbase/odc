@@ -45,13 +45,13 @@ public enum SqlType {
     OTHERS(null),
     UNKNOWN(null);
 
-    private final SqlType superType;
+    private final SqlType fatherType;
 
-    SqlType(SqlType superType) {
-        this.superType = superType;
+    SqlType(SqlType fatherType) {
+        this.fatherType = fatherType;
     }
 
-    public SqlType getSuperType() {
-        return superType;
+    public SqlType getFatherType() {
+        return fatherType;
     }
 }
