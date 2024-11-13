@@ -17,10 +17,6 @@ package com.oceanbase.odc.service.loaddata.model;
 
 import java.io.Serializable;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-
-import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
 
 import lombok.Data;
@@ -39,27 +35,6 @@ public class DataBaseInstanceCredential implements Serializable {
 
     private static final long serialVersionUID = -6045851446132148119L;
 
-    /**
-     * instanceId。必填
-     */
-    @NotBlank(message = "\"instanceId\" cannot be blank")
-    private String instanceId;
-
-    /**
-     * tenantId，必填。
-     */
-    @NotBlank(message = "\"tenantId\" cannot be blank")
-    private String tenantId;
-
-    /**
-     * 必填。 可选项： OB_MYSQL OB_ORACLE
-     */
-    @NotNull(message = "\"connectType\" cannot be null")
-    private ConnectType connectType;
-
-    /**
-     *
-     */
     private String username;
 
     private String password;
