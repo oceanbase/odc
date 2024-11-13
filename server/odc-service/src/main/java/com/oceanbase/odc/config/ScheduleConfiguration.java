@@ -190,12 +190,12 @@ public class ScheduleConfiguration {
         int poolSize = Math.max(SystemUtils.availableProcessors() * 8, 64);
         executor.setCorePoolSize(poolSize);
         executor.setMaxPoolSize(poolSize);
-        executor.setQueueCapacity(Integer.MAX_VALUE);
+        executor.setQueueCapacity(0);
         executor.setThreadNamePrefix("database-sync-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(5);
         executor.setTaskDecorator(new TraceDecorator<>());
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         executor.initialize();
         log.info("syncDatabaseTaskExecutor initialized");
         return executor;
