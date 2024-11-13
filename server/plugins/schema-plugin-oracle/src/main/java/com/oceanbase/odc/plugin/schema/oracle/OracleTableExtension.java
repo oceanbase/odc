@@ -63,6 +63,11 @@ public class OracleTableExtension extends OBOracleTableExtension {
     }
 
     @Override
+    public boolean syncExternalTableFiles(Connection connection, String schemaName, String tableName) {
+        throw new UnsupportedOperationException("not implemented yet");
+    }
+
+    @Override
     protected DBTableStats getTableStats(@NonNull Connection connection, @NonNull String schemaName,
             @NonNull String tableName) {
         DBStatsAccessor statsAccessor = getStatsAccessor(connection);

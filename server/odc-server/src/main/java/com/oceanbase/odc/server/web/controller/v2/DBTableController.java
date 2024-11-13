@@ -122,4 +122,14 @@ public class DBTableController {
         return Responses.list(this.partitionPlanService.getPartitionKeyDataTypes(sessionId, databaseId, tableName));
     }
 
+    @PostMapping(value = "/{sessionId}/databases/{databaseName}/externalTables/"
+            + "{externalTableName}/syncExternalTableFiles")
+    public SuccessResponse<Boolean> syncExternalTableFiles(@PathVariable String sessionId,
+            @PathVariable(required = false) String databaseName,
+            @PathVariable(required = true, name = "externalTableName") String externalTableName) {
+        Base64.Decoder decoder = Base64.getDecoder();
+        externalTableName = new String(decoder.decode(externalTableName));
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        return Responses.success(tableService.syncExternalTableFiles(session, databaseName, externalTableName));
+    }
 }

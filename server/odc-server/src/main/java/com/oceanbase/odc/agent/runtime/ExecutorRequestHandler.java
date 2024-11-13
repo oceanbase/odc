@@ -26,8 +26,7 @@ import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.UrlUtils;
 import com.oceanbase.odc.service.task.constants.JobExecutorUrls;
-import com.oceanbase.odc.service.task.executor.DefaultTaskResult;
-import com.oceanbase.odc.service.task.executor.DefaultTaskResultBuilder;
+import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.executor.logger.LogBiz;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
@@ -43,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.4
  */
 @Slf4j
-public class ExecutorRequestHandler {
+class ExecutorRequestHandler {
 
     private final Pattern queryLogUrlPattern = Pattern.compile(String.format(JobExecutorUrls.QUERY_LOG, "([0-9]+)"));
     private final Pattern stopTaskPattern = Pattern.compile(String.format(JobExecutorUrls.STOP_TASK, "([0-9]+)"));
@@ -87,7 +86,7 @@ public class ExecutorRequestHandler {
             if (matcher.find()) {
                 JobIdentity ji = getJobIdentity(matcher);
                 TaskRuntimeInfo runtimeInfo = ThreadPoolTaskExecutor.getInstance().getTaskRuntimeInfo(ji);
-                boolean result = runtimeInfo.getTask().modify(JobUtils.fromJsonToMap(requestData));
+                boolean result = runtimeInfo.getTaskContainer().modify(JobUtils.fromJsonToMap(requestData));
                 return Responses.ok(result);
             }
 
@@ -96,15 +95,15 @@ public class ExecutorRequestHandler {
                 JobIdentity ji = getJobIdentity(matcher);
                 TaskRuntimeInfo runtimeInfo = ThreadPoolTaskExecutor.getInstance().getTaskRuntimeInfo(ji);
                 TaskMonitor taskMonitor = runtimeInfo.getTaskMonitor();
-                DefaultTaskResult result = DefaultTaskResultBuilder.build(runtimeInfo.getTask());
+                TaskResult result = DefaultTaskResultBuilder.build(runtimeInfo.getTaskContainer());
                 if (taskMonitor != null && MapUtils.isNotEmpty(taskMonitor.getLogMetadata())) {
                     result.setLogMetadata(taskMonitor.getLogMetadata());
                     // assign final error message
-                    DefaultTaskResultBuilder.assignErrorMessage(result, taskMonitor.getError());
+                    DefaultTaskResultBuilder.assignErrorMessage(result, runtimeInfo.getTaskContainer().getError());
                     taskMonitor.markLogMetaCollected();
                     log.info("Task log metadata collected, ji={}.", ji.getId());
                 }
-                DefaultTaskResult copiedResult = ObjectUtil.deepCopy(result, DefaultTaskResult.class);
+                TaskResult copiedResult = ObjectUtil.deepCopy(result, TaskResult.class);
                 return Responses.ok(copiedResult);
             }
 

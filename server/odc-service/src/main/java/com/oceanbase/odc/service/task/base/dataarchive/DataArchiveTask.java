@@ -35,8 +35,7 @@ import com.oceanbase.odc.service.dlm.model.DlmTableUnitParameters;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.schedule.job.DLMJobReq;
 import com.oceanbase.odc.service.schedule.model.DlmTableUnitStatistic;
-import com.oceanbase.odc.service.task.TaskContext;
-import com.oceanbase.odc.service.task.base.BaseTask;
+import com.oceanbase.odc.service.task.base.TaskBase;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -53,7 +52,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 
 @Slf4j
-public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
+public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
 
     private DLMJobFactory jobFactory;
     private DLMJobStore jobStore;
@@ -62,6 +61,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
     private Map<String, DlmTableUnit> result;
     private boolean isToStop = false;
 
+    public DataArchiveTask() {}
 
     @Override
     protected void doInit(JobContext context) {
@@ -71,11 +71,12 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
     }
 
     @Override
-    protected boolean doStart(JobContext context, TaskContext taskContext) throws Exception {
+    public boolean start() throws Exception {
 
-        jobStore.setJobParameters(getJobParameters());
+        jobStore.setJobParameters(jobContext.getJobParameters());
         DLMJobReq parameters =
-                JsonUtils.fromJson(getJobParameters().get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
+                JsonUtils.fromJson(
+                        jobContext.getJobParameters().get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
                         DLMJobReq.class);
         if (parameters.getFireTime() == null) {
             parameters.setFireTime(new Date());
@@ -86,7 +87,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
             jobStore.setDlmTableUnits(result);
         } catch (Exception e) {
             log.warn("Get dlm job failed!", e);
-            taskContext.getExceptionListener().onException(e);
+            context.getExceptionListener().onException(e);
             return false;
         }
         Set<String> dlmTableUnitIds = result.keySet();
@@ -94,7 +95,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
         for (String dlmTableUnitId : dlmTableUnitIds) {
             DlmTableUnit dlmTableUnit = result.get(dlmTableUnitId);
             if (isToStop) {
-                log.info("Job is terminated,jobIdentity={}", context.getJobIdentity());
+                log.info("Job is terminated,jobIdentity={}", jobContext.getJobIdentity());
                 break;
             }
             if (dlmTableUnit.getStatus() == TaskStatus.DONE) {
@@ -138,7 +139,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
                     finishTableUnit(dlmTableUnitId, TaskStatus.CANCELED);
                 } else {
                     finishTableUnit(dlmTableUnitId, TaskStatus.FAILED);
-                    taskContext.getExceptionListener().onException(e);
+                    context.getExceptionListener().onException(e);
                 }
             }
         }
@@ -186,7 +187,7 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
     }
 
     @Override
-    protected void doStop() throws Exception {
+    public void stop() throws Exception {
         isToStop = true;
         if (job != null) {
             try {
@@ -203,14 +204,22 @@ public class DataArchiveTask extends BaseTask<List<DlmTableUnit>> {
     }
 
     @Override
-    protected void doClose() throws Exception {
+    public void close() throws Exception {
         jobStore.destroy();
     }
 
     @Override
-    protected void afterModifiedJobParameters() throws Exception {
+    public boolean modify(Map<String, String> jobParameters) {
+        if (!super.modify(jobParameters)) {
+            return false;
+        }
+        afterModifiedJobParameters();
+        return true;
+    }
+
+    protected void afterModifiedJobParameters() {
         if (jobStore != null) {
-            jobStore.setJobParameters(getJobParameters());
+            jobStore.setJobParameters(jobContext.getJobParameters());
         }
     }
 

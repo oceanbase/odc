@@ -94,7 +94,8 @@ public class RollbackPlanRuntimeFlowableTaskCopied extends BaseODCFlowTaskDelega
             if (Objects.isNull(jobEntity) || jobEntity.getStatus() != JobStatus.DONE) {
                 throw new ServiceTaskError(new RuntimeException("Generate rollback plan task failed"));
             }
-            RollbackPlanTaskResult result = JsonUtils.fromJson(jobEntity.getResultJson(), RollbackPlanTaskResult.class);
+            RollbackPlanTaskResult result =
+                    JsonUtils.fromJson(JobUtils.retrieveJobResultStr(jobEntity), RollbackPlanTaskResult.class);
             DatabaseChangeResult databaseChangeResult = new DatabaseChangeResult();
             databaseChangeResult.setRollbackPlanResult(result);
             taskEntity.setResultJson(JsonUtils.toJson(databaseChangeResult));

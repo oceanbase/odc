@@ -28,7 +28,7 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.schedule.ScheduleLogProperties;
 import com.oceanbase.odc.service.task.constants.JobExecutorUrls;
 import com.oceanbase.odc.service.task.exception.JobException;
-import com.oceanbase.odc.service.task.executor.DefaultTaskResult;
+import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
@@ -110,12 +110,12 @@ public class TaskExecutorClient {
         }
     }
 
-    public DefaultTaskResult getResult(@NonNull String executorEndpoint, @NonNull JobIdentity ji) throws JobException {
+    public TaskResult getResult(@NonNull String executorEndpoint, @NonNull JobIdentity ji) throws JobException {
         String url = executorEndpoint + String.format(JobExecutorUrls.GET_RESULT, ji.getId());
         log.info("Try query job result from executor, jobId={}, url={}", ji.getId(), url);
         try {
-            SuccessResponse<DefaultTaskResult> response =
-                    HttpClientUtils.request("GET", url, new TypeReference<SuccessResponse<DefaultTaskResult>>() {});
+            SuccessResponse<TaskResult> response =
+                    HttpClientUtils.request("GET", url, new TypeReference<SuccessResponse<TaskResult>>() {});
             if (response != null && response.getSuccessful()) {
                 return response.getData();
             } else {

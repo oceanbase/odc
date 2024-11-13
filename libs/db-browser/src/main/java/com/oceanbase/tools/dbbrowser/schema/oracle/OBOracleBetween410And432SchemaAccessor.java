@@ -78,6 +78,11 @@ public class OBOracleBetween410And432SchemaAccessor extends OBOracleSchemaAccess
     }
 
     @Override
+    public boolean syncExternalTableFiles(String schemaName, String tableName) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
     public List<DBObjectIdentity> listTables(String schemaName, String tableNameLike) {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("select OWNER as schema_name, 'TABLE' as type,TABLE_NAME as name");

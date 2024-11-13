@@ -28,8 +28,8 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.task.base.databasechange.QuerySensitiveColumnReq;
 import com.oceanbase.odc.service.task.base.databasechange.QuerySensitiveColumnResp;
-import com.oceanbase.odc.service.task.executor.DefaultTaskResult;
 import com.oceanbase.odc.service.task.executor.HeartbeatRequest;
+import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import io.swagger.annotations.ApiOperation;
@@ -53,7 +53,7 @@ public class TaskController {
 
     @ApiOperation(value = "updateResult", notes = "update task result")
     @RequestMapping(value = "/result", method = RequestMethod.POST)
-    public SuccessResponse<String> updateResult(@RequestBody DefaultTaskResult taskResult) {
+    public SuccessResponse<String> updateResult(@RequestBody TaskResult taskResult) {
         if (log.isDebugEnabled()) {
             log.debug("Accept task result {}.", JsonUtils.toJson(taskResult));
         }

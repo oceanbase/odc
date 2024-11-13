@@ -263,6 +263,11 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public boolean syncExternalTableFiles(String schemaName, String tableName) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
     public List<DBObjectIdentity> listViews(String schemaName) {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("select OWNER as schema_name, 'VIEW' as type, view_name as name from ");
