@@ -22,7 +22,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -123,15 +122,14 @@ public class DBTableController {
         return Responses.list(this.partitionPlanService.getPartitionKeyDataTypes(sessionId, databaseId, tableName));
     }
 
-    @PutMapping(value = "/{sessionId}/databases/{databaseName}/externalTables/"
+    @PostMapping(value = "/{sessionId}/databases/{databaseName}/externalTables/"
             + "{externalTableName}/syncExternalTableFiles")
-    public SuccessResponse syncExternalTableFiles(@PathVariable String sessionId,
+    public SuccessResponse<Boolean> syncExternalTableFiles(@PathVariable String sessionId,
             @PathVariable(required = false) String databaseName,
             @PathVariable(required = true, name = "externalTableName") String externalTableName) {
         Base64.Decoder decoder = Base64.getDecoder();
         externalTableName = new String(decoder.decode(externalTableName));
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
-        tableService.syncExternalTableFiles(session, databaseName, externalTableName);
-        return Responses.empty();
+        return Responses.success(tableService.syncExternalTableFiles(session, databaseName, externalTableName));
     }
 }
