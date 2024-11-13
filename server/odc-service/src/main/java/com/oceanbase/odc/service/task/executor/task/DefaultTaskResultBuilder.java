@@ -44,11 +44,7 @@ public class DefaultTaskResultBuilder {
         if (e == null) {
             result.setErrorMessage(null);
         } else {
-            String depth3 = ExceptionUtils.getRootCauseReason(e, 3);
-            log.info("三层错误：" + depth3);
-            String depth4 = ExceptionUtils.getRootCauseReason(e, 4);
-            log.info("四层错误：" + depth4);
-            result.setErrorMessage(depth3);
+            ExceptionUtils.getRootCauseReason(e, 3);
         }
     }
 }

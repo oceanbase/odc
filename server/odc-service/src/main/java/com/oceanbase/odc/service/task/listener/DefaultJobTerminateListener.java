@@ -72,7 +72,6 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
             // Refresh the schedule status after the task is completed.
             scheduleService.refreshScheduleStatus(Long.parseLong(scheduleTask.getJobName()));
             // Trigger the alarm if the task is failed or canceled.
-            log.info("alarm pre task status: {}", taskStatus);
             if (taskStatus == TaskStatus.FAILED) {
                 ScheduleAlarmUtils.fail(scheduleTask.getId());
                 alarmFailed(jobEntity, event.getErrorMessage());
