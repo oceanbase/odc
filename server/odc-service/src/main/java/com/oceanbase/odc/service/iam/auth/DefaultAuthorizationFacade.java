@@ -47,7 +47,6 @@ import com.oceanbase.odc.core.authority.model.SecurityResource;
 import com.oceanbase.odc.core.authority.permission.ConnectionPermission;
 import com.oceanbase.odc.core.authority.permission.DatabasePermission;
 import com.oceanbase.odc.core.authority.permission.Permission;
-import com.oceanbase.odc.core.authority.permission.PrivateConnectionPermission;
 import com.oceanbase.odc.core.authority.permission.ResourcePermission;
 import com.oceanbase.odc.core.authority.permission.ResourceRoleBasedPermission;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
@@ -96,10 +95,7 @@ public abstract class DefaultAuthorizationFacade implements AuthorizationFacade 
                 if (resourceType.equals(ResourceType.valueOf(((ResourcePermission) permission).getResourceType()))
                         && ("*".equals(((ResourcePermission) permission).getResourceId())
                                 || resourceId.equals(((ResourcePermission) permission).getResourceId()))) {
-                    if (resourceType == ResourceType.ODC_PRIVATE_CONNECTION) {
-                        returnVal.addAll(
-                                PrivateConnectionPermission.getActionList(((ResourcePermission) permission).getMask()));
-                    } else if (resourceType == ResourceType.ODC_CONNECTION) {
+                    if (resourceType == ResourceType.ODC_CONNECTION) {
                         returnVal.addAll(
                                 ConnectionPermission.getActionList(((ResourcePermission) permission).getMask()));
                     } else if (resourceType == ResourceType.ODC_DATABASE) {
@@ -165,8 +161,6 @@ public abstract class DefaultAuthorizationFacade implements AuthorizationFacade 
             Set<String> actions = returnVal.computeIfAbsent(resource, identifier -> new HashSet<>());
             if (ResourceType.ODC_DATABASE.name().equals(resource.resourceType())) {
                 actions.addAll(DatabasePermission.getActionList(((ResourcePermission) permission).getMask()));
-            } else if (ResourceType.ODC_PRIVATE_CONNECTION.name().equals(resource.resourceType())) {
-                actions.addAll(PrivateConnectionPermission.getActionList(((ResourcePermission) permission).getMask()));
             } else if (ResourceType.ODC_CONNECTION.name().equals(resource.resourceType())) {
                 actions.addAll(ConnectionPermission.getActionList(((ResourcePermission) permission).getMask()));
             } else {

@@ -24,7 +24,6 @@ import com.oceanbase.odc.core.authority.permission.ConnectionPermission;
 import com.oceanbase.odc.core.authority.permission.DatabasePermission;
 import com.oceanbase.odc.core.authority.permission.Permission;
 import com.oceanbase.odc.core.authority.permission.PermissionProvider;
-import com.oceanbase.odc.core.authority.permission.PrivateConnectionPermission;
 import com.oceanbase.odc.core.authority.permission.ProjectPermission;
 import com.oceanbase.odc.core.authority.permission.ResourcePermission;
 import com.oceanbase.odc.core.authority.permission.ResourceRoleBasedPermission;
@@ -44,8 +43,6 @@ public class DefaultPermissionProvider implements PermissionProvider {
     public Permission getPermissionByActions(SecurityResource resource, Collection<String> actions) {
         if (ResourceType.ODC_CONNECTION.name().equals(resource.resourceType())) {
             return new ConnectionPermission(resource.resourceId(), String.join(",", actions));
-        } else if (ResourceType.ODC_PRIVATE_CONNECTION.name().equals(resource.resourceType())) {
-            return new PrivateConnectionPermission(resource.resourceId(), String.join(",", actions));
         } else if (ResourceType.ODC_DATABASE.name().equals(resource.resourceType())) {
             return new DatabasePermission(resource.resourceId(), String.join(",", actions));
         } else if (ResourceType.ODC_PROJECT.name().equals(resource.resourceType())) {
