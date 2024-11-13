@@ -16,14 +16,11 @@
 package com.oceanbase.odc.service.iam.auth;
 
 import java.security.Principal;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Objects;
+import java.util.List;
 
-import com.oceanbase.odc.core.authority.auth.SecurityContext;
-import com.oceanbase.odc.core.authority.permission.ComposedPermission;
+import org.apache.commons.collections.ListUtils;
+
 import com.oceanbase.odc.core.authority.permission.Permission;
-import com.oceanbase.odc.service.iam.model.User;
 
 /**
  * @Author: Lebie
@@ -40,23 +37,8 @@ public class ComposedAuthorizer extends BaseAuthorizer {
     }
 
     @Override
-    public boolean isPermitted(Principal principal, Collection<Permission> permissions, SecurityContext context) {
-        User odcUser = (User) principal;
-        if (Objects.isNull(odcUser.getId())) {
-            return false;
-        }
-        if (permissions.stream().anyMatch(permission -> !(permission instanceof ComposedPermission))) {
-            return false;
-        }
-        for (Permission permission : permissions) {
-            ComposedPermission toBeCheck = (ComposedPermission) permission;
-            if (!defaultAuthorizer.isPermitted(principal, Collections.singleton(toBeCheck.getResourcePermission()),
-                    context) &&
-                    !resourceRoleAuthorizer.isPermitted(principal,
-                            Collections.singleton(toBeCheck.getResourceRolePermission()), context)) {
-                return false;
-            }
-        }
-        return true;
+    public List<Permission> listPermittedPermissions(Principal principal) {
+        return ListUtils.union(defaultAuthorizer.listPermittedPermissions(principal),
+                resourceRoleAuthorizer.listPermittedPermissions(principal));
     }
 }

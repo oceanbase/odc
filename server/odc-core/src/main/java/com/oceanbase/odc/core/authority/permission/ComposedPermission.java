@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.core.authority.permission;
 
-import com.oceanbase.odc.core.authority.model.SecurityResource;
+import java.util.List;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -27,18 +27,10 @@ import lombok.NonNull;
  */
 @Getter
 public class ComposedPermission implements Permission {
-    private final ResourceRoleBasedPermission resourceRolePermission;
-    private final ResourcePermission resourcePermission;
-    protected final String resourceId;
-    protected final String resourceType;
+    private final List<Permission> permissions;
 
-    public ComposedPermission(@NonNull SecurityResource resource,
-            @NonNull ResourceRoleBasedPermission resourceRolePermission,
-            @NonNull ResourcePermission resourcePermission) {
-        this.resourceId = resource.resourceId();
-        this.resourceType = resource.resourceType();
-        this.resourceRolePermission = resourceRolePermission;
-        this.resourcePermission = resourcePermission;
+    public ComposedPermission(@NonNull List<Permission> permissions) {
+        this.permissions = permissions;
     }
 
     @Override
@@ -46,10 +38,19 @@ public class ComposedPermission implements Permission {
         if (!(permission instanceof ComposedPermission)) {
             return false;
         }
-        ComposedPermission that = (ComposedPermission) permission;
-        return this.resourceId.equalsIgnoreCase(that.getResourceId())
-                && this.resourceType.equalsIgnoreCase(that.getResourceType())
-                && resourceRolePermission.implies(that.resourceRolePermission)
-                && resourcePermission.implies(that.resourcePermission);
+        ComposedPermission composedPermission = (ComposedPermission) permission;
+        for (Permission thatPermission : composedPermission.getPermissions()) {
+            boolean notImply = true;
+            for (Permission thisPermission : permissions) {
+                if (thisPermission.implies(thatPermission)) {
+                    notImply = false;
+                    break;
+                }
+            }
+            if (notImply) {
+                return false;
+            }
+        }
+        return true;
     }
 }

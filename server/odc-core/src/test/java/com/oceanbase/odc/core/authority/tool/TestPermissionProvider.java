@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.core.authority.tool;
 
+import java.util.Arrays;
 import java.util.Collection;
 
 import com.oceanbase.odc.core.authority.model.SecurityResource;
@@ -58,9 +59,8 @@ public class TestPermissionProvider implements PermissionProvider {
     @Override
     public Permission getPermissionByActionsAndResourceRoles(SecurityResource resource, Collection<String> actions,
             Collection<String> resourceRoles) {
-        return new ComposedPermission(resource,
-                (ResourceRoleBasedPermission) getPermissionByResourceRoles(resource, resourceRoles),
-                (ResourcePermission) getPermissionByActions(resource, actions));
+        return new ComposedPermission(Arrays.asList(getPermissionByActions(resource, actions),
+                getPermissionByResourceRoles(resource, resourceRoles)));
     }
 
 }
