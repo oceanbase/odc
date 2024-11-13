@@ -16,13 +16,17 @@
 package com.oceanbase.odc.service.task.executor.task;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.service.task.util.JobUtils;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author yaobin
  * @date 2024-01-12
  * @since 4.2.4
  */
+@Slf4j
 public class DefaultTaskResultBuilder {
 
     public static DefaultTaskResult build(BaseTask<?> task) {
@@ -37,6 +41,6 @@ public class DefaultTaskResultBuilder {
 
     public static void assignErrorMessage(DefaultTaskResult result, BaseTask<?> task) {
         Throwable e = task.getError();
-        result.setErrorMessage(null == e ? null : e.getMessage());
+        result.setErrorMessage(null == e ? null : ExceptionUtils.getRootCauseReason(e, 3));
     }
 }

@@ -93,7 +93,7 @@ public class BaseTaskTest {
             });
             DefaultTaskResult taskResult = DefaultTaskResultBuilder.build(dummyBaseTask);
             DefaultTaskResultBuilder.assignErrorMessage(taskResult, dummyBaseTask);
-            Assert.assertEquals(taskResult.getErrorMessage(), "exception should be thrown");
+            Assert.assertTrue(taskResult.getErrorMessage().contains("exception should be thrown"));
         }
     }
 
