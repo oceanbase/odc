@@ -170,7 +170,7 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
                 if (Objects.nonNull(parseResult.getSyntaxError()) && parseResult.getSyntaxError()) {
                     continue;
                 }
-                if (isViolatedRule(allowSqlTypesOpt, parseResult)) {
+                if (isViolatedRule(allowSqlTypesOpt.get(), parseResult)) {
                     ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.ALLOW_SQL_TYPES.getRuleName())
                             .ifPresent(rule -> {
                                 Rule violationRule = new Rule();
@@ -192,15 +192,6 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
             }
         }
         return allowExecute.get();
-    }
-
-    private boolean isViolatedRule(Optional<List<String>> allowSqlTypesOpt, BasicResult parseResult) {
-        for (SqlType sqlType = parseResult.getSqlType(); sqlType != null; sqlType = sqlType.getFatherType()) {
-            if (allowSqlTypesOpt.get().contains(sqlType.name())) {
-                return false;
-            }
-        }
-        return true;
     }
 
     @Override
@@ -256,6 +247,14 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
         return basicResult;
     }
 
+    private boolean isViolatedRule(@NonNull List<String> allowSqlTypesOpt, @NonNull BasicResult parseResult) {
+        for (SqlType sqlType = parseResult.getSqlType(); sqlType != null; sqlType = sqlType.getParentType()) {
+            if (allowSqlTypesOpt.contains(sqlType.name())) {
+                return false;
+            }
+        }
+        return true;
+    }
     @Override
     public int getOrder() {
         return 2;

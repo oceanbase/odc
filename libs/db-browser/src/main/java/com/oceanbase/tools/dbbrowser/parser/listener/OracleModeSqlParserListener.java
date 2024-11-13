@@ -705,11 +705,11 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
     public void enterSet_comment_stmt(OBParser.Set_comment_stmtContext ctx) {
         // comment on xxx
         setSqlType(SqlType.COMMENT_ON);
-        if(ctx.TABLE()!=null){
+        if (ctx.TABLE() != null) {
             this.dbObjectType = DBObjectType.TABLE;
             return;
         }
-        if(ctx.COLUMN()!=null){
+        if (ctx.COLUMN() != null) {
             this.dbObjectType = DBObjectType.COLUMN;
             return;
         }
