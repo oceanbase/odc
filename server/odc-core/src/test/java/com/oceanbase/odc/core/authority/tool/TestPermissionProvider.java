@@ -42,7 +42,7 @@ public class TestPermissionProvider implements PermissionProvider {
     public Permission getPermissionByActions(SecurityResource resource, Collection<String> actions) {
         if (ResourceType.ODC_CONNECTION.name().equals(resource.resourceType())) {
             return new ConnectionPermission(resource.resourceId(), String.join(",", actions));
-        }else if (ResourceType.ODC_DATABASE.name().equals(resource.resourceType())) {
+        } else if (ResourceType.ODC_DATABASE.name().equals(resource.resourceType())) {
             return new DatabasePermission(resource.resourceId(), String.join(",", actions));
         }
         return new ResourcePermission(resource, String.join(",", actions));

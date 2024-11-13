@@ -49,6 +49,15 @@ public class ProjectPermission implements Permission {
                 .collect(Collectors.toList());
     }
 
+    public ProjectPermission(@NonNull SecurityResource resource, List<String> actions) {
+        this.resourceId = resource.resourceId();
+        this.resourceType = resource.resourceType();
+        Validate.notNull(resourceId, "ResourceId can not be null");
+        Validate.notNull(resourceType, "ResourceType can not be null");
+        Validate.notEmpty(actions);
+        this.actions = actions;
+    }
+
 
     @Override
     public boolean implies(Permission permission) {

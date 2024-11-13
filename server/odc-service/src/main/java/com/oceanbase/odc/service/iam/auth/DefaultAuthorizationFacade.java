@@ -42,6 +42,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
 import com.oceanbase.odc.core.authority.permission.ConnectionPermission;
@@ -85,6 +86,9 @@ public abstract class DefaultAuthorizationFacade implements AuthorizationFacade 
     @Autowired
     @Qualifier("authorizationFacadeExecutor")
     private ThreadPoolTaskExecutor authorizationFacadeExecutor;
+    @Autowired
+    @Qualifier("servletSecurityManager")
+    private SecurityManager securityManager;
 
     @Override
     public Set<String> getAllPermittedActions(Principal principal, ResourceType resourceType, String resourceId) {
@@ -172,20 +176,7 @@ public abstract class DefaultAuthorizationFacade implements AuthorizationFacade 
 
     @Override
     public boolean isImpliesPermissions(@NotNull Principal principal, @NotNull Collection<Permission> permissions) {
-        List<Permission> permittedPermissions = getAllPermissions(principal);
-        for (Permission permission : permissions) {
-            boolean implies = false;
-            for (Permission permittedPermission : permittedPermissions) {
-                if (permittedPermission.implies(permission)) {
-                    implies = true;
-                    break;
-                }
-            }
-            if (!implies) {
-                return false;
-            }
-        }
-        return true;
+        return this.securityManager.isPermitted(permissions);
     }
 
     private User entityToUser(UserEntity entity) {
