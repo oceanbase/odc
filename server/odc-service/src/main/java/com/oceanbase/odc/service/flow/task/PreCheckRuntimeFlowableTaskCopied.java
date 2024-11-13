@@ -141,7 +141,8 @@ public class PreCheckRuntimeFlowableTaskCopied extends BaseODCFlowTaskDelegate<V
             if (jobEntity.getStatus() != JobStatus.DONE) {
                 throw new ServiceTaskError(new RuntimeException("Pre-check task failed"));
             }
-            this.preCheckResult = JsonUtils.fromJson(jobEntity.getResultJson(), PreCheckTaskResult.class);
+            this.preCheckResult =
+                    JsonUtils.fromJson(JobUtils.retrieveJobResultStr(jobEntity), PreCheckTaskResult.class);
             if (Objects.nonNull(this.preCheckResult)) {
                 this.preCheckResult.setExecutorInfo(new ExecutorInfo(this.hostProperties));
                 storeTaskResultToFile(this.preCheckResult.getSqlCheckResult());

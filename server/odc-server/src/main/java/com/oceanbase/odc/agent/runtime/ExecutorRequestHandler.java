@@ -26,7 +26,7 @@ import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.UrlUtils;
 import com.oceanbase.odc.service.task.constants.JobExecutorUrls;
-import com.oceanbase.odc.service.task.executor.DefaultTaskResult;
+import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.executor.logger.LogBiz;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
@@ -95,7 +95,7 @@ class ExecutorRequestHandler {
                 JobIdentity ji = getJobIdentity(matcher);
                 TaskRuntimeInfo runtimeInfo = ThreadPoolTaskExecutor.getInstance().getTaskRuntimeInfo(ji);
                 TaskMonitor taskMonitor = runtimeInfo.getTaskMonitor();
-                DefaultTaskResult result = DefaultTaskResultBuilder.build(runtimeInfo.getTaskContainer());
+                TaskResult result = DefaultTaskResultBuilder.build(runtimeInfo.getTaskContainer());
                 if (taskMonitor != null && MapUtils.isNotEmpty(taskMonitor.getLogMetadata())) {
                     result.setLogMetadata(taskMonitor.getLogMetadata());
                     // assign final error message
@@ -103,7 +103,7 @@ class ExecutorRequestHandler {
                     taskMonitor.markLogMetaCollected();
                     log.info("Task log metadata collected, ji={}.", ji.getId());
                 }
-                DefaultTaskResult copiedResult = ObjectUtil.deepCopy(result, DefaultTaskResult.class);
+                TaskResult copiedResult = ObjectUtil.deepCopy(result, TaskResult.class);
                 return Responses.ok(copiedResult);
             }
 

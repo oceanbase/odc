@@ -77,7 +77,6 @@ import com.oceanbase.odc.service.task.constants.JobEntityColumn;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
-import com.oceanbase.odc.service.task.executor.DefaultTaskResult;
 import com.oceanbase.odc.service.task.executor.HeartbeatRequest;
 import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.listener.DefaultJobProcessUpdateEvent;
@@ -359,18 +358,18 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         }
 
         String executorEndpoint = executorEndpointManager.getExecutorEndpoint(je);
-        DefaultTaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
+        TaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
         if (result.getStatus() == TaskStatus.PREPARING) {
             log.info("Job is preparing, ignore refresh, jobId={}, currentStatus={}", id, result.getStatus());
             return;
         }
-        DefaultTaskResult previous = JsonUtils.fromJson(je.getResultJson(), DefaultTaskResult.class);
+        TaskResult previous = JsonUtils.fromJson(je.getResultJson(), TaskResult.class);
 
         if (!updateHeartbeatTime(id)) {
             log.warn("Update lastHeartbeatTime failed, the job may finished or deleted already, jobId={}", id);
             return;
         }
-        if (!result.progressChanged(previous)) {
+        if (!result.isProgressChanged(previous)) {
             log.info("Progress not changed, skip update result to metadb, jobId={}, currentProgress={}",
                     id, result.getProgress());
             return;
@@ -444,7 +443,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         }
         try {
             String executorEndpoint = executorEndpointManager.getExecutorEndpoint(je);
-            DefaultTaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
+            TaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
 
             if (je.getRunMode().isK8s() && MapUtils.isEmpty(result.getLogMetadata())) {
                 log.info("Refresh log failed due to log have not uploaded,  jobId={}, currentStatus={}", je.getId(),
@@ -514,7 +513,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     private int updateTaskResult(TaskResult taskResult, JobEntity currentJob, JobStatus expectedStatus) {
         JobEntity jse = new JobEntity();
         handleTaskResult(currentJob.getJobType(), taskResult);
-        jse.setResultJson(taskResult.getResultJson());
+        jse.setResultJson(JsonUtils.toJson(taskResult));
         jse.setStatus(expectedStatus);
         jse.setProgressPercentage(taskResult.getProgress());
         jse.setLastReportTime(JobDateUtils.getCurrentDate());
