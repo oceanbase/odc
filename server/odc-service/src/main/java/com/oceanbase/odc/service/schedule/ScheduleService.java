@@ -525,9 +525,14 @@ public class ScheduleService {
             schedule = nullSafeGetModelById(Long.parseLong(trigger.getJobKey().getName()));
         } catch (Exception e) {
             log.warn("Get schedule failed,task will not be executed,job key={}", trigger.getJobKey(), e);
-            AlarmUtils.alarm(SCHEDULING_FAILED,
-                    MessageFormat.format("Job is misfired due to the failure to get the schedule, scheduleId={0}",
-                            trigger.getJobKey().getName()));
+            Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                    .item(AlarmUtils.SCHEDULE_ID_NAME, trigger.getJobKey().getName())
+                    .item(AlarmUtils.MESSAGE_NAME,
+                            MessageFormat.format(
+                                    "Job is misfired due to the failure to get the schedule, scheduleId={0}",
+                                    trigger.getJobKey().getName()))
+                    .build();
+            AlarmUtils.alarm(SCHEDULING_FAILED, eventMessage);
             return true;
         }
         // Only perform automatic termination checks for periodic tasks
@@ -538,17 +543,27 @@ public class ScheduleService {
             } catch (Exception e) {
                 log.warn("Terminate invalid schedule failed,scheduleId={}", schedule.getId());
             }
-            AlarmUtils.alarm(SCHEDULING_FAILED,
-                    MessageFormat.format("Job is misfired due to the schedule is invalid, scheduleId={0}",
-                            schedule.getId()));
+            Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                    .item(AlarmUtils.ORGANIZATION_NAME, schedule.getOrganizationId().toString())
+                    .item(AlarmUtils.SCHEDULE_ID_NAME, trigger.getJobKey().getName())
+                    .item(AlarmUtils.MESSAGE_NAME,
+                            MessageFormat.format("Job is misfired due to the schedule is invalid, scheduleId={0}",
+                                    schedule.getId()))
+                    .build();
+            AlarmUtils.alarm(SCHEDULING_FAILED, eventMessage);
             return true;
         }
         // skip execution if concurrent scheduling is not allowed
         boolean rejectExecution = !schedule.getAllowConcurrent() && hasExecutingTask(schedule.getId());
         if (rejectExecution) {
-            AlarmUtils.alarm(SCHEDULING_IGNORE, MessageFormat.format(
-                    "The Job has reached its trigger time, but the previous task has not yet finished. This scheduling will be ignored, scheduleId={0}",
-                    schedule.getId()));
+            Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                    .item(AlarmUtils.ORGANIZATION_NAME, schedule.getOrganizationId().toString())
+                    .item(AlarmUtils.SCHEDULE_ID_NAME, trigger.getJobKey().getName())
+                    .item(AlarmUtils.MESSAGE_NAME, MessageFormat.format(
+                            "The Job has reached its trigger time, but the previous task has not yet finished. This scheduling will be ignored, scheduleId={0}",
+                            schedule.getId()))
+                    .build();
+            AlarmUtils.alarm(SCHEDULING_IGNORE, eventMessage);
         }
         return rejectExecution;
     }
