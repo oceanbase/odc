@@ -1055,8 +1055,7 @@ public class DatabaseService {
             deleteDatabaseIfInstanceNotExists(dataSourceId, organization.getType());
         }
         connectionSyncHistoryService.upsert(dataSourceId, ConnectionSyncResult.FAILURE, organization.getId(),
-                failedReason,
-                errorMessage);
+                failedReason, errorMessage);
     }
 
     private void deleteDatabaseIfInstanceNotExists(Long connectionId, OrganizationType organizationType) {
