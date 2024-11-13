@@ -216,7 +216,8 @@ public class SqlExecuteResult {
         DialectType dialectType = connectionSession.getDialectType();
         if (dialectType == DialectType.OB_MYSQL || dialectType == DialectType.OB_ORACLE) {
             String obVersion = ConnectionSessionUtil.getVersion(connectionSession);
-            if (VersionUtils.isGreaterThanOrEqualsTo(obVersion, MIN_OB_VERSION_FOR_EXTERNAL_TABLE)) {
+            if (VersionUtils.isGreaterThanOrEqualsTo(obVersion, MIN_OB_VERSION_FOR_EXTERNAL_TABLE)
+                    && resultSetMetaData != null) {
                 List<JdbcColumnMetaData> columnList = resultSetMetaData.getFieldMetaDataList();
                 Map<String, JdbcColumnMetaData> schemaAndTable2Column = columnList.stream()
                         .collect(Collectors.groupingBy(jcmd -> jcmd.getCatalogName() + "." + jcmd.getTableName(),

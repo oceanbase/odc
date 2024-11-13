@@ -288,4 +288,96 @@ public class ParserUtilTest {
         BasicResult result = ParserUtil.parseOracleType(sql);
         Assert.assertTrue(result.getSyntaxError());
     }
+
+    @Test
+    public void test_mysql_set_session() {
+        String sql = "SET SESSION time_zone = '+00:00';";
+        BasicResult result = ParserUtil.parseMysqlType(sql);
+        Assert.assertEquals(SqlType.SET_SESSION, result.getSqlType());
+        Assert.assertEquals(SqlType.SET, result.getSqlType().getParentType());
+        Assert.assertEquals(DBObjectType.SESSION_VARIABLE, result.getDbObjectType());
+    }
+
+    @Test
+    public void test_mysql_set_global() {
+        String sql = "SET GLOBAL time_zone = '+00:00';";
+        BasicResult result = ParserUtil.parseMysqlType(sql);
+        Assert.assertEquals(SqlType.SET, result.getSqlType());
+        Assert.assertEquals(DBObjectType.GLOBAL_VARIABLE, result.getDbObjectType());
+    }
+
+    @Test
+    public void test_oracle_set_global() {
+        String sql = "SET GLOBAL time_zone = '+00:00';";
+        BasicResult result = ParserUtil.parseMysqlType(sql);
+        Assert.assertEquals(SqlType.SET, result.getSqlType());
+        Assert.assertEquals(DBObjectType.GLOBAL_VARIABLE, result.getDbObjectType());
+    }
+
+    @Test
+    public void test_oracle_alter_system() {
+        String sql = "ALTER SYSTEM SET time_zone = '+00:00';";
+        BasicResult result = ParserUtil.parseOracleType(sql);
+        Assert.assertEquals(SqlType.ALTER, result.getSqlType());
+        Assert.assertEquals(DBObjectType.OTHERS, result.getDbObjectType());
+    }
+
+    @Test
+    public void test_mysql_set() {
+        String sql = "SET time_zone = '+00:00';";
+        BasicResult result = ParserUtil.parseMysqlType(sql);
+        Assert.assertEquals(SqlType.SET, result.getSqlType());
+        Assert.assertEquals(DBObjectType.SYSTEM_VARIABLE, result.getDbObjectType());
+    }
+
+    @Test
+    public void test_mysql_call() {
+        String sql = "call proc()";
+        BasicResult result = ParserUtil.parseMysqlType(sql);
+        Assert.assertEquals(SqlType.CALL, result.getSqlType());
+        Assert.assertEquals(DBObjectType.PROCEDURE, result.getDbObjectType());
+    }
+
+    @Test
+    public void test_oracle_call() {
+        String sql = "call proc()";
+        BasicResult result = ParserUtil.parseOracleType(sql);
+        Assert.assertEquals(SqlType.CALL, result.getSqlType());
+        Assert.assertEquals(DBObjectType.PROCEDURE, result.getDbObjectType());
+    }
+
+    @Test
+    public void test_oracle_alterSession() {
+        String sql = "alter SESSION set ob_query_timeout=6000000000;";
+        BasicResult result = ParserUtil.parseOracleType(sql);
+        Assert.assertEquals(SqlType.ALTER_SESSION, result.getSqlType());
+        Assert.assertEquals(SqlType.ALTER, result.getSqlType().getParentType());
+        Assert.assertEquals(DBObjectType.OTHERS, result.getDbObjectType());
+    }
+
+    @Test
+    public void test_oracle_setSession() {
+        String sql = "set SESSION ob_query_timeout=6000000000;";
+        BasicResult result = ParserUtil.parseOracleType(sql);
+        Assert.assertEquals(SqlType.SET_SESSION, result.getSqlType());
+        Assert.assertEquals(SqlType.SET, result.getSqlType().getParentType());
+        Assert.assertEquals(DBObjectType.SESSION_VARIABLE, result.getDbObjectType());
+    }
+
+    @Test
+    public void test_oracle_comment_on_table() {
+        String sql = "comment on table t is 'abc'";
+        BasicResult result = ParserUtil.parseOracleType(sql);
+        Assert.assertEquals(SqlType.COMMENT_ON, result.getSqlType());
+        Assert.assertEquals(DBObjectType.TABLE, result.getDbObjectType());
+    }
+
+    @Test
+    public void test_oracle_comment_on_column() {
+        String sql = "comment on column t is 'abc'";
+        BasicResult result = ParserUtil.parseOracleType(sql);
+        Assert.assertEquals(SqlType.COMMENT_ON, result.getSqlType());
+        Assert.assertEquals(DBObjectType.COLUMN, result.getDbObjectType());
+    }
+
 }
