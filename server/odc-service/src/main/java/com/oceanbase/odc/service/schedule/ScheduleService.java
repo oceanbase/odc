@@ -519,12 +519,11 @@ public class ScheduleService {
      * returns false.
      */
     public boolean vetoJobExecution(Trigger trigger) {
-        Long scheduleId = Long.parseLong(trigger.getJobKey().getName());
         Schedule schedule;
         try {
-            schedule = nullSafeGetModelById(scheduleId);
+            schedule = nullSafeGetModelById(Long.parseLong(trigger.getJobKey().getName()));
         } catch (Exception e) {
-            log.warn("Get schedule failed,task will not be executed,scheduleId={}", scheduleId, e);
+            log.warn("Get schedule failed,task will not be executed,job key={}", trigger.getJobKey(), e);
             AlarmUtils.alarm(SCHEDULING_FAILED,
                     "Job is misfired due to the failure to get the schedule, job key=" + trigger.getJobKey());
             return true;
@@ -533,16 +532,16 @@ public class ScheduleService {
         if (trigger instanceof CronTrigger && !isValidSchedule(schedule)) {
             // terminate invalid schedule
             try {
-                innerTerminate(scheduleId);
+                innerTerminate(schedule.getId());
             } catch (Exception e) {
-                log.warn("Terminate invalid schedule failed,scheduleId={}", scheduleId);
+                log.warn("Terminate invalid schedule failed,scheduleId={}", schedule.getId());
             }
             AlarmUtils.alarm(SCHEDULING_FAILED,
                     "Job is misfired due to the schedule is invalid, job key=" + trigger.getJobKey());
             return true;
         }
         // skip execution if concurrent scheduling is not allowed
-        boolean rejectExecution = !schedule.getAllowConcurrent() && hasExecutingTask(scheduleId);
+        boolean rejectExecution = !schedule.getAllowConcurrent() && hasExecutingTask(schedule.getId());
         if (rejectExecution) {
             AlarmUtils.alarm(SCHEDULING_IGNORE,
                     "The Job has reached its trigger time, but the previous task has not yet finished. This scheduling will be ignored, job key:"
