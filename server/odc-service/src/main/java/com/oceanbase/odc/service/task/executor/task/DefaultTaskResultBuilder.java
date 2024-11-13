@@ -41,10 +41,6 @@ public class DefaultTaskResultBuilder {
 
     public static void assignErrorMessage(DefaultTaskResult result, BaseTask<?> task) {
         Throwable e = task.getError();
-        if (e == null) {
-            result.setErrorMessage(null);
-        } else {
-            ExceptionUtils.getRootCauseReason(e, 3);
-        }
+        result.setErrorMessage(null == e ? null : ExceptionUtils.getRootCauseReason(e, 3));
     }
 }
