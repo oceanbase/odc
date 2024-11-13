@@ -1218,4 +1218,19 @@ public class PLParserTest {
         Assert.assertEquals(SqlType.CALL, actual.getSqlType());
     }
 
+    @Test
+    public void test_oracle_alter_session() {
+        String sql = "alter SESSION set ob_query_timeout=6000000000;";
+        ParseOraclePLResult result = PLParser.parseOracle(sql);
+        Assert.assertEquals(SqlType.ALTER_SESSION, result.getSqlType());
+        Assert.assertEquals(DBObjectType.OTHERS, result.getDbObjectType());
+    }
+
+    @Test
+    public void test_oracle_set_session() {
+        String sql = "SET SESSION ob_query_timeout=6000000000;";
+        ParseOraclePLResult result = PLParser.parseOracle(sql);
+        Assert.assertEquals(SqlType.SET_SESSION, result.getSqlType());
+        Assert.assertEquals(DBObjectType.OTHERS, result.getDbObjectType());
+    }
 }

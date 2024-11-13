@@ -452,6 +452,18 @@ public class OracleModeParserListener extends PlSqlParserBaseListener implements
         }
     }
 
+    @Override
+    public void enterAlter_session(PlSqlParser.Alter_sessionContext ctx) {
+        doRecord(SqlType.ALTER_SESSION, DBObjectType.OTHERS, null);
+    }
+
+    @Override
+    public void enterScope_or_scope_alias(PlSqlParser.Scope_or_scope_aliasContext ctx) {
+        if (ctx.SESSION() != null) {
+            doRecord(SqlType.SET_SESSION, DBObjectType.OTHERS, null);
+        }
+    }
+
     private String getDdl(ParserRuleContext ctx) {
         Token start = ctx.getStart();
         Token stop = ctx.getStop();

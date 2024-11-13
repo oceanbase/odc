@@ -255,6 +255,7 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
         }
         return true;
     }
+
     @Override
     public int getOrder() {
         return 2;
