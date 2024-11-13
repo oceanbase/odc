@@ -705,23 +705,15 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
     public void enterSet_comment_stmt(OBParser.Set_comment_stmtContext ctx) {
         // comment on xxx
         setSqlType(SqlType.COMMENT_ON);
-        ParseTree child = null;
-        if (ctx.getChildCount() >= 3) {
-            child = ctx.getChild(2);
+        if(ctx.TABLE()!=null){
+            this.dbObjectType = DBObjectType.TABLE;
+            return;
         }
-        String sqlType = child != null ? child.getText() : "";
-        sqlType = sqlType.toUpperCase();
-        switch (sqlType) {
-            case "TABLE":
-                this.dbObjectType = DBObjectType.TABLE;
-                break;
-            case "COLUMN":
-                this.dbObjectType = DBObjectType.COLUMN;
-                break;
-            default:
-                this.dbObjectType = DBObjectType.OTHERS;
-                break;
+        if(ctx.COLUMN()!=null){
+            this.dbObjectType = DBObjectType.COLUMN;
+            return;
         }
+        this.dbObjectType = DBObjectType.OTHERS;
     }
 
     @Override
