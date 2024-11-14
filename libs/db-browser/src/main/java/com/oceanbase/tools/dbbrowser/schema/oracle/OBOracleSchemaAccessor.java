@@ -104,7 +104,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     public OBOracleSchemaAccessor(JdbcOperations jdbcOperations,
             OracleDataDictTableNames dataDictTableNames) {
         super(jdbcOperations, dataDictTableNames);
-        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBORACLE_4_3_2);
+        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBORACLE_4_3_2_x);
     }
 
     @Override

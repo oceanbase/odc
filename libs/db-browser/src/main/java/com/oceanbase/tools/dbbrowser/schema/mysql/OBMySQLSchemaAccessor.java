@@ -78,7 +78,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
     public OBMySQLSchemaAccessor(JdbcOperations jdbcOperations) {
         super(jdbcOperations);
-        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBMYSQL_432);
+        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBMYSQL_432x);
     }
 
     @Override
