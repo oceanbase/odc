@@ -83,19 +83,24 @@ public class CustomUsernamePasswordAuthenticationFilter extends UsernamePassword
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
-            throws AuthenticationException {
+        throws AuthenticationException {
+        // 获取客户端地址的失败登录尝试限制器
         FailedLoginAttemptLimiter failedLoginAttemptLimiter =
-                clientAddressLoginAttemptCache.get(WebRequestUtils.getClientAddress(request));
+            clientAddressLoginAttemptCache.get(WebRequestUtils.getClientAddress(request));
+        // 获取用户名和密码
         String username = request.getParameter("username");
         String password = sensitivePropertyHandler.decrypt(request.getParameter("password"));
+        // 设置跟踪上下文中的账户名
         TraceContextHolder.setAccountName(username);
         try {
+            // 确保失败登录尝试限制器不为空
             Validate.notNull(failedLoginAttemptLimiter, "Failed to get failedLoginAttemptLimiter");
             final Holder<Authentication> authenticationHolder = new Holder<>();
             CustomUsernamePasswordAuthenticationFilter that = this;
+            // 尝试进行身份验证
             failedLoginAttemptLimiter.attempt(() -> {
                 UsernamePasswordAuthenticationToken token =
-                        new UsernamePasswordAuthenticationToken(username, password);
+                    new UsernamePasswordAuthenticationToken(username, password);
                 that.setDetails(request, token);
                 Authentication authentication = that.getAuthenticationManager().authenticate(token);
                 authenticationHolder.setValue(authentication);
@@ -104,12 +109,15 @@ public class CustomUsernamePasswordAuthenticationFilter extends UsernamePassword
             return authenticationHolder.getValue();
         } catch (AuthenticationException e) {
             // if already AuthenticationException throw straightly
+            // 如果已经是身份验证异常，则直接抛出
             throw e;
         } catch (OverLimitException | AttemptLoginOverLimitException e) {
+            // 如果超过了尝试次数限制，则抛出身份验证服务异常
             throw new AuthenticationServiceException("AttemptAuthentication over limit", e);
         } catch (Exception e) {
             // InternalAuthenticationServiceException result into exception stack log output inside spring
             // security AbstractAuthenticationProcessingFilter
+            // 如果发生其他异常，则将其转换为内部身份验证服务异常并记录日志
             throw new InternalAuthenticationServiceException("Authentication failed", e);
         }
     }

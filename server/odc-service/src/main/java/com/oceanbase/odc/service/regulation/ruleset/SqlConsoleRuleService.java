@@ -109,34 +109,52 @@ public class SqlConsoleRuleService {
         return Optional.of(properties.get(0));
     }
 
+    /**
+     * 获取指定规则集合中指定 SQL 控制台规则、指定方言类型和指定类型的属性列表。
+     *
+     * @param rulesetId   规则集合 ID
+     * @param consoleRule SQL 控制台规则
+     * @param dialectType 方言类型
+     * @param clazz       属性类型
+     * @return 属性列表的可选项
+     */
     @SkipAuthorize("odc internal usage")
     public <T> Optional<List<T>> getListProperties(@NonNull Long rulesetId, @NonNull SqlConsoleRules consoleRule,
-            @NonNull DialectType dialectType, @NonNull Class<T> clazz) {
+        @NonNull DialectType dialectType, @NonNull Class<T> clazz) {
         try {
+            // 从缓存中获取指定规则集合中的所有规则，并过滤出符合条件的规则
             List<List> properties = ruleService.listAllFromCache(rulesetId).stream().filter(rule -> {
+                // 规则的元数据名称不等于 SQL 控制台规则的名称
                 if (Objects.isNull(rule.getMetadata())
-                        || !StringUtils.equals(rule.getMetadata().getName(), consoleRule.getRuleName())) {
+                    || !StringUtils.equals(rule.getMetadata().getName(), consoleRule.getRuleName())) {
                     return false;
                 }
+                // 规则未启用
                 if (Boolean.FALSE.equals(rule.getEnabled())) {
                     return false;
                 }
+                // 规则应用的方言类型列表中不包含指定的方言类型
                 if (Objects.isNull(rule.getAppliedDialectTypes()) || !rule.getAppliedDialectTypes().contains(
-                        dialectType)) {
+                    dialectType)) {
                     return false;
                 }
                 return true;
             }).map(rule -> {
+                // 获取规则的属性列表
                 if (Objects.isNull(rule.getProperties())) {
                     return null;
                 }
+                // 获取指定属性名称的属性值
                 Object property = rule.getProperties().getOrDefault(consoleRule.getPropertyName(), null);
+                // 属性值为空或不是列表类型
                 if (Objects.isNull(property) || !List.class.isAssignableFrom(property.getClass())) {
                     return Collections.EMPTY_LIST;
                 }
+                // 属性值列表为空
                 if (((List<?>) property).isEmpty()) {
                     return Collections.EMPTY_LIST;
                 }
+                // 将属性值列表中的元素转换为指定类型，并添加到结果列表中
                 List<T> result = new ArrayList<>();
                 for (Object o : (List<?>) property) {
                     if (clazz.equals(o.getClass())) {
@@ -145,15 +163,20 @@ public class SqlConsoleRuleService {
                 }
                 return result;
             }).collect(Collectors.toList());
+            // 如果属性列表为空，则返回空的可选项
             if (CollectionUtils.isEmpty(properties)) {
+                // 发生异常时，返回空的可选项
                 return Optional.empty();
             }
+            // 如果属性列表的第一个元素为空，则返回空的可选项
             if (properties.get(0).isEmpty()) {
                 return Optional.of(Collections.emptyList());
             } else {
+                // 否则，返回属性列表的第一个元素作为可选项的值
                 return Optional.of((List<T>) properties.get(0));
             }
         } catch (Exception ex) {
+            // 发生异常时，返回空的可选项
             return Optional.empty();
         }
     }

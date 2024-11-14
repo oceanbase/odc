@@ -58,24 +58,36 @@ public class FailedLoginAttemptLimiter {
         }
     }
 
+    /**
+     * 尝试执行某个操作，如果操作失败则进行限流
+     *
+     * @param attemptResultSupplier 尝试执行的操作
+     * @return 操作结果
+     * @throws AttemptLoginOverLimitException 当连续失败次数达到限制时抛出异常
+     */
     public synchronized Boolean attempt(Supplier<Boolean> attemptResultSupplier) {
         long currentTimeMillis = System.currentTimeMillis();
+        // 如果已经被限流且距离上次限流时间超过了限制时间或者限制时间为0，则重新初始化限流状态
         if (isLocked && (currentTimeMillis > lastLockedMills + lockTimeoutMillis || lockTimeoutMillis <= 0)) {
             isLocked = false;
             failedAttempt = 0;
         }
         if (isLocked) {
+            // 计算距离上次限流时间的剩余时间（秒）
             long remainSeconds = (lastLockedMills + lockTimeoutMillis - currentTimeMillis) / 1000L;
+            // 抛出连续失败次数达到限制的异常
             throw new AttemptLoginOverLimitException((double) maxFailedAttempt, remainSeconds,
-                    String.format("failed attempt over limit, failedAttempt=%d, limit=%d, remainSeconds=%d",
-                            failedAttempt, maxFailedAttempt, remainSeconds));
+                String.format("failed attempt over limit, failedAttempt=%d, limit=%d, remainSeconds=%d",
+                    failedAttempt, maxFailedAttempt, remainSeconds));
         }
         Boolean result = null;
         try {
+            // 执行尝试操作
             result = attemptResultSupplier.get();
             return result;
         } finally {
             if (result == null || !result) {
+                // 操作失败，记录失败次数并判断是否需要限流
                 log.info("attempt failed, currentFailedAttempt={}", failedAttempt);
                 failedAttempt++;
                 if (failedAttempt >= maxFailedAttempt) {
