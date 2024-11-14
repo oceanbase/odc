@@ -307,7 +307,10 @@ public enum ErrorCodes implements ErrorCode {
      * version conflict
      */
     WorksheetEditVersionConflict,
-
+    /**
+     * general version conflict error
+     */
+    EditVersionConflict,
     /**
      * workspace
      */
