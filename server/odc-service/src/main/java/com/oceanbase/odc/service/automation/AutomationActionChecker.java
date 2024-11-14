@@ -53,13 +53,22 @@ public class AutomationActionChecker {
     @Autowired
     private ProjectService projectService;
 
+    /**
+     * 检查操作
+     *
+     * @param action    操作类型
+     * @param arguments 参数列表
+     */
     public void check(String action, Map<String, Object> arguments) {
         if (AutomationConstants.BIND_ROLE.equals(action)) {
             checkBindRole(arguments);
+            // 如果操作类型为绑定权限
         } else if (AutomationConstants.BIND_PERMISSION.equals(action)) {
             checkBindPermission(arguments);
+            // 如果操作类型为绑定项目角色
         } else if (AutomationConstants.BIND_PROJECT_ROLE.equals(action)) {
             checkBindProjectRole(arguments);
+            // 如果操作类型不是上述三种类型
         } else {
             throw new IllegalArgumentException("Illegal action : " + action);
         }

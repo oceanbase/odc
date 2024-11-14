@@ -56,19 +56,34 @@ public class AutomationActionService {
         return AutomationAction.of(savedEntity);
     }
 
+    /**
+     * 批量插入自动化操作
+     *
+     * @param ruleId  规则ID
+     * @param actions 自动化操作列表
+     * @return 插入成功的自动化操作列表
+     */
     @Transactional(rollbackFor = Exception.class)
     public List<AutomationAction> insertAll(Long ruleId, List<AutomationAction> actions) {
+        // 获取当前用户ID
         long currentUserId = authenticationFacade.currentUserId();
+        // 创建结果列表
         List<AutomationAction> results = new ArrayList<>(actions.size());
+        // 遍历操作列表
         for (AutomationAction action : actions) {
+            // 检查操作和参数是否合法
             checker.check(action.getAction(), action.getArguments());
+            // 创建实体对象
             AutomationActionEntity entity = new AutomationActionEntity(action);
+            // 设置实体对象的属性
             entity.setRuleId(ruleId);
             entity.setCreatorId(currentUserId);
             entity.setOrganizationId(authenticationFacade.currentOrganizationId());
             entity.setEnabled(true);
+            // 将实体对象保存到数据库并添加到结果列表中
             results.add(AutomationAction.of(actionRepository.saveAndFlush(entity)));
         }
+        // 返回插入成功的自动化操作列表
         return results;
     }
 

@@ -38,15 +38,27 @@ public class HorizontalDataPermissionValidator {
         checkCurrentOrganization(Collections.singletonList(object));
     }
 
+    /**
+     * 检查当前组织机构是否有权限访问给定的对象列表
+     *
+     * @param objects 对象列表
+     * @param <T>     对象类型，必须实现OrganizationIsolated接口
+     */
     public final <T extends OrganizationIsolated> void checkCurrentOrganization(List<T> objects) {
+        // 检查对象列表是否为空
         Validate.notNull(objects,
-                "Resources can not be null for HorizontalDataPermissionValidator#checkCurrentOrganization");
+            "Resources can not be null for HorizontalDataPermissionValidator#checkCurrentOrganization");
+        // 获取当前组织机构ID
         Long currentOrganizationId = authenticationFacade.currentOrganizationId();
+        // 遍历对象列表
         for (T item : objects) {
+            // 获取对象的组织机构ID
             Long organizationId = item.organizationId();
+            // 检查组织机构ID是否为空
             Verify.notNull(organizationId, "organizationId");
+            // 检查当前组织机构ID是否与对象的组织机构ID相同
             PreConditions.validExists(ResourceType.valueOf(item.resourceType()), "id", item.id(),
-                    () -> currentOrganizationId.equals(organizationId));
+                () -> currentOrganizationId.equals(organizationId));
         }
     }
 
