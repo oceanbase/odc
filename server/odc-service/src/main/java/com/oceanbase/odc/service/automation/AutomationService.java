@@ -139,17 +139,26 @@ public class AutomationService {
         return ruleRepository.findAll(specification, pageable).map(this::entityToModel);
     }
 
+    /**
+     * 创建自动化规则
+     *
+     * @param request 创建规则请求
+     * @return 创建的自动化规则
+     */
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "create", resourceType = "ODC_AUTOMATION_RULE", isForAll = true)
     public AutomationRule create(@NotNull @Valid CreateRuleReq request) {
+        // 参数校验
         PreConditions.notNull(request, "createRuleRequest");
         PreConditions.notBlank(request.getName(), "rule.name");
         PreConditions.validNoDuplicated(ResourceType.ODC_AUTOMATION_RULE, "rule.name", request.getName(),
-                () -> exists(request.getName()));
+            () -> exists(request.getName()));
+        // 判断触发事件是否存在
         if (!eventRepository.findById(request.getEventId()).isPresent()) {
             throw new BadRequestException("No event found by event id:" + request.getEventId());
         }
 
+        // 创建自动触发规则实体
         AutomationRuleEntity ruleEntity = new AutomationRuleEntity();
         ruleEntity.setName(request.getName());
         ruleEntity.setEventId(request.getEventId());
@@ -160,15 +169,19 @@ public class AutomationService {
         ruleEntity.setBuiltIn(false);
         AutomationRuleEntity savedRuleEntity = ruleRepository.saveAndFlush(ruleEntity);
 
+        // 将自动触发规则实体转换为自动化规则模型
         AutomationRule rule = entityToModel(savedRuleEntity);
+        // 插入条件
         if (CollectionUtils.isNotEmpty(request.getConditions())) {
             for (AutomationCondition condition : request.getConditions()) {
+                // 检查操作是否合法
                 if (!checkOperation(condition.getOperation())) {
                     throw new UnsupportedOperationException("Illegal operation :" + condition);
                 }
             }
             rule.setConditions(conditionService.insertAll(rule.getId(), request.getConditions()));
         }
+        // 插入操作
         if (CollectionUtils.isNotEmpty(request.getActions())) {
             rule.setActions(actionService.insertAll(rule.getId(), request.getActions()));
         }
@@ -183,31 +196,50 @@ public class AutomationService {
         return update(id, req);
     }
 
+    /**
+     * 更新自动化规则
+     *
+     * @param id  规则ID
+     * @param req 创建规则请求体
+     * @return 更新后的自动化规则
+     */
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "update", resourceType = "ODC_AUTOMATION_RULE", indexOfIdParam = 0)
     public AutomationRule update(@NotNull Long id, @NotNull @Valid CreateRuleReq req) {
+        // 获取规则实体
         AutomationRuleEntity ruleEntity = nullSafeGet(id);
+        // 如果请求体中包含规则名称，则更新规则实体的名称
         if (Objects.nonNull(req.getName())) {
             ruleEntity.setName(req.getName());
         }
+        // 如果请求体中包含事件ID，则更新规则实体的事件ID
         if (Objects.nonNull(req.getEventId())) {
+            // 判断事件是否存在，若不存在则抛出异常
             if (!eventRepository.findById(req.getEventId()).isPresent()) {
                 throw new BadRequestException("No event found by event id:" + req.getEventId());
             }
             ruleEntity.setEventId(req.getEventId());
         }
+        // 如果请求体中包含启用状态，则更新规则实体的启用状态
         if (Objects.nonNull(req.getEnabled())) {
             ruleEntity.setEnabled(req.getEnabled());
         }
+        // 如果请求体中包含规则描述，则更新规则实体的描述
         if (Objects.nonNull(req.getDescription())) {
             ruleEntity.setDescription(req.getDescription());
         }
+        // 设置规则实体的最后修改人ID
         ruleEntity.setLastModifierId(authenticationFacade.currentUserId());
+        // 更新规则实体
         ruleRepository.updateById(ruleEntity);
+        // 将规则实体转换为自动化规则模型
         AutomationRule automationRule = entityToModel(nullSafeGet(id));
+        // 获取自动化规则的ID
         Long ruleId = automationRule.getId();
+        // 如果请求体中包含条件列表，则删除原有条件并插入新的条件
         if (Objects.nonNull(req.getConditions())) {
             for (AutomationCondition condition : req.getConditions()) {
+                // 检查操作是否合法，若不合法则抛出异常
                 if (!checkOperation(condition.getOperation())) {
                     throw new UnsupportedOperationException("Illegal operation :" + condition);
                 }
@@ -215,10 +247,12 @@ public class AutomationService {
             conditionService.deleteByRuleId(ruleId);
             automationRule.setConditions(conditionService.insertAll(ruleId, req.getConditions()));
         }
+        // 如果请求体中包含动作列表，则删除原有动作并插入新的动作
         if (Objects.nonNull(req.getActions())) {
             actionService.deleteByRuleId(ruleId);
             automationRule.setActions(actionService.insertAll(ruleId, req.getActions()));
         }
+        // 返回更新后的自动化规则
         return automationRule;
     }
 
@@ -277,33 +311,66 @@ public class AutomationService {
         return Arrays.asList(permittedOperations).contains(operation);
     }
 
+    /**
+     * 将实体类转换为模型类，不包括创建者信息
+     *
+     * @param ruleEntity 实体类对象
+     * @return 模型类对象
+     */
     private AutomationRule entityToModelWithoutCreator(AutomationRuleEntity ruleEntity) {
+        // 创建模型类对象
         AutomationRule automationRule = new AutomationRule(ruleEntity);
+        // 根据事件ID查询事件元数据实体类
         Optional<EventMetadataEntity> optional = eventRepository.findById(ruleEntity.getEventId());
+        // 如果事件ID不存在，则抛出异常
         if (!optional.isPresent()) {
             throw new UnexpectedException("Unexpected event id:" + ruleEntity.getEventId());
         }
+        // 设置模型类对象的事件名称
         automationRule.setEventName(optional.get().getName());
+        // 返回模型类对象
         return automationRule;
     }
 
+    /**
+     * 将实体类转换为模型类
+     *
+     * @param ruleEntity 自动化规则实体类
+     * @return 自动化规则模型类
+     */
     private AutomationRule entityToModel(AutomationRuleEntity ruleEntity) {
+        // 调用entityToModelWithoutCreator方法将实体类转换为模型类，同时获取创建人信息
         AutomationRule automationRule = entityToModelWithoutCreator(ruleEntity);
+        // 校验当前组织是否有权限
         permissionValidator.checkCurrentOrganization(automationRule);
         try {
+            // 查询创建人信息
             User creator = userService.detailWithoutPermissionCheck(ruleEntity.getCreatorId());
+            // 设置创建人名称
             automationRule.setCreatorName(creator.getName());
         } catch (Exception ex) {
+            // 查询创建人信息失败，记录日志
             log.warn("Query creator name failed, reason={}", ex.getMessage());
         }
+        // 返回自动化规则模型类
         return automationRule;
     }
 
+    /**
+     * 根据ID获取自动化规则实体对象，如果不存在则抛出NotFoundException异常
+     *
+     * @param id 自动化规则实体对象的ID
+     * @return 自动化规则实体对象
+     * @throws NotFoundException 如果自动化规则实体对象不存在，则抛出NotFoundException异常
+     */
     private AutomationRuleEntity nullSafeGet(Long id) {
+        // 使用Optional类来处理可能为null的返回值
         Optional<AutomationRuleEntity> optional = ruleRepository.findById(id);
+        // 如果返回值为空，则抛出NotFoundException异常
         if (!optional.isPresent()) {
             throw new NotFoundException(ResourceType.ODC_AUTOMATION_RULE, "ID", id);
         }
+        // 返回自动化规则实体对象
         return optional.get();
     }
 
