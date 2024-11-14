@@ -321,7 +321,9 @@ public class ConnectConsoleService {
             statementCallBack.getListeners()
                     .add(new OBQueryProfileExecutionListener(connectionSession, profileManager));
         }
-
+        if (StringUtils.isNotBlank(request.getDatabaseName())) {
+            ConnectionSessionUtil.setCurrentSchema(connectionSession, request.getDatabaseName());
+        }
         Future<List<JdbcGeneralResult>> futureResult = connectionSession.getAsyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY).execute(statementCallBack);
         executeContext.setFuture(futureResult);

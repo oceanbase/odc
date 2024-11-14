@@ -15,7 +15,11 @@
  */
 package com.oceanbase.odc.service.common.util;
 
+import java.util.Optional;
+
 import org.apache.commons.lang.StringUtils;
+
+import com.oceanbase.odc.service.common.model.ResourceIdentifier;
 
 /**
  * @author yizhou.xw
@@ -30,4 +34,10 @@ public class SidUtils {
         return sid;
     }
 
+    public static Optional<String> getDatabase(String sid) {
+        if (StringUtils.contains(sid, ResourceIdentifier.DATABASE_KEY)) {
+            return Optional.ofNullable(ResourceIDParser.parse(sid).getDatabase());
+        }
+        return Optional.empty();
+    }
 }

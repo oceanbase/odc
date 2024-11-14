@@ -108,6 +108,7 @@ public class ConnectSessionController {
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<SqlAsyncExecuteResp> streamExecute(@PathVariable String sessionId,
             @RequestBody SqlAsyncExecuteReq req) throws Exception {
+        req.setDatabaseName(SidUtils.getDatabase(sessionId).orElse(null));
         return Responses.success(consoleService.streamExecute(SidUtils.getSessionId(sessionId), req, true));
     }
 

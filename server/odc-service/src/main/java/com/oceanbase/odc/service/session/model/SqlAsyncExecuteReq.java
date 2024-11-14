@@ -41,6 +41,11 @@ public class SqlAsyncExecuteReq {
     private Boolean fullLinkTraceEnabled;
     private Boolean continueExecutionOnError;
 
+    /**
+     * The database name to execute the sql, if not set, the default database of connection will be used
+     */
+    private String databaseName;
+
     public boolean ifSplitSqls() {
         if (this.split == null) {
             return true;
