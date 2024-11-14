@@ -46,7 +46,9 @@ import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -145,6 +147,12 @@ public class SensitiveColumnService {
                         accessor.listBasicTableColumns(database.getName()), exists));
                 databaseColumn.setView2Columns(getFilteringExistColumns(database.getId(),
                         accessor.listBasicViewColumns(database.getName()), exists));
+                DialectType dialectType = session.getDialectType();
+                String version = ConnectionSessionUtil.getVersion(session);
+                if (versionDiffConfigService.isExternalTableSupported(dialectType, version)) {
+                    databaseColumn.setExternalTable2Columns(getFilteringExistColumns(database.getId(),
+                            accessor.listBasicExternalTableColumns(database.getName()), exists));
+                }
                 databaseColumn.setDataTypeUnits(versionDiffConfigService.getDatatypeList(session));
                 if (!databaseColumn.getTable2Columns().isEmpty() || !databaseColumn.getView2Columns().isEmpty()) {
                     databaseColumns.add(databaseColumn);

@@ -42,6 +42,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMappers;
+import com.oceanbase.tools.dbbrowser.schema.constant.Statements;
 import com.oceanbase.tools.dbbrowser.schema.constant.StatementsFiles;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
@@ -77,7 +78,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
     public OBMySQLSchemaAccessor(JdbcOperations jdbcOperations) {
         super(jdbcOperations);
-        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBMYSQL_40X);
+        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBMYSQL_432x);
     }
 
     @Override
@@ -430,6 +431,20 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         sb.append("ALTER EXTERNAL TABLE ").identifier(schemaName, tableName).append(" REFRESH");
         jdbcOperations.execute(sb.toString());
         return true;
+    }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicExternalTableColumns(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_EXTERNAL_TABLE_COLUMNS);
+        List<DBTableColumn> tableColumns = jdbcOperations.query(sql, new Object[] {schemaName, schemaName},
+                listBasicTableColumnRowMapper());
+        return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
+    }
+
+    @Override
+    public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String externalTableName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_EXTERNAL_TABLE_COLUMNS);
+        return jdbcOperations.query(sql, new Object[] {schemaName, externalTableName}, listBasicTableColumnRowMapper());
     }
 
     @Override

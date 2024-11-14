@@ -46,7 +46,7 @@ public class DBSchemaAccessorSqlMappers {
 
     static {
         SQL_MAPPER_FILE_PATHS.addAll(Arrays.asList(
-                StatementsFiles.OBMYSQL_40X,
+                StatementsFiles.OBMYSQL_432x,
                 StatementsFiles.OBMYSQL_3X,
                 StatementsFiles.OBMYSQL_2276,
                 StatementsFiles.OBMYSQL_225X,
@@ -56,6 +56,7 @@ public class DBSchemaAccessorSqlMappers {
                 StatementsFiles.OBORACLE_3_x,
                 StatementsFiles.OBORACLE_4_0_x,
                 StatementsFiles.OBORACLE_4_1_x,
+                StatementsFiles.OBORACLE_4_3_2_x,
                 StatementsFiles.ORACLE_11_g));
         for (String path : SQL_MAPPER_FILE_PATHS) {
             URL url = DBSchemaAccessorSqlMappers.class.getClassLoader().getResource(path);
