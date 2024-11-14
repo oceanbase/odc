@@ -378,6 +378,10 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
         String executorEndpoint = executorEndpointManager.getExecutorEndpoint(je);
         DefaultTaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
+        if (result.getStatus() == JobStatus.PREPARING) {
+            log.info("Job is preparing, ignore refresh, jobId={}, currentStatus={}", id, result.getStatus());
+            return;
+        }
         DefaultTaskResult previous = JsonUtils.fromJson(je.getResultJson(), DefaultTaskResult.class);
 
         if (!updateHeartbeatTime(id)) {

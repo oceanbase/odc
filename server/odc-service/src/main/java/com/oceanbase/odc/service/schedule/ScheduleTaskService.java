@@ -239,6 +239,10 @@ public class ScheduleTaskService {
         scheduleTaskRepository.updateStatusById(id, status);
     }
 
+    public int updateStatusById(Long id, TaskStatus newStatus, List<String> previousStatus) {
+        return scheduleTaskRepository.updateStatusById(id, newStatus, previousStatus);
+    }
+
     public void update(ScheduleTask scheduleTask) {
         ScheduleTaskEntity entity = scheduleTaskMapper.modelToEntity(scheduleTask);
         scheduleTaskRepository.update(entity);

@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.task.executor.logger;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -57,17 +58,23 @@ public class LogBizImpl implements LogBiz {
         log.info("upload log files to cloud storage starting, jobId={}", ji.getId());
 
         Map<String, String> logMap = new HashMap<>();
-        Optional<String> allLogObjectId = uploadTempFile(ji.getId(), OdcTaskLogLevel.ALL, storageService);
-        allLogObjectId.ifPresent(a -> logMap.put(JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID, a));
+        try {
+            Optional<String> allLogObjectId = uploadTempFile(ji.getId(), OdcTaskLogLevel.ALL, storageService);
+            allLogObjectId.ifPresent(a -> logMap.put(JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID, a));
 
-        Optional<String> warnLogObjectId = uploadTempFile(ji.getId(), OdcTaskLogLevel.WARN, storageService);
-        warnLogObjectId.ifPresent(a -> logMap.put(JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID, a));
+            Optional<String> warnLogObjectId = uploadTempFile(ji.getId(), OdcTaskLogLevel.WARN, storageService);
+            warnLogObjectId.ifPresent(a -> logMap.put(JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID, a));
 
-        if (allLogObjectId.isPresent() || warnLogObjectId.isPresent()) {
-            logMap.put(JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME, storageService.getBucketName());
-        } else {
-            logMap.put(JobAttributeKeyConstants.LOG_STORAGE_FAILED_REASON, "No log file to upload.");
+            if (allLogObjectId.isPresent() || warnLogObjectId.isPresent()) {
+                logMap.put(JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME, storageService.getBucketName());
+            } else {
+                logMap.put(JobAttributeKeyConstants.LOG_STORAGE_FAILED_REASON, "No log file to upload.");
+            }
+        } catch (Exception e) {
+            log.error("upload log files to cloud storage failed, jobId={}", ji.getId(), e);
+            logMap.put(JobAttributeKeyConstants.LOG_STORAGE_FAILED_REASON, e.getMessage());
         }
+
         log.info("upload log files to cloud storage completed, jobId={}, logs={}", ji.getId(), logMap);
         return logMap;
     }
@@ -76,21 +83,15 @@ public class LogBizImpl implements LogBiz {
      * TODO: should not upload as temp file
      */
     private Optional<String> uploadTempFile(Long jobId, OdcTaskLogLevel logType,
-            CloudObjectStorageService storageService) {
+            CloudObjectStorageService storageService) throws IOException {
         String logFileStr = LogUtils.getTaskLogFileWithPath(jobId, logType);
         String fileId = StringUtils.uuid();
         File jobLogFile = new File(logFileStr);
         if (jobLogFile.exists() && jobLogFile.length() > 0) {
-            try {
-                String ossName = storageService.upload(fileId, jobLogFile);
-                log.info("upload job {} log to OSS successfully, file name={}, oss object name {}.",
-                        logType.getName(), fileId, ossName);
-                return Optional.of(ossName);
-            } catch (Exception e) {
-                log.error("upload job {} log to OSS failed, file name={}, error {}.",
-                        logType.getName(), fileId, e.getMessage());
-                return Optional.empty();
-            }
+            String ossName = storageService.upload(fileId, jobLogFile);
+            log.info("upload job {} log to OSS successfully, file name={}, oss object name {}.",
+                    logType.getName(), fileId, ossName);
+            return Optional.of(ossName);
         }
         return Optional.empty();
 
