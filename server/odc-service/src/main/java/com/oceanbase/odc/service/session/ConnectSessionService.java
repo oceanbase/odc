@@ -422,8 +422,10 @@ public class ConnectSessionService {
         ConnectionSession connectionSession = nullSafeGet(SidUtils.getSessionId(sessionId), true);
         DBSession dbSession = dbSessionService.currentSession(connectionSession);
         DBSessionRespDelegate dbSessionRespDelegate = DBSessionRespDelegate.of(dbSession);
-        dbSessionRespDelegate
-                .setKillCurrentQuerySupported(dbSessionManageFacade.supportKillConsoleQuery(connectionSession));
+        if (dbSessionRespDelegate != null) {
+            dbSessionRespDelegate
+                    .setKillCurrentQuerySupported(dbSessionManageFacade.supportKillConsoleQuery(connectionSession));
+        }
         return DBSessionResp.builder()
                 .settings(settingsService.getSessionSettings(connectionSession))
                 .session(dbSessionRespDelegate)
