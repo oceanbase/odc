@@ -158,11 +158,11 @@ public class ProjectService {
     @Value("${odc.integration.bastion.enabled:false}")
     private boolean bastionEnabled;
 
+    public final static byte ALL_PROJECTS_ID = 0;
+
     private final ProjectMapper projectMapper = ProjectMapper.INSTANCE;
 
     private final static String BUILTIN_PROJECT_PREFIX = "USER_PROJECT_";
-
-    private final static byte ALL_PROJECTS_ID = 0;
 
     /**
      * Create a built-in project for bastion user if not exists

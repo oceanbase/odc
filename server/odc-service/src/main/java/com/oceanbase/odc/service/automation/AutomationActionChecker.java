@@ -97,7 +97,7 @@ public class AutomationActionChecker {
     private void checkBindProjectRole(Map<String, Object> arguments) {
         PreConditions.notNull(arguments.get("projectId"), "project id");
         Long projectId = ((Integer) arguments.get("projectId")).longValue();
-        if (projectId == 0) {
+        if (projectId == ProjectService.ALL_PROJECTS_ID) {
             return;
         }
         ProjectEntity projectEntity = projectService.nullSafeGet(projectId);
