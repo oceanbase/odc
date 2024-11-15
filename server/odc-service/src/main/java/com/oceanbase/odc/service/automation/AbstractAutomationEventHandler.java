@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.lang.Pair;
@@ -44,7 +43,6 @@ import com.oceanbase.odc.service.iam.UserPermissionService;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Service
 @SkipAuthorize
 public abstract class AbstractAutomationEventHandler implements TriggerEventHandler, InitializingBean {
 
@@ -139,7 +137,7 @@ public abstract class AbstractAutomationEventHandler implements TriggerEventHand
                             return member;
                         })
                         .collect(Collectors.toList());
-        projectService.createMembersSkipPermissionCheck(projectId, action.getOrganizationId(), members);
+        projectService.createMembersSkipPermissionCheckForAuthorization(projectId, action.getOrganizationId(), members);
     }
 
 

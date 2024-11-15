@@ -115,12 +115,13 @@ public interface UserResourceRoleRepository extends OdcJpaRepository<UserResourc
                 .field(UserResourceRoleEntity_.resourceRoleId)
                 .field(UserResourceRoleEntity_.organizationId)
                 .build();
+        String conflictHandlingSql = sql.substring(0, sql.length() - 1) + " ON DUPLICATE KEY UPDATE user_id = user_id;";
         List<Function<UserResourceRoleEntity, Object>> getter = valueGetterBuilder()
                 .add(UserResourceRoleEntity::getUserId)
                 .add(UserResourceRoleEntity::getResourceId)
                 .add(UserResourceRoleEntity::getResourceRoleId)
                 .add(UserResourceRoleEntity::getOrganizationId)
                 .build();
-        return batchCreate(entities, sql, getter, UserResourceRoleEntity::setId);
+        return batchCreate(entities, conflictHandlingSql, getter, UserResourceRoleEntity::setId);
     }
 }

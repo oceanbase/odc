@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.collaboration.project;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -35,6 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -159,6 +161,8 @@ public class ProjectService {
     private final ProjectMapper projectMapper = ProjectMapper.INSTANCE;
 
     private final static String BUILTIN_PROJECT_PREFIX = "USER_PROJECT_";
+
+    private final static byte ALL_PROJECTS_ID = 0;
 
     /**
      * Create a built-in project for bastion user if not exists
@@ -361,21 +365,32 @@ public class ProjectService {
 
     @SkipAuthorize("permission check inside")
     @Transactional(rollbackFor = Exception.class)
-    public Project createMembersSkipPermissionCheck(@NonNull Long projectId, @NonNull Long organizationId,
+    public void createMembersSkipPermissionCheckForAuthorization(@NonNull Long projectId, @NonNull Long organizationId,
             @NotEmpty List<ProjectMember> members) {
-        ProjectEntity project = repository.findByIdAndOrganizationId(projectId, organizationId)
+        if (projectId == ALL_PROJECTS_ID) {
+            QueryProjectParams params =
+                    QueryProjectParams.builder().name("").archived(false).builtin(false).build();
+            Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE);
+            Page<Project> pageResult = list(params, pageable);
+            List<UserResourceRole> allUserResourceRoles = new ArrayList<>();
+            pageResult.getContent().forEach(project -> {
+                allUserResourceRoles.addAll(
+                        members.stream().map(member -> member2UserResourceRole(member, project.getId())).collect(
+                                Collectors.toList()));
+            });
+            resourceRoleService.saveAll(allUserResourceRoles, organizationId);
+            return;
+        }
+        repository.findByIdAndOrganizationId(projectId, organizationId)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", projectId));
-
         members.forEach(m -> PreConditions.validArgumentState(
                 userOrganizationService.userBelongsToOrganization(m.getId(), organizationId),
                 ErrorCodes.UnauthorizedDataAccess, null, null));
-
-        List<UserResourceRole> userResourceRoles = resourceRoleService.saveAll(
+        resourceRoleService.saveAll(
                 members.stream()
                         .map(member -> member2UserResourceRole(member, projectId))
                         .collect(Collectors.toList()),
                 organizationId);
-        return entityToModelWithoutCurrentUser(project, userResourceRoles);
     }
 
 

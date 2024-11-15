@@ -97,6 +97,9 @@ public class AutomationActionChecker {
     private void checkBindProjectRole(Map<String, Object> arguments) {
         PreConditions.notNull(arguments.get("projectId"), "project id");
         Long projectId = ((Integer) arguments.get("projectId")).longValue();
+        if (projectId == 0) {
+            return;
+        }
         ProjectEntity projectEntity = projectService.nullSafeGet(projectId);
         if (!Objects.equals(projectEntity.getOrganizationId(), authenticationFacade.currentOrganizationId())) {
             throw new AccessDeniedException("Could not bind project from different organizations!");
