@@ -31,9 +31,9 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import com.oceanbase.odc.common.event.AbstractEvent;
 import com.oceanbase.odc.common.event.EventPublisher;
-import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.datasource.event.ConnectionResetEvent;
 import com.oceanbase.odc.core.datasource.event.GetConnectionFailedEvent;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 
