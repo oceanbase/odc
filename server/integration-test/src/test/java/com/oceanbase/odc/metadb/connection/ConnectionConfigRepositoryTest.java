@@ -337,6 +337,17 @@ public class ConnectionConfigRepositoryTest extends ServiceTestEnv {
     }
 
     @Test
+    public void findSyncableConnectionsByOrganizationIdsIn_TenantNotExists_Succeed() {
+        ConnectionEntity c1 = createEntity(ConnectionVisibleScope.ORGANIZATION);
+        ConnectionEntity saved = repository.save(c1);
+        ConnectionSyncHistoryEntity historyEntity = createTenantNotExistsSyncHistoryEntity(saved.getId());
+        syncHistoryRepository.save(historyEntity);
+        List<ConnectionEntity> syncableConnections =
+                repository.findSyncableConnectionsByOrganizationIdIn(Arrays.asList(ORGANIZATION_ID));
+        Assert.assertEquals(0, syncableConnections.size());
+    }
+
+    @Test
     public void findSyncableConnectionsByOrganizationIdsIn_OrganizationNotExists_Succeed() {
         ConnectionEntity c1 = createEntity(ConnectionVisibleScope.ORGANIZATION);
         repository.save(c1);
@@ -380,6 +391,13 @@ public class ConnectionConfigRepositoryTest extends ServiceTestEnv {
         ConnectionSyncHistoryEntity entity = createSyncHistoryEntity(connectionId);
         entity.setLastSyncResult(ConnectionSyncResult.FAILURE);
         entity.setLastSyncErrorReason(ConnectionSyncErrorReason.CLUSTER_NOT_EXISTS);
+        return entity;
+    }
+
+    private ConnectionSyncHistoryEntity createTenantNotExistsSyncHistoryEntity(Long connectionId) {
+        ConnectionSyncHistoryEntity entity = createSyncHistoryEntity(connectionId);
+        entity.setLastSyncResult(ConnectionSyncResult.FAILURE);
+        entity.setLastSyncErrorReason(ConnectionSyncErrorReason.TENANT_NOT_EXISTS);
         return entity;
     }
 
