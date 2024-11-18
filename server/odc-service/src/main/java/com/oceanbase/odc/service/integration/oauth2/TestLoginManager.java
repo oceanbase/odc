@@ -206,8 +206,7 @@ public class TestLoginManager {
                     authenticationFacade.currentOrganizationId(),
                     ssoIntegrationConfig);
             ssoIntegrationConfig.fillDecryptSecret(config.getEncryption().getSecret());
-        }
-        if (config.getEncryption().getSecret() == null) {
+        } else if (config.getEncryption().getSecret() == null) {
             Verify.verify(integration.isPresent(), "lack of secret");
             IntegrationEntity integrationEntity = integration.get();
             ssoIntegrationConfig.fillDecryptSecret(integrationService.decodeSecret(integrationEntity.getSecret(),
