@@ -756,11 +756,12 @@ public class ScheduleService {
             params.setCreatorIds(creatorIds);
         }
         if (!CollectionUtils.isEmpty(params.getDataSourceIds()) || StringUtils.isNotEmpty(params.getClusterId())
-                || StringUtils.isNotEmpty(params.getTenantId())) {
+                || StringUtils.isNotEmpty(params.getTenantId()) || StringUtils.isNotEmpty(params.getDataSourceName())) {
             QueryConnectionParams datasourceParams = QueryConnectionParams.builder()
                     .ids(params.getDataSourceIds())
                     .clusterNames(Collections.singletonList(params.getClusterId()))
                     .tenantNames(Collections.singletonList(params.getTenantId()))
+                    .name(params.getDataSourceName())
                     .build();
             Set<Long> datasourceIds = connectionService.listSkipPermissionCheck(datasourceParams).stream().map(
                     ConnectionConfig::getId).collect(
