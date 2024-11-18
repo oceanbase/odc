@@ -45,6 +45,8 @@ import com.oceanbase.tools.dbbrowser.model.DBSchema;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 
+import io.swagger.annotations.ApiOperation;
+
 @RestController
 @RequestMapping("api/v2/connect/sessions")
 public class DBTableController {
@@ -122,6 +124,7 @@ public class DBTableController {
         return Responses.list(this.partitionPlanService.getPartitionKeyDataTypes(sessionId, databaseId, tableName));
     }
 
+    @ApiOperation(value = "syncExternalTableFiles", notes = "sync external table files")
     @PostMapping(value = "/{sessionId}/databases/{databaseName}/externalTables/"
             + "{externalTableName}/syncExternalTableFiles")
     public SuccessResponse<Boolean> syncExternalTableFiles(@PathVariable String sessionId,
