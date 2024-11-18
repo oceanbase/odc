@@ -237,6 +237,7 @@ public class ScheduleController {
     public PaginatedResponse<ScheduleOverview> list(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
             @RequestParam(required = false, name = "dataSourceId") Set<Long> datasourceIds,
+            @RequestParam(required = false, name = "dataSourceName") String dataSourceName,
             @RequestParam(required = false, name = "databaseName") String databaseName,
             @RequestParam(required = false, name = "tenantId") String tenantId,
             @RequestParam(required = false, name = "clusterId") String clusterId,
@@ -253,6 +254,7 @@ public class ScheduleController {
         QueryScheduleParams req = QueryScheduleParams.builder()
                 .id(id)
                 .name(name)
+                .dataSourceName(dataSourceName)
                 .dataSourceIds(datasourceIds)
                 .databaseName(databaseName)
                 .tenantId(tenantId)
