@@ -244,7 +244,7 @@ public class IntegrationService {
         return new IntegrationConfig(entity);
     }
 
-    private IntegrationConfig getDecodeConfig(IntegrationEntity entity) {
+    public IntegrationConfig getDecodeConfig(IntegrationEntity entity) {
         IntegrationConfig integrationConfig = new IntegrationConfig(entity);
         String secret = decodeSecret(entity.getSecret(), entity.getSalt(), entity.getOrganizationId());
         integrationConfig.getEncryption().setSecret(secret);

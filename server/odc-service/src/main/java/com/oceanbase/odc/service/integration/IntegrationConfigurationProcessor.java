@@ -67,7 +67,7 @@ public class IntegrationConfigurationProcessor {
         checkNotEnabledInDbBeforeSave(enabled, organizationId, integrationId);
     }
 
-    private void fillSamlSecret(IntegrationConfig config, IntegrationConfig savedConfig, Long organizationId,
+    public void fillSamlSecret(IntegrationConfig config, IntegrationConfig savedConfig, Long organizationId,
             SSOIntegrationConfig ssoIntegrationConfig) {
         if ("SAML".equals(ssoIntegrationConfig.getType()) && config.getEncryption().getSecret() == null) {
             SecretInfo secretInfo = new SecretInfo();

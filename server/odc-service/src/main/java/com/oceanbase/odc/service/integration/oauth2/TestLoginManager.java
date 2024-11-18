@@ -43,6 +43,7 @@ import com.oceanbase.odc.service.common.util.UrlUtils;
 import com.oceanbase.odc.service.common.util.WebRequestUtils;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.TestLoginTerminateException;
+import com.oceanbase.odc.service.integration.IntegrationConfigurationProcessor;
 import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.integration.ldap.LdapConfigRegistrationManager;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
@@ -90,6 +91,9 @@ public class TestLoginManager {
 
     @Autowired(required = false)
     private AddableRelyingPartyRegistrationRepository addableRelyingPartyRegistrationRepository;
+
+    @Autowired
+    private IntegrationConfigurationProcessor integrationConfigurationProcessor;
 
     @SkipAuthorize
     public static boolean isOAuthTestLoginRequest(HttpServletRequest request) {
@@ -162,14 +166,7 @@ public class TestLoginManager {
     public SSOTestInfo getSSOTestInfo(IntegrationConfig config, String type) {
         SSOIntegrationConfig ssoConfig = SSOIntegrationConfig.of(config, authenticationFacade.currentOrganizationId());
         Verify.verify(ssoConfig.isOauth2OrOidc() || ssoConfig.isLdap() || ssoConfig.isSaml(), "not support sso type");
-        if (config.getEncryption().getSecret() == null) {
-            Optional<IntegrationEntity> integration = integrationService.findByTypeAndOrganizationIdAndName(
-                    IntegrationType.SSO, authenticationFacade.currentOrganizationId(), config.getName());
-            Verify.verify(integration.isPresent(), "lack of secret");
-            IntegrationEntity integrationEntity = integration.get();
-            ssoConfig.fillDecryptSecret(integrationService.decodeSecret(integrationEntity.getSecret(),
-                    integrationEntity.getSalt(), integrationEntity.getOrganizationId()));
-        }
+        fillTestSecret(config, ssoConfig);
         String testId = statefulUuidStateIdGenerator.generateStateId("SSO_TEST_ID");
         String redirectUrl = null;
         String testRegistrationId = null;
@@ -195,6 +192,27 @@ public class TestLoginManager {
             addableRelyingPartyRegistrationRepository.addTestConfig(ssoConfig);
         }
         return new SSOTestInfo(redirectUrl, testId, testRegistrationId);
+    }
+
+    private void fillTestSecret(IntegrationConfig config, SSOIntegrationConfig ssoIntegrationConfig) {
+        Optional<IntegrationEntity> integration = integrationService.findByTypeAndOrganizationIdAndName(
+                IntegrationType.SSO, authenticationFacade.currentOrganizationId(), config.getName());
+        if (ssoIntegrationConfig.isLdap()) {
+            IntegrationConfig savedConfig = null;
+            if (integration.isPresent()) {
+                savedConfig = integrationService.getDecodeConfig(integration.get());
+            }
+            integrationConfigurationProcessor.fillSamlSecret(config, savedConfig,
+                    authenticationFacade.currentOrganizationId(),
+                    ssoIntegrationConfig);
+            ssoIntegrationConfig.fillDecryptSecret(config.getEncryption().getSecret());
+        }
+        if (config.getEncryption().getSecret() == null) {
+            Verify.verify(integration.isPresent(), "lack of secret");
+            IntegrationEntity integrationEntity = integration.get();
+            ssoIntegrationConfig.fillDecryptSecret(integrationService.decodeSecret(integrationEntity.getSecret(),
+                    integrationEntity.getSalt(), integrationEntity.getOrganizationId()));
+        }
     }
 
     @Nullable
