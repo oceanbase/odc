@@ -435,8 +435,9 @@ public class ScheduleResponseMapperFactory {
         Set<Long> connectionIds =
                 databases.stream().filter(e -> e.getDataSource() != null && e.getDataSource().getId() != null)
                         .map(e -> e.getDataSource().getId()).collect(Collectors.toSet());
-        Map<Long, ConnectionConfig> id2Connection = dataSourceService.innerListByIds(connectionIds)
-                .stream().collect(Collectors.toMap(ConnectionConfig::getId, o -> o));
+        Map<Long, ConnectionConfig> id2Connection =
+                dataSourceService.internalListSkipUserCheck(connectionIds, false, false)
+                        .stream().collect(Collectors.toMap(ConnectionConfig::getId, o -> o));
         databases.forEach(database -> {
             if (id2Connection.containsKey(database.getDataSource().getId())) {
                 database.setDataSource(id2Connection.get(database.getDataSource().getId()));
