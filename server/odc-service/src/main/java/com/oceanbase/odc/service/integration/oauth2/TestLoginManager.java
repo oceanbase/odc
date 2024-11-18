@@ -197,7 +197,7 @@ public class TestLoginManager {
     private void fillTestSecret(IntegrationConfig config, SSOIntegrationConfig ssoIntegrationConfig) {
         Optional<IntegrationEntity> integration = integrationService.findByTypeAndOrganizationIdAndName(
                 IntegrationType.SSO, authenticationFacade.currentOrganizationId(), config.getName());
-        if (ssoIntegrationConfig.isLdap()) {
+        if (ssoIntegrationConfig.isSaml()) {
             IntegrationConfig savedConfig = null;
             if (integration.isPresent()) {
                 savedConfig = integrationService.getDecodeConfig(integration.get());
