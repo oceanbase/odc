@@ -244,11 +244,15 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
          * In order to adapt to the front-end only the expression field is used for Hash、List and Range
          * partition types
          */
+        // 判断分区选项的类型是否支持表达式，并且表达式为空
         if (Objects.nonNull(partition.getPartitionOption().getType())
             && partition.getPartitionOption().getType().supportExpression()
             && StringUtils.isBlank(partition.getPartitionOption().getExpression())) {
+            // 获取列名列表
             List<String> columnNames = partition.getPartitionOption().getColumnNames();
+            // 如果列名列表不为空
             if (!columnNames.isEmpty()) {
+                // 将列名列表中的元素用逗号连接起来，作为表达式
                 partition.getPartitionOption().setExpression(String.join(", ", columnNames));
             }
         }
@@ -257,30 +261,40 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
             return partition;
         }
         // TODO 目前 ODC 仅支持 HASH/KEY 二级分区, 其它类型后续需补充
-        // 设置子分区模板
+        // 设置分区是否为子分区模板
         partition.setSubpartitionTemplated(partitionStmt.getSubPartitionOption().getTemplates() != null);
+        // 获取子分区选项
         SubPartitionOption subOption = partitionStmt.getSubPartitionOption();
+        // 获取子分区类型
         String type = partitionStmt.getSubPartitionOption().getType();
         if ("key".equals(type.toLowerCase())) {
+            // 如果子分区类型为KEY
             subPartitionOption.setType(DBTablePartitionType.KEY);
+            // 设置子分区列名
             subPartitionOption.setColumnNames(subOption.getSubPartitionTargets() == null ? null
                 : subOption.getSubPartitionTargets().stream().map(item -> removeIdentifiers(item.getText()))
                     .collect(Collectors.toList()));
+            // 设置子分区数量
             subPartitionOption
                 .setPartitionsNum(partition.getSubpartitionTemplated() ? subOption.getTemplates().size()
                     : partitionStmt.getPartitionElements().get(0).getSubPartitionElements().size());
         } else if ("hash".equals(type.toLowerCase())) {
+            // 如果子分区类型为HASH
             subPartitionOption.setType(DBTablePartitionType.HASH);
             Expression expression = subOption.getSubPartitionTargets().get(0);
             if (expression instanceof ColumnReference) {
+                // 如果子分区表达式为列引用
                 subPartitionOption.setColumnNames(Collections.singletonList(removeIdentifiers(expression.getText())));
             } else {
+                // 如果子分区表达式不为列引用
                 subPartitionOption.setExpression(expression.getText());
             }
+            // 设置子分区数量
             subPartitionOption
                 .setPartitionsNum(partition.getSubpartitionTemplated() ? subOption.getTemplates().size()
                     : partitionStmt.getPartitionElements().get(0).getSubPartitionElements().size());
         } else {
+            // 如果子分区类型不为HASH或KEY
             partition.setWarning("Only support HASH/KEY subpartition currently");
         }
         return partition;
