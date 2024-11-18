@@ -36,6 +36,8 @@ public interface TaskResult {
 
     String getExecutorEndpoint();
 
+    String getErrorMessage();
+
     double getProgress();
 
     Map<String, String> getLogMetadata();

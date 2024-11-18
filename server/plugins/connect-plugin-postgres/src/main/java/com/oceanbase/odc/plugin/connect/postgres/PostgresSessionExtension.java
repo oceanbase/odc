@@ -15,11 +15,19 @@
  */
 package com.oceanbase.odc.plugin.connect.postgres;
 
+import java.sql.Connection;
+
 import org.pf4j.Extension;
 
+import com.oceanbase.odc.plugin.connect.model.DBClientInfo;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLSessionExtension;
 
 @Extension
 public class PostgresSessionExtension extends OBMySQLSessionExtension {
+
+    @Override
+    public boolean setClientInfo(Connection connection, DBClientInfo clientInfo) {
+        return false;
+    }
 
 }

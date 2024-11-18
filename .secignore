@@ -124,6 +124,7 @@
 /server/integration-test/src/test/resources/ssl/ca.pem
 /libs/ob-sql-parser/src/main/resources/**
 /server/integration-test/src/test/java/com/oceanbase/odc/service/connection/DefaultCertificateStorageTest.java
+/server/odc-common/src/test/java/com/oceanbase/odc/common/security/SensitiveDataUtilsTest.java
 --------------------------------------------------------
 # Set the ignored fold to escape the Chinese scan by GLOB wildcard
 --------------------------------------------------------

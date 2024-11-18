@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.notification.helper;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -45,6 +46,7 @@ import lombok.NonNull;
  */
 @Component
 public class ChannelConfigValidator {
+    private static final Pattern ILLEGAL_CHARACTERS_PATTERN = Pattern.compile("[@#;$,\\[\\]{}\\-\\\\^\"<>]");
     private static final String DINGTALK_WEBHOOK_PREFIX = "https://oapi.dingtalk.com/robot";
     private static final String FEISHU_WEBHOOK_PREFIX = "https://open.feishu.cn/open-apis/bot";
     private static final String WECOM_WEBHOOK_PREFIX = "https://qyapi.weixin.qq.com/cgi-bin/webhook";
@@ -96,6 +98,9 @@ public class ChannelConfigValidator {
         Verify.verify(
                 channelConfig.getWebhook().startsWith("http://") || channelConfig.getWebhook().startsWith("https://"),
                 "Webhook should start with 'http://' or 'https://'");
+        if (ILLEGAL_CHARACTERS_PATTERN.matcher(channelConfig.getWebhook()).find()) {
+            throw new IllegalArgumentException("Webhook contains illegal characters");
+        }
         try {
             if (CollectionUtils.isNotEmpty(integrationConfigProperties.getUrlWhiteList())) {
                 Verify.verify(SSRFChecker.checkUrlInWhiteList(channelConfig.getWebhook(),

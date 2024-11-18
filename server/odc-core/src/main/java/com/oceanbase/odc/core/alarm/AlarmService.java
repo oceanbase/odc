@@ -21,6 +21,7 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.ServiceLoader;
 
 import javax.annotation.Nullable;
@@ -44,27 +45,47 @@ class AlarmService {
         }
     }
 
-    public void alarm(String eventName, String eventMessage) {
+    public void alarm(String eventName, Map<String, String> eventMessage) {
         monitor(eventName, eventMessage, AlarmLevel.ERROR, null);
     }
 
-    public void alarm(String eventName, Throwable e) {
-        monitor(eventName, e.getMessage(), AlarmLevel.ERROR, e);
+    public void alarm(String eventName, String eventMessage) {
+        monitor(eventName, AlarmUtils.createAlarmMapBuilder().item(AlarmUtils.MESSAGE_NAME, eventMessage).build(),
+                AlarmLevel.ERROR,
+                null);
     }
 
-    public void warn(String eventName, String eventMessage) {
+    public void alarm(String eventName, Throwable e) {
+        monitor(eventName, AlarmUtils.createAlarmMapBuilder().item(AlarmUtils.MESSAGE_NAME, e.getMessage()).build(),
+                AlarmLevel.ERROR,
+                e);
+    }
+
+    public void warn(String eventName, Map<String, String> eventMessage) {
         monitor(eventName, eventMessage, AlarmLevel.WARN, null);
     }
 
-    public void warn(String eventName, Throwable e) {
-        monitor(eventName, e.getMessage(), AlarmLevel.WARN, e);
+    public void warn(String eventName, String eventMessage) {
+        monitor(eventName, AlarmUtils.createAlarmMapBuilder().item(AlarmUtils.MESSAGE_NAME, eventMessage).build(),
+                AlarmLevel.WARN, null);
     }
 
-    public void info(String eventName, String eventMessage) {
+    public void warn(String eventName, Throwable e) {
+        monitor(eventName, AlarmUtils.createAlarmMapBuilder().item(AlarmUtils.MESSAGE_NAME, e.getMessage()).build(),
+                AlarmLevel.WARN,
+                e);
+    }
+
+    public void info(String eventName, Map<String, String> eventMessage) {
         monitor(eventName, eventMessage, AlarmLevel.INFO, null);
     }
 
-    private void monitor(String eventName, String eventMessage, AlarmLevel level, @Nullable Throwable e) {
+    public void info(String eventName, String eventMessage) {
+        monitor(eventName, AlarmUtils.createAlarmMapBuilder().item(AlarmUtils.MESSAGE_NAME, eventMessage).build(),
+                AlarmLevel.INFO, null);
+    }
+
+    private void monitor(String eventName, Map<String, String> eventMessage, AlarmLevel level, @Nullable Throwable e) {
         String msg = String.format("eventName=%s, eventMessage=%s .", eventName, eventMessage);
         switch (level) {
             case INFO:

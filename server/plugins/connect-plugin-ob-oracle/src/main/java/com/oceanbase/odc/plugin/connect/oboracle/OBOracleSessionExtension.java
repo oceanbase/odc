@@ -16,6 +16,7 @@
 package com.oceanbase.odc.plugin.connect.oboracle;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Objects;
 
@@ -28,6 +29,8 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource.CloseIgnoreInvocationHandler;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
+import com.oceanbase.odc.plugin.connect.model.DBClientInfo;
+import com.oceanbase.tools.dbbrowser.util.VersionUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,6 +42,8 @@ import lombok.extern.slf4j.Slf4j;
 @Extension
 @Slf4j
 public class OBOracleSessionExtension implements SessionExtensionPoint {
+
+    private final OBOracleInformationExtension obOracleInformationExtension = new OBOracleInformationExtension();
 
     @Override
     public void killQuery(Connection connection, String connectionId) {
@@ -107,4 +112,25 @@ public class OBOracleSessionExtension implements SessionExtensionPoint {
     public String getAlterVariableStatement(String variableScope, String variableName, String variableValue) {
         return String.format("set %s %s=%s", variableScope, variableName, variableValue);
     }
+
+    @Override
+    public boolean setClientInfo(Connection connection, DBClientInfo clientInfo) {
+        String dbVersion = obOracleInformationExtension.getDBVersion(connection);
+        if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
+            return false;
+        }
+        String SET_MODULE_TEMPLATE =
+                "BEGIN DBMS_APPLICATION_INFO.SET_MODULE(module_name => ? , action_name => ? ); DBMS_APPLICATION_INFO.SET_CLIENT_INFO(?); END";
+        try (PreparedStatement pstmt = connection.prepareStatement(SET_MODULE_TEMPLATE)) {
+            pstmt.setString(1, clientInfo.getModule());
+            pstmt.setString(2, clientInfo.getAction());
+            pstmt.setString(3, clientInfo.getContext());
+            pstmt.execute();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+
 }
