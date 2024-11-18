@@ -62,8 +62,7 @@ import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.rule.SqlCheckRules;
-import com.oceanbase.odc.service.task.TaskContext;
-import com.oceanbase.odc.service.task.base.BaseTask;
+import com.oceanbase.odc.service.task.base.TaskBase;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -76,7 +75,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2024/1/30 11:02
  */
 @Slf4j
-public class PreCheckTask extends BaseTask<FlowTaskResult> {
+public class PreCheckTask extends TaskBase<FlowTaskResult> {
 
     private PreCheckTaskParameters parameters;
     private List<OffsetString> userInputSqls;
@@ -88,20 +87,22 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
     private SqlCheckTaskResult sqlCheckResult = null;
     private DatabasePermissionCheckResult permissionCheckResult = null;
 
+    public PreCheckTask() {}
+
     @Override
     protected void doInit(JobContext context) throws Exception {
         this.taskId = getJobContext().getJobIdentity().getId();
         log.info("Initiating pre-check task, taskId={}", taskId);
-        this.parameters = JobUtils.fromJson(getJobParameters().get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
-                PreCheckTaskParameters.class);
+        this.parameters =
+                JobUtils.fromJson(jobContext.getJobParameters().get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
+                        PreCheckTaskParameters.class);
         log.info("Load pre-check task parameters successfully, taskId={}", taskId);
         loadUserInputSqlContent();
         loadUploadFileInputStream();
         log.info("Load sql content successfully, taskId={}", taskId);
     }
 
-    @Override
-    protected boolean doStart(JobContext context, TaskContext taskContext) throws Exception {
+    public boolean start() throws Exception {
         try {
             List<OffsetString> sqls = new ArrayList<>();
             this.overLimit = getSqlContentUntilOverLimit(sqls, this.parameters.getMaxReadContentBytes());
@@ -118,7 +119,7 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
             this.success = true;
             log.info("Pre-check task end up running, task id: {}", taskId);
         } catch (Throwable e) {
-            taskContext.getExceptionListener().onException(e);
+            context.getExceptionListener().onException(e);
             throw e;
         } finally {
             tryCloseInputStream();
@@ -127,12 +128,12 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected void doStop() throws Exception {
+    public void stop() {
         tryCloseInputStream();
     }
 
     @Override
-    protected void doClose() throws Exception {
+    public void close() {
         tryCloseInputStream();
     }
 

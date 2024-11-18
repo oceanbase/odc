@@ -263,6 +263,11 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public boolean syncExternalTableFiles(String schemaName, String tableName) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
     public List<DBObjectIdentity> listViews(String schemaName) {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("select OWNER as schema_name, 'VIEW' as type, view_name as name from ");
@@ -637,6 +642,16 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     public List<DBTableColumn> listBasicViewColumns(String schemaName, String viewName) {
         String sql = sqlMapper.getSql(Statements.LIST_BASIC_VIEW_COLUMNS);
         return jdbcOperations.query(sql, new Object[] {schemaName, viewName}, listBasicColumnsRowMapper());
+    }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicExternalTableColumns(String schemaName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String externalTableName) {
+        throw new UnsupportedOperationException("not support yet");
     }
 
     @Override

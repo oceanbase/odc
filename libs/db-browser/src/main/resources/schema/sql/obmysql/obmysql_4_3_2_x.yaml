@@ -34,6 +34,41 @@ sqls:
     ORDER BY
       TABLE_NAME ASC,
       ORDINAL_POSITION ASC
+  list-basic-external-table-columns: |-
+    SELECT
+      TABLE_SCHEMA,
+      TABLE_NAME,
+      COLUMN_NAME,
+      DATA_TYPE,
+      COLUMN_COMMENT
+    FROM
+      information_schema.columns
+    WHERE
+      TABLE_SCHEMA = ? AND TABLE_NAME = ?
+    ORDER BY
+      ORDINAL_POSITION ASC
+  list-basic-schema-external-table-columns: |-
+    SELECT
+      TABLE_SCHEMA,
+      TABLE_NAME,
+      COLUMN_NAME,
+      DATA_TYPE,
+      COLUMN_COMMENT
+    FROM
+      information_schema.columns
+    WHERE
+      TABLE_SCHEMA = ?
+      AND TABLE_NAME IN (
+        SELECT
+          TABLE_NAME
+        FROM
+          information_schema.tables
+        WHERE
+          TABLE_SCHEMA = ? AND TABLE_TYPE = 'EXTERNAL TABLE'
+      )
+    ORDER BY
+      TABLE_NAME ASC,
+      ORDINAL_POSITION ASC
   list-basic-view-columns: |-
     SELECT
       TABLE_SCHEMA,

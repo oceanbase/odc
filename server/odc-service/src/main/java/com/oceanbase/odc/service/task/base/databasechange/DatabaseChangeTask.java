@@ -91,8 +91,7 @@ import com.oceanbase.odc.service.session.OdcStatementCallBack;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.initializer.ConsoleTimeoutInitializer;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
-import com.oceanbase.odc.service.task.TaskContext;
-import com.oceanbase.odc.service.task.base.BaseTask;
+import com.oceanbase.odc.service.task.base.TaskBase;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobServerUrls;
@@ -113,7 +112,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 
 @Slf4j
-public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
+public class DatabaseChangeTask extends TaskBase<FlowTaskResult> {
 
     private ConnectionSession connectionSession;
     private DatabaseChangeTaskParameters parameters;
@@ -140,12 +139,15 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
     private volatile boolean canceled = false;
     private long taskId;
 
+    public DatabaseChangeTask() {}
+
     @Override
     protected void doInit(JobContext jobContext) {
         taskId = getJobContext().getJobIdentity().getId();
         log.info("Initiating database change task, taskId={}", taskId);
-        this.parameters = JobUtils.fromJson(getJobParameters().get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
-                DatabaseChangeTaskParameters.class);
+        this.parameters =
+                JobUtils.fromJson(jobContext.getJobParameters().get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
+                        DatabaseChangeTaskParameters.class);
         this.databaseChangeParameters =
                 JsonUtils.fromJson(this.parameters.getParameterJson(), DatabaseChangeParameters.class);
         log.info("Load database change task parameters successfully, taskId={}", taskId);
@@ -186,7 +188,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected boolean doStart(JobContext context, TaskContext taskContext) throws JobException {
+    public boolean start() throws JobException {
         try {
             int index = 0;
             while (sqlIterator.hasNext()) {
@@ -244,7 +246,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
                         aborted = true;
                         break;
                     }
-                    taskContext.getExceptionListener().onException(e);
+                    context.getExceptionListener().onException(e);
                 }
             }
             writeZipFile();
@@ -260,14 +262,14 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected void doStop() {
+    public void stop() {
         tryExpireConnectionSession();
         tryCloseInputStream();
         canceled = true;
     }
 
     @Override
-    protected void doClose() throws Exception {
+    public void close() throws Exception {
         tryExpireConnectionSession();
         tryCloseInputStream();
     }

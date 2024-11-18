@@ -17,8 +17,6 @@ package com.oceanbase.odc.agent.runtime;
 
 import java.util.concurrent.Future;
 
-import com.oceanbase.odc.service.task.Task;
-
 import lombok.Data;
 
 /**
@@ -26,8 +24,8 @@ import lombok.Data;
  * @date 2024/10/24 14:32
  */
 @Data
-public class TaskRuntimeInfo {
-    private final Task<?> task;
-    private final Future<?> future;
+class TaskRuntimeInfo {
+    private final TaskContainer<?> taskContainer;
+    private Future<?> future;
     private final TaskMonitor taskMonitor;
 }

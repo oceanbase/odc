@@ -153,6 +153,11 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public boolean syncExternalTableFiles(String schemaName, String tableName) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
     public List<DBObjectIdentity> listViews(String schemaName) {
         throw new UnsupportedOperationException("Not supported yet");
     }
@@ -274,6 +279,16 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     @Override
     public List<DBTableColumn> listBasicViewColumns(String schemaName, String viewName) {
         throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicExternalTableColumns(String schemaName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String externalTableName) {
+        throw new UnsupportedOperationException("not support yet");
     }
 
     @Override

@@ -18,6 +18,7 @@ package com.oceanbase.odc.common.util;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.stream.IntStream;
 
 import com.google.common.base.Splitter;
@@ -126,6 +127,36 @@ public class MapUtils {
 
     public static int size(final Map<?, ?> map) {
         return org.apache.commons.collections4.MapUtils.size(map);
+    }
+
+    /**
+     * compare map, null map and empty map consider as equals
+     * 
+     * @param src
+     * @param target
+     * @param <Key> key of map
+     * @param <Value> value of map
+     * @param equalFunction function with argument value to compare if value instance is equals
+     * @return true is map is equals
+     */
+    public static <Key, Value> boolean isEqual(Map<Key, Value> src, Map<Key, Value> target,
+            BiFunction<Value, Value, Boolean> equalFunction) {
+        int currentSize = size(src);
+        int targetSize = size(target);
+        // map size not equals
+        if (currentSize != targetSize) {
+            return false;
+        }
+        if (currentSize == 0) {
+            return true;
+        }
+        // check key map
+        for (Map.Entry<Key, Value> entry : src.entrySet()) {
+            if (!equalFunction.apply(entry.getValue(), target.get(entry.getKey()))) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }

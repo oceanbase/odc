@@ -31,5 +31,8 @@ public class PostgresTableExtension extends OBMySQLTableExtension {
         return DBAccessorUtil.getSchemaAccessor(connection);
     }
 
-
+    @Override
+    public boolean syncExternalTableFiles(Connection connection, String schemaName, String tableName) {
+        throw new UnsupportedOperationException("not implemented yet");
+    }
 }

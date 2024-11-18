@@ -284,4 +284,79 @@ public class SqlParserTest {
         Assert.assertEquals(SqlType.ROLLBACK, actual.getSqlType());
     }
 
+    @Test
+    public void parseOracle_commentOnTable_getSqlTypeSucceed() {
+        ParseSqlResult actual = SqlParser.parseOracle("comment on table a is 'xxx'");
+        Assert.assertEquals(DBObjectType.TABLE, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.COMMENT_ON, actual.getSqlType());
+    }
+
+    @Test
+    public void parseOracle_commentOnColumn_getSqlTypeSucceed() {
+        ParseSqlResult actual = SqlParser.parseOracle("comment on column a is 'xxx'");
+        Assert.assertEquals(DBObjectType.COLUMN, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.COMMENT_ON, actual.getSqlType());
+    }
+
+    @Test
+    public void parseOracle_call_getSqlTypeSucceed() {
+        ParseSqlResult actual = SqlParser.parseOracle("call proc()");
+        Assert.assertEquals(DBObjectType.PROCEDURE, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.CALL, actual.getSqlType());
+    }
+
+
+    @Test
+    public void parseMysql_setSession_getSqlTypeSucceed() {
+        ParseSqlResult actual = SqlParser.parseMysql("SET SESSION time_zone = '+00:00';");
+        Assert.assertEquals(DBObjectType.SESSION_VARIABLE, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.SET_SESSION, actual.getSqlType());
+        Assert.assertEquals(SqlType.SET, actual.getSqlType().getParentType());
+    }
+
+    @Test
+    public void parseMysql_setGlobal_getSqlTypeSucceed() {
+        ParseSqlResult actual = SqlParser.parseMysql("SET GLOBAL time_zone = '+00:00';");
+        Assert.assertEquals(DBObjectType.GLOBAL_VARIABLE, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.SET, actual.getSqlType());
+    }
+
+    @Test
+    public void parseMysql_set_getSqlTypeSucceed() {
+        ParseSqlResult actual = SqlParser.parseMysql("SET time_zone = '+00:00';");
+        Assert.assertEquals(DBObjectType.SYSTEM_VARIABLE, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.SET, actual.getSqlType());
+    }
+
+    @Test
+    public void parseOracle_alterSession_getSqlTypeSucceed() {
+        ParseSqlResult actual = SqlParser.parseOracle("alter SESSION set ob_query_timeout=6000000000;");
+        Assert.assertEquals(SqlType.ALTER_SESSION, actual.getSqlType());
+        Assert.assertEquals(SqlType.ALTER, actual.getSqlType().getParentType());
+        Assert.assertEquals(DBObjectType.OTHERS, actual.getDbObjectType());
+    }
+
+    @Test
+    public void parseOracle_setSession_getSqlTypeSucceed() {
+        ParseSqlResult actual = SqlParser.parseOracle("set SESSION ob_query_timeout=6000000000;");
+        Assert.assertEquals(SqlType.SET_SESSION, actual.getSqlType());
+        Assert.assertEquals(SqlType.SET, actual.getSqlType().getParentType());
+        Assert.assertEquals(DBObjectType.SESSION_VARIABLE, actual.getDbObjectType());
+    }
+
+    @Test
+    public void parseOracle_setGlobal_getSqlTypeSucceed() {
+        ParseSqlResult actual = SqlParser.parseOracle("SET GLOBAL time_zone = '+00:00';");
+        Assert.assertEquals(DBObjectType.GLOBAL_VARIABLE, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.SET, actual.getSqlType());
+    }
+
+    @Test
+    public void parseOracle_alterSystem_getSqlTypeSucceed() {
+        ParseSqlResult actual = SqlParser.parseOracle("alter system set time_zone = '+00:00';");
+        Assert.assertEquals(DBObjectType.OTHERS, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.ALTER, actual.getSqlType());
+    }
+
+
 }

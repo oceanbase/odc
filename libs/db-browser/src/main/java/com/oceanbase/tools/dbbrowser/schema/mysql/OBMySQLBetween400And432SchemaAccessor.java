@@ -16,10 +16,12 @@
 package com.oceanbase.tools.dbbrowser.schema.mysql;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
 /**
  * @description: applicable to OB [4.0.0,4.3.2)
@@ -56,4 +58,15 @@ public class OBMySQLBetween400And432SchemaAccessor extends OBMySQLSchemaAccessor
     public boolean isExternalTable(String schemaName, String tableName) {
         return false;
     }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicExternalTableColumns(String schemaName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String externalTableName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
 }

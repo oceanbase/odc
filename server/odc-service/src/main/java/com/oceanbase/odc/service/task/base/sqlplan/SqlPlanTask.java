@@ -69,8 +69,7 @@ import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.initializer.ConsoleTimeoutInitializer;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanTaskResult;
-import com.oceanbase.odc.service.task.TaskContext;
-import com.oceanbase.odc.service.task.base.BaseTask;
+import com.oceanbase.odc.service.task.base.TaskBase;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.exception.JobException;
@@ -83,7 +82,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
+public class SqlPlanTask extends TaskBase<SqlPlanTaskResult> {
 
     private PublishSqlPlanJobReq parameters;
 
@@ -111,11 +110,14 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
 
     private final List<CSVExecuteResult> csvFileMappers = new ArrayList<>();
 
+    public SqlPlanTask() {}
+
     @Override
     protected void doInit(JobContext context) {
         this.result = new SqlPlanTaskResult();
-        this.parameters = JobUtils.fromJson(getJobParameters().get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
-                PublishSqlPlanJobReq.class);
+        this.parameters =
+                JobUtils.fromJson(jobContext.getJobParameters().get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
+                        PublishSqlPlanJobReq.class);
         JobContext jobContext = getJobContext();
         Map<String, String> jobProperties = jobContext.getJobProperties();
         this.taskId = jobContext.getJobIdentity().getId();
@@ -139,7 +141,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
     }
 
     @Override
-    protected boolean doStart(JobContext context, TaskContext taskContext) throws Exception {
+    public boolean start() throws Exception {
         try {
             int index = 0;
             initSqlInputStream();
@@ -244,14 +246,13 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
         }
     }
 
-
     @Override
-    protected void doStop() {
+    public void stop() {
         canceled = true;
     }
 
     @Override
-    protected void doClose() {
+    public void close() {
         tryExpireConnectionSession();
     }
 
@@ -323,7 +324,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
 
     private ConnectionSession generateSession() {
         ConnectionConfig connectionConfig = JobUtils.fromJson(
-                getJobParameters().get(JobParametersKeyConstants.CONNECTION_CONFIG), ConnectionConfig.class);
+                jobContext.getJobParameters().get(JobParametersKeyConstants.CONNECTION_CONFIG), ConnectionConfig.class);
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(connectionConfig);
         sessionFactory.setSessionTimeoutMillis(parameters.getTimeoutMillis());
         ConnectionSession connectionSession = sessionFactory.generateSession();
