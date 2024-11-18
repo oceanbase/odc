@@ -33,6 +33,7 @@ import lombok.Data;
 public class QueryScheduleParams {
 
     private Set<Long> dataSourceIds;
+    private String dataSourceName;
     private String id;
     private String name;
     private List<ScheduleStatus> statuses;
