@@ -151,7 +151,7 @@
         <okhttp.version>4.11.0</okhttp.version>
         <jgit.version>5.13.3.202401111512-r</jgit.version>
         <registry-prometheus.version>1.9.5</registry-prometheus.version>
-        <actuator.version>2.7.12</actuator.version>
+        <actuator.version>2.7.18</actuator.version>
     </properties>
 
     <dependencyManagement>
