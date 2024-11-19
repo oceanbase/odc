@@ -74,6 +74,8 @@ public class ConnectionTesting {
     private ConnectionSSLAdaptor connectionSSLAdaptor;
     @Autowired
     private CloudMetadataClient cloudMetadataClient;
+    @Autowired
+    private FileSystemConnectionTesting fileSystemConnectionTesting;
     @Value("${odc.sdk.test-connect.query-timeout-seconds:2}")
     private int queryTimeoutSeconds = 2;
 
@@ -97,7 +99,8 @@ public class ConnectionTesting {
         if (req.getAccountType() == ConnectionAccountType.SYS_READ) {
             connectionConfig.setDefaultSchema(null);
         }
-        return test(connectionConfig);
+        return connectionConfig.getDialectType().isFileSystem() ? fileSystemConnectionTesting.test(connectionConfig)
+                : test(connectionConfig);
     }
 
     public ConnectionTestResult test(@NonNull ConnectionConfig config) {

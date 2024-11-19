@@ -312,7 +312,12 @@ public enum ErrorCodes implements ErrorCode {
      * workspace
      */
     WorkspaceDatabaseUserTypeMustBeAdmin,
-    ;
+    /**
+     * oss
+     */
+    BucketNotExist,
+    InvalidAccessKeyId,
+    SignatureDoesNotMatch;
 
     @Override
     public String code() {

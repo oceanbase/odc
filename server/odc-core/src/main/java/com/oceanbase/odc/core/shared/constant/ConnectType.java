@@ -35,6 +35,10 @@ public enum ConnectType {
     // reserved for future version
     ODP_SHARDING_OB_ORACLE(DialectType.OB_ORACLE),
     ORACLE(DialectType.ORACLE),
+    OSS(DialectType.OSS),
+    OBS(DialectType.OBS),
+    COS(DialectType.COS),
+    S3A(DialectType.S3A),
     UNKNOWN(DialectType.UNKNOWN),
 
     ;

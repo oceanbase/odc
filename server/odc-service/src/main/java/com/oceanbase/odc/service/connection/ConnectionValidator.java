@@ -43,7 +43,9 @@ public class ConnectionValidator {
     void validateForUpsert(ConnectionConfig connection) {
         PreConditions.notNull(connection, "connection");
         PreConditions.notBlank(connection.getHost(), "connection.host");
-        PreConditions.notNull(connection.getPort(), "connection.port");
+        if (!connection.getDialectType().isFileSystem()) {
+            PreConditions.notNull(connection.getPort(), "connection.port");
+        }
         PreConditions.validNotSqlInjection(connection.getUsername(), "username");
         PreConditions.validNotSqlInjection(connection.getClusterName(), "clusterName");
         PreConditions.validNotSqlInjection(connection.getTenantName(), "tenantName");
