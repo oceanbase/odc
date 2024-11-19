@@ -84,6 +84,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 import com.oceanbase.odc.service.connection.model.CreateSessionResp;
 import com.oceanbase.odc.service.connection.model.DBSessionResp;
+import com.oceanbase.odc.service.connection.model.DBSessionResp.DBSessionRespDelegate;
 import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.db.DBCharsetService;
 import com.oceanbase.odc.service.db.session.DBSessionService;
@@ -99,6 +100,7 @@ import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
 import com.oceanbase.odc.service.session.factory.LogicalConnectionSessionFactory;
 import com.oceanbase.odc.service.session.factory.StateHostGenerator;
+import com.oceanbase.tools.dbbrowser.model.DBSession;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -418,10 +420,15 @@ public class ConnectSessionService {
 
     public DBSessionResp currentDBSession(@NotNull String sessionId) {
         ConnectionSession connectionSession = nullSafeGet(SidUtils.getSessionId(sessionId), true);
+        DBSession dbSession = dbSessionService.currentSession(connectionSession);
+        DBSessionRespDelegate dbSessionRespDelegate = DBSessionRespDelegate.of(dbSession);
+        if (dbSessionRespDelegate != null) {
+            dbSessionRespDelegate
+                    .setKillCurrentQuerySupported(dbSessionManageFacade.supportKillConsoleQuery(connectionSession));
+        }
         return DBSessionResp.builder()
                 .settings(settingsService.getSessionSettings(connectionSession))
-                .session(dbSessionService.currentSession(connectionSession))
-                .killCurrentQuerySupported(dbSessionManageFacade.supportKillConsoleQuery(connectionSession))
+                .session(dbSessionRespDelegate)
                 .build();
     }
 

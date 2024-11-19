@@ -13,19 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.monitor;
+package com.oceanbase.odc.service.connection.model;
 
-import java.util.function.Supplier;
-
-public interface MeterManager {
-
-    boolean registerGauge(MeterKey meterKey, Supplier<Number> f);
-
-    boolean incrementCounter(MeterKey meterKey);
-
-    boolean incrementCounter(MeterKey meterKey, double amount);
-
-    boolean startTimerSample(String sampleKey, MeterKey meterKey);
-
-    boolean recordTimerSample(String sampleKey, MeterKey meterKey);
+public enum ConnectionSyncErrorReason {
+    CLUSTER_NOT_EXISTS,
+    TENANT_NOT_EXISTS,
+    UNKNOWN,
 }

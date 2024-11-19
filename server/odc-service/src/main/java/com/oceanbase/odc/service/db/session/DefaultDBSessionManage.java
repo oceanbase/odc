@@ -120,6 +120,9 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
 
     @Override
     public boolean supportKillConsoleQuery(ConnectionSession session) {
+        if (Objects.nonNull(session) && ConnectionSessionUtil.isLogicalSession(session)) {
+            return false;
+        }
         return true;
     }
 

@@ -16,12 +16,17 @@
 
 package com.oceanbase.odc.service.task.listener;
 
+import java.text.MessageFormat;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.event.AbstractEventListener;
+import com.oceanbase.odc.core.alarm.AlarmEventNames;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.schedule.ScheduleService;
@@ -31,6 +36,8 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.task.processor.terminate.TerminateProcessor;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
+import cn.hutool.core.text.CharSequenceUtil;
+import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -67,6 +74,7 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
             // Trigger the alarm if the task is failed or canceled.
             if (taskStatus == TaskStatus.FAILED) {
                 ScheduleAlarmUtils.fail(scheduleTask.getId());
+                alarmFailed(jobEntity, event.getErrorMessage());
             }
             if (taskStatus == TaskStatus.CANCELED) {
                 ScheduleAlarmUtils.timeout(scheduleTask.getId());
@@ -74,6 +82,19 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
             // invoke task related processor
             doProcessor(jobEntity, scheduleTask);
         });
+    }
+
+    private void alarmFailed(JobEntity je, String errorMessage) {
+        Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                .item(AlarmUtils.ORGANIZATION_NAME, Optional.ofNullable(je.getOrganizationId()).map(
+                        Object::toString).orElse(StrUtil.EMPTY))
+                .item(AlarmUtils.TASK_JOB_ID_NAME, je.getId().toString())
+                .item(AlarmUtils.MESSAGE_NAME,
+                        MessageFormat.format("Job execution failed, jobId={0}", je.getId()))
+                .item(AlarmUtils.FAILED_REASON_NAME,
+                        CharSequenceUtil.nullToDefault(errorMessage, CharSequenceUtil.EMPTY))
+                .build();
+        AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED, eventMessage);
     }
 
     private void doProcessor(JobEntity jobEntity, ScheduleTask scheduleTask) {
