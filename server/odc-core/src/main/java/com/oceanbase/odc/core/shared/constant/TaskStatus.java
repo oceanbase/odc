@@ -25,6 +25,9 @@ import java.util.List;
 public enum TaskStatus {
     PREPARING,
     RUNNING,
+    // task not work, but can be recovered
+    ABNORMAL,
+    // the following is terminate states
     FAILED,
     CANCELED,
     DONE;

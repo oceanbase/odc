@@ -69,9 +69,14 @@ public class OdcTriggerListener extends TriggerListenerSupport {
     }
 
     @Override
+    public void triggerFired(Trigger trigger, JobExecutionContext context) {
+        log.info("Job is fired,jobKey={}", trigger.getJobKey());
+    }
+
+    @Override
     public boolean vetoJobExecution(Trigger trigger, JobExecutionContext context) {
         boolean skipExecution = SpringContextUtil.getBean(ScheduleService.class)
-                .vetoJobExecution(Long.parseLong(context.getTrigger().getJobKey().getName()));
+                .vetoJobExecution(trigger);
         if (skipExecution) {
             log.warn("The job will be skipped, job key:" + trigger.getJobKey());
             ScheduleAlarmUtils.misfire(Long.parseLong(trigger.getJobKey().getName()), new Date());
@@ -108,7 +113,6 @@ public class OdcTriggerListener extends TriggerListenerSupport {
                     .ifPresent(schedule -> {
                         Event event = eventBuilder.ofFailedSchedule(schedule);
                         broker.enqueueEvent(event);
-                        AlarmUtils.alarm(SCHEDULING_FAILED, event.toString());
                     });
         } catch (Exception e) {
             log.warn("Failed to enqueue event.", e);

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.processor;
+package com.oceanbase.odc.service.task.processor.result;
 
 import java.util.List;
 
@@ -22,9 +22,12 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.dlm.DLMService;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
+import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
+import com.oceanbase.odc.service.task.processor.matcher.DLMProcessorMatcher;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,10 +39,13 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
-public class DLMResultProcessor implements ResultProcessor {
+public class DLMResultProcessor extends DLMProcessorMatcher implements ResultProcessor {
 
     @Autowired
-    private DLMService dlmService;
+    protected DLMService dlmService;
+
+    @Autowired
+    protected ScheduleTaskService taskService;
 
     @Override
     public void process(TaskResult result) {
@@ -55,6 +61,11 @@ public class DLMResultProcessor implements ResultProcessor {
             log.info("Create or update dlm tableUnits success,jobIdentity={},scheduleTaskId={}",
                     result.getJobIdentity(),
                     dlmTableUnits.get(0).getScheduleTaskId());
+            TaskStatus taskStatus = taskService.nullSafeGetById(dlmTableUnits.get(0).getScheduleTaskId()).getStatus();
+            if (taskStatus != TaskStatus.RUNNING) {
+                taskService.updateStatusById(dlmTableUnits.get(0).getScheduleTaskId(), TaskStatus.RUNNING);
+            }
+            log.info("Update schedule task status to {} success", taskStatus);
         } catch (Exception e) {
             log.warn("Refresh result failed.", e);
         }

@@ -28,8 +28,10 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfigur
 public class CloudObjectStorageServiceBuilder {
 
     public static CloudObjectStorageService build(ObjectStorageConfiguration storageConfig) {
-        CloudClient cloudClient =
+        CloudClient publicCloudClient =
+                new CloudResourceConfigurations.CloudClientBuilder().generatePublicCloudClient(storageConfig);
+        CloudClient interalCloudClient =
                 new CloudResourceConfigurations.CloudClientBuilder().generateCloudClient(storageConfig);
-        return new CloudObjectStorageService(cloudClient, cloudClient, storageConfig);
+        return new CloudObjectStorageService(publicCloudClient, interalCloudClient, storageConfig);
     }
 }
