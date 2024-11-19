@@ -48,6 +48,7 @@ import com.oceanbase.odc.core.authority.model.SecurityResource;
 import com.oceanbase.odc.core.authority.permission.ConnectionPermission;
 import com.oceanbase.odc.core.authority.permission.DatabasePermission;
 import com.oceanbase.odc.core.authority.permission.Permission;
+import com.oceanbase.odc.core.authority.permission.ProjectPermission;
 import com.oceanbase.odc.core.authority.permission.ResourcePermission;
 import com.oceanbase.odc.core.authority.permission.ResourceRoleBasedPermission;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
@@ -167,6 +168,8 @@ public abstract class DefaultAuthorizationFacade implements AuthorizationFacade 
                 actions.addAll(DatabasePermission.getActionList(((ResourcePermission) permission).getMask()));
             } else if (ResourceType.ODC_CONNECTION.name().equals(resource.resourceType())) {
                 actions.addAll(ConnectionPermission.getActionList(((ResourcePermission) permission).getMask()));
+            } else if (ResourceType.ODC_PROJECT.name().equals(resource.resourceType())) {
+                actions.addAll(((ProjectPermission) permission).getActions());
             } else {
                 actions.addAll(ResourcePermission.getActionList(((ResourcePermission) permission).getMask()));
             }

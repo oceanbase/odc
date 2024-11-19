@@ -1160,7 +1160,7 @@ public class FlowInstanceService {
             }
             List<User> databaseOwners = new ArrayList<>();
             List<UserResourceRole> userResourceRoles =
-                    resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_DATABASE, database.getId());
+                    resourceRoleService.listByResourceTypeAndResourceId(ResourceType.ODC_DATABASE, database.getId());
             if (CollectionUtils.isNotEmpty(userResourceRoles)) {
                 Set<Long> userIds =
                         userResourceRoles.stream().map(UserResourceRole::getUserId).collect(Collectors.toSet());

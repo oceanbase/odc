@@ -34,12 +34,13 @@ import lombok.NonNull;
  * @Description: []
  */
 @Getter
-public class ProjectPermission implements Permission {
+public class ProjectPermission extends ResourcePermission {
     private final String resourceId;
     private final String resourceType;
     private final List<String> actions;
 
     public ProjectPermission(@NonNull SecurityResource resource, String action) {
+        super(resource.resourceId(), resource.resourceType(), action);
         this.resourceId = resource.resourceId();
         this.resourceType = resource.resourceType();
         Validate.notNull(resourceId, "ResourceId can not be null");
@@ -50,6 +51,7 @@ public class ProjectPermission implements Permission {
     }
 
     public ProjectPermission(@NonNull SecurityResource resource, List<String> actions) {
+        super(resource.resourceId(), resource.resourceType(), actions.stream().collect(Collectors.joining(",")));
         this.resourceId = resource.resourceId();
         this.resourceType = resource.resourceType();
         Validate.notNull(resourceId, "ResourceId can not be null");

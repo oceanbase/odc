@@ -123,11 +123,13 @@ public class PermissionService {
         }
     }
 
-
+    @SkipAuthorize
     public List<PermissionEntity> findGlobalResourceRolePermissions(Long userId, Long organizationId) {
         return findByUserIdAndOrganizationIdAndResourceIdentifierAndActionIn(userId, organizationId,
-                "ODC_PROJECT:*", Arrays.asList("OWNER", "DBA", "SECURITY_ADMINISTRATOR", "ADMIN"));
+                "ODC_PROJECT:*", Arrays.asList("OWNER", "DBA", "SECURITY_ADMINISTRATOR"));
     }
+
+
 
     private List<PermissionEntity> findByUserIdAndOrganizationIdAndResourceIdentifierAndActionIn(Long userId,
             Long organizationId, String resourceIdentifier, Collection<String> actions) {

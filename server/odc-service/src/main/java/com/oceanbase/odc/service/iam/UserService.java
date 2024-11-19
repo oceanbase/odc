@@ -328,7 +328,7 @@ public class UserService {
 
         log.debug("New user has been inserted, user: {}", userEntity);
         if (!Objects.isNull(createUserReq.getRoleIds()) && !createUserReq.getRoleIds().isEmpty()) {
-            inspectVerticalUnauthorized(authenticationFacade.currentUser(), createUserReq.getRoleIds());
+            // inspectVerticalUnauthorized(authenticationFacade.currentUser(), createUserReq.getRoleIds());
             for (Long roleId : createUserReq.getRoleIds()) {
                 Role role = new Role(roleRepository.findById(roleId)
                         .orElseThrow(() -> new NotFoundException(ResourceType.ODC_ROLE, "id", roleId)));
@@ -748,7 +748,7 @@ public class UserService {
                 attachedRoleIds = relations.stream().map(UserRoleEntity::getRoleId).collect(Collectors.toSet());
             }
             Long creatorId = authenticationFacade.currentUserId();
-            inspectVerticalUnauthorized(authenticationFacade.currentUser(), updateUserReq.getRoleIds());
+            // inspectVerticalUnauthorized(authenticationFacade.currentUser(), updateUserReq.getRoleIds());
             userRoleRepository.deleteByOrganizationIdAndUserId(authenticationFacade.currentOrganizationId(), id);
             userRoleRepository.flush();
             for (Long roleId : updateUserReq.getRoleIds()) {
@@ -1033,7 +1033,7 @@ public class UserService {
         if (CollectionUtils.isEmpty(roleIds)) {
             return;
         }
-        inspectVerticalUnauthorized(authenticationFacade.currentUser(), new ArrayList<>(roleIds));
+        // inspectVerticalUnauthorized(authenticationFacade.currentUser(), new ArrayList<>(roleIds));
         Map<Long, RoleEntity> roleId2Entity = roleRepository.findByIdIn(roleIds).stream()
                 .collect(Collectors.toMap(RoleEntity::getId, entity -> entity));
         Verify.equals(roleIds.size(), roleId2Entity.keySet().size(), "roleIds.size()");

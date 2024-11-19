@@ -16,10 +16,12 @@
 package com.oceanbase.odc.service.iam.auth;
 
 import java.security.Principal;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.collections.ListUtils;
 
+import com.oceanbase.odc.core.authority.permission.ComposedPermission;
 import com.oceanbase.odc.core.authority.permission.Permission;
 
 /**
@@ -38,7 +40,8 @@ public class ComposedAuthorizer extends BaseAuthorizer {
 
     @Override
     public List<Permission> listPermittedPermissions(Principal principal) {
-        return ListUtils.union(defaultAuthorizer.listPermittedPermissions(principal),
-                resourceRoleAuthorizer.listPermittedPermissions(principal));
+        return Collections.singletonList(
+                new ComposedPermission(ListUtils.union(defaultAuthorizer.listPermittedPermissions(principal),
+                        resourceRoleAuthorizer.listPermittedPermissions(principal))));
     }
 }

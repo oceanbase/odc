@@ -44,6 +44,8 @@ public class UserResourceRole implements PermissionConfiguration {
 
     private ResourceRoleName resourceRole;
 
+    private boolean derivedFromGlobalProjectRole = false;
+
     public boolean isProjectMember() {
         return this.resourceType == ResourceType.ODC_PROJECT && (this.resourceRole == ResourceRoleName.OWNER
                 || this.resourceRole == ResourceRoleName.DBA
