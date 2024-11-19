@@ -56,7 +56,7 @@ public class OnlineSchemaChangeExpiredTest extends OBMySqlOscTestEnv {
             onlineSchemaChangeTaskHandler.complete(schedule.getId(), taskEntities.get(0).getId());
 
             Assert.assertEquals(2, taskEntities.size());
-            Assert.assertEquals(TaskStatus.CANCELED,
+            Assert.assertEquals(TaskStatus.FAILED,
                     scheduleTaskRepository.findById(taskEntities.get(0).getId()).get().getStatus());
             Assert.assertEquals(TaskStatus.PREPARING,
                     scheduleTaskRepository.findById(taskEntities.get(1).getId()).get().getStatus());

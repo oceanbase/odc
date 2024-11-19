@@ -31,6 +31,7 @@ import com.google.common.cache.LoadingCache;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.iam.UserEntity;
+import com.oceanbase.odc.service.connection.ConnectionSyncHistoryService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.schema.DBSchemaSyncTaskManager;
 import com.oceanbase.odc.service.iam.OrganizationService;
@@ -55,7 +56,9 @@ public class DatabaseSyncManager {
     @Autowired
     private OrganizationService organizationService;
     @Autowired
-    DBSchemaSyncTaskManager dbSchemaSyncTaskManager;
+    private DBSchemaSyncTaskManager dbSchemaSyncTaskManager;
+    @Autowired
+    private ConnectionSyncHistoryService syncHistoryService;
     @Autowired
     @Qualifier("syncDatabaseTaskExecutor")
     private ThreadPoolTaskExecutor executor;

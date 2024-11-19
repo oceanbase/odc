@@ -29,6 +29,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.common.annotations.VisibleForTesting;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.validate.ValidatorUtils;
@@ -88,8 +89,10 @@ public abstract class BaseOmsClient implements OmsClient {
         return omsRestTemplate.exchange(realUrl, HttpMethod.POST, httpRequest, String.class);
     }
 
-    private <T> OmsApiReturnResult<T> resolveResponseEntity(ClientRequestParams requestParams,
+    @VisibleForTesting
+    protected <T> OmsApiReturnResult<T> resolveResponseEntity(ClientRequestParams requestParams,
             ResponseEntity<String> responseEntity, TypeReference<OmsApiReturnResult<T>> typeReference) {
+        log.info("process oms request [{}] with response [{}]", url + "/" + requestParams, responseEntity.getBody());
         if (responseEntity.getStatusCode() != HttpStatus.OK) {
             if (responseEntity.getStatusCode() == HttpStatus.REQUEST_TIMEOUT) {
                 throw new OmsException(ErrorCodes.Timeout, responseEntity.toString(), null,
@@ -100,7 +103,6 @@ public abstract class BaseOmsClient implements OmsClient {
                     : ErrorCodes.BadRequest;
             throw new OmsException(errorCode, responseEntity.toString(), null, responseEntity.getStatusCode());
         }
-        log.info("process oms request [{}] with response [{}]", requestParams, responseEntity.getBody());
         OmsApiReturnResult<T> result = JsonUtils.fromJsonIgnoreMissingProperty(responseEntity.getBody(), typeReference);
         if (result == null) {
             throw new UnexpectedException("Parse oms result occur error, result=" + responseEntity.getBody());

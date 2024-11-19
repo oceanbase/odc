@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 
 import lombok.Getter;
@@ -41,7 +42,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class PartitionPlanConfig implements Serializable, TaskParameters {
+public class PartitionPlanConfig implements Serializable, TaskParameters, ScheduleTaskParameters {
 
     private static final long serialVersionUID = 7008051004183574287L;
     private Long id;

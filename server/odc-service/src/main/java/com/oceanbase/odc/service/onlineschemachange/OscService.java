@@ -16,8 +16,15 @@
 
 package com.oceanbase.odc.service.onlineschemachange;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,10 +40,13 @@ import com.oceanbase.odc.core.session.ConnectionSessionFactory;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
+import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
@@ -59,6 +69,7 @@ import com.oceanbase.odc.service.onlineschemachange.model.OscSwapTableVO;
 import com.oceanbase.odc.service.onlineschemachange.model.RateLimiterConfig;
 import com.oceanbase.odc.service.onlineschemachange.model.SwapTableType;
 import com.oceanbase.odc.service.onlineschemachange.model.UpdateRateLimiterConfigRequest;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.ActionScheduler;
 import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
@@ -97,11 +108,15 @@ public class OscService {
     @Autowired
     private FlowInstanceService flowInstanceService;
     @Autowired
+    private FlowInstanceRepository flowInstanceRepository;
+    @Autowired
     private ScheduleTaskService scheduleTaskService;
     @Autowired
     private ScheduleService scheduleService;
     @Autowired
     private TaskService taskService;
+    @Autowired
+    private ActionScheduler actionScheduler;
 
 
     @SkipAuthorize("internal authenticated")
@@ -207,6 +222,69 @@ public class OscService {
         return true;
     }
 
+    /**
+     * resume osc task 1. get task_task result 2. reset flow / task / scheduler_task status by
+     * resetTaskStatus flag 3. restart scheduler task
+     * 
+     * @param flowInstanceID flow instance id
+     * @return
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("internal authenticated")
+    public boolean resumeOscTask(@NotNull Long flowInstanceID) {
+        log.info("resume osc task for flowInstanceID = {}", flowInstanceID);
+        // check permission
+        checkPermission(flowInstanceID);
+        // verify flow instance status
+        Map<Long, FlowStatus> flowInstanceStatus = flowInstanceService.getStatus(Collections.singleton(flowInstanceID));
+        FlowStatus flowStatus = flowInstanceStatus.get(flowInstanceID);
+        if (FlowStatus.EXECUTING == flowStatus) {
+            log.info("task is in execution status, resume ignored, flowInstanceID = {}", flowInstanceID);
+        }
+        PreConditions.validArgumentState(FlowStatus.EXECUTION_ABNORMAL == flowStatus, ErrorCodes.Unsupported,
+                new Object[] {flowInstanceID},
+                "only status in ABNORMAL state can resume, flowInstanceID=" + flowInstanceID);
+        // get task_task and result json
+        TaskEntity task = flowInstanceService.getTaskByFlowInstanceId(flowInstanceID);
+        PreConditions.notNull(task.getResultJson(), "result json",
+                "Task result is empty, taskId=" + task.getId() + ",flowInstanceId=" + flowInstanceID);
+        OnlineSchemaChangeTaskResult taskResult =
+                JsonUtils.fromJson(task.getResultJson(), new TypeReference<OnlineSchemaChangeTaskResult>() {});
+        // find the failed schedule task, change it to running
+        ScheduleTaskEntity abnormalTask = findAbnormalTask(task, flowInstanceID, taskResult);
+        // update flow instance, change it to execution
+        flowInstanceRepository.updateStatusById(flowInstanceID, FlowStatus.EXECUTING);
+        // update task task, change it to running
+        task.setStatus(TaskStatus.RUNNING);
+        taskService.update(task);
+        scheduleTaskService.updateStatusById(abnormalTask.getId(), TaskStatus.RUNNING);
+        // try register schedule with task id.
+        Long scheduleId = Long.parseLong(taskResult.getTasks().get(0).getJobName());
+        ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(scheduleId);
+        actionScheduler.submitFMSScheduler(scheduleEntity, abnormalTask.getId(), task.getId());
+        return true;
+    }
+
+    private ScheduleTaskEntity findAbnormalTask(TaskEntity task, Long flowInstanceID,
+            OnlineSchemaChangeTaskResult onlineSchemaChangeTaskResult) {
+        List<ScheduleTaskEntity> failedTasks = new ArrayList<>();
+        PreConditions.validArgumentState(CollectionUtils.isNotEmpty(onlineSchemaChangeTaskResult.getTasks()),
+                ErrorCodes.IllegalArgument,
+                new Object[] {flowInstanceID},
+                "Task result is empty, taskId=" + task.getId() + ",flowInstanceId=" + flowInstanceID);
+        for (ScheduleTaskEntity scheduleTask : onlineSchemaChangeTaskResult.getTasks()) {
+            if (scheduleTask.getStatus() == TaskStatus.ABNORMAL) {
+                failedTasks.add(scheduleTask);
+            }
+        }
+        PreConditions.validArgumentState(failedTasks.size() == 1, ErrorCodes.IllegalArgument,
+                new Object[] {flowInstanceID},
+                "Failed schedule task count not valid, taskId=" + task.getId() + ",flowInstanceId=" + flowInstanceID
+                        + ", scheduler task id = " +
+                        failedTasks.stream().map(ScheduleTaskEntity::getId).collect(Collectors.toList()));
+        return failedTasks.get(0);
+    }
+
     private void checkPermission(Long flowInstanceId) {
         Optional<FlowInstance> optional = flowFactory.getFlowInstance(flowInstanceId);
         FlowInstance flowInstance = optional.orElseThrow(
@@ -245,6 +323,4 @@ public class OscService {
                     return version;
                 });
     }
-
-
 }

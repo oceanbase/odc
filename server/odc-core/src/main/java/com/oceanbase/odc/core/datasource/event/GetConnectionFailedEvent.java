@@ -13,15 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.processor;
+package com.oceanbase.odc.core.datasource.event;
 
-import com.oceanbase.odc.service.task.executor.task.TaskResult;
+import java.sql.Connection;
+import java.util.Optional;
 
-/**
- * @Author：tinker
- * @Date: 2024/7/6 10:45
- * @Descripition:
- */
-public interface ResultProcessor {
-    void process(TaskResult result);
+import com.oceanbase.odc.common.event.AbstractEvent;
+
+public class GetConnectionFailedEvent extends AbstractEvent {
+    public static final String EVENT_NAME = "getConnectionFailed";
+
+    /**
+     * Constructs a prototypical Event.
+     *
+     * @param source The object on which the Event initially occurred.
+     * @throws IllegalArgumentException if source is null.
+     */
+    public GetConnectionFailedEvent(Optional<Connection> source) {
+        super(source, EVENT_NAME);
+    }
+
 }
