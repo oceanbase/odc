@@ -19,7 +19,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.metadb.task.JobRepository;
+import com.oceanbase.odc.service.task.executor.task.TaskDescription;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
+import com.oceanbase.odc.service.task.processor.result.ResultProcessor;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,4 +46,8 @@ public class LoadDataResultProcessor implements ResultProcessor {
         }
     }
 
+    @Override
+    public boolean interested(String type) {
+        return TaskDescription.LOAD_DATA.matched(type);
+    }
 }

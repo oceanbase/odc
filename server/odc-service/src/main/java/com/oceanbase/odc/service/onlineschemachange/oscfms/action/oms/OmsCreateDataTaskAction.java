@@ -249,7 +249,7 @@ public class OmsCreateDataTaskAction implements Action<OscActionContext, OscActi
     private String getConfigUrl(ConnectionSession connectionSession) {
 
         SyncJdbcExecutor syncJdbcExecutor = connectionSession.getSyncJdbcExecutor(
-                ConnectionSessionConstants.BACKEND_DS_KEY);
+                ConnectionSessionConstants.CONSOLE_DS_KEY);
         String queryClusterUrlSql = "show parameters like 'obconfig_url'";
         return syncJdbcExecutor.query(queryClusterUrlSql, rs -> {
             if (!rs.next()) {
@@ -261,7 +261,7 @@ public class OmsCreateDataTaskAction implements Action<OscActionContext, OscActi
 
     private boolean isObCE(ConnectionSession connectionSession) {
         SyncJdbcExecutor syncJdbcExecutor = connectionSession.getSyncJdbcExecutor(
-                ConnectionSessionConstants.BACKEND_DS_KEY);
+                ConnectionSessionConstants.CONSOLE_DS_KEY);
         String queryVersionSql = "show variables like 'version_comment'";
         String versionString = syncJdbcExecutor.query(queryVersionSql, rs -> {
             if (!rs.next()) {

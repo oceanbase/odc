@@ -77,7 +77,7 @@ public class OmsSwapTableAction implements Action<OscActionContext, OscActionRes
         }
         // begin swap table
         ScheduleTaskEntity scheduleTask = context.getScheduleTask();
-        log.info("Start execute {}, schedule task id {}", getClass().getSimpleName(), scheduleTask.getId());
+        log.info("Start execute {}, schedule task id={}", getClass().getSimpleName(), scheduleTask.getId());
 
         OnlineSchemaChangeScheduleTaskParameters taskParameters = context.getTaskParameter();
         PreConditions.notNull(taskParameters, "OnlineSchemaChangeScheduleTaskParameters is null");
@@ -102,7 +102,7 @@ public class OmsSwapTableAction implements Action<OscActionContext, OscActionRes
                                         lastResult.getCheckFailedTime(), 25000);
                             });
             defaultRenameTableInvoker.invoke(taskParameters, parameters);
-            // rename table success, jump to clean resoruce state
+            // rename table success, jump to clean resource state
             return new OscActionResult(OscStates.SWAP_TABLE.getState(), null, OscStates.CLEAN_RESOURCE.getState());
         } finally {
             if (enableUserMonitor(parameters.getLockUsers())) {

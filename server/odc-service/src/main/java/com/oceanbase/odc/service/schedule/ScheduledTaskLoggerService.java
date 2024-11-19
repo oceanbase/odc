@@ -18,8 +18,10 @@ package com.oceanbase.odc.service.schedule;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
@@ -34,7 +36,6 @@ import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
@@ -43,6 +44,7 @@ import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
+import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.caller.JobContext;
@@ -106,57 +108,62 @@ public class ScheduledTaskLoggerService {
     private final ConcurrentHashMap<ObjectStorageConfiguration, CloudObjectStorageService> cloudObjectServiceMap =
             new ConcurrentHashMap<>();
 
-    public String getLogContent(Long scheduleTaskId, OdcTaskLogLevel level) {
+    public String getLogContent(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel level) {
         try {
-            return getLog(scheduleTaskId, level);
+            return getLog(scheduleId, scheduleTaskId, level);
         } catch (Exception e) {
-            log.warn("get log failed, scheduleTaskId={}", scheduleTaskId);
+            log.warn("get log failed, scheduleId={}, scheduleTaskId={}", scheduleId, scheduleTaskId);
             return LogUtils.DEFAULT_LOG_CONTENT;
         }
     }
 
-    public InputStreamResource downloadLog(Long scheduleTaskId, OdcTaskLogLevel level) {
+    public InputStreamResource downloadLog(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel level) {
         try {
-            return new InputStreamResource(downloadLogFile(scheduleTaskId, level));
+            return new InputStreamResource(downloadLogFile(scheduleId, scheduleTaskId, level));
         } catch (Exception e) {
-            log.warn("download log failed, scheduleTaskId={}", scheduleTaskId);
+            log.warn("download log failed, scheduleId={}, scheduleTaskId={}", scheduleId, scheduleTaskId);
             return new InputStreamResource(IoUtil.toUtf8Stream(LogUtils.DEFAULT_LOG_CONTENT));
         }
     }
 
-    @SneakyThrows
     public String getFullLogDownloadUrl(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel level) {
-        ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(scheduleTaskId);
-        Long jobId = taskEntity.getJobId();
-        if (!taskFrameworkEnabledProperties.isEnabled() || jobId == null) {
-            return String.format(DOWNLOAD_LOG_URL_PATTERN, scheduleId, scheduleTaskId);
-        }
-        JobEntity jobEntity = taskFrameworkService.find(jobId);
-        PreConditions.notNull(jobEntity, "job not found by id " + jobId);
-        if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
-            CloudObjectStorageService cloudObjectStorageService = getCloudObjectStorageService(jobEntity);
-            if (!cloudObjectStorageService.supported()) {
+        try {
+            ScheduleTask taskEntity = scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
+            Long jobId = taskEntity.getJobId();
+            if (!taskFrameworkEnabledProperties.isEnabled()) {
+                return String.format(DOWNLOAD_LOG_URL_PATTERN, scheduleId, scheduleTaskId);
+            } else if (jobId == null) {
                 return StrUtil.EMPTY;
             }
-            String attributeKey =
-                    OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
-                            : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
-            Map<String, String> jobAttributeMap = taskFrameworkService.getJobAttributes(jobId);
-            String objId = jobAttributeMap.get(attributeKey);
-            String bucketName = jobAttributeMap.get(JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
-            if (ObjectUtil.isNotNull(objId) && ObjectUtil.isNotNull(bucketName)) {
-                return cloudObjectStorageService.generateDownloadUrl(objId).toString();
+            JobEntity jobEntity = taskFrameworkService.find(jobId);
+            PreConditions.notNull(jobEntity, "job not found by id " + jobId);
+            if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
+                CloudObjectStorageService cloudObjectStorageService = getCloudObjectStorageService(jobEntity);
+                if (!cloudObjectStorageService.supported()) {
+                    return StrUtil.EMPTY;
+                }
+                String attributeKey =
+                        OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
+                                : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
+                Map<String, String> jobAttributeMap = taskFrameworkService.getJobAttributes(jobId);
+                String objId = jobAttributeMap.get(attributeKey);
+                String bucketName = jobAttributeMap.get(JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
+                if (ObjectUtil.isNotNull(objId) && ObjectUtil.isNotNull(bucketName)) {
+                    return cloudObjectStorageService.generateDownloadUrl(objId).toString();
+                }
+                return StrUtil.EMPTY;
             }
-            return StrUtil.EMPTY;
+            return String.format(DOWNLOAD_LOG_URL_PATTERN, scheduleId, scheduleTaskId);
+        } catch (Exception e) {
+            log.warn("get download log url failed, scheduleId={}, scheduleTaskId={}", scheduleId, scheduleTaskId, e);
+            throw new RuntimeException("get download log url failed, scheduleId=" + scheduleId, e);
         }
-        return String.format(DOWNLOAD_LOG_URL_PATTERN, scheduleId, scheduleTaskId);
     }
 
-    @SneakyThrows
     private void consumeLogFromTaskFramework(Long jobId, OdcTaskLogLevel level,
             Consumer<File> logFileConsumer,
             Consumer<String> logContentConsumer,
-            Consumer<ExecutorIdentifier> jobDispatcherConsumer) {
+            Consumer<ExecutorIdentifier> jobDispatcherConsumer) throws IOException {
         JobEntity jobEntity = taskFrameworkService.find(jobId);
         PreConditions.notNull(jobEntity, "job not found by id " + jobId);
         if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
@@ -166,11 +173,11 @@ public class ScheduledTaskLoggerService {
             }
             String attributeKey = OdcTaskLogLevel.ALL.equals(level) ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
                     : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
-            Map<String, String> jobAttributeMap = taskFrameworkService.getJobAttributes(jobId);
-            String objId = jobAttributeMap.get(attributeKey);
-            String bucketName = jobAttributeMap.get(JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
+            Optional<String> objId = taskFrameworkService.findByJobIdAndAttributeKey(jobId, attributeKey);
+            Optional<String> bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobId,
+                    JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
             String logFilePath = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
-            if (ObjectUtil.isNotNull(objId) && ObjectUtil.isNotNull(bucketName)) {
+            if (objId.isPresent() && bucketName.isPresent()) {
                 if (log.isDebugEnabled()) {
                     log.debug("job: {} is finished, try to get log from local or oss.", jobEntity.getId());
                 }
@@ -180,7 +187,7 @@ public class ScheduledTaskLoggerService {
                     return;
                 }
 
-                File tempFile = cloudObjectStorageService.downloadToTempFile(objId);
+                File tempFile = cloudObjectStorageService.downloadToTempFile(objId.get());
                 try (FileInputStream inputStream = new FileInputStream(tempFile)) {
                     FileUtils.copyInputStreamToFile(inputStream, localFile);
                 } finally {
@@ -214,19 +221,19 @@ public class ScheduledTaskLoggerService {
         logFileConsumer.accept(file);
     }
 
-    private File getLogFileFromCurrentMachine(ScheduleTaskEntity scheduleTask, OdcTaskLogLevel level) {
+    private File getLogFileFromCurrentMachine(ScheduleTask scheduleTask, OdcTaskLogLevel level) {
         String filePath = String.format(LOG_PATH_PATTERN, loggerProperty.getDirectory(),
                 scheduleTask.getJobName(), scheduleTask.getJobGroup(), scheduleTask.getId(),
                 level.name().toLowerCase());
         return new File(filePath);
     }
 
-    private String getLog(Long scheduleTaskId, OdcTaskLogLevel level) {
-        ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(scheduleTaskId);
-        if (taskFrameworkEnabledProperties.isEnabled() && taskEntity.getJobId() != null) {
+    private String getLog(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel level) {
+        ScheduleTask task = scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
+        if (taskFrameworkEnabledProperties.isEnabled() && task.getJobId() != null) {
             try {
                 final Holder<String> logContentHolder = new Holder<>();
-                consumeLogFromTaskFramework(taskEntity.getJobId(), level,
+                consumeLogFromTaskFramework(task.getJobId(), level,
                         logFile -> logContentHolder
                                 .setValue(LogUtils.getLatestLogContent(logFile, loggerProperty.getMaxLines(),
                                         loggerProperty.getMaxSize())),
@@ -240,7 +247,7 @@ public class ScheduledTaskLoggerService {
                 throw new UnexpectedException("Copy input stream to file failed.");
             }
         }
-        ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
+        ExecutorInfo executorInfo = JsonUtils.fromJson(task.getExecutor(), ExecutorInfo.class);
         if (!dispatchChecker.isThisMachine(executorInfo)) {
             try {
                 return forwardToGetLogContent(executorInfo.getHost(), executorInfo.getPort());
@@ -250,16 +257,16 @@ public class ScheduledTaskLoggerService {
                         String.format("Remote interrupt task failed, scheduleTaskId=%s", scheduleTaskId));
             }
         }
-        File logFile = getLogFileFromCurrentMachine(taskEntity, level);
+        File logFile = getLogFileFromCurrentMachine(task, level);
         return LogUtils.getLatestLogContent(logFile, loggerProperty.getMaxLines(), loggerProperty.getMaxSize());
     }
 
-    private InputStream downloadLogFile(Long scheduleTaskId, OdcTaskLogLevel level) {
-        ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(scheduleTaskId);
-        if (taskFrameworkEnabledProperties.isEnabled() && taskEntity.getJobId() != null) {
+    private InputStream downloadLogFile(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel level) {
+        ScheduleTask task = scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
+        if (taskFrameworkEnabledProperties.isEnabled() && task.getJobId() != null) {
             try {
                 final Holder<InputStream> logStreamHolder = new Holder<>();
-                consumeLogFromTaskFramework(taskEntity.getJobId(), level,
+                consumeLogFromTaskFramework(task.getJobId(), level,
                         logFile -> logStreamHolder.setValue(IoUtil.toStream(logFile)),
                         logContent -> logStreamHolder.setValue(IoUtil.toUtf8Stream(logContent)),
                         executorIdentifier -> logStreamHolder
@@ -271,7 +278,7 @@ public class ScheduledTaskLoggerService {
                 throw new UnexpectedException("Copy input stream to file failed.");
             }
         }
-        ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
+        ExecutorInfo executorInfo = JsonUtils.fromJson(task.getExecutor(), ExecutorInfo.class);
         if (!dispatchChecker.isThisMachine(executorInfo)) {
             try {
                 return forwardToDownloadLog(executorInfo.getHost(), executorInfo.getPort());
@@ -281,7 +288,7 @@ public class ScheduledTaskLoggerService {
                         String.format("Remote interrupt task failed, scheduleTaskId=%s", scheduleTaskId));
             }
         }
-        return IoUtil.toStream(getLogFileFromCurrentMachine(taskEntity, level));
+        return IoUtil.toStream(getLogFileFromCurrentMachine(task, level));
     }
 
     @SneakyThrows
@@ -308,8 +315,8 @@ public class ScheduledTaskLoggerService {
 
     private CloudObjectStorageService getCloudObjectStorageService(JobEntity jobEntity) {
         JobContext jobContext = new DefaultJobContextBuilder().build(jobEntity);
-        ObjectStorageConfiguration objectStorageConfiguration = jobCredentialProvider.getCloudObjectStorageCredential(
-                jobContext);
+        ObjectStorageConfiguration objectStorageConfiguration =
+                jobCredentialProvider.getCloudObjectStorageCredential(jobContext);
         return cloudObjectServiceMap.computeIfAbsent(objectStorageConfiguration,
                 k -> CloudObjectStorageServiceBuilder.build(objectStorageConfiguration));
     }

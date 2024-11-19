@@ -38,7 +38,7 @@ public class ForeignKeyInterceptor implements RenameTableInterceptor {
 
     protected ForeignKeyInterceptor(ConnectionSession connSession) {
         this.connSession = connSession;
-        this.syncJdbcExecutor = connSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
+        this.syncJdbcExecutor = connSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
         this.foreignKeyHandler = ForeignKeyHandlers.getForeignKeyHandler(connSession);
     }
 

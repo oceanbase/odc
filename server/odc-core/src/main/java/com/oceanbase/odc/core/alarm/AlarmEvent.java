@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.core.alarm;
 
+import java.util.Map;
+
 import lombok.Getter;
 
 @Getter
@@ -23,11 +25,11 @@ public class AlarmEvent {
 
     private final String eventName;
 
-    private final String eventMessage;
+    private final Map<String, String> eventMessage;
 
     private final AlarmLevel level;
 
-    public AlarmEvent(String eventName, String eventMessage, AlarmLevel level) {
+    public AlarmEvent(String eventName, Map<String, String> eventMessage, AlarmLevel level) {
         this.eventName = eventName;
         this.eventMessage = eventMessage;
         this.level = level;

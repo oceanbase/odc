@@ -15,3 +15,4 @@ libs/ob-sql-parser/src/main/resources/oracle/PlSqlParser.g4
 
 #sample pem for unit testing
 server/integration-test/src/test/resources/ssl/ca.pem
+server/odc-common/src/test/java/com/oceanbase/odc/common/security/SensitiveDataUtilsTest.java
