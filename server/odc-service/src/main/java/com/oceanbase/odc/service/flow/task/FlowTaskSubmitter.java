@@ -43,6 +43,11 @@ import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.task.mapper.OdcRuntimeDelegateMapper;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
+import com.oceanbase.odc.service.monitor.DefaultMeterName;
+import com.oceanbase.odc.service.monitor.MeterKey;
+import com.oceanbase.odc.service.monitor.MeterKey.Builder;
+import com.oceanbase.odc.service.monitor.MeterManager;
+import com.oceanbase.odc.service.monitor.MeterName;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -63,6 +68,8 @@ public class FlowTaskSubmitter implements JavaDelegate {
     private FlowTaskCallBackApprovalService flowTaskCallBackApprovalService;
     @Autowired
     private ServiceTaskInstanceRepository serviceTaskRepository;
+    @Autowired
+    private MeterManager meterManager;
 
     @Override
     public void execute(DelegateExecution execution) {
@@ -80,10 +87,14 @@ public class FlowTaskSubmitter implements JavaDelegate {
                 BaseRuntimeFlowableDelegate<?> delegate = getDelegateInstance(flowTaskInstance);
                 delegate.updateHeartbeatTime();
                 List<Class<? extends ExecutionListener>> list = delegate.getExecutionListenerClasses();
+                sendStartMetric(String.valueOf(flowTaskInstance.getTargetTaskId()),
+                        flowTaskInstance.getTaskType().name(), String.valueOf(flowTaskInstance.getOrganizationId()));
                 if (CollectionUtils.isNotEmpty(list)) {
                     list.forEach(c -> doCallListener(FlowConstants.EXECUTION_START_EVENT_NAME, executionFacade, c));
                 }
                 delegate.execute(executionFacade);
+                sendEndMetric(String.valueOf(flowTaskInstance.getTargetTaskId()),
+                        flowTaskInstance.getTaskType().name(), String.valueOf(flowTaskInstance.getOrganizationId()));
                 if (CollectionUtils.isNotEmpty(list)) {
                     list.forEach(c -> doCallListener(FlowConstants.EXECUTION_END_EVENT_NAME, executionFacade, c));
                 }
@@ -93,6 +104,8 @@ public class FlowTaskSubmitter implements JavaDelegate {
                 log.warn("Delegate task instance execute occur error: ", e);
                 updateFlowTaskInstance(flowTaskInstance.getId(), FlowNodeStatus.FAILED);
                 Exception rootCause = (Exception) e.getCause();
+                sendFailedMetric(String.valueOf(flowTaskInstance.getTargetTaskId()),
+                        flowTaskInstance.getTaskType().name(), String.valueOf(flowTaskInstance.getOrganizationId()));
                 handleException(executionFacade, flowTaskInstance, rootCause, defs);
             } finally {
                 if (flowTaskInstance != null) {
@@ -186,4 +199,40 @@ public class FlowTaskSubmitter implements JavaDelegate {
                 () -> new NotFoundException(ResourceType.ODC_FLOW_TASK_INSTANCE, "activityId", activityId));
     }
 
+    private void sendStartMetric(String taskId, String taskType, String organizationId) {
+        meterManager.startTimerSample(taskId,
+                getUniqueTaskMeterKey(DefaultMeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
+        meterManager
+                .incrementCounter(getTaskMeterKey(DefaultMeterName.FLOW_TASK_START_COUNT, taskType, organizationId));
+
+    }
+
+    private void sendEndMetric(String taskId, String taskType, String organizationId) {
+        meterManager
+                .incrementCounter(getTaskMeterKey(DefaultMeterName.FLOW_TASK_SUCCESS_COUNT, taskType, organizationId));
+        meterManager
+                .recordTimerSample(taskId,
+                        getUniqueTaskMeterKey(DefaultMeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
+    }
+
+    private void sendFailedMetric(String taskId, String taskType, String organizationId) {
+        meterManager
+                .incrementCounter(getTaskMeterKey(DefaultMeterName.FLOW_TASK_FAILED_COUNT, taskType, organizationId));
+        meterManager
+                .recordTimerSample(taskId,
+                        getUniqueTaskMeterKey(DefaultMeterName.FLOW_TASK_DURATION, taskId, taskType, organizationId));
+    }
+
+    public MeterKey getTaskMeterKey(MeterName meterName, String taskType, String organizationId) {
+        return Builder.ofMeter(meterName)
+                .addTag("taskType", taskType)
+                .addTag("organizationId", organizationId).build();
+    }
+
+    public MeterKey getUniqueTaskMeterKey(MeterName meterName, String uniqueKey, String taskType,
+            String organizationId) {
+        return Builder.ofMeter(meterName)
+                .addTag("taskType", taskType)
+                .addTag("organizationId", organizationId).build();
+    }
 }

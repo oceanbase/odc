@@ -27,7 +27,7 @@ import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 public class RenameTableHandlers {
 
     public static RenameTableHandler getForeignKeyHandler(ConnectionSession session) {
-        SyncJdbcExecutor jdbcExecutor = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
+        SyncJdbcExecutor jdbcExecutor = session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
         return session.getDialectType().isMysql() ? new OBMySQLRenameTableHandler(jdbcExecutor)
                 : new OBOracleRenameTableHandler(jdbcExecutor);
     }

@@ -15,6 +15,12 @@
  */
 package com.oceanbase.odc.service.quartz.executor;
 
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.SCHEDULE_FAILED_COUNT;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.SCHEDULE_INTERRUPTED_COUNT;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.SCHEDULE_START_COUNT;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.SCHEDULE_SUCCESS_COUNT;
+import static com.oceanbase.odc.service.monitor.DefaultMeterName.SCHEDULE_TASK_DURATION;
+
 import org.quartz.InterruptableJob;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -22,6 +28,10 @@ import org.quartz.JobKey;
 import org.quartz.UnableToInterruptJobException;
 
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
+import com.oceanbase.odc.service.monitor.DefaultMeterName;
+import com.oceanbase.odc.service.monitor.MeterKey;
+import com.oceanbase.odc.service.monitor.MeterManager;
 import com.oceanbase.odc.service.schedule.job.DataArchiveDeleteJob;
 import com.oceanbase.odc.service.schedule.job.DataArchiveJob;
 import com.oceanbase.odc.service.schedule.job.DataArchiveRollbackJob;
@@ -34,6 +44,7 @@ import com.oceanbase.odc.service.schedule.job.PartitionPlanJob;
 import com.oceanbase.odc.service.schedule.job.SqlPlanJob;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskType;
 
+import io.micrometer.core.instrument.Tag;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -46,15 +57,24 @@ public abstract class AbstractQuartzJob implements InterruptableJob {
 
     private OdcJob odcJob;
 
+    private JobKey jobKey;
+
+    private MeterManager meterManager;
+
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
 
         log.info("Start to run new job,jobKey={}", context.getJobDetail().getKey());
         try {
+            this.jobKey = context.getJobDetail().getKey();
+            this.meterManager = SpringContextUtil.getBean(MeterManager.class);
             odcJob = getOdcJob(context);
             odcJob.before(context);
+            sendStartMetric();
             run(context);
+            sendEndMetric();
         } catch (Exception e) {
+            sendFailedMetric();
             log.warn("Job execute failed,job key={},fire time={}.",
                     context.getJobDetail().getKey(), context.getFireTime(), e);
         } finally {
@@ -96,8 +116,39 @@ public abstract class AbstractQuartzJob implements InterruptableJob {
         }
     }
 
+
     @Override
     public void interrupt() throws UnableToInterruptJobException {
         odcJob.interrupt();
+        sendInterruptMetric();
+    }
+
+    private void sendInterruptMetric() {
+        meterManager.incrementCounter(getMeterKey(SCHEDULE_INTERRUPTED_COUNT, this.jobKey.getGroup()));
+        meterManager.recordTimerSample(this.jobKey.getGroup(),
+                getMeterKey(SCHEDULE_TASK_DURATION, this.jobKey.getGroup()));
+    }
+
+    private void sendStartMetric() {
+        meterManager.incrementCounter(getMeterKey(SCHEDULE_START_COUNT, this.jobKey.getGroup()));
+        meterManager.startTimerSample(this.jobKey.getGroup(),
+                getMeterKey(SCHEDULE_TASK_DURATION, this.jobKey.getGroup()));
+    }
+
+    private void sendEndMetric() {
+        meterManager.recordTimerSample(this.jobKey.getGroup(),
+                getMeterKey(SCHEDULE_TASK_DURATION, this.jobKey.getGroup()));
+        meterManager.incrementCounter(getMeterKey(SCHEDULE_SUCCESS_COUNT, this.jobKey.getGroup()));
+    }
+
+    private void sendFailedMetric() {
+        meterManager.recordTimerSample(this.jobKey.getGroup(),
+                getMeterKey(SCHEDULE_TASK_DURATION, this.jobKey.getGroup()));
+        meterManager.incrementCounter(getMeterKey(SCHEDULE_FAILED_COUNT, this.jobKey.getGroup()));
+    }
+
+
+    public MeterKey getMeterKey(DefaultMeterName meterName, String taskType) {
+        return MeterKey.ofMeter(meterName, Tag.of("taskType", taskType));
     }
 }
