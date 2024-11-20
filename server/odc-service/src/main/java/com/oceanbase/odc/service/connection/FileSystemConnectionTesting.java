@@ -60,7 +60,7 @@ public class FileSystemConnectionTesting {
     public ConnectionTestResult test(@NonNull ConnectionConfig config) {
         PreConditions.notBlank(config.getPassword(), "AccessKeySecret");
         PreConditions.notBlank(config.getDefaultSchema(), "Bucket");
-        String[] splitPath = config.getDefaultSchema().split("/");
+        String[] splitPath = config.getDefaultSchema().split("/", 2);
         String bucketName = splitPath[0];
         String path = splitPath.length > 1 ? "/" + splitPath[1] : "/";
         ObjectStorageConfiguration storageConfig = new ObjectStorageConfiguration();
