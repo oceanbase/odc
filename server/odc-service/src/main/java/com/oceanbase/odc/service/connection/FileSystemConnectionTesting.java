@@ -25,6 +25,7 @@ import org.springframework.stereotype.Component;
 
 import com.aliyun.oss.OSSErrorCode;
 import com.aliyun.oss.OSSException;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
@@ -49,15 +50,16 @@ import lombok.NonNull;
 @Component
 public class FileSystemConnectionTesting {
 
-    private static final String cosRegex = "cos\\.(\\w+-\\w+)\\.myqcloud\\.com";
-    private static final String ossRegex = "oss-([a-zA-Z0-9-]+)\\.aliyuncs\\.com";
-    private static final String obsRegex = "obs\\.([a-zA-Z0-9-]+)\\.myhuaweicloud\\.com";
-    private static final String s3Regex = "s3\\.([a-zA-Z0-9-]+)\\.amazonaws\\.com(\\.cn)?";
-    private static final String tempFileNamePrefix = "odc-test-object";
-    private static final String tempFileData = "This is a test object to check read and write permissions.";
-    private static final String OSS_ERROR_CODE_INVALID_ACCESS_KEY_ID = "InvalidAccessKeyId";
+    private static final String COS_ENDPOINT_REGEX = "cos\\.(\\w+-\\w+)\\.myqcloud\\.com";
+    private static final String OSS_ENDPOINT_REGEX = "oss-([a-zA-Z0-9-]+)\\.aliyuncs\\.com";
+    private static final String OBS_ENDPOINT_REGEX = "obs\\.([a-zA-Z0-9-]+)\\.myhuaweicloud\\.com";
+    private static final String S3_ENDPOINT_REGEX = "s3\\.([a-zA-Z0-9-]+)\\.amazonaws\\.com(\\.cn)?";
+    private static final String TMP_FILE_NAME_PREFIX = "odc-test-object-";
+    private static final String TMP_TEST_DATA = "This is a test object to check read and write permissions.";
 
     public ConnectionTestResult test(@NonNull ConnectionConfig config) {
+        PreConditions.notBlank(config.getPassword(), "AccessKeySecret");
+        PreConditions.notBlank(config.getDefaultSchema(), "Bucket");
         ObjectStorageConfiguration storageConfig = new ObjectStorageConfiguration();
         storageConfig.setAccessKeyId(config.getUsername());
         storageConfig.setAccessKeySecret(config.getPassword());
@@ -71,7 +73,7 @@ public class FileSystemConnectionTesting {
             String tempFileName = generateTempFileName();
             String objectKey = config.getDefaultSchema() + tempFileName;
             cloudClient.putObject(storageConfig.getBucketName(), objectKey,
-                    new ByteArrayInputStream(tempFileData.getBytes(StandardCharsets.UTF_8)), new ObjectMetadata());
+                    new ByteArrayInputStream(TMP_TEST_DATA.getBytes(StandardCharsets.UTF_8)), new ObjectMetadata());
             DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest();
             deleteObjectsRequest.setBucketName(storageConfig.getBucketName());
             deleteObjectsRequest.setKey(objectKey);
@@ -90,6 +92,9 @@ public class FileSystemConnectionTesting {
                     case OSSErrorCode.SIGNATURE_DOES_NOT_MATCH:
                         return new ConnectionTestResult(
                                 TestResult.signatureDoesNotMatch(storageConfig.getAccessKeyId()), config.getType());
+                    case OSSErrorCode.NO_SUCH_BUCKET:
+                        return new ConnectionTestResult(TestResult.bucketNotExist(storageConfig.getBucketName()),
+                                config.getType());
                     default:
                         return new ConnectionTestResult(TestResult.unknownError(e), config.getType());
                 }
@@ -127,19 +132,19 @@ public class FileSystemConnectionTesting {
     private String getEndPointRegex(DialectType type) {
         switch (type) {
             case COS:
-                return cosRegex;
+                return COS_ENDPOINT_REGEX;
             case OBS:
-                return obsRegex;
+                return OBS_ENDPOINT_REGEX;
             case S3A:
-                return s3Regex;
+                return S3_ENDPOINT_REGEX;
             case OSS:
-                return ossRegex;
+                return OSS_ENDPOINT_REGEX;
             default:
                 throw new UnExpectedException();
         }
     }
 
     private String generateTempFileName() {
-        return tempFileNamePrefix + UUID.randomUUID();
+        return TMP_FILE_NAME_PREFIX + UUID.randomUUID();
     }
 }
