@@ -16,6 +16,7 @@
 package com.oceanbase.odc.agent.runtime;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.service.task.Task;
 import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -26,7 +27,6 @@ import com.oceanbase.odc.service.task.util.JobUtils;
  * @since 4.2.4
  */
 class DefaultTaskResultBuilder {
-
     public static TaskResult build(TaskContainer<?> taskContainer) {
         TaskResult result = new TaskResult();
         Task<?> task = taskContainer.getTask();
@@ -39,6 +39,6 @@ class DefaultTaskResultBuilder {
     }
 
     public static void assignErrorMessage(TaskResult result, Throwable e) {
-        result.setErrorMessage(null == e ? null : e.getMessage());
+        result.setErrorMessage(null == e ? null : ExceptionUtils.getRootCauseReason(e, 3));
     }
 }
