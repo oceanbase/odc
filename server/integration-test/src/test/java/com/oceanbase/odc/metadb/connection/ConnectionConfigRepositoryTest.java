@@ -36,6 +36,8 @@ import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.common.util.EmptyValues;
+import com.oceanbase.odc.service.connection.model.ConnectionSyncErrorReason;
+import com.oceanbase.odc.service.connection.model.ConnectionSyncResult;
 import com.oceanbase.odc.test.tool.TestRandom;
 
 public class ConnectionConfigRepositoryTest extends ServiceTestEnv {
@@ -51,6 +53,9 @@ public class ConnectionConfigRepositoryTest extends ServiceTestEnv {
 
     @Autowired
     private ConnectionConfigRepository repository;
+
+    @Autowired
+    private ConnectionSyncHistoryRepository syncHistoryRepository;
 
     @Before
     public void setUp() throws Exception {
@@ -317,6 +322,67 @@ public class ConnectionConfigRepositoryTest extends ServiceTestEnv {
         }
     }
 
+    @Test
+    public void findSyncableConnections_HasSyncable_Succeed() {
+        ConnectionEntity c1 = createEntity(ConnectionVisibleScope.ORGANIZATION);
+        ConnectionEntity saved = repository.save(c1);
+        ConnectionSyncHistoryEntity historyEntity = createSuccessSyncHistoryEntity(saved.getId());
+        syncHistoryRepository.save(historyEntity);
+
+        List<ConnectionEntity> syncableConnections = repository.findSyncableConnections();
+
+        Assert.assertEquals(1, syncableConnections.size());
+    }
+
+    @Test
+    public void findSyncableConnections_NoSyncable_Succeed() {
+        ConnectionEntity c1 = createEntity(ConnectionVisibleScope.ORGANIZATION);
+        ConnectionEntity saved = repository.save(c1);
+        ConnectionSyncHistoryEntity historyEntity = createClusterNotExistsSyncHistoryEntity(saved.getId());
+        syncHistoryRepository.save(historyEntity);
+
+        List<ConnectionEntity> syncableConnections = repository.findSyncableConnections();
+
+        Assert.assertEquals(0, syncableConnections.size());
+    }
+
+    @Test
+    public void findSyncableConnections_NoHistory_Succeed() {
+        ConnectionEntity c1 = createEntity(ConnectionVisibleScope.ORGANIZATION);
+        repository.save(c1);
+        List<ConnectionEntity> syncableConnections = repository.findSyncableConnections();
+        Assert.assertEquals(1, syncableConnections.size());
+    }
+
+    @Test
+    public void findSyncableConnectionsByOrganizationIdsIn_NoHistory_Succeed() {
+        ConnectionEntity c1 = createEntity(ConnectionVisibleScope.ORGANIZATION);
+        repository.save(c1);
+        List<ConnectionEntity> syncableConnections =
+                repository.findSyncableConnectionsByOrganizationIdIn(Arrays.asList(ORGANIZATION_ID));
+        Assert.assertEquals(1, syncableConnections.size());
+    }
+
+    @Test
+    public void findSyncableConnectionsByOrganizationIdsIn_ClusterNotExists_Succeed() {
+        ConnectionEntity c1 = createEntity(ConnectionVisibleScope.ORGANIZATION);
+        ConnectionEntity saved = repository.save(c1);
+        ConnectionSyncHistoryEntity historyEntity = createClusterNotExistsSyncHistoryEntity(saved.getId());
+        syncHistoryRepository.save(historyEntity);
+        List<ConnectionEntity> syncableConnections =
+                repository.findSyncableConnectionsByOrganizationIdIn(Arrays.asList(ORGANIZATION_ID));
+        Assert.assertEquals(0, syncableConnections.size());
+    }
+
+    @Test
+    public void findSyncableConnectionsByOrganizationIdsIn_OrganizationNotExists_Succeed() {
+        ConnectionEntity c1 = createEntity(ConnectionVisibleScope.ORGANIZATION);
+        repository.save(c1);
+        List<ConnectionEntity> syncableConnections =
+                repository.findSyncableConnectionsByOrganizationIdIn(Arrays.asList(999L));
+        Assert.assertEquals(0, syncableConnections.size());
+    }
+
     private ConnectionEntity createEntity(ConnectionVisibleScope visibleScope) {
         ConnectionEntity entity = TestRandom.nextObject(ConnectionEntity.class);
         entity.setId(null);
@@ -339,5 +405,28 @@ public class ConnectionConfigRepositoryTest extends ServiceTestEnv {
             entity.setOwnerId(ORGANIZATION_ID);
         }
         return entity;
+    }
+
+    private ConnectionSyncHistoryEntity createSuccessSyncHistoryEntity(Long connectionId) {
+        ConnectionSyncHistoryEntity entity = createSyncHistoryEntity(connectionId);
+        entity.setLastSyncResult(ConnectionSyncResult.SUCCESS);
+        return entity;
+
+    }
+
+    private ConnectionSyncHistoryEntity createClusterNotExistsSyncHistoryEntity(Long connectionId) {
+        ConnectionSyncHistoryEntity entity = createSyncHistoryEntity(connectionId);
+        entity.setLastSyncResult(ConnectionSyncResult.FAILURE);
+        entity.setLastSyncErrorReason(ConnectionSyncErrorReason.CLUSTER_NOT_EXISTS);
+        return entity;
+    }
+
+    private ConnectionSyncHistoryEntity createSyncHistoryEntity(Long connectionId) {
+        ConnectionSyncHistoryEntity entity = TestRandom.nextObject(ConnectionSyncHistoryEntity.class);
+        entity.setId(null);
+        entity.setConnectionId(connectionId);
+        entity.setOrganizationId(ORGANIZATION_ID);
+        return entity;
+
     }
 }

@@ -15,7 +15,11 @@
  */
 package com.oceanbase.odc.service.schedule;
 
+import static com.oceanbase.odc.core.alarm.AlarmEventNames.SCHEDULING_FAILED;
+import static com.oceanbase.odc.core.alarm.AlarmEventNames.SCHEDULING_IGNORE;
+
 import java.io.File;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -32,6 +36,7 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.compress.utils.Lists;
+import org.quartz.CronTrigger;
 import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
@@ -49,6 +54,7 @@ import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
@@ -517,30 +523,53 @@ public class ScheduleService {
      * true and terminates the scheduled task if the database does not exist. If the database exists, it
      * returns false.
      */
-    public boolean vetoJobExecution(Long scheduleId) {
-        Schedule schedule = null;
-        boolean isValidSchedule;
+    public boolean vetoJobExecution(Trigger trigger) {
+        Schedule schedule;
         try {
-            schedule = nullSafeGetModelById(scheduleId);
-            isValidSchedule = isValidSchedule(schedule);
-        } catch (NotFoundException e) {
-            isValidSchedule = false;
+            schedule = nullSafeGetModelById(Long.parseLong(trigger.getJobKey().getName()));
         } catch (Exception e) {
-            log.warn("Get schedule failed,task will be executed,scheduleId={}", scheduleId, e);
-            return false;
+            log.warn("Get schedule failed,task will not be executed,job key={}", trigger.getJobKey(), e);
+            Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                    .item(AlarmUtils.SCHEDULE_ID_NAME, trigger.getJobKey().getName())
+                    .item(AlarmUtils.MESSAGE_NAME,
+                            MessageFormat.format(
+                                    "Job is misfired due to the failure to get the schedule, scheduleId={0}",
+                                    trigger.getJobKey().getName()))
+                    .build();
+            AlarmUtils.alarm(SCHEDULING_FAILED, eventMessage);
+            return true;
         }
-        // terminate invalid schedule
-        if (!isValidSchedule) {
+        // Only perform automatic termination checks for periodic tasks
+        if (trigger instanceof CronTrigger && !isValidSchedule(schedule)) {
+            // terminate invalid schedule
             try {
-                innerTerminate(scheduleId);
+                innerTerminate(schedule.getId());
             } catch (Exception e) {
-                log.warn("Terminate invalid schedule failed,scheduleId={}", scheduleId);
+                log.warn("Terminate invalid schedule failed,scheduleId={}", schedule.getId());
             }
+            Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                    .item(AlarmUtils.ORGANIZATION_NAME, schedule.getOrganizationId().toString())
+                    .item(AlarmUtils.SCHEDULE_ID_NAME, trigger.getJobKey().getName())
+                    .item(AlarmUtils.MESSAGE_NAME,
+                            MessageFormat.format("Job is misfired due to the schedule is invalid, scheduleId={0}",
+                                    schedule.getId()))
+                    .build();
+            AlarmUtils.alarm(SCHEDULING_FAILED, eventMessage);
             return true;
         }
         // skip execution if concurrent scheduling is not allowed
-        return !schedule.getAllowConcurrent() && hasExecutingTask(scheduleId);
-
+        boolean rejectExecution = !schedule.getAllowConcurrent() && hasExecutingTask(schedule.getId());
+        if (rejectExecution) {
+            Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                    .item(AlarmUtils.ORGANIZATION_NAME, schedule.getOrganizationId().toString())
+                    .item(AlarmUtils.SCHEDULE_ID_NAME, trigger.getJobKey().getName())
+                    .item(AlarmUtils.MESSAGE_NAME, MessageFormat.format(
+                            "The Job has reached its trigger time, but the previous task has not yet finished. This scheduling will be ignored, scheduleId={0}",
+                            schedule.getId()))
+                    .build();
+            AlarmUtils.alarm(SCHEDULING_IGNORE, eventMessage);
+        }
+        return rejectExecution;
     }
 
     private boolean hasExecutingTask(Long scheduleId) {
@@ -550,6 +579,11 @@ public class ScheduleService {
                     scheduleTaskService.findById(optional.get().getLatestScheduleTaskId());
             TaskStatus status = null;
             if (taskEntityOptional.isPresent() && !taskEntityOptional.get().getStatus().isTerminated()) {
+                // correct the status of the task
+                if (taskEntityOptional.get().getJobId() == null) {
+                    scheduleTaskService.updateStatusById(taskEntityOptional.get().getId(), TaskStatus.FAILED);
+                    return false;
+                }
                 status = taskEntityOptional.get().getStatus();
                 log.info("Found executing task,scheduleId={},executingTaskId={},taskStatus={}", scheduleId,
                         taskEntityOptional.get().getId(), status);
@@ -596,6 +630,7 @@ public class ScheduleService {
 
     public void stopTask(Long scheduleId, Long scheduleTaskId) {
         nullSafeGetByIdWithCheckPermission(scheduleId, true);
+        scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
         Lock lock = jdbcLockRegistry.obtain(getScheduleTaskLockKey(scheduleTaskId));
         try {
             if (!lock.tryLock(10, TimeUnit.SECONDS)) {
@@ -617,6 +652,7 @@ public class ScheduleService {
     @Transactional(rollbackFor = Exception.class)
     public void startTask(Long scheduleId, Long scheduleTaskId) {
         nullSafeGetByIdWithCheckPermission(scheduleId, true);
+        scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
         Lock lock = jdbcLockRegistry.obtain(getScheduleTaskLockKey(scheduleTaskId));
         try {
             if (!lock.tryLock(10, TimeUnit.SECONDS)) {
@@ -633,6 +669,7 @@ public class ScheduleService {
 
     public void rollbackTask(Long scheduleId, Long scheduleTaskId) {
         Schedule schedule = nullSafeGetByIdWithCheckPermission(scheduleId, true);
+        scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
         if (schedule.getType() != ScheduleType.DATA_ARCHIVE) {
             throw new UnsupportedException();
         }
@@ -902,6 +939,7 @@ public class ScheduleService {
 
     public String getFullLogDownloadUrl(Long scheduleId, Long scheduleTaskId) {
         nullSafeGetByIdWithCheckPermission(scheduleId, false);
+        scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
         return scheduledTaskLoggerService.getFullLogDownloadUrl(scheduleId, scheduleTaskId, OdcTaskLogLevel.ALL);
     }
 
@@ -911,16 +949,18 @@ public class ScheduleService {
 
     public String getLog(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel logLevel) {
         nullSafeGetByIdWithCheckPermission(scheduleId, false);
-        return scheduledTaskLoggerService.getLogContent(scheduleTaskId, logLevel);
+        scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
+        return scheduledTaskLoggerService.getLogContent(scheduleId, scheduleTaskId, logLevel);
     }
 
     public String getLogWithoutPermission(Long scheduleId, Long scheduleTaskId, OdcTaskLogLevel logLevel) {
-        return scheduledTaskLoggerService.getLogContent(scheduleTaskId, logLevel);
+        return scheduledTaskLoggerService.getLogContent(scheduleId, scheduleTaskId, logLevel);
     }
 
     public InputStreamResource downloadLog(Long scheduleId, Long scheduleTaskId) {
         nullSafeGetByIdWithCheckPermission(scheduleId);
-        return scheduledTaskLoggerService.downloadLog(scheduleTaskId, OdcTaskLogLevel.ALL);
+        scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
+        return scheduledTaskLoggerService.downloadLog(scheduleId, scheduleTaskId, OdcTaskLogLevel.ALL);
     }
 
     public Schedule nullSafeGetByIdWithCheckPermission(Long id) {

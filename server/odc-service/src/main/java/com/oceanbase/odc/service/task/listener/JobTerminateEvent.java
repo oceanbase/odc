@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.task.listener;
 
+import javax.annotation.Nullable;
+
 import com.oceanbase.odc.common.event.AbstractEvent;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -34,6 +36,10 @@ public class JobTerminateEvent extends AbstractEvent {
     @Getter
     private final JobStatus status;
 
+    @Nullable
+    @Getter
+    private String errorMessage;
+
     /**
      * Constructs a prototypical Event.
      *
@@ -44,5 +50,10 @@ public class JobTerminateEvent extends AbstractEvent {
         super(ji, "DestroyExecutorEvent");
         this.ji = ji;
         this.status = status;
+    }
+
+    public JobTerminateEvent(JobIdentity ji, JobStatus status, String errorMessage) {
+        this(ji, status);
+        this.errorMessage = errorMessage;
     }
 }
