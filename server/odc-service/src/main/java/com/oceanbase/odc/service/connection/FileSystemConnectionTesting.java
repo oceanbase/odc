@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.connection;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -78,7 +79,7 @@ public class FileSystemConnectionTesting {
                     new ByteArrayInputStream(TMP_TEST_DATA.getBytes(StandardCharsets.UTF_8)), new ObjectMetadata());
             DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest();
             deleteObjectsRequest.setBucketName(storageConfig.getBucketName());
-            deleteObjectsRequest.setKey(objectKey);
+            deleteObjectsRequest.setKeys(Collections.singletonList(objectKey));
             cloudClient.deleteObjects(deleteObjectsRequest);
             return ConnectionTestResult.success(config.getType());
         } catch (CloudException e) {
