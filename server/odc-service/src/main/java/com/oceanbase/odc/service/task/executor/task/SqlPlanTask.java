@@ -137,7 +137,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
     }
 
     @Override
-    protected boolean doStart(JobContext context) throws Exception {
+    protected boolean doStart(JobContext context, TaskContext taskContext) throws Exception {
         try {
             int index = 0;
             initSqlInputStream();
@@ -180,6 +180,7 @@ public class SqlPlanTask extends BaseTask<SqlPlanTaskResult> {
                         break;
                     }
                     log.warn("Sql task execution failed, will continue to execute next statement.", e);
+                    taskContext.getExceptionListener().onException(e);
                 }
             }
             result.setTotalStatements(index);

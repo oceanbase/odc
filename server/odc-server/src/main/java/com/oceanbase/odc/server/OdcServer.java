@@ -27,6 +27,7 @@ import javax.validation.Validator;
 
 import org.hibernate.validator.HibernateValidator;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.actuate.autoconfigure.metrics.CompositeMeterRegistryAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.cloud.config.server.EnableConfigServer;
@@ -57,7 +58,8 @@ import lombok.extern.slf4j.Slf4j;
  * @author mogao.zj
  */
 @Slf4j
-@SpringBootApplication(scanBasePackages = {"com.oceanbase.odc"})
+@SpringBootApplication(scanBasePackages = {"com.oceanbase.odc"},
+        exclude = CompositeMeterRegistryAutoConfiguration.class)
 @EnableWebMvc
 @Configuration
 @EnableScheduling
@@ -89,10 +91,10 @@ public class OdcServer {
             log.info("Task executor exit.");
             return;
         }
-        AlarmUtils.alarm(SERVER_RESTART, LocalDateTime.now().toString());
         initEnv();
         System.setProperty("spring.cloud.bootstrap.enabled", "true");
         PluginSpringApplication.run(OdcServer.class, args);
+        AlarmUtils.alarm(SERVER_RESTART, LocalDateTime.now().toString());
     }
 
     private static void initEnv() {

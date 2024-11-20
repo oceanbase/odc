@@ -26,6 +26,8 @@ import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.loaddata.model.LoadDataParameters;
+import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 
 /**
@@ -58,6 +60,10 @@ public interface ScheduleMapper {
                 return JsonUtils.fromJson(entity.getJobParametersJson(), LogicalDatabaseChangeParameters.class);
             case LOAD_DATA:
                 return JsonUtils.fromJson(entity.getJobParametersJson(), LoadDataParameters.class);
+            case ONLINE_SCHEMA_CHANGE_COMPLETE:
+                return JsonUtils.fromJson(entity.getJobParametersJson(), OnlineSchemaChangeParameters.class);
+            case PARTITION_PLAN:
+                return JsonUtils.fromJson(entity.getJobParametersJson(), PartitionPlanConfig.class);
             default:
                 throw new UnsupportedException();
         }

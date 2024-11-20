@@ -84,6 +84,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 import com.oceanbase.odc.service.connection.model.CreateSessionResp;
 import com.oceanbase.odc.service.connection.model.DBSessionResp;
+import com.oceanbase.odc.service.connection.model.DBSessionResp.DBSessionRespDelegate;
 import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.db.DBCharsetService;
 import com.oceanbase.odc.service.db.session.DBSessionService;
@@ -92,12 +93,14 @@ import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.lab.model.LabProperties;
+import com.oceanbase.odc.service.monitor.session.ConnectionSessionMonitorListener;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
 import com.oceanbase.odc.service.session.factory.LogicalConnectionSessionFactory;
 import com.oceanbase.odc.service.session.factory.StateHostGenerator;
+import com.oceanbase.tools.dbbrowser.model.DBSession;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -157,6 +160,8 @@ public class ConnectSessionService {
     private LogicalDatabaseService logicalDatabaseService;
     @Autowired
     private StateHostGenerator stateHostGenerator;
+    @Autowired
+    private DBSessionManageFacade dbSessionManageFacade;
     private final Map<String, Lock> sessionId2Lock = new ConcurrentHashMap<>();
 
     @PostConstruct
@@ -168,6 +173,7 @@ public class ConnectSessionService {
                 new DefaultTaskManager("connection-session-management"), repository);
         this.connectionSessionManager.addListener(new SessionLimitListener(limitService));
         this.connectionSessionManager.addListener(new SessionLockRemoveListener(this.sessionId2Lock));
+        this.connectionSessionManager.addListener(new ConnectionSessionMonitorListener());
         this.connectionSessionManager.enableAsyncRefreshSessionManager();
         this.connectionSessionManager.addSessionValidator(
                 new SessionValidatorPredicate(sessionProperties.getTimeoutMins(), TimeUnit.MINUTES));
@@ -414,9 +420,15 @@ public class ConnectSessionService {
 
     public DBSessionResp currentDBSession(@NotNull String sessionId) {
         ConnectionSession connectionSession = nullSafeGet(SidUtils.getSessionId(sessionId), true);
+        DBSession dbSession = dbSessionService.currentSession(connectionSession);
+        DBSessionRespDelegate dbSessionRespDelegate = DBSessionRespDelegate.of(dbSession);
+        if (dbSessionRespDelegate != null) {
+            dbSessionRespDelegate
+                    .setKillCurrentQuerySupported(dbSessionManageFacade.supportKillConsoleQuery(connectionSession));
+        }
         return DBSessionResp.builder()
                 .settings(settingsService.getSessionSettings(connectionSession))
-                .session(dbSessionService.currentSession(connectionSession))
+                .session(dbSessionRespDelegate)
                 .build();
     }
 
@@ -535,6 +547,10 @@ public class ConnectSessionService {
     private boolean isOBCloudEnvironment() {
         return cloudMetadataClient.supportsCloudMetadata()
                 && Boolean.FALSE.equals(cloudMetadataClient.supportsCloudParentUid());
+    }
+
+    public Integer getActiveSession() {
+        return this.connectionSessionManager.getActiveSessionCount();
     }
 
 }

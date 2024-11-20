@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.stereotype.Service;
 
@@ -53,6 +55,7 @@ public class DBSessionService {
                 .collect(Collectors.toList());
     }
 
+    @Nullable
     public DBSession currentSession(@NonNull ConnectionSession connectionSession) {
         if (ConnectionSessionUtil.isLogicalSession(connectionSession)) {
             return null;
