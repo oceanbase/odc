@@ -49,6 +49,11 @@ public class DataArchiveJob extends AbstractDlmJob {
         parameters.setJobType(JobType.MIGRATE);
         parameters.setTables(dataArchiveParameters.getTables());
         for (DataArchiveTableConfig tableConfig : parameters.getTables()) {
+            tableConfig.setTargetTableName(DataArchiveConditionUtil.parseCondition(tableConfig.getTargetTableName(),
+                    dataArchiveParameters.getVariables(),
+                    context.getFireTime()));
+        }
+        for (DataArchiveTableConfig tableConfig : parameters.getTables()) {
             tableConfig.setConditionExpression(StringUtils.isNotEmpty(tableConfig.getConditionExpression())
                     ? DataArchiveConditionUtil.parseCondition(tableConfig.getConditionExpression(),
                             dataArchiveParameters.getVariables(),
