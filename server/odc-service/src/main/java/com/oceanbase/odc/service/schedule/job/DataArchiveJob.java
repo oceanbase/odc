@@ -54,6 +54,9 @@ public class DataArchiveJob extends AbstractDlmJob {
                             dataArchiveParameters.getVariables(),
                             context.getFireTime())
                     : "");
+            tableConfig.setTargetTableName(DataArchiveConditionUtil.parseCondition(tableConfig.getTargetTableName(),
+                    dataArchiveParameters.getVariables(),
+                    context.getFireTime()));
         }
         parameters.setDeleteAfterMigration(dataArchiveParameters.isDeleteAfterMigration());
         parameters.setMigrationInsertAction(dataArchiveParameters.getMigrationInsertAction());
