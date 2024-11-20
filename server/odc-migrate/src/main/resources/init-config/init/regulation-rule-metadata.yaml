@@ -1528,8 +1528,6 @@
       value: OB_ORACLE
     - label: SUPPORTED_DIALECT_TYPE
       value: ORACLE
-    - label: SUPPORTED_DIALECT_TYPE
-      value: ORACLE
   propertyMetadatas:
     - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.allowed-max-sql-affected-count}
       description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.allowed-max-sql-affected-count.description}
