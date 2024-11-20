@@ -184,6 +184,7 @@ public class SqlPlanTask extends TaskBase<SqlPlanTaskResult> {
                         break;
                     }
                     log.warn("Sql task execution failed, will continue to execute next statement.", e);
+                    context.getExceptionListener().onException(e);
                 }
             }
             result.setTotalStatements(index);
