@@ -368,41 +368,64 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
         }
     }
 
+    /**
+     * 解析范围分区语句
+     *
+     * @param statement 范围分区语句
+     * @param partition 数据库表分区
+     */
     private void parseRangePartitionStmt(RangePartition statement, DBTablePartition partition) {
+        // 获取返回值DBTablePartition中一级分区选项和一级分区定义列表
         DBTablePartitionOption partitionOption = partition.getPartitionOption();
         List<DBTablePartitionDefinition> partitionDefinitions = partition.getPartitionDefinitions();
+        // 获取一级分区的数量
         int num = statement.getPartitionElements().size();
+        // 响应结果中设置一级分区数量
         partitionOption.setPartitionsNum(num);
+        // 判断一级分区是否是Range Columns 分区
         if (!statement.isColumns()) {
+            // 设置分区类型为范围分区
             partitionOption.setType(DBTablePartitionType.RANGE);
+            // 判断分区目标是否为列引用
             if (statement.getPartitionTargets().get(0) instanceof ColumnReference) {
+                // 设置分区列名
                 partitionOption
-                        .setColumnNames(
-                                statement.getPartitionTargets().stream().map(item -> removeIdentifiers(item.getText()))
-                                        .collect(Collectors.toList()));
+                    .setColumnNames(
+                        statement.getPartitionTargets().stream().map(item -> removeIdentifiers(item.getText()))
+                            .collect(Collectors.toList()));
             } else {
+                // 设置分区表达式
                 partitionOption.setExpression((statement.getPartitionTargets().get(0).getText()));
             }
+            // 遍历分区元素
             for (int i = 0; i < num; i++) {
                 RangePartitionElement element = (RangePartitionElement) statement.getPartitionElements().get(i);
                 DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
                 partitionDefinition.setOrdinalPosition(i);
+                // 设置分区最大值
                 partitionDefinition.setMaxValues(Collections.singletonList(element.getRangeExprs().get(0).getText()));
+                // 设置分区名称
                 partitionDefinition.setName(removeIdentifiers(element.getRelation()));
                 partitionDefinition.setType(DBTablePartitionType.RANGE);
                 partitionDefinitions.add(partitionDefinition);
             }
         } else {
+            // 设置一级分区类型为范围列分区
             partitionOption.setType(DBTablePartitionType.RANGE_COLUMNS);
+            // 设置一级分区包含的所有列名
             partitionOption.setColumnNames(
-                    statement.getPartitionTargets().stream().map(item -> removeIdentifiers(item.getText()))
-                            .collect(Collectors.toList()));
+                statement.getPartitionTargets().stream().map(item -> removeIdentifiers(item.getText()))
+                    .collect(Collectors.toList()));
+            // 为每个一级分区构造分区定义DBTablePartitionDefinition
             for (int i = 0; i < num; i++) {
                 RangePartitionElement element = (RangePartitionElement) statement.getPartitionElements().get(i);
                 DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
+                //设置一级分区的顺序
                 partitionDefinition.setOrdinalPosition(i);
+                //设置一级分区的最大值，可能有多个
                 partitionDefinition.setMaxValues(
-                        element.getRangeExprs().stream().map(Expression::getText).collect(Collectors.toList()));
+                    element.getRangeExprs().stream().map(Expression::getText).collect(Collectors.toList()));
+                // 设置分区名称，类型
                 partitionDefinition.setName(removeIdentifiers(element.getRelation()));
                 partitionDefinition.setType(DBTablePartitionType.RANGE_COLUMNS);
                 partitionDefinitions.add(partitionDefinition);
