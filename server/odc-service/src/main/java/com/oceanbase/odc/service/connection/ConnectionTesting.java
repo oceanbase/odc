@@ -99,7 +99,8 @@ public class ConnectionTesting {
         if (req.getAccountType() == ConnectionAccountType.SYS_READ) {
             connectionConfig.setDefaultSchema(null);
         }
-        return connectionConfig.getDialectType().isFileSystem() ? fileSystemConnectionTesting.test(connectionConfig)
+        return connectionConfig.getDialectType() == DialectType.FILE_SYSTEM
+                ? fileSystemConnectionTesting.test(connectionConfig)
                 : test(connectionConfig);
     }
 

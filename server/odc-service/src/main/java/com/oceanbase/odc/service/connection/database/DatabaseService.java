@@ -511,9 +511,6 @@ public class DatabaseService {
         }
         try {
             ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
-            if (connection.getDialectType().isFileSystem()) {
-                return true;
-            }
             horizontalDataPermissionValidator.checkCurrentOrganization(connection);
             organizationService.get(connection.getOrganizationId()).ifPresent(organization -> {
                 if (organization.getType() == OrganizationType.INDIVIDUAL) {

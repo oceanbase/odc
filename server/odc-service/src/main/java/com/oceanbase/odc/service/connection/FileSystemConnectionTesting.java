@@ -26,7 +26,7 @@ import org.springframework.stereotype.Component;
 import com.aliyun.oss.OSSErrorCode;
 import com.aliyun.oss.OSSException;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -60,18 +60,20 @@ public class FileSystemConnectionTesting {
     public ConnectionTestResult test(@NonNull ConnectionConfig config) {
         PreConditions.notBlank(config.getPassword(), "AccessKeySecret");
         PreConditions.notBlank(config.getDefaultSchema(), "Bucket");
+        String[] splitPath = config.getDefaultSchema().split("/");
+        String bucketName = splitPath[0];
+        String path = splitPath.length > 1 ? "/" + splitPath[1] : "/";
         ObjectStorageConfiguration storageConfig = new ObjectStorageConfiguration();
         storageConfig.setAccessKeyId(config.getUsername());
         storageConfig.setAccessKeySecret(config.getPassword());
-        storageConfig.setBucketName(config.getDefaultSchema().split("/")[0]);
+        storageConfig.setBucketName(bucketName);
         storageConfig.setRegion(getRegion(config));
-        storageConfig.setCloudProvider(getCloudProvider(config.getDialectType()));
+        storageConfig.setCloudProvider(getCloudProvider(config.getType()));
         storageConfig.setPublicEndpoint(config.getHost());
         try {
             CloudClient cloudClient =
                     new CloudResourceConfigurations.CloudClientBuilder().generateCloudClient(storageConfig);
-            String tempFileName = generateTempFileName();
-            String objectKey = config.getDefaultSchema() + tempFileName;
+            String objectKey = path + generateTempFileName();
             cloudClient.putObject(storageConfig.getBucketName(), objectKey,
                     new ByteArrayInputStream(TMP_TEST_DATA.getBytes(StandardCharsets.UTF_8)), new ObjectMetadata());
             DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest();
@@ -105,7 +107,7 @@ public class FileSystemConnectionTesting {
     }
 
     private String getRegion(ConnectionConfig config) {
-        Pattern pattern = Pattern.compile(getEndPointRegex(config.getDialectType()));
+        Pattern pattern = Pattern.compile(getEndPointRegex(config.getType()));
         Matcher matcher = pattern.matcher(config.getHost());
         if (matcher.find()) {
             return matcher.group(1);
@@ -114,7 +116,7 @@ public class FileSystemConnectionTesting {
         }
     }
 
-    private CloudProvider getCloudProvider(DialectType type) {
+    private CloudProvider getCloudProvider(ConnectType type) {
         switch (type) {
             case COS:
                 return CloudProvider.TENCENT_CLOUD;
@@ -129,7 +131,7 @@ public class FileSystemConnectionTesting {
         }
     }
 
-    private String getEndPointRegex(DialectType type) {
+    private String getEndPointRegex(ConnectType type) {
         switch (type) {
             case COS:
                 return COS_ENDPOINT_REGEX;
