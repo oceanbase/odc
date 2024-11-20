@@ -257,7 +257,7 @@ public enum ErrorCodes implements ErrorCode {
     ObFullLinkTraceNotSupported,
     ObFullLinkTraceNotEnabled,
     ObQueryProfileNotSupported,
-    IntelligentAnalysisOfExecutionPlanFailed,
+    CopilotAnalyzeExecutionPlanFailed,
 
     ObPreCheckDdlFailed,
     ObCopySchemaFailed,
