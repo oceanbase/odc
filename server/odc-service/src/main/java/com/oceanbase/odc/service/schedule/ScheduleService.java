@@ -833,7 +833,7 @@ public class ScheduleService {
                 .databaseName(params.getDatabaseName())
                 .type(params.getScheduleType())
                 .creatorIds(params.getCreatorIds())
-                .projectId(params.getProjectId())
+                .projectIds(params.getProjectIds())
                 .organizationId(authenticationFacade.currentOrganizationId())
                 .build();
         Set<Long> scheduleIds = scheduleRepository.find(Pageable.unpaged(), scheduleParams).getContent()
