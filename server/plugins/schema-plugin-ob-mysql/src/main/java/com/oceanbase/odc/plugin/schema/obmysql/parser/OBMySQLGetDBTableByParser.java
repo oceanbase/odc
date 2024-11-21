@@ -446,26 +446,42 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
         }
     }
 
+    /**
+     * 解析列表分区语句
+     *
+     * @param statement 列表分区语句
+     * @param partition 数据库表分区
+     */
     private void parseListPartitionStmt(ListPartition statement, DBTablePartition partition) {
+        // 获取待返回值中的一级分区选项和一级分区定义列表
         DBTablePartitionOption partitionOption = partition.getPartitionOption();
         List<DBTablePartitionDefinition> partitionDefinitions = partition.getPartitionDefinitions();
+        // 获取一级分区元素数量
         int num = statement.getPartitionElements().size();
+        // 设置一级分区数量
         partitionOption.setPartitionsNum(num);
+        // 判断是否为列分区
         if (!statement.isColumns()) {
+            // 设置分区类型为列表分区
             partitionOption.setType(DBTablePartitionType.LIST);
+            // 判断分区目标是否为列引用
             if (statement.getPartitionTargets().get(0) instanceof ColumnReference) {
+                // 设置分区列名
                 partitionOption
-                        .setColumnNames(
-                                statement.getPartitionTargets().stream().map(item -> removeIdentifiers(item.getText()))
-                                        .collect(Collectors.toList()));
+                    .setColumnNames(
+                        statement.getPartitionTargets().stream().map(item -> removeIdentifiers(item.getText()))
+                            .collect(Collectors.toList()));
             } else {
+                // 设置分区表达式
                 partitionOption.setExpression((statement.getPartitionTargets().get(0).getText()));
             }
+            // 遍历分区元素
             for (int i = 0; i < num; i++) {
                 ListPartitionElement element = (ListPartitionElement) statement.getPartitionElements().get(i);
                 DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
                 partitionDefinition.setOrdinalPosition(i);
                 List<List<String>> valuesList = new ArrayList<>();
+                // 获取分区值列表
                 element.getListExprs().forEach(item -> valuesList.add(Collections.singletonList(item.getText())));
                 partitionDefinition.setValuesList(valuesList);
                 partitionDefinition.setName(removeIdentifiers(element.getRelation()));
@@ -473,10 +489,12 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
                 partitionDefinitions.add(partitionDefinition);
             }
         } else {
+            // 设置分区类型为列分区
             partitionOption.setType(DBTablePartitionType.LIST_COLUMNS);
             partitionOption.setColumnNames(
-                    statement.getPartitionTargets().stream().map(item -> removeIdentifiers(item.getText()))
-                            .collect(Collectors.toList()));
+                statement.getPartitionTargets().stream().map(item -> removeIdentifiers(item.getText()))
+                    .collect(Collectors.toList()));
+            // 遍历分区元素
             for (int i = 0; i < num; i++) {
                 ListPartitionElement element = (ListPartitionElement) statement.getPartitionElements().get(i);
                 DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
@@ -485,8 +503,8 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
                 for (Expression listExpr : element.getListExprs()) {
                     if (listExpr instanceof CollectionExpression) {
                         valuesList.add(
-                                ((CollectionExpression) listExpr).getExpressionList().stream().map(Expression::getText)
-                                        .collect(Collectors.toList()));
+                            ((CollectionExpression) listExpr).getExpressionList().stream().map(Expression::getText)
+                                .collect(Collectors.toList()));
                     } else if (listExpr instanceof ConstExpression) {
                         valuesList.add(Collections.singletonList(listExpr.getText()));
                     }
