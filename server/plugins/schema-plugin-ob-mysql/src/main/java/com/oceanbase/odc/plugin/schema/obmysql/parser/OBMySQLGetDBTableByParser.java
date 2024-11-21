@@ -300,19 +300,31 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
         return partition;
     }
 
+    /**
+     * 解析哈希分区语句
+     *
+     * @param statement 哈希分区语句
+     * @param partition 数据库表分区
+     */
     private void parseHashPartitionStmt(HashPartition statement, DBTablePartition partition) {
+        // 获取返回值中的一级分区选项和一级分区定义列表
         DBTablePartitionOption partitionOption = partition.getPartitionOption();
         List<DBTablePartitionDefinition> partitionDefinitions = partition.getPartitionDefinitions();
+        // 获取解析出来的一级分区表达式
         Expression expression = statement.getPartitionTargets().get(0);
         if (expression instanceof ColumnReference) {
+            // 如果一级分区表达式是列引用，则设置列名
             partitionOption.setColumnNames(
-                    statement.getPartitionTargets().stream().map(item -> removeIdentifiers(item.getText()))
-                            .collect(Collectors.toList()));
+                statement.getPartitionTargets().stream().map(item -> removeIdentifiers(item.getText()))
+                    .collect(Collectors.toList()));
         } else {
+            // 否则设置分区表达式
             partitionOption.setExpression(statement.getPartitionTargets().get(0).getText());
         }
+        // 设置一级分区类型为哈希
         partitionOption.setType(DBTablePartitionType.HASH);
         if (statement.getPartitionElements().size() != 0) {
+            // 如果存在一级分区元素，则设置分区数量和分区定义
             int num = statement.getPartitionElements().size();
             partitionOption.setPartitionsNum(num);
             for (int i = 0; i < num; i++) {
@@ -323,6 +335,7 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
                 partitionDefinitions.add(partitionDefinition);
             }
         } else if (statement.getPartitionsNum() != null) {
+            // 如果不存在分区元素但设置了分区数量，则设置分区数量和分区定义
             Integer num = statement.getPartitionsNum();
             partitionOption.setPartitionsNum(num);
             for (int i = 0; i < num; i++) {
@@ -384,27 +397,27 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
         partitionOption.setPartitionsNum(num);
         // 判断一级分区是否是Range Columns 分区
         if (!statement.isColumns()) {
-            // 设置分区类型为范围分区
+            // 获取一级分区类型
             partitionOption.setType(DBTablePartitionType.RANGE);
-            // 判断分区目标是否为列引用
+            // 获取一级分区分区键
             if (statement.getPartitionTargets().get(0) instanceof ColumnReference) {
-                // 设置分区列名
+                // 获取一级分区列名
                 partitionOption
                     .setColumnNames(
                         statement.getPartitionTargets().stream().map(item -> removeIdentifiers(item.getText()))
                             .collect(Collectors.toList()));
             } else {
-                // 设置分区表达式
+                // 获取一级分区表达式
                 partitionOption.setExpression((statement.getPartitionTargets().get(0).getText()));
             }
-            // 遍历分区元素
+            // 为每个一级分区构造分区定义DBTablePartitionDefinition
             for (int i = 0; i < num; i++) {
                 RangePartitionElement element = (RangePartitionElement) statement.getPartitionElements().get(i);
                 DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
                 partitionDefinition.setOrdinalPosition(i);
-                // 设置分区最大值
+                // 获取一级分区最大值
                 partitionDefinition.setMaxValues(Collections.singletonList(element.getRangeExprs().get(0).getText()));
-                // 设置分区名称
+                // 获取一级分区名称，类型
                 partitionDefinition.setName(removeIdentifiers(element.getRelation()));
                 partitionDefinition.setType(DBTablePartitionType.RANGE);
                 partitionDefinitions.add(partitionDefinition);
