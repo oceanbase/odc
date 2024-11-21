@@ -16,7 +16,7 @@
 package com.oceanbase.odc.service.sqlcheck.rule;
 
 import java.io.StringReader;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -65,7 +65,7 @@ public class OracleRestrictIndexDataTypes extends BaseRestrictIndexDataTypes {
 
     @Override
     public List<DialectType> getSupportsDialectTypes() {
-        return Collections.singletonList(DialectType.OB_ORACLE);
+        return Arrays.asList(DialectType.OB_ORACLE, DialectType.ORACLE);
     }
 
 }

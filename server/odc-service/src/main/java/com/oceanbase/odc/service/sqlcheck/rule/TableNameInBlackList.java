@@ -92,7 +92,7 @@ public class TableNameInBlackList implements SqlCheckRule {
     @Override
     public List<DialectType> getSupportsDialectTypes() {
         return Arrays.asList(DialectType.OB_MYSQL, DialectType.MYSQL, DialectType.OB_ORACLE,
-                DialectType.ODP_SHARDING_OB_MYSQL);
+                DialectType.ODP_SHARDING_OB_MYSQL, DialectType.ORACLE);
     }
 
     private String unquoteIdentifier(String name) {
