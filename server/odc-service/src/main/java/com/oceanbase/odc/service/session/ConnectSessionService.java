@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -301,8 +302,13 @@ public class ConnectSessionService {
 
     public ConnectionSession createPhysicalConnectionSession(@NotNull ConnectionConfig connection,
             @NotNull CreateSessionReq req) {
+        return createPhysicalConnectionSession(connection, req, 1);
+    }
+
+    public ConnectionSession createPhysicalConnectionSession(@NotNull ConnectionConfig connection,
+            @NotNull CreateSessionReq req, int maxConcurrentTaskCount) {
         SqlExecuteTaskManagerFactory factory =
-                new SqlExecuteTaskManagerFactory(this.monitorTaskManager, "console", 1);
+                new SqlExecuteTaskManagerFactory(this.monitorTaskManager, "console", maxConcurrentTaskCount);
         // TODO: query from use config service
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(
                 connection, getAutoCommit(connection), factory);
@@ -377,6 +383,36 @@ public class ConnectSessionService {
         }
         if (!Objects.equals(ConnectionSessionUtil.getUserId(session), authenticationFacade.currentUserId())) {
             throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
+        }
+        connectionSessionManager.cancelExpire(session);
+        return session;
+    }
+
+    public ConnectionSession nullSafeGetSkipPermissionCheck(@NotNull String sessionId,
+            Supplier<ConnectionSession> createConnectionSessionSupplier) {
+        ConnectionSession session = connectionSessionManager.getSession(sessionId);
+        if (session == null) {
+            if (createConnectionSessionSupplier == null) {
+                throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
+            }
+            Lock lock = this.sessionId2Lock.computeIfAbsent(sessionId, s -> new ReentrantLock());
+            try {
+                if (!lock.tryLock(10, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("Session is creating, please wait and retry later");
+                }
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+            try {
+                session = connectionSessionManager.getSession(sessionId);
+                if (session != null) {
+                    return session;
+                }
+                session = createConnectionSessionSupplier.get();
+                return session;
+            } finally {
+                lock.unlock();
+            }
         }
         connectionSessionManager.cancelExpire(session);
         return session;
