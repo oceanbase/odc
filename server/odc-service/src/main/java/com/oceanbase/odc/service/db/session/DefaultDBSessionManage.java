@@ -71,7 +71,6 @@ import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
