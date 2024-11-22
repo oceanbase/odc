@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.session;
 
-import static org.junit.Assert.*;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -48,16 +46,22 @@ public class DBSchemaExtractorTest {
 
     @Test
     public void test() {
+        // 从指定路径的YAML文件中读取测试用例列表
         List<DBSchemaExtractorTestCase> testCases =
-                YamlUtils.fromYamlList(TEST_RESOURCE_FILE_PATH, DBSchemaExtractorTestCase.class);
+            YamlUtils.fromYamlList(TEST_RESOURCE_FILE_PATH, DBSchemaExtractorTestCase.class);
+        // 遍历测试用例列表
         for (DBSchemaExtractorTestCase testCase : testCases) {
+            // 调用被测方法，获取实际结果
             Map<DBSchemaIdentity, Set<SqlType>> actual = DBSchemaExtractor.listDBSchemasWithSqlTypes(
-                    testCase.getSqls().stream().map(SqlTuple::newTuple).collect(Collectors.toList()),
-                    testCase.getDialectType(), testCase.getDefaultSchema());
+                testCase.getSqls().stream().map(SqlTuple::newTuple).collect(Collectors.toList()),
+                testCase.getDialectType(), testCase.getDefaultSchema());
+            // 断言实际结果和期望结果的大小相同
             Assert.assertEquals(testCase.getExpected().size(), actual.size());
+            // 断言实际结果包含期望结果中的所有元素
             for (DBSchemaIdentity expected : testCase.getExpected()) {
                 Assert.assertTrue(actual.containsKey(expected));
             }
+            // 打印测试通过的信息
             System.out.println("Test case: " + testCase.getId() + " passed.");
         }
     }
