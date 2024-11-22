@@ -184,7 +184,7 @@
   sqls:
     - "SELECT * FROM DB1.TABLE1@FAKE_DBLINK;"
   expected: [ ]
-# acess ob mysql function ,procedure and trigger
+# access ob mysql function ,procedure and trigger
 - id: 23
   dialect_type: OB_MYSQL
   default_schema: DEFAULT_SCHEMA
