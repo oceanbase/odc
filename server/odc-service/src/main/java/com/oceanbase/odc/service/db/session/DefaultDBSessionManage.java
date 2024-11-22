@@ -62,7 +62,6 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.db.browser.DBStatsAccessors;
-import com.oceanbase.odc.service.db.session.DBSessionService.SessionIdKillSql;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
@@ -508,19 +507,6 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
             log.warn("Kill all sessions occur error", e);
             throw new IllegalStateException("Kill all sessions occur error", e);
         }
-    }
-
-    private List<SessionIdKillSql> getKillSql(@NonNull List<OdcDBSession> allSession) {
-        return allSession.stream()
-                .map(dbSession -> {
-                    StringBuilder sqlBuilder = new StringBuilder();
-                    sqlBuilder.append("kill ");
-                    sqlBuilder.append(dbSession.getSessionId());
-                    if (dbSession.getSvrIp() != null) {
-                        sqlBuilder.append(" /*").append(dbSession.getSvrIp()).append("*/");
-                    }
-                    return new SessionIdKillSql(dbSession.getSessionId(), sqlBuilder.append(";").toString());
-                }).collect(Collectors.toList());
     }
 
     @Data
