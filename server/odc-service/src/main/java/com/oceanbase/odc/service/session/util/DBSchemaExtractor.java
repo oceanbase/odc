@@ -200,6 +200,36 @@ public class DBSchemaExtractor {
 
         private final Set<DBSchemaIdentity> identities = new HashSet<>();
 
+        public RelationFactor visitDrop_function_stmt(
+                com.oceanbase.tools.sqlparser.obmysql.OBParser.Drop_function_stmtContext ctx) {
+            RelationFactor relationFactor = MySQLFromReferenceFactory.getRelationFactor(
+                    ctx.relation_factor().normal_relation_factor());
+            if (relationFactor.getSchema() != null) {
+                identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
+            }
+            return null;
+        }
+
+        public RelationFactor visitDrop_procedure_stmt(
+                com.oceanbase.tools.sqlparser.obmysql.OBParser.Drop_procedure_stmtContext ctx) {
+            RelationFactor relationFactor = MySQLFromReferenceFactory.getRelationFactor(
+                    ctx.relation_factor().normal_relation_factor());
+            if (relationFactor.getSchema() != null) {
+                identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
+            }
+            return null;
+        }
+
+        public RelationFactor visitDrop_trigger_stmt(
+                com.oceanbase.tools.sqlparser.obmysql.OBParser.Drop_trigger_stmtContext ctx) {
+            RelationFactor relationFactor = MySQLFromReferenceFactory.getRelationFactor(
+                    ctx.relation_factor().normal_relation_factor());
+            if (relationFactor.getSchema() != null) {
+                identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
+            }
+            return null;
+        }
+
         @Override
         public RelationFactor visitPartition_option(Partition_optionContext ctx) {
             return null;

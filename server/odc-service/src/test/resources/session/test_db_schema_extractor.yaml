@@ -184,3 +184,28 @@
   sqls:
     - "SELECT * FROM DB1.TABLE1@FAKE_DBLINK;"
   expected: [ ]
+# acess ob mysql function ,procedure and trigger
+- id: 23
+  dialect_type: OB_MYSQL
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "drop function db1.func1"
+  expected:
+    - schema: db1
+      table: ~
+- id: 24
+  dialect_type: OB_MYSQL
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "drop procedure db1.proc1"
+  expected:
+    - schema: db1
+      table: ~
+- id: 25
+  dialect_type: OB_MYSQL
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "drop trigger db1.trigger1"
+  expected:
+    - schema: db1
+      table: ~
