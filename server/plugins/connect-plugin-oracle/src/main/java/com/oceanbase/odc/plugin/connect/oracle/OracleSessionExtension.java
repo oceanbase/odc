@@ -20,9 +20,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.pf4j.Extension;
+import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
@@ -114,5 +119,17 @@ public class OracleSessionExtension extends OBOracleSessionExtension {
         }
     }
 
+    @Override
+    public Map<String, String> getKillQuerySqls(@NonNull List<String> connectionIds) {
+        return getKillSessionSqls(connectionIds);
+    }
 
+    @Override
+    public Map<String, String> getKillSessionSqls(@NonNull List<String> connectionIds) {
+        if (CollectionUtils.isEmpty(connectionIds)) {
+            return Collections.emptyMap();
+        }
+        return connectionIds.stream()
+                .collect(Collectors.toMap(id -> id, id -> "ALTER SYSTEM KILL SESSION '" + id + "'", (k1, k2) -> k1));
+    }
 }

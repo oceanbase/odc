@@ -16,6 +16,8 @@
 package com.oceanbase.odc.core.sql.execute;
 
 import java.sql.Connection;
+import java.util.List;
+import java.util.Map;
 
 import lombok.NonNull;
 
@@ -29,5 +31,22 @@ public interface SessionOperations {
     String getConnectionId(@NonNull Connection connection);
 
     void killQuery(@NonNull Connection connection, @NonNull String connectionId);
+
+    /**
+     * Get kill query SQL by connectionId
+     *
+     * @param connectionIds
+     * @return the map of connectionId to kill query SQL
+     */
+    Map<String, String> getKillQuerySqls(@NonNull List<String> connectionIds);
+
+
+    /**
+     * Get kill session SQL by connectionId
+     *
+     * @param connectionIds
+     * @return the map of connectionId to kill session SQL
+     */
+    Map<String, String> getKillSessionSqls(@NonNull List<String> connectionIds);
 
 }

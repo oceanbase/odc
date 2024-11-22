@@ -18,9 +18,14 @@ package com.oceanbase.odc.plugin.connect.oboracle;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.pf4j.Extension;
+import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.jdbc.OceanBaseConnection;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
@@ -32,6 +37,7 @@ import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.model.DBClientInfo;
 import com.oceanbase.tools.dbbrowser.util.VersionUtils;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -49,6 +55,23 @@ public class OBOracleSessionExtension implements SessionExtensionPoint {
     public void killQuery(Connection connection, String connectionId) {
         JdbcOperationsUtil.getJdbcOperations(connection).execute("KILL QUERY " + connectionId);
     }
+
+    @Override
+    public Map<String, String> getKillQuerySqls(@NonNull List<String> connectionIds) {
+        if (CollectionUtils.isEmpty(connectionIds)) {
+            return Collections.emptyMap();
+        }
+        return connectionIds.stream().collect(Collectors.toMap(id -> id, id -> "KILL QUERY " + id, (k1, k2) -> k1));
+    }
+
+    @Override
+    public Map<String, String> getKillSessionSqls(@NonNull List<String> connectionIds) {
+        if (CollectionUtils.isEmpty(connectionIds)) {
+            return Collections.emptyMap();
+        }
+        return connectionIds.stream().collect(Collectors.toMap(id -> id, id -> "KILL " + id, (k1, k2) -> k1));
+    }
+
 
     @Override
     public void switchSchema(Connection connection, String schemaName) throws SQLException {

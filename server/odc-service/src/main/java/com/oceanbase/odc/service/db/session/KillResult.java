@@ -24,12 +24,12 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class KillSessionResult {
+public class KillResult {
     private String sessionId;
     private boolean killed;
     private String errorMessage;
 
-    public KillSessionResult(JdbcGeneralResult jdbcGeneralResult, String sessionId) {
+    public KillResult(JdbcGeneralResult jdbcGeneralResult, String sessionId) {
         this.sessionId = sessionId;
         this.killed = jdbcGeneralResult.getStatus().equals(SqlExecuteStatus.SUCCESS);
         if (!killed) {
