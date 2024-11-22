@@ -310,7 +310,8 @@ public class ScheduleService {
                 validateTriggerConfig(req.getUpdateScheduleReq().getTriggerConfig());
             }
             if (req.getOperationType() == OperationType.UPDATE
-                    && (targetSchedule.getStatus() != ScheduleStatus.PAUSE || hasRunningTask(targetSchedule.getId()))) {
+                    && (targetSchedule.getStatus() != ScheduleStatus.PAUSE
+                            || hasExecutingTask(targetSchedule.getId()))) {
                 log.warn("Update schedule is not allowed,status={}", targetSchedule.getStatus());
                 throw new IllegalStateException("Update schedule is not allowed.");
             }
@@ -816,6 +817,15 @@ public class ScheduleService {
         if (StringUtils.isNotEmpty(params.getId()) && !StringUtils.isNumeric(params.getId())) {
             return Page.empty();
         }
+        if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
+            Set<Long> projectIds = params.getProjectId() == null
+                    ? projectService.getMemberProjectIds(authenticationFacade.currentUserId())
+                    : Collections.singleton(params.getProjectId());
+            if (projectIds.isEmpty()) {
+                return Page.empty();
+            }
+            params.setProjectIds(projectIds);
+        }
         QueryScheduleParams scheduleParams = QueryScheduleParams.builder()
                 .id(params.getScheduleId())
                 .name(params.getScheduleName())
@@ -823,7 +833,7 @@ public class ScheduleService {
                 .databaseName(params.getDatabaseName())
                 .type(params.getScheduleType())
                 .creatorIds(params.getCreatorIds())
-                .projectId(params.getProjectId())
+                .projectIds(params.getProjectIds())
                 .organizationId(authenticationFacade.currentOrganizationId())
                 .build();
         Set<Long> scheduleIds = scheduleRepository.find(Pageable.unpaged(), scheduleParams).getContent()
@@ -947,10 +957,6 @@ public class ScheduleService {
             return Optional.empty();
         }
         return Optional.of(res.get(0));
-    }
-
-    public boolean hasRunningTask(Long id) {
-        return false;
     }
 
     public void terminateByDatasourceIds(Set<Long> datasourceIds) {
