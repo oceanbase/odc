@@ -99,8 +99,12 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
          */
         String explainSql = "EXPLAIN " + originalSql;
         List<String> queryResults = jdbcOperations.query(explainSql, (rs, rowNum) -> rs.getString("Query Plan"));
+        return getOBAndOracleAffectRowsFromResult(queryResults);
+    }
+
+    public long getOBAndOracleAffectRowsFromResult(List<String> queryResults) {
         long estRowsValue = 0;
-        for (int rowNum = 3; rowNum < queryResults.size(); rowNum++) {
+        for (int rowNum = 0; rowNum < queryResults.size(); rowNum++) {
             String resultRow = queryResults.get(rowNum);
             estRowsValue = getEstRowsValue(resultRow);
             if (estRowsValue != 0) {
@@ -110,7 +114,7 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
         return estRowsValue;
     }
 
-    public long getEstRowsValue(String singleRow) {
+    private long getEstRowsValue(String singleRow) {
         String[] parts = singleRow.split("\\|");
         if (parts.length > 5) {
             String value = parts[4].trim();
