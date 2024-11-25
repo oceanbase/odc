@@ -20,7 +20,7 @@ import static com.oceanbase.odc.core.shared.constant.DialectType.OB_MYSQL;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.SetUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -109,9 +110,9 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
             SessionExtensionPoint sessionExtension =
                     ConnectionPluginUtil.getSessionExtension(connectionConfig.getDialectType());
             if (KillSessionOrQueryReq.KILL_QUERY_TYPE.equals(request.getKillType())) {
-                connectionId2KillSql = sessionExtension.getKillQuerySqls(request.getSessionIds());
+                connectionId2KillSql = sessionExtension.getKillQuerySqls(new HashSet<>(request.getSessionIds()));
             } else {
-                connectionId2KillSql = sessionExtension.getKillSessionSqls(request.getSessionIds());
+                connectionId2KillSql = sessionExtension.getKillSessionSqls(new HashSet<>(request.getSessionIds()));
             }
             return doKill(connectionSession, connectionId2KillSql);
         } catch (Exception e) {
@@ -142,7 +143,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         Verify.notNull(conn, "ConnectionConfig");
         SessionExtensionPoint sessionExtension =
                 ConnectionPluginUtil.getSessionExtension(conn.getDialectType());
-        Map<String, String> connectionId2KillSql = sessionExtension.getKillQuerySqls(Arrays.asList(connectionId));
+        Map<String, String> connectionId2KillSql = sessionExtension.getKillQuerySqls(SetUtils.hashSet(connectionId));
         List<KillResult> results = doKill(session, connectionId2KillSql);
         Verify.singleton(results, "killResults");
         return results.get(0).isKilled();
@@ -486,7 +487,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
                         SessionExtensionPoint sessionExtension =
                                 ConnectionPluginUtil.getSessionExtension(connectionSession.getDialectType());
                         Map<String, String> connectionId2KillSql = sessionExtension.getKillQuerySqls(
-                                sessionList.stream().map(OdcDBSession::getSessionId).collect(Collectors.toList()));
+                                sessionList.stream().map(OdcDBSession::getSessionId).collect(Collectors.toSet()));
                         doKill(connectionSession, connectionId2KillSql);
                     });
             return null;

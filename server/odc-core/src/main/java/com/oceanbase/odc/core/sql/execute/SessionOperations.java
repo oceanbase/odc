@@ -16,8 +16,11 @@
 package com.oceanbase.odc.core.sql.execute;
 
 import java.sql.Connection;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.validation.constraints.NotEmpty;
 
 import lombok.NonNull;
 
@@ -32,13 +35,19 @@ public interface SessionOperations {
 
     void killQuery(@NonNull Connection connection, @NonNull String connectionId);
 
+    String getKillQuerySql(@NonNull String connectionId);
+
+    String getKillSessionSql(@NonNull String connectionId);
+
     /**
      * Get kill query SQL by connectionId
      *
      * @param connectionIds
      * @return the map of connectionId to kill query SQL
      */
-    Map<String, String> getKillQuerySqls(@NonNull List<String> connectionIds);
+    default Map<String, String> getKillQuerySqls(@NotEmpty Set<String> connectionIds) {
+        return connectionIds.stream().collect(Collectors.toMap(id -> id, this::getKillQuerySql));
+    }
 
 
     /**
@@ -47,6 +56,8 @@ public interface SessionOperations {
      * @param connectionIds
      * @return the map of connectionId to kill session SQL
      */
-    Map<String, String> getKillSessionSqls(@NonNull List<String> connectionIds);
+    default Map<String, String> getKillSessionSqls(@NonNull Set<String> connectionIds) {
+        return connectionIds.stream().collect(Collectors.toMap(id -> id, this::getKillSessionSql));
+    }
 
 }

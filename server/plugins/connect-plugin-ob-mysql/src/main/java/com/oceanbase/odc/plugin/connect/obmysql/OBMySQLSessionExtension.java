@@ -18,14 +18,9 @@ package com.oceanbase.odc.plugin.connect.obmysql;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import org.pf4j.Extension;
-import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.jdbc.OceanBaseConnection;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
@@ -52,23 +47,17 @@ public class OBMySQLSessionExtension implements SessionExtensionPoint {
 
     @Override
     public void killQuery(Connection connection, String connectionId) {
-        JdbcOperationsUtil.getJdbcOperations(connection).execute("KILL QUERY " + connectionId);
+        JdbcOperationsUtil.getJdbcOperations(connection).execute(getKillQuerySql(connectionId));
     }
 
     @Override
-    public Map<String, String> getKillQuerySqls(@NonNull List<String> connectionIds) {
-        if (CollectionUtils.isEmpty(connectionIds)) {
-            return Collections.emptyMap();
-        }
-        return connectionIds.stream().collect(Collectors.toMap(id -> id, id -> "KILL QUERY " + id, (k1, k2) -> k1));
+    public String getKillQuerySql(@NonNull String connectionId) {
+        return "KILL QUERY " + connectionId;
     }
 
     @Override
-    public Map<String, String> getKillSessionSqls(@NonNull List<String> connectionIds) {
-        if (CollectionUtils.isEmpty(connectionIds)) {
-            return Collections.emptyMap();
-        }
-        return connectionIds.stream().collect(Collectors.toMap(id -> id, id -> "KILL " + id, (k1, k2) -> k1));
+    public String getKillSessionSql(@NonNull String connectionId) {
+        return "KILL " + connectionId;
     }
 
     @Override

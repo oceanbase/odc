@@ -20,14 +20,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import org.pf4j.Extension;
-import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
@@ -47,7 +42,17 @@ import lombok.extern.slf4j.Slf4j;
 public class OracleSessionExtension extends OBOracleSessionExtension {
     @Override
     public void killQuery(Connection connection, String connectionId) {
-        JdbcOperationsUtil.getJdbcOperations(connection).execute("ALTER SYSTEM KILL SESSION '" + connectionId + "'");
+        JdbcOperationsUtil.getJdbcOperations(connection).execute(getKillQuerySql(connectionId));
+    }
+
+    @Override
+    public String getKillQuerySql(@NonNull String connectionId) {
+        return this.getKillSessionSql(connectionId);
+    }
+
+    @Override
+    public String getKillSessionSql(@NonNull String connectionId) {
+        return "ALTER SYSTEM KILL SESSION '" + connectionId + "'";
     }
 
     @Override
@@ -117,19 +122,5 @@ public class OracleSessionExtension extends OBOracleSessionExtension {
         } catch (Exception e) {
             return false;
         }
-    }
-
-    @Override
-    public Map<String, String> getKillQuerySqls(@NonNull List<String> connectionIds) {
-        return getKillSessionSqls(connectionIds);
-    }
-
-    @Override
-    public Map<String, String> getKillSessionSqls(@NonNull List<String> connectionIds) {
-        if (CollectionUtils.isEmpty(connectionIds)) {
-            return Collections.emptyMap();
-        }
-        return connectionIds.stream()
-                .collect(Collectors.toMap(id -> id, id -> "ALTER SYSTEM KILL SESSION '" + id + "'", (k1, k2) -> k1));
     }
 }

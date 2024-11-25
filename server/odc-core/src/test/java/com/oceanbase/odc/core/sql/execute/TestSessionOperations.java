@@ -19,8 +19,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.util.CollectionUtils;
@@ -57,7 +57,7 @@ public class TestSessionOperations implements SessionOperations {
     }
 
     @Override
-    public Map<String, String> getKillQuerySqls(@NonNull List<String> connectionIds) {
+    public Map<String, String> getKillQuerySqls(@NonNull Set<String> connectionIds) {
         if (CollectionUtils.isEmpty(connectionIds)) {
             return Collections.emptyMap();
         }
@@ -65,7 +65,7 @@ public class TestSessionOperations implements SessionOperations {
     }
 
     @Override
-    public Map<String, String> getKillSessionSqls(@NonNull List<String> connectionIds) {
+    public Map<String, String> getKillSessionSqls(@NonNull Set<String> connectionIds) {
         if (CollectionUtils.isEmpty(connectionIds)) {
             return Collections.emptyMap();
         }
