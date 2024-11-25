@@ -18,6 +18,12 @@ package com.oceanbase.odc.core.sql.execute;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.util.CollectionUtils;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +54,22 @@ public class TestSessionOperations implements SessionOperations {
         } catch (Exception e) {
             log.warn("Failed to kill query, connectionId={}", connectionId, e);
         }
+    }
+
+    @Override
+    public Map<String, String> getKillQuerySqls(@NonNull List<String> connectionIds) {
+        if (CollectionUtils.isEmpty(connectionIds)) {
+            return Collections.emptyMap();
+        }
+        return connectionIds.stream().collect(Collectors.toMap(id -> id, id -> "KILL QUERY " + id, (k1, k2) -> k1));
+    }
+
+    @Override
+    public Map<String, String> getKillSessionSqls(@NonNull List<String> connectionIds) {
+        if (CollectionUtils.isEmpty(connectionIds)) {
+            return Collections.emptyMap();
+        }
+        return connectionIds.stream().collect(Collectors.toMap(id -> id, id -> "KILL " + id, (k1, k2) -> k1));
     }
 
 }
