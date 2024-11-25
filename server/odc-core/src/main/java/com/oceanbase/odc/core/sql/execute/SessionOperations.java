@@ -56,7 +56,7 @@ public interface SessionOperations {
      * @param connectionIds
      * @return the map of connectionId to kill session SQL
      */
-    default Map<String, String> getKillSessionSqls(@NonNull Set<String> connectionIds) {
+    default Map<String, String> getKillSessionSqls(@NotEmpty Set<String> connectionIds) {
         return connectionIds.stream().collect(Collectors.toMap(id -> id, this::getKillSessionSql));
     }
 
