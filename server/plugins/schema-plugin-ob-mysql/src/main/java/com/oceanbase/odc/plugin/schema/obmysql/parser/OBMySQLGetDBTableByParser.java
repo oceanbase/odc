@@ -47,8 +47,10 @@ import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineCheckConstra
 import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineConstraint;
 import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineForeignConstraint;
 import com.oceanbase.tools.sqlparser.statement.createtable.Partition;
+import com.oceanbase.tools.sqlparser.statement.createtable.PartitionElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.RangePartition;
 import com.oceanbase.tools.sqlparser.statement.createtable.RangePartitionElement;
+import com.oceanbase.tools.sqlparser.statement.createtable.SubPartitionElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.SubPartitionOption;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableElement;
 import com.oceanbase.tools.sqlparser.statement.expression.CollectionExpression;
@@ -244,33 +246,102 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
         if (partitionStmt.getSubPartitionOption() == null) {
             return partition;
         }
-        // TODO 目前 ODC 仅支持 HASH/KEY 二级分区, 其它类型后续需补充
         partition.setSubpartitionTemplated(partitionStmt.getSubPartitionOption().getTemplates() != null);
-        SubPartitionOption subOption = partitionStmt.getSubPartitionOption();
         String type = partitionStmt.getSubPartitionOption().getType();
         if ("key".equals(type.toLowerCase())) {
-            subPartitionOption.setType(DBTablePartitionType.KEY);
-            subPartitionOption.setColumnNames(subOption.getSubPartitionTargets() == null ? null
-                    : subOption.getSubPartitionTargets().stream().map(item -> removeIdentifiers(item.getText()))
-                            .collect(Collectors.toList()));
-            subPartitionOption
-                    .setPartitionsNum(partition.getSubpartitionTemplated() ? subOption.getTemplates().size()
-                            : partitionStmt.getPartitionElements().get(0).getSubPartitionElements().size());
+            parseSubPartition(subPartitionOption, subPartitionDefinitions, partitionStmt, DBTablePartitionType.KEY,
+                    false);
         } else if ("hash".equals(type.toLowerCase())) {
-            subPartitionOption.setType(DBTablePartitionType.HASH);
-            Expression expression = subOption.getSubPartitionTargets().get(0);
+            parseSubPartition(subPartitionOption, subPartitionDefinitions, partitionStmt, DBTablePartitionType.HASH,
+                    true);
+        } else if ("range".equals(type.toLowerCase())) {
+            parseSubPartition(subPartitionOption, subPartitionDefinitions, partitionStmt, DBTablePartitionType.RANGE,
+                    true);
+        } else if ("range columns".equals(type.toLowerCase())) {
+            parseSubPartition(subPartitionOption, subPartitionDefinitions, partitionStmt,
+                    DBTablePartitionType.RANGE_COLUMNS, false);
+        } else if ("list".equals(type.toLowerCase())) {
+            parseSubPartition(subPartitionOption, subPartitionDefinitions, partitionStmt, DBTablePartitionType.LIST,
+                    true);
+        } else if ("list columns".equals(type.toLowerCase())) {
+            parseSubPartition(subPartitionOption, subPartitionDefinitions, partitionStmt,
+                    DBTablePartitionType.LIST_COLUMNS, false);
+        } else {
+            partition.setWarning("Only support HASH/KEY subpartition currently");
+        }
+        return partition;
+    }
+
+    private void parseSubPartition(DBTablePartitionOption subPartitionOption,
+            List<DBTablePartitionDefinition> subPartitionDefinitions, Partition partitionStmt,
+            DBTablePartitionType dbTablePartitionType, boolean supportExpression) {
+        subPartitionOption.setType(dbTablePartitionType);
+        SubPartitionOption parsedSubPartitionOption = partitionStmt.getSubPartitionOption();
+        // When expressions are supported, only single partition keys are supported
+        if (supportExpression) {
+            Expression expression = parsedSubPartitionOption.getSubPartitionTargets().get(0);
             if (expression instanceof ColumnReference) {
                 subPartitionOption.setColumnNames(Collections.singletonList(removeIdentifiers(expression.getText())));
             } else {
                 subPartitionOption.setExpression(expression.getText());
             }
-            subPartitionOption
-                    .setPartitionsNum(partition.getSubpartitionTemplated() ? subOption.getTemplates().size()
-                            : partitionStmt.getPartitionElements().get(0).getSubPartitionElements().size());
         } else {
-            partition.setWarning("Only support HASH/KEY subpartition currently");
+            // When expressions are not supported, multiple columns are supported as partition keys
+            subPartitionOption.setColumnNames(parsedSubPartitionOption.getSubPartitionTargets() == null ? null
+                    : parsedSubPartitionOption.getSubPartitionTargets().stream()
+                            .map(item -> removeIdentifiers(item.getText()))
+                            .collect(Collectors.toList()));
         }
-        return partition;
+        /**
+         * <pre>
+         * subpartitionsNum indicates the number of subpartitions in each partition.
+         * Therefore, subpartitionsNum should be configured only when the subpartitions are templated.
+         * If subpartition is not templated, the subpartitionsNum is not fixed.
+         * such as the following example of non-template subpartition table
+         *
+         * CREATE TABLE ranges_list (col1 INT,col2 INT)
+         *        PARTITION BY RANGE COLUMNS(col1)
+         *        SUBPARTITION BY LIST(col2)
+         *        (PARTITION p0 VALUES LESS THAN(100)
+         *          (SUBPARTITION sp0 VALUES IN(1,3),
+         *           SUBPARTITION sp1 VALUES IN(4,6),
+         *           SUBPARTITION sp2 VALUES IN(7,9)),
+         *         PARTITION p1 VALUES LESS THAN(200)
+         *          (SUBPARTITION sp3 VALUES IN(1,3))
+         *        );
+         *
+         * In this case, the subpartitionsNum is not fixed.
+         * </pre>
+         */
+        subPartitionOption
+                .setPartitionsNum(
+                        parsedSubPartitionOption.getTemplates() != null ? parsedSubPartitionOption.getTemplates().size()
+                                : null);
+        for (PartitionElement partitionElement : partitionStmt.getPartitionElements()) {
+            if (partitionElement.getSubPartitionElements() != null) {
+                // obtain DBTablePartitionDefinitions for non-template subpartitions
+                for (int i = 0; i < partitionElement.getSubPartitionElements().size(); i++) {
+                    DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
+                    partitionDefinition.setName(
+                            removeIdentifiers(partitionElement.getSubPartitionElements().get(i).getRelation()));
+                    partitionDefinition.setOrdinalPosition(i);
+                    partitionDefinition.setType(dbTablePartitionType);
+                    subPartitionDefinitions.add(partitionDefinition);
+                }
+            } else {
+                // obtain DBTablePartitionDefinitions for template subpartitions
+                String parentPartitionName = removeIdentifiers(partitionElement.getRelation());
+                List<SubPartitionElement> templates = partitionStmt.getSubPartitionOption().getTemplates();
+                for (int i = 0; i < templates.size(); i++) {
+                    DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
+                    partitionDefinition.setName(
+                            parentPartitionName + 's' + removeIdentifiers(templates.get(i).getRelation()));
+                    partitionDefinition.setOrdinalPosition(i);
+                    partitionDefinition.setType(dbTablePartitionType);
+                    subPartitionDefinitions.add(partitionDefinition);
+                }
+            }
+        }
     }
 
     private void parseHashPartitionStmt(HashPartition statement, DBTablePartition partition) {
