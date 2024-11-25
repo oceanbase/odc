@@ -234,15 +234,6 @@ public class DBSchemaExtractor {
         }
 
         @Override
-        public RelationFactor visitDrop_view_stmt(
-                com.oceanbase.tools.sqlparser.obmysql.OBParser.Drop_view_stmtContext ctx) {
-            ctx.table_list().relation_factor().stream()
-                    .map(e -> MySQLFromReferenceFactory.getRelationFactor(e).getSchema()).distinct()
-                    .forEach(e -> identities.add(new DBSchemaIdentity(e, null)));
-            return null;
-        }
-
-        @Override
         public RelationFactor visitPartition_option(Partition_optionContext ctx) {
             return null;
         }
@@ -397,63 +388,54 @@ public class DBSchemaExtractor {
 
         @Override
         public RelationFactor visitDrop_package_stmt(OBParser.Drop_package_stmtContext ctx) {
-            String databaseName = ctx.relation_factor().normal_relation_factor().database_factor().getText();
-            if (databaseName != null) {
-                identities.add(new DBSchemaIdentity(databaseName, null));
+            RelationFactor relationFactor = OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor());
+            if (relationFactor.getSchema() != null) {
+                identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
             }
             return null;
         }
 
         @Override
         public RelationFactor visitDrop_procedure_stmt(OBParser.Drop_procedure_stmtContext ctx) {
-            String databaseName = ctx.relation_factor().normal_relation_factor().database_factor().getText();
-            if (databaseName != null) {
-                identities.add(new DBSchemaIdentity(databaseName, null));
+            RelationFactor relationFactor = OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor());
+            if (relationFactor.getSchema() != null) {
+                identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
             }
             return null;
         }
 
         @Override
         public RelationFactor visitDrop_function_stmt(OBParser.Drop_function_stmtContext ctx) {
-            String databaseName = ctx.relation_factor().normal_relation_factor().database_factor().getText();
-            if (databaseName != null) {
-                identities.add(new DBSchemaIdentity(databaseName, null));
+            RelationFactor relationFactor = OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor());
+            if (relationFactor.getSchema() != null) {
+                identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
             }
             return null;
         }
 
         @Override
         public RelationFactor visitDrop_trigger_stmt(OBParser.Drop_trigger_stmtContext ctx) {
-            String databaseName = ctx.relation_factor().normal_relation_factor().database_factor().getText();
-            if (databaseName != null) {
-                identities.add(new DBSchemaIdentity(databaseName, null));
+            RelationFactor relationFactor = OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor());
+            if (relationFactor.getSchema() != null) {
+                identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
             }
             return null;
         }
 
         @Override
         public RelationFactor visitDrop_type_stmt(OBParser.Drop_type_stmtContext ctx) {
-            String databaseName = ctx.relation_factor().normal_relation_factor().database_factor().getText();
-            if (databaseName != null) {
-                identities.add(new DBSchemaIdentity(databaseName, null));
-            }
-            return null;
-        }
-
-        @Override
-        public RelationFactor visitDrop_view_stmt(OBParser.Drop_view_stmtContext ctx) {
-            String databaseName = ctx.relation_factor().normal_relation_factor().database_factor().getText();
-            if (databaseName != null) {
-                identities.add(new DBSchemaIdentity(databaseName, null));
+            RelationFactor relationFactor = OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor());
+            if (relationFactor.getSchema() != null) {
+                identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
             }
             return null;
         }
 
         @Override
         public RelationFactor visitDrop_sequence_stmt(OBParser.Drop_sequence_stmtContext ctx) {
-            String databaseName = ctx.relation_factor().normal_relation_factor().database_factor().getText();
-            if (databaseName != null) {
-                identities.add(new DBSchemaIdentity(databaseName, null));
+            RelationFactor relationFactor = OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor());
+            if (relationFactor.getSchema() != null) {
+                identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
             }
             return null;
         }

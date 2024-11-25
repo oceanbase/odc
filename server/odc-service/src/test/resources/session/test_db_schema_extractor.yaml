@@ -274,32 +274,5 @@
   expected:
     - schema: DB1
       table: ~
-# drop view
-- id: 34
-  dialect_type: OB_ORACLE
-  default_schema: DEFAULT_SCHEMA
-  sqls:
-    - "DROP VIEW DB1.VIEW1"
-  expected:
-    - schema: DB1
-      table: ~
-- id: 35
-  dialect_type: OB_MYSQL
-  default_schema: DEFAULT_SCHEMA
-  sqls:
-    - "DROP VIEW DB1.VIEW1"
-  expected:
-    - schema: DB1
-      table: ~
-- id: 36
-  dialect_type: OB_MYSQL
-  default_schema: DEFAULT_SCHEMA
-  sqls:
-    - "DROP VIEW DB1.VIEW1,DB2.VIEW2"
-  expected:
-    - schema: DB1
-      table: ~
-    - schema: DB2
-      table: ~
 
 
