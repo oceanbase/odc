@@ -184,3 +184,95 @@
   sqls:
     - "SELECT * FROM DB1.TABLE1@FAKE_DBLINK;"
   expected: [ ]
+# drop function ,procedure and trigger
+- id: 23
+  dialect_type: OB_MYSQL
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "drop function db1.func1"
+  expected:
+    - schema: db1
+      table: ~
+- id: 24
+  dialect_type: OB_MYSQL
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "drop procedure db1.proc1"
+  expected:
+    - schema: db1
+      table: ~
+- id: 25
+  dialect_type: OB_MYSQL
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "drop trigger db1.trigger1"
+  expected:
+    - schema: db1
+      table: ~
+- id: 26
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "DROP FUNCTION DB1.FUNC1"
+  expected:
+    - schema: DB1
+      table: ~
+- id: 27
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "DROP PROCEDURE DB1.PROC1"
+  expected:
+    - schema: DB1
+      table: ~
+- id: 28
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "DROP TRIGGER DB1.TRIGGER1"
+  expected:
+    - schema: DB1
+      table: ~
+#drop sequence、type、package、synonym、public synonym for ob oracle
+- id: 29
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "DROP SEQUENCE DB1.SEQ1"
+  expected:
+    - schema: DB1
+      table: ~
+- id: 30
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "DROP TYPE DB1.TYPE1"
+  expected:
+    - schema: DB1
+      table: ~
+- id: 31
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "DROP PACKAGE DB1.PACKAGE1"
+  expected:
+    - schema: DB1
+      table: ~
+- id: 32
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "DROP SYNONYM DB1.SYNONYM1"
+  expected:
+    - schema: DB1
+      table: ~
+- id : 33
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "DROP PUBLIC SYNONYM DB1.SYNONYM1"
+  expected:
+    - schema: DB1
+      table: ~
+
+
