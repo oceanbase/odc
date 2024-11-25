@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.plugin.schema.obmysql.parser;
 
+import static com.oceanbase.tools.dbbrowser.model.DBTablePartitionType.NOT_PARTITIONED;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -202,10 +204,10 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
         partition.setSubpartition(subPartition);
 
         DBTablePartitionOption partitionOption = new DBTablePartitionOption();
-        partitionOption.setType(DBTablePartitionType.NOT_PARTITIONED);
+        partitionOption.setType(NOT_PARTITIONED);
         partition.setPartitionOption(partitionOption);
         DBTablePartitionOption subPartitionOption = new DBTablePartitionOption();
-        subPartitionOption.setType(DBTablePartitionType.NOT_PARTITIONED);
+        subPartitionOption.setType(NOT_PARTITIONED);
         subPartition.setPartitionOption(subPartitionOption);
 
         List<DBTablePartitionDefinition> partitionDefinitions = new ArrayList<>();
@@ -246,39 +248,25 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
         if (partitionStmt.getSubPartitionOption() == null) {
             return partition;
         }
-        partition.setSubpartitionTemplated(partitionStmt.getSubPartitionOption().getTemplates() != null);
-        String type = partitionStmt.getSubPartitionOption().getType();
-        if ("key".equals(type.toLowerCase())) {
-            parseSubPartition(subPartitionOption, subPartitionDefinitions, partitionStmt, DBTablePartitionType.KEY,
-                    false);
-        } else if ("hash".equals(type.toLowerCase())) {
-            parseSubPartition(subPartitionOption, subPartitionDefinitions, partitionStmt, DBTablePartitionType.HASH,
-                    true);
-        } else if ("range".equals(type.toLowerCase())) {
-            parseSubPartition(subPartitionOption, subPartitionDefinitions, partitionStmt, DBTablePartitionType.RANGE,
-                    true);
-        } else if ("range columns".equals(type.toLowerCase())) {
-            parseSubPartition(subPartitionOption, subPartitionDefinitions, partitionStmt,
-                    DBTablePartitionType.RANGE_COLUMNS, false);
-        } else if ("list".equals(type.toLowerCase())) {
-            parseSubPartition(subPartitionOption, subPartitionDefinitions, partitionStmt, DBTablePartitionType.LIST,
-                    true);
-        } else if ("list columns".equals(type.toLowerCase())) {
-            parseSubPartition(subPartitionOption, subPartitionDefinitions, partitionStmt,
-                    DBTablePartitionType.LIST_COLUMNS, false);
-        } else {
-            partition.setWarning("Only support HASH/KEY subpartition currently");
-        }
+        fillSubPartitions(partition, partitionStmt);
         return partition;
     }
 
-    private void parseSubPartition(DBTablePartitionOption subPartitionOption,
-            List<DBTablePartitionDefinition> subPartitionDefinitions, Partition partitionStmt,
-            DBTablePartitionType dbTablePartitionType, boolean supportExpression) {
+    private void fillSubPartitions(DBTablePartition partition, Partition partitionStmt) {
+        partition.setSubpartitionTemplated(partitionStmt.getSubPartitionOption().getTemplates() != null);
+        DBTablePartitionOption subPartitionOption = partition.getSubpartition().getPartitionOption();
+        List<DBTablePartitionDefinition> subPartitionDefinitions =
+                partition.getSubpartition().getPartitionDefinitions();
+        String type = partitionStmt.getSubPartitionOption().getType();
+        DBTablePartitionType dbTablePartitionType = DBTablePartitionType.fromValue(type.toUpperCase());
+        if (NOT_PARTITIONED == dbTablePartitionType) {
+            partition.setWarning("not support this subpartition type, type: " + type);
+            return;
+        }
         subPartitionOption.setType(dbTablePartitionType);
         SubPartitionOption parsedSubPartitionOption = partitionStmt.getSubPartitionOption();
         // When expressions are supported, only single partition keys are supported
-        if (supportExpression) {
+        if (dbTablePartitionType.supportExpression()) {
             Expression expression = parsedSubPartitionOption.getSubPartitionTargets().get(0);
             if (expression instanceof ColumnReference) {
                 subPartitionOption.setColumnNames(Collections.singletonList(removeIdentifiers(expression.getText())));
@@ -319,7 +307,7 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
                                 : null);
         for (PartitionElement partitionElement : partitionStmt.getPartitionElements()) {
             if (partitionElement.getSubPartitionElements() != null) {
-                // obtain DBTablePartitionDefinitions for non-template subpartitions
+                // obtain DBTablePartitionDefinitions for non-templated subpartitions
                 for (int i = 0; i < partitionElement.getSubPartitionElements().size(); i++) {
                     DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
                     partitionDefinition.setName(
@@ -329,11 +317,13 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
                     subPartitionDefinitions.add(partitionDefinition);
                 }
             } else {
-                // obtain DBTablePartitionDefinitions for template subpartitions
+                // obtain DBTablePartitionDefinitions for templated subpartitions
                 String parentPartitionName = removeIdentifiers(partitionElement.getRelation());
                 List<SubPartitionElement> templates = partitionStmt.getSubPartitionOption().getTemplates();
                 for (int i = 0; i < templates.size(); i++) {
                     DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
+                    // for a templated subpartition table, the naming rule for the subpartition is
+                    // '($part_name)s($subpart_name)'.
                     partitionDefinition.setName(
                             parentPartitionName + 's' + removeIdentifiers(templates.get(i).getRelation()));
                     partitionDefinition.setOrdinalPosition(i);
