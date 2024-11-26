@@ -304,30 +304,30 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
             if (partitionElement.getSubPartitionElements() != null) {
                 // obtain DBTablePartitionDefinitions for non-templated subpartitions
                 for (int i = 0; i < partitionElement.getSubPartitionElements().size(); i++) {
-                    DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
+                    DBTablePartitionDefinition subPartitionDefinition = new DBTablePartitionDefinition();
                     SubPartitionElement subPartitionElement = partitionElement.getSubPartitionElements().get(i);
-                    fillSubPartitionValue(subDBTablePartitionType,subPartitionElement, partitionDefinition);
-                    partitionDefinition.setName(
+                    fillSubPartitionValue(subDBTablePartitionType,subPartitionElement, subPartitionDefinition);
+                    subPartitionDefinition.setName(
                             removeIdentifiers(subPartitionElement.getRelation()));
-                    partitionDefinition.setOrdinalPosition(i);
-                    partitionDefinition.setType(subDBTablePartitionType);
-                    subPartitionDefinitions.add(partitionDefinition);
+                    subPartitionDefinition.setOrdinalPosition(i);
+                    subPartitionDefinition.setType(subDBTablePartitionType);
+                    subPartitionDefinitions.add(subPartitionDefinition);
                 }
             } else {
                 // obtain DBTablePartitionDefinitions for templated subpartitions
                 String parentPartitionName = removeIdentifiers(partitionElement.getRelation());
                 List<SubPartitionElement> templates = partitionStmt.getSubPartitionOption().getTemplates();
                 for (int i = 0; i < templates.size(); i++) {
-                    DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
+                    DBTablePartitionDefinition subPartitionDefinition = new DBTablePartitionDefinition();
                     SubPartitionElement subPartitionElement = templates.get(i);
-                    fillSubPartitionValue(subDBTablePartitionType,subPartitionElement, partitionDefinition);
+                    fillSubPartitionValue(subDBTablePartitionType,subPartitionElement, subPartitionDefinition);
                     // for a templated subpartition table, the naming rule for the subpartition is
                     // '($part_name)s($subpart_name)'.
-                    partitionDefinition.setName(
+                    subPartitionDefinition.setName(
                             parentPartitionName + 's' + removeIdentifiers(subPartitionElement.getRelation()));
-                    partitionDefinition.setOrdinalPosition(i);
-                    partitionDefinition.setType(subDBTablePartitionType);
-                    subPartitionDefinitions.add(partitionDefinition);
+                    subPartitionDefinition.setOrdinalPosition(i);
+                    subPartitionDefinition.setType(subDBTablePartitionType);
+                    subPartitionDefinitions.add(subPartitionDefinition);
                 }
             }
         }
