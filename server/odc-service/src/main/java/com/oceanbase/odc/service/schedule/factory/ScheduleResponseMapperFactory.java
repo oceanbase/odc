@@ -357,7 +357,7 @@ public class ScheduleResponseMapperFactory {
     }
 
 
-    private Map<Long, ScheduleOverviewAttributes> generateAttributes(Collection<ScheduleEntity> schedules) {
+    public Map<Long, ScheduleOverviewAttributes> generateAttributes(Collection<ScheduleEntity> schedules) {
         Map<ScheduleType, List<ScheduleEntity>> type2Entity = schedules.stream().collect(
                 Collectors.groupingBy(ScheduleEntity::getType));
         Map<Long, ScheduleOverviewAttributes> id2Attributes = new HashMap<>();
