@@ -306,7 +306,7 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
                 for (int i = 0; i < partitionElement.getSubPartitionElements().size(); i++) {
                     DBTablePartitionDefinition subPartitionDefinition = new DBTablePartitionDefinition();
                     SubPartitionElement subPartitionElement = partitionElement.getSubPartitionElements().get(i);
-                    fillSubPartitionValue(subDBTablePartitionType,subPartitionElement, subPartitionDefinition);
+                    fillSubPartitionValue(subDBTablePartitionType, subPartitionElement, subPartitionDefinition);
                     subPartitionDefinition.setName(
                             removeIdentifiers(subPartitionElement.getRelation()));
                     subPartitionDefinition.setOrdinalPosition(i);
@@ -320,7 +320,7 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
                 for (int i = 0; i < templates.size(); i++) {
                     DBTablePartitionDefinition subPartitionDefinition = new DBTablePartitionDefinition();
                     SubPartitionElement subPartitionElement = templates.get(i);
-                    fillSubPartitionValue(subDBTablePartitionType,subPartitionElement, subPartitionDefinition);
+                    fillSubPartitionValue(subDBTablePartitionType, subPartitionElement, subPartitionDefinition);
                     // for a templated subpartition table, the naming rule for the subpartition is
                     // '($part_name)s($subpart_name)'.
                     subPartitionDefinition.setName(
@@ -333,8 +333,9 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
         }
     }
 
-    private void fillSubPartitionValue(DBTablePartitionType subDBTablePartitionType, SubPartitionElement subPartitionElement,
-        DBTablePartitionDefinition subPartitionDefinition) {
+    private void fillSubPartitionValue(DBTablePartitionType subDBTablePartitionType,
+            SubPartitionElement subPartitionElement,
+            DBTablePartitionDefinition subPartitionDefinition) {
         if (subDBTablePartitionType == DBTablePartitionType.LIST) {
             SubListPartitionElement subListPartitionElement =
                     (SubListPartitionElement) subPartitionElement;
