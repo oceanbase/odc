@@ -322,9 +322,7 @@ public class ScheduleService {
                 throw new IllegalStateException(
                         "Delete schedule is not allowed, only can delete terminated schedule or finished schedule.");
             } else {
-                List<ScheduleTaskEntity> runningTaskList = scheduleTaskRepository.findByJobNameAndStatusIn(
-                        targetSchedule.getId().toString(), Collections.singletonList(TaskStatus.RUNNING));
-                if (runningTaskList != null) {
+                if (hasExecutingTask(req.getScheduleId())) {
                     throw new IllegalStateException(
                             "Delete schedule is not allowed, there are running tasks in this schedule");
                 }
