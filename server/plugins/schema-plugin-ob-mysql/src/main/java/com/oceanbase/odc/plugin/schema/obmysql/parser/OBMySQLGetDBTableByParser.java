@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.plugin.schema.obmysql.parser;
 
-import static com.oceanbase.tools.dbbrowser.model.DBTablePartitionType.NOT_PARTITIONED;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -52,8 +50,10 @@ import com.oceanbase.tools.sqlparser.statement.createtable.Partition;
 import com.oceanbase.tools.sqlparser.statement.createtable.PartitionElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.RangePartition;
 import com.oceanbase.tools.sqlparser.statement.createtable.RangePartitionElement;
+import com.oceanbase.tools.sqlparser.statement.createtable.SubListPartitionElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.SubPartitionElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.SubPartitionOption;
+import com.oceanbase.tools.sqlparser.statement.createtable.SubRangePartitionElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableElement;
 import com.oceanbase.tools.sqlparser.statement.expression.CollectionExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
@@ -200,20 +200,11 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
     @Override
     public DBTablePartition getPartition() {
         DBTablePartition partition = new DBTablePartition();
-        DBTablePartition subPartition = new DBTablePartition();
-        partition.setSubpartition(subPartition);
-
         DBTablePartitionOption partitionOption = new DBTablePartitionOption();
-        partitionOption.setType(NOT_PARTITIONED);
+        partitionOption.setType(DBTablePartitionType.NOT_PARTITIONED);
         partition.setPartitionOption(partitionOption);
-        DBTablePartitionOption subPartitionOption = new DBTablePartitionOption();
-        subPartitionOption.setType(NOT_PARTITIONED);
-        subPartition.setPartitionOption(subPartitionOption);
-
         List<DBTablePartitionDefinition> partitionDefinitions = new ArrayList<>();
         partition.setPartitionDefinitions(partitionDefinitions);
-        List<DBTablePartitionDefinition> subPartitionDefinitions = new ArrayList<>();
-        subPartition.setPartitionDefinitions(subPartitionDefinitions);
 
         if (Objects.isNull(createTableStmt)) {
             partition.setWarning("Failed to parse table ddl");
@@ -245,28 +236,32 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
                 partition.getPartitionOption().setExpression(String.join(", ", columnNames));
             }
         }
-        if (partitionStmt.getSubPartitionOption() == null) {
-            return partition;
-        }
         fillSubPartitions(partition, partitionStmt);
         return partition;
     }
 
     private void fillSubPartitions(DBTablePartition partition, Partition partitionStmt) {
+        if (partitionStmt.getSubPartitionOption() == null) {
+            return;
+        }
+        DBTablePartition subPartition = new DBTablePartition();
+        partition.setSubpartition(subPartition);
+        DBTablePartitionOption subPartitionOption = new DBTablePartitionOption();
+        subPartitionOption.setType(DBTablePartitionType.NOT_PARTITIONED);
+        subPartition.setPartitionOption(subPartitionOption);
+        List<DBTablePartitionDefinition> subPartitionDefinitions = new ArrayList<>();
+        subPartition.setPartitionDefinitions(subPartitionDefinitions);
         partition.setSubpartitionTemplated(partitionStmt.getSubPartitionOption().getTemplates() != null);
-        DBTablePartitionOption subPartitionOption = partition.getSubpartition().getPartitionOption();
-        List<DBTablePartitionDefinition> subPartitionDefinitions =
-                partition.getSubpartition().getPartitionDefinitions();
         String type = partitionStmt.getSubPartitionOption().getType();
-        DBTablePartitionType dbTablePartitionType = DBTablePartitionType.fromValue(type.toUpperCase());
-        if (NOT_PARTITIONED == dbTablePartitionType) {
+        DBTablePartitionType subDBTablePartitionType = DBTablePartitionType.fromValue(type);
+        if (DBTablePartitionType.NOT_PARTITIONED == subDBTablePartitionType) {
             partition.setWarning("not support this subpartition type, type: " + type);
             return;
         }
-        subPartitionOption.setType(dbTablePartitionType);
+        subPartitionOption.setType(subDBTablePartitionType);
         SubPartitionOption parsedSubPartitionOption = partitionStmt.getSubPartitionOption();
         // When expressions are supported, only single partition keys are supported
-        if (dbTablePartitionType.supportExpression()) {
+        if (subDBTablePartitionType.supportExpression()) {
             Expression expression = parsedSubPartitionOption.getSubPartitionTargets().get(0);
             if (expression instanceof ColumnReference) {
                 subPartitionOption.setColumnNames(Collections.singletonList(removeIdentifiers(expression.getText())));
@@ -310,10 +305,12 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
                 // obtain DBTablePartitionDefinitions for non-templated subpartitions
                 for (int i = 0; i < partitionElement.getSubPartitionElements().size(); i++) {
                     DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
+                    SubPartitionElement subPartitionElement = partitionElement.getSubPartitionElements().get(i);
+                    fillSubPartitionValue(subDBTablePartitionType,subPartitionElement, partitionDefinition);
                     partitionDefinition.setName(
-                            removeIdentifiers(partitionElement.getSubPartitionElements().get(i).getRelation()));
+                            removeIdentifiers(subPartitionElement.getRelation()));
                     partitionDefinition.setOrdinalPosition(i);
-                    partitionDefinition.setType(dbTablePartitionType);
+                    partitionDefinition.setType(subDBTablePartitionType);
                     subPartitionDefinitions.add(partitionDefinition);
                 }
             } else {
@@ -322,15 +319,55 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
                 List<SubPartitionElement> templates = partitionStmt.getSubPartitionOption().getTemplates();
                 for (int i = 0; i < templates.size(); i++) {
                     DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
+                    SubPartitionElement subPartitionElement = templates.get(i);
+                    fillSubPartitionValue(subDBTablePartitionType,subPartitionElement, partitionDefinition);
                     // for a templated subpartition table, the naming rule for the subpartition is
                     // '($part_name)s($subpart_name)'.
                     partitionDefinition.setName(
-                            parentPartitionName + 's' + removeIdentifiers(templates.get(i).getRelation()));
+                            parentPartitionName + 's' + removeIdentifiers(subPartitionElement.getRelation()));
                     partitionDefinition.setOrdinalPosition(i);
-                    partitionDefinition.setType(dbTablePartitionType);
+                    partitionDefinition.setType(subDBTablePartitionType);
                     subPartitionDefinitions.add(partitionDefinition);
                 }
             }
+        }
+    }
+
+    private void fillSubPartitionValue(DBTablePartitionType subDBTablePartitionType, SubPartitionElement subPartitionElement,
+        DBTablePartitionDefinition subPartitionDefinition) {
+        if (subDBTablePartitionType == DBTablePartitionType.LIST) {
+            SubListPartitionElement subListPartitionElement =
+                    (SubListPartitionElement) subPartitionElement;
+            List<List<String>> valuesList = new ArrayList<>();
+            subListPartitionElement.getListExprs()
+                    .forEach(item -> valuesList.add(Collections.singletonList(item.getText())));
+            subPartitionDefinition.setValuesList(valuesList);
+        } else if (subDBTablePartitionType == DBTablePartitionType.LIST_COLUMNS) {
+            SubListPartitionElement subListPartitionElement =
+                    (SubListPartitionElement) subPartitionElement;
+            List<List<String>> valuesList = new ArrayList<>();
+            for (Expression listExpr : subListPartitionElement.getListExprs()) {
+                if (listExpr instanceof CollectionExpression) {
+                    valuesList.add(
+                            ((CollectionExpression) listExpr).getExpressionList().stream()
+                                    .map(Expression::getText)
+                                    .collect(Collectors.toList()));
+                } else if (listExpr instanceof ConstExpression) {
+                    valuesList.add(Collections.singletonList(listExpr.getText()));
+                }
+            }
+            subPartitionDefinition.setValuesList(valuesList);
+        } else if (subDBTablePartitionType == DBTablePartitionType.RANGE) {
+            SubRangePartitionElement subRangePartitionElement =
+                    (SubRangePartitionElement) subPartitionElement;
+            subPartitionDefinition.setMaxValues(
+                    Collections.singletonList(subRangePartitionElement.getRangeExprs().get(0).getText()));
+        } else if (subDBTablePartitionType == DBTablePartitionType.RANGE_COLUMNS) {
+            SubRangePartitionElement subRangePartitionElement =
+                    (SubRangePartitionElement) subPartitionElement;
+            subPartitionDefinition.setMaxValues(
+                    subRangePartitionElement.getRangeExprs().stream().map(Expression::getText)
+                            .collect(Collectors.toList()));
         }
     }
 

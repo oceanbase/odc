@@ -362,9 +362,12 @@ public class OBMySQLGetDBTableByParserTest {
                 + "); \n";
         OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
         DBTablePartition partition = table.getPartition();
-        Assert.assertEquals(3L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
         Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3L, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
         DBTablePartition subpartition = partition.getSubpartition();
         Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
         Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
@@ -373,6 +376,8 @@ public class OBMySQLGetDBTableByParserTest {
         Assert.assertTrue(partition.getSubpartitionTemplated());
         Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals("p0smp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("1000", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
     }
 
     @Test
@@ -391,15 +396,20 @@ public class OBMySQLGetDBTableByParserTest {
                 + "); \n";
         OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
         DBTablePartition partition = table.getPartition();
-        Assert.assertEquals(3L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
         Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3L, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
         DBTablePartition subpartition = partition.getSubpartition();
         Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
         Assert.assertEquals("ABS(col3)", subpartition.getPartitionOption().getExpression());
         Assert.assertTrue(partition.getSubpartitionTemplated());
         Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals("p0smp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("1000", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
     }
 
     @Test
@@ -422,9 +432,12 @@ public class OBMySQLGetDBTableByParserTest {
                 + "         );\n";
         OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
         DBTablePartition partition = table.getPartition();
-        Assert.assertEquals(2L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
         Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2L, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
         DBTablePartition subpartition = partition.getSubpartition();
         Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
         Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
@@ -433,6 +446,8 @@ public class OBMySQLGetDBTableByParserTest {
         Assert.assertFalse(partition.getSubpartitionTemplated());
         Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
         Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("100", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
     }
 
     @Test
@@ -455,15 +470,20 @@ public class OBMySQLGetDBTableByParserTest {
                 + "         );\n";
         OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
         DBTablePartition partition = table.getPartition();
-        Assert.assertEquals(2L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
         Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2L, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
         DBTablePartition subpartition = partition.getSubpartition();
         Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
         Assert.assertEquals("UNIX_TIMESTAMP(col2)", subpartition.getPartitionOption().getExpression());
         Assert.assertFalse(partition.getSubpartitionTemplated());
         Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
         Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("UNIX_TIMESTAMP('2021/04/01')", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
     }
 
     @Test
@@ -482,9 +502,12 @@ public class OBMySQLGetDBTableByParserTest {
                 + "        ); ";
         OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
         DBTablePartition partition = table.getPartition();
-        Assert.assertEquals(3L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
         Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
         DBTablePartition subpartition = partition.getSubpartition();
         Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, subpartition.getPartitionOption().getType());
         Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
@@ -494,6 +517,9 @@ public class OBMySQLGetDBTableByParserTest {
         Assert.assertTrue(partition.getSubpartitionTemplated());
         Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals("p0smp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2,subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("1000", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("1000", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(1));
     }
 
     @Test
@@ -512,9 +538,12 @@ public class OBMySQLGetDBTableByParserTest {
                 + ");\n";
         OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
         DBTablePartition partition = table.getPartition();
-        Assert.assertEquals(2L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
         Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
         DBTablePartition subpartition = partition.getSubpartition();
         Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, subpartition.getPartitionOption().getType());
         Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
@@ -524,6 +553,9 @@ public class OBMySQLGetDBTableByParserTest {
         Assert.assertFalse(partition.getSubpartitionTemplated());
         Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
         Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2,subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("1000", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("1000", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(1));
     }
 
     @Test
@@ -542,9 +574,12 @@ public class OBMySQLGetDBTableByParserTest {
                 + "        ); \n";
         OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
         DBTablePartition partition = table.getPartition();
-        Assert.assertEquals(3L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
         Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
         DBTablePartition subpartition = partition.getSubpartition();
         Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
         Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
@@ -553,6 +588,9 @@ public class OBMySQLGetDBTableByParserTest {
         Assert.assertTrue(partition.getSubpartitionTemplated());
         Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals("p0smp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2,subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("3", subpartition.getPartitionDefinitions().get(0).getValuesList().get(1).get(0));
     }
 
     @Test
@@ -571,15 +609,21 @@ public class OBMySQLGetDBTableByParserTest {
                 + "        ); \n";
         OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
         DBTablePartition partition = table.getPartition();
-        Assert.assertEquals(3L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
         Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
         DBTablePartition subpartition = partition.getSubpartition();
         Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
         Assert.assertEquals("abs(col2)", subpartition.getPartitionOption().getExpression());
         Assert.assertTrue(partition.getSubpartitionTemplated());
         Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals("p0smp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2,subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("3", subpartition.getPartitionDefinitions().get(0).getValuesList().get(1).get(0));
     }
 
     @Test
@@ -596,8 +640,12 @@ public class OBMySQLGetDBTableByParserTest {
                 + "       ); \n";
         OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
         DBTablePartition partition = table.getPartition();
-        Assert.assertEquals(2L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
         Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
         DBTablePartition subpartition = partition.getSubpartition();
         Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
@@ -607,6 +655,9 @@ public class OBMySQLGetDBTableByParserTest {
         Assert.assertFalse(partition.getSubpartitionTemplated());
         Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
         Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2,subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("3", subpartition.getPartitionDefinitions().get(0).getValuesList().get(1).get(0));
     }
 
     @Test
@@ -623,8 +674,12 @@ public class OBMySQLGetDBTableByParserTest {
                 + "       ); \n";
         OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
         DBTablePartition partition = table.getPartition();
-        Assert.assertEquals(2L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
         Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
         DBTablePartition subpartition = partition.getSubpartition();
         Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
@@ -632,6 +687,9 @@ public class OBMySQLGetDBTableByParserTest {
         Assert.assertFalse(partition.getSubpartitionTemplated());
         Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
         Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2,subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("3", subpartition.getPartitionDefinitions().get(0).getValuesList().get(1).get(0));
     }
 
     @Test
@@ -650,8 +708,12 @@ public class OBMySQLGetDBTableByParserTest {
                 + "        ); \n";
         OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
         DBTablePartition partition = table.getPartition();
-        Assert.assertEquals(3L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
         Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
         DBTablePartition subpartition = partition.getSubpartition();
         Assert.assertEquals(DBTablePartitionType.LIST_COLUMNS, subpartition.getPartitionOption().getType());
@@ -662,6 +724,11 @@ public class OBMySQLGetDBTableByParserTest {
         Assert.assertTrue(partition.getSubpartitionTemplated());
         Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals("p0smp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2,subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(1));
+        Assert.assertEquals("3", subpartition.getPartitionDefinitions().get(0).getValuesList().get(1).get(0));
+        Assert.assertEquals("3", subpartition.getPartitionDefinitions().get(0).getValuesList().get(1).get(1));
     }
 
     @Test
@@ -680,8 +747,12 @@ public class OBMySQLGetDBTableByParserTest {
                 + "       ); \n";
         OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
         DBTablePartition partition = table.getPartition();
-        Assert.assertEquals(2L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
         Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
         DBTablePartition subpartition = partition.getSubpartition();
         Assert.assertEquals(DBTablePartitionType.LIST_COLUMNS, subpartition.getPartitionOption().getType());
@@ -692,6 +763,9 @@ public class OBMySQLGetDBTableByParserTest {
         Assert.assertFalse(partition.getSubpartitionTemplated());
         Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
         Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2,subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(1).get(0));
     }
 
     @Test
@@ -711,8 +785,12 @@ public class OBMySQLGetDBTableByParserTest {
                 + "partition `p2` values less than (300))";
         OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
         DBTablePartition partition = table.getPartition();
-        Assert.assertEquals(3L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
         Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
         DBTablePartition subpartition = partition.getSubpartition();
         Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
@@ -741,8 +819,12 @@ public class OBMySQLGetDBTableByParserTest {
                 + "partition `p2` values less than (300))";
         OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
         DBTablePartition partition = table.getPartition();
-        Assert.assertEquals(3L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
         Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
         DBTablePartition subpartition = partition.getSubpartition();
         Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
@@ -768,8 +850,12 @@ public class OBMySQLGetDBTableByParserTest {
                 + "       ); \n";
         OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
         DBTablePartition partition = table.getPartition();
-        Assert.assertEquals(2L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
         Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
         DBTablePartition subpartition = partition.getSubpartition();
         Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
@@ -797,8 +883,12 @@ public class OBMySQLGetDBTableByParserTest {
                 + "       ); \n";
         OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
         DBTablePartition partition = table.getPartition();
-        Assert.assertEquals(2L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
         Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
         DBTablePartition subpartition = partition.getSubpartition();
         Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
@@ -823,8 +913,12 @@ public class OBMySQLGetDBTableByParserTest {
                 + "partition `p2` values less than (300))";
         OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
         DBTablePartition partition = table.getPartition();
-        Assert.assertEquals(3L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
         Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
         DBTablePartition subpartition = partition.getSubpartition();
         Assert.assertEquals(DBTablePartitionType.KEY, subpartition.getPartitionOption().getType());
@@ -853,8 +947,12 @@ public class OBMySQLGetDBTableByParserTest {
                 + "subpartition `sp4`))";
         OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
         DBTablePartition partition = table.getPartition();
-        Assert.assertEquals(2L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
         Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
         DBTablePartition subpartition = partition.getSubpartition();
         Assert.assertEquals(DBTablePartitionType.KEY, subpartition.getPartitionOption().getType());
