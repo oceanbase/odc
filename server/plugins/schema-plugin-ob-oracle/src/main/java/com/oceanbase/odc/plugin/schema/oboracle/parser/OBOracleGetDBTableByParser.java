@@ -60,9 +60,16 @@ import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineCheckConstra
 import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineConstraint;
 import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineForeignConstraint;
 import com.oceanbase.tools.sqlparser.statement.createtable.Partition;
+import com.oceanbase.tools.sqlparser.statement.createtable.PartitionElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.RangePartition;
 import com.oceanbase.tools.sqlparser.statement.createtable.RangePartitionElement;
+import com.oceanbase.tools.sqlparser.statement.createtable.SubListPartitionElement;
+import com.oceanbase.tools.sqlparser.statement.createtable.SubPartitionElement;
+import com.oceanbase.tools.sqlparser.statement.createtable.SubPartitionOption;
+import com.oceanbase.tools.sqlparser.statement.createtable.SubRangePartitionElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableElement;
+import com.oceanbase.tools.sqlparser.statement.expression.CollectionExpression;
+import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.RelationReference;
 
 import lombok.Getter;
@@ -405,7 +412,119 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
                 partition.getPartitionOption().setExpression(String.join(", ", columnNames));
             }
         }
+        fillSubPartitions(partition, partitionStmt);
         return partition;
+    }
+
+    private void fillSubPartitions(DBTablePartition partition, Partition partitionStmt) {
+        if (partitionStmt.getSubPartitionOption() == null) {
+            return;
+        }
+        DBTablePartition subPartition = new DBTablePartition();
+        partition.setSubpartition(subPartition);
+        DBTablePartitionOption subPartitionOption = new DBTablePartitionOption();
+        subPartitionOption.setType(DBTablePartitionType.NOT_PARTITIONED);
+        subPartition.setPartitionOption(subPartitionOption);
+        List<DBTablePartitionDefinition> subPartitionDefinitions = new ArrayList<>();
+        subPartition.setPartitionDefinitions(subPartitionDefinitions);
+        partition.setSubpartitionTemplated(partitionStmt.getSubPartitionOption().getTemplates() != null);
+        String type = partitionStmt.getSubPartitionOption().getType();
+        DBTablePartitionType subDBTablePartitionType = DBTablePartitionType.fromValue(type);
+        if (DBTablePartitionType.NOT_PARTITIONED == subDBTablePartitionType) {
+            partition.setWarning("not support this subpartition type, type: " + type);
+            return;
+        }
+        subPartitionOption.setType(subDBTablePartitionType);
+        SubPartitionOption parsedSubPartitionOption = partitionStmt.getSubPartitionOption();
+        // expressions are not supported, multiple columns are supported as partition keys
+        subPartitionOption.setColumnNames(parsedSubPartitionOption.getSubPartitionTargets() == null ? null
+                : parsedSubPartitionOption.getSubPartitionTargets().stream()
+                        .map(item -> removeIdentifiers(item.getText()))
+                        .collect(Collectors.toList()));
+
+        /**
+         * <pre>
+         * subpartitionsNum indicates the number of subpartitions in each partition.
+         * Therefore, subpartitionsNum should be configured only when the subpartitions are templated.
+         * If subpartition is not templated, the subpartitionsNum is not fixed.
+         * such as the following example of non-template subpartition table
+         *
+         * CREATE TABLE range_range(col1 INT,col2 INT,col3 INT)
+         *        PARTITION BY RANGE(col1)
+         *        SUBPARTITION BY RANGE(col2,col3)
+         *         (PARTITION p0 VALUES LESS THAN(100)
+         *           (SUBPARTITION sp0 VALUES LESS THAN(2020,2020),
+         *            SUBPARTITION sp1 VALUES LESS THAN(2021,2021)
+         *           ),
+         *          PARTITION p1 VALUES LESS THAN(200)
+         *           (SUBPARTITION sp2 VALUES LESS THAN(2020,2020),
+         *            SUBPARTITION sp3 VALUES LESS THAN(2021,2021),
+         *            SUBPARTITION sp4 VALUES LESS THAN(2022,2022)
+         *            )
+         *          );
+         *
+         * In this case, the subpartitionsNum is not fixed.
+         * </pre>
+         */
+        subPartitionOption
+                .setPartitionsNum(
+                        parsedSubPartitionOption.getTemplates() != null ? parsedSubPartitionOption.getTemplates().size()
+                                : null);
+        for (PartitionElement partitionElement : partitionStmt.getPartitionElements()) {
+            if (partitionElement.getSubPartitionElements() != null) {
+                // obtain DBTablePartitionDefinitions for non-templated subpartitions
+                for (int i = 0; i < partitionElement.getSubPartitionElements().size(); i++) {
+                    DBTablePartitionDefinition subPartitionDefinition = new DBTablePartitionDefinition();
+                    SubPartitionElement subPartitionElement = partitionElement.getSubPartitionElements().get(i);
+                    fillSubPartitionValue(subDBTablePartitionType, subPartitionElement, subPartitionDefinition);
+                    subPartitionDefinition.setName(
+                            removeIdentifiers(subPartitionElement.getRelation()));
+                    subPartitionDefinition.setOrdinalPosition(i);
+                    subPartitionDefinition.setType(subDBTablePartitionType);
+                    subPartitionDefinitions.add(subPartitionDefinition);
+                }
+            } else {
+                // obtain DBTablePartitionDefinitions for templated subpartitions
+                String parentPartitionName = removeIdentifiers(partitionElement.getRelation());
+                List<SubPartitionElement> templates = partitionStmt.getSubPartitionOption().getTemplates();
+                for (int i = 0; i < templates.size(); i++) {
+                    DBTablePartitionDefinition subPartitionDefinition = new DBTablePartitionDefinition();
+                    SubPartitionElement subPartitionElement = templates.get(i);
+                    fillSubPartitionValue(subDBTablePartitionType, subPartitionElement, subPartitionDefinition);
+                    // for a templated subpartition table, the naming rule for the subpartition is
+                    // '($part_name)S($subpart_name)'.
+                    subPartitionDefinition.setName(
+                            parentPartitionName + 'S' + removeIdentifiers(subPartitionElement.getRelation()));
+                    subPartitionDefinition.setOrdinalPosition(i);
+                    subPartitionDefinition.setType(subDBTablePartitionType);
+                    subPartitionDefinitions.add(subPartitionDefinition);
+                }
+            }
+        }
+    }
+
+    private void fillSubPartitionValue(DBTablePartitionType subDBTablePartitionType,
+            SubPartitionElement subPartitionElement, DBTablePartitionDefinition subPartitionDefinition) {
+        if (subDBTablePartitionType == DBTablePartitionType.RANGE) {
+            SubRangePartitionElement subRangePartitionElement = (SubRangePartitionElement) subPartitionElement;
+            subPartitionDefinition.setMaxValues(
+                    subRangePartitionElement.getRangeExprs().stream().map(Expression::getText)
+                            .collect(Collectors.toList()));
+        } else if (subDBTablePartitionType == DBTablePartitionType.LIST) {
+            SubListPartitionElement subListPartitionElement = (SubListPartitionElement) subPartitionElement;
+            List<List<String>> valuesList = new ArrayList<>();
+            for (Expression listExpr : subListPartitionElement.getListExprs()) {
+                if (listExpr instanceof CollectionExpression) {
+                    valuesList.add(
+                            ((CollectionExpression) listExpr).getExpressionList().stream()
+                                    .map(Expression::getText)
+                                    .collect(Collectors.toList()));
+                } else if (listExpr instanceof ConstExpression) {
+                    valuesList.add(Collections.singletonList(listExpr.getText()));
+                }
+            }
+            subPartitionDefinition.setValuesList(valuesList);
+        }
     }
 
     private void parseHashPartitionStmt(HashPartition statement, DBTablePartition partition) {
@@ -470,7 +589,16 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
             DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
             partitionDefinition.setOrdinalPosition(i);
             List<List<String>> valuesList = new ArrayList<>();
-            element.getListExprs().forEach(item -> valuesList.add(Collections.singletonList(item.getText())));
+            for (Expression listExpr : element.getListExprs()) {
+                if (listExpr instanceof CollectionExpression) {
+                    valuesList.add(
+                            ((CollectionExpression) listExpr).getExpressionList().stream()
+                                    .map(Expression::getText)
+                                    .collect(Collectors.toList()));
+                } else if (listExpr instanceof ConstExpression) {
+                    valuesList.add(Collections.singletonList(listExpr.getText()));
+                }
+            }
             partitionDefinition.setValuesList(valuesList);
             partitionDefinition.setName(removeIdentifiers(element.getRelation()));
             partitionDefinition.setType(DBTablePartitionType.LIST);
