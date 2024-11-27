@@ -306,7 +306,7 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
                 for (int i = 0; i < partitionElement.getSubPartitionElements().size(); i++) {
                     DBTablePartitionDefinition subPartitionDefinition = new DBTablePartitionDefinition();
                     SubPartitionElement subPartitionElement = partitionElement.getSubPartitionElements().get(i);
-                    fillSubPartitionValue(subDBTablePartitionType, subPartitionElement, subPartitionDefinition);
+                    fillSubPartitionValue(subPartitionElement, subPartitionDefinition);
                     subPartitionDefinition.setName(
                             removeIdentifiers(subPartitionElement.getRelation()));
                     subPartitionDefinition.setOrdinalPosition(i);
@@ -320,7 +320,7 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
                 for (int i = 0; i < templates.size(); i++) {
                     DBTablePartitionDefinition subPartitionDefinition = new DBTablePartitionDefinition();
                     SubPartitionElement subPartitionElement = templates.get(i);
-                    fillSubPartitionValue(subDBTablePartitionType, subPartitionElement, subPartitionDefinition);
+                    fillSubPartitionValue(subPartitionElement, subPartitionDefinition);
                     // for a templated subpartition table, the naming rule for the subpartition is
                     // '($part_name)s($subpart_name)'.
                     subPartitionDefinition.setName(
@@ -333,17 +333,9 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
         }
     }
 
-    private void fillSubPartitionValue(DBTablePartitionType subDBTablePartitionType,
-            SubPartitionElement subPartitionElement,
+    private void fillSubPartitionValue(SubPartitionElement subPartitionElement,
             DBTablePartitionDefinition subPartitionDefinition) {
-        if (subDBTablePartitionType == DBTablePartitionType.LIST) {
-            SubListPartitionElement subListPartitionElement =
-                    (SubListPartitionElement) subPartitionElement;
-            List<List<String>> valuesList = new ArrayList<>();
-            subListPartitionElement.getListExprs()
-                    .forEach(item -> valuesList.add(Collections.singletonList(item.getText())));
-            subPartitionDefinition.setValuesList(valuesList);
-        } else if (subDBTablePartitionType == DBTablePartitionType.LIST_COLUMNS) {
+        if (subPartitionElement instanceof SubListPartitionElement) {
             SubListPartitionElement subListPartitionElement =
                     (SubListPartitionElement) subPartitionElement;
             List<List<String>> valuesList = new ArrayList<>();
@@ -358,12 +350,7 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
                 }
             }
             subPartitionDefinition.setValuesList(valuesList);
-        } else if (subDBTablePartitionType == DBTablePartitionType.RANGE) {
-            SubRangePartitionElement subRangePartitionElement =
-                    (SubRangePartitionElement) subPartitionElement;
-            subPartitionDefinition.setMaxValues(
-                    Collections.singletonList(subRangePartitionElement.getRangeExprs().get(0).getText()));
-        } else if (subDBTablePartitionType == DBTablePartitionType.RANGE_COLUMNS) {
+        } else if (subPartitionElement instanceof SubRangePartitionElement) {
             SubRangePartitionElement subRangePartitionElement =
                     (SubRangePartitionElement) subPartitionElement;
             subPartitionDefinition.setMaxValues(
