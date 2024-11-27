@@ -476,7 +476,7 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
                 for (int i = 0; i < partitionElement.getSubPartitionElements().size(); i++) {
                     DBTablePartitionDefinition subPartitionDefinition = new DBTablePartitionDefinition();
                     SubPartitionElement subPartitionElement = partitionElement.getSubPartitionElements().get(i);
-                    fillSubPartitionValue(subDBTablePartitionType, subPartitionElement, subPartitionDefinition);
+                    fillSubPartitionValue(subPartitionElement, subPartitionDefinition);
                     subPartitionDefinition.setName(
                             removeIdentifiers(subPartitionElement.getRelation()));
                     subPartitionDefinition.setOrdinalPosition(i);
@@ -490,7 +490,7 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
                 for (int i = 0; i < templates.size(); i++) {
                     DBTablePartitionDefinition subPartitionDefinition = new DBTablePartitionDefinition();
                     SubPartitionElement subPartitionElement = templates.get(i);
-                    fillSubPartitionValue(subDBTablePartitionType, subPartitionElement, subPartitionDefinition);
+                    fillSubPartitionValue(subPartitionElement, subPartitionDefinition);
                     // for a templated subpartition table, the naming rule for the subpartition is
                     // '($part_name)S($subpart_name)'.
                     subPartitionDefinition.setName(
@@ -503,14 +503,14 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
         }
     }
 
-    private void fillSubPartitionValue(DBTablePartitionType subDBTablePartitionType,
-            SubPartitionElement subPartitionElement, DBTablePartitionDefinition subPartitionDefinition) {
-        if (subDBTablePartitionType == DBTablePartitionType.RANGE) {
+    private void fillSubPartitionValue(SubPartitionElement subPartitionElement,
+            DBTablePartitionDefinition subPartitionDefinition) {
+        if (subPartitionElement instanceof SubRangePartitionElement) {
             SubRangePartitionElement subRangePartitionElement = (SubRangePartitionElement) subPartitionElement;
             subPartitionDefinition.setMaxValues(
                     subRangePartitionElement.getRangeExprs().stream().map(Expression::getText)
                             .collect(Collectors.toList()));
-        } else if (subDBTablePartitionType == DBTablePartitionType.LIST) {
+        } else if (subPartitionElement instanceof SubListPartitionElement) {
             SubListPartitionElement subListPartitionElement = (SubListPartitionElement) subPartitionElement;
             List<List<String>> valuesList = new ArrayList<>();
             for (Expression listExpr : subListPartitionElement.getListExprs()) {
