@@ -361,7 +361,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 log.warn("Update executor endpoint failed, jobId={}", je.getId());
             }
         }
-
         handleTaskResultInner(je, taskResult);
     }
 
@@ -466,6 +465,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         try {
             String executorEndpoint = executorEndpointManager.getExecutorEndpoint(je);
             TaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
+
             if (je.getRunMode().isK8s() && MapUtils.isEmpty(result.getLogMetadata())) {
                 log.info("Refresh log failed due to log have not uploaded,  jobId={}, currentStatus={}", je.getId(),
                         je.getStatus());

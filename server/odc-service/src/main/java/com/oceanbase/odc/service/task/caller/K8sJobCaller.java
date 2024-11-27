@@ -107,6 +107,4 @@ public class K8sJobCaller extends BaseJobCaller {
             throw new JobException("invoke isExecutor failed", e);
         }
     }
-
-
 }

@@ -32,4 +32,5 @@ interface TaskExecutor {
     TaskRuntimeInfo getTaskRuntimeInfo(JobIdentity ji);
 
     boolean taskExist(JobIdentity ji);
+
 }
