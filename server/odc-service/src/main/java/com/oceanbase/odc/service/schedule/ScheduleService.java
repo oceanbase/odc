@@ -321,6 +321,12 @@ public class ScheduleService {
                 log.warn("Delete schedule is not allowed,status={}", targetSchedule.getStatus());
                 throw new IllegalStateException(
                         "Delete schedule is not allowed, only can delete terminated schedule or finished schedule.");
+            } else {
+                if (hasExecutingTask(req.getScheduleId())) {
+                    throw new IllegalStateException(
+                            "Delete schedule is not allowed, there are running tasks in this schedule");
+
+                }
             }
         }
 
