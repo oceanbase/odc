@@ -84,7 +84,6 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
         });
     }
 
-
     private void alarmFailed(JobEntity je, String errorMessage) {
         Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
                 .item(AlarmUtils.ORGANIZATION_NAME, Optional.ofNullable(je.getOrganizationId()).map(

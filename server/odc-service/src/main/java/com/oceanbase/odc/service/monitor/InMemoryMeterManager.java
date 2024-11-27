@@ -104,6 +104,7 @@ public class InMemoryMeterManager implements MeterManager, InitializingBean {
         return incrementCounter(meterKey, 1);
     }
 
+
     public Counter registerCounter(MeterKey meterKey) {
         Builder builder = Counter.builder(meterKey.getMeterName().getName())
                 .description(meterKey.getMeterName().getDescription());
