@@ -1097,7 +1097,7 @@ public class ConnectionService {
         return syncTimes.stream().min(Date::compareTo).orElse(null);
     }
 
-    private void fullFillAttributes(Collection<ConnectionConfig> models) {
+    public void fullFillAttributes(Collection<ConnectionConfig> models) {
         Map<Long, List<ConnectionAttributeEntity>> id2Attrs = this.attributeRepository
                 .findByConnectionIdIn(models.stream().map(ConnectionConfig::getId).collect(Collectors.toSet()))
                 .stream().collect(Collectors.groupingBy(ConnectionAttributeEntity::getConnectionId));
