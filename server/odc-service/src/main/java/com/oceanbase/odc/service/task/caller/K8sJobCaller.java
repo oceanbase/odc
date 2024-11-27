@@ -59,7 +59,9 @@ public class K8sJobCaller extends BaseJobCaller {
                     resourceManager.create(resourceLocation, buildK8sResourceContext(context, resourceLocation));
             String arn = resource.getResource().resourceID().getIdentifier();
             return DefaultExecutorIdentifier.builder().namespace(resource.getResource().getNamespace())
-                    .executorName(arn).build();
+                    .executorName(arn).host(resource.getResource().getPodIpAddress())
+                    .port(Integer.valueOf(resource.getResource().getServicePort()))
+                    .build();
         } catch (Throwable e) {
             throw new JobException("doStart failed for " + context, e);
         }
@@ -80,9 +82,6 @@ public class K8sJobCaller extends BaseJobCaller {
                 ResourceIDUtil.DEFAULT_GROUP_PROP_NAME, ResourceIDUtil.DEFAULT_PROP_VALUE);
         return new ResourceLocation(region, group);
     }
-
-    @Override
-    public void doStop(JobIdentity ji) throws JobException {}
 
     @Override
     protected void doFinish(JobIdentity ji, ExecutorIdentifier ei, ResourceID resourceID)
@@ -108,4 +107,6 @@ public class K8sJobCaller extends BaseJobCaller {
             throw new JobException("invoke isExecutor failed", e);
         }
     }
+
+
 }

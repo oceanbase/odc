@@ -117,7 +117,7 @@ public class StartPreparingJob implements Job {
                     Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
                             .item(AlarmUtils.ORGANIZATION_NAME, Optional.ofNullable(jobEntity.getOrganizationId()).map(
                                     Object::toString).orElse(StrUtil.EMPTY))
-                            .item(AlarmUtils.TASK_JOB_ID_NAME, jobEntity.getId().toString())
+                            .item(AlarmUtils.TASK_JOB_ID_NAME, String.valueOf(jobEntity.getId()))
                             .item(AlarmUtils.MESSAGE_NAME,
                                     MessageFormat.format("Start job failed, jobId={0}, message={1}",
                                             lockedEntity.getId(),

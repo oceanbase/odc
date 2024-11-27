@@ -70,11 +70,13 @@ import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
+import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobAttributeEntityColumn;
 import com.oceanbase.odc.service.task.constants.JobEntityColumn;
 import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.enums.TaskMonitorMode;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.executor.HeartbeatRequest;
@@ -290,10 +292,23 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
-    public int startSuccess(Long id, String executorIdentifier) {
+    public int startSuccess(Long id, String executorIdentifier, JobContext jobContext) {
         JobEntity jobEntity = find(id);
         jobEntity.setExecutorIdentifier(executorIdentifier);
-        return jobRepository.updateJobExecutorIdentifierById(jobEntity);
+        TaskMonitorMode monitorMode = JobPropertiesUtils.getMonitorMode(jobContext.getJobProperties());
+        if (monitorMode == TaskMonitorMode.PUSH) {
+            return jobRepository.updateJobExecutorIdentifierById(jobEntity);
+        } else {
+            // that's pull mode, update executor endpoint as well
+            ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(executorIdentifier);
+            String host = identifier.getHost();
+            if (!StringUtils.startsWith(host, "http")) {
+                host = "http://" + host;
+            }
+            String port = String.valueOf(identifier.getPort());
+            return jobRepository.updateExecutorEndpointAndExecutorIdentifierById(jobEntity.getId(), host + ":" + port,
+                    executorIdentifier);
+        }
     }
 
     @Override
@@ -346,6 +361,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 log.warn("Update executor endpoint failed, jobId={}", je.getId());
             }
         }
+
         handleTaskResultInner(je, taskResult);
     }
 
@@ -432,6 +448,12 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         });
     }
 
+    /**
+     * refresh log meta when job is canceled
+     *
+     * @param id
+     * @return
+     */
     @Override
     public boolean refreshLogMetaForCancelJob(Long id) {
         JobEntity je = find(id);
@@ -444,7 +466,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         try {
             String executorEndpoint = executorEndpointManager.getExecutorEndpoint(je);
             TaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
-
             if (je.getRunMode().isK8s() && MapUtils.isEmpty(result.getLogMetadata())) {
                 log.info("Refresh log failed due to log have not uploaded,  jobId={}, currentStatus={}", je.getId(),
                         je.getStatus());

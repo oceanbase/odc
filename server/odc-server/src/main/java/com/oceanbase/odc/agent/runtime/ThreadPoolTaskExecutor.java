@@ -25,6 +25,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.oceanbase.odc.common.ExitHelper;
 import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
@@ -82,6 +83,9 @@ class ThreadPoolTaskExecutor implements TaskExecutor {
             } catch (Exception e) {
                 log.error("Task start failed, jobIdentity={}.", jobIdentity.getId(), e);
                 taskContainer.onException(e);
+            } finally {
+                // only hold one task, task done, agent quit
+                ExitHelper.notifyFinished();
             }
         });
         taskRuntimeInfo.setFuture(future);
@@ -89,7 +93,7 @@ class ThreadPoolTaskExecutor implements TaskExecutor {
 
     /**
      * build task monitor
-     *
+     * 
      * @param jobContext
      * @return
      */

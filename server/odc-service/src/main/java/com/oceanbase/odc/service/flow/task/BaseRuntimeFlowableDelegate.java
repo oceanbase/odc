@@ -76,6 +76,7 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
     private TaskType taskType;
     @Getter
     protected Long flowInstanceId;
+
     @Getter
     private Long organizationId;
     @Getter

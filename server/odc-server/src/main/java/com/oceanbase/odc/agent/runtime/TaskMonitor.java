@@ -221,6 +221,7 @@ class TaskMonitor {
                 getJobId(), this.logMetaCollectedMillis.get());
     }
 
+
     @VisibleForTesting
     protected void uploadLogFileToCloudStorage(TaskResult finalResult) {
 

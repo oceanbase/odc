@@ -30,13 +30,13 @@ import lombok.extern.slf4j.Slf4j;
 public class OdcAgent {
     public static void main(String[] args) {
 
-        log.info("ODC start as task executor mode");
+        log.info("Supervisor agent started");
         try {
             Modules.load();
             new TaskApplication().run(args);
         } catch (Throwable e) {
-            log.error("Task existed abnormal", e);
+            log.error("Supervisor agent stopped", e);
         }
-        log.info("Task executor exit.");
+        log.info("Supervisor agent stopped.");
     }
 }

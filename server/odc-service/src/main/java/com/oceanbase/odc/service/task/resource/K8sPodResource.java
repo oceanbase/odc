@@ -17,6 +17,9 @@ package com.oceanbase.odc.service.task.resource;
 
 import java.util.Date;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+
 import com.oceanbase.odc.service.resource.Resource;
 import com.oceanbase.odc.service.resource.ResourceEndPoint;
 import com.oceanbase.odc.service.resource.ResourceID;
@@ -70,6 +73,11 @@ public class K8sPodResource implements Resource {
      */
     private String podIpAddress;
 
+    /**
+     * port of task supervisor listen for
+     */
+    private String servicePort;
+
     private Date createDate;
 
     public ResourceID resourceID() {
@@ -86,8 +94,19 @@ public class K8sPodResource implements Resource {
                 .append(region).append("::")
                 .append(namespace).append("::")
                 .append(arn).append("::")
-                .append(podIpAddress);
+                .append(podIpAddress).append("::")
+                .append(servicePort);
         return new ResourceEndPoint(sb.toString());
+    }
+
+    public static Pair<String, String> parseIPAndPort(String k8sEndPoint) {
+        String[] infos = StringUtils.split(k8sEndPoint, "::");
+        if (null == infos || infos.length != 6) {
+            throw new IllegalStateException(
+                    "expect k8s endpoint constructed by k8s::region::namespace::arn::ip::port, but current is "
+                            + k8sEndPoint);
+        }
+        return Pair.of(infos[4], infos[5]);
     }
 
     public ResourceState resourceState() {
