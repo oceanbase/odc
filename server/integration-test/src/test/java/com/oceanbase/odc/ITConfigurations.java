@@ -86,6 +86,18 @@ public class ITConfigurations {
         return configuration;
     }
 
+    public static ObjectStorageConfiguration getGCSConfiguration() {
+        ObjectStorageConfiguration configuration = new ObjectStorageConfiguration();
+        configuration.setCloudProvider(CloudProvider.GOOGLE_CLOUD);
+        configuration.setPublicEndpoint(get("odc.cloud.object-storage.gcs.endpoint"));
+        configuration.setAccessKeyId(get("odc.cloud.object-storage.gcs.access-key-id"));
+        configuration.setAccessKeySecret(get("odc.cloud.object-storage.gcs.access-key-secret"));
+        configuration.setBucketName(get("odc.cloud.object-storage.gcs.bucket-name"));
+        configuration.setRoleArn(get("odc.cloud.object-storage.gcs.role-arn"));
+        configuration.setRoleSessionName(get("odc.cloud.object-storage.gcs.role-session-name"));
+        return configuration;
+    }
+
     public static OnlineSchemaChangeProperties getOscPrivateCloudProperties() {
         OnlineSchemaChangeProperties configuration = new OnlineSchemaChangeProperties();
         OmsProperties omsConfiguration = new OmsProperties();

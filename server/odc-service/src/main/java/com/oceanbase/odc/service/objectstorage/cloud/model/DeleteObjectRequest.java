@@ -13,30 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
-
-import java.util.Date;
-import java.util.Map;
-
-import com.oceanbase.odc.service.common.model.InnerUser;
+package com.oceanbase.odc.service.objectstorage.cloud.model;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-@EqualsAndHashCode(callSuper = true)
+/**
+ * @author: liuyizhuo.lyz
+ * @date: 2024/10/29
+ */
 @Data
-public class ScheduleTaskListOverview extends ScheduleTaskOverview {
+@EqualsAndHashCode(callSuper = true)
+public class DeleteObjectRequest extends GenericRequest {
+    public DeleteObjectRequest() {}
 
+    public DeleteObjectRequest(String bucketName) {
+        super(bucketName);
+    }
 
-    private String scheduleId;
+    public DeleteObjectRequest(String bucketName, String key) {
+        super(bucketName, key);
+    }
 
-    private String scheduleName;
-
-    private InnerUser creator;
-
-    private Date lastExecutionTime;
-
-    private Map<String, Object> attributes;
-
-
+    public DeleteObjectRequest(String bucketName, String key, String versionId) {
+        super(bucketName, key, versionId);
+    }
 }
