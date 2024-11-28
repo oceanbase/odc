@@ -528,6 +528,48 @@ public class DatabaseService {
         }
     }
 
+    @SkipAuthorize("internal usage")
+    public Boolean internalSyncFileSystemSchemas(@NonNull Long dataSourceId) throws InterruptedException {
+        Lock lock = jdbcLockRegistry.obtain(connectionService.getUpdateDsSchemaLockKey(dataSourceId));
+        if (!lock.tryLock(3, TimeUnit.SECONDS)) {
+            throw new ConflictException(ErrorCodes.ResourceSynchronizing,
+                    new Object[] {ResourceType.ODC_DATABASE.getLocalizedMessage()}, "Can not acquire jdbc lock");
+        }
+        try {
+            ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
+            horizontalDataPermissionValidator.checkCurrentOrganization(connection);
+            List<DatabaseEntity> existDatabases = databaseRepository.findByConnectionId(dataSourceId).stream()
+                    .filter(DatabaseEntity::getExisted).collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(existDatabases)
+                    || !existDatabases.stream().map(DatabaseEntity::getName).collect(
+                            Collectors.toSet()).contains(connection.getDefaultSchema())) {
+                DatabaseEntity entity = new DatabaseEntity();
+                entity.setDatabaseId(com.oceanbase.odc.common.util.StringUtils.uuid());
+                entity.setOrganizationId(connection.getOrganizationId());
+                entity.setName(connection.getDefaultSchema());
+                entity.setProjectId(connection.getProjectId());
+                entity.setConnectionId(connection.getId());
+                entity.setEnvironmentId(connection.getEnvironmentId());
+                entity.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
+                entity.setExisted(true);
+                entity.setObjectSyncStatus(DBObjectSyncStatus.SYNCED);
+                entity.setConnectType(connection.getType());
+                databaseRepository.save(entity);
+            } else {
+                DeleteDatabasesReq deleteDatabasesReq = new DeleteDatabasesReq();
+                deleteDatabasesReq
+                        .setDatabaseIds(existDatabases.stream().map(DatabaseEntity::getId).collect(Collectors.toSet()));
+                deleteDatabases(deleteDatabasesReq);
+            }
+            return true;
+        } catch (Exception ex) {
+            log.warn("Sync database failed, dataSourceId={}, errorMessage={}", dataSourceId, ex.getLocalizedMessage());
+            return false;
+        } finally {
+            lock.unlock();
+        }
+    }
+
     public int updateEnvironmentIdByConnectionId(@NotNull Long environmentId, @NotNull Long connectionId) {
         return databaseRepository.setEnvironmentIdByConnectionId(environmentId, connectionId);
     }

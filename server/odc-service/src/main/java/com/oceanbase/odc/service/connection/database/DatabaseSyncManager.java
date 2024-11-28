@@ -29,6 +29,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -91,7 +92,8 @@ public class DatabaseSyncManager {
     private Boolean syncDBForDataSource(@NonNull ConnectionConfig dataSource) throws InterruptedException {
         Long creatorId = dataSource.getCreatorId();
         SecurityContextUtils.setCurrentUser(creatorId, dataSource.getOrganizationId(), getAccountName(creatorId));
-        return databaseService.internalSyncDataSourceSchemas(dataSource.getId());
+        return dataSource.getDialectType() == DialectType.FILE_SYSTEM ? databaseService.internalSyncFileSystemSchemas(
+                dataSource.getId()) : databaseService.internalSyncDataSourceSchemas(dataSource.getId());
     }
 
     private Future<Boolean> doExecute(Supplier<Future<Boolean>> supplier) {
