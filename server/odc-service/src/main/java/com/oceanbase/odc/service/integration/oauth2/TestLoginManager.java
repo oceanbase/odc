@@ -187,9 +187,9 @@ public class TestLoginManager {
             if (addableRelyingPartyRegistrationRepository == null) {
                 throw new UnsupportedOperationException("add test sso is not support");
             }
+            addableRelyingPartyRegistrationRepository.addTestConfig(ssoConfig);
             redirectUrl = UrlUtils.appendQueryParameter(ssoConfig.resolveLoginRedirectUrl(),
                     TEST_LOGIN_ID_PARAM, testId);
-            addableRelyingPartyRegistrationRepository.addTestConfig(ssoConfig);
         }
         return new SSOTestInfo(redirectUrl, testId, testRegistrationId);
     }

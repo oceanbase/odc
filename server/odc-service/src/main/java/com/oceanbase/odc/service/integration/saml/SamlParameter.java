@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.integration.saml;
 
+import static com.oceanbase.odc.service.integration.model.SSOIntegrationConfig.parseOrganizationId;
+
 import javax.annotation.Nullable;
 
 import org.springframework.boot.autoconfigure.security.saml2.Saml2RelyingPartyProperties.AssertingParty;
@@ -104,6 +106,10 @@ public class SamlParameter implements SSOParameter {
         Verify.verify(acsLocation.contains(acsLocationPath), "invalid acsLocation=" + acsLocation);
         String baseUrl = this.acsLocation.split(acsLocationPath)[0];
         return baseUrl + "/saml2/authenticate/" + registrationId;
+    }
+
+    public void amendTest() {
+        registrationId = parseOrganizationId(registrationId) + "-" + "test";
     }
 
     /**

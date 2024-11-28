@@ -60,6 +60,8 @@ public class AddableRelyingPartyRegistrationRepository implements RelyingPartyRe
     }
 
     public void addTestConfig(SSOIntegrationConfig ssoConfig) {
+        SamlParameter parameter = (SamlParameter) ssoConfig.getSsoParameter();
+        parameter.amendTest();
         testConfigRegistrations.put(ssoConfig.resolveRegistrationId(), ssoConfig);
     }
 }
