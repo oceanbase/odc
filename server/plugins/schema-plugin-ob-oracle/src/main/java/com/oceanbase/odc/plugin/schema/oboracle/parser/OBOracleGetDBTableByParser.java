@@ -60,7 +60,6 @@ import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineCheckConstra
 import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineConstraint;
 import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineForeignConstraint;
 import com.oceanbase.tools.sqlparser.statement.createtable.Partition;
-import com.oceanbase.tools.sqlparser.statement.createtable.PartitionElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.RangePartition;
 import com.oceanbase.tools.sqlparser.statement.createtable.RangePartitionElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.SubListPartitionElement;
@@ -470,32 +469,37 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
                 .setPartitionsNum(
                         parsedSubPartitionOption.getTemplates() != null ? parsedSubPartitionOption.getTemplates().size()
                                 : null);
-        for (PartitionElement partitionElement : partitionStmt.getPartitionElements()) {
-            if (partitionElement.getSubPartitionElements() != null) {
+        for (int i = 0; i < partitionStmt.getPartitionElements().size(); i++) {
+            DBTablePartitionDefinition partitionDefinition = partition.getPartitionDefinitions().get(i);
+            if (partitionStmt.getPartitionElements().get(i).getSubPartitionElements() != null) {
                 // obtain DBTablePartitionDefinitions for non-templated subpartitions
-                for (int i = 0; i < partitionElement.getSubPartitionElements().size(); i++) {
+                for (int j = 0; j < partitionStmt.getPartitionElements().get(i).getSubPartitionElements().size(); j++) {
                     DBTablePartitionDefinition subPartitionDefinition = new DBTablePartitionDefinition();
-                    SubPartitionElement subPartitionElement = partitionElement.getSubPartitionElements().get(i);
+                    SubPartitionElement subPartitionElement =
+                            partitionStmt.getPartitionElements().get(i).getSubPartitionElements().get(j);
                     fillSubPartitionValue(subPartitionElement, subPartitionDefinition);
+                    subPartitionDefinition.setParentPartitionDefinition(partitionDefinition);
                     subPartitionDefinition.setName(
                             removeIdentifiers(subPartitionElement.getRelation()));
-                    subPartitionDefinition.setOrdinalPosition(i);
+                    subPartitionDefinition.setOrdinalPosition(j);
                     subPartitionDefinition.setType(subDBTablePartitionType);
                     subPartitionDefinitions.add(subPartitionDefinition);
                 }
             } else {
                 // obtain DBTablePartitionDefinitions for templated subpartitions
-                String parentPartitionName = removeIdentifiers(partitionElement.getRelation());
+                String parentPartitionName =
+                        removeIdentifiers(partitionStmt.getPartitionElements().get(i).getRelation());
                 List<SubPartitionElement> templates = partitionStmt.getSubPartitionOption().getTemplates();
-                for (int i = 0; i < templates.size(); i++) {
+                for (int j = 0; j < templates.size(); j++) {
                     DBTablePartitionDefinition subPartitionDefinition = new DBTablePartitionDefinition();
-                    SubPartitionElement subPartitionElement = templates.get(i);
+                    SubPartitionElement subPartitionElement = templates.get(j);
                     fillSubPartitionValue(subPartitionElement, subPartitionDefinition);
+                    subPartitionDefinition.setParentPartitionDefinition(partitionDefinition);
                     // for a templated subpartition table, the naming rule for the subpartition is
                     // '($part_name)S($subpart_name)'.
                     subPartitionDefinition.setName(
                             parentPartitionName + 'S' + removeIdentifiers(subPartitionElement.getRelation()));
-                    subPartitionDefinition.setOrdinalPosition(i);
+                    subPartitionDefinition.setOrdinalPosition(j);
                     subPartitionDefinition.setType(subDBTablePartitionType);
                     subPartitionDefinitions.add(subPartitionDefinition);
                 }
