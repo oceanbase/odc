@@ -49,7 +49,7 @@ public class AddableRelyingPartyRegistrationRepository implements RelyingPartyRe
         Verify.notBlank(registrationId, "registrationId cannot be empty");
         SSOIntegrationConfig sSoClientRegistration = integrationService.getSSoIntegrationConfig();
         if (sSoClientRegistration == null) {
-            return null;
+            return testConfigRegistrations.get(registrationId, key -> null);
         }
         Verify.notNull(sSoClientRegistration, "Saml sSoClientRegistration");
         SamlParameter parameter = (SamlParameter) sSoClientRegistration.getSsoParameter();
