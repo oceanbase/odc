@@ -68,7 +68,12 @@ public class ScheduleChangePreprocessor implements InitializingBean {
         } else {
             type = scheduleService.nullSafeGetModelById(params.getScheduleId()).getType();
         }
-        adaptScheduleChangeParams(params);
+        try {
+            adaptScheduleChangeParams(params);
+        } catch (Exception e) {
+            log.error("Process schedule change params failed, params={}", params, e);
+            throw new UnsupportedException(e.getMessage());
+        }
         if (type2Processor.containsKey(type)) {
             type2Processor.get(type).process(params);
         }
@@ -94,6 +99,9 @@ public class ScheduleChangePreprocessor implements InitializingBean {
     }
 
     private void adaptScheduleChangeParams(ScheduleChangeParams req) {
+        if (req.getOperationType() != OperationType.CREATE || req.getOperationType() != OperationType.UPDATE) {
+            return;
+        }
         Database srcDb = databaseService.detail(getTargetDatabaseId(req));
         req.setProjectId(srcDb.getProject().getId());
         req.setProjectName(srcDb.getProject().getName());
