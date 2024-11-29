@@ -72,6 +72,7 @@ public class DBTableController {
         }
     }
 
+    @ApiOperation(value = "getTable", notes = "get table")
     @GetMapping(value = {"/{sessionId}/databases/{databaseName}/tables/{tableName}",
             "/{sessionId}/currentDatabase/tables/{tableName}"})
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
