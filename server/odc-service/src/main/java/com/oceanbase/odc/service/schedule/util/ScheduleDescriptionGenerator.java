@@ -13,30 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
+package com.oceanbase.odc.service.schedule.util;
 
-import java.util.Date;
-import java.util.Map;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 
-import com.oceanbase.odc.service.common.model.InnerUser;
+/**
+ * @Author：tinker
+ * @Date: 2024/11/11 11:33
+ * @Descripition:
+ */
+public interface ScheduleDescriptionGenerator {
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-
-@EqualsAndHashCode(callSuper = true)
-@Data
-public class ScheduleTaskListOverview extends ScheduleTaskOverview {
-
-
-    private String scheduleId;
-
-    private String scheduleName;
-
-    private InnerUser creator;
-
-    private Date lastExecutionTime;
-
-    private Map<String, Object> attributes;
-
+    void generateScheduleDescription(ScheduleChangeParams req);
 
 }
