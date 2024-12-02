@@ -354,6 +354,21 @@ public class ConnectSessionService {
     }
 
     public ConnectionSession nullSafeGet(@NotNull String sessionId, boolean autoCreate) {
+        return nullSafeGet(sessionId, autoCreate, null);
+    }
+
+    /**
+     * get a ConnectionSession of sessionId. If not exist and autoCreate is true, create a new session.
+     * If createConnectionSessionSupplier is not null, use it to create a new session; otherwise, create
+     * a new session by default.
+     * 
+     * @param sessionId session id for {@link ConnectionSession}
+     * @param autoCreate whether to auto create a new session if not exist
+     * @param createConnectionSessionSupplier a supplier to create a new session
+     * @return {@link ConnectionSession} of sessionId
+     */
+    public ConnectionSession nullSafeGet(@NotNull String sessionId, boolean autoCreate,
+            Supplier<ConnectionSession> createConnectionSessionSupplier) {
         ConnectionSession session = connectionSessionManager.getSession(sessionId);
         if (session == null) {
             CreateSessionReq req = new DefaultConnectSessionIdGenerator().getKeyFromId(sessionId);
@@ -375,8 +390,12 @@ public class ConnectSessionService {
                     connectionSessionManager.cancelExpire(session);
                     return session;
                 }
-                session = create(req);
-                ConnectionSessionUtil.setConsoleSessionResetFlag(session, true);
+                if (createConnectionSessionSupplier != null) {
+                    session = createConnectionSessionSupplier.get();
+                } else {
+                    session = create(req);
+                    ConnectionSessionUtil.setConsoleSessionResetFlag(session, true);
+                }
                 return session;
             } finally {
                 lock.unlock();
@@ -384,37 +403,6 @@ public class ConnectSessionService {
         }
         if (!Objects.equals(ConnectionSessionUtil.getUserId(session), authenticationFacade.currentUserId())) {
             throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
-        }
-        connectionSessionManager.cancelExpire(session);
-        return session;
-    }
-
-    public ConnectionSession nullSafeGetSkipPermissionCheck(@NotNull String sessionId,
-            Supplier<ConnectionSession> createConnectionSessionSupplier) {
-        ConnectionSession session = connectionSessionManager.getSession(sessionId);
-        if (session == null) {
-            if (createConnectionSessionSupplier == null) {
-                throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
-            }
-            Lock lock = this.sessionId2Lock.computeIfAbsent(sessionId, s -> new ReentrantLock());
-            try {
-                if (!lock.tryLock(10, TimeUnit.SECONDS)) {
-                    throw new IllegalStateException("Session is creating, please wait and retry later");
-                }
-            } catch (Exception e) {
-                throw new IllegalStateException(e);
-            }
-            try {
-                session = connectionSessionManager.getSession(sessionId);
-                if (session != null) {
-                    connectionSessionManager.cancelExpire(session);
-                    return session;
-                }
-                session = createConnectionSessionSupplier.get();
-                return session;
-            } finally {
-                lock.unlock();
-            }
         }
         connectionSessionManager.cancelExpire(session);
         return session;
