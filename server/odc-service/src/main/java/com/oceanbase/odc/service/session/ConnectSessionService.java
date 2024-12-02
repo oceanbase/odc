@@ -372,6 +372,7 @@ public class ConnectSessionService {
             try {
                 session = connectionSessionManager.getSession(sessionId);
                 if (session != null) {
+                    connectionSessionManager.cancelExpire(session);
                     return session;
                 }
                 session = create(req);
@@ -406,6 +407,7 @@ public class ConnectSessionService {
             try {
                 session = connectionSessionManager.getSession(sessionId);
                 if (session != null) {
+                    connectionSessionManager.cancelExpire(session);
                     return session;
                 }
                 session = createConnectionSessionSupplier.get();
