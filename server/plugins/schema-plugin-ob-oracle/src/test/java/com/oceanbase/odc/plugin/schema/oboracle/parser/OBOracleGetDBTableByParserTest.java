@@ -188,6 +188,8 @@ public class OBOracleGetDBTableByParserTest {
         Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
         Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
         Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(1));
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
     }
 
     @Test
@@ -212,6 +214,8 @@ public class OBOracleGetDBTableByParserTest {
         Assert.assertEquals("P0SMP0", subpartition.getPartitionDefinitions().get(0).getName());
         Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
         Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
     }
 
     @Test
@@ -236,6 +240,8 @@ public class OBOracleGetDBTableByParserTest {
         Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
         Assert.assertEquals("100", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
         Assert.assertEquals("100", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(1));
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
     }
 
     @Test
@@ -258,6 +264,8 @@ public class OBOracleGetDBTableByParserTest {
         Assert.assertEquals("P0SSP0", subpartition.getPartitionDefinitions().get(0).getName());
         Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
         Assert.assertEquals("100", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
     }
 
     @Test
@@ -279,6 +287,8 @@ public class OBOracleGetDBTableByParserTest {
         Assert.assertNull(subpartition.getPartitionOption().getExpression());
         Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals("P0SP0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
     }
 
     @Test
@@ -299,6 +309,8 @@ public class OBOracleGetDBTableByParserTest {
         Assert.assertNull(subpartition.getPartitionOption().getExpression());
         Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals("P0SP0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
     }
 
     @Test
@@ -325,6 +337,8 @@ public class OBOracleGetDBTableByParserTest {
         Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
         Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
         Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(1));
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
     }
 
     @Test
@@ -349,6 +363,8 @@ public class OBOracleGetDBTableByParserTest {
         Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
         Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
         Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
     }
 
     @Test
@@ -373,6 +389,8 @@ public class OBOracleGetDBTableByParserTest {
         Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
         Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
         Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(1));
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
     }
 
     @Test
@@ -395,6 +413,8 @@ public class OBOracleGetDBTableByParserTest {
         Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
         Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
         Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
     }
 
     @Test
@@ -415,6 +435,8 @@ public class OBOracleGetDBTableByParserTest {
         Assert.assertNull(subpartition.getPartitionOption().getExpression());
         Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
         Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
     }
 
     @Test
@@ -435,6 +457,8 @@ public class OBOracleGetDBTableByParserTest {
         Assert.assertNull(subpartition.getPartitionOption().getExpression());
         Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
         Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
     }
 
     @Test
