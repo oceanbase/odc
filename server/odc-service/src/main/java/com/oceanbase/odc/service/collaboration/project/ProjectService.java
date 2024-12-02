@@ -33,6 +33,7 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -147,6 +148,7 @@ public class ProjectService {
     private ConnectionService connectionService;
 
     @Autowired
+    @Lazy
     private ScheduleService scheduleService;
 
     @Autowired
@@ -156,6 +158,7 @@ public class ProjectService {
     private ProjectPermissionValidator projectPermissionValidator;
 
     @Autowired
+    @Lazy
     private FlowInstanceService flowInstanceService;
 
     @Value("${odc.integration.bastion.enabled:false}")
