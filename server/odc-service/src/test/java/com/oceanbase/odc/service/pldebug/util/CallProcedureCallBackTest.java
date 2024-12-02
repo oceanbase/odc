@@ -120,7 +120,7 @@ public class CallProcedureCallBackTest {
         list.add(param);
         procedure.setParams(list);
 
-        CallProcedureCallBack callBack = new CallProcedureCallBack(procedure, 30, new OracleSqlBuilder());
+        CallProcedureCallBack callBack = new CallProcedureCallBack(procedure, 30, new OracleSqlBuilder(), null);
         JdbcTemplate jdbcTemplate =
                 new JdbcTemplate(TestDBConfigurations.getInstance().getTestOBOracleConfiguration().getDataSource());
         List<DBPLParam> actual = jdbcTemplate.execute(callBack);
@@ -160,7 +160,7 @@ public class CallProcedureCallBackTest {
         list.add(param);
 
         procedure.setParams(list);
-        CallProcedureCallBack callBack = new CallProcedureCallBack(procedure, 30, new MySQLSqlBuilder());
+        CallProcedureCallBack callBack = new CallProcedureCallBack(procedure, 30, new MySQLSqlBuilder(), null);
         JdbcTemplate jdbcTemplate =
                 new JdbcTemplate(TestDBConfigurations.getInstance().getTestOBMysqlConfiguration().getDataSource());
         List<DBPLParam> acutal = jdbcTemplate.execute(callBack);
@@ -201,7 +201,7 @@ public class CallProcedureCallBackTest {
 
         procedure.setParams(list);
         // 注意版本1.1.0开始
-        CallProcedureCallBack callBack = new CallProcedureCallBack(procedure, 30, new OracleSqlBuilder());
+        CallProcedureCallBack callBack = new CallProcedureCallBack(procedure, 30, new OracleSqlBuilder(), null);
         JdbcTemplate jdbcTemplate =
                 new JdbcTemplate(TestDBConfigurations.getInstance().getTestOBOracleConfiguration().getDataSource());
         List<DBPLParam> actual = jdbcTemplate.execute(callBack);
@@ -234,7 +234,7 @@ public class CallProcedureCallBackTest {
         params.add(param);
         procedure.setParams(params);
 
-        CallProcedureCallBack callBack = new CallProcedureCallBack(procedure, 30, new OracleSqlBuilder());
+        CallProcedureCallBack callBack = new CallProcedureCallBack(procedure, 30, new OracleSqlBuilder(), null);
         JdbcTemplate jdbcTemplate =
                 new JdbcTemplate(TestDBConfigurations.getInstance().getTestOBOracleConfiguration().getDataSource());
         List<DBPLParam> actual = jdbcTemplate.execute(callBack);

@@ -32,6 +32,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.OBException;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.pldebug.model.DBPLError;
+import com.oceanbase.odc.service.pldebug.model.PLDebugODPSpecifiedRoute;
 import com.oceanbase.odc.service.pldebug.util.PLUtils;
 
 /**
@@ -42,6 +43,7 @@ import com.oceanbase.odc.service.pldebug.util.PLUtils;
 public class GetPLErrorCallBack implements ConnectionCallback<List<DBPLError>> {
     private final ConnectionConfig connectionConfig;
     private final DBPLError dbplError;
+    private PLDebugODPSpecifiedRoute plDebugODPSpecifiedRoute;
 
     public GetPLErrorCallBack(ConnectionConfig connectionConfig, DBPLError dbplError) {
         this.connectionConfig = connectionConfig;
@@ -60,8 +62,10 @@ public class GetPLErrorCallBack implements ConnectionCallback<List<DBPLError>> {
             tableName = "dba_errors";
         }
         String schema = connectionConfig.getDefaultSchema();
+        String specifiedRoute = PLUtils.getSpecifiedRoute(this.plDebugODPSpecifiedRoute);
         String sql = String.format(
-                "select * from %s WHERE type = '%s' and name = '%s' and owner = '%s' order by line asc;",
+                "%s select * from %s WHERE type = '%s' and name = '%s' and owner = '%s' order by line asc;",
+                specifiedRoute,
                 tableName, dbplError.getType(), dbplError.getName(), schema);
         List<DBPLError> dbplErrors = new ArrayList<>();
 
