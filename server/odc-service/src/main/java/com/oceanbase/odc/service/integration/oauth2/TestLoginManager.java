@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.integration.oauth2;
 
+import static com.oceanbase.odc.core.shared.constant.OdcConstants.ODC_BACK_URL_PARAM;
 import static com.oceanbase.odc.core.shared.constant.OdcConstants.TEST_LOGIN_ID_PARAM;
 import static com.oceanbase.odc.service.integration.model.SSOIntegrationConfig.parseRegistrationName;
 
@@ -27,6 +28,7 @@ import javax.validation.constraints.NotBlank;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.saml2.Saml2RelyingPartyProperties.Registration.Acs;
+import org.springframework.security.saml2.core.Saml2ParameterNames;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.stereotype.Service;
 
@@ -68,7 +70,7 @@ public class TestLoginManager {
      * @see Acs#getEntityId()
      */
     public static final AntPathRequestMatcher samlAuthorizationRequestMatcher =
-            new AntPathRequestMatcher("{baseUrl}/login/saml2/sso/{registrationId}");
+            new AntPathRequestMatcher("/login/saml2/sso/{registrationId}");
 
     private static final AntPathRequestMatcher LDAP_REQUEST_MATCHER =
             new AntPathRequestMatcher("/api/v2/iam/ldap/login", "POST");
@@ -88,6 +90,9 @@ public class TestLoginManager {
 
     @Autowired
     private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
+
+    @Autowired
+    private SSOStateManager ssoStateManager;
 
     @Autowired(required = false)
     private AddableRelyingPartyRegistrationRepository addableRelyingPartyRegistrationRepository;
@@ -136,7 +141,7 @@ public class TestLoginManager {
             return;
         }
         String testId = WebRequestUtils.getStringValueFromParameterOrAttribute(currentRequest,
-                OdcConstants.TEST_LOGIN_ID_PARAM);
+                Saml2ParameterNames.RELAY_STATE);
         Verify.notNull(testId, "testId");
         testLoginInfoCache.put(testId, info);
     }
@@ -163,7 +168,7 @@ public class TestLoginManager {
     }
 
     @PreAuthenticate(actions = "create", resourceType = "ODC_INTEGRATION", isForAll = true)
-    public SSOTestInfo getSSOTestInfo(IntegrationConfig config, String type) {
+    public SSOTestInfo getSSOTestInfo(IntegrationConfig config, String type, String odcBackUrl) {
         SSOIntegrationConfig ssoConfig = SSOIntegrationConfig.of(config, authenticationFacade.currentOrganizationId());
         Verify.verify(ssoConfig.isOauth2OrOidc() || ssoConfig.isLdap() || ssoConfig.isSaml(), "not support sso type");
         fillTestSecret(config, ssoConfig);
@@ -190,6 +195,9 @@ public class TestLoginManager {
             addableRelyingPartyRegistrationRepository.addTestConfig(ssoConfig);
             redirectUrl = UrlUtils.appendQueryParameter(ssoConfig.resolveLoginRedirectUrl(),
                     TEST_LOGIN_ID_PARAM, testId);
+            redirectUrl = UrlUtils.appendQueryParameter(redirectUrl,
+                    Saml2ParameterNames.RELAY_STATE, testId);
+            ssoStateManager.setStateParameter(testId, ODC_BACK_URL_PARAM, odcBackUrl);
         }
         return new SSOTestInfo(redirectUrl, testId, testRegistrationId);
     }
@@ -255,7 +263,8 @@ public class TestLoginManager {
         if (currentRequest == null) {
             return;
         }
-        if (isOAuthTestLoginRequest(currentRequest) && "info".equals(currentRequest.getParameter("type"))) {
+        if (isSamlTestLoginRequest(currentRequest)) {
+            ssoStateManager.addStateToCurrentRequestParam(Saml2ParameterNames.RELAY_STATE);
             throw new TestLoginTerminateException();
         }
     }

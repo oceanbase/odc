@@ -27,6 +27,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.service.common.util.UrlUtils;
 import com.oceanbase.odc.service.integration.model.SSOParameter;
 
 import lombok.AllArgsConstructor;
@@ -110,6 +111,8 @@ public class SamlParameter implements SSOParameter {
 
     public void amendTest() {
         registrationId = parseOrganizationId(registrationId) + "-" + "test";
+        acsLocation = UrlUtils.getUrlHost(acsLocation) + "/login/saml2/sso/" + registrationId;
+        acsEntityId = UrlUtils.getUrlHost(acsEntityId) + "/saml2/service-provider-metadata/" + registrationId;
     }
 
     /**
