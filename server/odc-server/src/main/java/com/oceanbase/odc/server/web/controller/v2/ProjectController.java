@@ -16,6 +16,7 @@
 package com.oceanbase.odc.server.web.controller.v2;
 
 import java.util.List;
+import java.util.Set;
 
 import javax.validation.Valid;
 
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.collaboration.project.model.Project.ProjectMember;
@@ -129,6 +131,18 @@ public class ProjectController {
     public SuccessResponse<Project> setArchived(@PathVariable Long id,
             @RequestBody @Valid SetArchivedReq setArchivedReq) throws InterruptedException {
         return Responses.success(projectService.setArchived(id, setArchivedReq));
+    }
+
+    @ApiOperation(value = "batchDeleteProject", notes = "Delete projects")
+    @RequestMapping(value = "/projects/{id:[\\d]+}/batchDelete", method = RequestMethod.POST)
+    public SuccessResponse<Boolean> batchDelete(@PathVariable Set<Long> ids) throws InterruptedException {
+        return Responses.success(projectService.batchDelete(ids));
+    }
+
+    @ApiOperation(value = "listUnfinishedTickets", notes = "List unfinished ticket references of a project")
+    @RequestMapping(value = "/projects/{id:[\\d]+}/unfinishedTickets", method = RequestMethod.GET)
+    public void listUnfinishedTickets(@PathVariable Long id) {
+        throw new NotImplementedException();
     }
 
 }

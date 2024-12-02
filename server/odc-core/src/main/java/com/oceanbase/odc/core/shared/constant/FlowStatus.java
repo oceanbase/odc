@@ -15,6 +15,10 @@
  */
 package com.oceanbase.odc.core.shared.constant;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * @author wenniu.ly
  * @date 2022/2/9
@@ -87,6 +91,10 @@ public enum FlowStatus {
      */
     COMPLETED,
 
-    PRE_CHECK_FAILED,
+    PRE_CHECK_FAILED;
 
+    public static List<FlowStatus> listUnfinishedStatus() {
+        return Collections.unmodifiableList(
+                Arrays.asList(CREATED, APPROVING, WAIT_FOR_EXECUTION, WAIT_FOR_CONFIRM, EXECUTING, ROLLBACKING));
+    }
 }
