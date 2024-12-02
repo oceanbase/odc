@@ -15,11 +15,21 @@
  */
 package com.oceanbase.odc.service.collaboration.project.model;
 
+import java.util.List;
+
+import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
+import com.oceanbase.odc.service.schedule.model.ScheduleOverviewHist;
+
+import lombok.Data;
+
 /**
  * @Author: Lebie
  * @Date: 2024/11/28 17:24
  * @Description: []
  */
-public class ProjectTicketReference {
-    private Long projectId;
+@Data
+public class TicketReference {
+    private List<FlowInstanceDetailResp> unfinishedFlowInstances;
+
+    private List<ScheduleOverviewHist> unfinishedSchedules;
 }

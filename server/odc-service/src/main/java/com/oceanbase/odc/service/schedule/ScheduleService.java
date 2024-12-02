@@ -794,6 +794,16 @@ public class ScheduleService {
                 : returnValue.map(o -> scheduleId2Overview.get(o.getId()));
     }
 
+    public Page<ScheduleOverviewHist> listUnfinishedSchedulesByProjectId(@NonNull Pageable pageable,
+            @NonNull Long projectId) {
+        return list(pageable, QueryScheduleParams.builder().projectId(projectId)
+                .statuses(ScheduleStatus.listUnfinishedStatus()).build());
+    }
+
+    public int getEnabledScheduleCountByProjectId(@NonNull Long projectId) {
+        return getEnabledScheduleCountByProjectId(projectId);
+    }
+
     public Page<ScheduleOverview> listScheduleOverview(@NotNull Pageable pageable,
             @NotNull QueryScheduleParams params) {
         log.info("List schedule overview req:{}", params);

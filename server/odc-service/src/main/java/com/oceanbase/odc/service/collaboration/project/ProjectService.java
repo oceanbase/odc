@@ -70,11 +70,11 @@ import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleRepository;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
-import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.collaboration.project.model.Project.ProjectMember;
 import com.oceanbase.odc.service.collaboration.project.model.QueryProjectParams;
 import com.oceanbase.odc.service.collaboration.project.model.SetArchivedReq;
+import com.oceanbase.odc.service.collaboration.project.model.TicketReference;
 import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
@@ -86,6 +86,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.model.UserResourceRole;
+import com.oceanbase.odc.service.schedule.ScheduleService;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -146,7 +147,7 @@ public class ProjectService {
     private ConnectionService connectionService;
 
     @Autowired
-    private ScheduleRepository scheduleRepository;
+    private ScheduleService scheduleService;
 
     @Autowired
     private HorizontalDataPermissionValidator horizontalDataPermissionValidator;
@@ -415,6 +416,17 @@ public class ProjectService {
         return true;
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("Internal usage")
+    public TicketReference getProjectTicketReference(Long projectId) {
+        TicketReference reference = new TicketReference();
+        reference.setUnfinishedFlowInstances(
+                flowInstanceService.listUnfinishedFlowInstances(Pageable.unpaged(), projectId).getContent());
+        reference.setUnfinishedSchedules(
+                scheduleService.listUnfinishedSchedulesByProjectId(Pageable.unpaged(), projectId).getContent());
+        return reference;
+    }
+
     @SkipAuthorize
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteProjectMemberSkipPermissionCheck(@NonNull Long projectId, @NonNull Long userId) {
@@ -532,7 +544,7 @@ public class ProjectService {
     }
 
     public void checkUnfinishedTickets(@NonNull Long projectId) {
-        if (scheduleRepository.getEnabledScheduleCountByProjectId(projectId) > 0) {
+        if (scheduleService.getEnabledScheduleCountByProjectId(projectId) > 0) {
             throw new BadRequestException(
                     "There exists unfinished schedule tasks in the project, please disable them before archiving the project.");
         }

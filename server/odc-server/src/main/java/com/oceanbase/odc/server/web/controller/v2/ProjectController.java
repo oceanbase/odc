@@ -31,12 +31,12 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.collaboration.project.model.Project.ProjectMember;
 import com.oceanbase.odc.service.collaboration.project.model.QueryProjectParams;
 import com.oceanbase.odc.service.collaboration.project.model.SetArchivedReq;
+import com.oceanbase.odc.service.collaboration.project.model.TicketReference;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
@@ -134,15 +134,15 @@ public class ProjectController {
     }
 
     @ApiOperation(value = "batchDeleteProject", notes = "Delete projects")
-    @RequestMapping(value = "/projects/{id:[\\d]+}/batchDelete", method = RequestMethod.POST)
-    public SuccessResponse<Boolean> batchDelete(@PathVariable Set<Long> ids) throws InterruptedException {
+    @RequestMapping(value = "/projects/batchDelete", method = RequestMethod.POST)
+    public SuccessResponse<Boolean> batchDelete(@RequestBody Set<Long> ids) throws InterruptedException {
         return Responses.success(projectService.batchDelete(ids));
     }
 
     @ApiOperation(value = "listUnfinishedTickets", notes = "List unfinished ticket references of a project")
     @RequestMapping(value = "/projects/{id:[\\d]+}/unfinishedTickets", method = RequestMethod.GET)
-    public void listUnfinishedTickets(@PathVariable Long id) {
-        throw new NotImplementedException();
+    public SuccessResponse<TicketReference> listUnfinishedTickets(@PathVariable Long id) {
+        return Responses.success(projectService.getProjectTicketReference(id));
     }
 
 }
