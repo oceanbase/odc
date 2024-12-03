@@ -26,6 +26,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.LimitMetric;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigEntity;
@@ -119,10 +121,12 @@ public class DlmLimiterService {
 
     private void checkLimiterConfig(RateLimitConfiguration limiterConfig) {
         if (limiterConfig.getRowLimit() != null && limiterConfig.getRowLimit() > maxRowLimit) {
-            throw new IllegalArgumentException(String.format("The maximum row limit is %s rows/s.", maxRowLimit));
+            PreConditions.lessThanOrEqualTo("rowLimit", LimitMetric.DLM_ROW_LIMIT, limiterConfig.getRowLimit(),
+                    maxRowLimit);
         }
         if (limiterConfig.getDataSizeLimit() != null && limiterConfig.getDataSizeLimit() > maxDataSizeLimit) {
-            throw new IllegalArgumentException(String.format("The maximum data size is %s KB/s.", maxDataSizeLimit));
+            PreConditions.lessThanOrEqualTo("dataSizeLimit", LimitMetric.DLM_DATA_SIZE_LIMIT,
+                    limiterConfig.getDataSizeLimit(), maxDataSizeLimit);
         }
     }
 }
