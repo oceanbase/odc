@@ -53,13 +53,19 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
      * supply if oms project has all data replicated
      */
     private final Supplier<Boolean> dataReplicatedSupplier;
+    /**
+     * supply if lock table can be supported
+     */
+    private final Supplier<LockTableSupportDecider> lockTableSupportDeciderSupplier;
 
     public DefaultRenameTableInvoker(ConnectionProvider connectionProvider,
             DBSessionManageFacade dbSessionManageFacade,
-            Supplier<Boolean> dataReplicatedSupplier) {
+            Supplier<Boolean> dataReplicatedSupplier,
+            Supplier<LockTableSupportDecider> lockTableSupportDeciderSupplier) {
         this.connectionProvider = connectionProvider;
         this.dbSessionManageFacade = dbSessionManageFacade;
         this.dataReplicatedSupplier = dataReplicatedSupplier;
+        this.lockTableSupportDeciderSupplier = lockTableSupportDeciderSupplier;
     }
 
     @Override
@@ -103,7 +109,8 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
             List<RenameTableInterceptor> interceptors = new LinkedList<>();
             LockRenameTableFactory lockRenameTableFactory = new LockRenameTableFactory();
             RenameTableInterceptor lockInterceptor =
-                    lockRenameTableFactory.generate(connectionSession, dbSessionManageFacade);
+                    lockRenameTableFactory.generate(connectionSession, dbSessionManageFacade,
+                            lockTableSupportDeciderSupplier);
             interceptors.add(lockInterceptor);
             interceptors.add(new ForeignKeyInterceptor(connectionSession));
             RenameTableHandler renameTableHandler = RenameTableHandlers.getForeignKeyHandler(connectionSession);
