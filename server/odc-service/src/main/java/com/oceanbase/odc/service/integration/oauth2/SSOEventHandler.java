@@ -108,7 +108,9 @@ public class SSOEventHandler implements IntegrationEventHandler {
         Verify.verify(config.getType() == SSO, "wrong integration type");
         SSOIntegrationConfig ssoIntegrationConfig =
                 JsonUtils.fromJson(config.getConfiguration(), SSOIntegrationConfig.class);
-        ssoIntegrationConfig.fillDecryptSecret(decryptConfiguration);
+        if (!ssoIntegrationConfig.isSaml()) {
+            ssoIntegrationConfig.fillDecryptSecret(decryptConfiguration);
+        }
         return ssoIntegrationConfig;
     }
 }
