@@ -154,14 +154,12 @@ public class TableService {
             }
             if (types.contains(DBObjectType.VIEW)) {
                 ViewExtensionPoint viewExtension = SchemaPluginUtil.getViewExtension(dataSource.getDialectType());
-                if (viewExtension == null) {
-                    throw new UnsupportedOperationException("the dialect " + dataSource.getDialectType()
-                            + " doesn't support the database object type " + DBObjectType.VIEW);
-                }
-                Set<String> latestViewNames = viewExtension.list(conn, database.getName())
+                if (viewExtension != null) {
+                    Set<String> latestViewNames = viewExtension.list(conn, database.getName())
                         .stream().map(DBObjectIdentity::getName).collect(Collectors.toCollection(LinkedHashSet::new));
-                generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn, DBObjectType.VIEW,
+                    generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn, DBObjectType.VIEW,
                         latestViewNames);
+                }
             }
         }
         return tables;
