@@ -40,6 +40,7 @@ import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.ProjectStepResultChecker.ProjectStepResult;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 import com.oceanbase.odc.service.onlineschemachange.rename.DefaultRenameTableInvoker;
+import com.oceanbase.odc.service.onlineschemachange.rename.LockTableSupportDecider;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 
 import lombok.extern.slf4j.Slf4j;
@@ -100,7 +101,7 @@ public class OmsSwapTableAction implements Action<OscActionContext, OscActionRes
                                         taskParameters.getUid(), taskParameters.getOmsProjectId(),
                                         taskParameters.getDatabaseName(),
                                         lastResult.getCheckFailedTime(), 25000);
-                            });
+                            }, this::getLockTableSupportDecider);
             defaultRenameTableInvoker.invoke(taskParameters, parameters);
             // rename table success, jump to clean resource state
             return new OscActionResult(OscStates.SWAP_TABLE.getState(), null, OscStates.CLEAN_RESOURCE.getState());
@@ -109,6 +110,11 @@ public class OmsSwapTableAction implements Action<OscActionContext, OscActionRes
                 userMonitorExecutor.stop();
             }
         }
+    }
+
+    protected LockTableSupportDecider getLockTableSupportDecider() {
+        String lockTableMatchers = onlineSchemaChangeProperties.getSupportLockTableObVersionJson();
+        return LockTableSupportDecider.createWithJsonArrayWithDefaultValue(lockTableMatchers);
     }
 
     protected boolean checkOMSProject(OscActionContext context) {
