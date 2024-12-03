@@ -156,9 +156,11 @@ public class TableService {
                 ViewExtensionPoint viewExtension = SchemaPluginUtil.getViewExtension(dataSource.getDialectType());
                 if (viewExtension != null) {
                     Set<String> latestViewNames = viewExtension.list(conn, database.getName())
-                        .stream().map(DBObjectIdentity::getName).collect(Collectors.toCollection(LinkedHashSet::new));
-                    generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn, DBObjectType.VIEW,
-                        latestViewNames);
+                            .stream().map(DBObjectIdentity::getName)
+                            .collect(Collectors.toCollection(LinkedHashSet::new));
+                    generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn,
+                            DBObjectType.VIEW,
+                            latestViewNames);
                 }
             }
         }
