@@ -299,6 +299,7 @@ public class ProjectService {
         }
         checkUnfinishedTickets(id);
         previous.setArchived(true);
+        previous.setName(previous.getName() + "_archived_" + System.currentTimeMillis());
         ProjectEntity saved = repository.save(previous);
         List<ConnectionEntity> connectionEntities = connectionConfigRepository.findByProjectId(id).stream()
                 .peek(e -> e.setProjectId(null)).collect(Collectors.toList());
