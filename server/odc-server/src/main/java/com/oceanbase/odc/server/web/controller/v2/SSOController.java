@@ -52,7 +52,7 @@ public class SSOController {
     @PostMapping(value = "/test/start")
     public SuccessResponse<SSOTestInfo> addTestClientRegistration(@RequestBody IntegrationConfig config,
             @RequestParam(required = false) String type, @RequestParam(required = false) String odcBackUrl) {
-        return Responses.ok(testLoginManager.getSSOTestInfo(config, type,odcBackUrl));
+        return Responses.ok(testLoginManager.getSSOTestInfo(config, type, odcBackUrl));
     }
 
     /**
