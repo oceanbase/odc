@@ -761,6 +761,12 @@ public class ConnectionService {
         return repository.findByIdIn(ids).stream().map(mapper::entityToModel).collect(Collectors.toList());
     }
 
+    public List<ConnectionConfig> innerListByIdsWithAttribute(Collection<Long> ids) {
+        List<ConnectionConfig> connectionConfigs = innerListByIds(ids);
+        fullFillAttributes(connectionConfigs);
+        return connectionConfigs;
+    }
+
     @SkipAuthorize("internal usage")
     public ConnectionConfig getForConnectionSkipPermissionCheck(@NotNull Long id) {
         ConnectionConfig connection = internalGetSkipUserCheck(id, false, false);
