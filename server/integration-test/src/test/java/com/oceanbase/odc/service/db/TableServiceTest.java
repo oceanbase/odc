@@ -92,14 +92,14 @@ public class TableServiceTest extends ServiceTestEnv {
     @BeforeClass
     public static void setUp() {
         clear();
-        createTablesByConnectType(ConnectType.OB_MYSQL, TABLE_NAME_LIST, OB_MYSQL_TABLE_CREATE_TEMPLATE);
-        createTablesByConnectType(ConnectType.OB_ORACLE, TABLE_NAME_LIST, OB_ORACLE_TABLE_CREATE_TEMPLATE);
-        createTablesByConnectType(ConnectType.MYSQL, TABLE_NAME_LIST, OB_MYSQL_TABLE_CREATE_TEMPLATE);
-        createTablesByConnectType(ConnectType.ORACLE, TABLE_NAME_LIST, OB_ORACLE_TABLE_CREATE_TEMPLATE);
-        createTablesByConnectType(ConnectType.OB_MYSQL, VIEW_NAME_LIST, VIEW_CREATE_TEMPLATE);
-        createTablesByConnectType(ConnectType.OB_ORACLE, VIEW_NAME_LIST, VIEW_CREATE_TEMPLATE);
-        createTablesByConnectType(ConnectType.MYSQL, VIEW_NAME_LIST, VIEW_CREATE_TEMPLATE);
-        createTablesByConnectType(ConnectType.ORACLE, VIEW_NAME_LIST, VIEW_CREATE_TEMPLATE);
+        createTablesOrViewsByConnectType(ConnectType.OB_MYSQL, TABLE_NAME_LIST, OB_MYSQL_TABLE_CREATE_TEMPLATE);
+        createTablesOrViewsByConnectType(ConnectType.OB_ORACLE, TABLE_NAME_LIST, OB_ORACLE_TABLE_CREATE_TEMPLATE);
+        createTablesOrViewsByConnectType(ConnectType.MYSQL, TABLE_NAME_LIST, OB_MYSQL_TABLE_CREATE_TEMPLATE);
+        createTablesOrViewsByConnectType(ConnectType.ORACLE, TABLE_NAME_LIST, OB_ORACLE_TABLE_CREATE_TEMPLATE);
+        createTablesOrViewsByConnectType(ConnectType.OB_MYSQL, VIEW_NAME_LIST, VIEW_CREATE_TEMPLATE);
+        createTablesOrViewsByConnectType(ConnectType.OB_ORACLE, VIEW_NAME_LIST, VIEW_CREATE_TEMPLATE);
+        createTablesOrViewsByConnectType(ConnectType.MYSQL, VIEW_NAME_LIST, VIEW_CREATE_TEMPLATE);
+        createTablesOrViewsByConnectType(ConnectType.ORACLE, VIEW_NAME_LIST, VIEW_CREATE_TEMPLATE);
     }
 
     @AfterClass
@@ -224,7 +224,7 @@ public class TableServiceTest extends ServiceTestEnv {
         return true;
     }
 
-    private static void createTablesByConnectType(ConnectType connectType, List<String> tableNames, String format) {
+    private static void createTablesOrViewsByConnectType(ConnectType connectType, List<String> tableNames, String format) {
         ConnectionSession session = TestConnectionUtil.getTestConnectionSession(connectType);
         SyncJdbcExecutor syncJdbcExecutor = session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
         for (String name : tableNames) {
