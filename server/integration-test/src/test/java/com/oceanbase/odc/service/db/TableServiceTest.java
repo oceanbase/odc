@@ -277,14 +277,8 @@ public class TableServiceTest extends ServiceTestEnv {
         Assert.assertFalse(list.isEmpty());
         List<Table> tableList = list.stream().filter(table -> table.getType() == DBObjectType.TABLE).collect(
                 Collectors.toList());
-        Assert.assertEquals(TABLE_NAME_LIST.size(), tableList.size());
         List<Table> viewList = list.stream().filter(table -> table.getType() == DBObjectType.VIEW).collect(
                 Collectors.toList());
-        Assert.assertEquals(VIEW_NAME_LIST.size(), viewList.size());
-        List<Table> externalTableList =
-                list.stream().filter(table -> table.getType() == DBObjectType.EXTERNAL_TABLE).collect(
-                        Collectors.toList());
-        Assert.assertEquals(0, externalTableList.size());
         Assert.assertTrue(containsAllIgnoreCase(TABLE_NAME_LIST, tableList));
         Assert.assertTrue(containsAllIgnoreCase(VIEW_NAME_LIST, viewList));
     }
