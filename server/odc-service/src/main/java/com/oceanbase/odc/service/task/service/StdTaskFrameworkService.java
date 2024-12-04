@@ -78,6 +78,7 @@ import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.listener.DefaultJobProcessUpdateEvent;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.processor.result.ResultProcessor;
+import com.oceanbase.odc.service.task.resource.DefaultResourceOperatorBuilder;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.state.JobStatusFsm;
@@ -183,7 +184,9 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         Specification<ResourceEntity> specification = SpecificationUtil.columnLate(ResourceEntity.CREATE_TIME,
                 JobDateUtils.getCurrentDateSubtractDays(RECENT_DAY));
         Specification<ResourceEntity> condition = Specification.where(specification)
-                .and(SpecificationUtil.columnIn(ResourceEntity.STATUS, Lists.newArrayList(ResourceState.ABANDONED)));
+                .and(SpecificationUtil.columnEqual(ResourceEntity.STATUS, ResourceState.ABANDONED))
+                .and(SpecificationUtil.columnEqual(ResourceEntity.TYPE,
+                        DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE));
         return resourceRepository.findAll(condition, PageRequest.of(page, size));
     }
 
