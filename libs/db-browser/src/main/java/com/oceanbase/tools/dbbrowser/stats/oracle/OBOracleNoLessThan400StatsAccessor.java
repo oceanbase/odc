@@ -38,6 +38,7 @@ public class OBOracleNoLessThan400StatsAccessor extends BaseOBOracleStatsAccesso
             + "  STATE, "
             + "  USER_CLIENT_IP as HOST, "
             + "  HOST as PROXY_HOST, "
+            + "  CONCAT(SVR_IP, ':', SVR_PORT) AS SVR_IP as SVR_IP "
             + "  TIME as EXECUTE_TIME, "
             + "  CASE "
             + "    WHEN TRANS_STATE IS NULL OR TRANS_STATE IN ('', 'IDLE', 'IN_TERMINATE', 'ABORTED', "
