@@ -761,6 +761,12 @@ public class ConnectionService {
         return repository.findByIdIn(ids).stream().map(mapper::entityToModel).collect(Collectors.toList());
     }
 
+    public List<ConnectionConfig> innerListByIdsWithAttribute(Collection<Long> ids) {
+        List<ConnectionConfig> connectionConfigs = innerListByIds(ids);
+        fullFillAttributes(connectionConfigs);
+        return connectionConfigs;
+    }
+
     @SkipAuthorize("internal usage")
     public ConnectionConfig getForConnectionSkipPermissionCheck(@NotNull Long id) {
         ConnectionConfig connection = internalGetSkipUserCheck(id, false, false);
@@ -1097,7 +1103,7 @@ public class ConnectionService {
         return syncTimes.stream().min(Date::compareTo).orElse(null);
     }
 
-    public void fullFillAttributes(Collection<ConnectionConfig> models) {
+    private void fullFillAttributes(Collection<ConnectionConfig> models) {
         Map<Long, List<ConnectionAttributeEntity>> id2Attrs = this.attributeRepository
                 .findByConnectionIdIn(models.stream().map(ConnectionConfig::getId).collect(Collectors.toSet()))
                 .stream().collect(Collectors.groupingBy(ConnectionAttributeEntity::getConnectionId));
