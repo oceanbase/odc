@@ -224,7 +224,8 @@ public class TableServiceTest extends ServiceTestEnv {
         return true;
     }
 
-    private static void createTablesOrViewsByConnectType(ConnectType connectType, List<String> tableNames, String format) {
+    private static void createTablesOrViewsByConnectType(ConnectType connectType, List<String> tableNames,
+            String format) {
         ConnectionSession session = TestConnectionUtil.getTestConnectionSession(connectType);
         SyncJdbcExecutor syncJdbcExecutor = session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
         for (String name : tableNames) {
