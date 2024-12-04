@@ -15,31 +15,25 @@
  */
 package com.oceanbase.odc.service.db.session;
 
-import static com.oceanbase.odc.service.db.session.KillSessionOrQueryReq.KILL_QUERY_TYPE;
-
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
+
+import javax.annotation.Nullable;
 
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.stereotype.Service;
 
-import com.google.common.base.MoreObjects;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
-import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.model.OdcDBSession;
 import com.oceanbase.odc.core.sql.util.OdcDBSessionRowMapper;
 import com.oceanbase.odc.service.db.browser.DBStatsAccessors;
 import com.oceanbase.tools.dbbrowser.model.DBSession;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,6 +47,7 @@ public class DBSessionService {
                 .collect(Collectors.toList());
     }
 
+    @Nullable
     public DBSession currentSession(@NonNull ConnectionSession connectionSession) {
         if (ConnectionSessionUtil.isLogicalSession(connectionSession)) {
             return null;
@@ -70,36 +65,4 @@ public class DBSessionService {
         JdbcOperations jdbcOperations = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
         return jdbcOperations.query("SHOW FULL PROCESSLIST", new OdcDBSessionRowMapper());
     }
-
-    public List<SessionIdKillSql> getKillSql(@NonNull ConnectionSession session, @NonNull List<String> sessionIds,
-            String closeType) {
-        List<OdcDBSession> allSession = list(session);
-        Map<String, String> sessionId2SvrpIp =
-                allSession.stream().collect(
-                        Collectors.toMap(OdcDBSession::getSessionId,
-                                s -> MoreObjects.firstNonNull(s.getSvrIp(), "")));
-        return sessionIds.stream().map(sid -> {
-            PreConditions.notNegative(Long.parseLong(sid), "sessionId");
-            StringBuilder sqlBuilder = new StringBuilder();
-            sqlBuilder.append("kill ");
-            if (KILL_QUERY_TYPE.equalsIgnoreCase(closeType)) {
-                sqlBuilder.append("query ");
-            }
-            sqlBuilder.append(sid);
-            if (sessionId2SvrpIp.get(sid) != null) {
-                sqlBuilder.append(" /*").append(sessionId2SvrpIp.get(sid)).append("*/");
-            }
-            return new SessionIdKillSql(sid, sqlBuilder.append(";").toString());
-        }).collect(Collectors.toList());
-    }
-
-
-    @AllArgsConstructor
-    @NoArgsConstructor
-    @Data
-    public static class SessionIdKillSql {
-        private String sessionId;
-        private String killSql;
-    }
-
 }

@@ -118,15 +118,17 @@ public class ResourceRoleService {
 
     @SkipAuthorize
     public Map<Long, Set<ResourceRoleName>> getProjectId2ResourceRoleNames() {
-        return getProjectId2ResourceRoleNames(authenticationFacade.currentUserId());
+        return getProjectId2ResourceRoleNames(authenticationFacade.currentUserId(),
+                authenticationFacade.currentOrganizationId());
     }
 
     @SkipAuthorize
-    public Map<Long, Set<ResourceRoleName>> getProjectId2ResourceRoleNames(Long userId) {
+    public Map<Long, Set<ResourceRoleName>> getProjectId2ResourceRoleNames(Long userId, Long organizationId) {
         Map<Long, ResourceRole> id2ResourceRoles = resourceRoleRepository.findByResourceType(ResourceType.ODC_PROJECT)
                 .stream().map(resourceRoleMapper::entityToModel)
                 .collect(Collectors.toMap(ResourceRole::getId, resourceRole -> resourceRole, (v1, v2) -> v2));
-        return userResourceRoleRepository.findByUserIdAndResourceType(userId, ResourceType.ODC_PROJECT).stream()
+        return userResourceRoleRepository
+                .findByUserIdAndResourceTypeAndOrganizationId(userId, ResourceType.ODC_PROJECT, organizationId).stream()
                 .collect(Collectors.groupingBy(UserResourceRoleEntity::getResourceId, Collectors.mapping(
                         e -> id2ResourceRoles.get(e.getResourceRoleId()).getRoleName(), Collectors.toSet())));
     }

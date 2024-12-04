@@ -240,6 +240,11 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
         return false;
     }
 
+    @Override
+    public boolean syncExternalTableFiles(String schemaName, String tableName) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
     protected List<DBObjectIdentity> listBaseTables(String schemaName, String tableNameLike)
             throws DataAccessException {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
@@ -465,6 +470,16 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
     public List<DBTableColumn> listBasicViewColumns(String schemaName, String viewName) {
         String sql = sqlMapper.getSql(Statements.LIST_BASIC_VIEW_COLUMNS);
         return jdbcOperations.query(sql, new Object[] {schemaName, viewName}, listBasicTableColumnRowMapper());
+    }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicExternalTableColumns(String schemaName) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String externalTableName) {
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override

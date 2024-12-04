@@ -1183,4 +1183,54 @@ public class PLParserTest {
         Assert.assertEquals(SqlType.ROLLBACK, actual.getSqlType());
     }
 
+    @Test
+    public void parseOracle_commentOnTable_getSqlTypeSucceed() {
+        ParseOraclePLResult actual = PLParser.parseOracle("comment on table a is 'xxx'");
+        Assert.assertEquals(DBObjectType.TABLE, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.COMMENT_ON, actual.getSqlType());
+    }
+
+    @Test
+    public void parseOracle_commentOnColumn_getSqlTypeSucceed() {
+        ParseOraclePLResult actual = PLParser.parseOracle("comment on column a is 'xxx'");
+        Assert.assertEquals(DBObjectType.COLUMN, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.COMMENT_ON, actual.getSqlType());
+    }
+
+    @Test
+    public void parseOracle_commentOnMaterialized_getSqlTypeSucceed() {
+        ParseOraclePLResult actual = PLParser.parseOracle("comment on materialized a is 'xxx'");
+        Assert.assertEquals(DBObjectType.OTHERS, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.COMMENT_ON, actual.getSqlType());
+    }
+
+    @Test
+    public void parseOracle_call_getSqlTypeSucceed() {
+        ParseOraclePLResult actual = PLParser.parseOracle("call proc()");
+        Assert.assertEquals(DBObjectType.PROCEDURE, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.CALL, actual.getSqlType());
+    }
+
+    @Test
+    public void parseOBMysql_call_getSqlTypeSucceed() {
+        ParseMysqlPLResult actual = PLParser.parseObMysql("call proc()");
+        Assert.assertEquals(DBObjectType.PROCEDURE, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.CALL, actual.getSqlType());
+    }
+
+    @Test
+    public void test_oracle_alter_session() {
+        String sql = "alter SESSION set ob_query_timeout=6000000000;";
+        ParseOraclePLResult result = PLParser.parseOracle(sql);
+        Assert.assertEquals(SqlType.ALTER_SESSION, result.getSqlType());
+        Assert.assertEquals(DBObjectType.OTHERS, result.getDbObjectType());
+    }
+
+    @Test
+    public void test_oracle_set_session() {
+        String sql = "SET SESSION ob_query_timeout=6000000000;";
+        ParseOraclePLResult result = PLParser.parseOracle(sql);
+        Assert.assertEquals(SqlType.SET_SESSION, result.getSqlType());
+        Assert.assertEquals(DBObjectType.OTHERS, result.getDbObjectType());
+    }
 }

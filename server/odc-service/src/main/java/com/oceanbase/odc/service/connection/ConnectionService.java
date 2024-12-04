@@ -410,8 +410,8 @@ public class ConnectionService {
     }
 
     @SkipAuthorize("odc internal usage")
-    public List<ConnectionConfig> listByOrganizationIdIn(@NonNull Collection<Long> organizationIds) {
-        return repository.findByOrganizationIdIn(organizationIds).stream()
+    public List<ConnectionConfig> listSyncableDataSourcesByOrganizationIdIn(@NonNull Collection<Long> organizationIds) {
+        return repository.findSyncableConnectionsByOrganizationIdIn(organizationIds).stream()
                 .map(mapper::entityToModel).collect(Collectors.toList());
     }
 
@@ -554,6 +554,11 @@ public class ConnectionService {
                 .collect(Collectors.toList());
     }
 
+    @SkipAuthorize("internal usage")
+    public List<ConnectionConfig> listSyncableDataSources() {
+        return repository.findSyncableConnections().stream().map(mapper::entityToModel).collect(Collectors.toList());
+    }
+
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("permission check inside")
     public PageAndStats<ConnectionConfig> list(@Valid QueryConnectionParams params, @NotNull Pageable pageable) {
@@ -596,13 +601,24 @@ public class ConnectionService {
 
     @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public ConnectionConfig update(@NotNull Long id, @NotNull @Valid ConnectionConfig connection) {
+        return updateConnectionConfig(id, connection, true);
+    }
+
+    public ConnectionConfig updateWithoutPermissionCheck(@NotNull Long id,
+            @NotNull @Valid ConnectionConfig connection) {
+        return updateConnectionConfig(id, connection, false);
+    }
+
+    private ConnectionConfig updateConnectionConfig(Long id, ConnectionConfig connection, boolean needCheckPermission) {
         ConnectionConfig config = txTemplate.execute(status -> {
             try {
                 environmentAdapter.adaptConfig(connection);
                 connectionSSLAdaptor.adapt(connection);
                 ConnectionConfig saved = internalGet(id);
                 connectionValidator.validateForUpdate(connection, saved);
-                checkProjectOperable(connection.getProjectId());
+                if (needCheckPermission) {
+                    checkProjectOperable(connection.getProjectId());
+                }
                 if (StringUtils.isBlank(connection.getSysTenantUsername())) {
                     // sys 用户没有设的情况下，相应地，密码要设置为空
                     connection.setSysTenantPassword("");

@@ -98,7 +98,7 @@ public class FlowInstanceSpecs {
         return SpecificationUtil.columnIn(FLOW_INSTANCE_PARENT_INSTANCE_ID, parentInstanceId);
     }
 
-    public static Specification<FlowInstanceEntity> projectIdEquals(Long projectId) {
-        return SpecificationUtil.columnEqual(FLOW_INSTANCE_PROJECT_ID, projectId);
+    public static Specification<FlowInstanceEntity> projectIdIn(Collection<Long> projectIds) {
+        return SpecificationUtil.columnIn(FLOW_INSTANCE_PROJECT_ID, projectIds);
     }
 }

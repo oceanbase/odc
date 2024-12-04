@@ -16,10 +16,13 @@
 package com.oceanbase.tools.sqlparser.statement.select;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
+import com.oceanbase.tools.sqlparser.statement.Expression;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -39,16 +42,33 @@ public class PartitionUsage extends BaseStatement {
 
     private final PartitionType type;
     private final List<String> nameList;
+    private final Map<String, Expression> externalTablePartition;
 
     public PartitionUsage(@NonNull ParserRuleContext context, PartitionType type, @NonNull List<String> nameList) {
         super(context);
         this.type = type;
         this.nameList = nameList;
+        this.externalTablePartition = null;
     }
 
     public PartitionUsage(PartitionType type, @NonNull List<String> nameList) {
         this.type = type;
         this.nameList = nameList;
+        this.externalTablePartition = null;
+    }
+
+    public PartitionUsage(@NonNull ParserRuleContext context, PartitionType type,
+            @NonNull Map<String, Expression> externalTablePartition) {
+        super(context);
+        this.type = type;
+        this.nameList = null;
+        this.externalTablePartition = externalTablePartition;
+    }
+
+    public PartitionUsage(PartitionType type, @NonNull Map<String, Expression> externalTablePartition) {
+        this.type = type;
+        this.nameList = null;
+        this.externalTablePartition = externalTablePartition;
     }
 
     @Override
@@ -59,7 +79,11 @@ public class PartitionUsage extends BaseStatement {
         } else {
             buffer.append("SUBPARTITION ");
         }
-        return buffer.append("(").append(String.join(",", nameList)).append(")").toString();
+        if (this.nameList != null) {
+            return buffer.append("(").append(String.join(",", nameList)).append(")").toString();
+        }
+        return buffer.append("(").append(this.externalTablePartition.entrySet().stream()
+                .map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(", "))).append(")").toString();
     }
 
 }

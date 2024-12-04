@@ -56,6 +56,9 @@ public class ColumnAttributes extends BaseOptions {
     private Expression onUpdate;
     private String collation;
     private Integer srid;
+    private String lobChunkSize;
+    private String columnFormat;
+    private String storage;
     private List<InLineConstraint> constraints;
     private List<String> skipIndexTypes;
 
@@ -129,6 +132,15 @@ public class ColumnAttributes extends BaseOptions {
             builder.append(" SKIP_INDEX (")
                     .append(String.join(",", skipIndexTypes))
                     .append(")");
+        }
+        if (this.lobChunkSize != null) {
+            builder.append(" CHUNK ").append(this.lobChunkSize);
+        }
+        if (this.columnFormat != null) {
+            builder.append(" COLUMN_FORMAT ").append(this.columnFormat);
+        }
+        if (this.storage != null) {
+            builder.append(" STORAGE ").append(this.storage);
         }
         return builder.length() == 0 ? "" : builder.substring(1);
     }

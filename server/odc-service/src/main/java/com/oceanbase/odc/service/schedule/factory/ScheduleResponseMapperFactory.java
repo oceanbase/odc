@@ -44,6 +44,8 @@ import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
+import com.oceanbase.odc.service.collaboration.project.ProjectService;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -102,6 +104,8 @@ public class ScheduleResponseMapperFactory {
     private FlowInstanceRepository flowInstanceRepository;
     @Autowired
     private ApprovalPermissionService approvalPermissionService;
+    @Autowired
+    private ProjectService projectService;
 
 
 
@@ -264,6 +268,10 @@ public class ScheduleResponseMapperFactory {
                 .filter(entry -> flowInstanceId2Candidates.get(entry.getValue()) != null).collect(
                         Collectors.toMap(Entry::getKey, entry -> flowInstanceId2Candidates.get(entry.getValue())));
 
+        Map<Long, Project> id2Project = projectService
+                .listByIds(schedules.stream().map(ScheduleEntity::getProjectId).collect(Collectors.toSet())).stream()
+                .collect(Collectors.toMap(Project::getId, o -> o, (o1, o2) -> o2));
+
         return schedules.stream().map(schedule -> {
             ScheduleOverviewHist resp = new ScheduleOverviewHist();
             resp.setId(schedule.getId());
@@ -284,6 +292,7 @@ public class ScheduleResponseMapperFactory {
             if (CollectionUtils.isNotEmpty(candidates)) {
                 resp.setCandidateApprovers(candidates.stream().map(InnerUser::new).collect(Collectors.toSet()));
             }
+            resp.setProject(id2Project.get(schedule.getProjectId()));
             return resp;
         }).collect(Collectors.toMap(ScheduleOverviewHist::getId, o -> o));
     }

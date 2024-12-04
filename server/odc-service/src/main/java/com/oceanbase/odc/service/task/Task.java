@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.task;
 import java.util.Map;
 
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.enums.JobStatus;
 
 /**
  * Task interface. Each task should implement this interface
@@ -29,14 +28,28 @@ import com.oceanbase.odc.service.task.enums.JobStatus;
 public interface Task<RESULT> {
 
     /**
-     * Start current task. This method will be called by TaskExecutor for fire a task
+     * init task in runtime
+     * 
+     * @param taskContext
+     * @throws Exception
      */
-    void start(JobContext context);
+    void init(TaskContext taskContext) throws Exception;
+
+    /**
+     * Start current task. This method will be called by TaskExecutor for fire a task This method call
+     * must be blocked until job is done or failed
+     */
+    boolean start() throws Exception;
 
     /**
      * Stop current task. This method will be called TaskExecutor for stop a task
      */
-    boolean stop();
+    void stop() throws Exception;
+
+    /**
+     * close and clean resource of task
+     */
+    void close() throws Exception;
 
     /**
      * Modify current task parameters
@@ -56,13 +69,6 @@ public interface Task<RESULT> {
      * @return {@link JobContext}
      */
     JobContext getJobContext();
-
-    /**
-     * Get task status
-     * 
-     * @return {@link JobStatus}
-     */
-    JobStatus getStatus();
 
     /**
      * Get task result

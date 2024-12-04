@@ -147,6 +147,7 @@ public class StructureComparisonService {
     }
 
     private void checkPermission(@NonNull StructureComparisonTaskEntity taskEntity) {
-        flowInstanceService.mapFlowInstance(taskEntity.getFlowInstanceId(), flowInstance -> flowInstance, false);
+        flowInstanceService.mapFlowInstanceWithReadPermission(taskEntity.getFlowInstanceId(),
+                flowInstance -> flowInstance);
     }
 }

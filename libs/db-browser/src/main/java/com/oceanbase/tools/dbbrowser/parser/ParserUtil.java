@@ -55,6 +55,7 @@ public class ParserUtil {
             case DROP:
             case TRUNCATE:
             case ALTER:
+            case COMMENT_ON:
                 return GeneralSqlType.DDL;
             case UNKNOWN:
             default:

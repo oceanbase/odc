@@ -32,6 +32,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.alibaba.fastjson.JSON;
 import com.oceanbase.odc.common.json.JsonUtils;
@@ -56,6 +57,7 @@ import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
 import com.oceanbase.odc.service.dlm.DLMService;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.factory.ScheduleResponseMapperFactory;
@@ -82,6 +84,7 @@ import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -152,7 +155,7 @@ public class ScheduleTaskService {
                 // sql plan task detail should display sql content
                 res.setParameters(JsonUtils.toJson(scheduleTask.getParameters()));
                 jobRepository.findByIdNative(scheduleTask.getJobId())
-                        .ifPresent(jobEntity -> res.setExecutionDetails(jobEntity.getResultJson()));
+                        .ifPresent(jobEntity -> res.setExecutionDetails(JobUtils.retrieveJobResultStr(jobEntity)));
                 break;
             case LOGICAL_DATABASE_CHANGE:
                 res.setExecutionDetails(
@@ -171,6 +174,7 @@ public class ScheduleTaskService {
     /**
      * Trigger an existing task to retry or resume a terminated task.
      */
+    @Transactional(rollbackFor = Exception.class)
     public void start(Long id) {
         ScheduleTask scheduleTask = nullSafeGetModelById(id);
         if (!scheduleTask.getStatus().isRetryAllowed()) {
@@ -179,6 +183,24 @@ public class ScheduleTaskService {
                     id);
             throw new IllegalStateException(
                     "The task cannot be restarted because it is currently in progress or has already completed.");
+        }
+        switch (ScheduleTaskType.valueOf(scheduleTask.getJobGroup())) {
+            case DATA_ARCHIVE:
+            case DATA_ARCHIVE_ROLLBACK:
+            case DATA_ARCHIVE_DELETE:
+            case DATA_DELETE: {
+                List<DlmTableUnit> tableUnits = dlmService.findByScheduleTaskId(scheduleTask.getId()).stream()
+                        .peek(unit -> {
+                            // Re-run all unfinished tableUnits
+                            if (unit.getStatus() != TaskStatus.DONE) {
+                                unit.setStatus(TaskStatus.PREPARING);
+                            }
+                        }).collect(Collectors.toList());
+                dlmService.createOrUpdateDlmTableUnits(tableUnits);
+                break;
+            }
+            default:
+                break;
         }
         try {
             JobKey jobKey = new JobKey(scheduleTask.getJobName(), scheduleTask.getJobGroup());
@@ -239,6 +261,10 @@ public class ScheduleTaskService {
         scheduleTaskRepository.updateStatusById(id, status);
     }
 
+    public int updateStatusById(Long id, TaskStatus newStatus, List<String> previousStatus) {
+        return scheduleTaskRepository.updateStatusById(id, newStatus, previousStatus);
+    }
+
     public void update(ScheduleTask scheduleTask) {
         ScheduleTaskEntity entity = scheduleTaskMapper.modelToEntity(scheduleTask);
         scheduleTaskRepository.update(entity);
@@ -295,9 +321,15 @@ public class ScheduleTaskService {
         List<Long> jobIds = scheduleTaskPage.getContent().stream().map(ScheduleTask::getJobId).filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        Map<Long, String> resultMap = jobRepository.findAllById(jobIds).stream()
-                .filter(jobEntity -> jobEntity.getResultJson() != null)
-                .collect(Collectors.toMap(JobEntity::getId, JobEntity::getResultJson));
+        Map<Long, String> resultMap = new HashMap<>();
+        List<JobEntity> jobEntities = jobRepository.findAllById(jobIds);
+        // only not null result is collected
+        for (JobEntity jobEntity : jobEntities) {
+            String resultJson = JobUtils.retrieveJobResultStr(jobEntity);
+            if (null != resultJson) {
+                resultMap.put(jobEntity.getId(), resultJson);
+            }
+        }
 
         return scheduleTaskPage.map(task -> {
             Schedule schedule = scheduleMap.get(task.getJobName());
@@ -324,6 +356,11 @@ public class ScheduleTaskService {
 
     public List<ScheduleTaskEntity> listTaskByJobNameAndStatus(String jobName, List<TaskStatus> statuses) {
         return scheduleTaskRepository.findByJobNameAndStatusIn(jobName, statuses);
+    }
+
+    public ScheduleTask nullSafeGetByJobId(Long jobId) {
+        return findByJobId(jobId)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE_TASK, "jobId", jobId));
     }
 
     public Optional<ScheduleTask> findByJobId(Long jobId) {

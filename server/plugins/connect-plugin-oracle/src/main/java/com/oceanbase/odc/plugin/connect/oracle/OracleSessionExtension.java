@@ -17,6 +17,7 @@
 package com.oceanbase.odc.plugin.connect.oracle;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Objects;
@@ -25,6 +26,7 @@ import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.plugin.connect.model.DBClientInfo;
 import com.oceanbase.odc.plugin.connect.oboracle.OBOracleSessionExtension;
 
 import lombok.NonNull;
@@ -40,7 +42,17 @@ import lombok.extern.slf4j.Slf4j;
 public class OracleSessionExtension extends OBOracleSessionExtension {
     @Override
     public void killQuery(Connection connection, String connectionId) {
-        JdbcOperationsUtil.getJdbcOperations(connection).execute("ALTER SYSTEM KILL SESSION '" + connectionId + "'");
+        JdbcOperationsUtil.getJdbcOperations(connection).execute(getKillQuerySql(connectionId));
+    }
+
+    @Override
+    public String getKillQuerySql(@NonNull String connectionId) {
+        return this.getKillSessionSql(connectionId);
+    }
+
+    @Override
+    public String getKillSessionSql(@NonNull String connectionId) {
+        return "ALTER SYSTEM KILL SESSION '" + connectionId + "'";
     }
 
     @Override
@@ -96,5 +108,19 @@ public class OracleSessionExtension extends OBOracleSessionExtension {
             throw new UnsupportedOperationException("modifying the global or system variable of oracle is unsupported");
         }
         return String.format("alter %s set %s=%s", variableScope, variableName, variableValue);
+    }
+
+    @Override
+    public boolean setClientInfo(Connection connection, DBClientInfo clientInfo) {
+        String SET_MODULE_TEMPLATE =
+                "BEGIN DBMS_APPLICATION_INFO.SET_MODULE(module_name => ?, action_name => ?); END;";
+        try (PreparedStatement pstmt = connection.prepareStatement(SET_MODULE_TEMPLATE)) {
+            pstmt.setString(1, clientInfo.getModule());
+            pstmt.setString(2, clientInfo.getAction());
+            pstmt.execute();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

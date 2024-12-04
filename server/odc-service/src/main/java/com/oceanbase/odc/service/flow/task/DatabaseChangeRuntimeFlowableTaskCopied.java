@@ -148,7 +148,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
                     TimeUnit.MILLISECONDS);
 
             JobEntity jobEntity = taskFrameworkService.find(this.jobId);
-            result = JsonUtils.fromJson(jobEntity.getResultJson(), DatabaseChangeResult.class);
+            result = JsonUtils.fromJson(JobUtils.retrieveJobResultStr(jobEntity), DatabaseChangeResult.class);
             result.setRollbackPlanResult(rollbackPlanTaskResult);
             if (jobEntity.getStatus() == JobStatus.DONE) {
                 isSuccessful = true;

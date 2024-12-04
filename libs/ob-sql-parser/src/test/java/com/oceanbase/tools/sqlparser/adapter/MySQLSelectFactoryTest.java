@@ -39,6 +39,7 @@ import com.oceanbase.tools.sqlparser.statement.common.WindowOffset;
 import com.oceanbase.tools.sqlparser.statement.common.WindowOffsetType;
 import com.oceanbase.tools.sqlparser.statement.common.WindowSpec;
 import com.oceanbase.tools.sqlparser.statement.common.WindowType;
+import com.oceanbase.tools.sqlparser.statement.expression.ArrayExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 import com.oceanbase.tools.sqlparser.statement.expression.CompoundExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
@@ -115,7 +116,7 @@ public class MySQLSelectFactoryTest {
     @Test
     public void generate_orderAndLimitUnion_generateSelectSucceed() {
         Select_stmtContext context = getSelectContext(
-                "select col.* abc from tab order by col desc limit 3 union distinct select * from dual");
+                "select col.* abc from tab order by col desc approx limit 3 union distinct select * from dual");
         StatementFactory<Select> factory = new MySQLSelectFactory(context);
         Select actual = factory.generate();
 
@@ -123,6 +124,7 @@ public class MySQLSelectFactoryTest {
         Projection p = new Projection(r, "abc");
         NameReference from = new NameReference(null, "tab", null);
         SelectBody selectBody = new SelectBody(Collections.singletonList(p), Collections.singletonList(from));
+        selectBody.setApproximate(true);
         SortKey s = new SortKey(new ColumnReference(null, null, "col"), SortDirection.DESC);
         selectBody.setOrderBy(new OrderBy(Collections.singletonList(s)));
         selectBody.setLimit(new Limit(new ConstExpression("3")));
@@ -235,7 +237,8 @@ public class MySQLSelectFactoryTest {
     @Test
     public void generate_fromSelectStatment_generateSelectSucceed() {
         Select_stmtContext context =
-                getSelectContext("select abc.* from (select * from tab order by col1 desc) as of snapshot 1 abc");
+                getSelectContext(
+                        "select abc.* from lateral (select * from tab order by col1 desc) as of snapshot 1 abc");
         StatementFactory<Select> factory = new MySQLSelectFactory(context);
         Select actual = factory.generate();
 
@@ -248,6 +251,7 @@ public class MySQLSelectFactoryTest {
         fromBody.setOrderBy(orderBy);
         FlashbackUsage flashbackUsage = new FlashbackUsage(FlashBackType.AS_OF_SNAPSHOT, new ConstExpression("1"));
         ExpressionReference from = new ExpressionReference(fromBody, "abc");
+        from.setLateral(true);
         from.setFlashbackUsage(flashbackUsage);
         Select expect = new Select(new SelectBody(Collections.singletonList(p), Collections.singletonList(from)));
         Assert.assertEquals(expect, actual);
@@ -649,6 +653,27 @@ public class MySQLSelectFactoryTest {
 
         Select expect = new Select(body);
         Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_SelectArray_Succeed() {
+        Select_stmtContext context = getSelectContext("select [[1,2],[3,4],[5,6]];");
+        StatementFactory<Select> factory = new MySQLSelectFactory(context);
+        Select actual = factory.generate();
+
+        ArrayExpression expression1 =
+                new ArrayExpression(Arrays.asList(new ConstExpression("1"), new ConstExpression("2")));
+        ArrayExpression expression2 =
+                new ArrayExpression(Arrays.asList(new ConstExpression("3"), new ConstExpression("4")));
+        ArrayExpression expression3 =
+                new ArrayExpression(Arrays.asList(new ConstExpression("5"), new ConstExpression("6")));
+
+        ArrayExpression column = new ArrayExpression(Arrays.asList(expression1, expression2, expression3));
+        Projection projection = new Projection(column, null);
+        SelectBody body = new SelectBody(Collections.singletonList(projection), Collections.emptyList());
+        Select expected = new Select(body);
+        Assert.assertEquals(expected, actual);
+
     }
 
     private SelectBody getDefaultSelect() {

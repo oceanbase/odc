@@ -23,12 +23,14 @@ import javax.validation.constraints.NotNull;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskSpecs;
 import com.oceanbase.odc.service.onlineschemachange.fsm.Action;
+import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.ActionScheduler;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
@@ -70,6 +72,8 @@ public class YieldContextAction implements Action<OscActionContext, OscActionRes
     // try to dispatch next task
     protected boolean tryDispatchNextSchedulerTask(ScheduleEntity schedule) {
         Long scheduleId = schedule.getId();
+        OnlineSchemaChangeParameters onlineSchemaChangeParameters = JsonUtils.fromJson(
+                schedule.getJobParametersJson(), OnlineSchemaChangeParameters.class);
         Optional<ScheduleTaskEntity> nextTask = findFirstConditionScheduleTask(scheduleId,
                 s -> s.getStatus() == TaskStatus.PREPARING);
         if (!nextTask.isPresent()) {
@@ -78,7 +82,7 @@ public class YieldContextAction implements Action<OscActionContext, OscActionRes
             return false;
         }
         Long nextTaskId = nextTask.get().getId();
-        actionScheduler.submitFMSScheduler(schedule, nextTaskId);
+        actionScheduler.submitFMSScheduler(schedule, nextTaskId, onlineSchemaChangeParameters.getFlowTaskID());
         return true;
     }
 

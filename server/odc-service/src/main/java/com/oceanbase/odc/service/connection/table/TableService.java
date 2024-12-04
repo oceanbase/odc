@@ -49,6 +49,7 @@ import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
+import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -59,9 +60,11 @@ import com.oceanbase.odc.service.db.schema.DBSchemaSyncService;
 import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncer;
 import com.oceanbase.odc.service.db.schema.syncer.object.DBExternalTableSyncer;
 import com.oceanbase.odc.service.db.schema.syncer.object.DBTableSyncer;
+import com.oceanbase.odc.service.feature.VersionDiffConfigService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
@@ -78,6 +81,9 @@ import lombok.NonNull;
 @Service
 @Validated
 public class TableService {
+
+    @Autowired
+    private VersionDiffConfigService versionDiffConfigService;
 
     @Autowired
     private DatabaseService databaseService;
@@ -126,11 +132,17 @@ public class TableService {
                         tableExtension);
             }
             if (types.contains(DBObjectType.EXTERNAL_TABLE)) {
-                generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn,
-                        DBObjectType.EXTERNAL_TABLE, tableExtension);
+                InformationExtensionPoint point =
+                        ConnectionPluginUtil.getInformationExtension(dataSource.getDialectType());
+                String databaseProductVersion = point.getDBVersion(conn);
+                if (versionDiffConfigService.isExternalTableSupported(dataSource.getDialectType(),
+                        databaseProductVersion)) {
+                    generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn,
+                            DBObjectType.EXTERNAL_TABLE, tableExtension);
+                }
             }
-            return tables;
         }
+        return tables;
     }
 
     private void generateListAndSyncDBTablesByTableType(QueryTableParams params, Database database,
@@ -189,7 +201,7 @@ public class TableService {
                     new Object[] {ResourceType.ODC_TABLE.getLocalizedMessage()}, "Can not acquire jdbc lock");
         }
         try {
-            if (syncer.supports(dialectType)) {
+            if (syncer.supports(dialectType, connection)) {
                 syncer.sync(connection, database, dialectType);
             } else {
                 throw new UnsupportedException("Unsupported dialect type: " + dialectType);

@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.agent.runtime;
 
-import com.oceanbase.odc.service.task.base.BaseTask;
+import com.oceanbase.odc.service.task.Task;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
@@ -23,12 +23,14 @@ import com.oceanbase.odc.service.task.schedule.JobIdentity;
  * @author gaoda.xy
  * @date 2023/11/24 11:18
  */
-public interface TaskExecutor {
+interface TaskExecutor {
 
-    void execute(BaseTask<?> task, JobContext jc);
+    void execute(Task<?> task, JobContext jc);
 
     boolean cancel(JobIdentity ji);
 
-    BaseTask<?> getTask(JobIdentity ji);
+    TaskRuntimeInfo getTaskRuntimeInfo(JobIdentity ji);
+
+    boolean taskExist(JobIdentity ji);
 
 }

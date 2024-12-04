@@ -60,6 +60,7 @@ import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
@@ -76,6 +77,7 @@ import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -206,6 +208,9 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         UserEntity user = new UserEntity();
         user.setEnabled(true);
         when(userService.nullSafeGet(anyLong())).thenReturn(user);
+        when(userService.getCurrentUserJoinedProjectIds()).thenReturn(Collections.singleton(1L));
+        when(databaseService.listDatabasesByIds(Mockito.anyCollection()))
+                .thenReturn(Collections.singletonList(getDatabase()));
     }
 
     @Test
@@ -401,8 +406,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         entity.setCreatorId(-1);
         flowInstanceRepository.saveAndFlush(entity);
 
-        thrown.expectMessage(String.format("ODC_FLOW_INSTANCE not found by id=%d", flowInstance.getId()));
-        thrown.expect(NotFoundException.class);
+        thrown.expect(AccessDeniedException.class);
         flowInstanceService.detail(flowInstance.getId());
     }
 
@@ -624,7 +628,14 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         ConnectionConfig connectionConfig = new ConnectionConfig();
         connectionConfig.setId(1L);
         database.setDataSource(connectionConfig);
+        database.setProject(getProject());
         return database;
+    }
+
+    private Project getProject() {
+        Project project = new Project();
+        project.setId(1L);
+        return project;
     }
 
     private List<ApprovalNodeConfig> getApprovalNodes() {

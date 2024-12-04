@@ -16,6 +16,8 @@
 package com.oceanbase.odc.service.task.schedule.daemon;
 
 import java.text.MessageFormat;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.quartz.DisallowConcurrentExecution;
@@ -43,6 +45,7 @@ import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -97,7 +100,6 @@ public class StartPreparingJob implements Job {
     private void startJob(TaskFrameworkService taskFrameworkService, JobEntity jobEntity) {
         getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
             JobEntity lockedEntity = taskFrameworkService.findWithPessimisticLock(jobEntity.getId());
-
             if (lockedEntity.getStatus() == JobStatus.PREPARING || lockedEntity.getStatus() == JobStatus.RETRYING) {
 
                 // todo user id should be not null when submit job
@@ -112,9 +114,16 @@ public class StartPreparingJob implements Job {
                 try {
                     getConfiguration().getJobDispatcher().start(jc);
                 } catch (JobException e) {
-                    AlarmUtils.alarm(AlarmEventNames.TASK_START_FAILED,
-                            MessageFormat.format("Start job failed, jobId={0}, message={1}", lockedEntity.getId(),
-                                    e.getMessage()));
+                    Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                            .item(AlarmUtils.ORGANIZATION_NAME, Optional.ofNullable(jobEntity.getOrganizationId()).map(
+                                    Object::toString).orElse(StrUtil.EMPTY))
+                            .item(AlarmUtils.TASK_JOB_ID_NAME, jobEntity.getId().toString())
+                            .item(AlarmUtils.MESSAGE_NAME,
+                                    MessageFormat.format("Start job failed, jobId={0}, message={1}",
+                                            lockedEntity.getId(),
+                                            e.getMessage()))
+                            .build();
+                    AlarmUtils.alarm(AlarmEventNames.TASK_START_FAILED, eventMessage);
                     throw new TaskRuntimeException(e);
                 }
             } else {

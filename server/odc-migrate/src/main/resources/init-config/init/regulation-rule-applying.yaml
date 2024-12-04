@@ -6,6 +6,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -16,6 +17,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -26,6 +28,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.metadata.name}":1000}'
@@ -36,6 +39,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.metadata.name}":["SELECT", "EXPLAIN", "SHOW", "HELP", "START_TRANS", "COMMIT", "ROLLBACK", "SORT", "DESC"]}'
@@ -46,6 +50,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-execute-sqls.metadata.name}":1000}'
@@ -56,6 +61,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -66,6 +72,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -76,6 +83,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -86,6 +94,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -97,6 +106,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -107,6 +117,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -117,6 +128,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.metadata.name}":100000}'
@@ -127,6 +139,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.metadata.name}":["UPDATE", "DELETE", "INSERT", "SELECT", "CREATE", "DROP", "ALTER", "REPLACE", "SET", "USE_DB", "EXPLAIN", "SHOW", "HELP", "START_TRANS", "COMMIT", "ROLLBACK", "SORT", "DESC", "TRUNCATE", "OTHERS"]}'
@@ -137,6 +150,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-execute-sqls.metadata.name}":1000}'
@@ -147,6 +161,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -157,6 +172,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -167,6 +183,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -178,6 +195,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -188,6 +206,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -198,6 +217,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.metadata.name}":100000}'
@@ -208,6 +228,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.metadata.name}":["UPDATE", "DELETE", "INSERT", "SELECT", "SET", "REPLACE", "EXPLAIN", "SHOW", "HELP", "START_TRANS", "COMMIT", "ROLLBACK", "SORT", "DESC", "TRUNCATE"]}'
@@ -218,6 +239,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-execute-sqls.metadata.name}":1000}'
@@ -228,6 +250,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -238,6 +261,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -248,6 +272,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -259,6 +284,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -269,6 +295,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -279,6 +306,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.metadata.name}":1000}'
@@ -289,6 +317,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.metadata.name}":["SELECT", "EXPLAIN", "SHOW", "HELP", "START_TRANS", "COMMIT", "ROLLBACK", "SORT", "DESC"]}'
@@ -299,6 +328,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-execute-sqls.metadata.name}":1000}'
@@ -309,6 +339,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -319,6 +350,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -329,6 +361,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -340,6 +373,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -350,6 +384,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -360,6 +395,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -370,6 +406,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
   propertiesJson: '{}'
 - enabled: 1
   level: 0
@@ -389,6 +426,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -399,6 +437,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -409,6 +448,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -419,6 +459,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -429,6 +470,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -439,6 +481,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-in-expr.max-in-expr-count}":200}'
@@ -449,6 +492,8 @@
   appliedDialectTypes:
     - 'OB_MYSQL'
     - 'MYSQL'
+    - 'OB_ORACLE'
+    - 'ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.allowed-max-sql-affected-count}":1000}'
 - enabled: 1
   level: 0
@@ -465,6 +510,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-table-join.max-join-table-count}":10}'
@@ -475,6 +521,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-index-keys.max-index-count}":10}'
@@ -485,6 +532,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-index.max-column-ref-count}":100}'
@@ -495,6 +543,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
 - enabled: 1
@@ -504,6 +553,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-columns.max-column-definition-count}":100}'
@@ -514,6 +564,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-long-char-length.max-char-length}":1000}'
@@ -524,6 +575,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -534,6 +586,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -544,6 +597,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -554,6 +608,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.table-name-in-black-list.black-list}":[]}'
@@ -582,6 +637,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.allowed-datatypes}":["int", "varchar2", "varchar", "number", "float", "bigint"]}'
@@ -601,6 +657,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-primary-key.max-column-ref-count}":100}'
@@ -611,6 +668,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-naming.name-pattern}":null}'
@@ -621,6 +679,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-unique-index-naming.name-pattern}":null}'
@@ -631,6 +690,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -641,6 +701,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -660,6 +721,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -670,6 +732,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -680,6 +743,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-is-nullable.nullable-datatype-list}":[]}'
@@ -690,6 +754,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-default-value-exists.no-default-value-datatype-list}":[]}'
@@ -700,6 +765,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -710,6 +776,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-name-in-black-list.black-list}":[]}'
@@ -719,6 +786,7 @@
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.name}
   appliedDialectTypes:
       - 'OB_ORACLE'
+      - 'ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.is-uppercase}":false, "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.is-lowercase}":false}'
 - enabled: 1
   level: 0
@@ -726,6 +794,7 @@
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.name}
   appliedDialectTypes:
       - 'OB_ORACLE'
+      - 'ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.is-uppercase}":false, "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.is-lowercase}":false}'
 - enabled: 1
   level: 0
@@ -743,6 +812,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -753,6 +823,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.missing-required-columns.column-names}":[]}'
@@ -772,6 +843,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-alter-statement.max-alter-count}":10}'
@@ -782,6 +854,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -792,6 +865,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-naming.name-pattern}":null}'
@@ -802,6 +876,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.prohibited-datatype-exists.datatype-names}":[]}'
@@ -812,6 +887,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-datatypes.allowed-datatypes}":["int", "varchar2", "number", "float", "bigint"]}'
@@ -831,6 +907,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-drop-object-types.allowed-object-types}":[]}'
@@ -841,6 +918,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -851,6 +929,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -861,6 +940,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -871,6 +951,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
   propertiesJson: '{}'
 - enabled: 1
   level: 0
@@ -890,6 +971,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -900,6 +982,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -910,6 +993,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -920,6 +1004,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -930,6 +1015,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -940,6 +1026,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-in-expr.max-in-expr-count}":200}'
@@ -950,6 +1037,8 @@
   appliedDialectTypes:
     - 'OB_MYSQL'
     - 'MYSQL'
+    - 'OB_ORACLE'
+    - 'ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.allowed-max-sql-affected-count}":10000}'
 - enabled: 1
   level: 0
@@ -966,6 +1055,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-table-join.max-join-table-count}":10}'
@@ -976,6 +1066,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-index-keys.max-index-count}":10}'
@@ -986,6 +1077,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-index.max-column-ref-count}":100}'
@@ -996,6 +1088,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
 - enabled: 1
@@ -1005,6 +1098,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-columns.max-column-definition-count}":100}'
@@ -1015,6 +1109,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-long-char-length.max-char-length}":1000}'
@@ -1025,6 +1120,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1035,6 +1131,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1045,6 +1142,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1055,6 +1153,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.table-name-in-black-list.black-list}":[]}'
@@ -1083,6 +1182,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.allowed-datatypes}":["int", "varchar2", "varchar", "number", "float", "bigint"]}'
@@ -1102,6 +1202,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-primary-key.max-column-ref-count}":100}'
@@ -1112,6 +1213,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-naming.name-pattern}":null}'
@@ -1122,6 +1224,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-unique-index-naming.name-pattern}":null}'
@@ -1132,6 +1235,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1142,6 +1246,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1161,6 +1266,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1171,6 +1277,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1181,6 +1288,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-is-nullable.nullable-datatype-list}":[]}'
@@ -1191,6 +1299,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-default-value-exists.no-default-value-datatype-list}":[]}'
@@ -1201,6 +1310,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1211,6 +1321,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-name-in-black-list.black-list}":[]}'
@@ -1220,6 +1331,7 @@
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.name}
   appliedDialectTypes:
       - 'OB_ORACLE'
+      - 'ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.is-uppercase}":false, "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.is-lowercase}":false}'
 - enabled: 1
   level: 0
@@ -1227,6 +1339,7 @@
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.name}
   appliedDialectTypes:
       - 'OB_ORACLE'
+      - 'ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.is-uppercase}":false, "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.is-lowercase}":false}'
 - enabled: 1
   level: 0
@@ -1244,6 +1357,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1254,6 +1368,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.missing-required-columns.column-names}":[]}'
@@ -1273,6 +1388,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-alter-statement.max-alter-count}":10}'
@@ -1283,6 +1399,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1293,6 +1410,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-naming.name-pattern}":null}'
@@ -1303,6 +1421,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.prohibited-datatype-exists.datatype-names}":[]}'
@@ -1313,6 +1432,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-datatypes.allowed-datatypes}":["int", "varchar2", "number", "float", "bigint"]}'
@@ -1332,6 +1452,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-drop-object-types.allowed-object-types}":[]}'
@@ -1342,6 +1463,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1352,6 +1474,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1362,6 +1485,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1372,6 +1496,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
   propertiesJson: '{}'
 - enabled: 1
   level: 1
@@ -1391,6 +1516,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1401,6 +1527,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1411,6 +1538,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1421,6 +1549,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1431,6 +1560,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1441,6 +1571,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-in-expr.max-in-expr-count}":200}'
@@ -1451,6 +1582,8 @@
   appliedDialectTypes:
     - 'OB_MYSQL'
     - 'MYSQL'
+    - 'OB_ORACLE'
+    - 'ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.allowed-max-sql-affected-count}":1000}'
 - enabled: 1
   level: 1
@@ -1467,6 +1600,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-table-join.max-join-table-count}":10}'
@@ -1477,6 +1611,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-index-keys.max-index-count}":10}'
@@ -1487,6 +1622,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-index.max-column-ref-count}":100}'
@@ -1497,6 +1633,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
 - enabled: 1
@@ -1506,6 +1643,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-columns.max-column-definition-count}":100}'
@@ -1516,6 +1654,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-long-char-length.max-char-length}":1000}'
@@ -1526,6 +1665,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1536,6 +1676,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1546,6 +1687,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1556,6 +1698,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.table-name-in-black-list.black-list}":[]}'
@@ -1584,6 +1727,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.allowed-datatypes}":["int", "varchar2", "varchar", "number", "float", "bigint"]}'
@@ -1603,6 +1747,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-primary-key.max-column-ref-count}":100}'
@@ -1613,6 +1758,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-naming.name-pattern}":null}'
@@ -1623,6 +1769,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-unique-index-naming.name-pattern}":null}'
@@ -1633,6 +1780,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1643,6 +1791,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1662,6 +1811,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1672,6 +1822,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1682,6 +1833,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-is-nullable.nullable-datatype-list}":[]}'
@@ -1692,6 +1844,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-default-value-exists.no-default-value-datatype-list}":[]}'
@@ -1702,6 +1855,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1712,6 +1866,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-name-in-black-list.black-list}":[]}'
@@ -1721,6 +1876,7 @@
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.name}
   appliedDialectTypes:
       - 'OB_ORACLE'
+      - 'ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.is-uppercase}":false, "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.is-lowercase}":false}'
 - enabled: 1
   level: 0
@@ -1728,6 +1884,7 @@
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.name}
   appliedDialectTypes:
       - 'OB_ORACLE'
+      - 'ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.is-uppercase}":false, "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.is-lowercase}":false}'
 - enabled: 1
   level: 0
@@ -1745,6 +1902,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1755,6 +1913,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.missing-required-columns.column-names}":[]}'
@@ -1774,6 +1933,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-alter-statement.max-alter-count}":10}'
@@ -1784,6 +1944,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1794,6 +1955,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-naming.name-pattern}":null}'
@@ -1804,6 +1966,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.prohibited-datatype-exists.datatype-names}":[]}'
@@ -1814,6 +1977,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-datatypes.allowed-datatypes}":["int", "varchar2", "number", "float", "bigint"]}'
@@ -1833,6 +1997,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-drop-object-types.allowed-object-types}":[]}'
@@ -1843,6 +2008,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1853,6 +2019,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1863,6 +2030,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
   propertiesJson: '{}'
 - enabled: 1
   level: 1
@@ -1882,6 +2050,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1892,6 +2061,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1902,6 +2072,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1912,6 +2083,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1922,6 +2094,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -1932,6 +2105,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-in-expr.max-in-expr-count}":200}'
@@ -1942,6 +2116,8 @@
   appliedDialectTypes:
     - 'OB_MYSQL'
     - 'MYSQL'
+    - 'OB_ORACLE'
+    - 'ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.allowed-max-sql-affected-count}":1000}'
 - enabled: 1
   level: 1
@@ -1958,6 +2134,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-table-join.max-join-table-count}":10}'
@@ -1968,6 +2145,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-index-keys.max-index-count}":10}'
@@ -1978,6 +2156,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-index.max-column-ref-count}":100}'
@@ -1988,6 +2167,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
 - enabled: 1
@@ -1997,6 +2177,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-columns.max-column-definition-count}":100}'
@@ -2007,6 +2188,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-long-char-length.max-char-length}":1000}'
@@ -2017,6 +2199,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -2027,6 +2210,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -2037,6 +2221,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -2047,6 +2232,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.table-name-in-black-list.black-list}":[]}'
@@ -2075,6 +2261,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.allowed-datatypes}":["int", "varchar2", "varchar", "number", "float", "bigint"]}'
@@ -2094,6 +2281,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-primary-key.max-column-ref-count}":100}'
@@ -2104,6 +2292,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-naming.name-pattern}":null}'
@@ -2114,6 +2303,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-unique-index-naming.name-pattern}":null}'
@@ -2124,6 +2314,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -2134,6 +2325,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -2153,6 +2345,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -2163,6 +2356,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -2173,6 +2367,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-is-nullable.nullable-datatype-list}":[]}'
@@ -2183,6 +2378,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-default-value-exists.no-default-value-datatype-list}":[]}'
@@ -2193,6 +2389,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -2203,6 +2400,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-name-in-black-list.black-list}":[]}'
@@ -2212,6 +2410,7 @@
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.name}
   appliedDialectTypes:
       - 'OB_ORACLE'
+      - 'ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.is-uppercase}":false, "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.is-lowercase}":false}'
 - enabled: 1
   level: 0
@@ -2219,6 +2418,7 @@
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.name}
   appliedDialectTypes:
       - 'OB_ORACLE'
+      - 'ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.is-uppercase}":false, "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.is-lowercase}":false}'
 - enabled: 1
   level: 0
@@ -2236,6 +2436,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -2246,6 +2447,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.missing-required-columns.column-names}":[]}'
@@ -2265,6 +2467,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-alter-statement.max-alter-count}":10}'
@@ -2275,6 +2478,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{}'
@@ -2285,6 +2489,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-naming.name-pattern}":null}'
@@ -2295,6 +2500,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.prohibited-datatype-exists.datatype-names}":[]}'
@@ -2305,6 +2511,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-datatypes.allowed-datatypes}":["int", "varchar2", "number", "float", "bigint"]}'
@@ -2324,6 +2531,7 @@
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
+      - 'ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-drop-object-types.allowed-object-types}":[]}'

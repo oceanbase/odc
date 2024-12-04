@@ -83,6 +83,17 @@ public class OracleAlterTableActionFactoryTest {
     }
 
     @Test
+    public void generate_exchangePartition_succeed() {
+        StatementFactory<AlterTableAction> factory = new OracleAlterTableActionFactory(
+                getActionContext("exchange partition p1 with table tbl including indexes without validation"));
+        AlterTableAction actual = factory.generate();
+
+        AlterTableAction expect = new AlterTableAction();
+        expect.setExchangePartition("p1", new RelationFactor("tbl"));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_setInterval_succeed() {
         StatementFactory<AlterTableAction> factory = new OracleAlterTableActionFactory(
                 getActionContext("set interval('abc')"));

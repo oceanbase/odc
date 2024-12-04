@@ -59,7 +59,7 @@ abstract class BaseSqlChecker implements SqlChecker {
         List<OffsetString> sqls = null;
         if (dialectType.isMysql() || dialectType.isDoris()) {
             sqls = splitByCommentProcessor(sqlScript);
-        } else if (dialectType == DialectType.OB_ORACLE) {
+        } else if (dialectType.isOracle()) {
             if (DEFAULT_DELIMITER.equals(this.delimiter)) {
                 // 如果用户没有改 delimiter 就用现成的分句逻辑
                 SqlSplitter sqlSplitter = new SqlSplitter(PlSqlLexer.class, this.delimiter);

@@ -26,6 +26,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.common.BaseOptions;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
+import com.oceanbase.tools.sqlparser.statement.common.mysql.LobStorageOption;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 
 import lombok.EqualsAndHashCode;
@@ -96,6 +98,26 @@ public class TableOptions extends BaseOptions {
     private String kvAttributes;
     private Integer defaultLobInRowThreshold;
     private Integer lobInRowThreshold;
+    private Integer keyBlockSize;
+    private Integer autoIncrementCacheSize;
+    private String partitionType;
+    private Map<String, String> externalProperties;
+    private LobStorageOption lobStorageOption;
+    private Boolean microIndexClustered;
+    private String autoRefresh;
+    private Integer maxRows;
+    private Integer minRows;
+    private String password;
+    private String packKeys;
+    private String connection;
+    private String dataDirectory;
+    private String indexDirectory;
+    private String encryption;
+    private String statsAutoRecalc;
+    private String statsPersistent;
+    private String statsSamplePages;
+    private List<RelationFactor> union;
+    private String insertMethod;
 
     public TableOptions(@NonNull ParserRuleContext context) {
         super(context);
@@ -254,6 +276,71 @@ public class TableOptions extends BaseOptions {
         }
         if (this.lobInRowThreshold != null) {
             builder.append(" LOB_INROW_THRESHOLD=").append(this.lobInRowThreshold);
+        }
+        if (this.keyBlockSize != null) {
+            builder.append(" KEY_BLOCK_SIZE=").append(this.keyBlockSize);
+        }
+        if (this.autoIncrementCacheSize != null) {
+            builder.append(" AUTO_INCREMENT_CACHE_SIZE=").append(this.autoIncrementCacheSize);
+        }
+        if (this.partitionType != null) {
+            builder.append(" PARTITION_TYPE=").append(this.partitionType);
+        }
+        if (this.externalProperties != null) {
+            builder.append(" PROPERTIES=(")
+                    .append(this.externalProperties.entrySet().stream()
+                            .map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(",")))
+                    .append(")");
+        }
+        if (this.lobStorageOption != null) {
+            builder.append(" ").append(this.lobStorageOption);
+        }
+        if (this.microIndexClustered != null) {
+            builder.append(" MICRO_INDEX_CLUSTERED=").append(
+                    Boolean.TRUE.equals(this.microIndexClustered) ? "TRUE" : "FALSE");
+        }
+        if (this.autoRefresh != null) {
+            builder.append(" AUTO_REFRESH=").append(this.autoRefresh);
+        }
+        if (this.maxRows != null) {
+            builder.append(" MAX_ROWS=").append(this.maxRows);
+        }
+        if (this.minRows != null) {
+            builder.append(" MIN_ROWS=").append(this.minRows);
+        }
+        if (this.password != null) {
+            builder.append(" PASSWORD=").append(this.password);
+        }
+        if (this.packKeys != null) {
+            builder.append(" PACK_KEYS=").append(this.packKeys);
+        }
+        if (this.connection != null) {
+            builder.append(" CONNECTION=").append(this.connection);
+        }
+        if (this.dataDirectory != null) {
+            builder.append(" DATA DIRECTORY=").append(this.dataDirectory);
+        }
+        if (this.indexDirectory != null) {
+            builder.append(" INDEX DIRECTORY=").append(this.indexDirectory);
+        }
+        if (this.encryption != null) {
+            builder.append(" ENCRYPTION=").append(this.encryption);
+        }
+        if (this.statsAutoRecalc != null) {
+            builder.append(" STATS_AUTO_RECALC=").append(this.statsAutoRecalc);
+        }
+        if (this.statsPersistent != null) {
+            builder.append(" STATS_PERSISTENT=").append(this.statsPersistent);
+        }
+        if (this.statsSamplePages != null) {
+            builder.append(" STATS_SAMPLE_PAGES=").append(this.statsSamplePages);
+        }
+        if (this.union != null) {
+            builder.append(" UNION=(").append(this.union.stream()
+                    .map(RelationFactor::toString).collect(Collectors.joining(", "))).append(")");
+        }
+        if (this.insertMethod != null) {
+            builder.append(" INSERT_METHOD=").append(this.insertMethod);
         }
         return builder.length() == 0 ? "" : builder.substring(1);
     }

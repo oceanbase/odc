@@ -118,7 +118,7 @@ public class FlowInstanceController {
             @RequestParam(name = "approveByCurrentUser") Boolean approveByCurrentUser,
             @RequestParam(required = false, name = "containsAll", defaultValue = "false") Boolean containsAll,
             @RequestParam(required = false, name = "parentInstanceId") Long parentInstanceId,
-            @RequestParam(required = false, name = "projectId") Long projectId) {
+            @RequestParam(required = false, name = "projectId") Set<Long> projectIds) {
         QueryFlowInstanceParams params = QueryFlowInstanceParams.builder()
                 .connectionIds(connectionIds)
                 .id(fuzzySearchKeyword)
@@ -132,7 +132,7 @@ public class FlowInstanceController {
                 .approveByCurrentUser(approveByCurrentUser)
                 .containsAll(containsAll)
                 .parentInstanceId(parentInstanceId)
-                .projectId(projectId)
+                .projectIds(projectIds)
                 .build();
         return Responses.paginated(flowInstanceService.list(pageable, params));
     }
@@ -199,14 +199,14 @@ public class FlowInstanceController {
     @ApiOperation(value = "getResult", notes = "获取任务结果")
     @RequestMapping(value = "/{id:[\\d]+}/tasks/result", method = RequestMethod.GET)
     public ListResponse<? extends FlowTaskResult> getResult(@PathVariable Long id) throws IOException {
-        return Responses.list(flowTaskInstanceService.getResult(id, false));
+        return Responses.list(flowTaskInstanceService.getResult(id));
     }
 
     @ApiOperation(value = "getResult", notes = "获取任务结果")
     @RequestMapping(value = "/{flowInstanceId:[\\d]+}/tasks/{nodeInstanceId:[\\d]+}/result", method = RequestMethod.GET)
     public ListResponse<? extends FlowTaskResult> getResult(
             @PathVariable Long flowInstanceId, @PathVariable Long nodeInstanceId) throws IOException {
-        return Responses.list(flowTaskInstanceService.getResult(flowInstanceId, nodeInstanceId, false));
+        return Responses.list(flowTaskInstanceService.getResult(flowInstanceId, nodeInstanceId));
     }
 
     @ApiOperation(value = "download", notes = "下载任务数据，仅用于 模拟数据、导出、数据库变更 任务")

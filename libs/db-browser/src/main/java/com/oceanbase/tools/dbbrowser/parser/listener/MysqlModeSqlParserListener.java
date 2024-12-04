@@ -228,6 +228,7 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
         if (scopeToken.getType() == OBLexer.GLOBAL || scopeToken.getType() == OBLexer.GLOBAL_ALIAS) {
             setDbObjectType(DBObjectType.GLOBAL_VARIABLE);
         } else if (scopeToken.getType() == OBLexer.SESSION || scopeToken.getType() == OBLexer.SESSION_ALIAS) {
+            this.sqlType = SqlType.SET_SESSION;
             setDbObjectType(DBObjectType.SESSION_VARIABLE);
         }
     }

@@ -261,7 +261,7 @@ public class OscService {
         // try register schedule with task id.
         Long scheduleId = Long.parseLong(taskResult.getTasks().get(0).getJobName());
         ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(scheduleId);
-        actionScheduler.submitFMSScheduler(scheduleEntity, abnormalTask.getId());
+        actionScheduler.submitFMSScheduler(scheduleEntity, abnormalTask.getId(), task.getId());
         return true;
     }
 

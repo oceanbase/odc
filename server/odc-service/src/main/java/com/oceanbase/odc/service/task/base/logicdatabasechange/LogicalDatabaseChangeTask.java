@@ -52,7 +52,7 @@ import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalD
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalTableResp;
 import com.oceanbase.odc.service.schedule.model.PublishLogicalDatabaseChangeReq;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
-import com.oceanbase.odc.service.task.base.BaseTask;
+import com.oceanbase.odc.service.task.base.TaskBase;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
@@ -68,12 +68,14 @@ import lombok.extern.slf4j.Slf4j;
  * @Description: []
  */
 @Slf4j
-public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionResult<SqlExecutionResultWrapper>>> {
+public class LogicalDatabaseChangeTask extends TaskBase<Map<String, ExecutionResult<SqlExecutionResultWrapper>>> {
     private SqlRewriter sqlRewriter;
     private ExecutionGroupContext<SqlExecuteReq, SqlExecutionResultWrapper> executionGroupContext;
     private PublishLogicalDatabaseChangeReq taskParameters;
     private List<ExecutionGroup<SqlExecuteReq, SqlExecutionResultWrapper>> executionGroups;
     private GroupExecutionEngine executorEngine;
+
+    public LogicalDatabaseChangeTask() {}
 
     @Override
     protected void doInit(JobContext context) throws Exception {
@@ -85,7 +87,7 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
     }
 
     @Override
-    protected boolean doStart(JobContext context) throws Exception {
+    public boolean start() throws Exception {
         try {
             DialectType dialectType = taskParameters.getLogicalDatabaseResp().getDialectType();
             DetailLogicalDatabaseResp detailLogicalDatabaseResp = taskParameters.getLogicalDatabaseResp();
@@ -177,6 +179,7 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
             this.executionGroupContext = executorEngine.execute(executionGroups);
         } catch (Exception ex) {
             log.warn("start logical database change task failed, ", ex);
+            context.getExceptionListener().onException(ex);
             return false;
         }
         while (!Thread.currentThread().isInterrupted()) {
@@ -186,6 +189,7 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
             }
             if (CollectionUtils.isNotEmpty(this.executionGroupContext.getThrowables())) {
                 log.warn("logical database change task failed, ", this.executionGroupContext.getThrowables());
+                context.getExceptionListener().onException(this.executionGroupContext.getThrowables().get(0));
                 return false;
             }
             try {
@@ -199,12 +203,12 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
     }
 
     @Override
-    protected void doStop() throws Exception {
+    public void stop() {
         this.executorEngine.terminateAll();
     }
 
     @Override
-    protected void doClose() throws Exception {
+    public void close() throws Exception {
         if (this.executorEngine != null) {
             this.executorEngine.close();
         }
@@ -221,8 +225,16 @@ public class LogicalDatabaseChangeTask extends BaseTask<Map<String, ExecutionRes
     }
 
     @Override
-    protected void afterModifiedJobParameters() throws Exception {
-        Map<String, String> currentJobParameters = getJobParameters();
+    public boolean modify(Map<String, String> jobParameters) {
+        if (!super.modify(jobParameters)) {
+            return false;
+        }
+        afterModifiedJobParameters();
+        return true;
+    }
+
+    protected void afterModifiedJobParameters() {
+        Map<String, String> currentJobParameters = jobContext.getJobParameters();
         if (currentJobParameters == null || currentJobParameters.isEmpty()) {
             return;
         }

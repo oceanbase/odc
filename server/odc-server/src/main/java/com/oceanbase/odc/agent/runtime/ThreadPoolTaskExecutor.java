@@ -15,8 +15,9 @@
  */
 package com.oceanbase.odc.agent.runtime;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,11 +28,14 @@ import java.util.concurrent.TimeoutException;
 import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
+import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.Task;
-import com.oceanbase.odc.service.task.base.BaseTask;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.executor.TraceDecoratorThreadFactory;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.service.task.util.CloudObjectStorageServiceBuilder;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,11 +46,10 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2023/11/24 11:22
  */
 @Slf4j
-public class ThreadPoolTaskExecutor implements TaskExecutor {
+class ThreadPoolTaskExecutor implements TaskExecutor {
 
     private static final TaskExecutor TASK_EXECUTOR = new ThreadPoolTaskExecutor();
-    private final Map<JobIdentity, BaseTask<?>> tasks = new HashMap<>();
-    private final Map<JobIdentity, Future<?>> futures = new HashMap<>();
+    private final Map<JobIdentity, TaskRuntimeInfo> tasks = new ConcurrentHashMap<>();
     private final ExecutorService executor;
 
     private ThreadPoolTaskExecutor() {
@@ -59,27 +62,54 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
     }
 
     @Override
-    synchronized public void execute(BaseTask<?> task, JobContext jc) {
+    synchronized public void execute(Task<?> task, JobContext jc) {
         JobIdentity jobIdentity = jc.getJobIdentity();
         log.info("Start to execute task, jobIdentity={}.", jobIdentity.getId());
 
         if (tasks.containsKey(jobIdentity)) {
             throw new IllegalArgumentException("Task already exists, jobIdentity=" + jobIdentity.getId());
         }
+        // init cloud objet storage service and task monitor
+        CloudObjectStorageService cloudObjectStorageService = buildCloudStorageService(jc);
+        TaskReporter taskReporter = new TaskReporter(jc.getHostUrls());
+        TaskContainer<?> taskContainer = new TaskContainer<>(jc, cloudObjectStorageService, taskReporter, task);
+        TaskRuntimeInfo taskRuntimeInfo = new TaskRuntimeInfo(taskContainer, taskContainer.getTaskMonitor());
+        // first put data in map, avoid concurrent thread access caused task not found exception
+        tasks.put(jobIdentity, taskRuntimeInfo);
         Future<?> future = executor.submit(() -> {
             try {
-                task.start(jc);
+                taskContainer.runTask();
             } catch (Exception e) {
                 log.error("Task start failed, jobIdentity={}.", jobIdentity.getId(), e);
+                taskContainer.onException(e);
             }
         });
-        futures.put(jobIdentity, future);
-        tasks.put(jobIdentity, task);
+        taskRuntimeInfo.setFuture(future);
+    }
+
+    /**
+     * build task monitor
+     *
+     * @param jobContext
+     * @return
+     */
+    protected CloudObjectStorageService buildCloudStorageService(JobContext jobContext) {
+        Optional<ObjectStorageConfiguration> storageConfig = JobUtils.getObjectStorageConfiguration();
+        CloudObjectStorageService cloudObjectStorageService = null;
+        try {
+            if (storageConfig.isPresent()) {
+                cloudObjectStorageService = CloudObjectStorageServiceBuilder.build(storageConfig.get());
+            }
+        } catch (Throwable e) {
+            log.warn("Init cloud object storage service failed, id={}.", jobContext.getJobIdentity().getId(), e);
+        }
+        return cloudObjectStorageService;
     }
 
     @Override
     public boolean cancel(JobIdentity ji) {
-        Task<?> task = getTask(ji);
+        TaskRuntimeInfo runtimeInfo = getTaskRuntimeInfo(ji);
+        TaskContainer<?> task = runtimeInfo.getTaskContainer();
         Future<Boolean> stopFuture = executor.submit(task::stop);
         boolean result = false;
         try {
@@ -104,9 +134,14 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
     }
 
     @Override
-    public BaseTask<?> getTask(JobIdentity ji) {
-        BaseTask<?> task = tasks.get(ji);
-        PreConditions.notNull(task, "task", "Task not found, jobIdentity=" + ji.getId());
-        return task;
+    public TaskRuntimeInfo getTaskRuntimeInfo(JobIdentity ji) {
+        TaskRuntimeInfo runtimeInfo = tasks.get(ji);
+        PreConditions.notNull(runtimeInfo, "task", "Task not found, jobIdentity=" + ji.getId());
+        return runtimeInfo;
+    }
+
+    @Override
+    public boolean taskExist(JobIdentity ji) {
+        return tasks.get(ji) != null;
     }
 }

@@ -71,7 +71,7 @@ public class ScheduleControllerHist {
             @RequestParam(required = false, name = "startTime") Date startTime,
             @RequestParam(required = false, name = "endTime") Date endTime,
             @RequestParam(required = false, name = "creator") String creator,
-            @RequestParam(required = false, name = "projectId") Long projectId) {
+            @RequestParam(required = false, name = "projectId") Set<Long> projectIds) {
 
         QueryScheduleParams req = QueryScheduleParams.builder()
                 .id(id)
@@ -81,7 +81,7 @@ public class ScheduleControllerHist {
                 .startTime(startTime)
                 .endTime(endTime)
                 .creator(creator)
-                .projectId(projectId)
+                .projectIds(projectIds)
                 .build();
         return Responses.paginated(scheduleService.list(pageable, req));
 

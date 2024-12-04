@@ -44,4 +44,6 @@ public interface TableExtensionPoint extends ExtensionPoint {
     String generateCreateDDL(Connection connection, DBTable table);
 
     String generateUpdateDDL(Connection connection, DBTable oldTable, DBTable newTable);
+
+    boolean syncExternalTableFiles(Connection connection, String schemaName, String tableName);
 }

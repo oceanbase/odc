@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.listener;
 
+import java.util.Collections;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -23,7 +25,6 @@ import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
-import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
@@ -42,8 +43,6 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
     @Autowired
     private ScheduleTaskService scheduleTaskService;
     @Autowired
-    private TaskService taskService;
-    @Autowired
     private TaskFrameworkService stdTaskFrameworkService;
 
     @Override
@@ -52,12 +51,22 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
         JobIdentity identity = taskResult.getJobIdentity();
         JobEntity jobEntity = stdTaskFrameworkService.find(identity.getId());
         scheduleTaskService.findByJobId(jobEntity.getId())
-                .ifPresent(taskEntity -> updateScheduleTaskStatus(taskEntity.getId(),
-                        taskResult.getStatus().convertTaskStatus()));
+                .ifPresent(taskEntity -> {
+                    if (taskEntity.getStatus() == TaskStatus.PREPARING) {
+                        updateScheduleTaskStatus(taskEntity.getId(), TaskStatus.RUNNING, TaskStatus.PREPARING);
+                    }
+                });
     }
 
-    private void updateScheduleTaskStatus(Long id, TaskStatus status) {
-        scheduleTaskService.updateStatusById(id, status);
-        log.debug("Update scheduleTask status to {} successfully, scheduleTaskId={}", status, id);
+    private void updateScheduleTaskStatus(Long id, TaskStatus status, TaskStatus previousStatus) {
+        int i = scheduleTaskService.updateStatusById(id, status, Collections.singletonList(previousStatus.name()));
+        if (i > 0) {
+            log.info("Update scheduleTask status from {} to {} successfully, scheduleTaskId={}", previousStatus, status,
+                    id);
+        } else {
+            log.warn("Update scheduleTask status from {} to {} failed, scheduleTaskId={}", previousStatus, status,
+                    id);
+        }
     }
+
 }

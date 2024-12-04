@@ -23,16 +23,21 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.metadb.iam.PermissionEntity;
 import com.oceanbase.odc.metadb.iam.PermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
+import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.feature.VersionDiffConfigService;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @description:
@@ -41,6 +46,7 @@ import lombok.NonNull;
  * @since: 4.3.3
  */
 @Component
+@Slf4j
 public class DBExternalTableSyncer extends AbstractDBObjectSyncer<TableExtensionPoint> {
 
     @Autowired
@@ -49,6 +55,9 @@ public class DBExternalTableSyncer extends AbstractDBObjectSyncer<TableExtension
     @Autowired
     private UserPermissionRepository userPermissionRepository;
 
+    @Autowired
+    private VersionDiffConfigService versionDiffConfigService;
+
     @Override
     protected void preDelete(@NonNull Set<Long> toBeDeletedIds) {
         List<PermissionEntity> permissions =
@@ -56,6 +65,20 @@ public class DBExternalTableSyncer extends AbstractDBObjectSyncer<TableExtension
         Set<Long> permissionIds = permissions.stream().map(PermissionEntity::getId).collect(Collectors.toSet());
         permissionRepository.deleteByIds(permissionIds);
         userPermissionRepository.deleteByPermissionIds(permissionIds);
+    }
+
+    @Override
+    public boolean supports(@NonNull DialectType dialectType, @NonNull Connection connection) {
+        try {
+            InformationExtensionPoint point =
+                    ConnectionPluginUtil.getInformationExtension(dialectType);
+            String databaseProductVersion = point.getDBVersion(connection);
+            return versionDiffConfigService.isExternalTableSupported(dialectType, databaseProductVersion)
+                    && getExtensionPoint(dialectType) != null;
+        } catch (Exception e) {
+            log.warn("check external table support failed", e);
+            return false;
+        }
     }
 
     @Override
