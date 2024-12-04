@@ -208,22 +208,6 @@ public class TableServiceTest extends ServiceTestEnv {
         return database;
     }
 
-    private boolean containsAllIgnoreCase(List<String> expectedlist, List<Table> toCheck) {
-        for (Table item : toCheck) {
-            boolean found = false;
-            for (String listItem : expectedlist) {
-                if (listItem.equalsIgnoreCase(item.getName())) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     private static void createTablesOrViewsByConnectType(ConnectType connectType, List<String> tableNames,
             String format) {
         ConnectionSession session = TestConnectionUtil.getTestConnectionSession(connectType);
@@ -275,12 +259,14 @@ public class TableServiceTest extends ServiceTestEnv {
                 .build();
         List<Table> list = tableService.list(params);
         Assert.assertFalse(list.isEmpty());
-        List<Table> tableList = list.stream().filter(table -> table.getType() == DBObjectType.TABLE).collect(
-                Collectors.toList());
-        List<Table> viewList = list.stream().filter(table -> table.getType() == DBObjectType.VIEW).collect(
-                Collectors.toList());
-        Assert.assertTrue(containsAllIgnoreCase(TABLE_NAME_LIST, tableList));
-        Assert.assertTrue(containsAllIgnoreCase(VIEW_NAME_LIST, viewList));
+        List<String> tableList = list.stream().filter(table -> table.getType() == DBObjectType.TABLE).map(
+                Table::getName).map(String::toUpperCase).collect(
+                        Collectors.toList());
+        List<String> viewList = list.stream().filter(table -> table.getType() == DBObjectType.VIEW).map(Table::getName)
+                .map(String::toUpperCase).collect(
+                        Collectors.toList());
+        Assert.assertTrue(tableList.containsAll(TABLE_NAME_LIST));
+        Assert.assertTrue(viewList.containsAll(VIEW_NAME_LIST));
     }
 
 }
