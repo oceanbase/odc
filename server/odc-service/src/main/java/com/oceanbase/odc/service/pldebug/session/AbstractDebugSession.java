@@ -34,6 +34,7 @@ import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.exception.OBException;
@@ -42,6 +43,7 @@ import com.oceanbase.odc.core.shared.model.OdcDBSession;
 import com.oceanbase.odc.core.sql.util.OdcDBSessionRowMapper;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.pldebug.model.PLDebugODPSpecifiedRoute;
+import com.oceanbase.odc.service.pldebug.operator.DBPLOperators;
 import com.oceanbase.odc.service.pldebug.util.CallProcedureCallBack;
 import com.oceanbase.odc.service.pldebug.util.OBOracleCallFunctionCallBack;
 import com.oceanbase.odc.service.pldebug.util.PLUtils;
@@ -120,7 +122,8 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
         String host;
         Integer port;
-        if (StringUtils.isBlank(config.getClusterName())) {
+        if (StringUtils.isBlank(config.getClusterName())
+                && connectionSession.getConnectType() != ConnectType.OB_ORACLE) {
             // direct connection to the observer
             host = config.getHost();
             port = config.getPort();
@@ -130,7 +133,7 @@ public abstract class AbstractDebugSession implements AutoCloseable {
             host = directServerIp.split(":")[0];
             port = Integer.parseInt(directServerIp.split(":")[1]);
         }
-        String obProxyVersion = getObProxyVersion(connectionSession);
+        String obProxyVersion = DBPLOperators.getObProxyVersion(connectionSession);
         if (obProxyVersion != null && VersionUtils.isGreaterThanOrEqualsTo(obProxyVersion, "3.1.11")) {
             // use the specified routing function of odp
             this.plDebugODPSpecifiedRoute = new PLDebugODPSpecifiedRoute(host, port);
@@ -150,23 +153,6 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         dataSource.setPassword(config.getPassword());
         dataSource.setDriverClassName(OdcConstants.DEFAULT_DRIVER_CLASS_NAME);
         return dataSource;
-    }
-
-    /**
-     * Get the OBProxy version number. If an exception occurs or the version does not support, return
-     * null.
-     *
-     * @param connectionSession
-     * @return
-     */
-    private String getObProxyVersion(ConnectionSession connectionSession) {
-        try {
-            return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                    .queryForObject("select proxy_version()", String.class);
-        } catch (Exception e) {
-            log.warn("Failed to obtain the OBProxy version number: {}", e.getMessage());
-            return null;
-        }
     }
 
     private String getDirectServerIp(ConnectionSession connectionSession) {
@@ -218,7 +204,8 @@ public abstract class AbstractDebugSession implements AutoCloseable {
 
     protected void enableDbmsOutput(Statement statement) {
         try {
-            statement.execute(String.format("%s call dbms_output.enable(%s);", PLUtils.getSpecifiedRoute(this.plDebugODPSpecifiedRoute),PL_LOG_CACHE_SIZE));
+            statement.execute(String.format("%s call dbms_output.enable(%s);",
+                    PLUtils.getSpecifiedRoute(this.plDebugODPSpecifiedRoute), PL_LOG_CACHE_SIZE));
         } catch (Exception e) {
             log.warn("enable dbms output failed, dbms_output may not exists, sid={}, reason={}",
                     connectionSession.getId(),
