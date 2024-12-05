@@ -147,11 +147,6 @@ public class TestDBConfigurations {
                 }
                 stmt.executeUpdate(sql.toString());
                 log.info("create test user for oracle, username: {}", username);
-                sql = new StringBuilder("GRANT SYSDBA, RESOURCE, CREATE SESSION TO ").append(username);
-                stmt.execute(sql.toString());
-                log.info("grant sysdba to new created user, username: {}", username);
-                // Although the above code has granted sysdba role to the new user, the connection created with the
-                // new user does not use the sysdba role, so the following grant statement is required
                 sql = new StringBuilder("GRANT ALL PRIVILEGES TO ").append(username);
                 stmt.execute(sql.toString());
                 log.info("grant all privileges to new created user, username: {}", username);
