@@ -29,7 +29,7 @@ public class KillSessionOrQueryReq {
     public static final String KILL_QUERY_TYPE = "query";
 
     @NotNull
-    private List<SessionIdSvpIp> sessionIds;
+    private List<SessionIdSvrIp> sessionIds;
 
     @NotNull
     private String datasourceId;
@@ -37,7 +37,7 @@ public class KillSessionOrQueryReq {
     private String killType;
 
     @Data
-    public static class SessionIdSvpIp {
+    public static class SessionIdSvrIp {
 
         private String sessionId;
         /**

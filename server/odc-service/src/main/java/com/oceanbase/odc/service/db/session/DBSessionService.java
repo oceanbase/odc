@@ -37,7 +37,7 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.model.OdcDBSession;
 import com.oceanbase.odc.core.sql.util.OdcDBSessionRowMapper;
 import com.oceanbase.odc.service.db.browser.DBStatsAccessors;
-import com.oceanbase.odc.service.db.session.KillSessionOrQueryReq.SessionIdSvpIp;
+import com.oceanbase.odc.service.db.session.KillSessionOrQueryReq.SessionIdSvrIp;
 import com.oceanbase.tools.dbbrowser.model.DBSession;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
 
@@ -77,7 +77,7 @@ public class DBSessionService {
     }
 
     public List<SessionIdKillSql> getKillSql(@NonNull ConnectionSession session,
-            @NonNull List<SessionIdSvpIp> sessionIds,
+            @NonNull List<SessionIdSvrIp> sessionIds,
             String closeType) {
         List<OdcDBSession> allSession = list(session);
         Map<String, List<OdcDBSession>> sidMap = allSession.stream().collect(
@@ -92,9 +92,9 @@ public class DBSessionService {
             sqlBuilder.append(sid.getSessionId());
             List<OdcDBSession> odcDBSessions = sidMap.get(sid.getSessionId());
             if (CollectionUtils.isNotEmpty(odcDBSessions)) {
-                String svpIp = sid.getSvrIp();
-                if (svpIp != null) {
-                    Verify.verify(odcDBSessions.stream().anyMatch(s -> s.getSvrIp().equals(svpIp)), "Invalid SvpId");
+                String svrIp = sid.getSvrIp();
+                if (svrIp != null) {
+                    Verify.verify(odcDBSessions.stream().anyMatch(s -> s.getSvrIp().equals(svrIp)), "Invalid SvpId");
                     sqlBuilder.append(" /*").append(sid.getSvrIp()).append("*/");
                 } else {
                     sqlBuilder.append(" /*").append(odcDBSessions.get(0).getSvrIp()).append("*/");
