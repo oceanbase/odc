@@ -29,6 +29,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DBPLOperators {
 
+    public static String odpSpecifiedRoutineEnabledVersionNumber = "3.1.11";
+
     public static DBPLOperator create(ConnectionSession connectionSession) {
         PreConditions.notNull(connectionSession, "connectionSession");
 
@@ -41,7 +43,8 @@ public class DBPLOperators {
             return new OraclePLOperator(connectionSession);
         } else if (connectType == ConnectType.CLOUD_OB_ORACLE) {
             String obProxyVersion = getObProxyVersion(connectionSession);
-            if (obProxyVersion != null && VersionUtils.isGreaterThanOrEqualsTo(obProxyVersion, "3.1.11")) {
+            if (obProxyVersion != null
+                    && VersionUtils.isGreaterThanOrEqualsTo(obProxyVersion, odpSpecifiedRoutineEnabledVersionNumber)) {
                 return new OraclePLOperator(connectionSession);
             } else {
                 throw new UnsupportedException(String.format(
