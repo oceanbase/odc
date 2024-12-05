@@ -34,6 +34,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.service.common.util.UrlUtils;
+import com.oceanbase.odc.service.integration.oauth2.SSOStateManager;
 
 import lombok.Data;
 import lombok.NonNull;
@@ -69,8 +70,8 @@ public class Oauth2Parameter implements SSOParameter {
     /**
      * {@link Oauth2Parameter}
      * 
-     * @see com.oceanbase.odc.service.integration.oauth2.Oauth2StateManager put redirect paramters into
-     *      Oauth2StateManager's cache, default value false to adaptive history data
+     * @see SSOStateManager put redirect paramters into Oauth2StateManager's cache, default value false
+     *      to adaptive history data
      */
     private Boolean useStateParams = true;
 

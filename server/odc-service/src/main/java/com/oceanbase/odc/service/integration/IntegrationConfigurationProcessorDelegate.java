@@ -15,6 +15,10 @@
  */
 package com.oceanbase.odc.service.integration;
 
+import java.util.Optional;
+
+import javax.annotation.Nullable;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -25,22 +29,24 @@ import com.oceanbase.odc.service.integration.model.IntegrationType;
 import com.oceanbase.odc.service.integration.model.SqlInterceptorProperties;
 
 @Component
-public class IntegrationConfigurationValidatorDelegate {
+public class IntegrationConfigurationProcessorDelegate {
 
     @Autowired
-    private IntegrationConfigurationValidator configurationValidator;
+    private IntegrationConfigurationProcessor configurationValidator;
 
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
-    public void preProcessConfig(IntegrationConfig config) {
-        if (config.getType() == IntegrationType.APPROVAL) {
-            configurationValidator.check(ApprovalProperties.from(config));
-        } else if (config.getType() == IntegrationType.SQL_INTERCEPTOR) {
-            configurationValidator.check(SqlInterceptorProperties.from(config));
-        } else if (config.getType() == IntegrationType.SSO) {
-            configurationValidator.checkAndFillConfig(config, authenticationFacade.currentOrganizationId(),
-                    config.getEnabled(), null);
+    public void preProcessConfig(IntegrationConfig newConfig, @Nullable IntegrationConfig savedConfig) {
+        if (newConfig.getType() == IntegrationType.APPROVAL) {
+            configurationValidator.check(ApprovalProperties.from(newConfig));
+        } else if (newConfig.getType() == IntegrationType.SQL_INTERCEPTOR) {
+            configurationValidator.check(SqlInterceptorProperties.from(newConfig));
+        } else if (newConfig.getType() == IntegrationType.SSO) {
+            configurationValidator.checkAndFillConfig(newConfig, savedConfig,
+                    authenticationFacade.currentOrganizationId(),
+                    newConfig.getEnabled(),
+                    Optional.ofNullable(savedConfig).map(IntegrationConfig::getId).orElse(null));
         }
     }
 }

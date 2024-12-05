@@ -150,6 +150,9 @@
         <jwt.version>3.9.0</jwt.version>
         <okhttp.version>4.11.0</okhttp.version>
         <jgit.version>5.13.3.202401111512-r</jgit.version>
+        <bouncycastle.jdk18.version>1.76</bouncycastle.jdk18.version>
+        <bouncycastle.jdk15.version>1.70</bouncycastle.jdk15.version>
+        <commons-codec.version>1.15</commons-codec.version>
         <registry-prometheus.version>1.9.5</registry-prometheus.version>
         <actuator.version>2.7.12</actuator.version>
     </properties>
@@ -192,6 +195,11 @@
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy-all</artifactId>
                 <version>${groovy-all.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>${commons-codec.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.micrometer</groupId>
@@ -459,6 +467,12 @@
                 <artifactId>spring-security-oauth2-client</artifactId>
                 <version>${spring-security.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.springframework.security</groupId>
+                <artifactId>spring-security-saml2-service-provider</artifactId>
+                <version>${spring-security.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.springframework.security</groupId>
                 <artifactId>spring-security-crypto</artifactId>
@@ -482,7 +496,7 @@
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcpkix-jdk15on</artifactId>
-                <version>${bcpkix-jdk15on.version}</version>
+                <version>${bouncycastle.jdk15.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.integration</groupId>
@@ -498,6 +512,21 @@
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-starter-bootstrap</artifactId>
                 <version>${spring-cloud-starter-bootstrap.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bouncycastle.jdk18.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>${bouncycastle.jdk18.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcutil-jdk18on</artifactId>
+                <version>${bouncycastle.jdk18.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
@@ -984,9 +1013,7 @@
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk15on</artifactId>
-                <!-- original version = 1.62 -->
-                <!-- upgrade to avoid vulnerability issues, version >= 1.67 -->
-                <version>1.70</version>
+                <version>${bouncycastle.jdk15.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
