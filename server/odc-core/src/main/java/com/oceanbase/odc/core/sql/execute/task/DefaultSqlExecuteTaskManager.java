@@ -50,7 +50,7 @@ public class DefaultSqlExecuteTaskManager extends DefaultTaskManager implements 
     private final int maxConcurrentTaskCount;
     private final Semaphore taskCountSemaphore;
     private final long waitingTimeoutForSubmitTask;
-    private final Collection<Future<?>> activeFuture;
+    private final ConcurrentLinkedQueue<Future<?>> activeFuture;
 
     public DefaultSqlExecuteTaskManager(int maxConcurrentTaskCount) {
         this(maxConcurrentTaskCount, "default", 10, TimeUnit.SECONDS);
