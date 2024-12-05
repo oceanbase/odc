@@ -409,6 +409,7 @@ public class ProjectService {
             }
         });
         repository.deleteAllById(projectIds);
+        // TODO: bind these resource delete logic in one place for better maintainability
         resourceRoleService.deleteByResourceTypeAndIdIn(ResourceType.ODC_PROJECT, projectIds);
         deleteMemberRelatedDatabasePermissions(projectIds);
         deleteMemberRelatedTablePermissions(projectIds);
