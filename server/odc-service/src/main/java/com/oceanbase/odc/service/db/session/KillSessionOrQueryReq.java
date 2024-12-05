@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.db.session;
 
 import java.util.List;
 
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 
 import lombok.Data;
@@ -28,11 +29,23 @@ public class KillSessionOrQueryReq {
     public static final String KILL_QUERY_TYPE = "query";
 
     @NotNull
-    private List<String> sessionIds;
+    private List<SessionIdSvpIp> sessionIds;
 
     @NotNull
     private String datasourceId;
 
     private String killType;
+
+    @Data
+    public static class SessionIdSvpIp {
+
+        private String sessionId;
+        /**
+         * Only greater than ob4.0 have this filed
+         */
+        @Nullable
+        private String svrIp;
+
+    }
 
 }

@@ -23,19 +23,21 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.stereotype.Service;
 
-import com.google.common.base.MoreObjects;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.model.OdcDBSession;
 import com.oceanbase.odc.core.sql.util.OdcDBSessionRowMapper;
 import com.oceanbase.odc.service.db.browser.DBStatsAccessors;
+import com.oceanbase.odc.service.db.session.KillSessionOrQueryReq.SessionIdSvpIp;
 import com.oceanbase.tools.dbbrowser.model.DBSession;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
 
@@ -74,25 +76,31 @@ public class DBSessionService {
         return jdbcOperations.query("SHOW FULL PROCESSLIST", new OdcDBSessionRowMapper());
     }
 
-    public List<SessionIdKillSql> getKillSql(@NonNull ConnectionSession session, @NonNull List<String> sessionIds,
+    public List<SessionIdKillSql> getKillSql(@NonNull ConnectionSession session,
+            @NonNull List<SessionIdSvpIp> sessionIds,
             String closeType) {
         List<OdcDBSession> allSession = list(session);
-        Map<String, String> sessionId2SvrpIp =
-                allSession.stream().collect(
-                        Collectors.toMap(OdcDBSession::getSessionId,
-                                s -> MoreObjects.firstNonNull(s.getSvrIp(), "")));
+        Map<String, List<OdcDBSession>> sidMap = allSession.stream().collect(
+                Collectors.groupingBy(OdcDBSession::getSessionId));
         return sessionIds.stream().map(sid -> {
-            PreConditions.notNegative(Long.parseLong(sid), "sessionId");
+            PreConditions.notNegative(Long.parseLong(sid.getSessionId()), "sessionId");
             StringBuilder sqlBuilder = new StringBuilder();
             sqlBuilder.append("kill ");
             if (KILL_QUERY_TYPE.equalsIgnoreCase(closeType)) {
                 sqlBuilder.append("query ");
             }
-            sqlBuilder.append(sid);
-            if (sessionId2SvrpIp.get(sid) != null) {
-                sqlBuilder.append(" /*").append(sessionId2SvrpIp.get(sid)).append("*/");
+            sqlBuilder.append(sid.getSessionId());
+            List<OdcDBSession> odcDBSessions = sidMap.get(sid.getSessionId());
+            if (CollectionUtils.isNotEmpty(odcDBSessions)) {
+                String svpIp = sid.getSvrIp();
+                if (svpIp != null) {
+                    Verify.verify(odcDBSessions.stream().anyMatch(s -> s.getSvrIp().equals(svpIp)), "Invalid SvpId");
+                    sqlBuilder.append(" /*").append(sid.getSvrIp()).append("*/");
+                } else {
+                    sqlBuilder.append(" /*").append(odcDBSessions.get(0).getSvrIp()).append("*/");
+                }
             }
-            return new SessionIdKillSql(sid, sqlBuilder.append(";").toString());
+            return new SessionIdKillSql(sid.getSessionId(), sqlBuilder.append(";").toString());
         }).collect(Collectors.toList());
     }
 
