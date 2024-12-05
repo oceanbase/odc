@@ -15,9 +15,9 @@
  */
 package com.oceanbase.odc.core.sql.execute.task;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Collection;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
@@ -50,7 +50,7 @@ public class DefaultSqlExecuteTaskManager extends DefaultTaskManager implements 
     private final int maxConcurrentTaskCount;
     private final Semaphore taskCountSemaphore;
     private final long waitingTimeoutForSubmitTask;
-    private final List<Future<?>> activeFuture;
+    private final Collection<Future<?>> activeFuture;
 
     public DefaultSqlExecuteTaskManager(int maxConcurrentTaskCount) {
         this(maxConcurrentTaskCount, "default", 10, TimeUnit.SECONDS);
@@ -73,7 +73,7 @@ public class DefaultSqlExecuteTaskManager extends DefaultTaskManager implements 
         this.taskCountSemaphore = new Semaphore(maxConcurrentTaskCount);
         Validate.isTrue(timeout > 0, "Timeout can not be negative");
         this.waitingTimeoutForSubmitTask = TimeUnit.MILLISECONDS.convert(timeout, timeUnit);
-        this.activeFuture = new LinkedList<>();
+        this.activeFuture = new ConcurrentLinkedQueue<>();
     }
 
     @Override
