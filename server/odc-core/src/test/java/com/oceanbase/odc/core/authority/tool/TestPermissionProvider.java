@@ -15,14 +15,15 @@
  */
 package com.oceanbase.odc.core.authority.tool;
 
+import java.util.Arrays;
 import java.util.Collection;
 
 import com.oceanbase.odc.core.authority.model.SecurityResource;
+import com.oceanbase.odc.core.authority.permission.ComposedPermission;
 import com.oceanbase.odc.core.authority.permission.ConnectionPermission;
 import com.oceanbase.odc.core.authority.permission.DatabasePermission;
 import com.oceanbase.odc.core.authority.permission.Permission;
 import com.oceanbase.odc.core.authority.permission.PermissionProvider;
-import com.oceanbase.odc.core.authority.permission.PrivateConnectionPermission;
 import com.oceanbase.odc.core.authority.permission.ResourcePermission;
 import com.oceanbase.odc.core.authority.permission.ResourceRoleBasedPermission;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -41,8 +42,6 @@ public class TestPermissionProvider implements PermissionProvider {
     public Permission getPermissionByActions(SecurityResource resource, Collection<String> actions) {
         if (ResourceType.ODC_CONNECTION.name().equals(resource.resourceType())) {
             return new ConnectionPermission(resource.resourceId(), String.join(",", actions));
-        } else if (ResourceType.ODC_PRIVATE_CONNECTION.name().equals(resource.resourceType())) {
-            return new PrivateConnectionPermission(resource.resourceId(), String.join(",", actions));
         } else if (ResourceType.ODC_DATABASE.name().equals(resource.resourceType())) {
             return new DatabasePermission(resource.resourceId(), String.join(",", actions));
         }
@@ -52,6 +51,13 @@ public class TestPermissionProvider implements PermissionProvider {
     @Override
     public Permission getPermissionByResourceRoles(SecurityResource resource, Collection<String> resourceRoles) {
         return new ResourceRoleBasedPermission(resource, String.join(",", resourceRoles));
+    }
+
+    @Override
+    public Permission getPermissionByActionsAndResourceRoles(SecurityResource resource, Collection<String> actions,
+            Collection<String> resourceRoles) {
+        return new ComposedPermission(Arrays.asList(getPermissionByActions(resource, actions),
+                getPermissionByResourceRoles(resource, resourceRoles)));
     }
 
 }

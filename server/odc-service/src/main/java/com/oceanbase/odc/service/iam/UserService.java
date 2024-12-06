@@ -25,7 +25,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -43,7 +42,6 @@ import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
@@ -65,7 +63,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.MoreObjects;
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.authority.permission.Permission;
 import com.oceanbase.odc.core.authority.permission.ResourcePermission;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
@@ -328,7 +325,6 @@ public class UserService {
 
         log.debug("New user has been inserted, user: {}", userEntity);
         if (!Objects.isNull(createUserReq.getRoleIds()) && !createUserReq.getRoleIds().isEmpty()) {
-            inspectVerticalUnauthorized(authenticationFacade.currentUser(), createUserReq.getRoleIds());
             for (Long roleId : createUserReq.getRoleIds()) {
                 Role role = new Role(roleRepository.findById(roleId)
                         .orElseThrow(() -> new NotFoundException(ResourceType.ODC_ROLE, "id", roleId)));
@@ -748,7 +744,6 @@ public class UserService {
                 attachedRoleIds = relations.stream().map(UserRoleEntity::getRoleId).collect(Collectors.toSet());
             }
             Long creatorId = authenticationFacade.currentUserId();
-            inspectVerticalUnauthorized(authenticationFacade.currentUser(), updateUserReq.getRoleIds());
             userRoleRepository.deleteByOrganizationIdAndUserId(authenticationFacade.currentOrganizationId(), id);
             userRoleRepository.flush();
             for (Long roleId : updateUserReq.getRoleIds()) {
@@ -925,19 +920,6 @@ public class UserService {
         private String accountName;
     }
 
-    private void inspectVerticalUnauthorized(User operator, List<Long> roleIdsToBeAttached) {
-        Validate.notNull(roleIdsToBeAttached,
-                "RoleIdsToBeAttached can not be null for UserServcei#inspectVerticalUnauthorized");
-        List<Permission> permissions = new LinkedList<>(
-                permissionMapper.getResourcePermissions(permissionRepository.findByRoleIds(roleIdsToBeAttached)));
-        boolean checkResult =
-                authorizationFacade.isImpliesPermissions(operator, permissions);
-        if (!checkResult) {
-            String errMsg = "Cannot grant permissions that the current user does not have";
-            throw new BadRequestException(ErrorCodes.GrantPermissionFailed, new Object[] {errMsg}, errMsg);
-        }
-    }
-
     private List<Long> getUserIdsByRoleIds(@NonNull List<Long> roleIds) {
         List<Long> userIds = new ArrayList<>();
         if (CollectionUtils.isEmpty(roleIds)) {
@@ -1033,7 +1015,6 @@ public class UserService {
         if (CollectionUtils.isEmpty(roleIds)) {
             return;
         }
-        inspectVerticalUnauthorized(authenticationFacade.currentUser(), new ArrayList<>(roleIds));
         Map<Long, RoleEntity> roleId2Entity = roleRepository.findByIdIn(roleIds).stream()
                 .collect(Collectors.toMap(RoleEntity::getId, entity -> entity));
         Verify.equals(roleIds.size(), roleId2Entity.keySet().size(), "roleIds.size()");

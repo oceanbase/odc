@@ -216,4 +216,10 @@ public class DefaultLoginSecurityManager extends BaseValueFilterSecurityManager 
         return this.permissionProvider.getPermissionByResourceRoles(resource, resourceRoles);
     }
 
+    @Override
+    public Permission getPermissionByActionsAndResourceRoles(SecurityResource resource, Collection<String> actions,
+            Collection<String> resourceRoles) {
+        return this.permissionProvider.getPermissionByActionsAndResourceRoles(resource, actions, resourceRoles);
+    }
+
 }

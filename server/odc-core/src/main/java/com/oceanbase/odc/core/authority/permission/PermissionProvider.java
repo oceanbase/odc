@@ -48,4 +48,13 @@ public interface PermissionProvider {
      */
     Permission getPermissionByResourceRoles(SecurityResource resource, Collection<String> resourceRoles);
 
+    /**
+     * @param resource {@link SecurityResource}
+     * @param actions action collection
+     * @param resourceRoles, see {@link ResourceRoleName} enums
+     * @return permission collection
+     */
+    Permission getPermissionByActionsAndResourceRoles(SecurityResource resource, Collection<String> actions,
+            Collection<String> resourceRoles);
+
 }

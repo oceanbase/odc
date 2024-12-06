@@ -97,6 +97,15 @@ public interface PermissionRepository
             nativeQuery = true)
     List<PermissionEntity> findByExpireTimeBefore(@Param("expireTime") Date expireTime);
 
+
+    @Query(value = "select p.* from iam_user_permission up inner join iam_permission p on up.permission_id=p.id "
+            + "where up.user_id=:userId and up.organization_id=:organizationId and p.resource_identifier=:resourceIdentifier "
+            + "and p.action in (:actions)",
+            nativeQuery = true)
+    List<PermissionEntity> findByUserIdAndOrganizationIdAndResourceIdentifierAndActionIn(@Param("userId") Long userId,
+            @Param("organizationId") Long organizationId, @Param("resourceIdentifier") String resourceIdentifier,
+            @Param("actions") Collection<String> actions);
+
     @Modifying
     @Transactional
     @Query(value = "delete from iam_permission p where p.id in (:ids)", nativeQuery = true)

@@ -42,12 +42,13 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
 import com.oceanbase.odc.core.authority.permission.ConnectionPermission;
 import com.oceanbase.odc.core.authority.permission.DatabasePermission;
 import com.oceanbase.odc.core.authority.permission.Permission;
-import com.oceanbase.odc.core.authority.permission.PrivateConnectionPermission;
+import com.oceanbase.odc.core.authority.permission.ProjectPermission;
 import com.oceanbase.odc.core.authority.permission.ResourcePermission;
 import com.oceanbase.odc.core.authority.permission.ResourceRoleBasedPermission;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
@@ -86,6 +87,9 @@ public abstract class DefaultAuthorizationFacade implements AuthorizationFacade 
     @Autowired
     @Qualifier("authorizationFacadeExecutor")
     private ThreadPoolTaskExecutor authorizationFacadeExecutor;
+    @Autowired
+    @Qualifier("servletSecurityManager")
+    private SecurityManager securityManager;
 
     @Override
     public Set<String> getAllPermittedActions(Principal principal, ResourceType resourceType, String resourceId) {
@@ -96,10 +100,7 @@ public abstract class DefaultAuthorizationFacade implements AuthorizationFacade 
                 if (resourceType.equals(ResourceType.valueOf(((ResourcePermission) permission).getResourceType()))
                         && ("*".equals(((ResourcePermission) permission).getResourceId())
                                 || resourceId.equals(((ResourcePermission) permission).getResourceId()))) {
-                    if (resourceType == ResourceType.ODC_PRIVATE_CONNECTION) {
-                        returnVal.addAll(
-                                PrivateConnectionPermission.getActionList(((ResourcePermission) permission).getMask()));
-                    } else if (resourceType == ResourceType.ODC_CONNECTION) {
+                    if (resourceType == ResourceType.ODC_CONNECTION) {
                         returnVal.addAll(
                                 ConnectionPermission.getActionList(((ResourcePermission) permission).getMask()));
                     } else if (resourceType == ResourceType.ODC_DATABASE) {
@@ -165,10 +166,10 @@ public abstract class DefaultAuthorizationFacade implements AuthorizationFacade 
             Set<String> actions = returnVal.computeIfAbsent(resource, identifier -> new HashSet<>());
             if (ResourceType.ODC_DATABASE.name().equals(resource.resourceType())) {
                 actions.addAll(DatabasePermission.getActionList(((ResourcePermission) permission).getMask()));
-            } else if (ResourceType.ODC_PRIVATE_CONNECTION.name().equals(resource.resourceType())) {
-                actions.addAll(PrivateConnectionPermission.getActionList(((ResourcePermission) permission).getMask()));
             } else if (ResourceType.ODC_CONNECTION.name().equals(resource.resourceType())) {
                 actions.addAll(ConnectionPermission.getActionList(((ResourcePermission) permission).getMask()));
+            } else if (ResourceType.ODC_PROJECT.name().equals(resource.resourceType())) {
+                actions.addAll(((ProjectPermission) permission).getActions());
             } else {
                 actions.addAll(ResourcePermission.getActionList(((ResourcePermission) permission).getMask()));
             }
@@ -178,20 +179,7 @@ public abstract class DefaultAuthorizationFacade implements AuthorizationFacade 
 
     @Override
     public boolean isImpliesPermissions(@NotNull Principal principal, @NotNull Collection<Permission> permissions) {
-        List<Permission> permittedPermissions = getAllPermissions(principal);
-        for (Permission permission : permissions) {
-            boolean implies = false;
-            for (Permission permittedPermission : permittedPermissions) {
-                if (permittedPermission.implies(permission)) {
-                    implies = true;
-                    break;
-                }
-            }
-            if (!implies) {
-                return false;
-            }
-        }
-        return true;
+        return this.securityManager.isPermitted(permissions);
     }
 
     private User entityToUser(UserEntity entity) {

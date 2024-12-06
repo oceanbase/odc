@@ -1,0 +1,81 @@
+kind: resource
+version: v2
+templates:
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_role
+      unique_keys: ["name", "organization_id"]
+    specs:
+      - column_name: id
+        default_value: 5
+        data_type: java.lang.Long
+      - column_name: name
+        value: "global_project_owner"
+      - column_name: type
+        value: "CUSTOM"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "global project owner, who is the owner of all projects"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_role
+      unique_keys: [ "name", "organization_id" ]
+    specs:
+      - column_name: id
+        default_value: 6
+        data_type: java.lang.Long
+      - column_name: name
+        value: "global_project_dba"
+      - column_name: type
+        value: "CUSTOM"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "global project owner, who is the DBA of all projects"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_role
+      unique_keys: [ "name", "organization_id" ]
+    specs:
+      - column_name: id
+        default_value: 7
+        data_type: java.lang.Long
+      - column_name: name
+        value: "global_project_security_administrator"
+      - column_name: type
+        value: "CUSTOM"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "global project owner, who is the security administrator of all projects"
