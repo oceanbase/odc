@@ -57,7 +57,7 @@ public class LocalMockK8sJobClient implements K8sJobClientSelector {
                     k8sResourceContext.type(),
                     executorIdentifier.getNamespace(),
                     executorIdentifier.getExecutorName(), ResourceState.AVAILABLE,
-                    "127.0.0.1:" + executorIdentifier.getPort(), new Date(System.currentTimeMillis()));
+                    "127.0.0.1", String.valueOf(executorIdentifier.getPort()), new Date(System.currentTimeMillis()));
         }
 
         private JobContext getJobContext(Object extraData) {
@@ -79,7 +79,7 @@ public class LocalMockK8sJobClient implements K8sJobClientSelector {
             K8sPodResource ret = new K8sPodResource(ResourceIDUtil.DEFAULT_REGION_PROP_NAME,
                     ResourceIDUtil.DEFAULT_GROUP_PROP_NAME, DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE,
                     namespace, arn, ResourceState.AVAILABLE,
-                    "127.0.0.1", new Date(System.currentTimeMillis()));
+                    "127.0.0.1", "8989", new Date(System.currentTimeMillis()));
             return Optional.of(ret);
         }
 

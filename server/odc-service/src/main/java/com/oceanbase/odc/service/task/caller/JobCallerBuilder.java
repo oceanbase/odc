@@ -15,16 +15,13 @@
  */
 package com.oceanbase.odc.service.task.caller;
 
-import java.io.File;
-import java.nio.charset.Charset;
 import java.util.Map;
-
-import org.apache.commons.io.FileUtils;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskMonitorMode;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
@@ -49,32 +46,17 @@ public class JobCallerBuilder {
      */
     public static JobCaller buildProcessCaller(JobContext context, Map<String, String> environments) {
         JobUtils.encryptEnvironments(environments);
-        /**
-         * write JobContext to file in case of exceeding the environments size limit; set the file path in
-         * the environment instead
-         */
-        String jobContextFilePath = JobUtils.getExecutorDataPath() + "/" + StringUtils.uuid() + ".enc";
-        try {
-            FileUtils.writeStringToFile(new File(jobContextFilePath),
-                    JobUtils.encrypt(environments.get(JobEnvKeyConstants.ENCRYPT_KEY),
-                            environments.get(JobEnvKeyConstants.ENCRYPT_SALT), JobUtils.toJson(context)),
-                    Charset.defaultCharset());
-        } catch (Exception ex) {
-            FileUtils.deleteQuietly(new File(jobContextFilePath));
-            throw new RuntimeException("Failed to write job context to file: " + jobContextFilePath, ex);
-        }
-        environments.put(JobEnvKeyConstants.ODC_JOB_CONTEXT_FILE_PATH,
-                JobUtils.encrypt(environments.get(JobEnvKeyConstants.ENCRYPT_KEY),
-                        environments.get(JobEnvKeyConstants.ENCRYPT_SALT), jobContextFilePath));
+        setReportMode(environments, context);
         ProcessConfig config = new ProcessConfig();
         config.setEnvironments(environments);
-
         TaskFrameworkProperties taskFrameworkProperties =
                 JobConfigurationHolder.getJobConfiguration().getTaskFrameworkProperties();
         config.setJvmXmsMB(taskFrameworkProperties.getJobProcessMinMemorySizeInMB());
         config.setJvmXmxMB(taskFrameworkProperties.getJobProcessMaxMemorySizeInMB());
-
-        return new ProcessJobCaller(config);
+        String mainClassName = StringUtils.isBlank(taskFrameworkProperties.getProcessMainClassName())
+                ? JobConstants.ODC_AGENT_CLASS_NAME
+                : taskFrameworkProperties.getProcessMainClassName();
+        return new ProcessJobCaller(config, mainClassName);
     }
 
     /**
@@ -94,12 +76,7 @@ public class JobCallerBuilder {
             environments.put(JobEnvKeyConstants.ODC_EXECUTOR_PORT, String.valueOf(executorListenPort));
         }
 
-        TaskMonitorMode monitorMode = JobPropertiesUtils.getMonitorMode(jobProperties);
-        if (TaskMonitorMode.PULL.equals(monitorMode)) {
-            environments.put(JobEnvKeyConstants.REPORT_ENABLED, "false");
-        } else {
-            environments.put(JobEnvKeyConstants.REPORT_ENABLED, "true");
-        }
+        setReportMode(environments, context);
 
         // encryption related properties
         JasyptEncryptorConfigProperties jasyptProperties = JobConfigurationHolder.getJobConfiguration()
@@ -110,6 +87,15 @@ public class JobCallerBuilder {
         environments.put(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_SUFFIX, jasyptProperties.getSuffix());
         environments.put(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_SALT, jasyptProperties.getSalt());
         return environments;
+    }
+
+    private static void setReportMode(Map<String, String> environments, JobContext jobContext) {
+        TaskMonitorMode monitorMode = JobPropertiesUtils.getMonitorMode(jobContext.getJobProperties());
+        if (TaskMonitorMode.PULL.equals(monitorMode)) {
+            environments.put(JobEnvKeyConstants.REPORT_ENABLED, "false");
+        } else {
+            environments.put(JobEnvKeyConstants.REPORT_ENABLED, "true");
+        }
     }
 
     public static JobCaller buildK8sJobCaller(PodConfig podConfig, JobContext context,

@@ -51,7 +51,7 @@ public abstract class BaseJobCaller implements JobCaller {
         }
         try {
             executorIdentifier = doStart(context);
-            rows = taskFrameworkService.startSuccess(ji.getId(), executorIdentifier.toString());
+            rows = taskFrameworkService.startSuccess(ji.getId(), executorIdentifier.toString(), context);
             if (rows > 0) {
                 afterStartSucceed(executorIdentifier, ji);
             } else {
@@ -193,8 +193,6 @@ public abstract class BaseJobCaller implements JobCaller {
     }
 
     protected abstract ExecutorIdentifier doStart(JobContext context) throws JobException;
-
-    protected abstract void doStop(JobIdentity ji) throws JobException;
 
     protected abstract boolean isExecutorExist(ExecutorIdentifier identifier, ResourceID resourceID)
             throws JobException;

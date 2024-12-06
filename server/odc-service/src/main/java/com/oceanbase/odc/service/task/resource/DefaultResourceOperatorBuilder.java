@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.resource;
 import java.io.IOException;
 import java.util.Optional;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -126,6 +127,7 @@ public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K
 
     @Override
     public K8sPodResource toResource(ResourceEntity resourceEntity, Optional<K8sPodResource> runtimeResource) {
+        Pair<String, String> ipAndPort = K8sPodResource.parseIPAndPort(resourceEntity.getEndpoint());
         return new K8sPodResource(
                 resourceEntity.getRegion(),
                 resourceEntity.getGroupName(),
@@ -133,7 +135,8 @@ public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K
                 resourceEntity.getNamespace(),
                 resourceEntity.getResourceName(),
                 resourceEntity.getStatus(),
-                resourceEntity.getEndpoint(),
+                ipAndPort.getLeft(),
+                ipAndPort.getRight(),
                 resourceEntity.getCreateTime());
     }
 
