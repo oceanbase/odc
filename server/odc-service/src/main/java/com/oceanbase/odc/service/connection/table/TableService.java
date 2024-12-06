@@ -51,6 +51,7 @@ import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
+import com.oceanbase.odc.plugin.schema.api.ViewExtensionPoint;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -60,6 +61,7 @@ import com.oceanbase.odc.service.db.schema.DBSchemaSyncService;
 import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncer;
 import com.oceanbase.odc.service.db.schema.syncer.object.DBExternalTableSyncer;
 import com.oceanbase.odc.service.db.schema.syncer.object.DBTableSyncer;
+import com.oceanbase.odc.service.db.schema.syncer.object.DBViewSyncer;
 import com.oceanbase.odc.service.feature.VersionDiffConfigService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
@@ -101,6 +103,9 @@ public class TableService {
     private DBExternalTableSyncer dbExternalTableSyncer;
 
     @Autowired
+    private DBViewSyncer dbViewSyncer;
+
+    @Autowired
     private JdbcLockRegistry lockRegistry;
 
     @Autowired
@@ -128,8 +133,10 @@ public class TableService {
                         + " doesn't support the database object type " + DBObjectType.TABLE);
             }
             if (types.contains(DBObjectType.TABLE)) {
+                Set<String> latestTableNames = tableExtension.list(conn, database.getName(), DBObjectType.TABLE)
+                        .stream().map(DBObjectIdentity::getName).collect(Collectors.toCollection(LinkedHashSet::new));
                 generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn, DBObjectType.TABLE,
-                        tableExtension);
+                        latestTableNames);
             }
             if (types.contains(DBObjectType.EXTERNAL_TABLE)) {
                 InformationExtensionPoint point =
@@ -137,8 +144,23 @@ public class TableService {
                 String databaseProductVersion = point.getDBVersion(conn);
                 if (versionDiffConfigService.isExternalTableSupported(dataSource.getDialectType(),
                         databaseProductVersion)) {
+                    Set<String> latestExternalTableNames =
+                            tableExtension.list(conn, database.getName(), DBObjectType.EXTERNAL_TABLE)
+                                    .stream().map(DBObjectIdentity::getName)
+                                    .collect(Collectors.toCollection(LinkedHashSet::new));
                     generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn,
-                            DBObjectType.EXTERNAL_TABLE, tableExtension);
+                            DBObjectType.EXTERNAL_TABLE, latestExternalTableNames);
+                }
+            }
+            if (types.contains(DBObjectType.VIEW)) {
+                ViewExtensionPoint viewExtension = SchemaPluginUtil.getViewExtension(dataSource.getDialectType());
+                if (viewExtension != null) {
+                    Set<String> latestViewNames = viewExtension.list(conn, database.getName())
+                            .stream().map(DBObjectIdentity::getName)
+                            .collect(Collectors.toCollection(LinkedHashSet::new));
+                    generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn,
+                            DBObjectType.VIEW,
+                            latestViewNames);
                 }
             }
         }
@@ -146,10 +168,8 @@ public class TableService {
     }
 
     private void generateListAndSyncDBTablesByTableType(QueryTableParams params, Database database,
-            ConnectionConfig dataSource, List<Table> tables, Connection conn, DBObjectType tableType,
-            TableExtensionPoint tableExtension) throws InterruptedException {
-        Set<String> latestTableNames = tableExtension.list(conn, database.getName(), tableType)
-                .stream().map(DBObjectIdentity::getName).collect(Collectors.toCollection(LinkedHashSet::new));
+            ConnectionConfig dataSource, List<Table> tables,
+            Connection conn, DBObjectType tableType, Set<String> latestTableNames) throws InterruptedException {
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             tables.addAll(latestTableNames.stream().map(tableName -> {
                 Table table = new Table();
@@ -181,6 +201,8 @@ public class TableService {
                 return dbTableSyncer;
             case EXTERNAL_TABLE:
                 return dbExternalTableSyncer;
+            case VIEW:
+                return dbViewSyncer;
             default:
                 throw new IllegalArgumentException("Unsupported table type: " + tableType);
         }
