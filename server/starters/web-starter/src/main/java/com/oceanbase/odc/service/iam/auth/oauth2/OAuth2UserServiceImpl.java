@@ -36,6 +36,7 @@ import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -49,7 +50,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.iam.auth.MappingRuleConvert;
 import com.oceanbase.odc.service.iam.auth.SsoUserDetailService;
 import com.oceanbase.odc.service.iam.model.User;
-import com.oceanbase.odc.service.integration.oauth2.Oauth2StateManager;
+import com.oceanbase.odc.service.integration.oauth2.SSOStateManager;
 import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
 
 /**
@@ -80,7 +81,7 @@ public class OAuth2UserServiceImpl implements OAuth2UserService<OAuth2UserReques
     private TestLoginManager testLoginManager;
 
     @Autowired
-    private Oauth2StateManager oauth2StateManager;
+    private SSOStateManager ssoStateManager;
 
     public OAuth2UserServiceImpl() {
         RestTemplate restTemplate = new RestTemplate();
@@ -107,7 +108,7 @@ public class OAuth2UserServiceImpl implements OAuth2UserService<OAuth2UserReques
         ResponseEntity<Map<String, Object>> response = getResponse(userRequest, request);
 
         PreConditions.notNull(response, "oAuth2User");
-        oauth2StateManager.addStateToCurrentRequestParam();
+        ssoStateManager.addStateToCurrentRequestParam(OAuth2ParameterNames.STATE);
 
         MappingResult mappingResult = mappingRuleConvert.resolveOAuthMappingResult(userRequest, response.getBody());
         testLoginManager.abortIfOAuthTestLoginTest();

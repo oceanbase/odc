@@ -13,11 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.dbbrowser.model;
+package com.oceanbase.odc.service.integration;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
-public class DBTablePartitionDefinition extends DBTableAbstractPartitionDefinition {
-    private DBTablePartitionDefinition parentPartitionDefinition;
+@AllArgsConstructor
+public class SSOCredential {
+
+    String certificate;
+
 }

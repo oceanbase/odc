@@ -18,16 +18,13 @@ package com.oceanbase.odc.plugin.schema.obmysql.parser;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBForeignKeyModifyRule;
-import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
-import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
@@ -49,7 +46,10 @@ import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineForeignConst
 import com.oceanbase.tools.sqlparser.statement.createtable.Partition;
 import com.oceanbase.tools.sqlparser.statement.createtable.RangePartition;
 import com.oceanbase.tools.sqlparser.statement.createtable.RangePartitionElement;
+import com.oceanbase.tools.sqlparser.statement.createtable.SubListPartitionElement;
+import com.oceanbase.tools.sqlparser.statement.createtable.SubPartitionElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.SubPartitionOption;
+import com.oceanbase.tools.sqlparser.statement.createtable.SubRangePartitionElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableElement;
 import com.oceanbase.tools.sqlparser.statement.expression.CollectionExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
@@ -64,7 +64,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.0
  */
 @Slf4j
-public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
+public class OBMySQLGetDBTableByParser extends BaseOBGetDBTableByParser {
 
     private final CreateTable createTableStmt;
     private static final char MYSQL_IDENTIFIER_WRAP_CHAR = '`';
@@ -87,8 +87,8 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
     }
 
     @Override
-    public List<DBTableColumn> listColumns() {
-        throw new UnsupportedOperationException("Not supported yet");
+    public CreateTable getCreateTableStmt() {
+        return this.createTableStmt;
     }
 
     /**
@@ -184,41 +184,37 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
         return constraints;
     }
 
-    private String removeIdentifiers(String str) {
+    protected String removeIdentifiers(String str) {
         return StringUtils.unwrap(str, MYSQL_IDENTIFIER_WRAP_CHAR);
     }
 
     @Override
-    public List<DBTableIndex> listIndexes() {
-        throw new UnsupportedOperationException("Not supported yet");
+    protected String generateTemplateSubPartitionName(String partitionName, String subPartitionName) {
+        return removeIdentifiers(partitionName) + 's' + removeIdentifiers(subPartitionName);
     }
 
     @Override
-    public DBTablePartition getPartition() {
-        DBTablePartition partition = new DBTablePartition();
-        DBTablePartition subPartition = new DBTablePartition();
-        partition.setSubpartition(subPartition);
-
-        DBTablePartitionOption partitionOption = new DBTablePartitionOption();
-        partitionOption.setType(DBTablePartitionType.NOT_PARTITIONED);
-        partition.setPartitionOption(partitionOption);
-        DBTablePartitionOption subPartitionOption = new DBTablePartitionOption();
-        subPartitionOption.setType(DBTablePartitionType.NOT_PARTITIONED);
-        subPartition.setPartitionOption(subPartitionOption);
-
-        List<DBTablePartitionDefinition> partitionDefinitions = new ArrayList<>();
-        partition.setPartitionDefinitions(partitionDefinitions);
-        List<DBTablePartitionDefinition> subPartitionDefinitions = new ArrayList<>();
-        subPartition.setPartitionDefinitions(subPartitionDefinitions);
-
-        if (Objects.isNull(createTableStmt)) {
-            partition.setWarning("Failed to parse table ddl");
-            return partition;
+    protected void fillSubPartitionKey(DBTablePartitionOption subPartitionOption,
+            DBTablePartitionType subDBTablePartitionType, SubPartitionOption parsedSubPartitionOption) {
+        // When expressions are supported, only single partition keys are supported
+        if (subDBTablePartitionType.supportExpression()) {
+            Expression expression = parsedSubPartitionOption.getSubPartitionTargets().get(0);
+            if (expression instanceof ColumnReference) {
+                subPartitionOption.setColumnNames(Collections.singletonList(removeIdentifiers(expression.getText())));
+            } else {
+                subPartitionOption.setExpression(expression.getText());
+            }
+        } else {
+            // When expressions are not supported, multiple columns are supported as partition keys
+            subPartitionOption.setColumnNames(parsedSubPartitionOption.getSubPartitionTargets() == null ? null
+                    : parsedSubPartitionOption.getSubPartitionTargets().stream()
+                            .map(item -> removeIdentifiers(item.getText()))
+                            .collect(Collectors.toList()));
         }
-        Partition partitionStmt = createTableStmt.getPartition();
-        if (Objects.isNull(partitionStmt)) {
-            return partition;
-        }
+    }
+
+    @Override
+    protected void parsePartitionStmt(DBTablePartition partition, Partition partitionStmt) {
         if (partitionStmt instanceof HashPartition) {
             parseHashPartitionStmt((HashPartition) partitionStmt, partition);
         } else if (partitionStmt instanceof KeyPartition) {
@@ -228,49 +224,32 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
         } else if (partitionStmt instanceof ListPartition) {
             parseListPartitionStmt((ListPartition) partitionStmt, partition);
         }
+    }
 
-        /**
-         * In order to adapt to the front-end only the expression field is used for Hash、List and Range
-         * partition types
-         */
-        if (Objects.nonNull(partition.getPartitionOption().getType())
-                && partition.getPartitionOption().getType().supportExpression()
-                && StringUtils.isBlank(partition.getPartitionOption().getExpression())) {
-            List<String> columnNames = partition.getPartitionOption().getColumnNames();
-            if (!columnNames.isEmpty()) {
-                partition.getPartitionOption().setExpression(String.join(", ", columnNames));
+    private void fillSubPartitionValue(SubPartitionElement subPartitionElement,
+            DBTablePartitionDefinition subPartitionDefinition) {
+        if (subPartitionElement instanceof SubListPartitionElement) {
+            SubListPartitionElement subListPartitionElement =
+                    (SubListPartitionElement) subPartitionElement;
+            List<List<String>> valuesList = new ArrayList<>();
+            for (Expression listExpr : subListPartitionElement.getListExprs()) {
+                if (listExpr instanceof CollectionExpression) {
+                    valuesList.add(
+                            ((CollectionExpression) listExpr).getExpressionList().stream()
+                                    .map(Expression::getText)
+                                    .collect(Collectors.toList()));
+                } else if (listExpr instanceof ConstExpression) {
+                    valuesList.add(Collections.singletonList(listExpr.getText()));
+                }
             }
-        }
-        if (partitionStmt.getSubPartitionOption() == null) {
-            return partition;
-        }
-        // TODO 目前 ODC 仅支持 HASH/KEY 二级分区, 其它类型后续需补充
-        partition.setSubpartitionTemplated(partitionStmt.getSubPartitionOption().getTemplates() != null);
-        SubPartitionOption subOption = partitionStmt.getSubPartitionOption();
-        String type = partitionStmt.getSubPartitionOption().getType();
-        if ("key".equals(type.toLowerCase())) {
-            subPartitionOption.setType(DBTablePartitionType.KEY);
-            subPartitionOption.setColumnNames(subOption.getSubPartitionTargets() == null ? null
-                    : subOption.getSubPartitionTargets().stream().map(item -> removeIdentifiers(item.getText()))
+            subPartitionDefinition.setValuesList(valuesList);
+        } else if (subPartitionElement instanceof SubRangePartitionElement) {
+            SubRangePartitionElement subRangePartitionElement =
+                    (SubRangePartitionElement) subPartitionElement;
+            subPartitionDefinition.setMaxValues(
+                    subRangePartitionElement.getRangeExprs().stream().map(Expression::getText)
                             .collect(Collectors.toList()));
-            subPartitionOption
-                    .setPartitionsNum(partition.getSubpartitionTemplated() ? subOption.getTemplates().size()
-                            : partitionStmt.getPartitionElements().get(0).getSubPartitionElements().size());
-        } else if ("hash".equals(type.toLowerCase())) {
-            subPartitionOption.setType(DBTablePartitionType.HASH);
-            Expression expression = subOption.getSubPartitionTargets().get(0);
-            if (expression instanceof ColumnReference) {
-                subPartitionOption.setColumnNames(Collections.singletonList(removeIdentifiers(expression.getText())));
-            } else {
-                subPartitionOption.setExpression(expression.getText());
-            }
-            subPartitionOption
-                    .setPartitionsNum(partition.getSubpartitionTemplated() ? subOption.getTemplates().size()
-                            : partitionStmt.getPartitionElements().get(0).getSubPartitionElements().size());
-        } else {
-            partition.setWarning("Only support HASH/KEY subpartition currently");
         }
-        return partition;
     }
 
     private void parseHashPartitionStmt(HashPartition statement, DBTablePartition partition) {

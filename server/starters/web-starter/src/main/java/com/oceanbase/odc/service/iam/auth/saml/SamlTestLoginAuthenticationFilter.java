@@ -13,11 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.dbbrowser.model;
+package com.oceanbase.odc.service.iam.auth.saml;
 
-import lombok.Data;
+import javax.servlet.http.HttpServletRequest;
 
-@Data
-public class DBTablePartitionDefinition extends DBTableAbstractPartitionDefinition {
-    private DBTablePartitionDefinition parentPartitionDefinition;
+import com.oceanbase.odc.service.iam.auth.local.AbstractTestLoginAuthenticationFilter;
+import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
+
+public class SamlTestLoginAuthenticationFilter extends AbstractTestLoginAuthenticationFilter {
+    @Override
+    protected Boolean isTestRequest(HttpServletRequest request) {
+        return TestLoginManager.isSamlTestLoginRequest(request);
+    }
 }
