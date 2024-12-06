@@ -33,6 +33,7 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -70,13 +71,14 @@ import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleRepository;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
-import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.collaboration.project.model.Project.ProjectMember;
 import com.oceanbase.odc.service.collaboration.project.model.QueryProjectParams;
 import com.oceanbase.odc.service.collaboration.project.model.SetArchivedReq;
+import com.oceanbase.odc.service.collaboration.project.model.TicketReference;
 import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.ResourceRoleService;
@@ -85,6 +87,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.model.UserResourceRole;
+import com.oceanbase.odc.service.schedule.ScheduleService;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -145,13 +148,18 @@ public class ProjectService {
     private ConnectionService connectionService;
 
     @Autowired
-    private ScheduleRepository scheduleRepository;
+    @Lazy
+    private ScheduleService scheduleService;
 
     @Autowired
     private HorizontalDataPermissionValidator horizontalDataPermissionValidator;
 
     @Autowired
     private ProjectPermissionValidator projectPermissionValidator;
+
+    @Autowired
+    @Lazy
+    private FlowInstanceService flowInstanceService;
 
     @Value("${odc.integration.bastion.enabled:false}")
     private boolean bastionEnabled;
@@ -289,10 +297,9 @@ public class ProjectService {
         if (!req.getArchived()) {
             throw new BadRequestException("currently not allowed to recover projects");
         }
-        if (scheduleRepository.getEnabledScheduleCountByProjectId(id) > 0) {
-            throw new BadRequestException("Please disable all active tickets in the project first.");
-        }
+        checkUnfinishedTickets(id);
         previous.setArchived(true);
+        previous.setName(previous.getName() + "_archived_" + System.currentTimeMillis());
         ProjectEntity saved = repository.save(previous);
         List<ConnectionEntity> connectionEntities = connectionConfigRepository.findByProjectId(id).stream()
                 .peek(e -> e.setProjectId(null)).collect(Collectors.toList());
@@ -388,6 +395,41 @@ public class ProjectService {
         boolean deleted = deleteProjectMemberSkipPermissionCheck(projectId, userId);
         checkMemberRoles(detail(projectId).getMembers());
         return deleted;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("Internal usage")
+    public Boolean batchDelete(Set<Long> projectIds) {
+        projectPermissionValidator.checkProjectRole(projectIds, Collections.singletonList(ResourceRoleName.OWNER));
+        repository.findByIdIn(projectIds).stream().forEach(project -> {
+            if (project.getBuiltin() || !project.getArchived()) {
+                throw new UnsupportedException(ErrorCodes.IllegalOperation,
+                        new Object[] {"builtin or not-archived project, projectName=" + project.getName()},
+                        "Operation on builtin or not-archived project is not allowed");
+            }
+        });
+        repository.deleteAllById(projectIds);
+        // TODO: bind these resource delete logic in one place for better maintainability
+        resourceRoleService.deleteByResourceTypeAndIdIn(ResourceType.ODC_PROJECT, projectIds);
+        deleteMemberRelatedDatabasePermissions(projectIds);
+        deleteMemberRelatedTablePermissions(projectIds);
+        List<Long> relatedDatabaseIds = databaseRepository.findByProjectIdIn(projectIds).stream()
+                .map(DatabaseEntity::getId).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(relatedDatabaseIds)) {
+            resourceRoleService.deleteByResourceTypeAndIdIn(ResourceType.ODC_DATABASE, relatedDatabaseIds);
+        }
+        return true;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("Internal usage")
+    public TicketReference getProjectTicketReference(Long projectId) {
+        TicketReference reference = new TicketReference();
+        reference.setUnfinishedFlowInstances(
+                flowInstanceService.listUnfinishedFlowInstances(Pageable.unpaged(), projectId).getContent());
+        reference.setUnfinishedSchedules(
+                scheduleService.listUnfinishedSchedulesByProjectId(Pageable.unpaged(), projectId).getContent());
+        return reference;
     }
 
     @SkipAuthorize
@@ -506,6 +548,17 @@ public class ProjectService {
         projectPermissionValidator.checkProjectRole(project.getId(), roleNames);
     }
 
+    public void checkUnfinishedTickets(@NonNull Long projectId) {
+        if (scheduleService.getEnabledScheduleCountByProjectId(projectId) > 0) {
+            throw new BadRequestException(
+                    "There exists unfinished schedule tasks in the project, please disable them before archiving the project.");
+        }
+        if (flowInstanceService.listUnfinishedFlowInstances(Pageable.unpaged(), projectId).hasContent()) {
+            throw new BadRequestException(
+                    "There exists unfinished tickets in the project, please stop them before archiving the project.");
+        }
+    }
+
     private Project entityToModel(ProjectEntity entity, List<UserResourceRole> userResourceRoles) {
         Project project = entityToModelWithoutCurrentUser(entity, userResourceRoles);
         project.setCreator(currentInnerUser());
@@ -586,6 +639,24 @@ public class ProjectService {
 
     private void deleteMemberRelatedTablePermissions(@NonNull Long userId, @NonNull Long projectId) {
         List<Long> permissionIds = userTablePermissionRepository.findByUserIdAndProjectId(userId, projectId).stream()
+                .map(UserTablePermissionEntity::getId).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(permissionIds)) {
+            permissionRepository.deleteByIds(permissionIds);
+            userPermissionRepository.deleteByPermissionIds(permissionIds);
+        }
+    }
+
+    private void deleteMemberRelatedDatabasePermissions(@NonNull Set<Long> projectIds) {
+        List<Long> permissionIds = userDatabasePermissionRepository.findByProjectIdIn(projectIds).stream()
+                .map(UserDatabasePermissionEntity::getId).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(permissionIds)) {
+            permissionRepository.deleteByIds(permissionIds);
+            userPermissionRepository.deleteByPermissionIds(permissionIds);
+        }
+    }
+
+    private void deleteMemberRelatedTablePermissions(@NonNull Set<Long> projectIds) {
+        List<Long> permissionIds = userTablePermissionRepository.findByProjectIdIn(projectIds).stream()
                 .map(UserTablePermissionEntity::getId).collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(permissionIds)) {
             permissionRepository.deleteByIds(permissionIds);

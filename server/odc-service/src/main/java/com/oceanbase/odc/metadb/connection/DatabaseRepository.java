@@ -42,7 +42,7 @@ public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
 
     List<DatabaseEntity> findByProjectId(Long projectId);
 
-    List<DatabaseEntity> findByProjectIdIn(List<Long> projectIds);
+    List<DatabaseEntity> findByProjectIdIn(Collection<Long> projectIds);
 
     List<DatabaseEntity> findByProjectIdAndExisted(Long projectId, Boolean existed);
 

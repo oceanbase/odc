@@ -44,6 +44,7 @@ import org.quartz.Trigger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanMap;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -166,6 +167,7 @@ public class ScheduleService {
     private ScheduleResponseMapperFactory scheduleResponseMapperFactory;
 
     @Autowired
+    @Lazy
     private ProjectService projectService;
 
     @Autowired
@@ -792,6 +794,16 @@ public class ScheduleService {
                 scheduleResponseMapperFactory.generateHistoryScheduleList(returnValue.getContent());
         return returnValue.isEmpty() ? Page.empty()
                 : returnValue.map(o -> scheduleId2Overview.get(o.getId()));
+    }
+
+    public Page<ScheduleOverviewHist> listUnfinishedSchedulesByProjectId(@NonNull Pageable pageable,
+            @NonNull Long projectId) {
+        return list(pageable, QueryScheduleParams.builder().projectId(projectId)
+                .statuses(ScheduleStatus.listUnfinishedStatus()).build());
+    }
+
+    public int getEnabledScheduleCountByProjectId(@NonNull Long projectId) {
+        return scheduleRepository.getEnabledScheduleCountByProjectId(projectId);
     }
 
     public Page<ScheduleOverview> listScheduleOverview(@NotNull Pageable pageable,
