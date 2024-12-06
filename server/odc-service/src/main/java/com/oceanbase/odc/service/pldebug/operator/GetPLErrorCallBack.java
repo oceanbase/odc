@@ -43,11 +43,13 @@ import com.oceanbase.odc.service.pldebug.util.PLUtils;
 public class GetPLErrorCallBack implements ConnectionCallback<List<DBPLError>> {
     private final ConnectionConfig connectionConfig;
     private final DBPLError dbplError;
-    private PLDebugODPSpecifiedRoute plDebugODPSpecifiedRoute;
+    private final PLDebugODPSpecifiedRoute plDebugODPSpecifiedRoute;
 
-    public GetPLErrorCallBack(ConnectionConfig connectionConfig, DBPLError dbplError) {
+    public GetPLErrorCallBack(ConnectionConfig connectionConfig, DBPLError dbplError,
+            PLDebugODPSpecifiedRoute plDebugODPSpecifiedRoute) {
         this.connectionConfig = connectionConfig;
         this.dbplError = dbplError;
+        this.plDebugODPSpecifiedRoute = plDebugODPSpecifiedRoute;
     }
 
     @Override

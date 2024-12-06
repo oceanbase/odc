@@ -374,7 +374,8 @@ public class DebuggerSession extends AbstractDebugSession {
         dbplError.setType(debugType.name());
         ConnectionConfig connectionConfig =
                 (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
-        return getJdbcOperations().execute(new GetPLErrorCallBack(connectionConfig, dbplError));
+        return getJdbcOperations()
+                .execute(new GetPLErrorCallBack(connectionConfig, dbplError, this.plDebugODPSpecifiedRoute));
     }
 
     public List<PLDebugBreakpoint> setBreakpoints(List<PLDebugBreakpoint> breakpoints) {

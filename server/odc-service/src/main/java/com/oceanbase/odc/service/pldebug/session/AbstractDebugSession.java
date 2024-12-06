@@ -120,35 +120,39 @@ public abstract class AbstractDebugSession implements AutoCloseable {
     protected DebugDataSource acquireDataSource(ConnectionSession connectionSession, List<String> initSqls) {
         ConnectionConfig config = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
         String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
-        String host;
-        Integer port;
+        String host = config.getHost();
+        Integer port = config.getPort();
+        String url;
+
         if (StringUtils.isBlank(config.getClusterName())
-                && connectionSession.getConnectType() != ConnectType.OB_ORACLE) {
-            // direct connection to the observer
-            host = config.getHost();
-            port = config.getPort();
+                && connectionSession.getConnectType() != ConnectType.CLOUD_OB_ORACLE) {
+            // current connection is a direct observer
+            url = String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, host, port, schema);
+            return buildDataSource(config, initSqls, null, url);
         } else {
             // obtain one of the proxied observers by odp
             String directServerIp = getDirectServerIp(connectionSession);
-            host = directServerIp.split(":")[0];
-            port = Integer.parseInt(directServerIp.split(":")[1]);
+            String[] ipParts = directServerIp.split(":");
+            host = ipParts[0];
+            port = Integer.parseInt(ipParts[1]);
         }
+
         String obProxyVersion = DBPLOperators.getObProxyVersion(connectionSession);
         if (obProxyVersion != null && VersionUtils.isGreaterThanOrEqualsTo(obProxyVersion,
                 DBPLOperators.odpSpecifiedRoutineEnabledVersionNumber)) {
             // use the specified routing function of odp
             this.plDebugODPSpecifiedRoute = new PLDebugODPSpecifiedRoute(host, port);
-            DebugDataSource dataSource = new DebugDataSource(config, initSqls, this.plDebugODPSpecifiedRoute);
-            String url = String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, config.getHost(), config.getPort(),
-                    schema);
-            dataSource.setUrl(url);
-            dataSource.setUsername(buildUserName(config));
-            dataSource.setPassword(config.getPassword());
-            dataSource.setDriverClassName(OdcConstants.DEFAULT_DRIVER_CLASS_NAME);
-            return dataSource;
+            url = String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, config.getHost(), config.getPort(), schema);
+            return buildDataSource(config, initSqls, this.plDebugODPSpecifiedRoute, url);
         }
-        String url = String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, host, port, schema);
-        DebugDataSource dataSource = new DebugDataSource(config, initSqls, null);
+        // use direct connection observer
+        url = String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, host, port, schema);
+        return buildDataSource(config, initSqls, null, url);
+    }
+
+    private DebugDataSource buildDataSource(ConnectionConfig config, List<String> initSqls,
+            PLDebugODPSpecifiedRoute route, String url) {
+        DebugDataSource dataSource = new DebugDataSource(config, initSqls, route);
         dataSource.setUrl(url);
         dataSource.setUsername(buildUserName(config));
         dataSource.setPassword(config.getPassword());
