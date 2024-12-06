@@ -20,21 +20,25 @@ import static com.oceanbase.odc.service.task.constants.JobConstants.ODC_EXECUTOR
 
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.response.OdcResult;
 import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.service.task.supervisor.TaskSupervisor;
+import com.oceanbase.odc.service.task.supervisor.endpoint.ExecutorEndpoint;
+import com.oceanbase.odc.service.task.supervisor.endpoint.SupervisorEndpoint;
 import com.oceanbase.odc.service.task.util.HttpClientUtils;
-import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -48,74 +52,35 @@ public class ProcessJobCaller extends BaseJobCaller {
 
     private final ProcessConfig processConfig;
 
-    public ProcessJobCaller(ProcessConfig processConfig) {
+    private final TaskSupervisor taskSupervisor;
+
+    public ProcessJobCaller(ProcessConfig processConfig, String mainClassName) {
         this.processConfig = processConfig;
+        // only serve local task supervisor
+        this.taskSupervisor = new TaskSupervisor(new SupervisorEndpoint(SystemUtils.getLocalIpAddress(),
+                String.valueOf(DefaultExecutorIdentifier.DEFAULT_PORT)), mainClassName);
     }
 
     @Override
     public ExecutorIdentifier doStart(JobContext context) throws JobException {
-
-        String executorName = JobUtils.generateExecutorName(context.getJobIdentity());
-        ProcessBuilder pb = new ExecutorProcessBuilderFactory().getProcessBuilder(
-                processConfig, context.getJobIdentity().getId(), executorName);
-        Process process;
-        try {
-            process = pb.start();
-        } catch (Exception ex) {
-            throw new JobException("Start process failed.", ex);
-        }
-
-        long pid = SystemUtils.getProcessPid(process);
-        if (pid == -1) {
-            process.destroyForcibly();
-            throw new JobException("Get pid failed, job id={0} ", context.getJobIdentity().getId());
-        }
-
-        boolean isProcessRunning =
-                SystemUtils.isProcessRunning(pid, JobUtils.generateExecutorSelectorOnProcess(executorName));
-
-        if (!isProcessRunning) {
-            process.destroyForcibly();
-            throw new JobException("Start process failed, not process found, pid={0},executorName={1}.",
-                    pid, executorName);
-        }
-
-        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
-        String portString = Optional.ofNullable(jobConfiguration.getHostProperties().getPort())
-                .orElse(DefaultExecutorIdentifier.DEFAULT_PORT + "");
-        // set process id as namespace
-        return DefaultExecutorIdentifier.builder().host(SystemUtils.getLocalIpAddress())
-                .port(Integer.parseInt(portString))
-                .namespace(pid + "")
-                .executorName(executorName).build();
+        ExecutorEndpoint executorEndpoint = taskSupervisor.startTask(context, copyProcessConfig(processConfig));
+        return ExecutorIdentifierParser.parser(executorEndpoint.getIdentifier());
     }
-
-    @Override
-    protected void doStop(JobIdentity ji) throws JobException {}
 
     @Override
     protected void doFinish(JobIdentity ji, ExecutorIdentifier ei, ResourceID resourceID)
             throws JobException {
-        if (isExecutorExist(ei, resourceID)) {
-            long pid = Long.parseLong(ei.getNamespace());
-            log.info("Found process, try kill it, pid={}.", pid);
-            // first update destroy time, second destroy executor.
-            // if executor failed update will be rollback, ensure distributed transaction atomicity.
+        ExecutorEndpoint executorEndpoint = buildExecutorEndpoint(ei);
+        JobContext jobContext = createJobContext(ji);
+        if (isSameTaskSupervisor(executorEndpoint, taskSupervisor.getSupervisorEndpoint())) {
+            taskSupervisor.finishTask(executorEndpoint, jobContext);
             updateExecutorDestroyed(ji);
-            doDestroyInternal(ei);
             return;
         }
 
-        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
-        String portString = Optional.ofNullable(jobConfiguration.getHostProperties().getPort())
-                .orElse(DefaultExecutorIdentifier.DEFAULT_PORT + "");
-        if (SystemUtils.getLocalIpAddress().equals(ei.getHost()) && Objects.equals(portString, ei.getPort() + "")) {
-            updateExecutorDestroyed(ji);
-            return;
-        }
-        JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
-        JobEntity jobEntity = configuration.getTaskFrameworkService().find(ji.getId());
-        if (!isOdcHealthy(ei.getHost(), ei.getPort())) {
+        if (!isRemoteTaskSupervisorAlive(executorEndpoint)) {
+            JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
+            JobEntity jobEntity = configuration.getTaskFrameworkService().find(ji.getId());
             if (jobEntity.getStatus() == JobStatus.RUNNING) {
                 // Cannot connect to target identifier,we cannot kill the process,
                 // so we set job to FAILED and avoid two process running
@@ -134,18 +99,35 @@ public class ProcessJobCaller extends BaseJobCaller {
                 + " may not on this machine, jodId={0}, identifier={1}", ji.getId(), ei);
     }
 
+    /**
+     * copy process config and remove listen port if it's in pull mode
+     * 
+     * @param origin
+     * @return
+     */
+    protected ProcessConfig copyProcessConfig(ProcessConfig origin) {
+        ProcessConfig ret = new ProcessConfig();
+        ret.setJvmXmxMB(origin.getJvmXmxMB());
+        ret.setJvmXmsMB(origin.getJvmXmsMB());
+        Map<String, String> evn = new HashMap<>();
+        if (null != origin.getEnvironments()) {
+            evn.putAll(origin.getEnvironments());
+        }
+        if (StringUtils.equalsIgnoreCase(evn.get(JobEnvKeyConstants.REPORT_ENABLED), "false")) {
+            evn.remove(JobEnvKeyConstants.ODC_EXECUTOR_PORT);
+        }
+        ret.setEnvironments(evn);
+        return ret;
+    }
+
     public boolean canBeFinish(JobIdentity ji, ExecutorIdentifier ei, ResourceID resourceID) {
-        if (isExecutorExist(ei, resourceID)) {
-            log.info("Executor be found, jobId={}, identifier={}", ji.getId(), ei);
+        ExecutorEndpoint executorEndpoint = buildExecutorEndpoint(ei);
+        // same machine can operate the task
+        if (isSameTaskSupervisor(executorEndpoint, taskSupervisor.getSupervisorEndpoint())) {
             return true;
         }
-        String portString = Optional.ofNullable(
-                JobConfigurationHolder.getJobConfiguration().getHostProperties().getPort())
-                .orElse(DefaultExecutorIdentifier.DEFAULT_PORT + "");
-        if (SystemUtils.getLocalIpAddress().equals(ei.getHost()) && Objects.equals(portString, ei.getPort() + "")) {
-            return true;
-        }
-        if (!isOdcHealthy(ei.getHost(), ei.getPort())) {
+        // remote is down
+        if (!isRemoteTaskSupervisorAlive(executorEndpoint)) {
             log.info("Cannot connect to target odc server, executor can be destroyed,jobId={}, identifier={}",
                     ji.getId(), ei);
             return true;
@@ -153,32 +135,54 @@ public class ProcessJobCaller extends BaseJobCaller {
         return false;
     }
 
-    protected void doDestroyInternal(ExecutorIdentifier identifier) throws JobException {
-        long pid = Long.parseLong(identifier.getNamespace());
-        boolean result = SystemUtils.killProcessByPid(pid);
-        if (result) {
-            log.info("Destroy succeed by kill process, executorIdentifier={},  pid={}", identifier, pid);
-        } else {
-            throw new JobException(
-                    "Destroy executor failed by kill process, identifier={0}, pid{1}=", identifier, pid);
-        }
-    }
 
     @Override
     protected boolean isExecutorExist(ExecutorIdentifier identifier, ResourceID resourceID) {
-        long pid = Long.parseLong(identifier.getNamespace());
-        boolean result = SystemUtils.isProcessRunning(pid,
-                JobUtils.generateExecutorSelectorOnProcess(identifier.getExecutorName()));
-        if (result) {
-            log.info("Found executor by identifier, identifier={}", identifier);
-        } else {
-            log.warn("Not found executor by identifier, identifier={}", identifier);
-        }
-        return result;
+        return taskSupervisor.isTaskAlive(identifier);
     }
 
-    private boolean isOdcHealthy(String server, int servPort) {
-        String url = String.format("http://%s:%d/api/v1/heartbeat/isHealthy", server, servPort);
+    protected JobContext createJobContext(JobIdentity jobIdentity) {
+        return new JobContext() {
+            @Override
+            public JobIdentity getJobIdentity() {
+                return jobIdentity;
+            }
+
+            @Override
+            public String getJobClass() {
+                throw new IllegalStateException("not impl");
+            }
+
+            @Override
+            public Map<String, String> getJobProperties() {
+                throw new IllegalStateException("not impl");
+            }
+
+            @Override
+            public Map<String, String> getJobParameters() {
+                throw new IllegalStateException("not impl");
+            }
+        };
+    }
+
+    protected ExecutorEndpoint buildExecutorEndpoint(ExecutorIdentifier executorIdentifier) {
+        return new ExecutorEndpoint(
+                TaskSupervisor.COMMAND_PROTOCOL_NAME,
+                executorIdentifier.getHost(),
+                String.valueOf(DefaultExecutorIdentifier.DEFAULT_PORT),
+                String.valueOf(executorIdentifier.getPort()),
+                executorIdentifier.toString());
+    }
+
+    /**
+     * this method will be moved out
+     * 
+     * @param executorEndpoint
+     * @return
+     */
+    public boolean isRemoteTaskSupervisorAlive(ExecutorEndpoint executorEndpoint) {
+        String url = String.format("http://%s:%s/api/v1/heartbeat/isHealthy", executorEndpoint.getHost(),
+                executorEndpoint.getSupervisorPort());
         try {
             OdcResult<Boolean> result = HttpClientUtils.request("GET", url, new TypeReference<OdcResult<Boolean>>() {});
             return result.getData();
@@ -186,6 +190,17 @@ public class ProcessJobCaller extends BaseJobCaller {
             log.warn("Check odc server health failed, url={}", url);
             return false;
         }
+    }
+
+    /**
+     * if this is on same machine
+     *
+     * @param supervisorEndpoint
+     * @return
+     */
+    protected boolean isSameTaskSupervisor(ExecutorEndpoint executorEndpoint, SupervisorEndpoint supervisorEndpoint) {
+        return StringUtils.equalsIgnoreCase(executorEndpoint.getHost(), supervisorEndpoint.getHost())
+                && StringUtils.equalsIgnoreCase(executorEndpoint.getSupervisorPort(), supervisorEndpoint.getPort());
     }
 
 }
