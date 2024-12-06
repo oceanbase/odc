@@ -554,6 +554,7 @@ public class DatabaseService {
                 entity.setExisted(true);
                 entity.setObjectSyncStatus(DBObjectSyncStatus.SYNCED);
                 entity.setConnectType(connection.getType());
+                entity.setType(DatabaseType.PHYSICAL);
                 databaseRepository.save(entity);
             } else {
                 DeleteDatabasesReq deleteDatabasesReq = new DeleteDatabasesReq();
@@ -563,7 +564,7 @@ public class DatabaseService {
             }
             return true;
         } catch (Exception ex) {
-            log.warn("Sync database failed, dataSourceId={}, errorMessage={}", dataSourceId, ex.getLocalizedMessage());
+            log.warn("Sync database failed, dataSourceId={}, errorMessage={}", dataSourceId, ex);
             return false;
         } finally {
             lock.unlock();
