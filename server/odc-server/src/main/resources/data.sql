@@ -849,3 +849,6 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.features.logicaldatabase.enabled', 'true',
 'Whether to enable the logical database feature, default is true, indicating enabled.') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
+VALUES ('non_support_kill_min_version', '4.2.5', 'odc', 'default', 'master', 'min version of non support kill session') ON DUPLICATE KEY UPDATE `id`=`id`;

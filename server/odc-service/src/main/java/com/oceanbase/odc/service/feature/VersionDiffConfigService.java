@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.feature;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -45,8 +46,11 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize("inside connect session")
 public class VersionDiffConfigService {
     private static final String SUPPORT_PREFIX = "support";
+    private static final String NON_SUPPORT_KIll_MIN_VERSION = "non_support_kill_min_version";
     private static final String SUPPORT_PROCEDURE = "support_procedure";
     private static final String SUPPORT_FUNCTION = "support_function";
+    private static final String SUPPORT_KILL_SESSION = "support_kill_session";
+    private static final String SUPPORT_KILL_QUERY = "support_kill_query";
     private static final String SUPPORT_PL_DEBUG = "support_pl_debug";
     private static final String COLUMN_DATA_TYPE = "column_data_type";
     private static final String ARM_OB_PREFIX = "aarch64";
@@ -127,6 +131,20 @@ public class VersionDiffConfigService {
                         obSupport.setSupport(false);
                     }
                 }
+
+                // killSession that is greater than the specified version is currently not supported
+                if (SUPPORT_KILL_SESSION.equalsIgnoreCase(configKey)
+                        || SUPPORT_KILL_QUERY.equalsIgnoreCase(configKey)) {
+                    Optional<Configuration> nonSupport = systemConfigs.stream().filter(
+                            c -> c.getKey().equalsIgnoreCase(NON_SUPPORT_KIll_MIN_VERSION)).findFirst();
+                    if (nonSupport.isPresent()) {
+                        String unSupportMinVersion = nonSupport.get().getValue();
+                        if(VersionUtils.isGreaterThanOrEqualsTo(currentVersion, unSupportMinVersion)){
+                            obSupport.setSupport(false);
+                        }
+                    }
+                }
+
                 if (SUPPORT_PL_DEBUG.equalsIgnoreCase(configKey) && !isPLDebugSupport(connectionSession)) {
                     obSupport.setSupport(false);
                 }

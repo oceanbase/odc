@@ -80,6 +80,7 @@ public class DBSessionService {
             @NonNull List<SessionIdSvrIp> sessionIds,
             String closeType) {
         List<OdcDBSession> allSession = list(session);
+        // From ob4.2.5 and 4.3.x, sessionId is not guaranteed to be unique.
         Map<String, List<OdcDBSession>> sidMap = allSession.stream().collect(
                 Collectors.groupingBy(OdcDBSession::getSessionId));
         return sessionIds.stream().map(sid -> {
@@ -93,10 +94,14 @@ public class DBSessionService {
             List<OdcDBSession> odcDBSessions = sidMap.get(sid.getSessionId());
             if (CollectionUtils.isNotEmpty(odcDBSessions)) {
                 String svrIp = sid.getSvrIp();
+                // svrIp ！= null means ob version must getter than ob4.0
                 if (svrIp != null) {
+                    // make sure svrIp valid
                     Verify.verify(odcDBSessions.stream().anyMatch(s -> s.getSvrIp().equals(svrIp)), "Invalid SvpId");
                     sqlBuilder.append(" /*").append(sid.getSvrIp()).append("*/");
                 } else {
+                    // if svrIp ==null, means ob version muster lower than ob4.0, odcDBSession should unique here.
+                    Verify.verify(odcDBSessions.size() == 1, "Lack of svrIp");
                     sqlBuilder.append(" /*").append(odcDBSessions.get(0).getSvrIp()).append("*/");
                 }
             }
