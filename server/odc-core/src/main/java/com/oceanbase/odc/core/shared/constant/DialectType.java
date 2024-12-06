@@ -29,6 +29,7 @@ public enum DialectType {
     ODP_SHARDING_OB_MYSQL,
     DORIS,
     POSTGRESQL,
+    FILE_SYSTEM,
     UNKNOWN,
     ;
 
