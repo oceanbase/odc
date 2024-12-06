@@ -107,7 +107,8 @@ public class PLDebugTest {
         params.add(paramC);
         DBProcedure odcProcedure = DBProcedure.of(null, "PROC", params);
 
-        CallProcedureCallBack procedureCallBack = new CallProcedureCallBack(odcProcedure, 30, new OracleSqlBuilder());
+        CallProcedureCallBack procedureCallBack =
+                new CallProcedureCallBack(odcProcedure, 30, new OracleSqlBuilder(), null);
         List<DBPLParam> result = jdbcOperations.execute(procedureCallBack);
 
         int returnVal = Integer.parseInt(result.get(0).getDefaultValue());
@@ -130,7 +131,7 @@ public class PLDebugTest {
         DBFunction odcFunction = new DBFunction();
         odcFunction.setFunName("FUNC");
         odcFunction.setParams(params);
-        OBOracleCallFunctionCallBack callFunctionCallBack = new OBOracleCallFunctionCallBack(odcFunction, 30);
+        OBOracleCallFunctionCallBack callFunctionCallBack = new OBOracleCallFunctionCallBack(odcFunction, 30, null);
         DBFunction result = jdbcOperations.execute(callFunctionCallBack);
         int returnVal = Integer.parseInt(result.getReturnValue());
 
