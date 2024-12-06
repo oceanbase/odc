@@ -525,7 +525,8 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
                     if (dbSession.getSvrIp() != null) {
                         sqlBuilder.append(" /*").append(dbSession.getSvrIp()).append("*/");
                     }
-                    return new SessionIdKillSql(dbSession.getSessionId(), sqlBuilder.append(";").toString());
+                    return new SessionIdKillSql(dbSession.getSessionId(),
+                            sqlBuilder.append(";").toString());
                 }).collect(Collectors.toList());
     }
 
