@@ -75,8 +75,14 @@ management:
     web:
       exposure:
         include: "business,application"
+    enabled-by-default: false
+  metrics:
+    export:
+      prometheus:
+        enabled: ${odc.system.monitor.actuator.enabled:false}
+
   endpoint:
     prometheus:
-      enabled: true
+      enabled: ${odc.system.monitor.actuator.enabled:false}
   server:
-    port: 8089
+    port: ${odc.system.monitor.actuator.port:-1}
