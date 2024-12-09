@@ -15,4 +15,4 @@
  */
 
 INSERT INTO `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
-VALUES ('non_support_kill_min_version', '4.2.5', 'odc', 'default', 'master', 'min version of non support kill session') ON DUPLICATE KEY UPDATE `id`=`id`;
+VALUES ('odc.session.kill-query-or-session.max-supported-ob-version', '4.2.5', 'odc', 'default', 'master', 'min version of non support kill session') ON DUPLICATE KEY UPDATE `id`=`id`;
