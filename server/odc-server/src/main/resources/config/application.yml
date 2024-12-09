@@ -75,7 +75,7 @@ management:
     web:
       exposure:
         include: "business,application"
-    enabled-by-default: false
+    enabled-by-default: ${odc.system.monitor.actuator.enabled:false}
   metrics:
     export:
       prometheus:
