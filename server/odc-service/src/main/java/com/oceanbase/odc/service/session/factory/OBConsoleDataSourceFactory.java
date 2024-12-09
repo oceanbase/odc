@@ -78,6 +78,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     protected UserRole userRole;
     private String catalogName;
     private boolean autoReConnect;
+    private boolean keepAlive;
     private Map<String, String> parameters;
     protected final ConnectionConfig connectionConfig;
     private final Boolean autoCommit;
@@ -92,11 +93,11 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
 
     public OBConsoleDataSourceFactory(@NonNull ConnectionConfig connectionConfig,
             Boolean autoCommit, boolean initConnection) {
-        this(connectionConfig, autoCommit, initConnection, true);
+        this(connectionConfig, autoCommit, initConnection, true, true);
     }
 
     public OBConsoleDataSourceFactory(@NonNull ConnectionConfig connectionConfig,
-            Boolean autoCommit, boolean initConnection, boolean autoReConnect) {
+            Boolean autoCommit, boolean initConnection, boolean autoReConnect, boolean keepAlive) {
         this.autoCommit = autoCommit;
         this.connectionConfig = connectionConfig;
         this.initConnection = initConnection;
@@ -111,6 +112,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         this.catalogName = connectionConfig.getCatalogName();
         this.parameters = getJdbcParams(connectionConfig);
         this.autoReConnect = autoReConnect;
+        this.keepAlive = keepAlive;
         this.connectionExtensionPoint = ConnectionPluginUtil.getConnectionExtension(connectionConfig.getDialectType());
     }
 
@@ -202,7 +204,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     @Override
     public DataSource getDataSource() {
         String jdbcUrl = getJdbcUrl();
-        SingleConnectionDataSource dataSource = new SingleConnectionDataSource(autoReConnect);
+        SingleConnectionDataSource dataSource = new SingleConnectionDataSource(autoReConnect, keepAlive);
         dataSource.setEventPublisher(eventPublisher);
         dataSource.setUrl(jdbcUrl);
         dataSource.setUsername(username);

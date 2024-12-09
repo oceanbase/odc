@@ -21,14 +21,19 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 import com.oceanbase.odc.common.event.AbstractEvent;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.core.datasource.event.ConnectionResetEvent;
@@ -66,15 +71,24 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     protected volatile Connection connection;
     private final List<ConnectionInitializer> initializerList = new LinkedList<>();
     private volatile Lock lock;
+    private final boolean keepAlive;
+    private final long keepAliveIntervalMillis = 5 * 60 * 1000;
+    private final String keepAliveSql = "SELECT 1 FROM DUAL";
+    private final int maxFailedKeepAliveAttempts = 5;
+    private AtomicInteger failedKeepAliveAttempts = new AtomicInteger(0);
+    private ScheduledExecutorService keepAliveScheduler;
     @Setter
     private long timeOutMillis = 10 * 1000;
 
     public SingleConnectionDataSource() {
-        this(false);
+        this(false, false);
     }
 
-    public SingleConnectionDataSource(boolean autoReconnect) {
+    public SingleConnectionDataSource(boolean autoReconnect, boolean keepAlive) {
         this.autoReconnect = autoReconnect;
+        this.keepAlive = keepAlive;
+        initKeepAliveScheduler();
+
     }
 
     @Override
@@ -127,6 +141,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         this.lock = null;
         try (Connection conn = innerCreateConnection()) {
             onConnectionReset(conn);
+            initKeepAliveScheduler();
         }
     }
 
@@ -136,6 +151,9 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
 
     @Override
     public void close() {
+        if (Objects.nonNull(keepAliveScheduler)) {
+            shutdownKeepAliveScheduler();
+        }
         if (!Objects.isNull(this.connection)) {
             try {
                 this.connection.close();
@@ -233,6 +251,34 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
             publishEvent(new GetConnectionFailedEvent(Optional.ofNullable(connection)));
             throw new SQLException(e);
         }
+    }
+
+
+    private void initKeepAliveScheduler() {
+        if (!keepAlive) {
+            return;
+        }
+        failedKeepAliveAttempts.set(0);
+        keepAliveScheduler = Executors.newScheduledThreadPool(1);
+        keepAliveScheduler.scheduleAtFixedRate(() -> {
+            try (Connection conn = getConnection()) {
+                try (Statement statement = conn.createStatement()) {
+                    statement.execute(keepAliveSql);
+                    failedKeepAliveAttempts.set(0);
+                    log.debug("Keep connection alive success");
+                }
+            } catch (SQLException e) {
+                log.warn("Failed to keep connection alive", e);
+                if (failedKeepAliveAttempts.incrementAndGet() >= maxFailedKeepAliveAttempts) {
+                    shutdownKeepAliveScheduler();
+                }
+            }
+        }, this.keepAliveIntervalMillis, this.keepAliveIntervalMillis, TimeUnit.MILLISECONDS);
+    }
+
+
+    private void shutdownKeepAliveScheduler() {
+        ExecutorUtils.gracefulShutdown(keepAliveScheduler, "connection-keep-alive-executor", 5L);
     }
 
     /**
