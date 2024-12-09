@@ -852,5 +852,5 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 
 INSERT INTO `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
 VALUES ('odc.session.kill-query-or-session.max-supported-ob-version', '4.2.5', 'odc', 'default', 'master',
-        'max OBVersion kill session or kill query supported,only take effect when greater than 0')
+        'Max OBVersion kill session or kill query supported, only take effect when value greater than 0')
 ON DUPLICATE KEY UPDATE `id`=`id`;
