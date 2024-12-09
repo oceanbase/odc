@@ -46,7 +46,8 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize("inside connect session")
 public class VersionDiffConfigService {
     private static final String SUPPORT_PREFIX = "support";
-    private static final String MAX_SUPPORT_KILL_OB_VERSION = "odc.session.kill-query-or-session.max-supported-ob-version";
+    private static final String MAX_SUPPORT_KILL_OB_VERSION =
+            "odc.session.kill-query-or-session.max-supported-ob-version";
     private static final String SUPPORT_PROCEDURE = "support_procedure";
     private static final String SUPPORT_FUNCTION = "support_function";
     private static final String SUPPORT_KILL_SESSION = "support_kill_session";
@@ -138,8 +139,10 @@ public class VersionDiffConfigService {
                     Optional<Configuration> nonSupport = systemConfigs.stream().filter(
                             c -> c.getKey().equalsIgnoreCase(MAX_SUPPORT_KILL_OB_VERSION)).findFirst();
                     if (nonSupport.isPresent()) {
-                        String unSupportMinVersion = nonSupport.get().getValue();
-                        if (VersionUtils.isGreaterThanOrEqualsTo(currentVersion, unSupportMinVersion)) {
+                        String maxSupportVersion = nonSupport.get().getValue();
+                        // maxSupportVersion takes effect only greater than 0
+                        if (VersionUtils.isGreaterThan0(maxSupportVersion)
+                                && VersionUtils.isGreaterThanOrEqualsTo(currentVersion, maxSupportVersion)) {
                             obSupport.setSupport(false);
                         }
                     }
