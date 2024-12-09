@@ -13,36 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
+package com.oceanbase.odc.service.collaboration.project.model;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
+import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
+import com.oceanbase.odc.service.schedule.model.ScheduleOverviewHist;
+
+import lombok.Data;
+
 /**
- * @Author：tinker
- * @Date: 2022/11/16 15:36
- * @Descripition:
+ * @Author: Lebie
+ * @Date: 2024/11/28 17:24
+ * @Description: []
  */
-public enum ScheduleStatus {
+@Data
+public class TicketReference {
+    private List<FlowInstanceDetailResp> unfinishedFlowInstances;
 
-    CREATING,
-    APPROVING,
-
-    APPROVAL_EXPIRED,
-
-    REJECTED,
-    PAUSE,
-    ENABLED,
-    TERMINATION,
-    TERMINATED,
-
-    COMPLETED,
-    EXECUTION_FAILED,
-
-    DELETED;
-
-    public static List<ScheduleStatus> listUnfinishedStatus() {
-        return Collections.unmodifiableList(Arrays.asList(CREATING, APPROVING, PAUSE, ENABLED));
-    }
+    private List<ScheduleOverviewHist> unfinishedSchedules;
 }

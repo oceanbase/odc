@@ -23,7 +23,6 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -41,7 +40,7 @@ import com.oceanbase.odc.service.session.factory.StateHostGenerator;
 import lombok.SneakyThrows;
 
 @Component
-public class Oauth2StateManager {
+public class SSOStateManager {
 
     private final Cache<String, Map<String, String>> STATE_PARAM_CACHE = CacheBuilder.newBuilder().maximumSize(1000)
             .expireAfterWrite(10, TimeUnit.MINUTES)
@@ -86,7 +85,7 @@ public class Oauth2StateManager {
     };
 
     @SneakyThrows
-    public void addStateToCurrentRequestParam() {
+    public void addStateToCurrentRequestParam(String stateKey) {
         HttpServletRequest request = WebRequestUtils.getCurrentRequest();
         Verify.notNull(request, "request");
         // state cached in mem, in the case of multiple nodes，need to rely on the StatefulRoute capability
@@ -94,7 +93,7 @@ public class Oauth2StateManager {
         SuccessResponse<Map<String, String>> stateResponse = requestDispatcher
                 .forward(requestDispatcher.getHostUrl(stateHostGenerator.getHost(), properties.getRequestPort()),
                         HttpMethod.GET,
-                        "/api/v2/sso/state?state=" + request.getParameter(OAuth2ParameterNames.STATE),
+                        "/api/v2/sso/state?state=" + request.getParameter(stateKey),
                         requestDispatcher.getRequestHeaders(request), null)
                 .getContentByType(
                         new TypeReference<SuccessResponse<Map<String, String>>>() {});

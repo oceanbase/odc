@@ -13,36 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
+package com.oceanbase.odc.service.integration;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
-/**
- * @Author：tinker
- * @Date: 2022/11/16 15:36
- * @Descripition:
- */
-public enum ScheduleStatus {
+@Data
+@AllArgsConstructor
+public class SSOCredential {
 
-    CREATING,
-    APPROVING,
+    String certificate;
 
-    APPROVAL_EXPIRED,
-
-    REJECTED,
-    PAUSE,
-    ENABLED,
-    TERMINATION,
-    TERMINATED,
-
-    COMPLETED,
-    EXECUTION_FAILED,
-
-    DELETED;
-
-    public static List<ScheduleStatus> listUnfinishedStatus() {
-        return Collections.unmodifiableList(Arrays.asList(CREATING, APPROVING, PAUSE, ENABLED));
-    }
 }

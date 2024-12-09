@@ -74,6 +74,7 @@ import com.oceanbase.odc.service.integration.model.IntegrationType;
 import com.oceanbase.odc.service.integration.model.QueryIntegrationParams;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
 import com.oceanbase.odc.service.integration.model.SqlInterceptorProperties;
+import com.oceanbase.odc.service.integration.saml.SamlCredentialManager;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -91,7 +92,7 @@ public class IntegrationService {
     private AuthenticationFacade authenticationFacade;
 
     @Autowired
-    private IntegrationConfigurationValidatorDelegate integrationConfigurationValidatorDelegate;
+    private IntegrationConfigurationProcessorDelegate integrationConfigurationProcessorDelegate;
 
     @Autowired
     private HorizontalDataPermissionValidator permissionValidator;
@@ -117,6 +118,9 @@ public class IntegrationService {
     @Autowired
     private CacheManager defaultCacheManager;
 
+    @Autowired
+    private SamlCredentialManager samlCredentialManager;
+
     @PreAuthenticate(actions = "create", resourceType = "ODC_INTEGRATION", isForAll = true)
     public Boolean exists(@NotBlank String name, @NotNull IntegrationType type) {
         Long organizationId = authenticationFacade.currentOrganizationId();
@@ -132,7 +136,7 @@ public class IntegrationService {
                 .findByNameAndTypeAndOrganizationId(config.getName(), config.getType(), organizationId);
         PreConditions.validNoDuplicated(ResourceType.ODC_EXTERNAL_APPROVAL, "name", config.getName(),
                 existsEntity::isPresent);
-        integrationConfigurationValidatorDelegate.preProcessConfig(config);
+        integrationConfigurationProcessorDelegate.preProcessConfig(config, null);
         Encryption encryption = config.getEncryption();
         encryption.check();
         applicationContext.publishEvent(IntegrationEvent.createPreCreate(config));
@@ -214,12 +218,13 @@ public class IntegrationService {
     @PreAuthenticate(actions = "update", resourceType = "ODC_INTEGRATION", indexOfIdParam = 0)
     public IntegrationConfig update(@NotNull Long id, @NotNull @Valid IntegrationConfig config) {
         IntegrationEntity entity = nullSafeGet(id);
-        permissionValidator.checkCurrentOrganization(new IntegrationConfig(entity));
+        IntegrationConfig saveConfig = getDecodeConfig(entity);
+        permissionValidator.checkCurrentOrganization(saveConfig);
         if (Boolean.TRUE.equals(entity.getBuiltin())) {
             throw new UnsupportedException(ErrorCodes.IllegalOperation, new Object[] {"builtin integration"},
                     "Operation on builtin integration is not allowed");
         }
-        integrationConfigurationValidatorDelegate.preProcessConfig(config);
+        integrationConfigurationProcessorDelegate.preProcessConfig(config, saveConfig);
         Encryption encryption = config.getEncryption();
         applicationContext.publishEvent(
                 IntegrationEvent.createPreUpdate(config, new IntegrationConfig(entity), entity.getSalt()));
@@ -237,6 +242,13 @@ public class IntegrationService {
         updateCache(entity.getId());
         log.info("An external integration has been updated, integration: {}", entity);
         return new IntegrationConfig(entity);
+    }
+
+    public IntegrationConfig getDecodeConfig(IntegrationEntity entity) {
+        IntegrationConfig integrationConfig = new IntegrationConfig(entity);
+        String secret = decodeSecret(entity.getSecret(), entity.getSalt(), entity.getOrganizationId());
+        integrationConfig.getEncryption().setSecret(secret);
+        return integrationConfig;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -343,7 +355,6 @@ public class IntegrationService {
         return ssoIntegrationConfig;
     }
 
-
     private String encodeSecret(String plainSecret, String salt, Long organizationId) {
         if (plainSecret == null) {
             return null;
@@ -351,7 +362,6 @@ public class IntegrationService {
         TextEncryptor encryptor = encryptionFacade.organizationEncryptor(organizationId, salt);
         return encryptor.encrypt(plainSecret);
     }
-
 
     @SkipAuthorize("odc internal usage")
     public String decodeSecret(String encryptedSecret, String salt, Long organizationId) {
@@ -367,6 +377,10 @@ public class IntegrationService {
         if (Objects.nonNull(cache)) {
             cache.evictIfPresent(key);
         }
+    }
+
+    public SSOCredential generateSSOCredential() {
+        return new SSOCredential(samlCredentialManager.generateCertWithCachedPrivateKey());
     }
 
 }

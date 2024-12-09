@@ -40,6 +40,7 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.converter.ClaimConversionService;
 import org.springframework.security.oauth2.core.converter.ClaimTypeConverter;
+import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
@@ -56,7 +57,7 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.service.iam.auth.MappingRuleConvert;
 import com.oceanbase.odc.service.iam.auth.SsoUserDetailService;
 import com.oceanbase.odc.service.iam.model.User;
-import com.oceanbase.odc.service.integration.oauth2.Oauth2StateManager;
+import com.oceanbase.odc.service.integration.oauth2.SSOStateManager;
 import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
 
 /**
@@ -88,7 +89,7 @@ public class OidcUserServiceImpl implements OAuth2UserService<OidcUserRequest, O
     private TestLoginManager testLoginManager;
 
     @Autowired
-    private Oauth2StateManager oauth2StateManager;
+    private SSOStateManager SSOStateManager;
 
     public static Map<String, Converter<Object, ?>> createDefaultClaimTypeConverters() {
         Converter<Object, ?> booleanConverter = getConverter(TypeDescriptor.valueOf(Boolean.class));
@@ -135,7 +136,7 @@ public class OidcUserServiceImpl implements OAuth2UserService<OidcUserRequest, O
             }
         }
         Map<String, Object> userInfoMap = collectClaims(userRequest.getIdToken(), userInfo);
-        oauth2StateManager.addStateToCurrentRequestParam();
+        SSOStateManager.addStateToCurrentRequestParam(OAuth2ParameterNames.STATE);
 
         MappingResult mappingResult = mappingRuleConvert.resolveOAuthMappingResult(userRequest, userInfoMap);
         testLoginManager.abortIfOAuthTestLoginTest();

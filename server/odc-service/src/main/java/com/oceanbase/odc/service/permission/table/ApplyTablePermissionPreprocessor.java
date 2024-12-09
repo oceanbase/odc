@@ -116,7 +116,8 @@ public class ApplyTablePermissionPreprocessor implements Preprocessor {
             }
             table.setDatabaseId(database.getId());
             table.setDatabaseName(database.getName());
-            if (table.getType() == DBObjectType.TABLE) {
+            if (table.getType() == DBObjectType.TABLE || table.getType() == DBObjectType.VIEW
+                    || table.getType() == DBObjectType.EXTERNAL_TABLE) {
                 ConnectionConfig dataSource = id2DataSource.get(database.getDataSource().getId());
                 if (dataSource == null) {
                     throw new NotFoundException(ResourceType.ODC_CONNECTION, "id", database.getDataSource().getId());

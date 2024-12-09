@@ -29,7 +29,7 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationFailureHandler;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationSuccessHandler;
 import com.oceanbase.odc.service.integration.oauth2.AddableClientRegistrationManager;
-import com.oceanbase.odc.service.integration.oauth2.Oauth2StateManager;
+import com.oceanbase.odc.service.integration.oauth2.SSOStateManager;
 import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 
 @Component
@@ -54,7 +54,7 @@ public class OAuth2SecurityConfigureHelper {
     @Autowired
     private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
     @Autowired
-    private Oauth2StateManager oauth2StateManager;
+    private SSOStateManager SSOStateManager;
 
 
     public void configure(HttpSecurity http)
@@ -65,7 +65,7 @@ public class OAuth2SecurityConfigureHelper {
                 .authorizationEndpoint()
                 .authorizationRequestResolver(
                         new CustomOAuth2AuthorizationRequestResolver(this.addableClientRegistrationManager,
-                                statefulUuidStateIdGenerator, oauth2StateManager))
+                                statefulUuidStateIdGenerator, SSOStateManager))
                 .and()
                 // token 端点配置, 根据 code 获取 token
                 .tokenEndpoint()
@@ -78,7 +78,7 @@ public class OAuth2SecurityConfigureHelper {
                 .oidcUserService(oidcUserService);
 
         http.addFilterBefore(
-                new OAuth2AbstractTestLoginAuthenticationFilter(),
+                new OAuth2TestLoginAuthenticationFilter(),
                 OAuth2LoginAuthenticationFilter.class);
     }
 }
