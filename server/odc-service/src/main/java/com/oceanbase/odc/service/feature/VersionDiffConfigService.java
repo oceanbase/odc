@@ -45,9 +45,9 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @SkipAuthorize("inside connect session")
 public class VersionDiffConfigService {
-    private static final String SUPPORT_PREFIX              = "support";
+    private static final String SUPPORT_PREFIX = "support";
     private static final String MAX_SUPPORT_KILL_OB_VERSION = "odc.session.kill-query-or-session.max-supported-ob-version";
-    private static final String SUPPORT_PROCEDURE           = "support_procedure";
+    private static final String SUPPORT_PROCEDURE = "support_procedure";
     private static final String SUPPORT_FUNCTION = "support_function";
     private static final String SUPPORT_KILL_SESSION = "support_kill_session";
     private static final String SUPPORT_KILL_QUERY = "support_kill_query";
