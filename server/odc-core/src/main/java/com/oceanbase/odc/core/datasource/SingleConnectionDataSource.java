@@ -74,7 +74,8 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     private final boolean keepAlive;
     private long keepAliveIntervalMillis = 5 * 60 * 1000;
     @Getter
-    private final String keepAliveSql = "SELECT 1 FROM DUAL";
+    @Setter
+    private String keepAliveSql = "SELECT 1 FROM DUAL";
     @Getter
     private final int maxFailedKeepAliveAttempts = 5;
     private AtomicInteger failedKeepAliveAttempts = new AtomicInteger(0);
@@ -96,6 +97,15 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         this.autoReconnect = autoReconnect;
         this.keepAlive = keepAlive;
         this.keepAliveIntervalMillis = keepAliveIntervalMillis;
+        initKeepAliveScheduler();
+    }
+
+    public SingleConnectionDataSource(boolean autoReconnect, boolean keepAlive, long keepAliveIntervalMillis,
+            String keepAliveSql) {
+        this.autoReconnect = autoReconnect;
+        this.keepAlive = keepAlive;
+        this.keepAliveIntervalMillis = keepAliveIntervalMillis;
+        this.keepAliveSql = keepAliveSql;
         initKeepAliveScheduler();
     }
 
@@ -262,9 +272,16 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     }
 
 
-    private void initKeepAliveScheduler() {
+    private synchronized void initKeepAliveScheduler() {
         if (!keepAlive) {
             return;
+        }
+        try {
+            if (keepAliveScheduler != null && !keepAliveScheduler.awaitTermination(3, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("Keep alive scheduler is running");
+            }
+        } catch (InterruptedException e) {
+            throw new IllegalStateException(e);
         }
         failedKeepAliveAttempts.set(0);
         keepAliveScheduler = Executors.newScheduledThreadPool(1);
