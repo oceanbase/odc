@@ -68,6 +68,7 @@ public class OBOracleCallFunctionCallBack implements ConnectionCallback<DBFuncti
     @Override
     public DBFunction doInConnection(Connection con) throws SQLException, DataAccessException {
         SqlBuilder sqlBuilder = new OracleSqlBuilder();
+        sqlBuilder.append(PLUtils.getSpecifiedRoute(plDebugODPSpecifiedRoute));
         // oracle mode 支持输出参数，因此通过jdbc调用，则需要转换为call procedure
         List<DBPLParam> params = new ArrayList<>();
         if (function.getParams() != null) {
@@ -75,7 +76,6 @@ public class OBOracleCallFunctionCallBack implements ConnectionCallback<DBFuncti
         }
         if (hasOutParameter()) {
             String plName = "PL_WRAPPER_" + function.getFunName();
-            sqlBuilder.append(PLUtils.getSpecifiedRoute(plDebugODPSpecifiedRoute));
             sqlBuilder.append("CREATE OR REPLACE PROCEDURE ").append(plName).append("(");
             params.forEach(p -> {
                 String inOutMode = DBPLObjectUtil.getOracleParamString(p.getParamMode());
@@ -121,7 +121,7 @@ public class OBOracleCallFunctionCallBack implements ConnectionCallback<DBFuncti
                 return function;
             } finally {
                 try (Statement stmt = con.createStatement()) {
-                    stmt.execute("DROP PROCEDURE " + plName);
+                    stmt.execute(PLUtils.getSpecifiedRoute(plDebugODPSpecifiedRoute) + "DROP PROCEDURE " + plName);
                 }
             }
         }
