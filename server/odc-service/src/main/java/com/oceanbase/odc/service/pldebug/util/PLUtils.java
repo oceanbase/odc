@@ -47,7 +47,7 @@ public abstract class PLUtils {
             sqlBuilder.append(pLDebugODPSpecifiedRoute.getObserverHost());
             sqlBuilder.append(":");
             sqlBuilder.append(pLDebugODPSpecifiedRoute.getObserverPort());
-            sqlBuilder.append("*/");
+            sqlBuilder.append("' */");
         }
         return sqlBuilder.toString();
     }
