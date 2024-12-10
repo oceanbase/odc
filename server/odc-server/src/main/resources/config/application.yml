@@ -84,5 +84,3 @@ management:
   endpoint:
     prometheus:
       enabled: ${odc.system.monitor.actuator.enabled:false}
-  server:
-    port: ${odc.system.monitor.actuator.port:-1}
