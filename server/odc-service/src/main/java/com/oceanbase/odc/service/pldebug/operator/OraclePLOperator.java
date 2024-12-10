@@ -75,7 +75,7 @@ public class OraclePLOperator implements DBPLOperator {
         try {
             syncJdbcExecutor.execute("CALL DBMS_OUTPUT.NEW_LINE()");
         } catch (DataAccessException dataAccessException) {
-            log.warn("CALL DBMS_DEBUG.PING() occur error {}", dataAccessException.getMessage());
+            log.warn("CALL DBMS_OUTPUT.NEW_LINE() occur error {}", dataAccessException.getMessage());
             String result = dataAccessException.getMessage();
             if (result != null && result.contains("Unknown")) {
                 return false;
