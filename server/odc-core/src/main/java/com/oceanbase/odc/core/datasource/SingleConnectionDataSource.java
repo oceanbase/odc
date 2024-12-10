@@ -154,12 +154,12 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
      */
     public synchronized void resetConnection() throws SQLException {
         log.info("The connection will be reset soon");
-        close();
+        closeConnection();
         this.connection = null;
         this.lock = null;
+        this.failedKeepAliveAttempts.set(0);
         try (Connection conn = innerCreateConnection()) {
             onConnectionReset(conn);
-            initKeepAliveScheduler();
         }
     }
 
@@ -172,19 +172,24 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         if (Objects.nonNull(keepAliveScheduler)) {
             shutdownKeepAliveScheduler();
         }
-        if (!Objects.isNull(this.connection)) {
-            try {
-                this.connection.close();
-            } catch (Throwable throwable) {
-                log.error("Failed to close the connection", throwable);
-            }
-        }
+        closeConnection();
     }
 
     protected void prepareConnection(Connection con) throws SQLException {
         Boolean autoCommit = getAutoCommit();
         if (autoCommit != null && con.getAutoCommit() != autoCommit) {
             con.setAutoCommit(autoCommit);
+        }
+    }
+
+
+    private void closeConnection() {
+        if (!Objects.isNull(this.connection)) {
+            try {
+                this.connection.close();
+            } catch (Throwable throwable) {
+                log.error("Failed to close the connection", throwable);
+            }
         }
     }
 
@@ -272,16 +277,9 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     }
 
 
-    private synchronized void initKeepAliveScheduler() {
+    private void initKeepAliveScheduler() {
         if (!keepAlive) {
             return;
-        }
-        try {
-            if (keepAliveScheduler != null && !keepAliveScheduler.awaitTermination(3, TimeUnit.SECONDS)) {
-                throw new IllegalStateException("Keep alive scheduler is running");
-            }
-        } catch (InterruptedException e) {
-            throw new IllegalStateException(e);
         }
         failedKeepAliveAttempts.set(0);
         keepAliveScheduler = Executors.newScheduledThreadPool(1);
