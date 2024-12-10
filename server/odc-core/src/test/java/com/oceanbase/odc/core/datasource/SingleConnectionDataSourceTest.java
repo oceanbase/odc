@@ -15,6 +15,15 @@
  */
 package com.oceanbase.odc.core.datasource;
 
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -138,6 +147,47 @@ public class SingleConnectionDataSourceTest {
         slowSql.join();
         Assert.assertFalse(exceptions.isEmpty());
         Assert.assertTrue(exceptions.get(0) instanceof ConflictException);
+    }
+
+    @Test
+    public void testKeepAlive_Enabled() throws SQLException, InterruptedException {
+        Connection mockConnection = mock(Connection.class);
+        Statement mockStatement = mock(Statement.class);
+        when(mockConnection.createStatement()).thenReturn(mockStatement);
+        doNothing().when(mockConnection).close();
+        try (SingleConnectionDataSource spiedDataSource = spy(new SingleConnectionDataSource(false, true, 100) {
+            @Override
+            public Connection getConnection() {
+                return mockConnection;
+            }
+        })) {
+            doReturn(mockConnection).when(spiedDataSource).getConnection();
+
+            Thread.sleep(1000);
+
+            verify(mockStatement, atLeastOnce()).execute(spiedDataSource.getKeepAliveSql());
+        }
+    }
+
+    @Test
+    public void testKeepAlive_Disabled() throws SQLException, InterruptedException {
+        Connection mockConnection = mock(Connection.class);
+        Statement mockStatement = mock(Statement.class);
+        when(mockConnection.createStatement()).thenReturn(mockStatement);
+        doNothing().when(mockConnection).close();
+        try (SingleConnectionDataSource spiedDataSource = spy(new SingleConnectionDataSource(false, false, 100) {
+            @Override
+            public Connection getConnection() {
+                return mockConnection;
+            }
+        })) {
+            doReturn(mockConnection).when(spiedDataSource).getConnection();
+
+            Thread.sleep(1000);
+
+            verify(mockStatement, never()).execute(spiedDataSource.getKeepAliveSql());
+        }
+
     }
 
     private void checkConnection(SingleConnectionDataSource dataSource) throws SQLException {
