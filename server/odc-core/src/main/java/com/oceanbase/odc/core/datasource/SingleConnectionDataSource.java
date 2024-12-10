@@ -169,7 +169,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
 
     @Override
     public void close() {
-        if (Objects.nonNull(keepAliveScheduler)) {
+        if (Objects.nonNull(keepAliveScheduler) && !keepAliveScheduler.isTerminated()) {
             shutdownKeepAliveScheduler();
         }
         closeConnection();
