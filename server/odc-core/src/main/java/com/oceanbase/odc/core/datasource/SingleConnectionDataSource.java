@@ -72,8 +72,10 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     private final List<ConnectionInitializer> initializerList = new LinkedList<>();
     private volatile Lock lock;
     private final boolean keepAlive;
-    private final long keepAliveIntervalMillis = 5 * 60 * 1000;
+    private long keepAliveIntervalMillis = 5 * 60 * 1000;
+    @Getter
     private final String keepAliveSql = "SELECT 1 FROM DUAL";
+    @Getter
     private final int maxFailedKeepAliveAttempts = 5;
     private AtomicInteger failedKeepAliveAttempts = new AtomicInteger(0);
     private ScheduledExecutorService keepAliveScheduler;
@@ -88,7 +90,13 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         this.autoReconnect = autoReconnect;
         this.keepAlive = keepAlive;
         initKeepAliveScheduler();
+    }
 
+    public SingleConnectionDataSource(boolean autoReconnect, boolean keepAlive, long keepAliveIntervalMillis) {
+        this.autoReconnect = autoReconnect;
+        this.keepAlive = keepAlive;
+        this.keepAliveIntervalMillis = keepAliveIntervalMillis;
+        initKeepAliveScheduler();
     }
 
     @Override
@@ -260,7 +268,11 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         }
         failedKeepAliveAttempts.set(0);
         keepAliveScheduler = Executors.newScheduledThreadPool(1);
-        keepAliveScheduler.scheduleAtFixedRate(() -> {
+        keepAliveScheduler.scheduleWithFixedDelay(() -> {
+            if (failedKeepAliveAttempts.get() > maxFailedKeepAliveAttempts) {
+                shutdownKeepAliveScheduler();
+                return;
+            }
             try (Connection conn = getConnection()) {
                 try (Statement statement = conn.createStatement()) {
                     statement.execute(keepAliveSql);
@@ -269,7 +281,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
                 }
             } catch (SQLException e) {
                 log.warn("Failed to keep connection alive", e);
-                if (failedKeepAliveAttempts.incrementAndGet() >= maxFailedKeepAliveAttempts) {
+                if (failedKeepAliveAttempts.incrementAndGet() > maxFailedKeepAliveAttempts) {
                     shutdownKeepAliveScheduler();
                 }
             }
