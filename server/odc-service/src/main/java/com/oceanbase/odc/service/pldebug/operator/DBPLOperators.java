@@ -37,7 +37,7 @@ public class DBPLOperators {
         if (connectType == ConnectType.OB_ORACLE) {
             return new OraclePLOperator(connectionSession);
         } else if (connectType == ConnectType.CLOUD_OB_ORACLE) {
-            String obProxyVersion = ConnectionSessionUtil.getObProxyVersion(connectionSession, false);
+            String obProxyVersion = ConnectionSessionUtil.getObProxyVersion(connectionSession);
             if (ConnectionSessionUtil.isSupportObProxyRoute(obProxyVersion)) {
                 return new OraclePLOperator(connectionSession);
             } else {

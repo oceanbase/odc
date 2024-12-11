@@ -57,6 +57,11 @@ public class MySQLInformationExtension implements InformationExtensionPoint {
         return parseDBVersion(dbVersion);
     }
 
+    @Override
+    public String getODPVersion(Connection connection) {
+        throw new UnsupportedOperationException("Not supported");
+    }
+
     private String parseDBVersion(String version) {
         if (version.contains("-")) {
             return version.split("-")[0];

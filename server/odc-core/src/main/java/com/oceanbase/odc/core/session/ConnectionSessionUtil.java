@@ -624,20 +624,10 @@ public class ConnectionSessionUtil {
      * null.
      *
      * @param connectionSession
-     * @param isDirectedOBServer
      * @return
      */
-    public static String getObProxyVersion(@NonNull ConnectionSession connectionSession, Boolean isDirectedOBServer) {
-        if (Boolean.TRUE.equals(isDirectedOBServer)) {
-            return null;
-        }
-        try {
-            return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                    .queryForObject("select proxy_version()", String.class);
-        } catch (Exception e) {
-            log.warn("Failed to obtain the OBProxy version number: {}", e.getMessage());
-            return null;
-        }
+    public static String getObProxyVersion(@NonNull ConnectionSession connectionSession) {
+        return (String) connectionSession.getAttribute(ConnectionSessionConstants.ODP_VERSION);
     }
 
     public static boolean isSupportObProxyRoute(String obProxyVersion) {

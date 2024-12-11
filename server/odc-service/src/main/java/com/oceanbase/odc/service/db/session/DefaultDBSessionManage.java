@@ -238,7 +238,10 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
                 Collectors.toMap(s -> s.getSqlTuple().getSqlId(), SqlTupleSessionId::getSessionId));
 
         Boolean isDirectedOBServer = isObServerDirected(connectionSession);
-        String obProxyVersion = ConnectionSessionUtil.getObProxyVersion(connectionSession, isDirectedOBServer);
+        String obProxyVersion = null;
+        if (Boolean.FALSE.equals(isDirectedOBServer)) {
+            obProxyVersion = ConnectionSessionUtil.getObProxyVersion(connectionSession);
+        }
         String obVersion = ConnectionSessionUtil.getVersion(connectionSession);
         boolean isEnabledGlobalClientSession =
                 isGlobalClientSessionEnabled(connectionSession, obProxyVersion, obVersion);

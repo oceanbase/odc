@@ -29,6 +29,7 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.execute.GeneralSyncJdbcExecutor;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
@@ -91,6 +92,22 @@ public class ConnectionInfoUtil {
         }
         connectionSession.setAttribute(ConnectionSessionConstants.OB_VERSION, version);
         log.debug("Init DB version completed.");
+    }
+
+    public static void initOdpVersionIfExists(@NonNull ConnectionSession connectionSession) {
+        ConnectType connectType = connectionSession.getConnectType();
+        if (connectType == ConnectType.OB_MYSQL || connectType == ConnectType.OB_ORACLE
+                || connectType == ConnectType.CLOUD_OB_MYSQL || connectType == ConnectType.CLOUD_OB_ORACLE) {
+            InformationExtensionPoint point =
+                    ConnectionPluginUtil.getInformationExtension(connectionSession.getDialectType());
+            String odpVersion = getSyncJdbcExecutor(connectionSession).execute(point::getODPVersion);
+            if (odpVersion == null) {
+                log.debug("OB Proxy does not exist or failed to obtain OB Proxy version.");
+                return;
+            }
+            connectionSession.setAttribute(ConnectionSessionConstants.ODP_VERSION, odpVersion);
+            log.debug("Init OB Proxy version completed.");
+        }
     }
 
     public static void killQuery(@NonNull String connectionId,

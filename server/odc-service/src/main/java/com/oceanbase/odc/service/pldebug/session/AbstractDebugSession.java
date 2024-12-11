@@ -135,7 +135,7 @@ public abstract class AbstractDebugSession implements AutoCloseable {
             port = Integer.parseInt(ipParts[1]);
         }
 
-        String obProxyVersion = ConnectionSessionUtil.getObProxyVersion(connectionSession, false);
+        String obProxyVersion = ConnectionSessionUtil.getObProxyVersion(connectionSession);
         if (ConnectionSessionUtil.isSupportObProxyRoute(obProxyVersion)) {
             // use the specified routing function of odp
             this.plDebugODPSpecifiedRoute = new PLDebugODPSpecifiedRoute(host, port);

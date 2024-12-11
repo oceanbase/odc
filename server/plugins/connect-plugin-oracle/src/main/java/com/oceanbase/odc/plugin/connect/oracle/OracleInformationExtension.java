@@ -65,4 +65,9 @@ public class OracleInformationExtension implements InformationExtensionPoint {
             return "11.2.0.1.0";
         }
     }
+
+    @Override
+    public String getODPVersion(Connection connection) {
+        throw new UnsupportedOperationException("Not supported");
+    }
 }

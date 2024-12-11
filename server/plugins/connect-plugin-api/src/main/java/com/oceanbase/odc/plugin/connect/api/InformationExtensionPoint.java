@@ -28,4 +28,6 @@ public interface InformationExtensionPoint extends ExtensionPoint {
 
     String getDBVersion(Connection connection);
 
+    String getODPVersion(Connection connection);
+
 }

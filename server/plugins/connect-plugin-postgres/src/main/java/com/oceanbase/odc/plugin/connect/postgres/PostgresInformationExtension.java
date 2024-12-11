@@ -36,4 +36,9 @@ public class PostgresInformationExtension implements InformationExtensionPoint {
                     new Object[] {"Result set is empty"}, "Result set is empty");
         }
     }
+
+    @Override
+    public String getODPVersion(Connection connection) {
+        throw new UnsupportedOperationException("Not supported");
+    }
 }
