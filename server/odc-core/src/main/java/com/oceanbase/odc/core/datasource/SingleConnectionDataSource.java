@@ -169,9 +169,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
 
     @Override
     public void close() {
-        if (Objects.nonNull(keepAliveScheduler) && !keepAliveScheduler.isTerminated()) {
-            shutdownKeepAliveScheduler();
-        }
+        shutdownKeepAliveScheduler();
         closeConnection();
     }
 
@@ -278,14 +276,13 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
 
 
     private void initKeepAliveScheduler() {
-        if (!keepAlive) {
+        if (!keepAlive || Objects.nonNull(keepAliveScheduler)) {
             return;
         }
         failedKeepAliveAttempts.set(0);
         keepAliveScheduler = Executors.newScheduledThreadPool(1);
         keepAliveScheduler.scheduleWithFixedDelay(() -> {
             if (failedKeepAliveAttempts.get() > maxFailedKeepAliveAttempts) {
-                shutdownKeepAliveScheduler();
                 return;
             }
             try (Connection conn = getConnection()) {
@@ -294,18 +291,22 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
                     failedKeepAliveAttempts.set(0);
                     log.debug("Keep connection alive success");
                 }
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 log.warn("Failed to keep connection alive", e);
-                if (failedKeepAliveAttempts.incrementAndGet() > maxFailedKeepAliveAttempts) {
-                    shutdownKeepAliveScheduler();
-                }
+                failedKeepAliveAttempts.incrementAndGet();
             }
         }, this.keepAliveIntervalMillis, this.keepAliveIntervalMillis, TimeUnit.MILLISECONDS);
     }
 
 
     private void shutdownKeepAliveScheduler() {
-        ExecutorUtils.gracefulShutdown(keepAliveScheduler, "connection-keep-alive-executor", 5L);
+        try {
+            if (Objects.nonNull(keepAliveScheduler) && !keepAliveScheduler.isTerminated()) {
+                ExecutorUtils.gracefulShutdown(keepAliveScheduler, "connection-keep-alive-executor", 5L);
+            }
+        } catch (Exception ex) {
+            log.warn("Failed to shutdown keep alive scheduler", ex);
+        }
     }
 
     /**
