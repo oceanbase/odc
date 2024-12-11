@@ -97,7 +97,7 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
     }
 
     public DefaultConnectSessionFactory(@NonNull ConnectionConfig connectionConfig) {
-        this(connectionConfig, null, null, true, true);
+        this(connectionConfig, null, null, true, false);
     }
 
     @Override

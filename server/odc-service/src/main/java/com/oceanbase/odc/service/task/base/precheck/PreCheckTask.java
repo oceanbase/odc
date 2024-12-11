@@ -244,7 +244,7 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
         }
         ConnectionConfig config = this.parameters.getConnectionConfig();
         List<Rule> rules = this.parameters.getRules();
-        OBConsoleDataSourceFactory factory = new OBConsoleDataSourceFactory(config, true, false);
+        OBConsoleDataSourceFactory factory = new OBConsoleDataSourceFactory(config, true, false, false);
         factory.resetSchema(origin -> OBConsoleDataSourceFactory
                 .getSchema(this.parameters.getRiskLevelDescriber().getDatabaseName(), config.getDialectType()));
         SqlCheckContext checkContext = new SqlCheckContext((long) sqls.size());

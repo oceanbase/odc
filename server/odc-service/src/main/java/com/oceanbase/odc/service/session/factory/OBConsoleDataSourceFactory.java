@@ -88,12 +88,12 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     protected final ConnectionExtensionPoint connectionExtensionPoint;
 
     public OBConsoleDataSourceFactory(@NonNull ConnectionConfig connectionConfig, Boolean autoCommit) {
-        this(connectionConfig, autoCommit, true);
+        this(connectionConfig, autoCommit, true, true, false);
     }
 
     public OBConsoleDataSourceFactory(@NonNull ConnectionConfig connectionConfig,
-            Boolean autoCommit, boolean initConnection) {
-        this(connectionConfig, autoCommit, initConnection, true, true);
+            Boolean autoCommit, boolean initConnection, boolean keepAlive) {
+        this(connectionConfig, autoCommit, initConnection, true, keepAlive);
     }
 
     public OBConsoleDataSourceFactory(@NonNull ConnectionConfig connectionConfig,
