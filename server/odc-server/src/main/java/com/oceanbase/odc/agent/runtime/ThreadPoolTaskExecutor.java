@@ -83,9 +83,6 @@ class ThreadPoolTaskExecutor implements TaskExecutor {
             } catch (Exception e) {
                 log.error("Task start failed, jobIdentity={}.", jobIdentity.getId(), e);
                 taskContainer.onException(e);
-            } finally {
-                // only hold one task, task done, agent quit
-                ExitHelper.notifyFinished();
             }
         });
         taskRuntimeInfo.setFuture(future);

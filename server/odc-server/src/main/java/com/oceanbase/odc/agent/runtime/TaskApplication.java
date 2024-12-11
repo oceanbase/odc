@@ -62,7 +62,6 @@ public class TaskApplication {
             Task<?> task = TaskFactory.create(context.getJobClass());
             ThreadPoolTaskExecutor.getInstance().execute(task, context);
             ExitHelper.await();
-            ThreadPoolTaskExecutor.getInstance().cancel(context.getJobIdentity());
         } catch (Exception e) {
             log.warn("Execute task error:", e);
         } finally {
