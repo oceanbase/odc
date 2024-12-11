@@ -15,21 +15,16 @@
  */
 package com.oceanbase.odc.service.pldebug.operator;
 
-import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class DBPLOperators {
-
-    public static String odpSpecifiedRoutineEnabledVersionNumber = "3.1.11";
 
     public static DBPLOperator create(ConnectionSession connectionSession) {
         PreConditions.notNull(connectionSession, "connectionSession");
@@ -42,9 +37,8 @@ public class DBPLOperators {
         if (connectType == ConnectType.OB_ORACLE) {
             return new OraclePLOperator(connectionSession);
         } else if (connectType == ConnectType.CLOUD_OB_ORACLE) {
-            String obProxyVersion = getObProxyVersion(connectionSession);
-            if (obProxyVersion != null
-                    && VersionUtils.isGreaterThanOrEqualsTo(obProxyVersion, odpSpecifiedRoutineEnabledVersionNumber)) {
+            String obProxyVersion = ConnectionSessionUtil.getObProxyVersion(connectionSession, false);
+            if (ConnectionSessionUtil.isSupportObProxyRoute(obProxyVersion)) {
                 return new OraclePLOperator(connectionSession);
             } else {
                 throw new UnsupportedException(String.format(
@@ -55,20 +49,4 @@ public class DBPLOperators {
         }
     }
 
-    /**
-     * Get the OBProxy version number. If an exception occurs or the version does not support, return
-     * null.
-     *
-     * @param connectionSession
-     * @return
-     */
-    public static String getObProxyVersion(@NonNull ConnectionSession connectionSession) {
-        try {
-            return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                    .queryForObject("select proxy_version()", String.class);
-        } catch (Exception e) {
-            log.warn("Failed to obtain the OBProxy version number: {}", e.getMessage());
-            return null;
-        }
-    }
 }

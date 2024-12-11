@@ -29,7 +29,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
@@ -43,7 +42,6 @@ import com.oceanbase.odc.core.shared.model.OdcDBSession;
 import com.oceanbase.odc.core.sql.util.OdcDBSessionRowMapper;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.pldebug.model.PLDebugODPSpecifiedRoute;
-import com.oceanbase.odc.service.pldebug.operator.DBPLOperators;
 import com.oceanbase.odc.service.pldebug.util.CallProcedureCallBack;
 import com.oceanbase.odc.service.pldebug.util.OBOracleCallFunctionCallBack;
 import com.oceanbase.odc.service.pldebug.util.PLUtils;
@@ -137,9 +135,8 @@ public abstract class AbstractDebugSession implements AutoCloseable {
             port = Integer.parseInt(ipParts[1]);
         }
 
-        String obProxyVersion = DBPLOperators.getObProxyVersion(connectionSession);
-        if (obProxyVersion != null && VersionUtils.isGreaterThanOrEqualsTo(obProxyVersion,
-                DBPLOperators.odpSpecifiedRoutineEnabledVersionNumber)) {
+        String obProxyVersion = ConnectionSessionUtil.getObProxyVersion(connectionSession, false);
+        if (ConnectionSessionUtil.isSupportObProxyRoute(obProxyVersion)) {
             // use the specified routing function of odp
             this.plDebugODPSpecifiedRoute = new PLDebugODPSpecifiedRoute(host, port);
             url = String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, config.getHost(), config.getPort(), schema);

@@ -44,6 +44,7 @@ import com.oceanbase.jdbc.internal.protocol.Protocol;
 import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.common.util.HashUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -71,6 +72,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class ConnectionSessionUtil {
+
+    public static final String ODP_SPECIFIED_ROUTINE_ENABLED_VERSION_NUMBER = "3.1.11";
 
     public static void logSocketInfo(Connection connection, String scenario) {
         if (!(connection instanceof OceanBaseConnection)) {
@@ -561,7 +564,7 @@ public class ConnectionSessionUtil {
         String svrIp = session.getSvrIp();
         Verify.notEmpty(svrIp, "ObserverIp");
         String[] ipPort = svrIp.split(":");
-        Verify.verify(ipPort.length == 2, String.format("incorrect observer ip address %s", svrIp));
+        Verify.verify(ipPort.length == 2, java.lang.String.format("incorrect observer ip address %s", svrIp));
 
         CloneableDataSourceFactory factory = dataSourceFactory.deepCopy();
         factory.resetHost(origin -> ipPort[0]);
@@ -614,6 +617,35 @@ public class ConnectionSessionUtil {
 
     public static String getUniqueIdentifier(@NonNull ConnectionSession connectionSession) {
         return HashUtils.md5(connectionSession.getId()).replace("-", "");
+    }
+
+    /**
+     * Get the OBProxy version number. If an exception occurs or the version does not support, return
+     * null.
+     *
+     * @param connectionSession
+     * @param isDirectedOBServer
+     * @return
+     */
+    public static String getObProxyVersion(@NonNull ConnectionSession connectionSession, Boolean isDirectedOBServer) {
+        if (Boolean.TRUE.equals(isDirectedOBServer)) {
+            return null;
+        }
+        try {
+            return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
+                    .queryForObject("select proxy_version()", String.class);
+        } catch (Exception e) {
+            log.warn("Failed to obtain the OBProxy version number: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    public static boolean isSupportObProxyRoute(String obProxyVersion) {
+        if (obProxyVersion == null
+                || VersionUtils.isLessThan(obProxyVersion, ODP_SPECIFIED_ROUTINE_ENABLED_VERSION_NUMBER)) {
+            return false;
+        }
+        return true;
     }
 
     private static String getOrCreateFullPathAppendingSuffixToDataPath(@NonNull String suffix) throws IOException {
