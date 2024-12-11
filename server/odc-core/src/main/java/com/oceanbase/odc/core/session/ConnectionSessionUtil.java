@@ -564,7 +564,7 @@ public class ConnectionSessionUtil {
         String svrIp = session.getSvrIp();
         Verify.notEmpty(svrIp, "ObserverIp");
         String[] ipPort = svrIp.split(":");
-        Verify.verify(ipPort.length == 2, java.lang.String.format("incorrect observer ip address %s", svrIp));
+        Verify.verify(ipPort.length == 2, String.format("incorrect observer ip address %s", svrIp));
 
         CloneableDataSourceFactory factory = dataSourceFactory.deepCopy();
         factory.resetHost(origin -> ipPort[0]);
