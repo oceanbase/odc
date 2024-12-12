@@ -45,7 +45,7 @@ public class JobPropertiesUtils {
 
     public static CloudProvider getCloudProvider(@NonNull Map<String, String> jobProperties) {
         String cloudProvider = jobProperties.get("cloudProvider");
-        return StringUtils.isBlank(cloudProvider) ? CloudProvider.NONE : CloudProvider.valueOf(cloudProvider);
+        return StringUtils.isBlank(cloudProvider) ? CloudProvider.NONE : CloudProvider.fromValue(cloudProvider);
     }
 
     public static void setRegionName(@NonNull Map<String, String> jobProperties, @NonNull String regionName) {
