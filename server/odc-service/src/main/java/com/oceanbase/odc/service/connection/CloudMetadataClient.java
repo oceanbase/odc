@@ -22,6 +22,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 import com.oceanbase.odc.core.authority.exception.AccessDeniedException;
+import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.connection.model.OBDatabaseUser;
 import com.oceanbase.odc.service.connection.model.OBInstance;
 import com.oceanbase.odc.service.connection.model.OBInstanceType;
@@ -91,6 +92,8 @@ public interface CloudMetadataClient {
             Map<String, String> roles);
 
     void deleteDatabaseUsers(String instanceId, String tenantId, List<String> users);
+
+    Configuration getConfiguration(@NotBlank String projectId, @NotBlank String action);
 
     enum CloudPermissionAction {
         READONLY,
