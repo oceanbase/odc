@@ -364,7 +364,7 @@ public class DatabaseService {
                 || !connectionService.checkPermission(req.getDataSourceId(), Collections.singletonList("update"))) {
             throw new AccessDeniedException();
         }
-        DataSource dataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
+        DataSource dataSource = new OBConsoleDataSourceFactory(connection, true, false, false).getDataSource();
         try (Connection conn = dataSource.getConnection()) {
             createDatabase(req, conn, connection);
             DBDatabase dbDatabase = dbSchemaService.detail(connection.getDialectType(), conn, req.getName());
@@ -658,7 +658,8 @@ public class DatabaseService {
     }
 
     private OBConsoleDataSourceFactory getDataSourceFactory(ConnectionConfig connection) {
-        OBConsoleDataSourceFactory obConsoleDataSourceFactory = new OBConsoleDataSourceFactory(connection, true, false);
+        OBConsoleDataSourceFactory obConsoleDataSourceFactory =
+                new OBConsoleDataSourceFactory(connection, true, false, false);
         LocalEventPublisher localEventPublisher = new LocalEventPublisher();
         localEventPublisher.addEventListener(new GetConnectionFailedEventListener());
         obConsoleDataSourceFactory.setEventPublisher(localEventPublisher);
