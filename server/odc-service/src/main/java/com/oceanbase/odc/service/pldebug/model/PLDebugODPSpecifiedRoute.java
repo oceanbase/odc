@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.pldebug.model;
 
 import lombok.Getter;
+import lombok.NonNull;
 
 /**
  * @description:
@@ -30,7 +31,7 @@ public class PLDebugODPSpecifiedRoute {
 
     private final Integer observerPort;
 
-    public PLDebugODPSpecifiedRoute(String observerHost, Integer observerPort) {
+    public PLDebugODPSpecifiedRoute(@NonNull String observerHost, @NonNull Integer observerPort) {
         this.observerHost = observerHost;
         this.observerPort = observerPort;
     }

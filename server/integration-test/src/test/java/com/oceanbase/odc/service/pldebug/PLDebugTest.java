@@ -107,8 +107,7 @@ public class PLDebugTest {
         params.add(paramC);
         DBProcedure odcProcedure = DBProcedure.of(null, "PROC", params);
 
-        CallProcedureCallBack procedureCallBack =
-                new CallProcedureCallBack(odcProcedure, 30, new OracleSqlBuilder());
+        CallProcedureCallBack procedureCallBack = new CallProcedureCallBack(odcProcedure, 30, new OracleSqlBuilder());
         List<DBPLParam> result = jdbcOperations.execute(procedureCallBack);
 
         int returnVal = Integer.parseInt(result.get(0).getDefaultValue());
