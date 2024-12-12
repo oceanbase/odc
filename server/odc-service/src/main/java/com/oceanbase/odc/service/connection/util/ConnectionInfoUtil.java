@@ -95,7 +95,7 @@ public class ConnectionInfoUtil {
 
     public static void initOdpVersionIfExists(@NonNull ConnectionSession connectionSession) {
         DialectType dialectType = connectionSession.getDialectType();
-        if (dialectType!=null&&dialectType.isOceanbase()) {
+        if (dialectType != null && dialectType.isOceanbase()) {
             InformationExtensionPoint point =
                     ConnectionPluginUtil.getInformationExtension(connectionSession.getDialectType());
             String odpVersion = getSyncJdbcExecutor(connectionSession).execute(point::getODPVersion);

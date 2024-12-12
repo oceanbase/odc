@@ -54,7 +54,7 @@ public class CallProcedureCallBack implements ConnectionCallback<List<DBPLParam>
     private final PLDebugODPSpecifiedRoute plDebugODPSpecifiedRoute;
 
     public CallProcedureCallBack(@NonNull DBProcedure procedure,
-        int timeoutSeconds, @NonNull SqlBuilder sqlBuilder) {
+            int timeoutSeconds, @NonNull SqlBuilder sqlBuilder) {
         Validate.notBlank(procedure.getProName(), "Procedure name can not be blank");
         DBPLObjectUtil.checkParams(procedure);
         this.procedure = procedure;
@@ -64,7 +64,8 @@ public class CallProcedureCallBack implements ConnectionCallback<List<DBPLParam>
     }
 
     public CallProcedureCallBack(@NonNull DBProcedure procedure,
-            int timeoutSeconds, @NonNull SqlBuilder sqlBuilder, @NonNull PLDebugODPSpecifiedRoute plDebugODPSpecifiedRoute) {
+            int timeoutSeconds, @NonNull SqlBuilder sqlBuilder,
+            @NonNull PLDebugODPSpecifiedRoute plDebugODPSpecifiedRoute) {
         Validate.notBlank(procedure.getProName(), "Procedure name can not be blank");
         DBPLObjectUtil.checkParams(procedure);
         this.procedure = procedure;

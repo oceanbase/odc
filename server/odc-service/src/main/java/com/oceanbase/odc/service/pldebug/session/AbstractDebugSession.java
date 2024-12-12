@@ -83,12 +83,12 @@ public abstract class AbstractDebugSession implements AutoCloseable {
             // -1 means statement queryTimeout will be default 0,
             // By default there is no limit on the amount of time allowed for a running statement to complete
             CallProcedureCallBack callProcedureCallBack;
-            if(this.plDebugODPSpecifiedRoute==null){
+            if (this.plDebugODPSpecifiedRoute == null) {
                 callProcedureCallBack =
-                    new CallProcedureCallBack(procedure, -1, getSqlBuilder());
-            }else {
+                        new CallProcedureCallBack(procedure, -1, getSqlBuilder());
+            } else {
                 callProcedureCallBack =
-                    new CallProcedureCallBack(procedure, -1, getSqlBuilder(), this.plDebugODPSpecifiedRoute);
+                        new CallProcedureCallBack(procedure, -1, getSqlBuilder(), this.plDebugODPSpecifiedRoute);
             }
             return getJdbcOperations().execute(callProcedureCallBack);
         } catch (Exception e) {
@@ -101,12 +101,12 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         // -1 means statement queryTimeout will be default 0,
         // By default there is no limit on the amount of time allowed for a running statement to complete
         OBOracleCallFunctionCallBack obOracleCallFunctionCallBack;
-        if(this.plDebugODPSpecifiedRoute==null){
+        if (this.plDebugODPSpecifiedRoute == null) {
             obOracleCallFunctionCallBack =
-                new OBOracleCallFunctionCallBack(dbFunction, -1);
-        }else {
+                    new OBOracleCallFunctionCallBack(dbFunction, -1);
+        } else {
             obOracleCallFunctionCallBack =
-                new OBOracleCallFunctionCallBack(dbFunction, -1, this.plDebugODPSpecifiedRoute);
+                    new OBOracleCallFunctionCallBack(dbFunction, -1, this.plDebugODPSpecifiedRoute);
         }
         try {
             return getJdbcOperations().execute(obOracleCallFunctionCallBack);
@@ -158,14 +158,14 @@ public abstract class AbstractDebugSession implements AutoCloseable {
     }
 
     private DebugDataSource getODPSpecifiedRouteDataSource(ConnectionSession connectionSession, List<String> initSqls,
-        ConnectionConfig config, String schema) {
+            ConnectionConfig config, String schema) {
         String directServerIp = getDirectServerIp(connectionSession);
         String[] ipParts = directServerIp.split(":");
         String host = ipParts[0];
         Integer port = Integer.parseInt(ipParts[1]);
         this.plDebugODPSpecifiedRoute = new PLDebugODPSpecifiedRoute(host, port);
         String url = String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, config.getHost(), config.getPort(),
-            schema);
+                schema);
         return buildDataSource(config, initSqls, this.plDebugODPSpecifiedRoute, url);
     }
 
