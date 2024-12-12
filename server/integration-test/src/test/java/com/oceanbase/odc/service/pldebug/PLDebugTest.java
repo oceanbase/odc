@@ -131,7 +131,7 @@ public class PLDebugTest {
         DBFunction odcFunction = new DBFunction();
         odcFunction.setFunName("FUNC");
         odcFunction.setParams(params);
-        OBOracleCallFunctionCallBack callFunctionCallBack = new OBOracleCallFunctionCallBack(odcFunction, 30, null);
+        OBOracleCallFunctionCallBack callFunctionCallBack = new OBOracleCallFunctionCallBack(odcFunction, 30);
         DBFunction result = jdbcOperations.execute(callFunctionCallBack);
         int returnVal = Integer.parseInt(result.getReturnValue());
 

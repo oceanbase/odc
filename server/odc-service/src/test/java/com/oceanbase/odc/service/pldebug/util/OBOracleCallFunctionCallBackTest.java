@@ -104,7 +104,7 @@ public class OBOracleCallFunctionCallBackTest {
         function.setParams(list);
         function.setReturnType("int");
 
-        OBOracleCallFunctionCallBack callBack = new OBOracleCallFunctionCallBack(function, 30, null);
+        OBOracleCallFunctionCallBack callBack = new OBOracleCallFunctionCallBack(function, 30);
         JdbcTemplate jdbcTemplate =
                 new JdbcTemplate(TestDBConfigurations.getInstance().getTestOBOracleConfiguration().getDataSource());
         DBFunction actual = jdbcTemplate.execute(callBack);
@@ -145,7 +145,7 @@ public class OBOracleCallFunctionCallBackTest {
         list.add(param);
         function.setParams(list);
 
-        OBOracleCallFunctionCallBack callBack = new OBOracleCallFunctionCallBack(function, 30, null);
+        OBOracleCallFunctionCallBack callBack = new OBOracleCallFunctionCallBack(function, 30);
         JdbcTemplate jdbcTemplate =
                 new JdbcTemplate(TestDBConfigurations.getInstance().getTestOBOracleConfiguration().getDataSource());
         DBFunction actual = jdbcTemplate.execute(callBack);

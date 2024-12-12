@@ -56,8 +56,16 @@ public class OBOracleCallFunctionCallBack implements ConnectionCallback<DBFuncti
 
     private final PLDebugODPSpecifiedRoute plDebugODPSpecifiedRoute;
 
+    public OBOracleCallFunctionCallBack(@NonNull DBFunction function, int timeoutSeconds) {
+        Validate.notBlank(function.getFunName(), "Function name can not be blank");
+        DBPLObjectUtil.checkParams(function);
+        this.function = function;
+        this.timeoutSeconds = timeoutSeconds;
+        this.plDebugODPSpecifiedRoute = null;
+    }
+
     public OBOracleCallFunctionCallBack(@NonNull DBFunction function, int timeoutSeconds,
-            PLDebugODPSpecifiedRoute plDebugODPSpecifiedRoute) {
+            @NonNull PLDebugODPSpecifiedRoute plDebugODPSpecifiedRoute) {
         Validate.notBlank(function.getFunName(), "Function name can not be blank");
         DBPLObjectUtil.checkParams(function);
         this.function = function;

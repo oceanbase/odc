@@ -100,8 +100,14 @@ public abstract class AbstractDebugSession implements AutoCloseable {
     public DBFunction executeFunction(DBFunction dbFunction) {
         // -1 means statement queryTimeout will be default 0,
         // By default there is no limit on the amount of time allowed for a running statement to complete
-        OBOracleCallFunctionCallBack obOracleCallFunctionCallBack =
+        OBOracleCallFunctionCallBack obOracleCallFunctionCallBack;
+        if(this.plDebugODPSpecifiedRoute==null){
+            obOracleCallFunctionCallBack =
+                new OBOracleCallFunctionCallBack(dbFunction, -1);
+        }else {
+            obOracleCallFunctionCallBack =
                 new OBOracleCallFunctionCallBack(dbFunction, -1, this.plDebugODPSpecifiedRoute);
+        }
         try {
             return getJdbcOperations().execute(obOracleCallFunctionCallBack);
         } catch (Exception e) {
