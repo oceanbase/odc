@@ -73,7 +73,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ConnectionSessionUtil {
 
-    public static final String ODP_SPECIFIED_ROUTINE_ENABLED_VERSION_NUMBER = "3.1.11";
+    private static final String ODP_SPECIFIED_ROUTINE_ENABLED_VERSION_NUMBER = "3.1.11";
 
     public static void logSocketInfo(Connection connection, String scenario) {
         if (!(connection instanceof OceanBaseConnection)) {

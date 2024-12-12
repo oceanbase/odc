@@ -139,9 +139,10 @@ public abstract class AbstractDebugSession implements AutoCloseable {
                 url = String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, host, port, schema);
                 return buildDataSource(config, initSqls, null, url);
             } else {
-                String obProxyVersion = ConnectionSessionUtil.getObProxyVersion(connectionSession);
-                if (ConnectionSessionUtil.isSupportObProxyRoute(obProxyVersion)) {
-                    return getODPSpecifiedRouteDataSource(connectionSession, initSqls, config, schema);
+                DebugDataSource debugDataSource = tryGetODPSpecifiedRouteDataSource(connectionSession, initSqls, config,
+                        schema);
+                if (debugDataSource != null) {
+                    return debugDataSource;
                 }
                 // use direct connection observer
                 String directServerIp = getDirectServerIp(connectionSession);
@@ -152,21 +153,33 @@ public abstract class AbstractDebugSession implements AutoCloseable {
                 return buildDataSource(config, initSqls, null, url);
             }
         } else if (connectionSession.getConnectType() == ConnectType.CLOUD_OB_ORACLE) {
-            return getODPSpecifiedRouteDataSource(connectionSession, initSqls, config, schema);
+            DebugDataSource debugDataSource = tryGetODPSpecifiedRouteDataSource(connectionSession, initSqls, config,
+                    schema);
+            if (debugDataSource == null) {
+                throw new IllegalStateException(String.format(
+                        "ODP specified route is not supported for cloud ob oracle connection, ODP version: %s",
+                        ConnectionSessionUtil.getObProxyVersion(connectionSession)));
+            }
+            return debugDataSource;
         }
         throw new IllegalStateException("Unsupported connect type: " + connectionSession.getConnectType());
     }
 
-    private DebugDataSource getODPSpecifiedRouteDataSource(ConnectionSession connectionSession, List<String> initSqls,
+    private DebugDataSource tryGetODPSpecifiedRouteDataSource(ConnectionSession connectionSession,
+            List<String> initSqls,
             ConnectionConfig config, String schema) {
-        String directServerIp = getDirectServerIp(connectionSession);
-        String[] ipParts = directServerIp.split(":");
-        String host = ipParts[0];
-        Integer port = Integer.parseInt(ipParts[1]);
-        this.plDebugODPSpecifiedRoute = new PLDebugODPSpecifiedRoute(host, port);
-        String url = String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, config.getHost(), config.getPort(),
-                schema);
-        return buildDataSource(config, initSqls, this.plDebugODPSpecifiedRoute, url);
+        String obProxyVersion = ConnectionSessionUtil.getObProxyVersion(connectionSession);
+        if (ConnectionSessionUtil.isSupportObProxyRoute(obProxyVersion)) {
+            String directServerIp = getDirectServerIp(connectionSession);
+            String[] ipParts = directServerIp.split(":");
+            String host = ipParts[0];
+            Integer port = Integer.parseInt(ipParts[1]);
+            this.plDebugODPSpecifiedRoute = new PLDebugODPSpecifiedRoute(host, port);
+            String url = String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, config.getHost(), config.getPort(),
+                    schema);
+            return buildDataSource(config, initSqls, this.plDebugODPSpecifiedRoute, url);
+        }
+        return null;
     }
 
     private DebugDataSource buildDataSource(ConnectionConfig config, List<String> initSqls,
