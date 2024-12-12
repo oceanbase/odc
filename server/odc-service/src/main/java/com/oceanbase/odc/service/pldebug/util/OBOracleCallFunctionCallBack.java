@@ -107,9 +107,15 @@ public class OBOracleCallFunctionCallBack implements ConnectionCallback<DBFuncti
                 p.setDataType(function.getReturnType());
                 params.add(p);
                 proc.setParams(params);
-                CallProcedureCallBack callBack =
+                CallProcedureCallBack callBack;
+                if(this.plDebugODPSpecifiedRoute==null){
+                    callBack =
+                        new CallProcedureCallBack(proc, timeoutSeconds, new OracleSqlBuilder());
+                }else {
+                    callBack =
                         new CallProcedureCallBack(proc, timeoutSeconds, new OracleSqlBuilder(),
-                                this.plDebugODPSpecifiedRoute);
+                            this.plDebugODPSpecifiedRoute);
+                }
                 List<DBPLParam> callResult = callBack.doInConnection(con);
                 if (CollectionUtils.isEmpty(callResult)) {
                     return function;

@@ -82,8 +82,14 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         try {
             // -1 means statement queryTimeout will be default 0,
             // By default there is no limit on the amount of time allowed for a running statement to complete
-            CallProcedureCallBack callProcedureCallBack =
+            CallProcedureCallBack callProcedureCallBack;
+            if(this.plDebugODPSpecifiedRoute==null){
+                callProcedureCallBack =
+                    new CallProcedureCallBack(procedure, -1, getSqlBuilder());
+            }else {
+                callProcedureCallBack =
                     new CallProcedureCallBack(procedure, -1, getSqlBuilder(), this.plDebugODPSpecifiedRoute);
+            }
             return getJdbcOperations().execute(callProcedureCallBack);
         } catch (Exception e) {
             throw OBException.executePlFailed(String.format("Error occurs when calling procedure={%s}, message=%s",
