@@ -207,7 +207,7 @@ public class BeanConfiguration {
         }
 
         @Override
-        public com.oceanbase.odc.service.config.model.Configuration getConfiguration(String projectId, String action) {
+        public com.oceanbase.odc.service.config.model.Configuration getConfiguration(String projectId, String key) {
             throw new UnsupportedException("CloudMetadata not supported");
         }
     }

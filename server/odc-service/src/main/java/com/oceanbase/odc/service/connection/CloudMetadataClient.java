@@ -93,7 +93,7 @@ public interface CloudMetadataClient {
 
     void deleteDatabaseUsers(String instanceId, String tenantId, List<String> users);
 
-    Configuration getConfiguration(@NotBlank String projectId, @NotBlank String action);
+    Configuration getConfiguration(@NotBlank String projectId, @NotBlank String key);
 
     enum CloudPermissionAction {
         READONLY,
