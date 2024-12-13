@@ -39,7 +39,7 @@ public class ComposedAuthorizer extends BaseAuthorizer {
     }
 
     @Override
-    public List<Permission> listPermittedPermissions(Principal principal) {
+    protected List<Permission> listPermittedPermissions(Principal principal) {
         return Collections.singletonList(
                 new ComposedPermission(ListUtils.union(defaultAuthorizer.listPermittedPermissions(principal),
                         resourceRoleAuthorizer.listPermittedPermissions(principal))));

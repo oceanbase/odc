@@ -50,9 +50,10 @@ public abstract class BaseAuthorizer implements Authorizer {
         if (Objects.isNull(odcUser.getId())) {
             return false;
         }
+        List<Permission> permittedPermissions = listPermittedPermissions(principal);
         for (Permission permission : permissions) {
             boolean accessDenied = true;
-            for (Permission resourcePermission : listPermittedPermissions(principal)) {
+            for (Permission resourcePermission : permittedPermissions) {
                 if (resourcePermission.implies(permission)) {
                     accessDenied = false;
                     break;
@@ -78,5 +79,5 @@ public abstract class BaseAuthorizer implements Authorizer {
         return User.class.isAssignableFrom(principal);
     }
 
-    public abstract List<Permission> listPermittedPermissions(Principal principal);
+    protected abstract List<Permission> listPermittedPermissions(Principal principal);
 }

@@ -63,15 +63,15 @@ public class ProjectPermission extends ResourcePermission {
 
     @Override
     public boolean implies(Permission permission) {
-        if (!(permission instanceof ProjectPermission)) {
-            return false;
-        }
         ProjectPermission that = (ProjectPermission) permission;
         if (this == that) {
             return true;
         }
-        boolean returnVal = (this.resourceId.equals(that.resourceId) || "*".equals(this.resourceId));
-        returnVal &= (this.resourceType.equals(that.resourceType) || "*".equals(this.resourceType));
-        return returnVal && !Collections.disjoint(this.actions, that.getActions());
+        if (!(permission instanceof ProjectPermission)) {
+            return false;
+        }
+        return (this.resourceId.equals(that.resourceId) || "*".equals(this.resourceId))
+                && (this.resourceType.equals(that.resourceType) || "*".equals(this.resourceType))
+                && !Collections.disjoint(this.actions, that.getActions());
     }
 }

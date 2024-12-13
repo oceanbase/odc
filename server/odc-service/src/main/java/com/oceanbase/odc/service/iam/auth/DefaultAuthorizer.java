@@ -47,7 +47,7 @@ public class DefaultAuthorizer extends BaseAuthorizer {
     }
 
     @Override
-    public List<Permission> listPermittedPermissions(Principal principal) {
+    protected List<Permission> listPermittedPermissions(Principal principal) {
         User odcUser = (User) principal;
         if (Objects.isNull(odcUser.getId())) {
             return Collections.emptyList();
