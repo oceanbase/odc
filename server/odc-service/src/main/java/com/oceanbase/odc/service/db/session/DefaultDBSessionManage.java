@@ -238,7 +238,10 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
                 Collectors.toMap(s -> s.getSqlTuple().getSqlId(), SqlTupleSessionId::getSessionId));
 
         Boolean isDirectedOBServer = isObServerDirected(connectionSession);
-        String obProxyVersion = getObProxyVersion(connectionSession, isDirectedOBServer);
+        String obProxyVersion = null;
+        if (Boolean.FALSE.equals(isDirectedOBServer)) {
+            obProxyVersion = ConnectionSessionUtil.getObProxyVersion(connectionSession);
+        }
         String obVersion = ConnectionSessionUtil.getVersion(connectionSession);
         boolean isEnabledGlobalClientSession =
                 isGlobalClientSessionEnabled(connectionSession, obProxyVersion, obVersion);
@@ -286,27 +289,6 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         }
         // Return null if the version is not supported or an exception occurs
         return null;
-    }
-
-    /**
-     * Get the OBProxy version number. If an exception occurs or the version does not support, return
-     * null.
-     *
-     * @param connectionSession
-     * @param isDirectedOBServer
-     * @return
-     */
-    private String getObProxyVersion(ConnectionSession connectionSession, Boolean isDirectedOBServer) {
-        if (Boolean.TRUE.equals(isDirectedOBServer)) {
-            return null;
-        }
-        try {
-            return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                    .queryForObject("select proxy_version()", String.class);
-        } catch (Exception e) {
-            log.warn("Failed to obtain the OBProxy version number: {}", e.getMessage());
-            return null;
-        }
     }
 
     private boolean isGlobalClientSessionEnabled(ConnectionSession connectionSession, String obProxyVersion,

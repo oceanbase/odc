@@ -165,6 +165,7 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
         ConnectionInfoUtil.initSessionVersion(session);
         ConnectionSessionUtil.setConsoleSessionResetFlag(session, false);
         ConnectionInfoUtil.initConsoleConnectionId(session);
+        ConnectionInfoUtil.initOdpVersionIfExists(session);
         ConnectionSessionUtil.setConnectionConfig(session, connectionConfig);
         ConnectionSessionUtil.setColumnAccessor(session, new DatasourceColumnAccessor(session));
         if (StringUtils.isNotBlank(connectionConfig.getTenantName())) {
