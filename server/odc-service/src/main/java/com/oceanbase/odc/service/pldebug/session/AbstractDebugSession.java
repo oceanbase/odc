@@ -20,6 +20,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -33,6 +34,7 @@ import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
@@ -40,6 +42,7 @@ import com.oceanbase.odc.core.shared.exception.OBException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.OdcDBSession;
 import com.oceanbase.odc.core.sql.util.OdcDBSessionRowMapper;
+import com.oceanbase.odc.plugin.connect.api.HostAddress;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.pldebug.model.PLDebugODPSpecifiedRoute;
 import com.oceanbase.odc.service.pldebug.util.CallProcedureCallBack;
@@ -127,59 +130,51 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         this.connection = newDataSource.getConnection();
     }
 
-    protected DebugDataSource acquireDataSource(ConnectionSession connectionSession, List<String> initSqls) {
+    protected DebugDataSource acquireDataSource(@NonNull ConnectionSession connectionSession, @NonNull List<String> initSqls) {
         ConnectionConfig config = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
         String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
-        String url;
-        if (connectionSession.getConnectType() == ConnectType.OB_ORACLE) {
-            if (StringUtils.isBlank(config.getClusterName())) {
-                String host = config.getHost();
-                Integer port = config.getPort();
-                // current connection is a direct observer
-                url = String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, host, port, schema);
-                return buildDataSource(config, initSqls, null, url);
-            } else {
-                DebugDataSource debugDataSource = tryGetODPSpecifiedRouteDataSource(connectionSession, initSqls, config,
-                        schema);
-                if (debugDataSource != null) {
-                    return debugDataSource;
-                }
-                // use direct connection observer
-                String directServerIp = getDirectServerIp(connectionSession);
-                String[] ipParts = directServerIp.split(":");
-                String host = ipParts[0];
-                Integer port = Integer.parseInt(ipParts[1]);
-                url = String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, host, port, schema);
-                return buildDataSource(config, initSqls, null, url);
-            }
-        } else if (connectionSession.getConnectType() == ConnectType.CLOUD_OB_ORACLE) {
-            DebugDataSource debugDataSource = tryGetODPSpecifiedRouteDataSource(connectionSession, initSqls, config,
+        Verify.equals(DialectType.OB_ORACLE, config.getDialectType(), "Only support OB_ORACLE");
+        if (connectionSession.getConnectType() == ConnectType.OB_ORACLE
+            && StringUtils.isBlank(config.getClusterName())) {
+            // current connection is a direct observer
+            return buildDataSource(config, initSqls, null,
+                buildJdbcUrl(new HostAddress(config.getHost(), config.getPort()), schema));
+        } else {
+            Optional<DebugDataSource> odpSpecifiedRouteDataSource =
+                tryGetODPSpecifiedRouteDataSource(connectionSession, initSqls, config,
                     schema);
-            if (debugDataSource == null) {
-                throw new IllegalStateException(String.format(
-                        "ODP specified route is not supported for cloud ob oracle connection, ODP version: %s",
-                        ConnectionSessionUtil.getObProxyVersion(connectionSession)));
+            if (odpSpecifiedRouteDataSource.isPresent()) {
+                return odpSpecifiedRouteDataSource.get();
             }
-            return debugDataSource;
+            // cloud ob oracle not support direct connection to observer
+            if (connectionSession.getConnectType() == ConnectType.CLOUD_OB_ORACLE) {
+                throw new IllegalStateException(String.format(
+                    "ODP specified route is not supported for cloud ob oracle connection, ODP version: %s",
+                    ConnectionSessionUtil.getObProxyVersion(connectionSession)));
+            }
+            // use direct connection observer
+            return buildDataSource(config, initSqls, null,
+                buildJdbcUrl(getOBServerHostAddress(connectionSession), schema));
         }
-        throw new IllegalStateException("Unsupported connect type: " + connectionSession.getConnectType());
     }
 
-    private DebugDataSource tryGetODPSpecifiedRouteDataSource(ConnectionSession connectionSession,
+    private Optional<DebugDataSource> tryGetODPSpecifiedRouteDataSource(ConnectionSession connectionSession,
             List<String> initSqls,
             ConnectionConfig config, String schema) {
         String obProxyVersion = ConnectionSessionUtil.getObProxyVersion(connectionSession);
         if (ConnectionSessionUtil.isSupportObProxyRoute(obProxyVersion)) {
-            String directServerIp = getDirectServerIp(connectionSession);
-            String[] ipParts = directServerIp.split(":");
-            String host = ipParts[0];
-            Integer port = Integer.parseInt(ipParts[1]);
-            this.plDebugODPSpecifiedRoute = new PLDebugODPSpecifiedRoute(host, port);
-            String url = String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, config.getHost(), config.getPort(),
-                    schema);
-            return buildDataSource(config, initSqls, this.plDebugODPSpecifiedRoute, url);
+            HostAddress directServerIp = getOBServerHostAddress(connectionSession);
+            this.plDebugODPSpecifiedRoute =
+                new PLDebugODPSpecifiedRoute(directServerIp.getHost(), directServerIp.getPort());
+            return Optional.of(buildDataSource(config, initSqls, this.plDebugODPSpecifiedRoute,
+                buildJdbcUrl(new HostAddress(config.getHost(), config.getPort()), schema)));
         }
-        return null;
+        return Optional.empty();
+    }
+
+    private String buildJdbcUrl(HostAddress hostAddress, String schema) {
+        return String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, hostAddress.getHost(), hostAddress.getPort(),
+            schema);
     }
 
     private DebugDataSource buildDataSource(ConnectionConfig config, List<String> initSqls,
@@ -192,7 +187,7 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         return dataSource;
     }
 
-    private String getDirectServerIp(ConnectionSession connectionSession) {
+    private HostAddress getOBServerHostAddress(ConnectionSession connectionSession) {
         List<OdcDBSession> sessions =
                 connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY)
                         .query("show full processlist", new OdcDBSessionRowMapper());
@@ -209,7 +204,8 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         if (StringUtils.isEmpty(directServerIp)) {
             throw new UnexpectedException("Empty direct server ip and port from 'show full processlist'");
         }
-        return directServerIp;
+        String[] ipParts = directServerIp.split(":");
+        return new HostAddress(ipParts[0], Integer.parseInt(ipParts[1]));
     }
 
     private String buildUserName(ConnectionConfig connectionConfig) {
