@@ -36,5 +36,4 @@ public class PostgresInformationExtension implements InformationExtensionPoint {
                     new Object[] {"Result set is empty"}, "Result set is empty");
         }
     }
-
 }

@@ -65,5 +65,4 @@ public class OracleInformationExtension implements InformationExtensionPoint {
             return "11.2.0.1.0";
         }
     }
-
 }
