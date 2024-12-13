@@ -37,8 +37,4 @@ public class PostgresInformationExtension implements InformationExtensionPoint {
         }
     }
 
-    @Override
-    public String getODPVersion(Connection connection) {
-        throw new UnsupportedOperationException("Not supported");
-    }
 }

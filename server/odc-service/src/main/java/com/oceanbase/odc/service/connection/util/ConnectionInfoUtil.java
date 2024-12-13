@@ -96,9 +96,7 @@ public class ConnectionInfoUtil {
     public static void initOdpVersionIfExists(@NonNull ConnectionSession connectionSession) {
         DialectType dialectType = connectionSession.getDialectType();
         if (dialectType != null && dialectType.isOceanbase()) {
-            InformationExtensionPoint point =
-                    ConnectionPluginUtil.getInformationExtension(connectionSession.getDialectType());
-            String odpVersion = getSyncJdbcExecutor(connectionSession).execute(point::getODPVersion);
+            String odpVersion = getSyncJdbcExecutor(connectionSession).execute(OBUtils::getODPVersion);
             if (odpVersion == null) {
                 log.debug("OB Proxy does not exist or failed to obtain OB Proxy version.");
                 return;

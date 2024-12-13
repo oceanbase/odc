@@ -38,9 +38,4 @@ public class OBMySQLInformationExtension implements InformationExtensionPoint {
         return OBUtils.getObVersion(connection);
     }
 
-    @Override
-    public String getODPVersion(Connection connection) {
-        return OBUtils.getODPVersion(connection);
-    }
-
 }

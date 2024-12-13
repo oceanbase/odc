@@ -130,31 +130,32 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         this.connection = newDataSource.getConnection();
     }
 
-    protected DebugDataSource acquireDataSource(@NonNull ConnectionSession connectionSession, @NonNull List<String> initSqls) {
+    protected DebugDataSource acquireDataSource(@NonNull ConnectionSession connectionSession,
+            @NonNull List<String> initSqls) {
         ConnectionConfig config = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
         String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
         Verify.equals(DialectType.OB_ORACLE, config.getDialectType(), "Only support OB_ORACLE");
         if (connectionSession.getConnectType() == ConnectType.OB_ORACLE
-            && StringUtils.isBlank(config.getClusterName())) {
+                && StringUtils.isBlank(config.getClusterName())) {
             // current connection is a direct observer
             return buildDataSource(config, initSqls, null,
-                buildJdbcUrl(new HostAddress(config.getHost(), config.getPort()), schema));
+                    buildJdbcUrl(new HostAddress(config.getHost(), config.getPort()), schema));
         } else {
             Optional<DebugDataSource> odpSpecifiedRouteDataSource =
-                tryGetODPSpecifiedRouteDataSource(connectionSession, initSqls, config,
-                    schema);
+                    tryGetODPSpecifiedRouteDataSource(connectionSession, initSqls, config,
+                            schema);
             if (odpSpecifiedRouteDataSource.isPresent()) {
                 return odpSpecifiedRouteDataSource.get();
             }
             // cloud ob oracle not support direct connection to observer
             if (connectionSession.getConnectType() == ConnectType.CLOUD_OB_ORACLE) {
                 throw new IllegalStateException(String.format(
-                    "ODP specified route is not supported for cloud ob oracle connection, ODP version: %s",
-                    ConnectionSessionUtil.getObProxyVersion(connectionSession)));
+                        "ODP specified route is not supported for cloud ob oracle connection, ODP version: %s",
+                        ConnectionSessionUtil.getObProxyVersion(connectionSession)));
             }
             // use direct connection observer
             return buildDataSource(config, initSqls, null,
-                buildJdbcUrl(getOBServerHostAddress(connectionSession), schema));
+                    buildJdbcUrl(getOBServerHostAddress(connectionSession), schema));
         }
     }
 
@@ -165,16 +166,16 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         if (ConnectionSessionUtil.isSupportObProxyRoute(obProxyVersion)) {
             HostAddress directServerIp = getOBServerHostAddress(connectionSession);
             this.plDebugODPSpecifiedRoute =
-                new PLDebugODPSpecifiedRoute(directServerIp.getHost(), directServerIp.getPort());
+                    new PLDebugODPSpecifiedRoute(directServerIp.getHost(), directServerIp.getPort());
             return Optional.of(buildDataSource(config, initSqls, this.plDebugODPSpecifiedRoute,
-                buildJdbcUrl(new HostAddress(config.getHost(), config.getPort()), schema)));
+                    buildJdbcUrl(new HostAddress(config.getHost(), config.getPort()), schema)));
         }
         return Optional.empty();
     }
 
     private String buildJdbcUrl(HostAddress hostAddress, String schema) {
         return String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, hostAddress.getHost(), hostAddress.getPort(),
-            schema);
+                schema);
     }
 
     private DebugDataSource buildDataSource(ConnectionConfig config, List<String> initSqls,
