@@ -143,7 +143,7 @@ public abstract class AbstractDebugSession implements AutoCloseable {
             Optional<DebugDataSource> odpSpecifiedRouteDataSource =
                     tryGetODPSpecifiedRouteDataSource(connectionSession, initSqls, config,
                             schema);
-            if (!odpSpecifiedRouteDataSource.isPresent()) {
+            if (odpSpecifiedRouteDataSource.isPresent()) {
                 return odpSpecifiedRouteDataSource.get();
             }
             // cloud ob oracle not support direct connection to observer
