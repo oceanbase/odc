@@ -185,8 +185,8 @@ jobs:
         if: ${{ github.event.inputs.pull_flink_image == 'true'}}
         run: |
           echo "Start pull flink image"
-          docker pull apache/airflow:2.9.3-python3.9
-          docker save -o airflow_base.tar.gz apache/airflow:2.9.3-python3.9
+          docker pull apache/airflow:2.10.3-python3.9
+          docker save -o airflow_base.tar.gz apache/airflow:2.10.3-python3.9
           echo "Pull flink image success"
       - name: Upload flink
         if: ${{ github.event.inputs.pull_flink_image == 'true'}}
