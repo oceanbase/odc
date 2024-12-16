@@ -32,6 +32,7 @@ import com.oceanbase.odc.service.dlm.DLMTableStructureSynchronizer;
 import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnitParameters;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.schedule.job.DLMJobReq;
 import com.oceanbase.odc.service.schedule.model.DlmTableUnitStatistic;
@@ -40,6 +41,7 @@ import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.tools.migrator.common.enums.JobType;
+import com.oceanbase.tools.migrator.core.meta.JobMeta;
 import com.oceanbase.tools.migrator.job.Job;
 import com.oceanbase.tools.migrator.task.CheckMode;
 
@@ -73,7 +75,6 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
     @Override
     public boolean start() throws Exception {
 
-        jobStore.setJobParameters(jobContext.getJobParameters());
         DLMJobReq parameters =
                 JsonUtils.fromJson(
                         jobContext.getJobParameters().get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
@@ -213,13 +214,39 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
         if (!super.modify(jobParameters)) {
             return false;
         }
-        afterModifiedJobParameters();
+        updateLimiter(jobParameters);
         return true;
     }
 
-    protected void afterModifiedJobParameters() {
-        if (jobStore != null) {
-            jobStore.setJobParameters(jobContext.getJobParameters());
+    public void updateLimiter(Map<String, String> jobParameters) {
+        if (job == null || job.getJobMeta() == null) {
+            return;
+        }
+        JobMeta jobMeta = job.getJobMeta();
+        try {
+            RateLimitConfiguration params;
+            if (jobParameters.containsKey(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG)) {
+                params = JsonUtils.fromJson(
+                        jobParameters.get(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG),
+                        RateLimitConfiguration.class);
+            } else {
+                DLMJobReq dlmJobReq = JsonUtils.fromJson(
+                        jobParameters.get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
+                        DLMJobReq.class);
+                params = dlmJobReq.getRateLimit();
+            }
+            if (params.getDataSizeLimit() != null) {
+                jobMeta.getSourceLimiterConfig().setDataSizeLimit(params.getDataSizeLimit());
+                jobMeta.getTargetLimiterConfig().setDataSizeLimit(params.getDataSizeLimit());
+                log.info("Update rate limit success,dataSizeLimit={}", params.getDataSizeLimit());
+            }
+            if (params.getRowLimit() != null) {
+                jobMeta.getSourceLimiterConfig().setRowLimit(params.getRowLimit());
+                jobMeta.getTargetLimiterConfig().setRowLimit(params.getRowLimit());
+                log.info("Update rate limit success,rowLimit={}", params.getRowLimit());
+            }
+        } catch (Exception e) {
+            log.warn("Update rate limit failed,errorMsg={}", e.getMessage());
         }
     }
 

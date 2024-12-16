@@ -18,9 +18,9 @@ package com.oceanbase.odc.service.dlm;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnitParameters;
 import com.oceanbase.tools.migrator.common.dto.HistoryJob;
-import com.oceanbase.tools.migrator.core.IJobStore;
 import com.oceanbase.tools.migrator.core.JobFactory;
 import com.oceanbase.tools.migrator.core.JobReq;
+import com.oceanbase.tools.migrator.core.store.IJobStore;
 import com.oceanbase.tools.migrator.job.Job;
 
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +41,6 @@ public class DLMJobFactory extends JobFactory {
         HistoryJob historyJob = new HistoryJob();
         historyJob.setId(parameters.getDlmTableUnitId());
         historyJob.setJobType(parameters.getType());
-        historyJob.setTableId(-1L);
         historyJob.setPrintSqlTrace(false);
         historyJob.setSourceTable(parameters.getTableName());
         historyJob.setTargetTable(parameters.getTargetTableName());

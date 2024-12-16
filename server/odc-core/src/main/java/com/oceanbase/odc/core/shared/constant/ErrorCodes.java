@@ -317,7 +317,8 @@ public enum ErrorCodes implements ErrorCode {
      */
     BucketNotExist,
     InvalidAccessKeyId,
-    SignatureDoesNotMatch;
+    SignatureDoesNotMatch,
+    UnsupportedSyncTableStructure;
 
     @Override
     public String code() {
