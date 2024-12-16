@@ -173,7 +173,7 @@ public abstract class StringUtils extends org.apache.commons.lang3.StringUtils {
             table.getColumns().forEach(column -> {
                 String defaultValue = column.getDefaultValue();
                 if (StringUtils.isNotEmpty(defaultValue)) {
-                    if (!isDefaultValueBuiltInFunction(column)) {
+                    if (!isDefaultValueBuiltInFunction(column) && !DataTypeUtil.isBitType(column.getTypeName())) {
                         column.setDefaultValue("'".concat(defaultValue.replace("'", "''")).concat("'"));
                     }
                 }
