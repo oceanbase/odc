@@ -122,7 +122,7 @@ public class DBTableColumn implements DBObject, DBObjectWarningDescriptor {
     private String collationName;
 
     /**
-     * Default value for the column
+     * The generation column's expression
      */
     private String genExpression;
 
