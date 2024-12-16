@@ -57,23 +57,30 @@ public class SqlConsoleRuleService {
 
     @SkipAuthorize("odc internal usage")
     public boolean isForbidden(@NonNull SqlConsoleRules consoleRules,
-            @NonNull ConnectionSession connectionSession) {
+        @NonNull ConnectionSession connectionSession) {
+        // 获取规则集ID
         Long ruleSetId = ConnectionSessionUtil.getRuleSetId(connectionSession);
+        // 如果规则集ID为空或者控制台规则不是布尔类型，则抛出异常
         if (Objects.isNull(ruleSetId) || !consoleRules.isBooleanRule()) {
             throw new UnexpectedException("find sql rule failed");
         }
+        // 如果当前用户属于个人组织，则不被禁止执行
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             return false;
         }
+        // 从缓存中获取所有规则，并过滤出规则名称与控制台规则名称相同的规则
         List<Rule> rules = ruleService.listAllFromCache(ruleSetId).stream()
-                .filter(rule -> StringUtils.equals(consoleRules.getRuleName(), rule.getMetadata().getName())).collect(
-                        Collectors.toList());
+            .filter(rule -> StringUtils.equals(consoleRules.getRuleName(), rule.getMetadata().getName())).collect(
+                Collectors.toList());
+        // 确保只有一个规则符合条件
         Verify.singleton(rules, "rules");
         Rule rule = rules.get(0);
+        // 如果规则应用的方言类型列表为空或者不包含当前数据库方言类型，则不被禁止执行
         if (CollectionUtils.isEmpty(rule.getAppliedDialectTypes())
-                || !rule.getAppliedDialectTypes().contains(connectionSession.getDialectType())) {
+            || !rule.getAppliedDialectTypes().contains(connectionSession.getDialectType())) {
             return false;
         }
+        // 规则被启用，则被禁止执行
         return rule.getEnabled();
     }
 

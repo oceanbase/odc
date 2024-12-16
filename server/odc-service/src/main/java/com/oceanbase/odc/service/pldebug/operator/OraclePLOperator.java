@@ -85,38 +85,46 @@ public class OraclePLOperator implements DBPLOperator {
 
     }
 
-
+    /**
+     * 创建调试PL包
+     */
     @Override
     public void createDebugPLPackage() {
+        // 获取当前schema的owner
         String owner = (String) connectionSession.getAttribute(ConnectionSessionConstants.CURRENT_SCHEMA_KEY);
         try {
+            // 判断PL调试包是否存在，不存在则创建
             if (!PackageValidator.isValid(connectionSession, OdcConstants.PL_DEBUG_PACKAGE, DBObjectType.PACKAGE,
-                    owner)) {
+                owner)) {
                 syncJdbcExecutor.execute(OracleCreateDebugPLConstants.WRAPPED_DEBUG_PL_PACKAGE_HEAD);
             }
 
         } catch (Exception exception) {
+            // 抛出自定义异常
             throw new OBException(ErrorCodes.ObCreatePlDebugPackageFailed,
-                    new Object[] {exception.getMessage()}, "Valid PL debug package header error",
-                    HttpStatus.BAD_REQUEST);
+                new Object[] {exception.getMessage()}, "Valid PL debug package header error",
+                HttpStatus.BAD_REQUEST);
         }
 
         try {
+            // 获取连接配置
             ConnectionConfig connectionConfig =
-                    (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
+                (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
+            // 判断PL调试包体是否存在，版本是否正确，不存在则创建
             if (!PackageValidator.isValid(connectionSession, OdcConstants.PL_DEBUG_PACKAGE, DBObjectType.PACKAGE_BODY,
-                    owner)
-                    || !PackageValidator.isVersionValid(connectionSession,
-                            OdcConstants.PL_DEBUG_PACKAGE,
-                            OracleCreateDebugPLConstants.PL_DEBUG_PACKAGE_VERSION_NOTE,
-                            connectionConfig.getUsername())) {
+                owner)
+                || !PackageValidator.isVersionValid(connectionSession,
+                OdcConstants.PL_DEBUG_PACKAGE,
+                OracleCreateDebugPLConstants.PL_DEBUG_PACKAGE_VERSION_NOTE,
+                connectionConfig.getUsername())) {
                 syncJdbcExecutor.execute(OracleCreateDebugPLConstants.WRAPPED_DEBUG_PL_PACKAGE_BODY);
             }
 
         } catch (Exception exception) {
+            // 抛出自定义异常
             throw new OBException(ErrorCodes.ObCreatePlDebugPackageFailed,
-                    new Object[] {exception.getMessage()}, "Valid PL debug package body error",
-                    HttpStatus.BAD_REQUEST);
+                new Object[] {exception.getMessage()}, "Valid PL debug package body error",
+                HttpStatus.BAD_REQUEST);
         }
 
     }

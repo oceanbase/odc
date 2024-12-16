@@ -220,25 +220,30 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
 
     @Override
     public void doAfterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
-            @NonNull AsyncExecuteContext context) {
+        @NonNull AsyncExecuteContext context) {
+        // 如果 SQL 执行状态不是成功，则直接返回
         if (response.getStatus() != SqlExecuteStatus.SUCCESS) {
             return;
         }
+        // 如果当前用户属于个人团队，则允许导出结果集，并直接返回
         if (isIndividualTeam()) {
             response.setAllowExport(true);
             return;
         }
+        // 获取规则集 ID
         Long ruleSetId = ConnectionSessionUtil.getRuleSetId(session);
+        // 如果规则集 ID 为空或当前用户属于个人团队，则直接返回
         if (Objects.isNull(ruleSetId) || isIndividualTeam()) {
             return;
         }
+        // 如果禁止编辑结果集，则设置结果集元数据为不可编辑
         if (sqlConsoleRuleService.isForbidden(SqlConsoleRules.NOT_ALLOWED_EDIT_RESULTSET, session)) {
             if (Objects.nonNull(response.getResultSetMetaData())) {
                 response.getResultSetMetaData().setEditable(false);
             }
         }
         response.setAllowExport(
-                !sqlConsoleRuleService.isForbidden(SqlConsoleRules.NOT_ALLOWED_EXPORT_RESULTSET, session));
+            !sqlConsoleRuleService.isForbidden(SqlConsoleRules.NOT_ALLOWED_EXPORT_RESULTSET, session));
     }
 
     private boolean isIndividualTeam() {

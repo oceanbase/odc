@@ -68,20 +68,34 @@ public class PLDebugSession {
     @Setter
     private Integer dbmsoutputMaxRows = null;
 
+    /**
+     * PLDebugSession类的构造函数
+     *
+     * @param userId      用户ID
+     * @param idGenerator ID生成器
+     */
     public PLDebugSession(long userId, IdGenerator idGenerator) {
+        // 生成会话ID
         this.sessionId = idGenerator.generate();
+        // 设置用户ID
         this.userId = userId;
+        // 创建线程工厂
         ThreadFactory threadFactory = new ThreadFactoryBuilder()
-                .setNameFormat("PLDebug-schedule-ping-%d")
-                .build();
+            .setNameFormat("PLDebug-schedule-ping-%d")
+            .build();
+        // 创建定时线程池
         scheduleExecutor = new ScheduledThreadPoolExecutor(1, threadFactory);
+        // 每隔60秒执行一次任务
         scheduleExecutor.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
+                // 如果调试器会话存在且会话正常
                 if (Objects.nonNull(debuggerSession) && debuggerSession.detectSessionAlive()) {
                     try (Statement stmt = debuggerSession.getConnection().createStatement()) {
+                        // 调用DBMS_DEBUG.PING()方法
                         stmt.execute("CALL DBMS_DEBUG.PING()");
                     } catch (Exception e) {
+                        // 记录日志
                         log.debug("Failed to call DBMS_DEBUG.PING()", e);
                     }
                 }

@@ -190,20 +190,43 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         }
     }
 
+    /**
+     * DebugDataSource是一个继承自SingleConnectionDataSource的静态类，用于创建一个带有初始化SQL和连接初始化器的数据源。
+     */
     static class DebugDataSource extends SingleConnectionDataSource {
 
-        private final List<String> initSqls;
+        /**
+         * 初始化SQL列表
+         */
+        private final List<String>                initSqls;
+        /**
+         * 连接初始化器列表
+         */
         private final List<ConnectionInitializer> initializers;
 
+        /**
+         * 构造函数，创建一个DebugDataSource对象
+         *
+         * @param connectionConfig 数据库连接配置
+         * @param initSqls         初始化SQL列表
+         */
         public DebugDataSource(@NonNull ConnectionConfig connectionConfig, List<String> initSqls) {
             this.initSqls = initSqls;
+            // 创建连接初始化器列表，包括BackupInstanceInitializer和DataSourceInitScriptInitializer
             this.initializers = Arrays.asList(new BackupInstanceInitializer(connectionConfig),
-                    new DataSourceInitScriptInitializer(connectionConfig, true));
+                new DataSourceInitScriptInitializer(connectionConfig, true));
         }
 
+        /**
+         * 重写prepareConnection方法，用于在获取连接后执行初始化SQL和连接初始化器
+         *
+         * @param con 数据库连接
+         * @throws SQLException SQL异常
+         */
         @Override
         protected void prepareConnection(Connection con) throws SQLException {
             super.prepareConnection(con);
+            // 执行初始化SQL
             if (CollectionUtils.isNotEmpty(this.initSqls)) {
                 try (Statement statement = con.createStatement()) {
                     for (String stmt : this.initSqls) {
@@ -211,6 +234,7 @@ public abstract class AbstractDebugSession implements AutoCloseable {
                     }
                 }
             }
+            // 执行连接初始化器
             for (ConnectionInitializer initializer : this.initializers) {
                 initializer.init(con);
             }
