@@ -30,7 +30,7 @@
 /server/odc-core/**/flow/           @zijiacj @LioRoger @MarkPotato777
 /server/odc-core/**/migrate/        @MarkPotato777 @LioRoger
 /server/odc-core/**/session/        @LuckyPickleZZ @LioRoger
-/server/odc-core/**/shared/         @LioRoger @MarkPotato777
+/server/odc-core/**/shared/         @LioRoger @guowl3
 /server/odc-core/**/sql/            @LuckyPickleZZ @LioRoger
 /server/odc-core/**/task/           @LioRoger @guowl3
 
