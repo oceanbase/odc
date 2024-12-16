@@ -54,6 +54,7 @@ import org.springframework.data.domain.Pageable;
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
@@ -181,6 +182,8 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
     private UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository;
     @MockBean
     private DBResourcePermissionHelper permissionHelper;
+    @Autowired
+    private SecurityManager securityManager;
 
     @Before
     public void setUp() {
@@ -405,7 +408,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         FlowInstanceEntity entity = optional.get();
         entity.setCreatorId(-1);
         flowInstanceRepository.saveAndFlush(entity);
-
+        securityManager.login(null, null);
         thrown.expect(AccessDeniedException.class);
         flowInstanceService.detail(flowInstance.getId());
     }

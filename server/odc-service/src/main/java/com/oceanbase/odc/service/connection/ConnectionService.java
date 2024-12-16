@@ -417,6 +417,7 @@ public class ConnectionService {
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, DEVELOPER, SECURITY_ADMINISTRATOR"},
+            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"},
             resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public PaginatedData<ConnectionConfig> listByProjectId(@NotNull Long projectId, @NotNull Boolean basic) {
         List<ConnectionConfig> connections;

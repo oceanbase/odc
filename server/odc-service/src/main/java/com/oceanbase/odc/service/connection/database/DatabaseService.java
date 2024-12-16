@@ -803,15 +803,17 @@ public class DatabaseService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, actions = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public boolean modifyDatabasesOwners(@NotNull Long projectId, @NotNull @Valid ModifyDatabaseOwnerReq req) {
         databaseRepository.findByIdIn(req.getDatabaseIds()).forEach(database -> {
             if (!projectId.equals(database.getProjectId())) {
                 throw new AccessDeniedException();
             }
         });
-        Set<Long> memberIds = resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, projectId).stream()
-                .map(UserResourceRole::getUserId).collect(Collectors.toSet());
+        Set<Long> memberIds =
+                resourceRoleService.listByResourceTypeAndResourceId(ResourceType.ODC_PROJECT, projectId).stream()
+                        .map(UserResourceRole::getUserId).collect(Collectors.toSet());
         if (!memberIds.containsAll(req.getOwnerIds())) {
             throw new AccessDeniedException();
         }
@@ -884,7 +886,8 @@ public class DatabaseService {
         }
         if (CollectionUtils.isNotEmpty(req.getOwnerIds())) {
             Set<Long> memberIds =
-                    resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, req.getProjectId()).stream()
+                    resourceRoleService.listByResourceTypeAndResourceId(ResourceType.ODC_PROJECT, req.getProjectId())
+                            .stream()
                             .map(UserResourceRole::getUserId).collect(Collectors.toSet());
             PreConditions.validArgumentState(memberIds.containsAll(req.getOwnerIds()), ErrorCodes.AccessDenied, null,
                     "Invalid ownerIds");
@@ -935,7 +938,7 @@ public class DatabaseService {
         Map<Long, List<UserResourceRole>> databaseId2UserResourceRole = new HashMap<>();
         Map<Long, User> userId2User = new HashMap<>();
         List<UserResourceRole> userResourceRoles =
-                resourceRoleService.listByResourceTypeAndIdIn(ResourceType.ODC_DATABASE, databaseIds);
+                resourceRoleService.listByResourceTypeAndResourceIdIn(ResourceType.ODC_DATABASE, databaseIds);
         if (CollectionUtils.isNotEmpty(userResourceRoles)) {
             databaseId2UserResourceRole = userResourceRoles.stream()
                     .collect(Collectors.groupingBy(UserResourceRole::getResourceId, Collectors.toList()));

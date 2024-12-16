@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.iam;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -25,7 +26,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
+import com.oceanbase.odc.core.authority.permission.ComposedPermission;
 import com.oceanbase.odc.core.authority.permission.Permission;
+import com.oceanbase.odc.core.authority.permission.ProjectPermission;
 import com.oceanbase.odc.core.authority.permission.ResourceRoleBasedPermission;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
@@ -73,9 +76,15 @@ public class ProjectPermissionValidator {
             return false;
         }
         List<Permission> permissions = projectIds.stream().filter(Objects::nonNull)
-                .map(projectId -> new ResourceRoleBasedPermission(
-                        new DefaultSecurityResource(projectId.toString(), "ODC_PROJECT"), roleNames))
-                .collect(Collectors.toList());
+                .map(projectId -> {
+                    Permission resourceRolePermission = new ResourceRoleBasedPermission(
+                            new DefaultSecurityResource(projectId.toString(), "ODC_PROJECT"), roleNames);
+                    Permission projectResourcePermission =
+                            new ProjectPermission(new DefaultSecurityResource(projectId.toString(), "ODC_PROJECT"),
+                                    roleNames.stream().map(ResourceRoleName::name).collect(
+                                            Collectors.toList()));
+                    return new ComposedPermission(Arrays.asList(resourceRolePermission, projectResourcePermission));
+                }).collect(Collectors.toList());
         return authorizationFacade.isImpliesPermissions(authenticationFacade.currentUser(), permissions);
     }
 

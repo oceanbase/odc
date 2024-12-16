@@ -16,6 +16,8 @@
 package com.oceanbase.odc.service.iam;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -119,6 +121,20 @@ public class PermissionService {
             rolePermissionRepository.deleteByPermissionIds(ids);
             log.info("Clear expired permission, count: {}, expired time: {}", count, expiredTime);
         }
+    }
+
+    @SkipAuthorize
+    public List<PermissionEntity> findGlobalResourceRolePermissions(Long userId, Long organizationId) {
+        return findByUserIdAndOrganizationIdAndResourceIdentifierAndActionIn(userId, organizationId,
+                "ODC_PROJECT:*", Arrays.asList("OWNER", "DBA", "SECURITY_ADMINISTRATOR"));
+    }
+
+
+
+    private List<PermissionEntity> findByUserIdAndOrganizationIdAndResourceIdentifierAndActionIn(Long userId,
+            Long organizationId, String resourceIdentifier, Collection<String> actions) {
+        return permissionRepository.findByUserIdAndOrganizationIdAndResourceIdentifierAndActionIn(userId,
+                organizationId, resourceIdentifier, actions);
     }
 
 }
