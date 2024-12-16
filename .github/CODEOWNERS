@@ -61,7 +61,7 @@
 /server/odc-service/**/service/info/                  @MarkPotato777 @LioRoger
 /server/odc-service/**/service/integration/           @ungreat @LioRoger @yiminpeng
 /server/odc-service/**/service/lab/                   @LuckyPickleZZ @ungreat
-/server/odc-service/**/service/monitor/               @ungreat @LioRoger
+/server/odc-service/**/service/monitor/               @ungreat @ysjemmm @LioRoger
 /server/odc-service/**/service/notification/          @LuckyPickleZZ @MarkPotato777
 /server/odc-service/**/service/objectstorage/         @CHLK @MarkPotato777
 /server/odc-service/**/service/onlineschemachange/    @LioRoger @LuckyPickleZZ
