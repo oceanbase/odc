@@ -48,6 +48,10 @@ public class ApplyDatabaseParameter implements Serializable, TaskParameters {
      */
     private List<DatabasePermissionType> types;
     /**
+     * This property is required by the front end to initiate task again
+     */
+    private String expireTimeValue;
+    /**
      * Expiration time, null means no expiration, optional
      */
     private Date expireTime;
