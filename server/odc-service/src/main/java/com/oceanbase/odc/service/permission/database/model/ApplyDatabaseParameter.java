@@ -48,9 +48,10 @@ public class ApplyDatabaseParameter implements Serializable, TaskParameters {
      */
     private List<DatabasePermissionType> types;
     /**
-     * This property is required by the front end to initiate task again
+     * This field represents the duration of the permission. It is only used for the front end to
+     * re-initiate tasks, and the backend does not rely on it
      */
-    private String expireTimeValue;
+    private String validDuration;
     /**
      * Expiration time, null means no expiration, optional
      */
