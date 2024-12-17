@@ -9,12 +9,12 @@ templates:
       - column_name: role_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_3_3_2__iam_role.yaml
+            ref_file: migrate/common/V_4_3_3_4__iam_role.yaml
             field_path: templates.0.specs.0.value
       - column_name: permission_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_3_3_1__iam_permission.yaml
+            ref_file: migrate/common/V_4_3_3_3__iam_permission.yaml
             field_path: templates.0.specs.0.value
       - column_name: organization_id
         value: ${ORGANIZATION_ID}
@@ -30,12 +30,12 @@ templates:
       - column_name: role_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_3_3_2__iam_role.yaml
+            ref_file: migrate/common/V_4_3_3_4__iam_role.yaml
             field_path: templates.1.specs.0.value
       - column_name: permission_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_3_3_1__iam_permission.yaml
+            ref_file: migrate/common/V_4_3_3_3__iam_permission.yaml
             field_path: templates.1.specs.0.value
       - column_name: organization_id
         value: ${ORGANIZATION_ID}
@@ -51,12 +51,12 @@ templates:
       - column_name: role_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_3_3_2__iam_role.yaml
+            ref_file: migrate/common/V_4_3_3_4__iam_role.yaml
             field_path: templates.2.specs.0.value
       - column_name: permission_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_3_3_1__iam_permission.yaml
+            ref_file: migrate/common/V_4_3_3_3__iam_permission.yaml
             field_path: templates.2.specs.0.value
       - column_name: organization_id
         value: ${ORGANIZATION_ID}
