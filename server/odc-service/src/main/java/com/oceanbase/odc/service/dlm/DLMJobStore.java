@@ -212,7 +212,7 @@ public class DLMJobStore implements IJobStore {
 
     @Override
     public long getAbnormalTaskCount(String jobId) {
-        long count = 9999;
+        long count = 0;
         if (enableBreakpointRecovery) {
             try (Connection conn = dataSource.getConnection();
                     PreparedStatement ps = conn.prepareStatement(
