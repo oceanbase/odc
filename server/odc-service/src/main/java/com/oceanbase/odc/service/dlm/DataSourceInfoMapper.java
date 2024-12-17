@@ -110,7 +110,7 @@ public class DataSourceInfoMapper {
                 dataSourceInfo.setUsername(connectionConfig.getUsername());
                 dataSourceInfo.setPassword(connectionConfig.getPassword());
                 dataSourceInfo.setFileFormat(FileFormat.CSV);
-                dataSourceInfo.setUrl(connectionConfig.getDefaultSchema());
+                dataSourceInfo.setDatabaseName(connectionConfig.getDefaultSchema());
                 dataSourceInfo.setDefaultCharset("UTF-8");
                 break;
             default:
