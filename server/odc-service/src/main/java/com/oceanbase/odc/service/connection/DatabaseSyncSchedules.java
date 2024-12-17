@@ -44,18 +44,27 @@ public class DatabaseSyncSchedules {
     @Autowired
     private ConnectionService connectionService;
 
+    /**
+     * 同步数据库方法
+     */
     @Scheduled(fixedDelayString = "${odc.connect.database.sync.interval-millis:180000}")
     public void syncDatabases() {
+        // 从元数据库中去获取所有组织下的数据源
         List<ConnectionConfig> orgDataSources =
-                connectionService.listByVisibleScope(ConnectionVisibleScope.ORGANIZATION);
+            connectionService.listByVisibleScope(ConnectionVisibleScope.ORGANIZATION);
+        // 如果数据源列表为空，则直接返回
         if (CollectionUtils.isEmpty(orgDataSources)) {
             return;
         }
+        // 遍历数据源列表，提交同步数据源任务
         for (ConnectionConfig dataSource : orgDataSources) {
             try {
+                // 提交同步数据源任务
                 databaseSyncManager.submitSyncDataSourceTask(dataSource);
+                // 记录日志，同步数据源任务提交成功
                 log.debug("submit sync datasource task successfully, connectionId={}", dataSource.getId());
             } catch (Exception ex) {
+                // 记录日志，同步数据源任务提交失败
                 log.warn("Submit sync datasource task failed, datasourceId={}", dataSource.getId(), ex);
             }
         }
