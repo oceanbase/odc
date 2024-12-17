@@ -29,7 +29,7 @@ management:
     enabled-by-default: false
     web:
       exposure:
-        include: [] # 明确设置为空列表，确保没有端点暴露
+        include: []
   metrics:
     export:
       simple:
