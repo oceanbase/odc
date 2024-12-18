@@ -15,10 +15,13 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
+import java.util.Objects;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.service.common.response.ListResponse;
@@ -38,8 +41,13 @@ public class CloudMetadataController {
 
     @ApiOperation(value = "listInstances", notes = "Cloud Metadata list instances")
     @RequestMapping(value = "/clusters", method = RequestMethod.GET)
-    public ListResponse<OBInstance> listInstances() {
-        return Responses.list(cloudMetadataClient.listInstances());
+    public ListResponse<OBInstance> listInstances(
+            @RequestParam(required = false, name = "organizationId") Long organizationId) {
+        if (Objects.nonNull(organizationId)) {
+            return Responses.list(cloudMetadataClient.listInstances(organizationId));
+        } else {
+            return Responses.list(cloudMetadataClient.listInstances());
+        }
     }
 
     @ApiOperation(value = "listTenants", notes = "Cloud Metadata list tenants by instanceId")

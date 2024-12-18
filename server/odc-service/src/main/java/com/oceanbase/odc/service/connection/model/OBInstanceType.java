@@ -21,16 +21,18 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import com.oceanbase.odc.common.i18n.Translatable;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @Author: Lebie
  * @Date: 2022/10/25 下午4:56
  * @Description: [公有云/多云 实例类型，公有云支持集群实例、MySQL 租户实例 和 Oracle 租户实例；多云目前只有 集群实例、租户实例、AP实例]
  */
+@Slf4j
 public enum OBInstanceType implements Translatable {
     CLUSTER("cluster"),
-    MYSQL_TENANT("mtenant"),
-    ORACLE_TENANT("otenant"),
+    MYSQL_TENANT("MYSQL_TENANT", "mtenant"),
+    ORACLE_TENANT("ORACLE_TENANT", "otenant"),
     MYSQL_SERVERLESS("mtenant_serverless"),
     ORACLE_SERVERLESS("otenant_serverless"),
     DEDICATED("DEDICATED"),
@@ -40,28 +42,35 @@ public enum OBInstanceType implements Translatable {
     // K8s共享集群模式
     K8s_SHARED("K8s_SHARED"),
     ANALYTICAL_CLUSTER("ANALYTICAL_CLUSTER"),
-    KV_CLUSTER("KV_CLUSTER");
+    KV_CLUSTER("KV_CLUSTER"),
+    BACKUP("backup"),
+    PRIMARY_STANDBY_CLUSTER("primary_standby_cluster"),
+    UNKNOWN("UNKNOWN");
+    ;
 
     @Getter
-    private String value;
+    private final String[] values;
 
     @JsonValue
     public String getName() {
         return this.name();
     }
 
-    OBInstanceType(String value) {
-        this.value = value;
+    OBInstanceType(String... values) {
+        this.values = values;
     }
 
     @JsonCreator
     public static OBInstanceType fromValue(String value) {
         for (OBInstanceType instanceType : OBInstanceType.values()) {
-            if (StringUtils.equalsIgnoreCase(instanceType.value, value)) {
-                return instanceType;
+            for (String type : instanceType.values) {
+                if (StringUtils.equalsIgnoreCase(type, value)) {
+                    return instanceType;
+                }
             }
         }
-        throw new IllegalArgumentException("OBInstanceType value not supported, given value '" + value + "'");
+        log.warn("Unknown OBInstanceType: {}", value);
+        return UNKNOWN;
     }
 
     @Override
@@ -69,4 +78,8 @@ public enum OBInstanceType implements Translatable {
         return name();
     }
 
+    public boolean isTenantInstance() {
+        return this == MYSQL_TENANT || this == ORACLE_TENANT || this == MYSQL_SERVERLESS
+                || this == ORACLE_SERVERLESS;
+    }
 }
