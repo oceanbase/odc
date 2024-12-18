@@ -31,11 +31,7 @@ import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
 import com.oceanbase.tools.migrator.common.dto.TaskGenerator;
 import com.oceanbase.tools.migrator.common.element.PrimaryKey;
-import com.oceanbase.tools.migrator.common.exception.JobException;
-import com.oceanbase.tools.migrator.common.exception.JobSqlException;
 import com.oceanbase.tools.migrator.core.handler.genarator.GeneratorStatus;
-import com.oceanbase.tools.migrator.core.handler.genarator.GeneratorType;
-import com.oceanbase.tools.migrator.core.meta.JobMeta;
 import com.oceanbase.tools.migrator.core.meta.TaskMeta;
 import com.oceanbase.tools.migrator.core.store.IJobStore;
 
@@ -70,7 +66,7 @@ public class DLMJobStore implements IJobStore {
     }
 
     @Override
-    public TaskGenerator getTaskGenerator(String generatorId, String jobId) throws SQLException {
+    public TaskGenerator getTaskGenerator(String jobId) throws SQLException {
         if (enableBreakpointRecovery) {
             try (Connection conn = dataSource.getConnection();
                     PreparedStatement ps = conn.prepareStatement(
@@ -80,15 +76,14 @@ public class DLMJobStore implements IJobStore {
                 if (resultSet.next()) {
                     TaskGenerator taskGenerator = new TaskGenerator();
                     taskGenerator.setId(resultSet.getString("generator_id"));
-                    taskGenerator.setGeneratorType(GeneratorType.valueOf(resultSet.getString("type")));
                     taskGenerator.setGeneratorStatus(GeneratorStatus.valueOf(resultSet.getString("status")));
                     taskGenerator.setJobId(jobId);
                     taskGenerator.setTaskCount(resultSet.getInt("task_count"));
                     taskGenerator
-                            .setGeneratorSavePoint(PrimaryKey.valuesOf(resultSet.getString("primary_key_save_point")));
+                            .setPrimaryKeySavePoint(PrimaryKey.valuesOf(resultSet.getString("primary_key_save_point")));
                     taskGenerator.setProcessedDataSize(resultSet.getLong("processed_row_count"));
                     taskGenerator.setProcessedDataSize(resultSet.getLong("processed_data_size"));
-                    taskGenerator.setGeneratorPartitionSavepoint(resultSet.getString("partition_save_point"));
+                    taskGenerator.setPartitionSavePoint(resultSet.getString("partition_save_point"));
                     log.info("Load task generator success.jobId={}", jobId);
                     return taskGenerator;
                 }
@@ -118,11 +113,11 @@ public class DLMJobStore implements IJobStore {
                 ps.setLong(3, taskGenerator.getProcessedDataSize());
                 ps.setLong(4, taskGenerator.getProcessedRowCount());
                 ps.setString(5, taskGenerator.getGeneratorStatus().name());
-                ps.setString(6, GeneratorType.AUTO.name());
+                ps.setString(6, "");
                 ps.setLong(7, taskGenerator.getTaskCount());
-                ps.setString(8, taskGenerator.getGeneratorSavePoint() == null ? ""
-                        : taskGenerator.getGeneratorSavePoint().toSqlString());
-                ps.setString(9, taskGenerator.getGeneratorPartitionSavepoint());
+                ps.setString(8, taskGenerator.getPrimaryKeySavePoint() == null ? ""
+                        : taskGenerator.getPrimaryKeySavePoint().toSqlString());
+                ps.setString(9, taskGenerator.getPartitionSavePoint());
                 if (ps.executeUpdate() == 1) {
                     log.info("Update task generator success.jobId={}", taskGenerator.getJobId());
                 } else {
@@ -133,34 +128,34 @@ public class DLMJobStore implements IJobStore {
     }
 
     @Override
-    public JobStatistic getJobStatistic(String s) throws JobException {
+    public JobStatistic getJobStatistic(String s) throws SQLException {
         return new JobStatistic();
     }
 
     @Override
-    public void storeJobStatistic(JobMeta jobMeta) throws JobSqlException {
-        dlmTableUnits.get(jobMeta.getJobId()).getStatistic().setProcessedRowCount(jobMeta.getJobStat().getRowCount());
-        dlmTableUnits.get(jobMeta.getJobId()).getStatistic()
-                .setProcessedRowsPerSecond(jobMeta.getJobStat().getAvgRowCount());
+    public void storeJobStatistic(JobStatistic jobStatistic) throws SQLException {
+        dlmTableUnits.get(jobStatistic.getJobId()).getStatistic()
+                .setProcessedRowCount(jobStatistic.getRowCount().get());
+        dlmTableUnits.get(jobStatistic.getJobId()).getStatistic()
+                .setProcessedRowsPerSecond(jobStatistic.getRowCountPerSeconds());
 
-        dlmTableUnits.get(jobMeta.getJobId()).getStatistic().setReadRowCount(jobMeta.getJobStat().getReadRowCount());
-        dlmTableUnits.get(jobMeta.getJobId()).getStatistic()
-                .setReadRowsPerSecond(jobMeta.getJobStat().getAvgReadRowCount());
+        dlmTableUnits.get(jobStatistic.getJobId()).getStatistic().setReadRowCount(jobStatistic.getReadRowCount().get());
+        dlmTableUnits.get(jobStatistic.getJobId()).getStatistic()
+                .setReadRowsPerSecond(jobStatistic.getReadRowCountPerSeconds());
     }
 
     @Override
-    public List<TaskMeta> getTaskMeta(JobMeta jobMeta) throws SQLException {
+    public List<TaskMeta> loadUnfinishedTask(String generatorId) throws SQLException {
         if (enableBreakpointRecovery) {
             try (Connection conn = dataSource.getConnection();
                     PreparedStatement ps = conn.prepareStatement(
                             "select * from dlm_task_unit where generator_id = ? AND status !='SUCCESS'")) {
-                ps.setString(1, jobMeta.getGenerator().getId());
+                ps.setString(1, generatorId);
                 ResultSet resultSet = ps.executeQuery();
                 List<TaskMeta> taskMetas = new LinkedList<>();
                 while (resultSet.next()) {
                     TaskMeta taskMeta = new TaskMeta();
                     taskMeta.setTaskIndex(resultSet.getLong("task_index"));
-                    taskMeta.setJobMeta(jobMeta);
                     taskMeta.setGeneratorId(resultSet.getString("generator_id"));
                     taskMeta.setTaskStatus(com.oceanbase.tools.migrator.common.enums.TaskStatus
                             .valueOf(resultSet.getString("status")));
