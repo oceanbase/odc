@@ -163,6 +163,11 @@ public class BeanConfiguration {
         }
 
         @Override
+        public List<OBInstance> listInstances(Long organizationId) {
+            throw new UnsupportedException("CloudMetadata not supported");
+        }
+
+        @Override
         public List<OBTenant> listTenants(String instanceId) {
             throw new UnsupportedException("CloudMetadata not supported");
         }
