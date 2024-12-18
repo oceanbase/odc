@@ -15,36 +15,27 @@
  */
 package com.oceanbase.odc.service.connection.model;
 
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonAlias;
 
 import lombok.Data;
 
 /**
- * 公有云/多云 数据库用户
+ * @author: liuyizhuo.lyz
+ * @date: 2024/12/18
  */
 @Data
-public class OBDatabaseUser {
-    /**
-     * 数据库用户名
-     */
+public class OBDatabase {
+
+    @JsonAlias("Database")
+    private String name;
+
+    @JsonAlias("Privileges")
+    private String privileges;
+
     @JsonAlias("UserName")
-    private String userName;
+    private String username;
 
-    /**
-     * 数据库用户类型
-     */
-    @JsonAlias("UserType")
-    private OBDatabaseUserType userType;
-
-    @JsonAlias("Password")
-    private String password;
-
-    @JsonAlias("Databases")
-    private List<OBDatabase> databases;
-
-    @JsonAlias("UserStatus")
-    private String userStatus;
+    @JsonAlias("Role")
+    private String role;
 
 }
