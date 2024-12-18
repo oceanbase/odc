@@ -1,97 +1,97 @@
 # ODC code owners, refer to https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
 # These owners will be the default owners for everything in the repo.
-*                                   @yhilmare @yizhouxw
+*                                   @LioRoger @guowl3 @MarkPotato777
 
 # libs
-/libs/db-browser/                   @yhilmare @PeachThinking
-/libs/ob-sql-parser/                @yhilmare @PeachThinking
+/libs/db-browser/                   @PeachThinking @MarkPotato777
+/libs/ob-sql-parser/                @PeachThinking @MarkPotato777
 
 # 3rd-party
-/server/3rd-party/                  @MarkPotato777 @yhilmare
+/server/3rd-party/                  @MarkPotato777 @LioRoger
 
 # common
-/server/odc-common/                 @yhilmare @yizhouxw
+/server/odc-common/                 @LioRoger @guowl3
 
 # migrate
-/server/odc-migrate/                @MarkPotato777 @yhilmare
+/server/odc-migrate/                @MarkPotato777 @LioRoger
 
 # core
-/server/odc-core/                   @yhilmare @yizhouxw
+/server/odc-core/                   @LioRoger @guowl3
 /server/odc-core/**/alarm/          @LuckyPickleZZ
-/server/odc-core/**/authority/      @yhilmare
+/server/odc-core/**/authority/      @MarkPotato777
 /server/odc-core/**/datamasking/    @LuckyPickleZZ
-/server/odc-core/**/datasource/     @yhilmare
-/server/odc-core/**/flow/           @yhilmare
-/server/odc-core/**/alarm/          @LuckyPickleZZ  @yizhouxw
-/server/odc-core/**/authority/      @yhilmare @yizhouxw
-/server/odc-core/**/datamasking/    @LuckyPickleZZ @yhilmare
-/server/odc-core/**/datasource/     @yhilmare @yizhouxw
-/server/odc-core/**/flow/           @yhilmare @yizhouxw
-/server/odc-core/**/migrate/        @yhilmare @yizhouxw
-/server/odc-core/**/session/        @yhilmare @yizhouxw
-/server/odc-core/**/shared/         @yhilmare @yizhouxw
-/server/odc-core/**/sql/            @yhilmare @LuckyPickleZZ
-/server/odc-core/**/task/           @yhilmare @yizhouxw @guowl3
+/server/odc-core/**/datasource/     @MarkPotato777
+/server/odc-core/**/flow/           @zijiacj @LioRoger @MarkPotato777
+/server/odc-core/**/alarm/          @LuckyPickleZZ  @LioRoger
+/server/odc-core/**/authority/      @MarkPotato777 @LioRoger
+/server/odc-core/**/datamasking/    @LuckyPickleZZ @MarkPotato777
+/server/odc-core/**/datasource/     @MarkPotato777 @LioRoger
+/server/odc-core/**/flow/           @zijiacj @LioRoger @MarkPotato777
+/server/odc-core/**/migrate/        @MarkPotato777 @LioRoger
+/server/odc-core/**/session/        @LuckyPickleZZ @LioRoger
+/server/odc-core/**/shared/         @LioRoger @guowl3
+/server/odc-core/**/sql/            @LuckyPickleZZ @LioRoger
+/server/odc-core/**/task/           @LioRoger @guowl3
 
 # service common
-/server/odc-service/                                  @yhilmare @yizhouxw
-/server/odc-service/**/config/                        @yhilmare @yizhouxw
-/server/odc-service/**/metadb/                        @yhilmare @yizhouxw
-/server/odc-service/**/service/common/                @yhilmare @MarkPotato777
+/server/odc-service/                                  @LioRoger @guowl3
+/server/odc-service/**/config/                        @LioRoger @guowl3
+/server/odc-service/**/metadb/                        @LioRoger @guowl3
+/server/odc-service/**/service/common/                @LioRoger @MarkPotato777
 
 # service business
-/server/odc-service/**/service/audit/                 @MarkPotato777 @yizhouxw
+/server/odc-service/**/service/audit/                 @MarkPotato777 @LioRoger
 /server/odc-service/**/service/automation/            @LuckyPickleZZ @ungreat
-/server/odc-service/**/service/captcha/               @MarkPotato777 @yizhouxw
-/server/odc-service/**/service/collaboration/         @MarkPotato777 @yizhouxw
-/server/odc-service/**/service/config/                @MarkPotato777 @yizhouxw
-/server/odc-service/**/service/datasecurity/          @LuckyPickleZZ @yhilmare
-/server/odc-service/**/service/datatransfer/          @LuckyPickleZZ @yhilmare
-/server/odc-service/**/service/db/                    @PeachThinking @yhilmare
-/server/odc-service/**/service/diagnose/              @LuckyPickleZZ @yizhouxw
-/server/odc-service/**/service/dispatch/              @yhilmare  @yizhouxw
+/server/odc-service/**/service/captcha/               @MarkPotato777 @LioRoger
+/server/odc-service/**/service/collaboration/         @MarkPotato777 @LioRoger
+/server/odc-service/**/service/config/                @MarkPotato777 @LioRoger
+/server/odc-service/**/service/datasecurity/          @LuckyPickleZZ @MarkPotato777
+/server/odc-service/**/service/datatransfer/          @LuckyPickleZZ @LioRoger
+/server/odc-service/**/service/db/                    @PeachThinking @LioRoger
+/server/odc-service/**/service/diagnose/              @LuckyPickleZZ @LioRoger
+/server/odc-service/**/service/dispatch/              @LioRoger @guowl3
 /server/odc-service/**/service/dlm/                   @guowl3 @kiko-art
 /server/odc-service/**/service/dml/                   @LuckyPickleZZ @PeachThinking
-/server/odc-service/**/service/encryption/            @PeachThinking @yizhouxw
-/server/odc-service/**/service/feature/               @MarkPotato777 @yizhouxw
-/server/odc-service/**/service/flow/                  @yhilmare @yizhouxw
+/server/odc-service/**/service/encryption/            @PeachThinking @LioRoger
+/server/odc-service/**/service/feature/               @MarkPotato777 @LioRoger
+/server/odc-service/**/service/flow/                  @zijiacj @LioRoger @MarkPotato777
 /server/odc-service/**/service/i18n/                  @LuckyPickleZZ
-/server/odc-service/**/service/iam/                   @MarkPotato777 @PeachThinking @yhilmare
-/server/odc-service/**/service/info/                  @yhilmare @yizhouxw
-/server/odc-service/**/service/integration/           @yiminpeng @ungreat @yizhouxw
+/server/odc-service/**/service/iam/                   @MarkPotato777 @PeachThinking @LioRoger
+/server/odc-service/**/service/info/                  @MarkPotato777 @LioRoger
+/server/odc-service/**/service/integration/           @ungreat @LioRoger @yiminpeng
 /server/odc-service/**/service/lab/                   @LuckyPickleZZ @ungreat
-/server/odc-service/**/service/monitor/               @ungreat @yizhouxw
+/server/odc-service/**/service/monitor/               @ungreat @ysjemmm @LioRoger
 /server/odc-service/**/service/notification/          @LuckyPickleZZ @MarkPotato777
-/server/odc-service/**/service/objectstorage/         @MarkPotato777 @yizhouxw
+/server/odc-service/**/service/objectstorage/         @CHLK @MarkPotato777
 /server/odc-service/**/service/onlineschemachange/    @LioRoger @LuckyPickleZZ
-/server/odc-service/**/service/partitionplan/         @guowl3 @yhilmare
-/server/odc-service/**/service/permission/            @MarkPotato777 @yhilmare
-/server/odc-service/**/service/pldebug/               @yhilmare @yizhouxw
-/server/odc-service/**/service/plugin/                @yhilmare @LuckyPickleZZ
-/server/odc-service/**/service/quartz/                @guowl3 @yhilmare
-/server/odc-service/**/service/requlation/            @MarkPotato777 @yhilmare
-/server/odc-service/**/service/resourcegroup/         @MarkPotato777 @yhilmare
+/server/odc-service/**/service/partitionplan/         @guowl3 @LioRoger
+/server/odc-service/**/service/permission/            @MarkPotato777 @LioRoger
+/server/odc-service/**/service/pldebug/               @zijiacj @MarkPotato777
+/server/odc-service/**/service/plugin/                @LioRoger @LuckyPickleZZ
+/server/odc-service/**/service/quartz/                @guowl3 @LioRoger
+/server/odc-service/**/service/requlation/            @MarkPotato777 @zijiacj
+/server/odc-service/**/service/resourcegroup/         @MarkPotato777 @zijiacj
 /server/odc-service/**/service/resultset/             @LuckyPickleZZ @PeachThinking
 /server/odc-service/**/service/rollbackplan/          @PeachThinking @MarkPotato777
-/server/odc-service/**/service/schedule/              @guowl3 @yhilmare
-/server/odc-service/**/service/script/                @LuckyPickleZZ @yizhouxw
-/server/odc-service/**/service/session/               @yhilmare @LuckyPickleZZ
+/server/odc-service/**/service/schedule/              @guowl3 @LioRoger
+/server/odc-service/**/service/script/                @LuckyPickleZZ @LioRoger
+/server/odc-service/**/service/session/               @LuckyPickleZZ @LioRoger
 /server/odc-service/**/service/shadowtable/           @MarkPotato777 @PeachThinking
-/server/odc-service/**/service/snippet/               @LuckyPickleZZ @yizhouxw
-/server/odc-service/**/service/sqlcheck/              @yhilmare @PeachThinking
-/server/odc-service/**/service/structurecompare/      @PeachThinking @yhilmare
-/server/odc-service/**/service/systemconfig/          @MarkPotato777  @yizhouxw
-/server/odc-service/**/service/task/                  @yhilmare @guowl3 @yizhouxw
-/server/odc-service/**/service/websocket/             @LuckyPickleZZ  @yizhouxw
+/server/odc-service/**/service/snippet/               @LuckyPickleZZ @LioRoger
+/server/odc-service/**/service/sqlcheck/              @zijiacj @PeachThinking @MarkPotato777
+/server/odc-service/**/service/structurecompare/      @PeachThinking @MarkPotato777
+/server/odc-service/**/service/systemconfig/          @MarkPotato777  @LioRoger
+/server/odc-service/**/service/task/                  @guowl3 @LioRoger
+/server/odc-service/**/service/websocket/             @LuckyPickleZZ  @LioRoger
 
 # plugins
-/server/plugins/                                      @yhilmare @yizhouxw
-/server/plugins/connect-plugin-doris/                 @yhilmare @yizhouxw
-/server/plugins/connect-plugin-mysql/                 @yhilmare @yizhouxw
-/server/plugins/connect-plugin-ob-mysql/              @yhilmare @yizhouxw
-/server/plugins/connect-plugin-ob-oracle/             @yhilmare @yizhouxw
-/server/plugins/connect-plugin-oracle/                @yhilmare @yizhouxw
+/server/plugins/                                      @LioRoger @guowl3 @MarkPotato777
+/server/plugins/connect-plugin-doris/                 @LioRoger @guowl3 @MarkPotato777
+/server/plugins/connect-plugin-mysql/                 @LioRoger @guowl3 @MarkPotato777
+/server/plugins/connect-plugin-ob-mysql/              @LioRoger @guowl3 @MarkPotato777
+/server/plugins/connect-plugin-ob-oracle/             @LioRoger @guowl3 @MarkPotato777
+/server/plugins/connect-plugin-oracle/                @LioRoger @guowl3 @MarkPotato777
 
 /server/plugins/schema-plugin-api/                    @PeachThinking @MarkPotato777
 /server/plugins/schema-plugin-doris/                  @PeachThinking @MarkPotato777
@@ -101,37 +101,37 @@
 /server/plugins/schema-plugin-odp-sharding-ob-mysql/  @PeachThinking @MarkPotato777
 /server/plugins/schema-plugin-oracle/                 @PeachThinking @MarkPotato777
 
-/server/plugins/task-plugin-api/                      @LuckyPickleZZ @yhilmare
-/server/plugins/task-plugin-doris/                    @LuckyPickleZZ @yhilmare
-/server/plugins/task-plugin-mysql/                    @LuckyPickleZZ @yhilmare
-/server/plugins/task-plugin-ob-mysql/                 @LuckyPickleZZ @yhilmare
-/server/plugins/task-plugin-ob-oracle/                @LuckyPickleZZ @yhilmare
-/server/plugins/task-plugin-oracle/                   @LuckyPickleZZ @yhilmare
+/server/plugins/task-plugin-api/                      @LuckyPickleZZ @LioRoger
+/server/plugins/task-plugin-doris/                    @LuckyPickleZZ @LioRoger
+/server/plugins/task-plugin-mysql/                    @LuckyPickleZZ @LioRoger
+/server/plugins/task-plugin-ob-mysql/                 @LuckyPickleZZ @LioRoger
+/server/plugins/task-plugin-ob-oracle/                @LuckyPickleZZ @LioRoger
+/server/plugins/task-plugin-oracle/                   @LuckyPickleZZ @LioRoger
 
 
 # starters
-/server/starters/                                     @yhilmare @yizhouxw
-/server/starters/desktop-starter/                     @yhilmare @yizhouxw
-/server/starters/web-starter/                         @yhilmare @MarkPotato777
+/server/starters/                                     @LioRoger @guowl3 @MarkPotato777
+/server/starters/desktop-starter/                     @LioRoger @guowl3 @MarkPotato777
+/server/starters/web-starter/                         @LioRoger @guowl3 @MarkPotato777
 
 # modules
-/server/modules/                                      @yhilmare @yizhouxw
+/server/modules/                                      @LioRoger @CHLK
 
 # CI/CD
-/.github/                    @MarkPotato777 @yhilmare @yizhouxw
-/builds/                     @MarkPotato777 @yhilmare @yizhouxw
-/script/                     @MarkPotato777 @yhilmare @yizhouxw
-/distribution/               @MarkPotato777 @yhilmare @yizhouxw
-/server/odc-test/            @MarkPotato777 @yhilmare @yizhouxw
-/server/integration-test/    @MarkPotato777 @yhilmare @yizhouxw
-/server/test-script/         @MarkPotato777 @yhilmare @yizhouxw
+/.github/                    @MarkPotato777 @LioRoger
+/builds/                     @MarkPotato777 @LioRoger
+/script/                     @MarkPotato777 @LioRoger
+/distribution/               @MarkPotato777 @LioRoger
+/server/odc-test/            @MarkPotato777 @LioRoger
+/server/integration-test/    @MarkPotato777 @LioRoger
+/server/test-script/         @MarkPotato777 @LioRoger
 
 # i18n
-/server/odc-core/src/main/resources/i18n/     @Jane201510 @JessieWuJiexi @yizhouxw
+/server/odc-core/src/main/resources/i18n/     @Jane201510 @JessieWuJiexi @LioRoger @MarkPotato777 @guowl3
 
 # docs
-/docs/                      @Jane201510 @yhilmare @yizhouxw
-CHANGELOG.md                @Jane201510 @JessieWuJiexi @yhilmare @yizhouxw
-CHANGELOG-zh-CN.md          @Jane201510 @JessieWuJiexi @yhilmare @yizhouxw
-README.md                   @Jane201510 @JessieWuJiexi @yizhouxw
-README-zh.md                @Jane201510 @JessieWuJiexi @yizhouxw
+/docs/                      @Jane201510 @MarkPotato777 @LioRoger @guowl3
+CHANGELOG.md                @Jane201510 @JessieWuJiexi @MarkPotato777 @LioRoger @guowl3
+CHANGELOG-zh-CN.md          @Jane201510 @JessieWuJiexi @MarkPotato777 @LioRoger @guowl3
+README.md                   @Jane201510 @JessieWuJiexi @MarkPotato777 @LioRoger @guowl3
+README-zh.md                @Jane201510 @JessieWuJiexi @MarkPotato777 @LioRoger @guowl3

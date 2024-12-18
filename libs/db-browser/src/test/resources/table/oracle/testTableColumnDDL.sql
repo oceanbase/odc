@@ -14,3 +14,9 @@ create table TEST_COL_DATA_TYPE(
 	col13 interval day to second
 )
 /
+
+CREATE TABLE TEST_EXTENDED_STATS_COL(
+    "X" NUMBER(*,0),
+    "Y" NUMBER(*,0)
+)
+/

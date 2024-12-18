@@ -869,7 +869,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             tableColumn.setVirtual("YES".equalsIgnoreCase(rs.getString(OracleConstants.COL_VIRTUAL_COLUMN)));
             tableColumn.setDefaultValue("NULL".equals(defaultValue) ? null : defaultValue);
             if (tableColumn.getVirtual()) {
-                tableColumn.setGenExpression(rs.getString(OracleConstants.COL_DATA_DEFAULT));
+                tableColumn.setGenExpression(defaultValue);
             }
             return tableColumn;
         };

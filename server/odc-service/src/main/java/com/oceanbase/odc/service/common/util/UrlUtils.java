@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.common.util;
 
+import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -67,6 +68,22 @@ public class UrlUtils {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    @SneakyThrows
+    public static String getUrlHost(String targetUrl) {
+        URL url = new URL(targetUrl);
+        StringBuilder host = new StringBuilder();
+        host.append(url.getProtocol()).append("://").append(url.getHost());
+        int port = url.getPort();
+        if (port <= 0) {
+            return host.toString();
+        }
+        if ("http".equals(url.getProtocol()) && port != 80 ||
+                "https".equals(url.getProtocol()) && port != 443) {
+            host.append(":").append(url.getPort());
+        }
+        return host.toString();
     }
 
     @Nullable

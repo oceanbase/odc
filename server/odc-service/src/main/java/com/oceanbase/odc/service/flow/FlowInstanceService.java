@@ -414,7 +414,20 @@ public class FlowInstanceService {
         return FlowMetaInfo.of(entities);
     }
 
-    public Page<FlowInstanceEntity> listAll(@NotNull Pageable pageable, @NotNull QueryFlowInstanceParams params) {
+    public Page<FlowInstanceDetailResp> listUnfinishedFlowInstances(@NotNull Pageable pageable,
+            @NonNull Long projectId) {
+        QueryFlowInstanceParams.builder().projectIds(Collections.singleton(projectId)).containsAll(true).statuses(
+                Arrays.asList(FlowStatus.APPROVING, FlowStatus.CREATED, FlowStatus.EXECUTING, FlowStatus.ROLLBACKING,
+                        FlowStatus.WAIT_FOR_EXECUTION, FlowStatus.WAIT_FOR_CONFIRM))
+                .build();
+        return list(pageable,
+                QueryFlowInstanceParams.builder().projectIds(Collections.singleton(projectId)).containsAll(true)
+                        .statuses(
+                                FlowStatus.listUnfinishedStatus())
+                        .build());
+    }
+
+    private Page<FlowInstanceEntity> listAll(@NotNull Pageable pageable, @NotNull QueryFlowInstanceParams params) {
         if (Objects.nonNull(params.getProjectIds())) {
             projectPermissionValidator.checkProjectRole(params.getProjectIds(), ResourceRoleName.all());
         }
@@ -1160,7 +1173,7 @@ public class FlowInstanceService {
             }
             List<User> databaseOwners = new ArrayList<>();
             List<UserResourceRole> userResourceRoles =
-                    resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_DATABASE, database.getId());
+                    resourceRoleService.listByResourceTypeAndResourceId(ResourceType.ODC_DATABASE, database.getId());
             if (CollectionUtils.isNotEmpty(userResourceRoles)) {
                 Set<Long> userIds =
                         userResourceRoles.stream().map(UserResourceRole::getUserId).collect(Collectors.toSet());

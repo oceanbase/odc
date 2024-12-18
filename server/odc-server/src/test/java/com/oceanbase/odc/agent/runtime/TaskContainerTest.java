@@ -25,6 +25,7 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.task.Task;
@@ -81,7 +82,8 @@ public class TaskContainerTest {
             TaskReporter taskReporter = taskContainer.taskMonitor.getReporter();
             ArgumentCaptor<TaskResult> argumentCaptor = ArgumentCaptor.forClass(TaskResult.class);
             Mockito.verify(taskReporter).report(ArgumentMatchers.any(), argumentCaptor.capture());
-            Assert.assertEquals(argumentCaptor.getValue().getErrorMessage(), "exception should be thrown");
+            Assert.assertTrue(
+                    StringUtils.contains(argumentCaptor.getValue().getErrorMessage(), "exception should be thrown"));
         }
     }
 

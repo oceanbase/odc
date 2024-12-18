@@ -852,3 +852,6 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
  --
  INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('server.servlet.session.cookie.secure',
   'false', 'Enable secure cookie or not, default value false') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.features.logicaldatabase.enabled', 'true',
+  'Whether to enable the logical database feature, default is true, indicating enabled.') ON DUPLICATE KEY UPDATE `id`=`id`;

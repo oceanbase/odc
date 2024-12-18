@@ -65,12 +65,8 @@ import com.oceanbase.odc.metadb.task.JobAttributeEntity;
 import com.oceanbase.odc.metadb.task.JobAttributeRepository;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.JobRepository;
-import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.resource.ResourceState;
-import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
-import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
-import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobAttributeEntityColumn;
 import com.oceanbase.odc.service.task.constants.JobEntityColumn;
@@ -82,6 +78,7 @@ import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.listener.DefaultJobProcessUpdateEvent;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.processor.result.ResultProcessor;
+import com.oceanbase.odc.service.task.resource.DefaultResourceOperatorBuilder;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.state.JobStatusFsm;
@@ -187,7 +184,9 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         Specification<ResourceEntity> specification = SpecificationUtil.columnLate(ResourceEntity.CREATE_TIME,
                 JobDateUtils.getCurrentDateSubtractDays(RECENT_DAY));
         Specification<ResourceEntity> condition = Specification.where(specification)
-                .and(SpecificationUtil.columnIn(ResourceEntity.STATUS, Lists.newArrayList(ResourceState.ABANDONED)));
+                .and(SpecificationUtil.columnEqual(ResourceEntity.STATUS, ResourceState.ABANDONED))
+                .and(SpecificationUtil.columnEqual(ResourceEntity.TYPE,
+                        DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE));
         return resourceRepository.findAll(condition, PageRequest.of(page, size));
     }
 
@@ -389,8 +388,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     protected void handleTaskResultInner(JobEntity jobEntity, TaskResult result) {
         JobStatus expectedJobStatus = jobStatusFsm.determinateJobStatus(jobEntity.getStatus(), result.getStatus());
         int rows = updateTaskResult(result, jobEntity, expectedJobStatus);
-        // release resource
-        tryReleaseResource(jobEntity, expectedJobStatus.isTerminated());
         if (rows == 0) {
             log.warn("Update task result failed, the job may finished or deleted already, jobId={}", jobEntity.getId());
             return;
@@ -459,15 +456,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         } catch (Exception exception) {
             log.warn("Refresh log meta failed,errorMsg={}", exception.getMessage());
             return false;
-        }
-    }
-
-    protected void tryReleaseResource(JobEntity jobEntity, boolean isJobDone) {
-        // release resource
-        if (isJobDone && TaskRunMode.K8S == jobEntity.getRunMode()) {
-            ExecutorIdentifier executorIdentifier = ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier());
-            ResourceID resourceID = ResourceIDUtil.getResourceID(executorIdentifier, jobEntity);
-            resourceManager.release(resourceID);
         }
     }
 

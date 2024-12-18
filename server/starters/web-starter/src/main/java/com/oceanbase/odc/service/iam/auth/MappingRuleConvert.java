@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 import javax.naming.NamingEnumeration;
@@ -35,6 +36,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.saml2.provider.service.authentication.DefaultSaml2AuthenticatedPrincipal;
+import org.springframework.security.saml2.provider.service.authentication.Saml2Authentication;
 import org.springframework.stereotype.Component;
 
 import com.google.common.base.MoreObjects;
@@ -51,6 +54,7 @@ import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig.CustomAt
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig.MappingRule;
 import com.oceanbase.odc.service.integration.oauth2.AddableClientRegistrationManager;
 import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
+import com.oceanbase.odc.service.integration.saml.AddableRelyingPartyRegistrationRepository;
 
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -69,11 +73,14 @@ public class MappingRuleConvert {
     @Autowired
     private TestLoginManager testLoginManager;
 
+    @Autowired
+    private AddableRelyingPartyRegistrationRepository addableRelyingPartyRegistrationRepository;
+
     public MappingResult resolveOAuthMappingResult(OAuth2UserRequest userRequest, Map<String, Object> userInfoMap) {
         MappingRule mappingRule = resolveMappingRule(userRequest);
         Verify.notNull(mappingRule, "mappingRule");
         userInfoMap = getUserInfoMapFromResponse(userInfoMap, mappingRule);
-        testLoginManager.saveOauth2TestIdIfNeed(JsonUtils.toJson(userInfoMap));
+        testLoginManager.saveOauth2InfoIfNeed(JsonUtils.toJson(userInfoMap));
         testLoginManager.abortIfOAuthTestLoginInfo();
         Long organizationId = parseOrganizationId(userRequest.getClientRegistration().getRegistrationId());
         String userAccountName = String.valueOf(userInfoMap.get(mappingRule.getUserAccountNameField()));
@@ -109,6 +116,40 @@ public class MappingRuleConvert {
                 .sourceUserInfoMap(userInfoMap)
                 .build();
     }
+
+    public MappingResult resolveSamlMappingResult(Saml2Authentication saml2Authentication) {
+        DefaultSaml2AuthenticatedPrincipal principal =
+                (DefaultSaml2AuthenticatedPrincipal) saml2Authentication.getPrincipal();
+        Map<String, Object> userInfoMap = getUserInfoMap(principal);
+        testLoginManager.saveSamlInfoIfNeed(JsonUtils.toJson(userInfoMap));
+        testLoginManager.abortIfSamlTestLogin();
+
+        String relyingPartyRegistrationId = principal.getRelyingPartyRegistrationId();
+
+        SSOIntegrationConfig ssoIntegrationConfig =
+                addableRelyingPartyRegistrationRepository.findConfigByRegistrationId(relyingPartyRegistrationId);
+        com.google.common.base.Verify.verifyNotNull(ssoIntegrationConfig, "ssoIntegrationConfig");
+        MappingRule mappingRule = ssoIntegrationConfig.getMappingRule();
+        String name = principal.getName();
+        String parseExtraInfo = parseExtraInfo(userInfoMap, mappingRule);
+
+        return MappingResult.builder()
+                .organizationId(SSOIntegrationConfig.parseOrganizationId(relyingPartyRegistrationId))
+                .userAccountName(name)
+                .userNickName(getName(userInfoMap, mappingRule))
+                .isAdmin(false)
+                .extraInfo(parseExtraInfo)
+                .sourceUserInfoMap(userInfoMap)
+                .build();
+    }
+
+    private Map<String, Object> getUserInfoMap(DefaultSaml2AuthenticatedPrincipal principal) {
+        return principal.getAttributes().entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> entry.getValue().size() == 1 ? entry.getValue().get(0) : entry.getValue()));
+    }
+
 
     @SneakyThrows
     private Map<String, Object> getUserInfoMap(DirContextOperations ctx) {
@@ -149,9 +190,9 @@ public class MappingRuleConvert {
 
 
     @Nullable
-    private String getName(Map<String, Object> oAuth2User, MappingRule mappingRule) {
+    private String getName(Map<String, Object> userInfoMap, MappingRule mappingRule) {
         Set<String> nameFields = MoreObjects.firstNonNull(mappingRule.getUserNickNameField(), new HashSet<>());
-        Object o = nameFields.stream().map(oAuth2User::get).filter(Objects::nonNull).findFirst().orElse(null);
+        Object o = nameFields.stream().map(userInfoMap::get).filter(Objects::nonNull).findFirst().orElse(null);
         return o == null ? null : String.valueOf(o);
     }
 

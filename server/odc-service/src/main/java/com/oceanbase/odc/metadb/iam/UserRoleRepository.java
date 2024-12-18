@@ -25,6 +25,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.oceanbase.odc.service.iam.model.UserGlobalResourceRole;
+
 /**
  * @author gaoda.xy
  * @date 2022/12/5 19:20
@@ -41,6 +43,22 @@ public interface UserRoleRepository
     List<UserRoleEntity> findByRoleIdIn(Collection<Long> roleIds);
 
     List<UserRoleEntity> findByOrganizationIdAndUserIdIn(Long organizationId, Collection<Long> userIds);
+
+    @Query("SELECT new com.oceanbase.odc.service.iam.model.UserGlobalResourceRole(ur.userId, r.name) "
+            +
+            "FROM RoleEntity r " +
+            "JOIN UserRoleEntity ur ON r.id = ur.roleId " +
+            "WHERE r.organizationId=:organizationId and r.name IN (:names)")
+    List<UserGlobalResourceRole> findByOrganizationIdAndNameIn(@Param("organizationId") Long organizationId,
+            @Param("names") Collection<String> names);
+
+    @Query("SELECT new com.oceanbase.odc.service.iam.model.UserGlobalResourceRole(ur.userId, r.name) "
+            +
+            "FROM RoleEntity r " +
+            "JOIN UserRoleEntity ur ON r.id = ur.roleId " +
+            "WHERE r.organizationId=:organizationId and ur.userId=:userId and r.name IN (:names)")
+    List<UserGlobalResourceRole> findByOrganizationIdAndUserIdAndNameIn(@Param("organizationId") Long organizationId,
+            @Param("userId") Long userId, @Param("names") Collection<String> names);
 
     @Modifying
     @Transactional

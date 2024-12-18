@@ -410,13 +410,14 @@ public class ConnectionService {
     }
 
     @SkipAuthorize("odc internal usage")
-    public List<ConnectionConfig> listByOrganizationIdIn(@NonNull Collection<Long> organizationIds) {
-        return repository.findByOrganizationIdIn(organizationIds).stream()
+    public List<ConnectionConfig> listSyncableDataSourcesByOrganizationIdIn(@NonNull Collection<Long> organizationIds) {
+        return repository.findSyncableConnectionsByOrganizationIdIn(organizationIds).stream()
                 .map(mapper::entityToModel).collect(Collectors.toList());
     }
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, DEVELOPER, SECURITY_ADMINISTRATOR"},
+            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"},
             resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public PaginatedData<ConnectionConfig> listByProjectId(@NotNull Long projectId, @NotNull Boolean basic) {
         List<ConnectionConfig> connections;
@@ -552,6 +553,11 @@ public class ConnectionService {
     public List<ConnectionConfig> listByVisibleScope(ConnectionVisibleScope visibleScope) {
         return repository.findByVisibleScope(visibleScope).stream().map(mapper::entityToModel)
                 .collect(Collectors.toList());
+    }
+
+    @SkipAuthorize("internal usage")
+    public List<ConnectionConfig> listSyncableDataSources() {
+        return repository.findSyncableConnections().stream().map(mapper::entityToModel).collect(Collectors.toList());
     }
 
     @Transactional(rollbackFor = Exception.class)

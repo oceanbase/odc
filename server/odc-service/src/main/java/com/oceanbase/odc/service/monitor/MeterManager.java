@@ -23,6 +23,8 @@ public interface MeterManager {
 
     boolean incrementCounter(MeterKey meterKey);
 
+    boolean incrementCounter(MeterKey meterKey, double amount);
+
     boolean startTimerSample(String sampleKey, MeterKey meterKey);
 
     boolean recordTimerSample(String sampleKey, MeterKey meterKey);

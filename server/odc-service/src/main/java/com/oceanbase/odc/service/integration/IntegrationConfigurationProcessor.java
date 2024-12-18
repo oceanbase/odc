@@ -36,6 +36,9 @@ import com.oceanbase.odc.service.integration.model.ApprovalProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
 import com.oceanbase.odc.service.integration.model.SqlInterceptorProperties;
+import com.oceanbase.odc.service.integration.saml.SamlCredentialManager;
+import com.oceanbase.odc.service.integration.saml.SamlParameter;
+import com.oceanbase.odc.service.integration.saml.SamlParameter.SecretInfo;
 
 /**
  * @author gaoda.xy
@@ -43,20 +46,56 @@ import com.oceanbase.odc.service.integration.model.SqlInterceptorProperties;
  */
 @Component
 @Validated
-public class IntegrationConfigurationValidator {
+public class IntegrationConfigurationProcessor {
 
     @Autowired
     private IntegrationRepository integrationRepository;
+
+    @Autowired
+    private SamlCredentialManager samlCredentialManager;
 
     public void check(@NotNull @Valid ApprovalProperties properties) {}
 
     public void check(@NotNull @Valid SqlInterceptorProperties properties) {}
 
-    public void checkAndFillConfig(@NotNull @Valid IntegrationConfig config, Long organizationId, Boolean enabled,
+    public void checkAndFillConfig(@NotNull @Valid IntegrationConfig config, @Nullable IntegrationConfig savedConfig,
+            Long organizationId, Boolean enabled,
             @Nullable Long integrationId) {
         SSOIntegrationConfig ssoIntegrationConfig = SSOIntegrationConfig.of(config, organizationId);
+        fillSamlSecret(config, savedConfig, organizationId, ssoIntegrationConfig);
         config.setConfiguration(JsonUtils.toJson(ssoIntegrationConfig));
         checkNotEnabledInDbBeforeSave(enabled, organizationId, integrationId);
+    }
+
+    public void fillSamlSecret(IntegrationConfig config, IntegrationConfig savedConfig, Long organizationId,
+            SSOIntegrationConfig ssoIntegrationConfig) {
+        if ("SAML".equals(ssoIntegrationConfig.getType()) && config.getEncryption().getSecret() == null) {
+            SecretInfo secretInfo = new SecretInfo();
+            SamlParameter newParameter = (SamlParameter) ssoIntegrationConfig.getSsoParameter();
+            if (savedConfig != null) {
+                SecretInfo savedSecretInfo =
+                        JsonUtils.fromJson(savedConfig.getEncryption().getSecret(), SecretInfo.class);
+                SSOIntegrationConfig savedSsoConfig = SSOIntegrationConfig.of(savedConfig, organizationId);
+                SamlParameter savedParameter = (SamlParameter) savedSsoConfig.getSsoParameter();
+                if (Objects.equals(savedParameter.getSigning().getCertificate(),
+                        newParameter.getSigning().getCertificate())) {
+                    secretInfo.setSigningPrivateKey(savedSecretInfo.getSigningPrivateKey());
+                }
+                if (Objects.equals(savedParameter.getDecryption().getCertificate(),
+                        newParameter.getDecryption().getCertificate())) {
+                    secretInfo.setDecryptionPrivateKey(savedSecretInfo.getDecryptionPrivateKey());
+                }
+            }
+            String certificate = newParameter.getSigning().getCertificate();
+            if (secretInfo.getSigningPrivateKey() == null && certificate != null) {
+                secretInfo.setSigningPrivateKey(samlCredentialManager.getPrivateKeyByCert(certificate));
+            }
+            String decryptionCertificate = newParameter.getDecryption().getCertificate();
+            if (secretInfo.getDecryptionPrivateKey() == null && decryptionCertificate != null) {
+                secretInfo.setDecryptionPrivateKey(samlCredentialManager.getPrivateKeyByCert(decryptionCertificate));
+            }
+            config.getEncryption().setSecret(JsonUtils.toJson(secretInfo));
+        }
     }
 
     public void checkNotEnabledInDbBeforeSave(Boolean enabled, Long organizationId, @Nullable Long integrationId) {

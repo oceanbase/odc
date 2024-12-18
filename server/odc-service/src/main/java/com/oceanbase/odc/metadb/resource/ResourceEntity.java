@@ -48,6 +48,8 @@ import lombok.ToString;
 public class ResourceEntity {
     public static final String CREATE_TIME = "createTime";
     public static final String STATUS = "status";
+    public static final String TYPE = "resourceType";
+
     /**
      * id for task
      */
