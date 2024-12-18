@@ -181,7 +181,7 @@ public class AbstractDlmPreprocessor implements Preprocessor {
                             targetDs.getRegion()));
         }
         if (sourceDs.getDialectType().isMysql()) {
-            if (!targetDs.getDialectType().isMysql()) {
+            if (!targetDs.getDialectType().isMysql() && targetDs.getDialectType() != DialectType.FILE_SYSTEM) {
                 throw new UnsupportedException(
                         String.format("Unsupported data link from %s to %s.", sourceDs.getDialectType(),
                                 targetDs.getDialectType()));

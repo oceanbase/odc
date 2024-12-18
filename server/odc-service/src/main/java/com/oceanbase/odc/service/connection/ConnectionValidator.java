@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
@@ -43,7 +44,9 @@ public class ConnectionValidator {
     void validateForUpsert(ConnectionConfig connection) {
         PreConditions.notNull(connection, "connection");
         PreConditions.notBlank(connection.getHost(), "connection.host");
-        PreConditions.notNull(connection.getPort(), "connection.port");
+        if (connection.getDialectType() != DialectType.FILE_SYSTEM) {
+            PreConditions.notNull(connection.getPort(), "connection.port");
+        }
         PreConditions.validNotSqlInjection(connection.getUsername(), "username");
         PreConditions.validNotSqlInjection(connection.getClusterName(), "clusterName");
         PreConditions.validNotSqlInjection(connection.getTenantName(), "tenantName");
