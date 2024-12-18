@@ -74,7 +74,8 @@ public class OrganizationAuthenticationInterceptor implements HandlerInterceptor
             "/api/v2/snippet/builtinSnippets",
             "/api/v2/cloud/collaboration/currentProject",
             "/api/v1/cloud/webhook/instanceChange/preCheck",
-            "/api/v1/cloud/webhook/instanceChange/processEvent"
+            "/api/v1/cloud/webhook/instanceChange/processEvent",
+            "/api/v2/cloud/metadata"
     };
 
     @Autowired
