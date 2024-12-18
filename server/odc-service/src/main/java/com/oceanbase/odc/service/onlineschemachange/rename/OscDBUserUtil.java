@@ -32,11 +32,12 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
  */
 public class OscDBUserUtil {
 
-    public static boolean isLockUserRequired(DialectType dialectType, Supplier<String> obVersion) {
+    public static boolean isLockUserRequired(DialectType dialectType, Supplier<String> obVersion,
+            Supplier<LockTableSupportDecider> lockTableSupportDeciderSupplier) {
         String version = obVersion.get();
         if (dialectType.isOBMysql()) {
             // version is null, or version less than 4.2.5
-            return !(version != null && VersionUtils.isGreaterThanOrEqualsTo(version, "4.2.5"));
+            return !(version != null && lockTableSupportDeciderSupplier.get().supportLockTable(version));
         } else if (dialectType == DialectType.OB_ORACLE) {
             return version != null && !VersionUtils.isGreaterThanOrEqualsTo(version, "4.0.0");
         } else {
