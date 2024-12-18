@@ -59,11 +59,6 @@
                             <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
                             <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
                         </Filters>
-                        <Policies>
-                            <OnStartupTriggeringPolicy/>
-                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
-                            <SizeBasedTriggeringPolicy size="10 MB"/>
-                        </Policies>
                     </RollingFile>
                 </Route>
             </Routes>
@@ -82,11 +77,6 @@
                             <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
                             <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
                         </Filters>
-                        <Policies>
-                            <OnStartupTriggeringPolicy/>
-                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
-                            <SizeBasedTriggeringPolicy size="10 MB"/>
-                        </Policies>
                     </RollingFile>
                 </Route>
             </Routes>
