@@ -362,7 +362,13 @@ public class ScheduleService {
                             ScheduleChangeStatus.APPROVING));
             log.info("Create change log success,changLog={}", changeLog);
             req.setScheduleChangeLogId(changeLog.getId());
-            Long approvalFlowInstanceId = approvalFlowService.create(req);
+            Long approvalFlowInstanceId;
+            if (organizationService.get(targetSchedule.getId()).isPresent()
+                    && organizationService.get(targetSchedule.getId()).get().getType() == OrganizationType.INDIVIDUAL) {
+                approvalFlowInstanceId = null;
+            } else {
+                approvalFlowInstanceId = approvalFlowService.create(req);
+            }
             if (approvalFlowInstanceId != null) {
                 changeLog.setFlowInstanceId(approvalFlowInstanceId);
                 scheduleChangeLogService.updateFlowInstanceIdById(changeLog.getId(), approvalFlowInstanceId);
