@@ -70,6 +70,11 @@ public class DBSession {
      * 客户端主机名称
      */
     private String host;
+
+    /**
+     * 服务端地址（带端口号）
+     */
+    private String svrIp;
     /**
      * OB Proxy HOST
      */

@@ -216,7 +216,7 @@ public class TaskMonitor {
     }
 
     private void uploadLogFileToCloudStorage(DefaultTaskResult finalResult) {
-        Map<String, String> logMap = finalResult.getLogMetadata();
+        Map<String, String> logMap = new HashMap<>();
         if (cloudObjectStorageService != null && cloudObjectStorageService.supported()
                 && JobUtils.isK8sRunModeOfEnv()) {
             logMap = new LogBizImpl().uploadLogFileToCloudStorage(finalResult.getJobIdentity(),
