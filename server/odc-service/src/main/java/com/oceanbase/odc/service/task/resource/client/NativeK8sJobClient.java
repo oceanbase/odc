@@ -140,7 +140,8 @@ public class NativeK8sJobClient implements K8sJobClient {
             // return pod status
             return new K8sPodResource(null, null, null, namespace, createdJob.getMetadata().getName(),
                     k8sPodPhaseToResourceState(createdJob.getStatus().getPhase()),
-                    createdJob.getStatus().getPodIP(), new Date(System.currentTimeMillis() / 1000));
+                    createdJob.getStatus().getPodIP(), String.valueOf(k8sProperties.getExecutorListenPort()),
+                    new Date(System.currentTimeMillis() / 1000));
         } catch (ApiException e) {
             if (e.getResponseBody() != null) {
                 throw new JobException(e.getResponseBody(), e);
@@ -169,6 +170,7 @@ public class NativeK8sJobClient implements K8sJobClient {
         V1Pod v1Pod = v1PodOptional.get();
         K8sPodResource resource = new K8sPodResource(k8sProperties.getRegion(), k8sProperties.getGroup(), null,
                 namespace, arn, k8sPodPhaseToResourceState(v1Pod.getStatus().getPhase()), v1Pod.getStatus().getPodIP(),
+                String.valueOf(k8sProperties.getExecutorListenPort()),
                 new Date(System.currentTimeMillis() / 1000));
         return Optional.of(resource);
     }

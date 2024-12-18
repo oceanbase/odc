@@ -24,6 +24,7 @@ import org.springframework.data.domain.Page;
 
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.executor.HeartbeatRequest;
@@ -72,7 +73,7 @@ public interface TaskFrameworkService {
      */
     long countRunningJobs(TaskRunMode runMode);
 
-    int startSuccess(Long id, String executorIdentifier);
+    int startSuccess(Long id, String executorIdentifier, JobContext jobContext);
 
     int beforeStart(Long id);
 
