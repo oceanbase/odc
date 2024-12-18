@@ -36,9 +36,8 @@ public interface TaskGeneratorMapper {
 
     @Mapping(source = "generatorId", target = "id")
     @Mapping(source = "status", target = "generatorStatus")
-    @Mapping(target = "generatorType", constant = "AUTO")
-    @Mapping(source = "partitionSavePoint", target = "generatorPartitionSavepoint")
-    @Mapping(target = "generatorSavePoint",
+    @Mapping(source = "partitionSavePoint", target = "partitionSavePoint")
+    @Mapping(target = "primaryKeySavePoint",
             expression = "java(com.oceanbase.tools.migrator.common.element.PrimaryKey.valuesOf(entity.getPrimaryKeySavePoint()))")
     TaskGenerator entityToModel(TaskGeneratorEntity entity);
 
