@@ -214,6 +214,7 @@ public class ScheduleService {
 
     private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
 
+    @Transactional(rollbackFor = Exception.class)
     public List<FlowInstanceDetailResp> dispatchCreateSchedule(CreateFlowInstanceReq createReq) {
         AlterScheduleParameters parameters = (AlterScheduleParameters) createReq.getParameters();
         // adapt history parameters
