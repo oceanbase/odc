@@ -47,6 +47,7 @@ import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameDescriptor;
 import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameDescriptorFactory;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlType;
+import com.oceanbase.odc.service.onlineschemachange.rename.LockTableSupportDecider;
 import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
@@ -249,7 +250,8 @@ public class OnlineSchemaChangeValidator {
     }
 
     private void validateLockUser(DialectType dialectType, String obVersion, List<String> lockUsers) {
-        if (OscDBUserUtil.isLockUserRequired(dialectType, () -> obVersion) && CollectionUtils.isEmpty(lockUsers)) {
+        if (OscDBUserUtil.isLockUserRequired(dialectType, () -> obVersion,
+                () -> LockTableSupportDecider.DEFAULT_LOCK_TABLE_DECIDER) && CollectionUtils.isEmpty(lockUsers)) {
             throw new BadRequestException(ErrorCodes.OscLockUserRequired, new Object[] {lockUsers},
                     "Current db version should lock user required, but parameters do not contains user to lock.");
         }

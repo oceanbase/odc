@@ -65,7 +65,7 @@ public class ScheduleControllerHist {
     public PaginatedResponse<ScheduleOverviewHist> list(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
             @RequestParam(required = false, name = "connectionId") Set<Long> connectionIds,
-            @RequestParam(required = false, name = "id") Long id,
+            @RequestParam(required = false, name = "id") String id,
             @RequestParam(required = false, name = "status") List<ScheduleStatus> status,
             @RequestParam(required = false, name = "type") ScheduleType type,
             @RequestParam(required = false, name = "startTime") Date startTime,

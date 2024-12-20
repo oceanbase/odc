@@ -34,6 +34,10 @@ public class VersionUtils {
         return compareVersions(currentVersion, targetVersion) > 0;
     }
 
+    public static boolean isGreaterThan0(String currentVersion) {
+        return compareVersions(currentVersion, "0") > 0;
+    }
+
     public static boolean isLessThanOrEqualsTo(String currentVersion, String targetVersion) {
         return !isGreaterThan(currentVersion, targetVersion);
     }

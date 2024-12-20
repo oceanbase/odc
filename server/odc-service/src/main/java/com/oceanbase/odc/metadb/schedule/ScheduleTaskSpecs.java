@@ -43,7 +43,7 @@ public class ScheduleTaskSpecs {
         return SpecificationUtil.columnIn("jobName", jobName);
     }
 
-    public static Specification<ScheduleTaskEntity> jobIdEquals(Long id) {
+    public static Specification<ScheduleTaskEntity> idEquals(Long id) {
         return SpecificationUtil.columnEqual("id", id);
     }
 

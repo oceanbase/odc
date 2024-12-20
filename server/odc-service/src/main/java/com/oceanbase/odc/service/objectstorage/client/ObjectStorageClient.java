@@ -49,6 +49,8 @@ public interface ObjectStorageClient {
 
     List<String> deleteObjects(@NotEmpty List<String> objectNames) throws IOException;
 
+    String deleteObject(@NotBlank String objectName) throws IOException;
+
     InputStream getObject(@NotBlank String objectName) throws IOException;
 
     InputStream getAbortableObject(@NotBlank String objectName) throws IOException;

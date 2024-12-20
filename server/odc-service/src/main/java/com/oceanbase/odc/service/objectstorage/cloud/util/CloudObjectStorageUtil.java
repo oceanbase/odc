@@ -77,6 +77,7 @@ public class CloudObjectStorageUtil {
         SimpleDateFormat format = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
         format.setTimeZone(TimeZone.getDefault());
         builder.append(prefix).append(format.format(date)).append("/")
+                .append(StringUtils.isEmpty(userId) ? "" : userId + "/")
                 .append(dateFormat.format(date)).append("/")
                 .append(digest).append("/")
                 .append(subPath).append("/")

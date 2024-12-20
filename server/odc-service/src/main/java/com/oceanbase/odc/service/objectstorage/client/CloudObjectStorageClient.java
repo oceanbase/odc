@@ -41,6 +41,7 @@ import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorage;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadResult;
+import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectsRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectsResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.GetObjectRequest;
@@ -164,6 +165,16 @@ public class CloudObjectStorageClient implements ObjectStorageClient {
         log.info("Delete files success, tryDeleteObjectName={}, deletedObjectNames={}",
                 objectNames, deletedObjects);
         return deletedObjects;
+    }
+
+    @Override
+    public String deleteObject(String objectName) {
+        verifySupported();
+        DeleteObjectRequest request = new DeleteObjectRequest(getBucketName(), objectName);
+        String deleted = internalEndpointCloudObjectStorage.deleteObject(request);
+        log.info("Delete file success, tryDeleteObjectName={}, deletedObjectName={}",
+                objectName, deleted);
+        return deleted;
     }
 
     @Override

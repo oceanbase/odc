@@ -76,19 +76,4 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
                 .and(OdcJpaRepository.eq(ScheduleEntity_.organizationId, params.getOrganizationId()));
         return findAll(specification, pageable);
     }
-
-    default List<ScheduleEntity> find(@NotNull QueryScheduleParams params) {
-        Specification<ScheduleEntity> specification = Specification
-                .where(OdcJpaRepository.between(ScheduleEntity_.createTime, params.getStartTime(), params.getEndTime()))
-                .and(OdcJpaRepository.in(ScheduleEntity_.dataSourceId, params.getDataSourceIds()))
-                .and(OdcJpaRepository.eq(ScheduleEntity_.databaseName, params.getDatabaseName()))
-                .and(OdcJpaRepository.eq(ScheduleEntity_.type, params.getType()))
-                .and(OdcJpaRepository.in(ScheduleEntity_.projectId, params.getProjectIds()))
-                .and(OdcJpaRepository.eq(ScheduleEntity_.id, params.getId()))
-                .and(OdcJpaRepository.notEq(ScheduleEntity_.status, ScheduleStatus.DELETED))
-                .and(OdcJpaRepository.in(ScheduleEntity_.creatorId, params.getCreatorIds()))
-                .and(OdcJpaRepository.like(ScheduleEntity_.name, params.getName()))
-                .and(OdcJpaRepository.eq(ScheduleEntity_.organizationId, params.getOrganizationId()));
-        return findAll(specification);
-    }
 }

@@ -72,7 +72,7 @@ public class JsonUtils {
         try {
             return OBJECT_MAPPER.readValue(json, classType);
         } catch (JsonProcessingException e) {
-            log.warn("deserialize str = {} failed", json, e);
+            log.warn("deserialize str = {} failed, reason = {}", json, e.getMessage());
             return null;
         }
     }
@@ -95,7 +95,7 @@ public class JsonUtils {
         try {
             return OBJECT_MAPPER.readValue(json, javaType);
         } catch (JsonProcessingException e) {
-            log.warn("deserialize str = {} failed", json, e);
+            log.warn("deserialize str = {} failed, reason = {}", json, e.getMessage());
             return null;
         }
     }
@@ -111,14 +111,14 @@ public class JsonUtils {
         try {
             return OBJECT_MAPPER.readValue(json, valueTypeRef);
         } catch (JsonProcessingException e) {
-            log.warn("deserialize str = {} failed", json, e);
+            log.warn("deserialize str = {} failed, reason = {}", json, e.getMessage());
             return null;
         }
     }
 
     /**
      * Ignore deserialize fail when json missing property annotation by @JsonTypeInfo
-     * 
+     *
      * @param json json string
      * @param valueTypeRef represent the actual type of generic
      * @return object represented by valueTypeRef

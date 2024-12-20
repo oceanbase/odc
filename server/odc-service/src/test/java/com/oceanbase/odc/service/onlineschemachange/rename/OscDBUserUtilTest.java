@@ -28,7 +28,9 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 public class OscDBUserUtilTest {
     @Test
     public void testIsLockUserRequired() {
-        Assert.assertFalse(OscDBUserUtil.isLockUserRequired(DialectType.OB_MYSQL, () -> "4.2.5"));
-        Assert.assertTrue(OscDBUserUtil.isLockUserRequired(DialectType.OB_MYSQL, () -> "4.2.0"));
+        Assert.assertFalse(OscDBUserUtil.isLockUserRequired(DialectType.OB_MYSQL, () -> "4.2.5",
+                () -> LockTableSupportDecider.DEFAULT_LOCK_TABLE_DECIDER));
+        Assert.assertTrue(OscDBUserUtil.isLockUserRequired(DialectType.OB_MYSQL, () -> "4.2.0",
+                () -> LockTableSupportDecider.DEFAULT_LOCK_TABLE_DECIDER));
     }
 }

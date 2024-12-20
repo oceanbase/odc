@@ -113,9 +113,10 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
                 } catch (Exception e) {
                     log.warn("Failed to sync target table structure,table will be ignored,tableName={}",
                             dlmTableUnit.getTableName(), e);
-                    // jobStore.updateDlmTableUnitStatus(dlmTableUnit.getDlmTableUnitId(), TaskStatus.FAILED);
-                    finishTableUnit(dlmTableUnitId, TaskStatus.FAILED);
-                    continue;
+                    if (!parameters.getSyncTableStructure().isEmpty()) {
+                        finishTableUnit(dlmTableUnitId, TaskStatus.FAILED);
+                        continue;
+                    }
                 }
             }
             try {

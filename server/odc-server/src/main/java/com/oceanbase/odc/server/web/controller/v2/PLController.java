@@ -61,7 +61,7 @@ public class PLController {
     @ApiOperation(value = "end batchCompile", notes = "终止批量编译")
     @RequestMapping(value = {"/{sessionId}/databases/{databaseName}/batchCompilations/{id}",
             "/{sessionId}/currentDatabase/batchCompilations/{id}"}, method = RequestMethod.DELETE)
-    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
+    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#id")
     public SuccessResponse<Boolean> endBatchCompile(@PathVariable String id) {
         return Responses.success(plService.endBatchCompile(id));
     }
@@ -69,7 +69,7 @@ public class PLController {
     @ApiOperation(value = "get result for batchCompile", notes = "获取批量编译PL对象的结果")
     @RequestMapping(value = {"/{sessionId}/databases/{databaseName}/batchCompilations/{id}",
             "/{sessionId}/currentDatabase/batchCompilations/{id}"}, method = RequestMethod.GET)
-    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#id")
+    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#id")
     public SuccessResponse<BatchCompileResp> getBatchCompileResult(@PathVariable String id) {
         return Responses.success(plService.getBatchCompileResult(id));
     }

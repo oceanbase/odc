@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import javax.validation.constraints.NotBlank;
+
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectTagging;
@@ -94,6 +96,12 @@ public class LocalObjectStorageClient implements ObjectStorageClient {
         HashSet<String> objectNameSet = new HashSet<>(objectNames);
         blockOperator.batchDelete(objectNameSet);
         return new ArrayList<>();
+    }
+
+    @Override
+    public String deleteObject(@NotBlank String objectName) throws IOException {
+        blockOperator.deleteByObjectId(objectName);
+        return objectName;
     }
 
     @Override

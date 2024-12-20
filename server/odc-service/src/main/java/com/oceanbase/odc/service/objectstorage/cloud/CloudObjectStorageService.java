@@ -20,7 +20,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -164,8 +163,8 @@ public class CloudObjectStorageService {
      * @throws IOException
      */
     public boolean delete(@NotBlank String objectName) throws IOException {
-        List<String> deletedObjectNames = delete(Collections.singletonList(objectName));
-        return !deletedObjectNames.isEmpty();
+        cloudObjectStorageClient.deleteObject(objectName);
+        return true;
     }
 
     /**

@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -78,6 +77,7 @@ import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.odc.service.session.SessionProperties;
+import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.parser.PLParser;
@@ -106,6 +106,9 @@ public class DBPLService {
     private DatabaseRepository databaseRepository;
     @Autowired
     private DBResourcePermissionHelper permissionHelper;
+
+    @Autowired
+    private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
 
     private static final Integer DEFAULT_MAX_CONCURRENT_BATCH_COMPILE_TASK_COUNT = 10;
     private final DefaultSqlExecuteTaskManager taskManager;
@@ -181,7 +184,7 @@ public class DBPLService {
         if (StringUtils.isBlank(databaseName)) {
             // it means batch compile refers to current database
             handle = taskManager.submit(taskCallable);
-            taskId = UUID.randomUUID().toString();
+            taskId = statefulUuidStateIdGenerator.generateStateId("BatchCompile");
         } else {
             throw new UnsupportedException("Batch compile PL in another database is not supported yet");
         }

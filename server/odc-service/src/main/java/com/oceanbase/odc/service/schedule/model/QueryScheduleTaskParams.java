@@ -27,9 +27,9 @@ import lombok.Data;
 @Data
 @Builder
 public class QueryScheduleTaskParams {
-    private Long id;
-    private Long scheduleId;
-    private List<Schedule> schedules;
+    private String id;
+    // it will be merged into scheduleIds when it is not null
+    private String scheduleId;
     private String scheduleName;
     private Set<Long> dataSourceIds;
     private List<TaskStatus> statuses;
@@ -37,10 +37,14 @@ public class QueryScheduleTaskParams {
     private Date startTime;
     private Date endTime;
     private String creator;
+    private Set<Long> creatorIds;
     private Long projectId;
     private Set<Long> projectIds;
     private Long organizationId;
     private String databaseName;
     private String tenantId;
     private String clusterId;
+
+    // inner use
+    private Set<Long> scheduleIds;
 }

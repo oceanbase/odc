@@ -45,6 +45,7 @@ public class OdcDBSession {
         session.setStatus(dbSession.getState());
         session.setObproxyIp(dbSession.getProxyHost());
         session.setSql(dbSession.getLatestQueries());
+        session.setSvrIp(dbSession.getSvrIp());
         return session;
     }
 }

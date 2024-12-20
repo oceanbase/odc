@@ -20,7 +20,11 @@ import java.util.Optional;
 import java.util.Set;
 
 import javax.transaction.Transactional;
+import javax.validation.constraints.NotNull;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -28,7 +32,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.service.schedule.model.QueryScheduleTaskParams;
 
 /**
  * @Author：tinker
@@ -99,5 +105,15 @@ public interface ScheduleTaskRepository extends JpaRepository<ScheduleTaskEntity
             + "st.status=:#{#entity.status},st.progressPercentage=:#{#entity.progressPercentage},"
             + "st.resultJson=:#{#entity.resultJson} where st.id=:#{#entity.id}")
     int update(@Param("entity") ScheduleTaskEntity entity);
+
+    default Page<ScheduleTaskEntity> find(@NotNull Pageable pageable, @NotNull QueryScheduleTaskParams params) {
+        Specification<ScheduleTaskEntity> specification = Specification
+                .where(OdcJpaRepository.between(ScheduleTaskEntity_.createTime, params.getStartTime(),
+                        params.getEndTime()))
+                .and(OdcJpaRepository.eq(ScheduleTaskEntity_.id, params.getId()))
+                .and(OdcJpaRepository.in(ScheduleTaskEntity_.status, params.getStatuses()))
+                .and(OdcJpaRepository.in(ScheduleTaskEntity_.jobName, params.getScheduleIds()));
+        return findAll(specification, pageable);
+    }
 
 }

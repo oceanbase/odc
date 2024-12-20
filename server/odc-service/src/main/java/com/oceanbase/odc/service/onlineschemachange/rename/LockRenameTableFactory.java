@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.rename;
 
+import java.util.function.Supplier;
+
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
@@ -32,14 +34,15 @@ import lombok.extern.slf4j.Slf4j;
 public class LockRenameTableFactory {
 
     public RenameTableInterceptor generate(ConnectionSession connectionSession,
-            DBSessionManageFacade dbSessionManageFacade) {
+            DBSessionManageFacade dbSessionManageFacade,
+            Supplier<LockTableSupportDecider> lockTableSupportDeciderSupplier) {
         PreConditions.notNull(connectionSession, "connectionSession");
 
         DialectType dialectType = connectionSession.getDialectType();
         PreConditions.notNull(dialectType, "dialectType");
         String obVersion = ConnectionSessionUtil.getVersion(connectionSession);
         PreConditions.notNull(obVersion, "obVersion");
-        return OscDBUserUtil.isLockUserRequired(dialectType, () -> obVersion)
+        return OscDBUserUtil.isLockUserRequired(dialectType, () -> obVersion, lockTableSupportDeciderSupplier)
                 ? new LockUserInterceptor(connectionSession, dbSessionManageFacade)
                 : new LockTableInterceptor(connectionSession);
     }

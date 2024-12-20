@@ -50,6 +50,7 @@ import com.oceanbase.odc.service.onlineschemachange.oscfms.action.ConnectionProv
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.ProjectStepResultChecker.ProjectStepResult;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 import com.oceanbase.odc.service.onlineschemachange.rename.DefaultRenameTableInvoker;
+import com.oceanbase.odc.service.onlineschemachange.rename.LockTableSupportDecider;
 import com.oceanbase.odc.service.onlineschemachange.rename.RenameTableHandler;
 import com.oceanbase.odc.service.onlineschemachange.rename.RenameTableHandlers;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
@@ -120,7 +121,7 @@ public class OmsSwapTableActionTest {
     private void doInvoke(DBSchemaAccessor dbSchemaAccessor, MockRenameTableHandler mockRenameTableHandler) {
         ConnectionSession connectionSession = Mockito.mock(ConnectionSession.class);
         Mockito.when(connectionSession.getDialectType()).thenReturn(DialectType.OB_MYSQL);
-        Mockito.when(connectionSession.getAttribute(ConnectionSessionConstants.OB_VERSION)).thenReturn("3.4.0");
+        Mockito.when(connectionSession.getAttribute(ConnectionSessionConstants.OB_VERSION)).thenReturn("4.2.5.0");
         Mockito.when(connectionSession.getSyncJdbcExecutor(
                 ArgumentMatchers.anyString())).thenReturn(Mockito.mock(SyncJdbcExecutor.class));
         ConnectionProvider connectionProvider = new ConnectionProvider() {
@@ -137,7 +138,7 @@ public class OmsSwapTableActionTest {
 
         DefaultRenameTableInvoker renameTableInvoker =
                 new DefaultRenameTableInvoker(connectionProvider, dbSessionManageFacade,
-                        () -> true);
+                        () -> true, () -> LockTableSupportDecider.DEFAULT_LOCK_TABLE_DECIDER);
         OnlineSchemaChangeParameters parameters = OscTestUtil.createOscParameters();
         parameters.setSwapTableNameRetryTimes(1);
         try (MockedStatic<DBSchemaAccessors> mockedStatic = Mockito.mockStatic(DBSchemaAccessors.class);

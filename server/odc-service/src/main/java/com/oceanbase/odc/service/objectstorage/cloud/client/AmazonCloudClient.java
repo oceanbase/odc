@@ -51,6 +51,7 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CopyObjectResult;
+import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectsRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectsResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.GetObjectRequest;
@@ -208,6 +209,16 @@ public class AmazonCloudClient implements CloudClient {
             result.setDeletedObjects(
                     s3Result.getDeletedObjects().stream().map(DeletedObject::getKey).collect(Collectors.toList()));
             return result;
+        });
+    }
+
+    @Override
+    public String deleteObject(DeleteObjectRequest request) throws CloudException {
+        com.amazonaws.services.s3.model.DeleteObjectRequest s3Request =
+                new com.amazonaws.services.s3.model.DeleteObjectRequest(request.getBucketName(), request.getKey());
+        return callAmazonMethod("Delete object", () -> {
+            s3.deleteObject(s3Request);
+            return s3Request.getKey();
         });
     }
 

@@ -854,4 +854,9 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
   'false', 'Enable secure cookie or not, default value false') ON DUPLICATE KEY UPDATE `id`=`id`;
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.features.logicaldatabase.enabled', 'true',
-  'Whether to enable the logical database feature, default is true, indicating enabled.') ON DUPLICATE KEY UPDATE `id`=`id`;
+'Whether to enable the logical database feature, default is true, indicating enabled.') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
+VALUES ('odc.session.kill-query-or-session.max-supported-ob-version', '4.2.5', 'odc', 'default', 'master',
+        'Max OBVersion kill session or kill query supported, only take effect when value greater than 0')
+ON DUPLICATE KEY UPDATE `id`=`id`;

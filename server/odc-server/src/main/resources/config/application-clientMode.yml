@@ -21,5 +21,82 @@ spring:
       - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
       - org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
       - org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.metrics.export.prometheus.PrometheusMetricsExportAutoConfiguration
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
+management:
+  endpoints:
+    enabled-by-default: false
+    web:
+      exposure:
+        include: []
+  metrics:
+    export:
+      simple:
+        enabled: false
+      appoptics:
+        enabled: false
+      atlas:
+        enabled: false
+      datadog:
+        enabled: false
+      dynatrace:
+        enabled: false
+      elastic:
+        enabled: false
+      ganglia:
+        enabled: false
+      graphite:
+        enabled: false
+      influx:
+        enabled: false
+      jmx:
+        enabled: false
+      kairos:
+        enabled: false
+      newrelic:
+        enabled: false
+      prometheus:
+        enabled: false
+      signalfx:
+        enabled: false
+      stackdriver:
+        enabled: false
+      statsd:
+        enabled: false
+      wavefront:
+        enabled: false
+  health:
+    defaults:
+      enabled: false
+    diskspace:
+      enabled: false
+    db:
+      enabled: false
+  auditevents:
+    enabled: false
+  endpoint:
+    loggers:
+      enabled: false
+    threaddump:
+      enabled: false
+    env:
+      enabled: false
+    beans:
+      enabled: false
+    conditions:
+      enabled: false
+    configprops:
+      enabled: false
+    info:
+      enabled: false
+    httptrace:
+      enabled: false
+    mappings:
+      enabled: false
+    scheduledtasks:
+      enabled: false
+    sessions:
+      enabled: false
+    shutdown:
+      enabled: false

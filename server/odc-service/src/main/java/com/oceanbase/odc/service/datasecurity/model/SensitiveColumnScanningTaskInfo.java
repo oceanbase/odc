@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.ErrorCode;
 
 import lombok.Getter;
@@ -43,8 +42,9 @@ public class SensitiveColumnScanningTaskInfo {
     private ErrorCode errorCode;
     private String errorMsg;
 
-    public SensitiveColumnScanningTaskInfo(@NonNull Long projectId, @NonNull Integer allTableCount) {
-        this.taskId = StringUtils.uuid();
+    public SensitiveColumnScanningTaskInfo(@NonNull String taskId, @NonNull Long projectId,
+            @NonNull Integer allTableCount) {
+        this.taskId = taskId;
         this.projectId = projectId;
         this.status = ScanningTaskStatus.CREATED;
         this.allTableCount = allTableCount;
