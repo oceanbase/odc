@@ -356,10 +356,14 @@ public class ScheduleService {
 
             ScheduleChangeLog changeLog = scheduleChangeLogService.createChangeLog(
                     ScheduleChangeLog.build(targetSchedule.getId(), req.getOperationType(),
-                            JsonUtils.toJson(targetSchedule.getParameters()),
+                            req.getOperationType() == OperationType.UPDATE
+                                    ? JsonUtils.toJson(targetSchedule.getParameters())
+                                    : null,
                             req.getOperationType() == OperationType.UPDATE
                                     ? JsonUtils.toJson(req.getUpdateScheduleReq().getParameters())
-                                    : null,
+                                    : req.getOperationType() == OperationType.CREATE
+                                            ? JsonUtils.toJson(req.getCreateScheduleReq().getParameters())
+                                            : null,
                             ScheduleChangeStatus.APPROVING));
             log.info("Create change log success,changLog={}", changeLog);
             req.setScheduleChangeLogId(changeLog.getId());
