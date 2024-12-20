@@ -24,6 +24,7 @@ import com.oceanbase.odc.service.objectstorage.cloud.client.CloudException;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CopyObjectResult;
+import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectsRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectsResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.GetObjectRequest;
@@ -68,6 +69,8 @@ public interface CloudObjectStorage {
             throws CloudException;
 
     DeleteObjectsResult deleteObjects(DeleteObjectsRequest request) throws CloudException;
+
+    String deleteObject(DeleteObjectRequest request) throws CloudException;
 
     boolean doesObjectExist(String bucketName, String key) throws CloudException;
 

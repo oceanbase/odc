@@ -62,6 +62,7 @@ import com.oceanbase.odc.service.flow.instance.FlowInstance;
 import com.oceanbase.odc.service.flow.task.model.OnlineSchemaChangeTaskResult;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
 import com.oceanbase.odc.service.onlineschemachange.model.OscLockDatabaseUserInfo;
@@ -70,6 +71,7 @@ import com.oceanbase.odc.service.onlineschemachange.model.RateLimiterConfig;
 import com.oceanbase.odc.service.onlineschemachange.model.SwapTableType;
 import com.oceanbase.odc.service.onlineschemachange.model.UpdateRateLimiterConfigRequest;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.ActionScheduler;
+import com.oceanbase.odc.service.onlineschemachange.rename.LockTableSupportDecider;
 import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
@@ -117,6 +119,8 @@ public class OscService {
     private TaskService taskService;
     @Autowired
     private ActionScheduler actionScheduler;
+    @Autowired
+    private OnlineSchemaChangeProperties onlineSchemaChangeProperties;
 
 
     @SkipAuthorize("internal authenticated")
@@ -305,6 +309,7 @@ public class OscService {
     private boolean getLockUserIsRequired(Long connectionId) {
         ConnectionConfig decryptedConnConfig =
                 connectionService.getForConnectionSkipPermissionCheck(connectionId);
+
         return OscDBUserUtil.isLockUserRequired(decryptedConnConfig.getDialectType(),
                 () -> {
                     ConnectionSessionFactory factory = new DefaultConnectSessionFactory(decryptedConnConfig);
@@ -321,6 +326,7 @@ public class OscService {
                         }
                     }
                     return version;
-                });
+                }, () -> LockTableSupportDecider.createWithJsonArrayWithDefaultValue(
+                        onlineSchemaChangeProperties.getSupportLockTableObVersionJson()));
     }
 }

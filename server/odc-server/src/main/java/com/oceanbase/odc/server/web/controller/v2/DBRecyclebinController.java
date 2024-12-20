@@ -103,7 +103,7 @@ public class DBRecyclebinController {
 
     @ApiOperation(value = "updateRecyclebinSettings", notes = "更新回收站设置，sid示例：sid:1000-1:d:db1")
     @RequestMapping(value = "/settings", method = RequestMethod.PATCH)
-    @StatefulRoute(multiState = true, stateIdExpression = "#req.sessionIds",
+    @StatefulRoute(stateIdExpression = "#req.sessionIds",
             stateManager = "dbRecyclebinUpdateStateManager")
     public SuccessResponse<RecyclebinSettings> updateRecyclebinSettings(@RequestBody UpdateRecyclebinSettingsReq req) {
         List<ConnectionSession> sessions = req.getSessionIds().stream().map(s -> {

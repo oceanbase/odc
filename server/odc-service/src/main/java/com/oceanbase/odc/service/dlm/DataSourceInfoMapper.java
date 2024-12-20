@@ -28,7 +28,6 @@ import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.enums.DataBaseType;
-import com.oceanbase.tools.migrator.common.util.EncryptUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -87,15 +86,7 @@ public class DataSourceInfoMapper {
                 dataSourceInfo
                         .setFullUserName(OBConsoleDataSourceFactory.getUsername(connectionConfig));
                 dataSourceInfo.setDatabaseType(DataBaseType.OB_MYSQL);
-                dataSourceInfo.setSysUser(connectionConfig.getSysTenantUsername());
                 dataSourceInfo.setClusterName(connectionConfig.getClusterName());
-                if (StringUtils.isNotEmpty(connectionConfig.getSysTenantPassword())) {
-                    try {
-                        dataSourceInfo.setSysPassword(EncryptUtils.encode(connectionConfig.getSysTenantPassword()));
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }
                 dataSourceInfo.setSysDatabaseName("oceanbase");
                 break;
             }

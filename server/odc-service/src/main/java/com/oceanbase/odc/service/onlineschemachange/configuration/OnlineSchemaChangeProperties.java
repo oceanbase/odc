@@ -35,6 +35,8 @@ public class OnlineSchemaChangeProperties {
 
     @NestedConfigurationProperty
     private OmsProperties oms;
+    // in json array["obv1", "obv*",....]
+    private String supportLockTableObVersionJson;
 
     private boolean enableFullVerify;
 
