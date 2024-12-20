@@ -538,6 +538,7 @@ public class DatabaseService {
         }
     }
 
+    @SkipAuthorize("internal usage")
     public int updateEnvironmentIdByConnectionId(@NotNull Long environmentId, @NotNull Long connectionId) {
         return databaseRepository.setEnvironmentIdByConnectionId(environmentId, connectionId);
     }
