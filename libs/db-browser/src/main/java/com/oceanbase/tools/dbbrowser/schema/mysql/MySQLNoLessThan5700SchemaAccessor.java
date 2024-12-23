@@ -1350,14 +1350,22 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
                     .identifier(rs.getString("PARAMETER_NAME")).space()
                     .append(rs.getString("DTD_IDENTIFIER")).append(",");
         });
+        MySQLSqlBuilder getDDL = new MySQLSqlBuilder();
+        getDDL.append("show create procedure ");
+        if (schemaName == null) {
+            getDDL.identifier(procedureName);
+        } else {
+            getDDL.identifier(schemaName);
+            getDDL.append(".");
+            getDDL.identifier(procedureName);
+        }
+        jdbcOperations.query(getDDL.toString(), (rs) -> {
+            procedure.setDdl(rs.getString("Create Procedure"));
+        });
         jdbcOperations.query(sql1.toString(), (rs) -> {
             procedure.setDefiner(rs.getString("DEFINER"));
             procedure.setCreateTime(Timestamp.valueOf(rs.getString("CREATED")));
             procedure.setModifyTime(Timestamp.valueOf(rs.getString("LAST_ALTERED")));
-            procedure.setDdl(String.format("create procedure %s (%s) %s;",
-                    StringUtils.quoteMysqlIdentifier(procedure.getProName()),
-                    StringUtils.substring(parameters.toString(), 0, parameters.length() - 1),
-                    rs.getString("ROUTINE_DEFINITION")));
         });
         return parseProcedureDDL(procedure);
     }
