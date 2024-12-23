@@ -798,7 +798,7 @@ public class ScheduleService {
 
     public Page<ScheduleOverviewHist> listUnfinishedSchedulesByProjectId(@NonNull Pageable pageable,
             @NonNull Long projectId) {
-        return list(pageable, QueryScheduleParams.builder().projectId(projectId)
+        return list(pageable, QueryScheduleParams.builder().projectIds(Collections.singleton(projectId))
                 .statuses(ScheduleStatus.listUnfinishedStatus()).build());
     }
 
