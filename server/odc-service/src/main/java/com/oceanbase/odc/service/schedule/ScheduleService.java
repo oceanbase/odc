@@ -52,6 +52,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import com.alibaba.fastjson.JSONObject;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
@@ -366,16 +367,25 @@ public class ScheduleService {
                         "Concurrent change schedule request is not allowed");
             }
 
+            JSONObject pre = null;
+            JSONObject curr = null;
+            if (req.getOperationType() == OperationType.UPDATE) {
+                pre = new JSONObject();
+                pre.put("triggerConfig", targetSchedule.getTriggerConfig());
+                pre.put("parameters", targetSchedule.getParameters());
+                curr = new JSONObject();
+                curr.put("triggerConfig", req.getUpdateScheduleReq().getTriggerConfig());
+                curr.put("parameters", req.getUpdateScheduleReq().getParameters());
+            } else if (req.getOperationType() == OperationType.CREATE) {
+                curr = new JSONObject();
+                curr.put("triggerConfig", req.getCreateScheduleReq().getTriggerConfig());
+                curr.put("parameters", req.getCreateScheduleReq().getParameters());
+            }
+
             ScheduleChangeLog changeLog = scheduleChangeLogService.createChangeLog(
                     ScheduleChangeLog.build(targetSchedule.getId(), req.getOperationType(),
-                            req.getOperationType() == OperationType.UPDATE
-                                    ? JsonUtils.toJson(targetSchedule.getParameters())
-                                    : null,
-                            req.getOperationType() == OperationType.UPDATE
-                                    ? JsonUtils.toJson(req.getUpdateScheduleReq().getParameters())
-                                    : req.getOperationType() == OperationType.CREATE
-                                            ? JsonUtils.toJson(req.getCreateScheduleReq().getParameters())
-                                            : null,
+                            pre.toJSONString(),
+                            curr.toJSONString(),
                             ScheduleChangeStatus.APPROVING));
             log.info("Create change log success,changLog={}", changeLog);
             req.setScheduleChangeLogId(changeLog.getId());
