@@ -20,6 +20,7 @@ import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.APP
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.APPROVER_NAME;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.CLUSTER_NAME;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.CONNECTION_ID;
+import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.CREATOR_ACCOUNT;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.CREATOR_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.CREATOR_NAME;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.DATABASE_ID;
@@ -321,6 +322,7 @@ public class EventBuilder {
             try {
                 UserEntity user = userService.nullSafeGet(labels.getLongFromString(CREATOR_ID));
                 labels.putIfNonNull(CREATOR_NAME, user.getName());
+                labels.putIfNonNull(CREATOR_ACCOUNT, user.getAccountName());
             } catch (Exception e) {
                 log.warn("failed to query creator info.", e);
             }
