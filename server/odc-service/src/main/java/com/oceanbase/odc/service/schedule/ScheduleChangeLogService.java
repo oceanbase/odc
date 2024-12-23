@@ -65,7 +65,7 @@ public class ScheduleChangeLogService {
             JSONObject curr = JSONObject.parseObject(changeLog.getNewParameter());
             removeCommonKeys(pre, curr);
             changeLog.setPreviousParameters(pre.toJSONString());
-            changeLog.setNewParameter(pre.toJSONString());
+            changeLog.setNewParameter(curr.toJSONString());
             return changeLog;
         }
         return changeLog;

@@ -367,25 +367,26 @@ public class ScheduleService {
                         "Concurrent change schedule request is not allowed");
             }
 
-            JSONObject pre = null;
-            JSONObject curr = null;
+            String pre = null;
+            String curr = null;
             if (req.getOperationType() == OperationType.UPDATE) {
-                pre = new JSONObject();
-                pre.put("triggerConfig", targetSchedule.getTriggerConfig());
-                pre.put("parameters", targetSchedule.getParameters());
-                curr = new JSONObject();
-                curr.put("triggerConfig", req.getUpdateScheduleReq().getTriggerConfig());
-                curr.put("parameters", req.getUpdateScheduleReq().getParameters());
+                JSONObject preJsonObject = new JSONObject();
+                preJsonObject.put("triggerConfig", targetSchedule.getTriggerConfig());
+                preJsonObject.put("parameters", targetSchedule.getParameters());
+                pre = preJsonObject.toJSONString();
+                JSONObject currJsonOBject = new JSONObject();
+                currJsonOBject.put("triggerConfig", req.getUpdateScheduleReq().getTriggerConfig());
+                currJsonOBject.put("parameters", req.getUpdateScheduleReq().getParameters());
+                curr = currJsonOBject.toJSONString();
             } else if (req.getOperationType() == OperationType.CREATE) {
-                curr = new JSONObject();
-                curr.put("triggerConfig", req.getCreateScheduleReq().getTriggerConfig());
-                curr.put("parameters", req.getCreateScheduleReq().getParameters());
+                JSONObject currJsonOBject = new JSONObject();
+                currJsonOBject.put("triggerConfig", req.getCreateScheduleReq().getTriggerConfig());
+                currJsonOBject.put("parameters", req.getCreateScheduleReq().getParameters());
+                curr = currJsonOBject.toJSONString();
             }
 
             ScheduleChangeLog changeLog = scheduleChangeLogService.createChangeLog(
-                    ScheduleChangeLog.build(targetSchedule.getId(), req.getOperationType(),
-                            pre.toJSONString(),
-                            curr.toJSONString(),
+                    ScheduleChangeLog.build(targetSchedule.getId(), req.getOperationType(), pre, curr,
                             ScheduleChangeStatus.APPROVING));
             log.info("Create change log success,changLog={}", changeLog);
             req.setScheduleChangeLogId(changeLog.getId());
