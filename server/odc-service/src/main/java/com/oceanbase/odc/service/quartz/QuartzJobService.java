@@ -59,11 +59,15 @@ public class QuartzJobService {
 
     @Autowired(required = false)
     @Qualifier(value = ("defaultScheduler"))
-    private Scheduler scheduler;
+    private Scheduler defaultScheduler;
+    @Autowired(required = false)
+    @Qualifier(value = ("commonScheduler"))
+    private Scheduler commonScheduler;
 
     public void changeQuartzJob(ChangeQuartJobParam req) {
 
         JobKey jobKey = QuartzKeyGenerator.generateJobKey(req.getJobName(), req.getJobGroup());
+        Scheduler scheduler = QuartzJob.class.isAssignableFrom(req.getJobClazz()) ? defaultScheduler : commonScheduler;
         try {
             switch (req.getOperationType()) {
                 case CREATE: {
@@ -72,30 +76,32 @@ public class QuartzJobService {
                     createQuartzJobReq.setAllowConcurrent(req.getAllowConcurrent());
                     createQuartzJobReq.setMisfireStrategy(req.getMisfireStrategy());
                     createQuartzJobReq.setTriggerConfig(req.getTriggerConfig());
+                    createQuartzJobReq.setJobClazz(req.getJobClazz());
                     createJob(createQuartzJobReq);
                     break;
                 }
                 case UPDATE: {
-                    deleteJob(jobKey);
+                    deleteJob(jobKey, scheduler);
                     CreateQuartzJobParam createQuartzJobReq = new CreateQuartzJobParam();
                     createQuartzJobReq.setJobKey(jobKey);
                     createQuartzJobReq.setAllowConcurrent(req.getAllowConcurrent());
                     createQuartzJobReq.setMisfireStrategy(req.getMisfireStrategy());
                     createQuartzJobReq.setTriggerConfig(req.getTriggerConfig());
+                    createQuartzJobReq.setJobClazz(req.getJobClazz());
                     createJob(createQuartzJobReq);
                     break;
                 }
                 case RESUME: {
-                    resumeJob(jobKey);
+                    resumeJob(jobKey, scheduler);
                     break;
                 }
                 case PAUSE: {
-                    pauseJob(jobKey);
+                    pauseJob(jobKey, scheduler);
                     break;
                 }
                 case TERMINATE:
                 case DELETE: {
-                    deleteJob(jobKey);
+                    deleteJob(jobKey, scheduler);
                     break;
                 }
                 default:
@@ -108,14 +114,21 @@ public class QuartzJobService {
 
 
     public void createJob(CreateQuartzJobParam req) throws SchedulerException {
-        createJob(req, null);
+        if (QuartzJob.class.isAssignableFrom(req.getJobClazz())) {
+            createJob(req, null);
+        } else {
+            createJob(req, null, commonScheduler);
+        }
     }
 
     // TODO how can we recognize multi trigger for job. maybe we can use jobName as trigger group.
     public void createJob(CreateQuartzJobParam req, JobDataMap triggerDataMap) throws SchedulerException {
+        createJob(req, triggerDataMap, defaultScheduler);
+    }
 
-        Class<? extends Job> clazz = QuartzJob.class;
-
+    private void createJob(CreateQuartzJobParam req, JobDataMap triggerDataMap, Scheduler scheduler)
+            throws SchedulerException {
+        Class<? extends Job> clazz = req.getJobClazz();
         if (req.getTriggerConfig() != null) {
             JobDataMap triData = triggerDataMap == null ? new JobDataMap(new HashMap<>(1)) : triggerDataMap;
             TriggerKey triggerKey =
@@ -182,42 +195,83 @@ public class QuartzJobService {
     }
 
     public void pauseJob(JobKey jobKey) throws SchedulerException {
+        pauseJob(jobKey, defaultScheduler);
+    }
+
+    public void pauseJob(JobKey jobKey, Scheduler scheduler) throws SchedulerException {
         scheduler.pauseJob(jobKey);
     }
 
     public void resumeJob(JobKey jobKey) throws SchedulerException {
+        resumeJob(jobKey, defaultScheduler);
+    }
+
+    public void resumeJob(JobKey jobKey, Scheduler scheduler) throws SchedulerException {
         scheduler.resumeJob(jobKey);
     }
 
     public void deleteJob(JobKey jobKey) throws SchedulerException {
+        deleteJob(jobKey, defaultScheduler);
+    }
+
+    public void deleteJob(JobKey jobKey, Scheduler scheduler) throws SchedulerException {
         scheduler.deleteJob(jobKey);
     }
 
     public boolean checkExists(JobKey jobKey) throws SchedulerException {
+        return checkExists(jobKey, defaultScheduler);
+    }
+
+    public boolean checkExists(JobKey jobKey, Scheduler scheduler) throws SchedulerException {
         return scheduler.checkExists(jobKey);
     }
 
     public Trigger getTrigger(TriggerKey key) throws SchedulerException {
+        return getTrigger(key, defaultScheduler);
+    }
+
+    public Trigger getTrigger(TriggerKey key, Scheduler scheduler) throws SchedulerException {
         return scheduler.getTrigger(key);
     }
 
     public void rescheduleJob(TriggerKey triggerKey, Trigger newTrigger) throws SchedulerException {
+        rescheduleJob(triggerKey, newTrigger, defaultScheduler);
+    }
+
+    public void rescheduleJob(TriggerKey triggerKey, Trigger newTrigger, Scheduler scheduler)
+            throws SchedulerException {
         scheduler.rescheduleJob(triggerKey, newTrigger);
     }
 
     public void triggerJob(JobKey key) throws SchedulerException {
+        triggerJob(key, defaultScheduler);
+    }
+
+    public void triggerJob(JobKey key, Scheduler scheduler) throws SchedulerException {
         scheduler.triggerJob(key);
     }
 
     public void interruptJob(JobKey key) throws UnableToInterruptJobException {
+        interruptJob(key, defaultScheduler);
+    }
+
+    public void interruptJob(JobKey key, Scheduler scheduler) throws UnableToInterruptJobException {
         scheduler.interrupt(key);
     }
 
     public void triggerJob(JobKey key, JobDataMap triggerDataMap) throws SchedulerException {
+        triggerJob(key, triggerDataMap, defaultScheduler);
+    }
+
+    public void triggerJob(JobKey key, JobDataMap triggerDataMap, Scheduler scheduler) throws SchedulerException {
         scheduler.triggerJob(key, triggerDataMap);
     }
 
     public List<? extends Trigger> getJobTriggers(JobKey jobKey) throws SchedulerException {
+        return getJobTriggers(jobKey, defaultScheduler);
+    }
+
+    public List<? extends Trigger> getJobTriggers(JobKey jobKey, Scheduler scheduler) throws SchedulerException {
         return scheduler.getTriggersOfJob(jobKey);
     }
 }
