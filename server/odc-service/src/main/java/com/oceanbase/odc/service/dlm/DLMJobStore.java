@@ -58,6 +58,9 @@ public class DLMJobStore implements IJobStore {
     }
 
     public void destroy() {
+        if (dataSource == null) {
+            return;
+        }
         try {
             dataSource.close();
         } catch (Exception e) {

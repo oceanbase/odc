@@ -51,6 +51,13 @@ public class VersionUtilsTest {
     }
 
     @Test
+    public void isGreaterThan0_Length() {
+        Assert.assertTrue(VersionUtils.isGreaterThan0("1.1.2"));
+        Assert.assertFalse(VersionUtils.isGreaterThan0("-1"));
+        Assert.assertFalse(VersionUtils.isGreaterThan0("0"));
+    }
+
+    @Test
     public void isGreaterThan_Length4WithLength3() {
         Assert.assertTrue(VersionUtils.isGreaterThan("1.1.1.1", "1.1.1"));
         Assert.assertFalse(VersionUtils.isGreaterThan("1.1.1.0", "1.1.1"));

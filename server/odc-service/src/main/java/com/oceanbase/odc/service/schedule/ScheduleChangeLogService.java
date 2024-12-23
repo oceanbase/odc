@@ -15,12 +15,17 @@
  */
 package com.oceanbase.odc.service.schedule;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.parser.Feature;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -50,9 +55,20 @@ public class ScheduleChangeLogService {
     }
 
     public ScheduleChangeLog getByIdAndScheduleId(Long id, Long scheduleId) {
-        return scheduleChangeLogRepository.findByIdAndScheduleId(id, scheduleId).map(mapper::entityToModel)
+        ScheduleChangeLog changeLog = scheduleChangeLogRepository.findByIdAndScheduleId(id, scheduleId).map(
+                mapper::entityToModel)
                 .orElseThrow(() -> new NotFoundException(
                         ResourceType.ODC_SCHEDULE_CHANGELOG, "id", id));
+        if (StringUtils.isNotEmpty(changeLog.getNewParameter())
+                && StringUtils.isNotEmpty(changeLog.getPreviousParameters())) {
+            JSONObject pre = JSONObject.parseObject(changeLog.getPreviousParameters());
+            JSONObject curr = JSONObject.parseObject(changeLog.getNewParameter());
+            removeCommonKeys(pre, curr);
+            changeLog.setPreviousParameters(pre.toJSONString());
+            changeLog.setNewParameter(curr.toJSONString());
+            return changeLog;
+        }
+        return changeLog;
     }
 
     public ScheduleChangeLog getByFlowInstanceId(Long flowInstanceId) {
@@ -77,5 +93,39 @@ public class ScheduleChangeLogService {
     public boolean hasApprovingChangeLog(Long scheduleId) {
         return listByScheduleId(scheduleId).stream().map(ScheduleChangeLog::getStatus)
                 .anyMatch(ScheduleChangeStatus.APPROVING::equals);
+    }
+
+
+    public static void removeCommonKeys(JSONObject json1, JSONObject json2) {
+        Iterator<String> keys = json1.keySet().iterator();
+        while (keys.hasNext()) {
+            String key = keys.next();
+
+            if (json2.containsKey(key)) {
+                Object value1 = json1.get(key);
+                Object value2 = json2.get(key);
+
+                if (isJsonString(value1.toString()) && isJsonString(value2.toString())) {
+                    JSONObject nestedJson1 = JSON.parseObject(value1.toString());
+                    JSONObject nestedJson2 = JSON.parseObject(value2.toString());
+                    removeCommonKeys(nestedJson1, nestedJson2);
+
+                    json1.put(key, nestedJson1);
+                    json2.put(key, nestedJson2);
+                } else if (value1.equals(value2)) {
+                    keys.remove();
+                    json2.remove(key);
+                }
+            }
+        }
+    }
+
+    public static boolean isJsonString(String value) {
+        try {
+            JSON.parseObject(value, Feature.IgnoreNotMatch);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
