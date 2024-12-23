@@ -99,7 +99,7 @@ public class DBPLModifyHelper {
             DBObjectType plType, String tempPlName) throws Exception {
         String plName = editPLReq.getObjectName();
         String editPLSql = editPLReq.getSql();
-        String tempPLSql = editPLSql.replaceFirst(plName, tempPlName);
+        String tempPLSql = editPLSql.replaceFirst(plName.replaceAll("([\\\\+*?\\[\\](){}|.^$])", "\\\\$1"), tempPlName);
         StringBuilder wrappedSqlBuilder = new StringBuilder();
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
         SqlCommentProcessor processor = ConnectionSessionUtil.getSqlCommentProcessor(connectionSession);
