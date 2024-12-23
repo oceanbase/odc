@@ -84,6 +84,7 @@ import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter.ApplyTable;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 
 import lombok.extern.slf4j.Slf4j;
@@ -242,6 +243,16 @@ public class EventBuilder {
                             : database.getEnvironment().getName(), database.getName()))
                     .collect(Collectors.joining(",")));
             labels.putIfNonNull(PROJECT_ID, projectId);
+        } else if (task.getTaskType() == TaskType.ALTER_SCHEDULE) {
+            AlterScheduleParameters parameter = JsonUtils.fromJson(task.getParametersJson(),
+                    AlterScheduleParameters.class);
+            ScheduleChangeParams scheduleChangeParams = parameter.getScheduleChangeParams();
+            Verify.notNull(scheduleChangeParams, "scheduleChangeParams");
+            ScheduleEntity schedule = scheduleRepository.findById(scheduleChangeParams.getScheduleId()).get();
+            projectId = schedule.getProjectId();
+            labels.putIfNonNull(PROJECT_ID, projectId);
+            labels.putIfNonNull(DATABASE_ID, schedule.getDatabaseId());
+            labels.putIfNonNull(DATABASE_NAME, schedule.getDatabaseName());
         } else {
             throw new UnexpectedException("task.databaseId should not be null");
         }
