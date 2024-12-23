@@ -105,17 +105,14 @@ public class ScheduleChangeLogService {
                 Object value1 = json1.get(key);
                 Object value2 = json2.get(key);
 
-                // 如果值也是 JSON 对象，则递归处理
                 if (isJsonString(value1.toString()) && isJsonString(value2.toString())) {
                     JSONObject nestedJson1 = JSON.parseObject(value1.toString());
                     JSONObject nestedJson2 = JSON.parseObject(value2.toString());
                     removeCommonKeys(nestedJson1, nestedJson2);
 
-                    // 更新原 JSON 对象中嵌套的 JSON 字符串
                     json1.put(key, nestedJson1);
                     json2.put(key, nestedJson2);
                 } else if (value1.equals(value2)) {
-                    // 如果值相同，移除这个键
                     keys.remove();
                     json2.remove(key);
                 }
