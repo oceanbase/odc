@@ -52,6 +52,7 @@ public class EventLabelKeys {
     public static final String CREATOR_NAME = "creatorName";
     public static final String APPROVER_ID = "approverId";
     public static final String APPROVER_NAME = "approverName";
+    public static final String APPROVER_ACCOUNT = "approverAccountName";
 
     /**
      * global info

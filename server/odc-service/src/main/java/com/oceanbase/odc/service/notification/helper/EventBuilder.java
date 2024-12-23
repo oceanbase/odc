@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.notification.helper;
 
+import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.APPROVER_ACCOUNT;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.APPROVER_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.APPROVER_NAME;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.CLUSTER_NAME;
@@ -155,6 +156,7 @@ public class EventBuilder {
         Event event = ofTask(task, TaskEvent.APPROVED);
         if (approver == null) {
             event.getLabels().putIfNonNull(APPROVER_NAME, AUTO_APPROVAL_KEY);
+            event.getLabels().putIfNonNull(APPROVER_ACCOUNT, AUTO_APPROVAL_KEY);
         } else {
             event.getLabels().put(APPROVER_ID, approver + "");
         }
@@ -166,6 +168,7 @@ public class EventBuilder {
         Event event = ofTask(task, TaskEvent.APPROVAL_REJECTION);
         if (approver == null) {
             event.getLabels().putIfNonNull(APPROVER_NAME, AUTO_APPROVAL_KEY);
+            event.getLabels().putIfNonNull(APPROVER_ACCOUNT, AUTO_APPROVAL_KEY);
         } else {
             event.getLabels().put(APPROVER_ID, approver + "");
         }
@@ -339,14 +342,19 @@ public class EventBuilder {
             try {
                 if ("null".equals(labels.get(APPROVER_ID))) {
                     labels.putIfNonNull(APPROVER_NAME, AUTO_APPROVAL_KEY);
+                    labels.putIfNonNull(APPROVER_ACCOUNT, AUTO_APPROVAL_KEY);
                 } else if (labels.get(APPROVER_ID).startsWith("[")) {
                     List<Long> approverIds = JsonUtils.fromJsonList(labels.get(APPROVER_ID), Long.class);
                     List<User> approvers = userService.batchNullSafeGet(approverIds);
                     labels.putIfNonNull(APPROVER_NAME,
                             String.join(" | ", approvers.stream().map(User::getName).collect(Collectors.toSet())));
+                    labels.putIfNonNull(APPROVER_ACCOUNT,
+                            String.join(" | ",
+                                    approvers.stream().map(User::getAccountName).collect(Collectors.toSet())));
                 } else {
                     UserEntity user = userService.nullSafeGet(labels.getLongFromString(APPROVER_ID));
                     labels.putIfNonNull(APPROVER_NAME, user.getName());
+                    labels.putIfNonNull(APPROVER_ACCOUNT, user.getAccountName());
                 }
             } catch (Exception e) {
                 log.warn("failed to query approver.", e);
