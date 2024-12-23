@@ -769,7 +769,7 @@ public class FlowInstanceService {
             } else if (CollectionUtils.isNotEmpty(parameters.getExportDbObjects())) {
                 ConnectionConfig config = connectionService.getBasicWithoutPermissionCheck(req.getConnectionId());
                 parameters.getExportDbObjects().forEach(item -> {
-                    if (item.getDbObjectType() == ObjectType.TABLE) {
+                    if (item.getDbObjectType() == ObjectType.TABLE || item.getDbObjectType() == ObjectType.VIEW) {
                         resource2Types.put(
                                 DBResource.from(config, req.getDatabaseName(), item.getObjectName(),
                                         ResourceType.ODC_TABLE),
