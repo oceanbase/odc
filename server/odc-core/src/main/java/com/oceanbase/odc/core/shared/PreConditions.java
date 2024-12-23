@@ -269,16 +269,6 @@ public class PreConditions {
                 "file suffix is illegal");
     }
 
-    public static void validNoDuplicatedAlterSchedule(
-            String parameterName, Object parameterValue, BooleanSupplier duplicatedChecker) {
-        if (duplicatedChecker.getAsBoolean()) {
-            throw new BadRequestException(ErrorCodes.AlterScheduleExists,
-                    new Object[] {parameterName, parameterValue},
-                    String.format("alter task already exists by %s=%s", parameterName,
-                            parameterValue.toString()));
-        }
-    }
-
     public static <T> void validSingleton(Collection<T> collection, String parameterName) {
         notEmpty(collection, parameterName);
         if (collection.size() != 1) {

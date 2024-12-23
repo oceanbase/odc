@@ -170,6 +170,9 @@ public enum ErrorCodes implements ErrorCode {
     // Schedule
     AlterScheduleExists,
     InvalidCronExpression,
+    UpdateNotAllowed,
+    PauseNotAllowed,
+    DeleteNotAllowed,
 
     // Partition plan
     PartitionPlanNoDropPreviewSqlGenerated,
