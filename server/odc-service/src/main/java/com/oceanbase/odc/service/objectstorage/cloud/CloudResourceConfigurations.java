@@ -105,6 +105,7 @@ public class CloudResourceConfigurations {
                 case AWS:
                 case TENCENT_CLOUD:
                 case HUAWEI_CLOUD:
+                case GOOGLE_CLOUD:
                     return createAmazonCloudClient(configuration);
                 default:
                     return new NullCloudClient();
@@ -140,6 +141,10 @@ public class CloudResourceConfigurations {
                 .withCredentials(credentialsProvider)
                 .withClientConfiguration(clientConfiguration)
                 .disableChunkedEncoding();
+        // GCS does not support region
+        if (configuration.getCloudProvider() == CloudProvider.GOOGLE_CLOUD) {
+            region = "EMPTY";
+        }
         // if not AWS, means use S3 SDK to access other cloud storage, then we must set endpoint
         if (!configuration.getCloudProvider().isAWS()) {
             String endpoint = configuration.getPublicEndpoint();

@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.text.ParseException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +51,7 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CompleteMultipartUploadResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CopyObjectResult;
+import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectsRequest;
 import com.oceanbase.odc.service.objectstorage.cloud.model.DeleteObjectsResult;
 import com.oceanbase.odc.service.objectstorage.cloud.model.GetObjectRequest;
@@ -195,6 +197,17 @@ public class AlibabaCloudClient implements CloudClient {
             result.setRequestId(ossResult.getRequestId());
             result.setDeletedObjects(ossResult.getDeletedObjects());
             return result;
+        });
+    }
+
+    @Override
+    public String deleteObject(DeleteObjectRequest request) throws CloudException {
+        com.aliyun.oss.model.DeleteObjectsRequest ossRequest =
+                new com.aliyun.oss.model.DeleteObjectsRequest(request.getBucketName())
+                        .withKeys(Collections.singletonList(request.getKey()));
+        return callOssMethod("Delete object", () -> {
+            com.aliyun.oss.model.DeleteObjectsResult ossResult = oss.deleteObjects(ossRequest);
+            return ossResult.getDeletedObjects().get(0);
         });
     }
 
