@@ -63,7 +63,7 @@ public class JobPropertiesUtils {
 
     public static TaskMonitorMode getMonitorMode(@NonNull Map<String, String> jobProperties) {
         String monitorMode = jobProperties.get("monitorMode");
-        return StringUtils.isBlank(monitorMode) ? TaskMonitorMode.PULL : TaskMonitorMode.valueOf(monitorMode);
+        return StringUtils.isBlank(monitorMode) ? TaskMonitorMode.PUSH : TaskMonitorMode.valueOf(monitorMode);
     }
 
     public static void setExecutorListenPort(@NonNull Map<String, String> jobProperties, @NonNull Integer listenPort) {
