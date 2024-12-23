@@ -58,6 +58,18 @@ public class PLParserTest {
     }
 
     @Test
+    public void testParseMysqlProcedureContainsDefiner() {
+        String pl = "create DEFINER = `root`@`%` procedure testProduce (out p1 int) \n" + "BEGIN \n" + "DECLARE Eno INT DEFAULT 10000;\n"
+            + "DECLARE En VARCHAR(20);\n" + "DECLARE J VARCHAR(20);\n" + "DECLARE M INT DEFAULT 80000;\n"
+            + "DECLARE H YEAR;\n" + "DECLARE Dno INT;\n" + "DECLARE i INT DEFAULT 1; \n" + "RETURN;\n" + "END;";
+        ParseMysqlPLResult result = PLParser.parseObMysql(pl);
+        Assert.assertEquals(7, result.getVaribaleList().size());
+        Assert.assertEquals("testProduce", result.getPlName());
+        Assert.assertEquals("procedure", result.getPlType());
+        Assert.assertEquals(1, result.getParamList().size());
+    }
+
+    @Test
     public void testParseOracleProcedure() {
         String pl = "create procedure pl_test(p1 in int default 1, p2 in varchar2) \n" + "is \n" + "v1 number;\n"
                 + "begin \n"
