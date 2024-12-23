@@ -31,6 +31,7 @@ import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import com.oceanbase.odc.service.common.ConditionOnServer;
 import com.oceanbase.odc.service.quartz.OdcJobListener;
 import com.oceanbase.odc.service.quartz.OdcTriggerListener;
+import com.oceanbase.odc.service.quartz.QuartzTriggerListener;
 
 /**
  * @Author：tinker
@@ -46,10 +47,14 @@ public class QuartzConfiguration {
     private OdcJobListener odcJobListener;
     @Autowired
     private OdcTriggerListener odcTriggerListener;
+    @Autowired
+    private QuartzTriggerListener quartzTriggerListener;
     @Value("${odc.task.max-concurrent-task-count:10}")
     private Long maxConcurrentTaskCount;
 
     private final String defaultSchedulerName = "ODC-SCHEDULER";
+    private final String commonSchedulerName = "ODC-COMMON-SCHEDULER";
+    private final String APPLICATION_CONTEXT_SCHEDULER_KEY_NAME = "applicationContext";
 
     @Bean("defaultSchedulerFactoryBean")
     public SchedulerFactoryBean schedulerFactoryBean(DataSource dataSource) {
@@ -69,6 +74,27 @@ public class QuartzConfiguration {
         Scheduler scheduler = schedulerFactoryBean.getScheduler();
         scheduler.getListenerManager().addJobListener(odcJobListener);
         scheduler.getListenerManager().addTriggerListener(odcTriggerListener);
+        return scheduler;
+    }
+
+    @Bean("commonSchedulerFactoryBean")
+    public SchedulerFactoryBean commonSchedulerFactoryBean(DataSource dataSource) throws Exception {
+        SchedulerFactoryBean factory = new SchedulerFactoryBean();
+        factory.setDataSource(dataSource);
+        factory.setSchedulerName(commonSchedulerName);
+        factory.setApplicationContextSchedulerContextKey(APPLICATION_CONTEXT_SCHEDULER_KEY_NAME);
+        Properties properties = new Properties();
+        properties.put("org.quartz.threadPool.threadCount", maxConcurrentTaskCount.toString());
+        factory.setQuartzProperties(properties);
+        return factory;
+    }
+
+    @Bean("commonScheduler")
+    public Scheduler commonScheduler(
+            @Autowired @Qualifier("commonSchedulerFactoryBean") SchedulerFactoryBean schedulerFactoryBean)
+            throws SchedulerException {
+        Scheduler scheduler = schedulerFactoryBean.getScheduler();
+        scheduler.getListenerManager().addTriggerListener(quartzTriggerListener);
         return scheduler;
     }
 }

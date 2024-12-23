@@ -15,8 +15,10 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
+import org.quartz.Job;
 import org.quartz.JobDataMap;
 
+import com.oceanbase.odc.service.quartz.executor.QuartzJob;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 
 import lombok.Data;
@@ -44,4 +46,5 @@ public class ChangeQuartJobParam {
     private JobDataMap jobDataMap = new JobDataMap();
 
     private OperationType operationType;
+    private Class<? extends Job> jobClazz = QuartzJob.class;
 }
