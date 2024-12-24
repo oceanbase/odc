@@ -31,6 +31,7 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
@@ -88,6 +89,8 @@ import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.model.UserResourceRole;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.model.ScheduleOverviewHist;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -428,12 +431,16 @@ public class ProjectService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("Internal usage")
-    public TicketReference getProjectTicketReference(Long projectId) {
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
+    public TicketReference getProjectTicketReference(@NonNull Long projectId) {
         TicketReference reference = new TicketReference();
         reference.setUnfinishedFlowInstances(
                 flowInstanceService.listUnfinishedFlowInstances(Pageable.unpaged(), projectId).getContent());
         reference.setUnfinishedSchedules(
-                scheduleService.listUnfinishedSchedulesByProjectId(Pageable.unpaged(), projectId).getContent());
+                scheduleService.listUnfinishedSchedulesByProjectId(Pageable.unpaged(), projectId).getContent().stream()
+                        .filter(schedule -> schedule.getType() != ScheduleType.PARTITION_PLAN).collect(
+                                Collectors.toList()));
         return reference;
     }
 
@@ -556,14 +563,31 @@ public class ProjectService {
     }
 
     public void checkUnfinishedTickets(@NonNull Long projectId) {
-        if (scheduleService.getEnabledScheduleCountByProjectId(projectId) > 0) {
-            throw new BadRequestException(
-                    "There exists unfinished schedule tasks in the project, please disable them before archiving the project.");
-        }
         if (flowInstanceService.listUnfinishedFlowInstances(Pageable.unpaged(), projectId).hasContent()) {
             throw new BadRequestException(
                     "There exists unfinished tickets in the project, please stop them before archiving the project.");
         }
+        List<ScheduleOverviewHist> schedules =
+                scheduleService.listUnfinishedSchedulesByProjectId(Pageable.unpaged(), projectId).getContent();
+        // no unfinished schedules
+        if (CollectionUtils.isEmpty(schedules)) {
+            return;
+        }
+        // There exists unfinished schedules(except for partition plans) in the project
+        if (schedules.stream().anyMatch(schedule -> schedule.getType() != ScheduleType.PARTITION_PLAN)) {
+            throw new BadRequestException(
+                    "There exists unfinished schedule tasks in the project, please stop them before archiving the project.");
+        }
+        // Terminate all partition plans if exists
+        schedules.stream().filter(schedule -> schedule.getType() == ScheduleType.PARTITION_PLAN)
+                .forEach(schedule -> {
+                    try {
+                        scheduleService.innerTerminate(schedule.getId());
+                    } catch (SchedulerException e) {
+                        log.warn("Failed to terminate partition plan schedule, scheduleId={}", schedule.getId());
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 
     private Project entityToModel(ProjectEntity entity, List<UserResourceRole> userResourceRoles) {
