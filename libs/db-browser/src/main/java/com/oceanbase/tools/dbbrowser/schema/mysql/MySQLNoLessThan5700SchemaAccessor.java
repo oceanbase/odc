@@ -1333,31 +1333,24 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
                 .value(schemaName)
                 .append(" and ROUTINE_TYPE = 'PROCEDURE' and ROUTINE_NAME=")
                 .value(procedureName);
-
-        MySQLSqlBuilder queryForParameters = new MySQLSqlBuilder();
-        queryForParameters.append(
-                "select PARAMETER_MODE, PARAMETER_NAME, DTD_IDENTIFIER from `information_schema`.`parameters` where SPECIFIC_SCHEMA=")
-                .value(schemaName)
-                .append(" and SPECIFIC_NAME=")
-                .value(procedureName)
-                .append(" and ROUTINE_TYPE='PROCEDURE'");
         DBProcedure procedure = new DBProcedure();
         procedure.setProName(procedureName);
-        MySQLSqlBuilder parameters = new MySQLSqlBuilder();
-
-        jdbcOperations.query(queryForParameters.toString(), (rs) -> {
-            parameters.append(rs.getString("PARAMETER_MODE")).space()
-                    .identifier(rs.getString("PARAMETER_NAME")).space()
-                    .append(rs.getString("DTD_IDENTIFIER")).append(",");
+        MySQLSqlBuilder getDDL = new MySQLSqlBuilder();
+        getDDL.append("show create procedure ");
+        if (schemaName == null) {
+            getDDL.identifier(procedureName);
+        } else {
+            getDDL.identifier(schemaName);
+            getDDL.append(".");
+            getDDL.identifier(procedureName);
+        }
+        jdbcOperations.query(getDDL.toString(), (rs) -> {
+            procedure.setDdl(rs.getString("Create Procedure"));
         });
         jdbcOperations.query(sql1.toString(), (rs) -> {
             procedure.setDefiner(rs.getString("DEFINER"));
             procedure.setCreateTime(Timestamp.valueOf(rs.getString("CREATED")));
             procedure.setModifyTime(Timestamp.valueOf(rs.getString("LAST_ALTERED")));
-            procedure.setDdl(String.format("create procedure %s (%s) %s;",
-                    StringUtils.quoteMysqlIdentifier(procedure.getProName()),
-                    StringUtils.substring(parameters.toString(), 0, parameters.length() - 1),
-                    rs.getString("ROUTINE_DEFINITION")));
         });
         return parseProcedureDDL(procedure);
     }
