@@ -46,5 +46,5 @@ public class ChangeQuartJobParam {
     private JobDataMap jobDataMap = new JobDataMap();
 
     private OperationType operationType;
-    private Class<? extends Job> jobClazz = QuartzJob.class;
+    private Class<? extends Job> jobClass = QuartzJob.class;
 }

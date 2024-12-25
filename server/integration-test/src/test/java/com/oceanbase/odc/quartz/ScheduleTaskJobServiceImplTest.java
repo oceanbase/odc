@@ -24,9 +24,10 @@ import org.junit.Test;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.oceanbase.odc.ServiceTestEnv;
-import com.oceanbase.odc.service.quartz.QuartzJobService;
+import com.oceanbase.odc.service.quartz.ScheduleTaskJobServiceImpl;
 import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
@@ -38,10 +39,11 @@ import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
  * @Date: 2023/5/19 10:23
  * @Descripition:
  */
-public class QuartzJobServiceTest extends ServiceTestEnv {
+public class ScheduleTaskJobServiceImplTest extends ServiceTestEnv {
 
     @Autowired
-    private QuartzJobService quartzJobService;
+    @Qualifier("scheduleTaskJobServiceImpl")
+    private ScheduleTaskJobServiceImpl quartzJobService;
 
     @Test
     public void create() throws SchedulerException, ParseException {
