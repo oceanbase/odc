@@ -92,6 +92,7 @@ import com.oceanbase.odc.metadb.iam.RolePermissionEntity;
 import com.oceanbase.odc.metadb.iam.RolePermissionRepository;
 import com.oceanbase.odc.metadb.iam.RoleRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
+import com.oceanbase.odc.metadb.iam.UserOrganizationEntity;
 import com.oceanbase.odc.metadb.iam.UserOrganizationRepository;
 import com.oceanbase.odc.metadb.iam.UserPermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
@@ -600,9 +601,11 @@ public class UserService {
 
     @SkipAuthorize
     public PaginatedData<User> listUserBasicsWithoutPermissionCheck() {
-        List<User> users =
-                userRepository.findByOrganizationId(authenticationFacade.currentOrganizationId()).stream()
-                        .map(User::new).collect(Collectors.toList());
+        List<UserOrganizationEntity> entities = userOrganizationRepository.findByOrganizationId(
+                authenticationFacade.currentOrganizationId());
+        List<User> users = userRepository.findByIdIn(
+                entities.stream().map(UserOrganizationEntity::getUserId).collect(Collectors.toList())).stream()
+                .map(User::new).collect(Collectors.toList());
         return new PaginatedData<>(users, CustomPage.empty());
     }
 
