@@ -253,6 +253,7 @@ public class EventBuilder {
             labels.putIfNonNull(PROJECT_ID, projectId);
             labels.putIfNonNull(DATABASE_ID, schedule.getDatabaseId());
             labels.putIfNonNull(DATABASE_NAME, schedule.getDatabaseName());
+            labels.putIfNonNull(TASK_TYPE, schedule.getType().name());
         } else {
             throw new UnexpectedException("task.databaseId should not be null");
         }
