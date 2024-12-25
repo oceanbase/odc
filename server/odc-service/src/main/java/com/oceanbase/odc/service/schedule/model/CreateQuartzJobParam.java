@@ -43,6 +43,6 @@ public class CreateQuartzJobParam {
 
     // To store task parameters.
     private JobDataMap jobDataMap = new JobDataMap();
-    private Class<? extends Job> jobClazz = QuartzJob.class;
+    private Class<? extends Job> jobClass = QuartzJob.class;
 
 }
