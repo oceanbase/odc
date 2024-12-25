@@ -1333,14 +1333,6 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
                 .value(schemaName)
                 .append(" and ROUTINE_TYPE = 'PROCEDURE' and ROUTINE_NAME=")
                 .value(procedureName);
-
-        MySQLSqlBuilder queryForParameters = new MySQLSqlBuilder();
-        queryForParameters.append(
-                "select PARAMETER_MODE, PARAMETER_NAME, DTD_IDENTIFIER from `information_schema`.`parameters` where SPECIFIC_SCHEMA=")
-                .value(schemaName)
-                .append(" and SPECIFIC_NAME=")
-                .value(procedureName)
-                .append(" and ROUTINE_TYPE='PROCEDURE'");
         DBProcedure procedure = new DBProcedure();
         procedure.setProName(procedureName);
         MySQLSqlBuilder getDDL = new MySQLSqlBuilder();
