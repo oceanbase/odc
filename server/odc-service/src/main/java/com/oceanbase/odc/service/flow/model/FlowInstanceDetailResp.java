@@ -176,6 +176,7 @@ public class FlowInstanceDetailResp {
             resp.setStatus(flowInstance.getStatus());
             resp.setDescription(flowInstance.getDescription());
             resp.setProjectId(flowInstance.getProjectId());
+            resp.setProject(getProjectById.apply(flowInstance.getProjectId()));
 
             List<BaseFlowNodeInstance> instances =
                     flowInstance.filterInstanceNode(instance -> FlowNodeType.SERVICE_TASK == instance.getNodeType()

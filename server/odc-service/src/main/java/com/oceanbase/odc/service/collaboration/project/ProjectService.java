@@ -338,7 +338,7 @@ public class ProjectService {
 
     @SkipAuthorize("odc internal usage")
     public List<Project> listByIds(@NotEmpty Set<Long> ids) {
-        return repository.findAllById(ids).stream().map(projectMapper::entityToModel).collect(Collectors.toList());
+        return repository.findAllById(ids).stream().map(this::entityToModel).collect(Collectors.toList());
     }
 
     private Page<ProjectEntity> innerList(@Valid QueryProjectParams params, @NotNull Pageable pageable,
@@ -610,6 +610,8 @@ public class ProjectService {
         Project project = projectMapper.entityToModel(entity);
         project.setCreator(currentInnerUser());
         project.setLastModifier(currentInnerUser());
+        project.setCurrentUserResourceRoles(
+                getProjectId2ResourceRoleNames().getOrDefault(project.getId(), Collections.EMPTY_SET));
         return project;
     }
 
