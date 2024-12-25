@@ -415,7 +415,7 @@ public class StringUtilsTest {
     }
 
     @Test
-    public void replaceFirst_plEditReplaceOriginalName_success() {
+    public void replaceFirst_replaceOriginalNameContainingRegularCharsInPlEdit_success() {
         String pl =
                 "create function `FuN_test@111--#%&*()_+` (`p1` int(12)) returns int(11) begin declare v1 int; set v1 = p1 + 1; return v1; end;";
         String originalName = "FuN_test@111--#%&*()_+";
