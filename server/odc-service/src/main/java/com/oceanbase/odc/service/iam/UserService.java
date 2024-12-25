@@ -92,6 +92,7 @@ import com.oceanbase.odc.metadb.iam.RolePermissionEntity;
 import com.oceanbase.odc.metadb.iam.RolePermissionRepository;
 import com.oceanbase.odc.metadb.iam.RoleRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
+import com.oceanbase.odc.metadb.iam.UserOrganizationEntity;
 import com.oceanbase.odc.metadb.iam.UserOrganizationRepository;
 import com.oceanbase.odc.metadb.iam.UserPermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
@@ -600,9 +601,11 @@ public class UserService {
 
     @SkipAuthorize
     public PaginatedData<User> listUserBasicsWithoutPermissionCheck() {
-        List<User> users =
-                userRepository.findByOrganizationId(authenticationFacade.currentOrganizationId()).stream()
-                        .map(User::new).collect(Collectors.toList());
+        List<UserOrganizationEntity> entities = userOrganizationRepository.findByOrganizationId(
+                authenticationFacade.currentOrganizationId());
+        List<User> users = userRepository.findByIdIn(
+                entities.stream().map(UserOrganizationEntity::getUserId).collect(Collectors.toList())).stream()
+                .map(User::new).collect(Collectors.toList());
         return new PaginatedData<>(users, CustomPage.empty());
     }
 
@@ -664,13 +667,17 @@ public class UserService {
             }
         }).collect(Collectors.toList());
 
-        Specification<UserEntity> spec =
-                Specification.where(UserSpecs.organizationIdEqual(authenticationFacade.currentOrganizationId()))
-                        .and(UserSpecs.enabledEqual(params.getEnabled()))
-                        .and(UserSpecs.namesLike(params.getNames())
-                                .or(UserSpecs.accountNamesLike(params.getAccountNames())));
+        Specification<UserEntity> spec = Specification.where(UserSpecs.enabledEqual(params.getEnabled()))
+                .and(UserSpecs.namesLike(params.getNames()).or(UserSpecs.accountNamesLike(params.getAccountNames())));
+
+        List<Long> userIdsInOrg = userOrganizationRepository.findByOrganizationId(
+                authenticationFacade.currentOrganizationId()).stream().map(UserOrganizationEntity::getUserId).collect(
+                        Collectors.toList());
         if (!findAllUsers) {
+            queryUserIds.addAll(userIdsInOrg);
             spec = spec.and(UserSpecs.userIdIn(queryUserIds));
+        } else {
+            spec = spec.and(UserSpecs.userIdIn(userIdsInOrg));
         }
         spec = spec.and(UserSpecs.sort(Sort.by(orderList)));
         Pageable page = pageable.equals(Pageable.unpaged()) ? pageable
