@@ -50,7 +50,9 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
@@ -248,7 +250,9 @@ public class EventBuilder {
                     AlterScheduleParameters.class);
             ScheduleChangeParams scheduleChangeParams = parameter.getScheduleChangeParams();
             Verify.notNull(scheduleChangeParams, "scheduleChangeParams");
-            ScheduleEntity schedule = scheduleRepository.findById(scheduleChangeParams.getScheduleId()).get();
+            ScheduleEntity schedule = scheduleRepository.findById(scheduleChangeParams.getScheduleId())
+                    .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE, "id",
+                            scheduleChangeParams.getScheduleId()));
             projectId = schedule.getProjectId();
             labels.putIfNonNull(PROJECT_ID, projectId);
             labels.putIfNonNull(DATABASE_ID, schedule.getDatabaseId());
