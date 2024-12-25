@@ -179,8 +179,16 @@ public class SqlCommentProcessor {
         }
     }
 
+    /**
+     * 向MySQL语句中添加一行
+     *
+     * @param sqls        SQL语句列表
+     * @param buffer      存储SQL语句的字符串缓冲区
+     * @param bufferOrder SQL语句顺序的持有者
+     * @param line        当前行的字符数组
+     */
     private synchronized void addLineMysql(List<OffsetString> sqls, StringBuffer buffer, Holder<Integer> bufferOrder,
-            List<OrderChar> line) {
+        List<OrderChar> line) {
         int pos, out;
         boolean needSpace = false;
         // 标识量，用于标识当前是否处于HINT，CONDITIONAL中
@@ -188,6 +196,7 @@ public class SqlCommentProcessor {
         boolean isSameLine = false;
         int lineLength = line.size();
         OrderChar[] lines = line.toArray(new OrderChar[lineLength + 1]);
+        // 如果当前行为空且缓冲区也为空，则直接返回
         if ((lines.length == 0 || lines[0] == null || lines[0].getCh() == 0) && buffer.length() == 0) {
             return;
         }
@@ -200,12 +209,15 @@ public class SqlCommentProcessor {
                 continue;
             }
             int delimiterBegin = 0;
+            // 如果需要保留格式，则循环删除 delimiterBegin 之前的空格和制表符
             if (preserveFormat) {
+                // 循环删除 delimiterBegin 之前的空格和制表符
                 for (; delimiterBegin < out
-                        && (lines[delimiterBegin].getCh() == ' '
-                                || lines[delimiterBegin].getCh() == '\t'); delimiterBegin++) {
+                       && (lines[delimiterBegin].getCh() == ' '
+                           || lines[delimiterBegin].getCh() == '\t'); delimiterBegin++) {
                 }
             }
+            // 判断是否为设定分隔符的语句
             if (equalsIgnoreCase((DELIMITER_NAME + " ").toCharArray(), lines, delimiterBegin, (out - delimiterBegin))) {
                 // 检测到"delimiter "字符串，且不在多行注释以及多行字符串中，说明有设定分隔符的语句
                 StringBuilder newDelimiter = new StringBuilder();
@@ -222,6 +234,7 @@ public class SqlCommentProcessor {
                 continue;
             }
             // 扫描到转义字符，可能出现指令
+            // 判断是否为多行注释
             if ((!mlComment && inChar == '\\')) {
                 inOrderChar = lines[++pos];
                 inChar = inOrderChar.getCh();
@@ -241,7 +254,7 @@ public class SqlCommentProcessor {
                 lines[out++] = OrderChar.newOrderChar(lines[pos - 1]);
                 lines[out++] = OrderChar.newOrderChar(lines[pos]);
             } else if (!mlComment && inString == '\0' && ssComment != SSC.HINT
-                    && isPrefix(lines, pos, delimiter)) {
+                       && isPrefix(lines, pos, delimiter)) {
                 // 不是多行注释，未在字符串中，不是hint且以delimiter开头，通常是扫描到了sql的末尾
                 pos += delimiter.length();
                 if (out != 0) {
@@ -258,9 +271,11 @@ public class SqlCommentProcessor {
                 buffer.setLength(0);
                 isSameLine = true;
                 inNormalSql = false;
-            } else if (!mlComment
-                    && (inString == '\0' && (inChar == '#' || (inChar == '-' && lines[pos + 1].getCh() == '-'
-                            && ((lines[pos + 2].getCh() == ' ' || lines[pos + 2].getCh() == '\0')))))) {
+            } // 判断是否处于单行注释中
+            else if (!mlComment
+                     && (inString == '\0' && (inChar == '#' || (inChar == '-' && lines[pos + 1].getCh() == '-'
+                                                                && ((lines[pos + 2].getCh() == ' '
+                                                                     || lines[pos + 2].getCh() == '\0')))))) {
                 // 处于单行注释中
                 if (buffer.length() == 0) {
                     bufferOrder.setValue(lines[0].getOrder());
@@ -306,9 +321,9 @@ public class SqlCommentProcessor {
                 }
                 break;
             } else if (inString == '\0' && (inChar == '/' && lines[pos + 1].getCh() == '*')
-            // 此处注意，Oracle模式下没有Conditional，故这里要做规避。Mysql模式下的Conditional在Oracle模式在要识别为注释去掉
-                    && lines[pos + 2].getCh() != '!'
-                    && lines[pos + 2].getCh() != '+' && ssComment != SSC.HINT) {
+                       // 此处注意，Oracle模式下没有Conditional，故这里要做规避。Mysql模式下的Conditional在Oracle模式在要识别为注释去掉
+                       && lines[pos + 2].getCh() != '!'
+                       && lines[pos + 2].getCh() != '+' && ssComment != SSC.HINT) {
                 // 处于多行注释中，注意规避了HINT和CONDITIONAL，Oracle模式下没有conditional
                 if (preserveMultiComments) {
                     lines[out++].setCh('/');
@@ -351,7 +366,7 @@ public class SqlCommentProcessor {
                         ssComment = SSC.HINT;
                     }
                 } else if (inString == '\0' && ssComment != SSC.NONE && inChar == '*'
-                        && lines[pos + 1].getCh() == '/') {
+                           && lines[pos + 1].getCh() == '/') {
                     // HINT或CONDITIONAL结束
                     ssComment = SSC.NONE;
                 }
@@ -359,7 +374,7 @@ public class SqlCommentProcessor {
                     // 字符指针出字符串或表达式
                     inString = '\0';
                 } else if (!mlComment && inString == '\0' && ssComment != SSC.HINT
-                        && (inChar == '\'' || inChar == '"' || inChar == '`')) {
+                           && (inChar == '\'' || inChar == '"' || inChar == '`')) {
                     // 字符指针进入字符串或者表达式
                     inString = inChar;
                 }

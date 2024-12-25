@@ -747,40 +747,54 @@ public class FlowInstanceService {
         return taskService.detail(taskId);
     }
 
+    /**
+     * 检查创建流程实例的权限
+     *
+     * @param req 创建流程实例的请求
+     */
     private void checkCreateFlowInstancePermission(CreateFlowInstanceReq req) {
+        // 如果当前用户是个人用户，则直接返回
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             return;
         }
+        // 如果任务类型是导出，则需要检查导出数据库对象的权限
         if (req.getTaskType() == TaskType.EXPORT) {
             DataTransferConfig parameters = (DataTransferConfig) req.getParameters();
             Map<DBResource, Set<DatabasePermissionType>> resource2Types = new HashMap<>();
+            // 如果导出的数据库对象不为空，则需要检查每个对象的权限
             if (CollectionUtils.isNotEmpty(parameters.getExportDbObjects())) {
                 ConnectionConfig config = connectionService.getBasicWithoutPermissionCheck(req.getConnectionId());
                 parameters.getExportDbObjects().forEach(item -> {
                     if (item.getDbObjectType() == ObjectType.TABLE) {
                         resource2Types.put(
-                                DBResource.from(config, req.getDatabaseName(), item.getObjectName(),
-                                        ResourceType.ODC_TABLE),
-                                DatabasePermissionType.from(TaskType.EXPORT));
+                            DBResource.from(config, req.getDatabaseName(), item.getObjectName(),
+                                ResourceType.ODC_TABLE),
+                            DatabasePermissionType.from(TaskType.EXPORT));
                     }
                 });
+                // 如果导出的数据库对象为空，则需要检查整个数据库的权限
             } else if (parameters.isExportAllObjects()) {
                 ConnectionConfig config = connectionService.getBasicWithoutPermissionCheck(req.getConnectionId());
                 resource2Types.put(
-                        DBResource.from(config, req.getDatabaseName(), null, ResourceType.ODC_DATABASE),
-                        DatabasePermissionType.from(TaskType.EXPORT));
+                    DBResource.from(config, req.getDatabaseName(), null, ResourceType.ODC_DATABASE),
+                    DatabasePermissionType.from(TaskType.EXPORT));
             }
+            // 过滤未授权的数据库资源
             List<UnauthorizedDBResource> unauthorizedDBResources = this.permissionHelper
-                    .filterUnauthorizedDBResources(resource2Types, false);
+                .filterUnauthorizedDBResources(resource2Types, false);
+            // 如果存在未授权的数据库资源，则抛出异常
             if (CollectionUtils.isNotEmpty(unauthorizedDBResources)) {
                 throw new BadRequestException(ErrorCodes.DatabaseAccessDenied,
-                        new Object[] {unauthorizedDBResources.stream()
-                                .map(UnauthorizedDBResource::getUnauthorizedPermissionTypes).flatMap(Collection::stream)
-                                .map(DatabasePermissionType::getLocalizedMessage).collect(Collectors.joining(","))},
-                        "Lack permission for the database with id " + req.getDatabaseId());
+                    new Object[] {unauthorizedDBResources.stream()
+                                      .map(UnauthorizedDBResource::getUnauthorizedPermissionTypes).flatMap(
+                            Collection::stream)
+                                      .map(DatabasePermissionType::getLocalizedMessage).collect(
+                        Collectors.joining(","))},
+                    "Lack permission for the database with id " + req.getDatabaseId());
             }
             return;
         }
+        // 如果任务类型不是导出，则需要检查数据库的权限
         Set<Long> databaseIds = new HashSet<>();
         if (Objects.nonNull(req.getDatabaseId())) {
             databaseIds.add(req.getDatabaseId());
@@ -793,8 +807,9 @@ public class FlowInstanceService {
         } else if (taskType == TaskType.MULTIPLE_ASYNC) {
             MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
             databaseIds =
-                    parameters.getOrderedDatabaseIds().stream().flatMap(Collection::stream).collect(Collectors.toSet());
+                parameters.getOrderedDatabaseIds().stream().flatMap(Collection::stream).collect(Collectors.toSet());
         }
+        // 检查数据库的权限
         permissionHelper.checkDBPermissions(databaseIds, DatabasePermissionType.from(req.getTaskType()));
     }
 
