@@ -21,13 +21,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import com.oceanbase.odc.common.trace.TraceDecorator;
 import com.oceanbase.odc.common.util.SystemUtils;
-import com.oceanbase.odc.service.config.SystemConfigService;
-import com.oceanbase.odc.service.datasecurity.SensitiveColumnScanningResultCache;
 import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncProperties;
 
 import lombok.extern.slf4j.Slf4j;
@@ -41,13 +38,6 @@ import lombok.extern.slf4j.Slf4j;
 public class ScheduleConfiguration {
 
     private final int CORE_NUMBER = SystemUtils.availableProcessors();
-
-    private final long REFRESH_CONFIG_RATE_MILLIS = 3 * 60 * 1000L;
-
-    private static final int SHORT_VALIDATE_INTERVAL_MS = 10 * 1000;
-
-    @Autowired
-    private SystemConfigService systemConfigService;
 
     @Autowired
     private DBSchemaSyncProperties dbSchemaSyncProperties;
@@ -315,16 +305,6 @@ public class ScheduleConfiguration {
         executor.initialize();
         log.info("queryProfileMonitorExecutor initialized");
         return executor;
-    }
-
-    @Scheduled(fixedDelay = REFRESH_CONFIG_RATE_MILLIS)
-    public void refreshSysConfig() {
-        systemConfigService.refresh();
-    }
-
-    @Scheduled(fixedRate = SHORT_VALIDATE_INTERVAL_MS)
-    public void clearExpiredTask() {
-        SensitiveColumnScanningResultCache.getInstance().clearExpiredTaskInfo();
     }
 
 }
