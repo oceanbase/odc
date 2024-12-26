@@ -40,9 +40,11 @@ import com.oceanbase.tools.dbbrowser.model.DBPLParamMode;
 
 public class OBMysqlCallFunctionCallBackTest {
 
-    public static final String TEST_CASE_1 = "func_test";
-    public static final String TEST_CASE_2 = "func_test_1";
-    public static final String TEST_CASE_3 = "func_test_2";
+    public static final String TEST_CASE_1 = "TEST_CASE_1";
+    public static final String TEST_CASE_2 = "TEST_CASE_2";
+    public static final String TEST_CASE_3 = "TEST_CASE_3";
+    public static final String TEST_CASE_4 = "func_test_4";
+
 
     @BeforeClass
     public static void setUp() throws IOException {
@@ -58,6 +60,7 @@ public class OBMysqlCallFunctionCallBackTest {
         mysql.execute("DROP FUNCTION " + TEST_CASE_1);
         mysql.execute("DROP FUNCTION " + TEST_CASE_2);
         mysql.execute("DROP FUNCTION " + TEST_CASE_3);
+        mysql.execute("DROP FUNCTION " + TEST_CASE_4);
     }
 
     @Test
@@ -215,6 +218,37 @@ public class OBMysqlCallFunctionCallBackTest {
         plOutParam.setParamName(TEST_CASE_3);
         plOutParam.setDataType("varchar(20)");
         plOutParam.setValue(input);
+        expect.setReturnValue(plOutParam);
+        expect.setOutParams(null);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void doInConnection_returnTypeIsYear_callSucceed() {
+        CallFunctionReq callFunctionReq = new CallFunctionReq();
+        DBFunction function = new DBFunction();
+        function.setFunName(TEST_CASE_4);
+        List<DBPLParam> list = new ArrayList<>();
+        DBPLParam param = new DBPLParam();
+        param.setParamName("p1");
+        param.setDefaultValue("2024");
+        param.setDataType("year");
+        param.setParamMode(DBPLParamMode.IN);
+        list.add(param);
+        function.setParams(list);
+        function.setReturnType("year");
+        callFunctionReq.setFunction(function);
+
+        ConnectionCallback<CallFunctionResp> callback = new OBMysqlCallFunctionCallBack(callFunctionReq, -1);
+        JdbcTemplate jdbcTemplate =
+                new JdbcTemplate(TestDBConfigurations.getInstance().getTestOBMysqlConfiguration().getDataSource());
+        CallFunctionResp actual = jdbcTemplate.execute(callback);
+
+        CallFunctionResp expect = new CallFunctionResp();
+        PLOutParam plOutParam = new PLOutParam();
+        plOutParam.setParamName(TEST_CASE_4);
+        plOutParam.setDataType("year");
+        plOutParam.setValue("2024");
         expect.setReturnValue(plOutParam);
         expect.setOutParams(null);
         Assert.assertEquals(expect, actual);

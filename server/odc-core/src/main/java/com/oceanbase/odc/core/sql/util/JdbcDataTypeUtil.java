@@ -290,6 +290,8 @@ public class JdbcDataTypeUtil {
             dataType = "date";
         } else if ("sys_refcursor".equalsIgnoreCase(dataType)) {
             dataType = "ref";
+        } else if ("year".equalsIgnoreCase(dataType)) {
+            dataType = "SMALLINT";
         }
 
         JDBCType type;

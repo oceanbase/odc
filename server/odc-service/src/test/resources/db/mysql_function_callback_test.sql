@@ -27,3 +27,10 @@ begin
   return p0;
 end;
 $$
+
+create function ${const:com.oceanbase.odc.service.db.util.OBMysqlCallFunctionCallBackTest.TEST_CASE_4} (
+p1 year) returns year
+begin
+return p1;
+end;
+$$
