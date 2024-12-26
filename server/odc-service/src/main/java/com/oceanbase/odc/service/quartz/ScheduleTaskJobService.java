@@ -23,18 +23,21 @@ import org.springframework.stereotype.Service;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 
 /**
- * @author jingtian
- * @date 2024/12/25
+ * @Author：tinker
+ * @Date: 2022/11/14 18:28
+ * @Descripition:
  */
-@Service("quartzJobServiceImpl")
+
+@Service("scheduleTaskJobService")
 @SkipAuthorize("odc internal usage")
-public class QuartzJobServiceImpl extends ScheduleTaskJobServiceImpl {
+public class ScheduleTaskJobService extends AbstractQuartzJobService {
+
     @Autowired(required = false)
-    @Qualifier(value = ("commonScheduler"))
-    private Scheduler commonScheduler;
+    @Qualifier(value = ("defaultScheduler"))
+    private Scheduler scheduler;
 
     @Override
     protected Scheduler getScheduler() {
-        return commonScheduler;
+        return scheduler;
     }
 }
