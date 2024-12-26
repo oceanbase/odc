@@ -32,11 +32,7 @@ import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
 import org.quartz.UnableToInterruptJobException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Service;
 
-import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
@@ -47,20 +43,10 @@ import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 
 /**
- * @Author：tinker
- * @Date: 2022/11/14 18:28
- * @Descripition:
+ * @author jingtian
+ * @date 2024/12/25
  */
-
-@Service("scheduleTaskJobServiceImpl")
-@SkipAuthorize("odc internal usage")
-public class ScheduleTaskJobServiceImpl implements QuartzJobService {
-
-    @Autowired(required = false)
-    @Qualifier(value = ("defaultScheduler"))
-    private Scheduler scheduler;
-
-    @Override
+public abstract class AbstractQuartzJobService {
     public void changeJob(ChangeQuartJobParam req) {
 
         JobKey jobKey = QuartzKeyGenerator.generateJobKey(req.getJobName(), req.getJobGroup());
@@ -108,27 +94,25 @@ public class ScheduleTaskJobServiceImpl implements QuartzJobService {
         }
     }
 
-    @Override
     public void createJob(CreateQuartzJobParam req) throws SchedulerException {
         createJob(req, null);
     }
 
-    @Override
     // TODO how can we recognize multi trigger for job. maybe we can use jobName as trigger group.
     public void createJob(CreateQuartzJobParam req, JobDataMap triggerDataMap) throws SchedulerException {
 
-        Class<? extends Job> clazz = req.getJobClass();
+        Class<? extends Job> jobClass = req.getJobClass();
 
         if (req.getTriggerConfig() != null) {
             JobDataMap triData = triggerDataMap == null ? new JobDataMap(new HashMap<>(1)) : triggerDataMap;
             TriggerKey triggerKey =
                     QuartzKeyGenerator.generateTriggerKey(req.getJobKey().getName(), req.getJobKey().getGroup());
             Trigger trigger = buildTrigger(triggerKey, req.getTriggerConfig(), req.getMisfireStrategy(), triData);
-            JobDetail jobDetail = JobBuilder.newJob(clazz).withIdentity(req.getJobKey())
+            JobDetail jobDetail = JobBuilder.newJob(jobClass).withIdentity(req.getJobKey())
                     .usingJobData(req.getJobDataMap()).build();
             getScheduler().scheduleJob(jobDetail, trigger);
         } else {
-            JobDetail jobDetail = JobBuilder.newJob(clazz).withIdentity(req.getJobKey())
+            JobDetail jobDetail = JobBuilder.newJob(jobClass).withIdentity(req.getJobKey())
                     .usingJobData(req.getJobDataMap()).storeDurably(true).build();
             getScheduler().addJob(jobDetail, false);
         }
@@ -184,57 +168,46 @@ public class ScheduleTaskJobServiceImpl implements QuartzJobService {
         }
     }
 
-    @Override
     public void pauseJob(JobKey jobKey) throws SchedulerException {
         getScheduler().pauseJob(jobKey);
     }
 
-    @Override
     public void resumeJob(JobKey jobKey) throws SchedulerException {
         getScheduler().resumeJob(jobKey);
     }
 
-    @Override
     public void deleteJob(JobKey jobKey) throws SchedulerException {
         getScheduler().deleteJob(jobKey);
     }
 
-    @Override
     public boolean checkExists(JobKey jobKey) throws SchedulerException {
         return getScheduler().checkExists(jobKey);
     }
 
-    @Override
     public Trigger getTrigger(TriggerKey key) throws SchedulerException {
         return getScheduler().getTrigger(key);
     }
 
-    @Override
     public void rescheduleJob(TriggerKey triggerKey, Trigger newTrigger) throws SchedulerException {
         getScheduler().rescheduleJob(triggerKey, newTrigger);
     }
 
-    @Override
     public void triggerJob(JobKey key) throws SchedulerException {
         getScheduler().triggerJob(key);
     }
 
-    @Override
     public void interruptJob(JobKey key) throws UnableToInterruptJobException {
         getScheduler().interrupt(key);
     }
 
-    @Override
     public void triggerJob(JobKey key, JobDataMap triggerDataMap) throws SchedulerException {
         getScheduler().triggerJob(key, triggerDataMap);
     }
 
-    @Override
     public List<? extends Trigger> getJobTriggers(JobKey jobKey) throws SchedulerException {
         return getScheduler().getTriggersOfJob(jobKey);
     }
 
-    protected Scheduler getScheduler() {
-        return scheduler;
-    }
+    abstract protected Scheduler getScheduler();
+
 }

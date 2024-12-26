@@ -40,80 +40,67 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskType;
  */
 @Service("quartzJobServiceProxy")
 @SkipAuthorize("odc internal usage")
-public class QuartzJobServiceProxy implements QuartzJobService {
+public class QuartzJobServiceProxy {
     @Autowired
-    @Qualifier("scheduleTaskJobServiceImpl")
-    private ScheduleTaskJobServiceImpl scheduleTaskJobService;
+    @Qualifier("scheduleTaskJobService")
+    private ScheduleTaskJobService scheduleTaskJobService;
     @Autowired
-    @Qualifier("quartzJobServiceImpl")
-    private QuartzJobServiceImpl quartzJobService;
+    @Qualifier("quartzJobService")
+    private QuartzJobService quartzJobService;
 
-    @Override
     public void createJob(CreateQuartzJobParam req) throws SchedulerException {
         getQuartzJobServiceImpl(req.getJobClass()).createJob(req);
     }
 
-    @Override
     public void createJob(CreateQuartzJobParam req, JobDataMap triggerDataMap) throws SchedulerException {
         getQuartzJobServiceImpl(req.getJobClass()).createJob(req, triggerDataMap);
     }
 
-    @Override
     public void changeJob(ChangeQuartJobParam req) {
         getQuartzJobServiceImpl(req.getJobClass()).changeJob(req);
     }
 
-    @Override
     public void pauseJob(JobKey jobKey) throws SchedulerException {
         getQuartzJobServiceImpl(jobKey.getGroup()).pauseJob(jobKey);
     }
 
-    @Override
     public void resumeJob(JobKey jobKey) throws SchedulerException {
         getQuartzJobServiceImpl(jobKey.getGroup()).resumeJob(jobKey);
     }
 
-    @Override
     public void deleteJob(JobKey jobKey) throws SchedulerException {
         getQuartzJobServiceImpl(jobKey.getGroup()).deleteJob(jobKey);
     }
 
-    @Override
     public boolean checkExists(JobKey jobKey) throws SchedulerException {
         return getQuartzJobServiceImpl(jobKey.getGroup()).checkExists(jobKey);
     }
 
-    @Override
     public Trigger getTrigger(TriggerKey key) throws SchedulerException {
         return getQuartzJobServiceImpl(key.getGroup()).getTrigger(key);
     }
 
-    @Override
     public void rescheduleJob(TriggerKey triggerKey, Trigger newTrigger) throws SchedulerException {
         getQuartzJobServiceImpl(triggerKey.getGroup()).rescheduleJob(triggerKey, newTrigger);
     }
 
-    @Override
     public void triggerJob(JobKey key) throws SchedulerException {
         getQuartzJobServiceImpl(key.getGroup()).triggerJob(key);
     }
 
-    @Override
     public void interruptJob(JobKey key) throws UnableToInterruptJobException {
         getQuartzJobServiceImpl(key.getGroup()).interruptJob(key);
     }
 
-    @Override
     public void triggerJob(JobKey key, JobDataMap triggerDataMap) throws SchedulerException {
         getQuartzJobServiceImpl(key.getGroup()).triggerJob(key, triggerDataMap);
     }
 
-    @Override
     public List<? extends Trigger> getJobTriggers(JobKey jobKey) throws SchedulerException {
         return getQuartzJobServiceImpl(jobKey.getGroup()).getJobTriggers(jobKey);
     }
 
-    private QuartzJobService getQuartzJobServiceImpl(String group) {
+    private AbstractQuartzJobService getQuartzJobServiceImpl(String group) {
         for (ScheduleTaskType type : ScheduleTaskType.values()) {
             if (type.name().equalsIgnoreCase(group)) {
                 return scheduleTaskJobService;
@@ -122,7 +109,7 @@ public class QuartzJobServiceProxy implements QuartzJobService {
         return quartzJobService;
     }
 
-    private QuartzJobService getQuartzJobServiceImpl(Class<? extends Job> jobClass) {
+    private AbstractQuartzJobService getQuartzJobServiceImpl(Class<? extends Job> jobClass) {
         return QuartzJob.class.isAssignableFrom(jobClass) ? scheduleTaskJobService : quartzJobService;
     }
 }

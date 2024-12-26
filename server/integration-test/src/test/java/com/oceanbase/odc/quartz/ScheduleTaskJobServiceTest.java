@@ -27,7 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.oceanbase.odc.ServiceTestEnv;
-import com.oceanbase.odc.service.quartz.ScheduleTaskJobServiceImpl;
+import com.oceanbase.odc.service.quartz.ScheduleTaskJobService;
 import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
@@ -39,11 +39,11 @@ import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
  * @Date: 2023/5/19 10:23
  * @Descripition:
  */
-public class ScheduleTaskJobServiceImplTest extends ServiceTestEnv {
+public class ScheduleTaskJobServiceTest extends ServiceTestEnv {
 
     @Autowired
-    @Qualifier("scheduleTaskJobServiceImpl")
-    private ScheduleTaskJobServiceImpl quartzJobService;
+    @Qualifier("scheduleTaskJobService")
+    private ScheduleTaskJobService scheduleTaskJobService;
 
     @Test
     public void create() throws SchedulerException, ParseException {
@@ -55,9 +55,10 @@ public class ScheduleTaskJobServiceImplTest extends ServiceTestEnv {
         Date date = simpleDateFormat.parse("20220101 00:00:00");
         config.setStartAt(date);
         req.setTriggerConfig(config);
-        quartzJobService.createJob(req);
+        scheduleTaskJobService.createJob(req);
         Trigger trigger =
-                quartzJobService.getTrigger(QuartzKeyGenerator.generateTriggerKey("1", ScheduleType.SQL_PLAN.name()));
+                scheduleTaskJobService
+                        .getTrigger(QuartzKeyGenerator.generateTriggerKey("1", ScheduleType.SQL_PLAN.name()));
         Assert.assertEquals(trigger.getFinalFireTime(), date);
     }
 
