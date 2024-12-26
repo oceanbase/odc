@@ -51,7 +51,7 @@ public class QuartzConfiguration {
 
     private final String defaultSchedulerName = "ODC-SCHEDULER";
     private final String commonSchedulerName = "ODC-COMMON-SCHEDULER";
-    private final String APPLICATION_CONTEXT_SCHEDULER_KEY_NAME = "applicationContext";
+    private final String applicationContextKeyName = "applicationContext";
 
     @Bean("defaultSchedulerFactoryBean")
     public SchedulerFactoryBean schedulerFactoryBean(DataSource dataSource) {
@@ -79,7 +79,7 @@ public class QuartzConfiguration {
         SchedulerFactoryBean factory = new SchedulerFactoryBean();
         factory.setDataSource(dataSource);
         factory.setSchedulerName(commonSchedulerName);
-        factory.setApplicationContextSchedulerContextKey(APPLICATION_CONTEXT_SCHEDULER_KEY_NAME);
+        factory.setApplicationContextSchedulerContextKey(applicationContextKeyName);
         Properties properties = new Properties();
         properties.put("org.quartz.threadPool.threadCount", maxConcurrentTaskCount.toString());
         factory.setQuartzProperties(properties);

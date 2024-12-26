@@ -208,6 +208,6 @@ public abstract class AbstractQuartzJobService {
         return getScheduler().getTriggersOfJob(jobKey);
     }
 
-    abstract protected Scheduler getScheduler();
+    protected abstract Scheduler getScheduler();
 
 }
