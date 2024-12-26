@@ -225,13 +225,21 @@ public class OBMysqlCallFunctionCallBackTest {
 
     @Test
     public void doInConnection_returnTypeIsYear_callSucceed() {
+        testCallFunctionWhenReturnIsYear("2024", "2024");
+        testCallFunctionWhenReturnIsYear("0000", "0000");
+        testCallFunctionWhenReturnIsYear("0", "2000");
+        testCallFunctionWhenReturnIsYear("1", "2001");
+        testCallFunctionWhenReturnIsYear("99", "1999");
+    }
+
+    private static void testCallFunctionWhenReturnIsYear(String input, String expectOutput) {
         CallFunctionReq callFunctionReq = new CallFunctionReq();
         DBFunction function = new DBFunction();
         function.setFunName(TEST_CASE_4);
         List<DBPLParam> list = new ArrayList<>();
         DBPLParam param = new DBPLParam();
         param.setParamName("p1");
-        param.setDefaultValue("2024");
+        param.setDefaultValue(input);
         param.setDataType("year");
         param.setParamMode(DBPLParamMode.IN);
         list.add(param);
@@ -248,7 +256,7 @@ public class OBMysqlCallFunctionCallBackTest {
         PLOutParam plOutParam = new PLOutParam();
         plOutParam.setParamName(TEST_CASE_4);
         plOutParam.setDataType("year");
-        plOutParam.setValue("2024");
+        plOutParam.setValue(expectOutput);
         expect.setReturnValue(plOutParam);
         expect.setOutParams(null);
         Assert.assertEquals(expect, actual);
