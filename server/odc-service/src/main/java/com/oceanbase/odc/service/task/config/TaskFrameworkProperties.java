@@ -72,6 +72,15 @@ public interface TaskFrameworkProperties {
 
     String getDestroyExecutorJobCronExpression();
 
+    /**
+     * main class to boot process, default is null, to upgrade from process caller to supervisor
+     * 
+     * @return
+     */
+    String getProcessMainClassName();
+
     boolean isEnableK8sLocalDebugMode();
+
+    boolean isEnableTaskSupervisorAgent();
 
 }

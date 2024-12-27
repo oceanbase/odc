@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.caller;
 
+import java.util.Date;
 import java.util.Optional;
 
 import com.oceanbase.odc.service.resource.ResourceID;
@@ -45,10 +46,12 @@ public class K8sJobCaller extends BaseJobCaller {
      */
     private final PodConfig defaultPodConfig;
     private final ResourceManager resourceManager;
+    private final Date jobCreateTime;
 
-    public K8sJobCaller(PodConfig podConfig, ResourceManager resourceManager) {
+    public K8sJobCaller(PodConfig podConfig, ResourceManager resourceManager, Date jobCreateTime) {
         this.defaultPodConfig = podConfig;
         this.resourceManager = resourceManager;
+        this.jobCreateTime = jobCreateTime;
     }
 
     @Override
@@ -59,14 +62,16 @@ public class K8sJobCaller extends BaseJobCaller {
                     resourceManager.create(resourceLocation, buildK8sResourceContext(context, resourceLocation));
             String arn = resource.getResource().resourceID().getIdentifier();
             return DefaultExecutorIdentifier.builder().namespace(resource.getResource().getNamespace())
-                    .executorName(arn).build();
+                    .executorName(arn).host(resource.getResource().getPodIpAddress())
+                    .port(Integer.valueOf(resource.getResource().getServicePort()))
+                    .build();
         } catch (Throwable e) {
             throw new JobException("doStart failed for " + context, e);
         }
     }
 
     protected K8sResourceContext buildK8sResourceContext(JobContext context, ResourceLocation resourceLocation) {
-        String jobName = JobUtils.generateExecutorName(context.getJobIdentity());
+        String jobName = JobUtils.generateExecutorName(context.getJobIdentity(), jobCreateTime);
         return new K8sResourceContext(defaultPodConfig, jobName, resourceLocation.getRegion(),
                 resourceLocation.getGroup(),
                 DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE, context);
@@ -75,14 +80,11 @@ public class K8sJobCaller extends BaseJobCaller {
     protected ResourceLocation buildResourceLocation(JobContext context) {
         // TODO(tianke): confirm is this correct?
         String region = ResourceIDUtil.checkAndGetJobProperties(context.getJobProperties(),
-                ResourceIDUtil.REGION_PROP_NAME, ResourceIDUtil.DEFAULT_PROP_VALUE);
+                ResourceIDUtil.REGION_PROP_NAME);
         String group = ResourceIDUtil.checkAndGetJobProperties(context.getJobProperties(),
-                ResourceIDUtil.GROUP_PROP_NAME, ResourceIDUtil.DEFAULT_PROP_VALUE);
+                ResourceIDUtil.GROUP_PROP_NAME);
         return new ResourceLocation(region, group);
     }
-
-    @Override
-    public void doStop(JobIdentity ji) throws JobException {}
 
     @Override
     protected void doFinish(JobIdentity ji, ExecutorIdentifier ei, ResourceID resourceID)

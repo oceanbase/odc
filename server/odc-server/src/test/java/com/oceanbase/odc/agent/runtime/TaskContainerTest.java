@@ -53,7 +53,6 @@ public class TaskContainerTest {
         jobContext.setJobClass(SimpleTask.class.getName());
     }
 
-
     @Test
     public void testExceptionListenerNormal() {
         try (MockedStatic<SystemUtils> mockSystemUtil = Mockito.mockStatic(SystemUtils.class)) {

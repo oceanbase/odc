@@ -18,8 +18,8 @@ package com.oceanbase.odc.service.task.util;
 
 import java.io.File;
 import java.lang.reflect.Type;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -36,12 +36,15 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfigur
 import com.oceanbase.odc.service.task.caller.JobEnvironmentEncryptor;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
+import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.jasypt.AccessEnvironmentJasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.jasypt.DefaultJasyptEncryptor;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,10 +56,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JobUtils {
 
-    private static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS");
-
-    public static String generateExecutorName(JobIdentity ji) {
-        return JobConstants.TEMPLATE_JOB_NAME_PREFIX + ji.getId() + "-" + LocalDateTime.now().format(DTF);
+    public static String generateExecutorName(JobIdentity ji, Date jobCreateTime) {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmssSSS");
+        String dateString = formatter.format(jobCreateTime);
+        return JobConstants.TEMPLATE_JOB_NAME_PREFIX + ji.getId() + "-" + dateString;
     }
 
     public static String generateExecutorSelectorOnProcess(String executorName) {
@@ -194,5 +197,14 @@ public class JobUtils {
     public static String retrieveJobResultStr(JobEntity jobEntity) {
         TaskResult taskResult = JsonUtils.fromJson(jobEntity.getResultJson(), TaskResult.class);
         return null == taskResult ? null : taskResult.getResultJson();
+    }
+
+    public static void updateStatusAndCheck(Long jobId, JobStatus oldStatus, JobStatus newStatus,
+            TaskFrameworkService taskFrameworkService) {
+        int rows = taskFrameworkService.updateStatusByIdOldStatus(jobId, oldStatus, newStatus);
+        if (rows <= 0) {
+            throw new TaskRuntimeException(
+                    "Update job status from " + oldStatus + "to " + newStatus + " failed, jobId=" + jobId);
+        }
     }
 }

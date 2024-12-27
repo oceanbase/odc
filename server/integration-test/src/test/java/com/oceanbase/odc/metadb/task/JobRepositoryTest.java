@@ -53,7 +53,7 @@ public class JobRepositoryTest extends ServiceTestEnv {
         jse.setExecutorEndpoint("");
         jse.setLastReportTime(JobDateUtils.getCurrentDate());
         jse.setFinishedTime(JobDateUtils.getCurrentDate());
-        int rows = jobRepository.updateReportResult(jse, currentJob.getId(), currentJob.getStatus());
+        int rows = jobRepository.updateReportResult(jse, currentJob.getId());
         Assert.assertTrue(rows > 0);
         jobRepository.deleteById(currentJob.getId());
         Assert.assertFalse(jobRepository.existsById(currentJob.getId()));

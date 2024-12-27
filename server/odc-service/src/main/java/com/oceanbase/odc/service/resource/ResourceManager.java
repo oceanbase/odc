@@ -39,6 +39,7 @@ import com.oceanbase.odc.metadb.resource.ResourceRepository;
 import com.oceanbase.odc.metadb.resource.ResourceSpecs;
 import com.oceanbase.odc.service.resource.k8s.model.QueryResourceParams;
 
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -52,6 +53,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class ResourceManager {
 
+    @Getter
     @Autowired
     private ResourceRepository resourceRepository;
     private final List<ResourceOperatorBuilder<?, ?>> resourceOperatorBuilders = new ArrayList<>();

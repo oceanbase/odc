@@ -95,4 +95,9 @@ public class K8sProperties {
      */
     private Integer executorListenPort = JobConstants.JOB_POD_DEFAULT_LISTEN_PORT;
 
+    /**
+     * k8s listen port for supervisor endpoint
+     */
+    private Integer supervisorListenPort = JobConstants.JOB_POD_DEFAULT_SUPERVISOR_LISTEN_PORT;
+
 }

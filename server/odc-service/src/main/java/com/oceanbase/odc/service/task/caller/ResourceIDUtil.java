@@ -35,27 +35,27 @@ public class ResourceIDUtil {
     public static final String REGION_PROP_NAME = "regionName";
     public static final String GROUP_PROP_NAME = "cloudProvider";
     public static final String DEFAULT_PROP_VALUE = "local";
+    public static final String PROCESS_REGION_NAME = DEFAULT_PROP_VALUE;
+    public static final String PROCESS_GROUP_NAME = "process";
+    public static final ResourceLocation PROCESS_RESOURCE_LOCATION =
+            new ResourceLocation(PROCESS_REGION_NAME, PROCESS_GROUP_NAME);
 
     /**
      * get with log is missing
      * 
      * @param jobParameters
      * @param propName
-     * @param defaultValue
      * @return defaultValue if key is absent in jobParameters
      */
-    public static String checkAndGetJobProperties(Map<String, String> jobParameters, String propName,
-            String defaultValue) {
+    public static String checkAndGetJobProperties(Map<String, String> jobParameters, String propName) {
         if (null == jobParameters) {
-            log.warn("get propName={} failed from job context={} failed, use default value={}", propName, jobParameters,
-                    defaultValue);
-            return defaultValue;
+            throw new RuntimeException(
+                    "get propName=" + propName + " failed from job context=" + jobParameters + " failed");
         }
         String ret = jobParameters.get(propName);
         if (null == ret) {
-            log.warn("get propName={} failed from job context={} failed, use default value={}", propName, jobParameters,
-                    defaultValue);
-            return defaultValue;
+            throw new RuntimeException(
+                    "get propName=" + propName + " failed from job context=" + jobParameters + " failed");
         } else {
             return ret;
         }
@@ -70,11 +70,15 @@ public class ResourceIDUtil {
      */
     public static ResourceID getResourceID(ExecutorIdentifier executorIdentifier,
             Map<String, String> jobProperties) {
-        String region = checkAndGetJobProperties(jobProperties, REGION_PROP_NAME, DEFAULT_PROP_VALUE);
-        String group = checkAndGetJobProperties(jobProperties, GROUP_PROP_NAME, DEFAULT_PROP_VALUE);
-        return new ResourceID(new ResourceLocation(region, group), DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE,
+        return new ResourceID(getResourceLocation(jobProperties), DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE,
                 executorIdentifier.getNamespace(),
                 executorIdentifier.getExecutorName());
+    }
+
+    public static ResourceLocation getResourceLocation(Map<String, String> jobProperties) {
+        String region = checkAndGetJobProperties(jobProperties, REGION_PROP_NAME);
+        String group = checkAndGetJobProperties(jobProperties, GROUP_PROP_NAME);
+        return new ResourceLocation(region, group);
     }
 
     /**
