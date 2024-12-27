@@ -667,13 +667,17 @@ public class UserService {
             }
         }).collect(Collectors.toList());
 
-        Specification<UserEntity> spec =
-                Specification.where(UserSpecs.organizationIdEqual(authenticationFacade.currentOrganizationId()))
-                        .and(UserSpecs.enabledEqual(params.getEnabled()))
-                        .and(UserSpecs.namesLike(params.getNames())
-                                .or(UserSpecs.accountNamesLike(params.getAccountNames())));
+        Specification<UserEntity> spec = Specification.where(UserSpecs.enabledEqual(params.getEnabled()))
+                .and(UserSpecs.namesLike(params.getNames()).or(UserSpecs.accountNamesLike(params.getAccountNames())));
+
+        List<Long> userIdsInOrg = userOrganizationRepository.findByOrganizationId(
+                authenticationFacade.currentOrganizationId()).stream().map(UserOrganizationEntity::getUserId).collect(
+                        Collectors.toList());
         if (!findAllUsers) {
+            queryUserIds.addAll(userIdsInOrg);
             spec = spec.and(UserSpecs.userIdIn(queryUserIds));
+        } else {
+            spec = spec.and(UserSpecs.userIdIn(userIdsInOrg));
         }
         spec = spec.and(UserSpecs.sort(Sort.by(orderList)));
         Pageable page = pageable.equals(Pageable.unpaged()) ? pageable
