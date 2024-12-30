@@ -29,7 +29,7 @@ import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
-import com.oceanbase.odc.service.connection.event.UpdateDatasourceEvent;
+import com.oceanbase.odc.service.connection.event.UpsertDatasourceEvent;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
 
@@ -42,13 +42,13 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class UpdateDatasourceListener extends AbstractEventListener<UpdateDatasourceEvent> {
+public class UpdateDatasourceListener extends AbstractEventListener<UpsertDatasourceEvent> {
 
     @Autowired
     private DatabaseRepository databaseRepository;
 
     @Override
-    public void onEvent(UpdateDatasourceEvent event) {
+    public void onEvent(UpsertDatasourceEvent event) {
 
         ConnectionConfig connectionConfig = event.getConnectionConfig();
         if (connectionConfig.getDialectType() != DialectType.FILE_SYSTEM) {
