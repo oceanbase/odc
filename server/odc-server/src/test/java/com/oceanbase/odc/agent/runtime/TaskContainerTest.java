@@ -62,6 +62,7 @@ public class TaskContainerTest {
             SimpleTask dummyBaseTask = new SimpleTask(false);
             TaskContainer<?> taskContainer = buildTaskContainer(jobContext, dummyBaseTask);
             taskContainer.runTask();
+            taskContainer.taskMonitor.finalWork();
             TaskReporter taskReporter = taskContainer.taskMonitor.getReporter();
             ArgumentCaptor<TaskResult> argumentCaptor = ArgumentCaptor.forClass(TaskResult.class);
             Mockito.verify(taskReporter).report(ArgumentMatchers.any(), argumentCaptor.capture());
@@ -78,6 +79,7 @@ public class TaskContainerTest {
             SimpleTask dummyBaseTask = new SimpleTask(true);
             TaskContainer<?> taskContainer = buildTaskContainer(jobContext, dummyBaseTask);
             taskContainer.runTask();
+            taskContainer.taskMonitor.finalWork();
             TaskReporter taskReporter = taskContainer.taskMonitor.getReporter();
             ArgumentCaptor<TaskResult> argumentCaptor = ArgumentCaptor.forClass(TaskResult.class);
             Mockito.verify(taskReporter).report(ArgumentMatchers.any(), argumentCaptor.capture());
