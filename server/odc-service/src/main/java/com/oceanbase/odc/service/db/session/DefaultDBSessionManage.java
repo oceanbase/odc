@@ -310,6 +310,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
                         int columnIndex = rs.findColumn("time");
                         return columnIndex > 0;
                     } catch (SQLException e) {
+                        log.warn("Failed to find the column 'time' in the result set", e);
                         return false;
                     }
                 });
