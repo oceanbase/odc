@@ -64,6 +64,7 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
@@ -518,6 +519,9 @@ public class DatabaseService {
         Optional<Organization> organizationOpt = Optional.empty();
         try {
             connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
+            if (connection.getDialectType() == DialectType.FILE_SYSTEM) {
+                return true;
+            }
             horizontalDataPermissionValidator.checkCurrentOrganization(connection);
             organizationOpt = organizationService.get(connection.getOrganizationId());
             Organization organization =
@@ -532,49 +536,6 @@ public class DatabaseService {
             return true;
         } catch (Exception ex) {
             handleSyncException(ex, dataSourceId, organizationOpt);
-            return false;
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    @SkipAuthorize("internal usage")
-    public Boolean internalSyncFileSystemSchemas(@NonNull Long dataSourceId) throws InterruptedException {
-        Lock lock = jdbcLockRegistry.obtain(connectionService.getUpdateDsSchemaLockKey(dataSourceId));
-        if (!lock.tryLock(3, TimeUnit.SECONDS)) {
-            throw new ConflictException(ErrorCodes.ResourceSynchronizing,
-                    new Object[] {ResourceType.ODC_DATABASE.getLocalizedMessage()}, "Can not acquire jdbc lock");
-        }
-        try {
-            ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
-            horizontalDataPermissionValidator.checkCurrentOrganization(connection);
-            List<DatabaseEntity> existDatabases = databaseRepository.findByConnectionId(dataSourceId).stream()
-                    .filter(DatabaseEntity::getExisted).collect(Collectors.toList());
-            if (CollectionUtils.isEmpty(existDatabases)
-                    || !existDatabases.stream().map(DatabaseEntity::getName).collect(
-                            Collectors.toSet()).contains(connection.getDefaultSchema())) {
-                DatabaseEntity entity = new DatabaseEntity();
-                entity.setDatabaseId(com.oceanbase.odc.common.util.StringUtils.uuid());
-                entity.setOrganizationId(connection.getOrganizationId());
-                entity.setName(connection.getDefaultSchema());
-                entity.setProjectId(connection.getProjectId());
-                entity.setConnectionId(connection.getId());
-                entity.setEnvironmentId(connection.getEnvironmentId());
-                entity.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
-                entity.setExisted(true);
-                entity.setObjectSyncStatus(DBObjectSyncStatus.SYNCED);
-                entity.setConnectType(connection.getType());
-                entity.setType(DatabaseType.PHYSICAL);
-                databaseRepository.save(entity);
-            } else {
-                DeleteDatabasesReq deleteDatabasesReq = new DeleteDatabasesReq();
-                deleteDatabasesReq
-                        .setDatabaseIds(existDatabases.stream().map(DatabaseEntity::getId).collect(Collectors.toSet()));
-                deleteDatabases(deleteDatabasesReq);
-            }
-            return true;
-        } catch (Exception ex) {
-            log.warn("Sync database failed, dataSourceId={}, errorMessage={}", dataSourceId, ex);
             return false;
         } finally {
             lock.unlock();

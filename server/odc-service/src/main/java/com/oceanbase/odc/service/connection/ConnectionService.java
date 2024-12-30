@@ -105,6 +105,7 @@ import com.oceanbase.odc.service.common.response.PaginatedData;
 import com.oceanbase.odc.service.connection.ConnectionStatusManager.CheckState;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.DatabaseSyncManager;
+import com.oceanbase.odc.service.connection.event.UpdateDatasourceEvent;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
@@ -221,6 +222,9 @@ public class ConnectionService {
     @Autowired
     private TransactionTemplate txTemplate;
 
+    @Autowired
+    private ConnectionEventPublisher connectionEventPublisher;
+
     private final ConnectionMapper mapper = ConnectionMapper.INSTANCE;
 
     public static final String DEFAULT_MIN_PRIVILEGE = "read";
@@ -249,6 +253,7 @@ public class ConnectionService {
             }
         });
         databaseSyncManager.submitSyncDataSourceAndDBSchemaTask(saved);
+        connectionEventPublisher.publishEvent(new UpdateDatasourceEvent(saved));
         return saved;
     }
 
@@ -684,6 +689,7 @@ public class ConnectionService {
             }
         });
         databaseSyncManager.submitSyncDataSourceAndDBSchemaTask(config);
+        connectionEventPublisher.publishEvent(new UpdateDatasourceEvent(config));
         return config;
     }
 
