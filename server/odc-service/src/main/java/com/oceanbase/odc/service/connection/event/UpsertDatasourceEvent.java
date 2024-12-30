@@ -25,13 +25,14 @@ import lombok.Getter;
  * @Date: 2024/12/30 10:41
  * @Descripition:
  */
-public class UpdateDatasourceEvent extends AbstractEvent {
+public class UpsertDatasourceEvent extends AbstractEvent {
 
     @Getter
     private ConnectionConfig connectionConfig;
 
-    public UpdateDatasourceEvent(ConnectionConfig connectionCOnfig) {
-        super(connectionCOnfig, "UpdateDatasourceEvent");
+    public UpsertDatasourceEvent(ConnectionConfig connectionConfig) {
+        super(connectionConfig, "UpsertDatasourceEvent");
+        this.connectionConfig = connectionConfig;
 
     }
 }

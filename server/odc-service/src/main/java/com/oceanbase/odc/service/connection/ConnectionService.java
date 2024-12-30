@@ -105,7 +105,7 @@ import com.oceanbase.odc.service.common.response.PaginatedData;
 import com.oceanbase.odc.service.connection.ConnectionStatusManager.CheckState;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.DatabaseSyncManager;
-import com.oceanbase.odc.service.connection.event.UpdateDatasourceEvent;
+import com.oceanbase.odc.service.connection.event.UpsertDatasourceEvent;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
@@ -253,7 +253,7 @@ public class ConnectionService {
             }
         });
         databaseSyncManager.submitSyncDataSourceAndDBSchemaTask(saved);
-        connectionEventPublisher.publishEvent(new UpdateDatasourceEvent(saved));
+        connectionEventPublisher.publishEvent(new UpsertDatasourceEvent(saved));
         return saved;
     }
 
@@ -689,7 +689,7 @@ public class ConnectionService {
             }
         });
         databaseSyncManager.submitSyncDataSourceAndDBSchemaTask(config);
-        connectionEventPublisher.publishEvent(new UpdateDatasourceEvent(config));
+        connectionEventPublisher.publishEvent(new UpsertDatasourceEvent(config));
         return config;
     }
 
