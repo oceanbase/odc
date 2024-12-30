@@ -1,4 +1,6 @@
-UPDATE connect_database AS cd
-JOIN connect_connection AS cc ON cd.connection_id = cc.id
-SET cd.connect_type = cc.type
-WHERE cd.connect_type IS NULL AND cd.type = 'PHYSICAL';
+UPDATE connect_database
+SET connect_type = (
+    SELECT cc.type FROM connect_connection cc
+    WHERE connect_database.connection_id = cc.id
+  )
+WHERE connect_type IS NULL AND type = 'PHYSICAL';
