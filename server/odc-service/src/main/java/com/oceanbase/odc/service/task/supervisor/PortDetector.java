@@ -71,7 +71,7 @@ public class PortDetector {
         throw new RuntimeException("port allocate failed");
     }
 
-    private boolean portInUse(int port) {
+    public static boolean portInUse(int port) {
         ServerSocket socketServer = null;
         try {
             socketServer = new ServerSocket(port);

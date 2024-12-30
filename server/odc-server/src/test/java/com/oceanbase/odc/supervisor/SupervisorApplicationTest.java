@@ -133,7 +133,7 @@ public class SupervisorApplicationTest {
         supervisorApplication.waitStop();
         // stop task
         TaskCallerResult taskCallerResult =
-                taskSupervisorJobCaller.stopTaskDirectly(remoteSupervisorEndpoint, executorEndpoint, jobContext);
+                taskSupervisorJobCaller.stopTaskDirectly(executorEndpoint, jobContext);
         // still can stop
         Assert.assertTrue(taskCallerResult.getSucceed());
         // check task stopped
@@ -141,6 +141,11 @@ public class SupervisorApplicationTest {
         // verify finish
         taskCallerResult = taskSupervisorJobCaller.finish(remoteSupervisorEndpoint, executorEndpoint, jobContext);
         Assert.assertFalse(taskCallerResult.getSucceed());
+        // stop use local supervisor
+        Assert.assertTrue(localTaskSupervisorProxy.isTaskAlive(localSupervisorEndpoint, executorEndpoint, jobContext));
+        taskCallerResult = taskSupervisorJobCaller.destroyTask(localSupervisorEndpoint, executorEndpoint, jobContext);
+        Assert.assertFalse(localTaskSupervisorProxy.isTaskAlive(localSupervisorEndpoint, executorEndpoint, jobContext));
+
     }
 
 

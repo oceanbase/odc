@@ -39,9 +39,11 @@ import com.oceanbase.odc.service.task.schedule.provider.JobImageNameProvider;
 public class K8sResourceContextBuilder {
     private static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS");
     protected final K8sProperties k8sProperties;
+    protected final Integer supervisorListenPort;
 
-    public K8sResourceContextBuilder(K8sProperties k8sProperties) {
+    public K8sResourceContextBuilder(K8sProperties k8sProperties, Integer supervisorListenPort) {
         this.k8sProperties = k8sProperties;
+        this.supervisorListenPort = supervisorListenPort;
     }
 
     public K8sResourceContext buildK8sResourceContext(Long taskID, ResourceLocation resourceLocation) {
@@ -88,7 +90,7 @@ public class K8sResourceContextBuilder {
     public Map<String, String> buildEnv() {
         Map<String, String> env = new HashMap<>();
         env.put(JobEnvKeyConstants.ODC_SUPERVISOR_LISTEN_PORT,
-                String.valueOf(JobConstants.JOB_POD_DEFAULT_SUPERVISOR_LISTEN_PORT));
+                String.valueOf(supervisorListenPort));
         return env;
     }
 }

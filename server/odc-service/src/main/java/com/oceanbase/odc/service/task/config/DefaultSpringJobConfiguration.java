@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.config;
 
+import java.util.Random;
+
 import org.quartz.Scheduler;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -49,6 +51,7 @@ import com.oceanbase.odc.service.task.service.SpringTransactionManager;
 import com.oceanbase.odc.service.task.service.StdTaskFrameworkService;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.supervisor.DefaultJobEventListener;
+import com.oceanbase.odc.service.task.supervisor.PortDetector;
 import com.oceanbase.odc.service.task.supervisor.TaskSupervisorJobCaller;
 import com.oceanbase.odc.service.task.supervisor.proxy.LocalTaskSupervisorProxy;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
@@ -124,12 +127,30 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
                             ResourceAllocateInfoRepository.class),
                             new K8SResourceManageStrategy(taskFrameworkProperties.getK8sProperties(),
                                     ctx.getBean(ResourceManager.class),
-                                    ctx.getBean(SupervisorEndpointRepository.class)));
+                                    ctx.getBean(SupervisorEndpointRepository.class),
+                                    taskFrameworkProperties.isEnableK8sLocalDebugMode()
+                                            ? this::getPortForLocalDebugSupervisorEndpoint
+                                            : taskFrameworkProperties.getK8sProperties()::getSupervisorListenPort));
         }
 
         setTaskResourceManager(taskResourceManager);
         setSupervisorAgentAllocator(
                 new SupervisorAgentAllocator(ctx.getBean(ResourceAllocateInfoRepository.class)));
+    }
+
+    private int getPortForLocalDebugSupervisorEndpoint() {
+        int basePort = PortDetector.getInstance().getPort();
+        Random random = new Random();
+        // back off random between 100 - 1000 to avoid supervisor conflict port with agent in same machine
+        int round = 0;
+        while (round++ < 100) {
+            int randomBack = (random.nextInt(1000) + 100) % 1000;
+            int port = (basePort + randomBack) % 65535;
+            if (!PortDetector.portInUse(port)) {
+                return port;
+            }
+        }
+        return basePort;
     }
 
     @Override

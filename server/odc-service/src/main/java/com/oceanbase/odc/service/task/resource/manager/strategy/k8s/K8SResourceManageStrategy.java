@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -45,8 +46,6 @@ import com.oceanbase.odc.service.task.resource.manager.ResourceManageStrategy;
 import com.oceanbase.odc.service.task.resource.manager.SupervisorEndpointRepositoryWrap;
 import com.oceanbase.odc.service.task.supervisor.SupervisorEndpointState;
 import com.oceanbase.odc.service.task.supervisor.endpoint.SupervisorEndpoint;
-import com.oceanbase.odc.service.task.supervisor.protocol.TaskCommandSender;
-import com.oceanbase.odc.service.task.supervisor.proxy.RemoteTaskSupervisorProxy;
 
 import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -62,16 +61,14 @@ public class K8SResourceManageStrategy implements ResourceManageStrategy {
     // real resource manger
     protected final ResourceManager resourceManager;
     protected final K8sProperties k8sProperties;
-    protected final K8sResourceContextBuilder contextBuilder;
+    protected final Supplier<Integer> supervisorListenPortProvider;
     protected final SupervisorEndpointRepositoryWrap supervisorEndpointRepositoryWrap;
-    protected final RemoteTaskSupervisorProxy remoteTaskSupervisorProxy =
-            new RemoteTaskSupervisorProxy(new TaskCommandSender());
 
     public K8SResourceManageStrategy(K8sProperties k8sProperties, ResourceManager resourceManager,
-            SupervisorEndpointRepository supervisorEndpointRepository) {
+            SupervisorEndpointRepository supervisorEndpointRepository, Supplier<Integer> supervisorListenPortProvider) {
         this.resourceManager = resourceManager;
         this.k8sProperties = k8sProperties;
-        this.contextBuilder = new K8sResourceContextBuilder(k8sProperties);
+        this.supervisorListenPortProvider = supervisorListenPortProvider;
         this.supervisorEndpointRepositoryWrap = new SupervisorEndpointRepositoryWrap(supervisorEndpointRepository);
     }
 
@@ -87,6 +84,8 @@ public class K8SResourceManageStrategy implements ResourceManageStrategy {
             throws Exception {
         ResourceLocation resourceLocation = new ResourceLocation(resourceAllocateInfoEntity.getResourceRegion(),
                 resourceAllocateInfoEntity.getResourceGroup());
+        int supervisorListenPort = supervisorListenPortProvider.get();
+        K8sResourceContextBuilder contextBuilder = new K8sResourceContextBuilder(k8sProperties, supervisorListenPort);
         K8sResourceContext k8sResourceContext =
                 contextBuilder.buildK8sResourceContext(resourceAllocateInfoEntity.getTaskId(), resourceLocation);
         ResourceWithID<K8sPodResource> k8sPodResource = null;
@@ -102,7 +101,7 @@ public class K8SResourceManageStrategy implements ResourceManageStrategy {
         // save to db failed, try release resource
         try {
             K8sPodResource podResource = k8sPodResource.getResource();
-            podResource.setServicePort(String.valueOf(k8sProperties.getSupervisorListenPort()));
+            podResource.setServicePort(String.valueOf(supervisorListenPort));
             // create with load 1 to let resource not released
             return supervisorEndpointRepositoryWrap.save(podResource, k8sPodResource.getId(), 0);
         } catch (Throwable e) {

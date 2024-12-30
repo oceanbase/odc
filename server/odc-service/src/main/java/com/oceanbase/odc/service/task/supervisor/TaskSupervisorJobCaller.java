@@ -59,6 +59,9 @@ public class TaskSupervisorJobCaller {
             // do start process
             jobEventHandler.beforeStartJob(jobContext);
             executorEndpoint = taskSupervisorProxy.startTask(supervisorEndpoint, jobContext, processConfig);
+            if (null == executorEndpoint) {
+                throw new RuntimeException("start job failed, cause no executor endpoint returned");
+            }
             jobEventHandler.afterStartJob(executorEndpoint, jobContext);
             // send success event
             log.info("Start job succeed, jobId={}.", jobContext.getJobIdentity().getId());
