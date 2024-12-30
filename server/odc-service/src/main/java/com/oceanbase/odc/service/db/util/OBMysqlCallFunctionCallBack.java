@@ -58,7 +58,6 @@ public class OBMysqlCallFunctionCallBack implements ConnectionCallback<CallFunct
 
     @Override
     public CallFunctionResp doInConnection(Connection con) throws SQLException, DataAccessException {
-        CallFunctionResp callFunctionResp = new CallFunctionResp();
         List<DBPLParam> params = new ArrayList<>();
         if (function.getParams() != null) {
             params = function.getParams();
@@ -81,33 +80,36 @@ public class OBMysqlCallFunctionCallBack implements ConnectionCallback<CallFunct
             if (this.timeoutSeconds > 0) {
                 stmt.setQueryTimeout(this.timeoutSeconds);
             }
-            PLOutParam plOutParam = new PLOutParam();
             try (ResultSet res = stmt.executeQuery(sqlBuilder.toString())) {
                 if (!res.next()) {
-                    return generateDefaultReturnValue(plOutParam, callFunctionResp);
+                    return generateDefaultReturnValue();
                 }
                 JdbcQueryResult jdbcQueryResult = new JdbcQueryResult(res.getMetaData(), rowDataMapper);
-                try {
-                    jdbcQueryResult.addLine(res);
-                } catch (IOException e) {
-                    return generateDefaultReturnValue(plOutParam, callFunctionResp);
-                }
+                jdbcQueryResult.addLine(res);
                 if (jdbcQueryResult.getRows().size() == 1 && jdbcQueryResult.getRows().get(0) != null
                         && jdbcQueryResult.getRows().get(0).size() == 1
                         && jdbcQueryResult.getRows().get(0).get(0) != null) {
+                    CallFunctionResp callFunctionResp = new CallFunctionResp();
+                    PLOutParam plOutParam = new PLOutParam();
                     plOutParam.setValue((String) jdbcQueryResult.getRows().get(0).get(0));
                     plOutParam.setDataType(function.getReturnType());
                     callFunctionResp.setReturnValue(plOutParam);
                     callFunctionResp.setOutParams(null);
                     return callFunctionResp;
                 } else {
-                    return generateDefaultReturnValue(plOutParam, callFunctionResp);
+                    return generateDefaultReturnValue();
                 }
             }
+        } catch (SQLException | IOException e) {
+            CallFunctionResp callFunctionResp = generateDefaultReturnValue();
+            callFunctionResp.setErrorMessage(e.getMessage());
+            return callFunctionResp;
         }
     }
 
-    private CallFunctionResp generateDefaultReturnValue(PLOutParam plOutParam, CallFunctionResp callFunctionResp) {
+    private CallFunctionResp generateDefaultReturnValue() {
+        CallFunctionResp callFunctionResp = new CallFunctionResp();
+        PLOutParam plOutParam = new PLOutParam();
         plOutParam.setValue(function.getReturnValue());
         plOutParam.setDataType(function.getReturnType());
         callFunctionResp.setReturnValue(plOutParam);
