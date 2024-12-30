@@ -16,16 +16,13 @@
 package com.oceanbase.odc.service.dlm;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import com.alibaba.druid.pool.DruidDataSource;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
@@ -35,6 +32,7 @@ import com.oceanbase.tools.migrator.core.handler.genarator.GeneratorStatus;
 import com.oceanbase.tools.migrator.core.meta.TaskMeta;
 import com.oceanbase.tools.migrator.core.store.IJobStore;
 
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -47,14 +45,11 @@ public class DLMJobStore implements IJobStore {
 
     private DruidDataSource dataSource;
     private boolean enableBreakpointRecovery = false;
-    private Map<String, DlmTableUnit> dlmTableUnits;
+    @Setter
+    private DlmTableUnit dlmTableUnit;
 
     public DLMJobStore(ConnectionConfig metaDBConfig) {
 
-    }
-
-    public void setDlmTableUnits(Map<String, DlmTableUnit> dlmTableUnits) {
-        this.dlmTableUnits = dlmTableUnits;
     }
 
     public void destroy() {
@@ -137,13 +132,13 @@ public class DLMJobStore implements IJobStore {
 
     @Override
     public void storeJobStatistic(JobStatistic jobStatistic) throws SQLException {
-        dlmTableUnits.get(jobStatistic.getJobId()).getStatistic()
+        dlmTableUnit.getStatistic()
                 .setProcessedRowCount(jobStatistic.getRowCount().get());
-        dlmTableUnits.get(jobStatistic.getJobId()).getStatistic()
+        dlmTableUnit.getStatistic()
                 .setProcessedRowsPerSecond(jobStatistic.getRowCountPerSeconds());
 
-        dlmTableUnits.get(jobStatistic.getJobId()).getStatistic().setReadRowCount(jobStatistic.getReadRowCount().get());
-        dlmTableUnits.get(jobStatistic.getJobId()).getStatistic()
+        dlmTableUnit.getStatistic().setReadRowCount(jobStatistic.getReadRowCount().get());
+        dlmTableUnit.getStatistic()
                 .setReadRowsPerSecond(jobStatistic.getReadRowCountPerSeconds());
     }
 
