@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.db.util;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -29,7 +30,8 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
 
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.sql.util.JdbcDataTypeUtil;
+import com.oceanbase.odc.core.sql.execute.mapper.JdbcRowMapper;
+import com.oceanbase.odc.core.sql.execute.model.JdbcQueryResult;
 import com.oceanbase.odc.service.db.model.CallFunctionReq;
 import com.oceanbase.odc.service.db.model.CallFunctionResp;
 import com.oceanbase.odc.service.db.model.PLOutParam;
@@ -44,11 +46,14 @@ public class OBMysqlCallFunctionCallBack implements ConnectionCallback<CallFunct
 
     private final DBFunction function;
     private final int timeoutSeconds;
+    private final JdbcRowMapper rowDataMapper;
 
-    public OBMysqlCallFunctionCallBack(@NonNull CallFunctionReq callFunctionReq, int timeoutSeconds) {
+    public OBMysqlCallFunctionCallBack(@NonNull CallFunctionReq callFunctionReq, int timeoutSeconds,
+            @NonNull JdbcRowMapper rowDataMapper) {
         Validate.notBlank(callFunctionReq.getFunction().getFunName(), "Function name can not be blank");
         this.function = callFunctionReq.getFunction();
         this.timeoutSeconds = timeoutSeconds;
+        this.rowDataMapper = rowDataMapper;
     }
 
     @Override
@@ -79,20 +84,33 @@ public class OBMysqlCallFunctionCallBack implements ConnectionCallback<CallFunct
             PLOutParam plOutParam = new PLOutParam();
             try (ResultSet res = stmt.executeQuery(sqlBuilder.toString())) {
                 if (!res.next()) {
-                    plOutParam.setValue(function.getReturnValue());
+                    return generateDefaultReturnValue(plOutParam, callFunctionResp);
+                }
+                JdbcQueryResult jdbcQueryResult = new JdbcQueryResult(res.getMetaData(), rowDataMapper);
+                try {
+                    jdbcQueryResult.addLine(res);
+                } catch (IOException e) {
+                    return generateDefaultReturnValue(plOutParam, callFunctionResp);
+                }
+                if (jdbcQueryResult.getRows().size() == 1 && jdbcQueryResult.getRows().get(0) != null
+                        && jdbcQueryResult.getRows().get(0).size() == 1
+                        && jdbcQueryResult.getRows().get(0).get(0) != null) {
+                    plOutParam.setValue((String) jdbcQueryResult.getRows().get(0).get(0));
                     plOutParam.setDataType(function.getReturnType());
                     callFunctionResp.setReturnValue(plOutParam);
+                    callFunctionResp.setOutParams(null);
                     return callFunctionResp;
+                } else {
+                    return generateDefaultReturnValue(plOutParam, callFunctionResp);
                 }
-                Object value = JdbcDataTypeUtil.getValueFromResultSet(
-                        res, 1, function.getReturnType());
-                plOutParam.setValue(String.valueOf(value));
-                plOutParam.setDataType(function.getReturnType());
-                callFunctionResp.setReturnValue(plOutParam);
             }
         }
-        callFunctionResp.setOutParams(null);
-        return callFunctionResp;
     }
 
+    private CallFunctionResp generateDefaultReturnValue(PLOutParam plOutParam, CallFunctionResp callFunctionResp) {
+        plOutParam.setValue(function.getReturnValue());
+        plOutParam.setDataType(function.getReturnType());
+        callFunctionResp.setReturnValue(plOutParam);
+        return callFunctionResp;
+    }
 }

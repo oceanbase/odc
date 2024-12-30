@@ -201,14 +201,6 @@ public class JdbcDataTypeUtil {
 
     public static Object getValueFromResultSet(ResultSet resultSet, int index, String type)
             throws SQLException {
-        // YEAR type is used to represent the year in 4-digit format. The range is 1901 to 2155, and 0000
-        if ("year".equalsIgnoreCase(type)) {
-            Short yearValue = resultSet.getShort(index);
-            if (yearValue == 0) {
-                return "0000";
-            }
-            return yearValue;
-        }
         JDBCType jdbcType = parseDataType(type);
         switch (jdbcType) {
             case BIT:
