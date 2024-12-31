@@ -47,6 +47,7 @@ import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 
 import lombok.NonNull;
 
@@ -100,14 +101,15 @@ public class DBPLModifyHelper {
         String plName = editPLReq.getObjectName();
         String editPLSql = editPLReq.getSql();
         String tempPLSql = editPLSql.replaceFirst(plName, tempPlName);
-        StringBuilder wrappedSqlBuilder = new StringBuilder();
+
+        MySQLSqlBuilder wrappedSqlBuilder = new MySQLSqlBuilder();
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
         SqlCommentProcessor processor = ConnectionSessionUtil.getSqlCommentProcessor(connectionSession);
         String delimiter = processor.getDelimiter();
         wrappedSqlBuilder.append("DELIMITER $$\n")
                 .append(tempPLSql).append(" $$\n")
-                .append("drop ").append(plType).append(" if exists ").append(tempPlName).append(" $$\n")
-                .append("drop ").append(plType).append(" if exists ").append(plName).append(" $$\n")
+                .append("drop ").append(plType).append(" if exists ").identifier(tempPlName).append(" $$\n")
+                .append("drop ").append(plType).append(" if exists ").identifier(plName).append(" $$\n")
                 .append(editPLSql).append(" $$\n")
                 .append("DELIMITER " + delimiter);
         String wrappedSql = wrappedSqlBuilder.toString();
