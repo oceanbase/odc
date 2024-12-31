@@ -388,7 +388,13 @@ public class ScheduleService {
                             ScheduleChangeStatus.APPROVING));
             log.info("Create change log success,changLog={}", changeLog);
             req.setScheduleChangeLogId(changeLog.getId());
-            Long approvalFlowInstanceId = approvalFlowService.create(req);
+            Long approvalFlowInstanceId;
+            if (organizationService.get(targetSchedule.getId()).isPresent()
+                    && organizationService.get(targetSchedule.getId()).get().getType() == OrganizationType.INDIVIDUAL) {
+                approvalFlowInstanceId = null;
+            } else {
+                approvalFlowInstanceId = approvalFlowService.create(req);
+            }
             if (approvalFlowInstanceId != null) {
                 changeLog.setFlowInstanceId(approvalFlowInstanceId);
                 scheduleChangeLogService.updateFlowInstanceIdById(changeLog.getId(), approvalFlowInstanceId);
@@ -820,7 +826,7 @@ public class ScheduleService {
 
     public Page<ScheduleOverviewHist> listUnfinishedSchedulesByProjectId(@NonNull Pageable pageable,
             @NonNull Long projectId) {
-        return list(pageable, QueryScheduleParams.builder().projectId(projectId)
+        return list(pageable, QueryScheduleParams.builder().projectIds(Collections.singleton(projectId))
                 .statuses(ScheduleStatus.listUnfinishedStatus()).build());
     }
 

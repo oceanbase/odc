@@ -28,6 +28,7 @@ import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -100,8 +101,9 @@ public class DBPLModifyHelper {
             DBObjectType plType, String tempPlName) throws Exception {
         String plName = editPLReq.getObjectName();
         String editPLSql = editPLReq.getSql();
-        String tempPLSql = editPLSql.replaceFirst(plName, tempPlName);
-
+        String escapeRegexPlName = StringUtils.escapeRegex(plName)
+                .orElseThrow(() -> new IllegalStateException(String.format("%s name cannot be null", plType)));
+        String tempPLSql = editPLSql.replaceFirst(escapeRegexPlName, tempPlName);
         MySQLSqlBuilder wrappedSqlBuilder = new MySQLSqlBuilder();
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
         SqlCommentProcessor processor = ConnectionSessionUtil.getSqlCommentProcessor(connectionSession);
@@ -117,7 +119,6 @@ public class DBPLModifyHelper {
         sqlAsyncExecuteReq.setSql(wrappedSql);
         sqlAsyncExecuteReq.setSplit(true);
         sqlAsyncExecuteReq.setContinueExecutionOnError(false);
-
         Lock editPLLock = obtainEditPLLock(connectionSession, plType);
         if (!editPLLock.tryLock(LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");

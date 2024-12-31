@@ -266,7 +266,8 @@ public class FlowResponseMapperFactory {
                     IntegrationConfig config =
                             integrationService.detailWithoutPermissionCheck(externalApproval.getApprovalId());
                     ApprovalProperties properties = ApprovalProperties.from(config);
-                    if (StringUtils.isEmpty(properties.getAdvanced().getHyperlinkExpression())) {
+                    if (Objects.isNull(properties.getAdvanced())
+                            || StringUtils.isEmpty(properties.getAdvanced().getHyperlinkExpression())) {
                         return null;
                     }
                     TemplateVariables variables = new TemplateVariables();
