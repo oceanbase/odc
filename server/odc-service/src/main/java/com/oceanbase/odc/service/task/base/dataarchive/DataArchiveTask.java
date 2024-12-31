@@ -94,6 +94,7 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             }
             syncTableStructure(dlmTableUnit);
             try {
+                jobStore.setDlmTableUnit(dlmTableUnit);
                 job = jobFactory.createJob(dlmTableUnit);
             } catch (Throwable e) {
                 log.error("Failed to create job,dlmTableUnitId={}", dlmTableUnit.getDlmTableUnitId(), e);
