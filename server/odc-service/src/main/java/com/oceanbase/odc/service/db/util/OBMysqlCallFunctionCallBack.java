@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
@@ -86,12 +87,12 @@ public class OBMysqlCallFunctionCallBack implements ConnectionCallback<CallFunct
                 }
                 JdbcQueryResult jdbcQueryResult = new JdbcQueryResult(res.getMetaData(), rowDataMapper);
                 jdbcQueryResult.addLine(res);
-                if (jdbcQueryResult.getRows().size() == 1 && jdbcQueryResult.getRows().get(0) != null
-                        && jdbcQueryResult.getRows().get(0).size() == 1
-                        && jdbcQueryResult.getRows().get(0).get(0) != null) {
+                List<List<Object>> rows = jdbcQueryResult.getRows();
+                if (CollectionUtils.size(rows) == 1 && Objects.nonNull(rows.get(0))
+                        && CollectionUtils.size(rows.get(0)) == 1) {
                     CallFunctionResp callFunctionResp = new CallFunctionResp();
                     PLOutParam plOutParam = new PLOutParam();
-                    plOutParam.setValue((String) jdbcQueryResult.getRows().get(0).get(0));
+                    plOutParam.setValue(String.valueOf(rows.get(0).get(0)));
                     plOutParam.setDataType(function.getReturnType());
                     callFunctionResp.setReturnValue(plOutParam);
                     callFunctionResp.setOutParams(null);
