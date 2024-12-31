@@ -17,22 +17,38 @@ package com.oceanbase.odc.service.script;
 
 import static com.oceanbase.odc.service.script.model.ScriptConstants.CONTENT_ABSTRACT_LENGTH;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -40,6 +56,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -49,6 +66,8 @@ import com.oceanbase.odc.metadb.script.ScriptMetaEntity;
 import com.oceanbase.odc.metadb.script.ScriptMetaRepository;
 import com.oceanbase.odc.metadb.script.ScriptMetaSpecs;
 import com.oceanbase.odc.service.common.FileChecker;
+import com.oceanbase.odc.service.common.util.OdcFileUtil;
+import com.oceanbase.odc.service.common.util.WebResponseUtils;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
@@ -61,6 +80,7 @@ import com.oceanbase.odc.service.script.model.UpdateScriptReq;
 import com.oceanbase.odc.service.script.util.ScriptMetaMapper;
 import com.oceanbase.odc.service.script.util.ScriptUtils;
 
+import cn.hutool.core.lang.Tuple;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -88,7 +108,30 @@ public class ScriptService {
     @Autowired
     private FileChecker fileChecker;
 
+    @PostConstruct
+    public void init() {
+        FileUtils.deleteQuietly(new File(ScriptUtils.getScriptBatchDownloadDirectory()));
+    }
+
+    @PreDestroy
+    public void destroy() {
+        FileUtils.deleteQuietly(new File(ScriptUtils.getScriptBatchDownloadDirectory()));
+    }
+
     private ScriptMetaMapper scriptMetaMapper = ScriptMetaMapper.INSTANCE;
+    protected final Cache<String, Set<String>> tempPathsInBatchDownloadCache =
+            Caffeine.newBuilder().maximumSize(10000).expireAfterWrite(5, TimeUnit.MINUTES)
+                    .<String, Set<String>>removalListener((key, tempPaths, cause) -> {
+                        if (CollectionUtils.isEmpty(tempPaths)) {
+                            return;
+                        }
+                        for (String filePath : tempPaths) {
+                            FileUtils.deleteQuietly(new File(filePath));
+                        }
+                        if (log.isDebugEnabled()) {
+                            log.debug("delete files: {}", tempPaths);
+                        }
+                    }).build();
 
     public Page<ScriptMeta> list(Pageable pageable) {
         String bucketName = ScriptUtils.getPersonalBucketName(authenticationFacade.currentUserIdStr());
@@ -266,5 +309,55 @@ public class ScriptService {
         ScriptMeta scriptMeta = scriptMetaMapper.entityToModel(optional.get());
         objectStorageFacade.loadMetaData(bucketName, scriptMeta.getObjectId());
         return scriptMeta;
+    }
+
+    public ResponseEntity<InputStreamResource> batchDownload(List<Long> scriptIds) throws IOException {
+        String bucketName = ScriptUtils.getPersonalBucketName(authenticationFacade.currentUserIdStr());
+        List<ScriptMetaEntity> scriptMetas = new ArrayList<>();
+        for (Long scriptId : scriptIds) {
+            Optional<ScriptMetaEntity> opt = scriptMetaRepository.findByIdAndBucketName(scriptId, bucketName);
+            opt.ifPresent(scriptMetas::add);
+        }
+        if (scriptMetas.isEmpty()) {
+            log.info("nothing to download, scriptIds={}", scriptIds);
+            throw new BadRequestException("Can't find valid Scripts to download");
+        }
+        if (scriptMetas.size() == 1) {
+            ScriptMetaEntity objectMetadata = scriptMetas.get(0);
+            StorageObject storageObject =
+                    objectStorageFacade.loadObject(objectMetadata.getBucketName(), objectMetadata.getObjectId());
+            return WebResponseUtils.getFileAttachmentResponseEntity(new InputStreamResource(storageObject.getContent()),
+                    objectMetadata.getObjectName());
+        }
+        Tuple downloadDirAndZipFileTuple = ScriptUtils.getScriptBatchDownloadDirectoryAndZipFile();
+        String downloadDirStr = downloadDirAndZipFileTuple.get(0);
+        String zipFileStr = downloadDirAndZipFileTuple.get(1);
+
+        try {
+            File downloadDir = ScriptUtils.createFileWithParent(downloadDirStr, true);
+            for (ScriptMetaEntity objectMetadata : scriptMetas) {
+                StorageObject storageObject =
+                        objectStorageFacade.loadObject(objectMetadata.getBucketName(), objectMetadata.getObjectId());
+                File file = new File(downloadDir, objectMetadata.getObjectName());
+                FileUtils.copyInputStreamToFile(storageObject.getContent(), file);
+            }
+
+            try {
+                OdcFileUtil.zip(downloadDirStr, zipFileStr);
+            } catch (IOException ex) {
+                throw new InternalServerError("create zip file error,"
+                        + "downloadDirStr: " + downloadDirStr + ",zipFileStr: " + zipFileStr, ex);
+            }
+        } finally {
+            // register a async task to delete the zip file and download directory after 5 minutes;
+            // Note: Since Caffeine employs lazy deletion for expired key-value pairs,
+            // it only checks for and deletes expired KV entries during a download operation.
+            // Therefore, the temporary files used in the last download will not be automatically deleted (even
+            // if the expiration time has been reached),
+            // and deletion will only be triggered by the next download or when the program stops.
+            tempPathsInBatchDownloadCache.put(downloadDirStr, new HashSet<>(Arrays.asList(downloadDirStr, zipFileStr)));
+        }
+        return WebResponseUtils.getFileAttachmentResponseEntity(
+                new InputStreamResource(new FileInputStream(zipFileStr)), new File(zipFileStr).getName());
     }
 }
