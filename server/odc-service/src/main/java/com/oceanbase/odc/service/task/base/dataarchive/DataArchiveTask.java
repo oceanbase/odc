@@ -104,6 +104,7 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             }
             log.info("Init {} job succeed,dlmTableUnitId={}", dlmTableUnit.getType(), dlmTableUnit.getDlmTableUnitId());
             try {
+                dlmTableUnit.setStatus(TaskStatus.RUNNING);
                 job.run();
                 log.info("{} job finished,dlmTableUnitId={}", dlmTableUnit.getType(), dlmTableUnit.getDlmTableUnitId());
                 dlmTableUnit.setStatus(TaskStatus.DONE);
