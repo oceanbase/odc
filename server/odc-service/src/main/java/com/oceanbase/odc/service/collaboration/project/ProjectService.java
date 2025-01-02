@@ -627,6 +627,7 @@ public class ProjectService {
         member.setName(user.getName());
         member.setAccountName(user.getAccountName());
         member.setUserEnabled(user.isEnabled());
+        member.setDerivedFromGlobalProjectRole(userResourceRole.isDerivedFromGlobalProjectRole());
         return member;
     }
 

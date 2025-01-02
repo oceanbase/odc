@@ -38,7 +38,6 @@ import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
-import com.oceanbase.odc.metadb.iam.PermissionEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleRepository;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
@@ -120,13 +119,14 @@ public class ResourceRoleService {
     public Set<String> getResourceRoleIdentifiersByUserId(long organizationId, long userId) {
         List<UserResourceRoleEntity> userResourceRoleEntities =
                 userResourceRoleRepository.findByOrganizationIdAndUserId(organizationId, userId);
-        List<PermissionEntity> globalResourceRolePermissions =
-                permissionService.findGlobalResourceRolePermissions(userId, organizationId);
+        List<ResourceRoleName> globalResourceRoles =
+                globalResourceRoleService.findGlobalResourceRoleUsersByOrganizationIdAndUserId(organizationId, userId)
+                        .stream().map(UserGlobalResourceRole::getResourceRole).collect(Collectors.toList());
 
         Set<String> resourceRoleIdentifiers = userResourceRoleEntities.stream()
                 .map(i -> StringUtils.join(i.getResourceId(), ":", i.getResourceRoleId()))
                 .collect(Collectors.toSet());
-        if (CollectionUtils.isEmpty(globalResourceRolePermissions)) {
+        if (CollectionUtils.isEmpty(globalResourceRoles)) {
             return resourceRoleIdentifiers;
         }
         // Has global resource role
@@ -134,8 +134,8 @@ public class ResourceRoleService {
                 .stream().map(resourceRoleMapper::entityToModel)
                 .collect(Collectors.toMap(role -> role.getRoleName().name(), ResourceRole::getId, (v1, v2) -> v2));
 
-        Set<String> derivedFromGlobalResourceRole = globalResourceRolePermissions.stream()
-                .map(i -> StringUtils.join("*", ":", resourceRoleName2Id.get(i.getAction())))
+        Set<String> derivedFromGlobalResourceRole = globalResourceRoles.stream()
+                .map(i -> StringUtils.join("*", ":", resourceRoleName2Id.get(i.name())))
                 .collect(Collectors.toSet());
         derivedFromGlobalResourceRole.addAll(resourceRoleIdentifiers);
         return derivedFromGlobalResourceRole;
@@ -157,8 +157,9 @@ public class ResourceRoleService {
                 .collect(Collectors.groupingBy(UserResourceRoleEntity::getResourceId, Collectors.mapping(
                         e -> id2ResourceRoles.get(e.getResourceRoleId()).getRoleName(), Collectors.toSet())));
         Set<ResourceRoleName> globalResourceRoles =
-                permissionService.findGlobalResourceRolePermissions(userId, organizationId).stream()
-                        .map(i -> ResourceRoleName.valueOf(i.getAction())).collect(Collectors.toSet());
+                globalResourceRoleService.findGlobalResourceRoleUsersByOrganizationIdAndUserId(organizationId, userId)
+                        .stream()
+                        .map(UserGlobalResourceRole::getResourceRole).collect(Collectors.toSet());
         if (CollectionUtils.isEmpty(globalResourceRoles)) {
             return result;
         }
