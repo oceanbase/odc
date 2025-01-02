@@ -60,9 +60,9 @@ import com.oceanbase.odc.metadb.iam.PermissionSpecs;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
-import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
 import com.oceanbase.odc.service.iam.ResourcePermissionExtractor;
 import com.oceanbase.odc.service.iam.ResourceRoleBasedPermissionExtractor;
+import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.resourcegroup.model.ResourceIdentifier;
 
@@ -79,7 +79,7 @@ public abstract class DefaultAuthorizationFacade implements AuthorizationFacade 
     @Autowired
     private PermissionRepository repository;
     @Autowired
-    private UserResourceRoleRepository resourceRoleService;
+    private ResourceRoleService resourceRoleService;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -205,9 +205,9 @@ public abstract class DefaultAuthorizationFacade implements AuthorizationFacade 
                 .stream().filter(permission -> !Objects.isNull(permission)).collect(Collectors.toList());
         List<UserResourceRoleEntity> resourceRoles =
                 resourceRoleService
-                        .findByOrganizationIdAndUserId(authenticationFacade.currentOrganizationId(), odcUser.getId())
+                        .listByOrganizationIdAndUserId(authenticationFacade.currentOrganizationId(), odcUser.getId())
                         .stream()
-                        .filter(Objects::nonNull).collect(Collectors.toList());
+                        .filter(Objects::nonNull).map(ResourceRoleService::toEntity).collect(Collectors.toList());
         return ListUtils.union(permissionMapper.getResourcePermissions(permissionEntityList),
                 resourceRoleBasedPermissionExtractor.getResourcePermissions(resourceRoles));
     }
