@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.db.util;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -25,7 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
@@ -88,8 +87,7 @@ public class OBMysqlCallFunctionCallBack implements ConnectionCallback<CallFunct
                 JdbcQueryResult jdbcQueryResult = new JdbcQueryResult(res.getMetaData(), rowDataMapper);
                 jdbcQueryResult.addLine(res);
                 List<List<Object>> rows = jdbcQueryResult.getRows();
-                if (CollectionUtils.size(rows) == 1 && Objects.nonNull(rows.get(0))
-                        && CollectionUtils.size(rows.get(0)) == 1) {
+                if (CollectionUtils.size(rows) == 1 && CollectionUtils.size(rows.get(0)) == 1) {
                     CallFunctionResp callFunctionResp = new CallFunctionResp();
                     PLOutParam plOutParam = new PLOutParam();
                     plOutParam.setValue(String.valueOf(rows.get(0).get(0)));
@@ -97,11 +95,10 @@ public class OBMysqlCallFunctionCallBack implements ConnectionCallback<CallFunct
                     callFunctionResp.setReturnValue(plOutParam);
                     callFunctionResp.setOutParams(null);
                     return callFunctionResp;
-                } else {
-                    return generateDefaultReturnValue();
                 }
+                throw new IllegalStateException("The return value of a function must be unique");
             }
-        } catch (SQLException | IOException e) {
+        } catch (Exception e) {
             CallFunctionResp callFunctionResp = generateDefaultReturnValue();
             callFunctionResp.setErrorMessage(e.getMessage());
             return callFunctionResp;
