@@ -41,7 +41,9 @@ import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class OBMysqlCallFunctionCallBack implements ConnectionCallback<CallFunctionResp> {
 
     private final DBFunction function;
@@ -99,6 +101,7 @@ public class OBMysqlCallFunctionCallBack implements ConnectionCallback<CallFunct
                 throw new IllegalStateException("The return value of a function must be unique");
             }
         } catch (Exception e) {
+            log.warn("Failed to call function {}", function.getFunName(), e);
             CallFunctionResp callFunctionResp = generateDefaultReturnValue();
             callFunctionResp.setErrorMessage(e.getMessage());
             return callFunctionResp;
