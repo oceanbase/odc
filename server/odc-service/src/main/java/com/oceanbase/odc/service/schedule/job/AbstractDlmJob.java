@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.schedule.job;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.quartz.JobExecutionContext;
 
@@ -29,12 +30,13 @@ import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.dlm.DLMService;
 import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.task.base.dataarchive.DataArchiveTask;
-import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.executor.task.TaskDescription;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
@@ -58,11 +60,9 @@ public abstract class AbstractDlmJob implements OdcJob {
     public final DatabaseService databaseService;
     public final ScheduleService scheduleService;
     public final DlmLimiterService limiterService;
+    public final DLMService dlmService;
 
     public JobScheduler jobScheduler = null;
-
-    public final TaskFrameworkEnabledProperties taskFrameworkProperties;
-
     public final TaskFrameworkService taskFrameworkService;
 
 
@@ -71,11 +71,9 @@ public abstract class AbstractDlmJob implements OdcJob {
         databaseService = SpringContextUtil.getBean(DatabaseService.class);
         scheduleService = SpringContextUtil.getBean(ScheduleService.class);
         limiterService = SpringContextUtil.getBean(DlmLimiterService.class);
-        taskFrameworkProperties = SpringContextUtil.getBean(TaskFrameworkEnabledProperties.class);
         taskFrameworkService = SpringContextUtil.getBean(TaskFrameworkService.class);
-        if (taskFrameworkProperties.isEnabled()) {
-            jobScheduler = SpringContextUtil.getBean(JobScheduler.class);
-        }
+        jobScheduler = SpringContextUtil.getBean(JobScheduler.class);
+        dlmService = SpringContextUtil.getBean(DLMService.class);
     }
 
     public DataSourceInfo getDataSourceInfo(Long databaseId) {
@@ -129,10 +127,23 @@ public abstract class AbstractDlmJob implements OdcJob {
     }
 
     public DLMJobReq getDLMJobReq(Long jobId) {
-        return JsonUtils.fromJson(JsonUtils.fromJson(
+        DLMJobReq dlmJobReq = JsonUtils.fromJson(JsonUtils.fromJson(
                 taskFrameworkService.find(jobId).getJobParametersJson(),
                 new TypeReference<Map<String, String>>() {}).get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
                 DLMJobReq.class);
+        Map<String, DlmTableUnit> tableName2Unit =
+                dlmService.findByScheduleTaskId(dlmJobReq.getScheduleTaskId()).stream()
+                        .collect(
+                                Collectors.toMap(DlmTableUnit::getTableName, o -> o));
+        dlmJobReq.getTables().forEach(o -> {
+            if (tableName2Unit.containsKey(o.getTableName())
+                    && tableName2Unit.get(o.getTableName()).getStatistic() != null) {
+                o.setPartName2MinKey(tableName2Unit.get(o.getTableName()).getStatistic().getPartName2MinKey());
+                o.setPartName2MaxKey(tableName2Unit.get(o.getTableName()).getStatistic().getPartName2MaxKey());
+            }
+        });
+
+        return dlmJobReq;
     }
 
 

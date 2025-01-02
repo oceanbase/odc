@@ -93,6 +93,8 @@ public class DLMJobStore implements IJobStore {
 
     @Override
     public void storeTaskGenerator(TaskGenerator taskGenerator) throws SQLException {
+        dlmTableUnit.getStatistic().setPartName2MaxKey(taskGenerator.getPartName2MaxKey());
+        dlmTableUnit.getStatistic().setPartName2MinKey(taskGenerator.getPartName2MinKey());
         if (enableBreakpointRecovery) {
             StringBuilder sb = new StringBuilder();
             sb.append("INSERT INTO dlm_task_generator ");
