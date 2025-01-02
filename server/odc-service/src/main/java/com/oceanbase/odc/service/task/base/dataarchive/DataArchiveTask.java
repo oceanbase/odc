@@ -148,6 +148,8 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             jobParameter.setMigratePartitions(table.getPartitions());
             jobParameter.setSyncDBObjectType(req.getSyncTableStructure());
             jobParameter.setShardingStrategy(req.getShardingStrategy());
+            jobParameter.setPartName2MinKey(table.getPartName2MinKey());
+            jobParameter.setPartName2MaxKey(table.getPartName2MaxKey());
             dlmTableUnit.setParameters(jobParameter);
             dlmTableUnit.setDlmTableUnitId(DlmJobIdUtil.generateHistoryJobId(req.getJobName(), req.getJobType().name(),
                     req.getScheduleTaskId(), dlmTableUnits.size()));
