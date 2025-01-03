@@ -54,6 +54,9 @@ public class DLMConfiguration {
     @Value("${odc.task.dlm.default-scan-batch-size:10000}")
     private int defaultScanBatchSize;
 
+    @Value("${odc.task.dlm.session.limit.ratio:25}")
+    private int sessionLimitRatio;
+
     @Bean
     public DLMJobFactory dlmJobFactory(IJobStore jobStore) {
         return new DLMJobFactory(jobStore);
