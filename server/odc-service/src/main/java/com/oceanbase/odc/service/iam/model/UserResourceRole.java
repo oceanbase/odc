@@ -44,6 +44,8 @@ public class UserResourceRole implements PermissionConfiguration {
 
     private ResourceRoleName resourceRole;
 
+    private Long resourceRoleId;
+
     private boolean derivedFromGlobalProjectRole = false;
 
     public boolean isProjectMember() {
