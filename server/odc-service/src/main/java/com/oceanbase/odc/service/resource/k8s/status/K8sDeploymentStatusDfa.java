@@ -65,7 +65,7 @@ public class K8sDeploymentStatusDfa extends AbstractDfa<ResourceState, K8sDeploy
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>().from(ResourceState.UNKNOWN)
                 .matchesK8sResource(getErrorDeploymentMatchers(current)).to(ResourceState.ERROR_STATE).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>().from(ResourceState.UNKNOWN)
-                .matchesK8sResource(getErrorDeploymentMatchers(current)).to(ResourceState.DESTROYED).build());
+                .matchesK8sResource(Collections.singletonList(Objects::isNull)).to(ResourceState.DESTROYED).build());
         return new K8sDeploymentStatusDfa(transfers);
     }
 
