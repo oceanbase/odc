@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.task.schedule.daemon.v2;
 
 import java.text.MessageFormat;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -29,7 +28,6 @@ import org.springframework.data.domain.Page;
 import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
-import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.task.caller.JobCallerBuilder;
@@ -44,7 +42,9 @@ import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
+import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.supervisor.endpoint.ExecutorEndpoint;
@@ -52,7 +52,6 @@ import com.oceanbase.odc.service.task.supervisor.endpoint.SupervisorEndpoint;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
-import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -73,7 +72,20 @@ public class StartPreparingJobV2 implements Job {
             configuration.getTaskFrameworkDisabledHandler().handleJobToFailed();
             return;
         }
+        // safe check
+        if (!configuration.getTaskFrameworkProperties().isEnableTaskSupervisorAgent()) {
+            return;
+        }
+        // process preparing job with rate limiter
+        processPreparingJob(configuration);
+        // process ready start job
+        processReadyStartJob(configuration);
+    }
 
+    /**
+     * process job in preparing status, it will do rate limit status
+     */
+    protected void processPreparingJob(JobConfiguration configuration) {
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
         // scan preparing job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
@@ -82,10 +94,52 @@ public class StartPreparingJobV2 implements Job {
                 taskFrameworkProperties.getSingleFetchPreparingJobRows());
 
         for (JobEntity jobEntity : jobs) {
-            if (!configuration.getStartJobRateLimiter().tryAcquire()) {
-                break;
-            }
             try {
+                // first check if job is expired
+                if (checkJobIsExpired(jobEntity)) {
+                    // expired task transfer to timeout, to try to send stop command
+                    JobUtils.updateStatusAndCheck(jobEntity.getId(), jobEntity.getStatus(), JobStatus.TIMEOUT,
+                            taskFrameworkService);
+                }
+                // check rate limiter
+                if (!configuration.getStartJobRateLimiter().tryAcquire()) {
+                    break;
+                }
+                // summit job resource allocate request
+                configuration.getTransactionManager().doInTransactionWithoutResult(
+                        () -> allocateResource(configuration, jobEntity));
+            } catch (Throwable e) {
+                log.warn("Start job failed cause prepare resource failed, jobId={}, terminate job.", jobEntity.getId(),
+                        e);
+                afterJobFailed(e, jobEntity, configuration);
+            }
+        }
+    }
+
+    protected void allocateResource(JobConfiguration configuration, JobEntity jobEntity) {
+        JobContext jobContext =
+                new DefaultJobContextBuilder().build(jobEntity);
+        configuration.getSupervisorAgentAllocator()
+                .submitAllocateSupervisorEndpointRequest(jobEntity.getRunMode().name(), jobContext,
+                        retrieveJobRunningLocation(jobEntity, jobContext));
+        JobUtils.updateStatusAndCheck(jobEntity.getId(), jobEntity.getStatus(), JobStatus.PREPARING_RESR,
+                configuration.getTaskFrameworkService());
+    }
+
+    /**
+     * process job in allocate resource status
+     */
+    protected void processReadyStartJob(JobConfiguration configuration) {
+        TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
+        // scan preparing job
+        TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
+        Page<JobEntity> jobs = taskFrameworkService.find(
+                Lists.newArrayList(JobStatus.PREPARING_RESR), 0,
+                taskFrameworkProperties.getSingleFetchPreparingJobRows());
+
+        for (JobEntity jobEntity : jobs) {
+            try {
+                // first check if job is expired
                 if (checkJobIsExpired(jobEntity)) {
                     // expired task transfer to timeout, to try to send stop command
                     JobUtils.updateStatusAndCheck(jobEntity.getId(), jobEntity.getStatus(), JobStatus.TIMEOUT,
@@ -94,9 +148,8 @@ public class StartPreparingJobV2 implements Job {
                     JobContext jobContext =
                             new DefaultJobContextBuilder().build(jobEntity);
                     Optional<SupervisorEndpoint> supervisorEndpoint = configuration.getSupervisorAgentAllocator()
-                            .tryAllocateSupervisorEndpoint(jobEntity.getRunMode().name(), jobContext,
-                                    retrieveJobRunningLocation(jobEntity, jobContext));
-                    // no resource found current round, try allocate next
+                            .checkAllocateSupervisorEndpointState(jobContext);
+                    // resource not ready yet, wait another round
                     if (!supervisorEndpoint.isPresent()) {
                         continue;
                     }
@@ -104,11 +157,21 @@ public class StartPreparingJobV2 implements Job {
                             () -> startJob(supervisorEndpoint.get(), configuration, jobContext, jobEntity));
                 }
             } catch (Throwable e) {
-                log.warn("Start job failed, jobId={}, terminate job.", jobEntity.getId(), e);
-                JobUtils.updateStatusAndCheck(jobEntity.getId(), jobEntity.getStatus(), JobStatus.FAILED,
-                        taskFrameworkService);
+                log.warn("Start job failed cause start job failed, jobId={}, terminate job.", jobEntity.getId(), e);
+                afterJobFailed(e, jobEntity, configuration);
             }
         }
+    }
+
+    private void afterJobFailed(Throwable e, JobEntity jobEntity, JobConfiguration configuration) {
+        JobUtils.updateStatusAndCheck(jobEntity.getId(), jobEntity.getStatus(), JobStatus.FAILED,
+                configuration.getTaskFrameworkService());
+        JobUtils.alarmJobEvent(jobEntity, AlarmEventNames.TASK_START_FAILED,
+                MessageFormat.format("Start job failed, jobId={0}, message={1}", jobEntity.getId(),
+                        e.getMessage()));
+        // send terminate event
+        configuration.getEventPublisher().publishEvent(
+                new JobTerminateEvent(JobIdentity.of(jobEntity.getId()), JobStatus.FAILED));
     }
 
     protected ResourceLocation retrieveJobRunningLocation(JobEntity jobEntity, JobContext jobContext) {
@@ -135,16 +198,10 @@ public class StartPreparingJobV2 implements Job {
                     .startTask(supervisorEndpoint, jobContext, jobCaller.getProcessConfig());
             log.info("start job success with endpoint={}", executorEndpoint);
         } catch (JobException e) {
-            Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
-                    .item(AlarmUtils.ORGANIZATION_NAME, Optional.ofNullable(jobEntity.getOrganizationId()).map(
-                            Object::toString).orElse(StrUtil.EMPTY))
-                    .item(AlarmUtils.TASK_JOB_ID_NAME, String.valueOf(jobEntity.getId()))
-                    .item(AlarmUtils.MESSAGE_NAME,
-                            MessageFormat.format("Start job failed, jobId={0}, message={1}",
-                                    jobEntity.getId(),
-                                    e.getMessage()))
-                    .build();
-            AlarmUtils.alarm(AlarmEventNames.TASK_START_FAILED, eventMessage);
+            JobUtils.alarmJobEvent(jobEntity, AlarmEventNames.TASK_START_FAILED,
+                    MessageFormat.format("Start job failed, jobId={0}, message={1}",
+                            jobEntity.getId(),
+                            e.getMessage()));
             // rollback load
             configuration.getSupervisorAgentAllocator()
                     .deallocateSupervisorEndpoint(jobContext.getJobIdentity().getId());

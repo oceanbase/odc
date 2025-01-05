@@ -108,4 +108,7 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
      * will ignore this mode
      */
     private boolean enableTaskSupervisorAgent;
+
+    // resource allocate will expired after resourceAllocateTimeOutSeconds
+    private int resourceAllocateTimeOutSeconds = 600;
 }

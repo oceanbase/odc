@@ -31,7 +31,6 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class ProcessResourceManageStrategy implements ResourceManageStrategy {
-
     public ProcessResourceManageStrategy() {}
 
     /**
@@ -58,6 +57,7 @@ public class ProcessResourceManageStrategy implements ResourceManageStrategy {
     @Override
     public boolean isEndpointHaveEnoughResource(SupervisorEndpointEntity supervisorEndpoint,
             ResourceAllocateInfoEntity entity) {
+        // TODO(lx): add resource detect logic here
         return true;
     }
 

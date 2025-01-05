@@ -22,9 +22,10 @@ import java.util.List;
 import com.oceanbase.odc.metadb.task.ResourceAllocateInfoRepository;
 import com.oceanbase.odc.metadb.task.SupervisorEndpointEntity;
 import com.oceanbase.odc.metadb.task.SupervisorEndpointRepository;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.service.TransactionManager;
 import com.oceanbase.odc.service.task.supervisor.endpoint.SupervisorEndpoint;
-import com.oceanbase.odc.service.task.supervisor.protocol.TaskCommandSender;
+import com.oceanbase.odc.service.task.supervisor.protocol.TaskNetClient;
 import com.oceanbase.odc.service.task.supervisor.proxy.RemoteTaskSupervisorProxy;
 
 import lombok.extern.slf4j.Slf4j;
@@ -44,14 +45,15 @@ public class TaskResourceManager {
 
     public TaskResourceManager(SupervisorEndpointRepository supervisorEndpointRepository,
             ResourceAllocateInfoRepository resourceAllocateInfoRepository,
-            ResourceManageStrategy resourceManageStrategy) {
-        this.remoteTaskSupervisorProxy = new RemoteTaskSupervisorProxy(new TaskCommandSender());
+            ResourceManageStrategy resourceManageStrategy, TaskFrameworkProperties taskFrameworkProperties) {
+        this.remoteTaskSupervisorProxy = new RemoteTaskSupervisorProxy(new TaskNetClient());
         this.supervisorEndpointRepositoryWrap = new SupervisorEndpointRepositoryWrap(supervisorEndpointRepository);
         this.resourceAllocateInfoRepositoryWrap =
                 new ResourceAllocateInfoRepositoryWrap(resourceAllocateInfoRepository);
         this.resourceManageStrategy = resourceManageStrategy;
         this.resourceAllocator = new ResourceAllocator(supervisorEndpointRepositoryWrap,
-                resourceAllocateInfoRepositoryWrap, remoteTaskSupervisorProxy, resourceManageStrategy);
+                resourceAllocateInfoRepositoryWrap, remoteTaskSupervisorProxy, resourceManageStrategy,
+                taskFrameworkProperties);
         this.resourceDeAllocator = new ResourceDeAllocator(supervisorEndpointRepositoryWrap,
                 resourceAllocateInfoRepositoryWrap, remoteTaskSupervisorProxy, resourceManageStrategy);
     }

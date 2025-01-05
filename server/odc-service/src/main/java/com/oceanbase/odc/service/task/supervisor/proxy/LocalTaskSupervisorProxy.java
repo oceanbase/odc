@@ -23,7 +23,8 @@ import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.supervisor.TaskSupervisor;
 import com.oceanbase.odc.service.task.supervisor.endpoint.ExecutorEndpoint;
 import com.oceanbase.odc.service.task.supervisor.endpoint.SupervisorEndpoint;
-import com.oceanbase.odc.service.task.supervisor.protocol.TaskCommandSender;
+import com.oceanbase.odc.service.task.supervisor.protocol.TaskNetClient;
+import com.oceanbase.odc.service.task.supervisor.runtime.EndpointInfo;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,7 +44,7 @@ public class LocalTaskSupervisorProxy implements TaskSupervisorProxy {
             String mainClassName) {
         this.localEndPoint = supervisorEndpoint;
         log.info("LocalTaskSupervisorProxy start with endpoint={}", supervisorEndpoint);
-        remoteTaskSupervisorProxy = new RemoteTaskSupervisorProxy(new TaskCommandSender());
+        remoteTaskSupervisorProxy = new RemoteTaskSupervisorProxy(new TaskNetClient());
         taskSupervisor = new TaskSupervisor(supervisorEndpoint, mainClassName);
     }
 
@@ -102,6 +103,11 @@ public class LocalTaskSupervisorProxy implements TaskSupervisorProxy {
             log.info("remote call isSupervisorAlive task, supervisorEndpoint={}", supervisorEndpoint);
             return remoteTaskSupervisorProxy.isSupervisorAlive(supervisorEndpoint);
         }
+    }
+
+    @Override
+    public EndpointInfo supervisorResources(SupervisorEndpoint supervisorEndpoint) {
+        return EndpointInfo.getEndpointInfo();
     }
 
     protected boolean isLocalCommandCall(SupervisorEndpoint supervisorEndpoint) {

@@ -22,6 +22,7 @@ import com.oceanbase.odc.service.task.caller.ProcessConfig;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.supervisor.endpoint.ExecutorEndpoint;
 import com.oceanbase.odc.service.task.supervisor.endpoint.SupervisorEndpoint;
+import com.oceanbase.odc.service.task.supervisor.runtime.EndpointInfo;
 
 /**
  * execute remote/local call for given supervisor endpoint
@@ -68,6 +69,9 @@ public interface TaskSupervisorProxy {
      * if supervisor is alvie
      */
     boolean isSupervisorAlive(SupervisorEndpoint supervisorEndpoint);
+
+
+    EndpointInfo supervisorResources(SupervisorEndpoint supervisorEndpoint);
 
     static String getExecutorIdentifierByExecutorEndpoint(ExecutorEndpoint executorEndpoint) {
         return executorEndpoint.getIdentifier();

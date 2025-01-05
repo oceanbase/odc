@@ -25,7 +25,7 @@ import com.oceanbase.odc.service.task.util.HttpClientUtils;
  * @author longpeng.zlp
  * @date 2024/10/29 15:01
  */
-public class TaskCommandSender {
+public class TaskNetClient {
     /**
      * send command to supervisor end point and return reponse
      * 
@@ -46,6 +46,13 @@ public class TaskCommandSender {
         StringBuilder sb = new StringBuilder(64);
         appendHttpURlBase(supervisorEndpoint, sb);
         sb.append("/heartbeat");
+        return HttpClientUtils.request("GET", sb.toString(), new TypeReference<String>() {});
+    }
+
+    public String memInfo(SupervisorEndpoint supervisorEndpoint) throws IOException {
+        StringBuilder sb = new StringBuilder(64);
+        appendHttpURlBase(supervisorEndpoint, sb);
+        sb.append("/memInfo");
         return HttpClientUtils.request("GET", sb.toString(), new TypeReference<String>() {});
     }
 

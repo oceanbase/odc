@@ -31,6 +31,7 @@ import org.quartz.JobExecutionException;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
@@ -42,6 +43,7 @@ import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.state.JobStatusFsm;
+import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 import com.oceanbase.odc.service.task.util.TaskResultWrap;
 
@@ -65,6 +67,10 @@ public class PullTaskResultJobV2 implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
+        // safe check
+        if (!configuration.getTaskFrameworkProperties().isEnableTaskSupervisorAgent()) {
+            return;
+        }
         this.taskFrameworkProperties = configuration.getTaskFrameworkProperties();
         this.taskFrameworkService = configuration.getTaskFrameworkService();
         this.taskExecutorClient = configuration.getTaskExecutorClient();
@@ -139,6 +145,8 @@ public class PullTaskResultJobV2 implements Job {
                 log.info("job id = {} is  expired after {} seconds, so try mark it as timeout, success = {}",
                         jobEntity.getId(), taskFrameworkProperties.getJobHeartTimeoutSeconds(),
                         updateRows == 0 ? "false" : "true");
+                JobUtils.alarmJobEvent(jobEntity, AlarmEventNames.TASK_HEARTBEAT_TIMEOUT,
+                        "Job heartbeat timeout, jobId=" + jobEntity.getId());
             } else {
                 log.info("job id = {} not receive result from task, reason = {}",
                         jobEntity.getId(), resultWarp.getE() != null ? resultWarp.getE().getMessage() : "");

@@ -24,6 +24,7 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.metadb.task.ResourceAllocateInfoEntity;
 import com.oceanbase.odc.metadb.task.SupervisorEndpointEntity;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.resource.ResourceAllocateState;
 import com.oceanbase.odc.service.task.resource.ResourceUsageState;
 import com.oceanbase.odc.service.task.service.TransactionManager;
@@ -44,14 +45,17 @@ public class ResourceAllocator {
     protected final ResourceAllocateInfoRepositoryWrap resourceAllocateInfoRepositoryWrap;
     protected final RemoteTaskSupervisorProxy remoteTaskSupervisorProxy;
     protected final ResourceManageStrategy resourceManageStrategy;
+    protected final TaskFrameworkProperties taskFrameworkProperties;
 
     public ResourceAllocator(SupervisorEndpointRepositoryWrap supervisorEndpointRepositoryWrap,
             ResourceAllocateInfoRepositoryWrap resourceAllocateInfoRepositoryWrap,
-            RemoteTaskSupervisorProxy remoteTaskSupervisorProxy, ResourceManageStrategy resourceManageStrategy) {
+            RemoteTaskSupervisorProxy remoteTaskSupervisorProxy, ResourceManageStrategy resourceManageStrategy,
+            TaskFrameworkProperties taskFrameworkProperties) {
         this.supervisorEndpointRepositoryWrap = supervisorEndpointRepositoryWrap;
         this.resourceAllocateInfoRepositoryWrap = resourceAllocateInfoRepositoryWrap;
         this.remoteTaskSupervisorProxy = remoteTaskSupervisorProxy;
         this.resourceManageStrategy = resourceManageStrategy;
+        this.taskFrameworkProperties = taskFrameworkProperties;
     }
 
     // allocate entry
@@ -156,6 +160,7 @@ public class ResourceAllocator {
      * @return
      */
     protected SupervisorEndpointEntity chooseSupervisorEndpoint(ResourceAllocateInfoEntity entity) {
+        // TODO(): maybe we can sort entity, reuse this endpoint result set
         List<SupervisorEndpointEntity> supervisorEndpointEntities = supervisorEndpointRepositoryWrap
                 .collectAvailableSupervisorEndpoint(entity.getResourceRegion(), entity.getResourceGroup());
         // no available found
@@ -187,7 +192,7 @@ public class ResourceAllocator {
         Duration between = Duration.between(entity.getUpdateTime().toInstant(), Instant.now());
         // 300 seconds considered as timeout
         // TODO(lx): config it
-        return (between.toMillis() / 1000 > 60);
+        return (between.toMillis() / 1000 > taskFrameworkProperties.getResourceAllocateTimeOutSeconds());
     }
 
 }

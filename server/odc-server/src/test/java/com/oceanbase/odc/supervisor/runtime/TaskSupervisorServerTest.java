@@ -24,6 +24,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.MapUtils;
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobContext;
@@ -37,7 +38,8 @@ import com.oceanbase.odc.service.task.supervisor.protocol.CommandType;
 import com.oceanbase.odc.service.task.supervisor.protocol.GeneralTaskCommand;
 import com.oceanbase.odc.service.task.supervisor.protocol.StartTaskCommand;
 import com.oceanbase.odc.service.task.supervisor.protocol.TaskCommand;
-import com.oceanbase.odc.service.task.supervisor.protocol.TaskCommandSender;
+import com.oceanbase.odc.service.task.supervisor.protocol.TaskNetClient;
+import com.oceanbase.odc.service.task.supervisor.runtime.EndpointInfo;
 import com.oceanbase.odc.service.task.supervisor.runtime.TaskCommandExecutor;
 import com.oceanbase.odc.service.task.supervisor.runtime.TaskSupervisorServer;
 
@@ -48,7 +50,7 @@ import com.oceanbase.odc.service.task.supervisor.runtime.TaskSupervisorServer;
 public class TaskSupervisorServerTest {
     private TaskSupervisorServer taskSupervisorServer;
     private SimpleTaskCommandExecutor simpleTaskCommandExecutor;
-    private TaskCommandSender taskCommandSender;
+    private TaskNetClient taskNetClient;
     private DefaultJobContext jobContext;
 
     @Before
@@ -70,7 +72,7 @@ public class TaskSupervisorServerTest {
                 put("pro2", "pro21");
             }
         });
-        taskCommandSender = new TaskCommandSender();
+        taskNetClient = new TaskNetClient();
         simpleTaskCommandExecutor = new SimpleTaskCommandExecutor();
         taskSupervisorServer = new TaskSupervisorServer(0, simpleTaskCommandExecutor);
         taskSupervisorServer.start();
@@ -96,7 +98,7 @@ public class TaskSupervisorServerTest {
             }
         });
         StartTaskCommand startTaskCommand = StartTaskCommand.create(jobContext, processConfig);
-        String ret = taskCommandSender.sendCommand(
+        String ret = taskNetClient.sendCommand(
                 new SupervisorEndpoint("127.0.0.1", taskSupervisorServer.getServerPort()),
                 startTaskCommand);
         Assert.assertEquals(ret, startTaskCommand.commandType().name().toLowerCase());
@@ -117,7 +119,7 @@ public class TaskSupervisorServerTest {
                 continue;
             }
             GeneralTaskCommand generalTaskCommand = GeneralTaskCommand.create(jobContext, endpoint, commandType);
-            String ret = taskCommandSender.sendCommand(
+            String ret = taskNetClient.sendCommand(
                     new SupervisorEndpoint("127.0.0.1", taskSupervisorServer.getServerPort()),
                     generalTaskCommand);
             GeneralTaskCommand receivedCommand = (GeneralTaskCommand) simpleTaskCommandExecutor.receivedTaskCommand;
@@ -134,11 +136,21 @@ public class TaskSupervisorServerTest {
 
     @Test
     public void testHeartbeat() throws IOException {
-        String ret = taskCommandSender.heartbeat(
+        String ret = taskNetClient.heartbeat(
                 new SupervisorEndpoint("127.0.0.1", taskSupervisorServer.getServerPort()));
         GeneralTaskCommand receivedCommand = (GeneralTaskCommand) simpleTaskCommandExecutor.receivedTaskCommand;
         Assert.assertNull(receivedCommand);
         Assert.assertEquals(ret, "true");
+    }
+
+    @Test
+    public void testHEndpointInfo() throws IOException {
+        String ret = taskNetClient.memInfo(
+                new SupervisorEndpoint("127.0.0.1", taskSupervisorServer.getServerPort()));
+        GeneralTaskCommand receivedCommand = (GeneralTaskCommand) simpleTaskCommandExecutor.receivedTaskCommand;
+        Assert.assertNull(receivedCommand);
+        EndpointInfo endpointInfo = JsonUtils.fromJson(ret, EndpointInfo.class);
+        Assert.assertNotNull(endpointInfo);
     }
 
 

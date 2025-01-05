@@ -38,10 +38,35 @@ public class SupervisorAgentAllocator {
         this.resourceAllocateInfoRepository = resourceAllocateInfoRepository;
     }
 
-    public Optional<SupervisorEndpoint> tryAllocateSupervisorEndpoint(String applierName, JobContext jobContext,
+    /**
+     * create allocate info request.
+     * 
+     * @return
+     */
+    public ResourceAllocateInfoEntity submitAllocateSupervisorEndpointRequest(String applierName, JobContext jobContext,
             ResourceLocation resourceLocation) {
         // register it to allocate info
-        ResourceAllocateInfoEntity entity = createAllocateInfo(applierName, jobContext, resourceLocation);
+        ResourceAllocateInfoEntity created = new ResourceAllocateInfoEntity();
+        created.setResourceAllocateState(ResourceAllocateState.PREPARING.name());
+        created.setResourceUsageState(ResourceUsageState.PREPARING.name());
+        created.setResourceRegion(resourceLocation.getRegion());
+        created.setResourceGroup(resourceLocation.getGroup());
+        created.setEndpoint(null);
+        created.setTaskId(jobContext.getJobIdentity().getId());
+        created.setResourceApplierName(applierName);
+        resourceAllocateInfoRepository.save(created);
+        log.info("submit allocate request info, value = {}", created);
+        return created;
+    }
+
+    /**
+     * check if resource allocated is ready
+     * 
+     * @return
+     */
+    public Optional<SupervisorEndpoint> checkAllocateSupervisorEndpointState(JobContext jobContext) {
+        // register it to allocate info
+        ResourceAllocateInfoEntity entity = findAllocateInfo(jobContext);
         ResourceAllocateState resourceAllocateState =
                 ResourceAllocateState.fromString(entity.getResourceAllocateState());
         switch (resourceAllocateState) {
@@ -76,28 +101,15 @@ public class SupervisorAgentAllocator {
         return resourceAllocateInfoRepository.findByTaskIdNative(taskID);
     }
 
-    /**
-     * create allocate info for job context
-     * 
-     * @param jobContext
-     */
-    protected ResourceAllocateInfoEntity createAllocateInfo(String applierName, JobContext jobContext,
-            ResourceLocation resourceLocation) {
+
+    protected ResourceAllocateInfoEntity findAllocateInfo(JobContext jobContext) {
         Optional<ResourceAllocateInfoEntity> resourceAllocateInfoEntity =
                 resourceAllocateInfoRepository.findByTaskIdNative(jobContext.getJobIdentity().getId());
         if (resourceAllocateInfoEntity.isPresent()) {
             return resourceAllocateInfoEntity.get();
+        } else {
+            throw new RuntimeException("no resource allocate info found for " + jobContext.getJobIdentity());
         }
-        ResourceAllocateInfoEntity created = new ResourceAllocateInfoEntity();
-        created.setResourceAllocateState(ResourceAllocateState.PREPARING.name());
-        created.setResourceUsageState(ResourceUsageState.PREPARING.name());
-        created.setResourceRegion(resourceLocation.getRegion());
-        created.setResourceGroup(resourceLocation.getGroup());
-        created.setEndpoint(null);
-        created.setTaskId(jobContext.getJobIdentity().getId());
-        created.setResourceApplierName(applierName);
-        resourceAllocateInfoRepository.save(created);
-        return created;
     }
 
     /**

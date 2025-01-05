@@ -26,7 +26,8 @@ import com.oceanbase.odc.service.task.supervisor.endpoint.SupervisorEndpoint;
 import com.oceanbase.odc.service.task.supervisor.protocol.CommandType;
 import com.oceanbase.odc.service.task.supervisor.protocol.GeneralTaskCommand;
 import com.oceanbase.odc.service.task.supervisor.protocol.StartTaskCommand;
-import com.oceanbase.odc.service.task.supervisor.protocol.TaskCommandSender;
+import com.oceanbase.odc.service.task.supervisor.protocol.TaskNetClient;
+import com.oceanbase.odc.service.task.supervisor.runtime.EndpointInfo;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,17 +41,17 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RemoteTaskSupervisorProxy implements TaskSupervisorProxy {
     // command sender to supervisor client
-    private final TaskCommandSender taskCommandSender;
+    private final TaskNetClient taskNetClient;
 
-    public RemoteTaskSupervisorProxy(TaskCommandSender taskCommandSender) {
-        this.taskCommandSender = taskCommandSender;
+    public RemoteTaskSupervisorProxy(TaskNetClient taskNetClient) {
+        this.taskNetClient = taskNetClient;
     }
 
     @Override
     public ExecutorEndpoint startTask(SupervisorEndpoint supervisorEndpoint, JobContext jobContext,
             ProcessConfig processConfig) throws IOException {
         String ret =
-                taskCommandSender.sendCommand(supervisorEndpoint, StartTaskCommand.create(jobContext, processConfig));
+                taskNetClient.sendCommand(supervisorEndpoint, StartTaskCommand.create(jobContext, processConfig));
         log.info("start task to supervisorEndpoint = {}, jobContext = {}, with response = {}", supervisorEndpoint,
                 jobContext, ret);
         return JsonUtils.fromJson(ret, ExecutorEndpoint.class);
@@ -59,7 +60,7 @@ public class RemoteTaskSupervisorProxy implements TaskSupervisorProxy {
     @Override
     public boolean destroyTask(SupervisorEndpoint supervisorEndpoint, ExecutorEndpoint executorEndpoint,
             JobContext jobContext) throws IOException {
-        String ret = taskCommandSender.sendCommand(supervisorEndpoint,
+        String ret = taskNetClient.sendCommand(supervisorEndpoint,
                 GeneralTaskCommand.create(jobContext, executorEndpoint, CommandType.DESTROY));
         log.info("stop task to supervisorEndpoint = {}, with response = {}", supervisorEndpoint, ret);
         return Boolean.parseBoolean(StringUtils.trim(ret));
@@ -68,7 +69,7 @@ public class RemoteTaskSupervisorProxy implements TaskSupervisorProxy {
     @Override
     public boolean isTaskAlive(SupervisorEndpoint supervisorEndpoint, ExecutorEndpoint executorEndpoint,
             JobContext jobContext) throws IOException {
-        String ret = taskCommandSender.sendCommand(supervisorEndpoint,
+        String ret = taskNetClient.sendCommand(supervisorEndpoint,
                 GeneralTaskCommand.create(jobContext, executorEndpoint, CommandType.IS_TASK_ALIVE));
         log.info("send task is alive command to supervisorEndpoint = {}, with response = {}", supervisorEndpoint, ret);
         return Boolean.parseBoolean(StringUtils.trim(ret));
@@ -77,11 +78,22 @@ public class RemoteTaskSupervisorProxy implements TaskSupervisorProxy {
     @Override
     public boolean isSupervisorAlive(SupervisorEndpoint supervisorEndpoint) {
         try {
-            taskCommandSender.heartbeat(supervisorEndpoint);
+            taskNetClient.heartbeat(supervisorEndpoint);
             return true;
         } catch (Throwable e) {
             log.info("heartbeat failed", e);
             return false;
+        }
+    }
+
+    @Override
+    public EndpointInfo supervisorResources(SupervisorEndpoint supervisorEndpoint) {
+        try {
+            String memInfo = taskNetClient.memInfo(supervisorEndpoint);
+            return JsonUtils.fromJson(memInfo, EndpointInfo.class);
+        } catch (Throwable e) {
+            log.info("heartbeat failed", e);
+            return EndpointInfo.INVALID_END_POINT;
         }
     }
 }

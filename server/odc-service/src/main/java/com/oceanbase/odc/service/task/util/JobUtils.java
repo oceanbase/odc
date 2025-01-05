@@ -28,8 +28,10 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
@@ -46,6 +48,7 @@ import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -206,5 +209,25 @@ public class JobUtils {
             throw new TaskRuntimeException(
                     "Update job status from " + oldStatus + "to " + newStatus + " failed, jobId=" + jobId);
         }
+    }
+
+    public static void alarmJobEvent(JobEntity jobEntity, String eventName, String message) {
+        AlarmUtils.alarm(eventName,
+                AlarmUtils.createAlarmMapBuilder()
+                        .item(AlarmUtils.ORGANIZATION_NAME, Optional.ofNullable(jobEntity.getOrganizationId()).map(
+                                Object::toString).orElse(StrUtil.EMPTY))
+                        .item(AlarmUtils.TASK_JOB_ID_NAME, String.valueOf(jobEntity.getId()))
+                        .item(AlarmUtils.MESSAGE_NAME, message)
+                        .build());
+    }
+
+    public static void alarmResourceEvent(ResourceEntity resourceEntity, String eventName, String message) {
+        Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                .item(AlarmUtils.ORGANIZATION_NAME, AlarmUtils.ODC_RESOURCE)
+                .item(AlarmUtils.RESOURCE_ID_NAME, String.valueOf(resourceEntity.getId()))
+                .item(AlarmUtils.RESOURCE_TYPE, resourceEntity.getResourceType())
+                .item(AlarmUtils.MESSAGE_NAME, message)
+                .build();
+        AlarmUtils.alarm(eventName, eventMessage);
     }
 }

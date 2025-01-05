@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.task.net.HttpServerContainer;
 import com.oceanbase.odc.service.task.net.RequestHandler;
@@ -60,8 +61,10 @@ public class TaskSupervisorServer extends HttpServerContainer<String> {
             @Override
             public String process(HttpMethod httpMethod, String uri, String requestData) {
                 // handle heartbeat request
-                if (StringUtils.contains(uri, "heartbeat")) {
+                if (StringUtils.containsIgnoreCase(uri, "heartbeat")) {
                     return "true";
+                } else if (StringUtils.containsIgnoreCase(uri, "memInfo")) {
+                    return JsonUtils.toJson(EndpointInfo.getEndpointInfo());
                 }
                 try {
                     TaskCommand taskCommand = taskCommandDeserializer.deserializeTaskCommand(requestData);

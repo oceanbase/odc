@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.task.schedule.daemon.v2;
 
 import java.text.MessageFormat;
-import java.util.Map;
 
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
@@ -25,18 +24,17 @@ import org.quartz.JobExecutionException;
 import org.springframework.data.domain.Page;
 
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
-import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
-import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.resource.manager.TaskResourceManager;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,6 +53,10 @@ public class ManagerResourceJobV2 implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         configuration = JobConfigurationHolder.getJobConfiguration();
+        // safe check
+        if (!configuration.getTaskFrameworkProperties().isEnableTaskSupervisorAgent()) {
+            return;
+        }
         // scan terminate job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
@@ -96,18 +98,9 @@ public class ManagerResourceJobV2 implements Job {
                 configuration.getResourceManager().destroy(resourceID);
             } catch (Throwable e) {
                 log.warn("DestroyResourceJob destroy resource = {} failed", resourceEntity, e);
-                if (e.getMessage() != null &&
-                        !e.getMessage().startsWith(JobConstants.ODC_EXECUTOR_CANNOT_BE_DESTROYED)) {
-                    Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
-                            .item(AlarmUtils.ORGANIZATION_NAME, AlarmUtils.ODC_RESOURCE)
-                            .item(AlarmUtils.RESOURCE_ID_NAME, String.valueOf(resourceEntity.getId()))
-                            .item(AlarmUtils.RESOURCE_TYPE, resourceEntity.getResourceType())
-                            .item(AlarmUtils.MESSAGE_NAME,
-                                    MessageFormat.format("Job resource destroy failed, resourceID={0}, message={1}",
-                                            resourceEntity.getId(), e.getMessage()))
-                            .build();
-                    AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTOR_DESTROY_FAILED, eventMessage);
-                }
+                JobUtils.alarmResourceEvent(resourceEntity, AlarmEventNames.DESTROY_RESOURCE_FAILED,
+                        MessageFormat.format("Job resource destroy failed, resourceID={0}, message={1}",
+                                resourceEntity.getId(), e.getMessage()));
                 throw new TaskRuntimeException(e);
             }
             log.info("Job destroy resource succeed, resource={}", resourceEntity);

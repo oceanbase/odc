@@ -33,6 +33,8 @@ import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
+import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.supervisor.endpoint.ExecutorEndpoint;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -56,6 +58,10 @@ public class DoStopJobV2 implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         configuration = JobConfigurationHolder.getJobConfiguration();
+        // safe check
+        if (!configuration.getTaskFrameworkProperties().isEnableTaskSupervisorAgent()) {
+            return;
+        }
         // scan preparing job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
@@ -102,6 +108,9 @@ public class DoStopJobV2 implements Job {
                         : "job heartbeat timeout";
                 taskFrameworkService.updateStatusDescriptionByIdOldStatus(jobEntity.getId(), JobStatus.TIMEOUT,
                         JobStatus.FAILED, message);
+                // send terminate event
+                configuration.getEventPublisher().publishEvent(
+                        new JobTerminateEvent(JobIdentity.of(jobEntity.getId()), JobStatus.FAILED));
                 break;
             default:
                 throw new TaskRuntimeException("do stop job can't process status for " + jobEntity.getId()

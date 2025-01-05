@@ -24,26 +24,26 @@ import com.oceanbase.odc.service.task.supervisor.endpoint.SupervisorEndpoint;
  * @author longpeng.zlp
  * @date 2024/11/25 16:44
  */
-public class TaskCommandSenderTest {
+public class TaskNetClientTest {
     @Test
     public void testCommandSenderBuildStartUrl() {
-        TaskCommandSender taskCommandSender = new TaskCommandSender();
+        TaskNetClient taskNetClient = new TaskNetClient();
         SupervisorEndpoint supervisorEndpoint = new SupervisorEndpoint("127.0.0.1", 9999);
         TaskCommand taskCommand = StartTaskCommand.create(null, null);
-        Assert.assertEquals(taskCommandSender.buildUrl(supervisorEndpoint, taskCommand),
+        Assert.assertEquals(taskNetClient.buildUrl(supervisorEndpoint, taskCommand),
                 "http://127.0.0.1:9999/task/command/start");
     }
 
     @Test
     public void testCommandSenderBuildNoneStartUrl() {
-        TaskCommandSender taskCommandSender = new TaskCommandSender();
+        TaskNetClient taskNetClient = new TaskNetClient();
         SupervisorEndpoint supervisorEndpoint = new SupervisorEndpoint("127.0.0.1", 9999);
         for (CommandType commandType : CommandType.values()) {
             if (commandType == CommandType.START) {
                 continue;
             }
             TaskCommand taskCommand = GeneralTaskCommand.create(null, null, commandType);
-            Assert.assertEquals(taskCommandSender.buildUrl(supervisorEndpoint, taskCommand),
+            Assert.assertEquals(taskNetClient.buildUrl(supervisorEndpoint, taskCommand),
                     "http://127.0.0.1:9999/task/command/" + commandType.name().toLowerCase());
         }
     }

@@ -79,6 +79,7 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         TaskFrameworkProperties taskFrameworkProperties = getTaskFrameworkProperties();
         if (!taskFrameworkProperties.isEnableTaskSupervisorAgent()) {
             setDaemonScheduler((Scheduler) ctx.getBean("taskFrameworkSchedulerFactoryBean"));
+            setTaskSupervisorScheduler((Scheduler) ctx.getBean("defaultTaskSchedulerFactoryBean"));
         } else {
             setTaskSupervisorScheduler((Scheduler) ctx.getBean("defaultTaskSchedulerFactoryBean"));
         }
@@ -119,7 +120,8 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
             localProcessResource.prepareLocalProcessResource();
             taskResourceManager =
                     new TaskResourceManager(ctx.getBean(SupervisorEndpointRepository.class), ctx.getBean(
-                            ResourceAllocateInfoRepository.class), new ProcessResourceManageStrategy());
+                            ResourceAllocateInfoRepository.class), new ProcessResourceManageStrategy(),
+                            taskFrameworkProperties);
         } else {
             // k8s mode
             taskResourceManager =
@@ -130,7 +132,8 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
                                     ctx.getBean(SupervisorEndpointRepository.class),
                                     taskFrameworkProperties.isEnableK8sLocalDebugMode()
                                             ? this::getPortForLocalDebugSupervisorEndpoint
-                                            : taskFrameworkProperties.getK8sProperties()::getSupervisorListenPort));
+                                            : taskFrameworkProperties.getK8sProperties()::getSupervisorListenPort),
+                            taskFrameworkProperties);
         }
 
         setTaskResourceManager(taskResourceManager);

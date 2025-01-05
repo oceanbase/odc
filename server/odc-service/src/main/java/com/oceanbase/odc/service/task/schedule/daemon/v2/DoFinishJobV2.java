@@ -40,7 +40,6 @@ import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
-import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
@@ -72,6 +71,10 @@ public class DoFinishJobV2 implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         configuration = JobConfigurationHolder.getJobConfiguration();
+        // safe check
+        if (!configuration.getTaskFrameworkProperties().isEnableTaskSupervisorAgent()) {
+            return;
+        }
         // scan terminate job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
@@ -100,8 +103,7 @@ public class DoFinishJobV2 implements Job {
             }
         } catch (Throwable e) {
             log.warn("Destroy executor occur error, jobId={}: ", jobEntity.getId(), e);
-            if (e.getMessage() != null &&
-                    !e.getMessage().startsWith(JobConstants.ODC_EXECUTOR_CANNOT_BE_DESTROYED)) {
+            if (e.getMessage() != null) {
                 Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
                         .item(AlarmUtils.ORGANIZATION_NAME,
                                 Optional.ofNullable(jobEntity.getOrganizationId()).map(

@@ -83,4 +83,6 @@ public interface TaskFrameworkProperties {
 
     boolean isEnableTaskSupervisorAgent();
 
+    int getResourceAllocateTimeOutSeconds();
+
 }

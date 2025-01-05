@@ -79,6 +79,13 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class StdJobScheduler implements JobScheduler {
+    private static final String START_PREPARING_JOB_V2_KEY_NAME = "StartPreparingJobV2";
+    private static final String PULL_TASK_RESULT_JOB_V2_KEY_NAME = "PullTaskResultJobV2";
+    private static final String DO_STOP_JOB_V2_KEY_NAME = "DoStopJobV2";
+    private static final String DO_FINISH_JOB_V2_KEY_NAME = "DoFinishJobV2";
+    private static final String MANAGE_RESOURCE_JOB_V2_KEY_NAME = "ManagerResourceJobV2";
+
+
     private final Scheduler scheduler;
     private final JobConfiguration configuration;
     private final TaskFrameworkProperties taskFrameworkProperties;
@@ -95,6 +102,7 @@ public class StdJobScheduler implements JobScheduler {
         if (taskFrameworkProperties.isEnableTaskSupervisorAgent()) {
             initDaemonJobV2();
         } else {
+            disableSchedulerV2();
             initDaemonJob();
         }
         log.info("Start StdJobScheduler succeed.");
@@ -223,6 +231,52 @@ public class StdJobScheduler implements JobScheduler {
         initManagerResourceJobV2();
     }
 
+    private void disableSchedulerV2() {
+        Scheduler taskSupervisorScheduler = configuration.getTaskSupervisorScheduler();
+        cancelCronJob(START_PREPARING_JOB_V2_KEY_NAME, taskSupervisorScheduler);
+        cancelCronJob(PULL_TASK_RESULT_JOB_V2_KEY_NAME, taskSupervisorScheduler);
+        cancelCronJob(DO_STOP_JOB_V2_KEY_NAME, taskSupervisorScheduler);
+        cancelCronJob(DO_FINISH_JOB_V2_KEY_NAME, taskSupervisorScheduler);
+        cancelCronJob(MANAGE_RESOURCE_JOB_V2_KEY_NAME, taskSupervisorScheduler);
+    }
+
+    // v2 daemon job
+    private void initStartPreparingJobV2() {
+        log.info("start with supervisor preparing job");
+        initCronJob(START_PREPARING_JOB_V2_KEY_NAME,
+                configuration.getTaskFrameworkProperties().getStartPreparingJobCronExpression(),
+                StartPreparingJobV2.class, configuration.getTaskSupervisorScheduler());
+    }
+
+    private void initPullResultJobV2() {
+        log.info("start with supervisor pull task result job");
+        initCronJob(PULL_TASK_RESULT_JOB_V2_KEY_NAME,
+                configuration.getTaskFrameworkProperties().getPullTaskResultJobCronExpression(),
+                PullTaskResultJobV2.class, configuration.getTaskSupervisorScheduler());
+    }
+
+    private void initDoStopJobV2() {
+        log.info("start with supervisor do stop job");
+        initCronJob(DO_STOP_JOB_V2_KEY_NAME,
+                configuration.getTaskFrameworkProperties().getDoCancelingJobCronExpression(),
+                DoStopJobV2.class, configuration.getTaskSupervisorScheduler());
+    }
+
+    private void initDoFinishJobV2() {
+        log.info("start with supervisor do finish job");
+        initCronJob(DO_FINISH_JOB_V2_KEY_NAME,
+                configuration.getTaskFrameworkProperties().getDestroyExecutorJobCronExpression(),
+                DoFinishJobV2.class, configuration.getTaskSupervisorScheduler());
+    }
+
+    private void initManagerResourceJobV2() {
+        log.info("start with supervisor manage resource job");
+        initCronJob(MANAGE_RESOURCE_JOB_V2_KEY_NAME,
+                configuration.getTaskFrameworkProperties().getDestroyExecutorJobCronExpression(),
+                ManagerResourceJobV2.class, configuration.getTaskSupervisorScheduler());
+    }
+
+    // old daemon job
     private void initCheckRunningJob() {
         String key = "checkRunningJob";
         initCronJob(key,
@@ -239,46 +293,6 @@ public class StdJobScheduler implements JobScheduler {
         initCronJob(key,
                 configuration.getTaskFrameworkProperties().getPullTaskResultJobCronExpression(),
                 PullTaskResultJob.class, scheduler);
-    }
-
-    private void initStartPreparingJobV2() {
-        log.info("start with supervisor preparing job");
-        String key = "startPreparingSupervisorTaskJob";
-        initCronJob(key,
-                configuration.getTaskFrameworkProperties().getStartPreparingJobCronExpression(),
-                StartPreparingJobV2.class, configuration.getTaskSupervisorScheduler());
-    }
-
-    private void initPullResultJobV2() {
-        log.info("start with supervisor pull task result job");
-        String key = "PullTaskResultJobV2";
-        initCronJob(key,
-                configuration.getTaskFrameworkProperties().getPullTaskResultJobCronExpression(),
-                PullTaskResultJobV2.class, configuration.getTaskSupervisorScheduler());
-    }
-
-    private void initDoStopJobV2() {
-        log.info("start with supervisor do stop job");
-        String key = "DoStopJobV2";
-        initCronJob(key,
-                configuration.getTaskFrameworkProperties().getDoCancelingJobCronExpression(),
-                DoStopJobV2.class, configuration.getTaskSupervisorScheduler());
-    }
-
-    private void initDoFinishJobV2() {
-        log.info("start with supervisor do finish job");
-        String key = "DoFinishJobV2";
-        initCronJob(key,
-                configuration.getTaskFrameworkProperties().getDestroyExecutorJobCronExpression(),
-                DoFinishJobV2.class, configuration.getTaskSupervisorScheduler());
-    }
-
-    private void initManagerResourceJobV2() {
-        log.info("start with supervisor manage resource job");
-        String key = "ManagerResourceJobV2";
-        initCronJob(key,
-                configuration.getTaskFrameworkProperties().getDestroyExecutorJobCronExpression(),
-                ManagerResourceJobV2.class, configuration.getTaskSupervisorScheduler());
     }
 
     private void initStartPreparingJob() {
@@ -330,6 +344,17 @@ public class StdJobScheduler implements JobScheduler {
             log.warn("build trigger {} failed:", key, e);
         } catch (SchedulerException e) {
             log.warn("schedule job failed:", e);
+        }
+    }
+
+    private void cancelCronJob(String key, Scheduler scheduler) {
+        String group = JobConstants.ODC_JOB_MONITORING;
+        JobKey jobKey = JobKey.jobKey(key, group);
+        try {
+            scheduler.deleteJob(jobKey);
+            log.info("delete job key = {} succeed", jobKey);
+        } catch (SchedulerException e) {
+            log.warn("delete job key = {} failed, reason = {}", jobKey, e.getMessage());
         }
     }
 
