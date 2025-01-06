@@ -148,6 +148,13 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
 
         sessionConfig.setJdbcOption("sendConnectionAttributes", "true");
         sessionConfig.setJdbcOption("defaultConnectionAttributesBanList", "__client_ip");
+
+        if (StringUtils.isNotBlank(transferConfig.getConnectionInfo().getProxyHost())
+                && Objects.nonNull(transferConfig.getConnectionInfo().getProxyPort())) {
+            sessionConfig.setJdbcOption("socksProxyHost", transferConfig.getConnectionInfo().getProxyHost());
+            sessionConfig.setJdbcOption("socksProxyPort", transferConfig.getConnectionInfo().getProxyPort() + "");
+        }
+
         Optional.ofNullable(transferConfig.getExecutionTimeoutSeconds())
                 .ifPresent(timeout -> {
                     sessionConfig.setJdbcOption("socketTimeout", timeout * 1000 + "");
