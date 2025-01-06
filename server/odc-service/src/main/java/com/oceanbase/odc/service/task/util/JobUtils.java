@@ -27,6 +27,7 @@ import java.util.Optional;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.shared.Verify;
@@ -229,5 +230,10 @@ public class JobUtils {
                 .item(AlarmUtils.MESSAGE_NAME, message)
                 .build();
         AlarmUtils.alarm(eventName, eventMessage);
+    }
+
+    public static String getLogBasePath(String mountPath) {
+        return StringUtils.isNotBlank(mountPath) ? mountPath
+                : JobConstants.ODC_EXECUTOR_DEFAULT_MOUNT_PATH;
     }
 }

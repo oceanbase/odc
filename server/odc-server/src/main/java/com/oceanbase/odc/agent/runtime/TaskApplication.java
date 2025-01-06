@@ -15,20 +15,13 @@
  */
 package com.oceanbase.odc.agent.runtime;
 
-import java.io.File;
-import java.net.URI;
-import java.net.URISyntaxException;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.LoggerContext;
-
+import com.oceanbase.odc.agent.OdcAgent;
+import com.oceanbase.odc.common.BootAgentUtil;
 import com.oceanbase.odc.common.ExitHelper;
-import com.oceanbase.odc.common.JobContextResolver;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.task.Task;
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,9 +39,9 @@ public class TaskApplication {
             log.info("Task executor exits, systemInfo={}", SystemUtils.getSystemMemoryInfo());
         }));
         try {
-            context = new JobContextResolver().resolveJobContext(args);
-            // set log4j xml
-            setLog4JConfigXml();
+            context = new BootAgentUtil().resolveJobContext(args);
+            // set log4j xml, need env set by resolveJobContext
+            BootAgentUtil.setLog4JConfigXml(OdcAgent.class.getClassLoader(), "log4j2-task.xml");
             log.info("context is {}", JsonUtils.toJson(context));
             log.info("initial log configuration success.");
         } catch (Exception e) {
@@ -71,27 +64,5 @@ public class TaskApplication {
                 log.warn("Stop embed server occur exception:", e);
             }
         }
-    }
-
-    private void setLog4JConfigXml() {
-        String configurationFile = System.getProperty("log4j.configurationFile");
-        URI taskLogFile = null;
-        if (configurationFile != null) {
-            File file = new File(configurationFile);
-            if (file.exists() && file.isFile()) {
-                taskLogFile = file.toURI();
-            }
-        }
-        if (taskLogFile == null) {
-            try {
-                taskLogFile = getClass().getClassLoader().getResource("log4j2-task.xml").toURI();
-            } catch (URISyntaxException e) {
-                throw new TaskRuntimeException("load default log4j2-task.xml occur error:", e);
-            }
-        }
-
-        LoggerContext context = (LoggerContext) LogManager.getContext(false);
-        // this will force a reconfiguration, MDC context will to take effect
-        context.setConfigLocation(taskLogFile);
     }
 }

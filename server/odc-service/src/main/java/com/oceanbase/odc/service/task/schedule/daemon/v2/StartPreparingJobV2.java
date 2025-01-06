@@ -33,6 +33,7 @@ import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.task.caller.JobCallerBuilder;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobEnvironmentFactory;
+import com.oceanbase.odc.service.task.caller.ProcessConfig;
 import com.oceanbase.odc.service.task.caller.ProcessJobCaller;
 import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
@@ -42,6 +43,7 @@ import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -191,11 +193,10 @@ public class StartPreparingJobV2 implements Job {
 
         log.info("Prepare start job, jobId={}, currentStatus={}.",
                 jobEntity.getId(), jobEntity.getStatus());
-        ProcessJobCaller jobCaller = JobCallerBuilder.buildProcessCaller(jobContext,
-                new JobEnvironmentFactory().build(jobContext, TaskRunMode.PROCESS));
         try {
+            ProcessConfig processConfig = buildProcessConfig(configuration, jobContext);
             ExecutorEndpoint executorEndpoint = configuration.getTaskSupervisorJobCaller()
-                    .startTask(supervisorEndpoint, jobContext, jobCaller.getProcessConfig());
+                    .startTask(supervisorEndpoint, jobContext, processConfig);
             log.info("start job success with endpoint={}", executorEndpoint);
         } catch (JobException e) {
             JobUtils.alarmJobEvent(jobEntity, AlarmEventNames.TASK_START_FAILED,
@@ -207,6 +208,16 @@ public class StartPreparingJobV2 implements Job {
                     .deallocateSupervisorEndpoint(jobContext.getJobIdentity().getId());
             throw new TaskRuntimeException(e);
         }
+    }
+
+    protected ProcessConfig buildProcessConfig(JobConfiguration configuration, JobContext jobContext) {
+        TaskFrameworkProperties properties = configuration.getTaskFrameworkProperties();
+        String logPath = properties.getRunMode() == TaskRunMode.K8S
+                ? JobUtils.getLogBasePath(properties.getK8sProperties().getMountPath())
+                : LogUtils.getBaseLogPath();
+        ProcessJobCaller jobCaller = JobCallerBuilder.buildProcessCaller(jobContext,
+                new JobEnvironmentFactory().build(jobContext, TaskRunMode.PROCESS, logPath));
+        return jobCaller.getProcessConfig();
     }
 
     private boolean checkJobIsExpired(JobEntity jobEntity) {

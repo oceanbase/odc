@@ -174,12 +174,11 @@ public class ResourceAllocator {
                 .sorted((s1, s2) -> Integer.compare(s1.getLoads(), s2.getLoads())).collect(
                         Collectors.toList());
         for (SupervisorEndpointEntity tmp : supervisorEndpointEntities) {
-            if (!resourceManageStrategy.isEndpointHaveEnoughResource(tmp, entity)) {
-                continue;
-            }
             SupervisorEndpoint ret = new SupervisorEndpoint(tmp.getHost(), tmp.getPort());
             // TODO(longxuan): handle unreached supervisor
-            if (remoteTaskSupervisorProxy.isSupervisorAlive(ret)) {
+            // alive and have enough resource can start new job
+            if (remoteTaskSupervisorProxy.isSupervisorAlive(ret)
+                    && resourceManageStrategy.isEndpointHaveEnoughResource(tmp, entity)) {
                 // each task means one load
                 supervisorEndpointRepositoryWrap.operateLoad(tmp.getHost(), tmp.getPort(), tmp.getResourceID(), 1);
                 return tmp;

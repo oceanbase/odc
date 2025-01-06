@@ -85,4 +85,6 @@ public interface TaskFrameworkProperties {
 
     int getResourceAllocateTimeOutSeconds();
 
+    int getMaxAllowRunningJobs();
+
 }

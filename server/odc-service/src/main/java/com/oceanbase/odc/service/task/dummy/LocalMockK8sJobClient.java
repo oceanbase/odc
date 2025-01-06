@@ -33,6 +33,7 @@ import com.oceanbase.odc.service.task.caller.ProcessJobCaller;
 import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.resource.DefaultResourceOperatorBuilder;
 import com.oceanbase.odc.service.task.resource.K8sPodResource;
 import com.oceanbase.odc.service.task.resource.K8sResourceContext;
@@ -72,7 +73,7 @@ public class LocalMockK8sJobClient implements K8sJobClientSelector {
             if (null != jobContext) {
                 // normal process
                 ProcessJobCaller jobCaller = JobCallerBuilder.buildProcessCaller(jobContext,
-                        JobCallerBuilder.buildK8sEnv(jobContext));
+                        JobCallerBuilder.buildK8sEnv(jobContext, LogUtils.getBaseLogPath()));
                 DefaultExecutorIdentifier executorIdentifier = (DefaultExecutorIdentifier) jobCaller.doStart(
                         jobContext);
                 return new K8sPodResource(k8sResourceContext.getRegion(), k8sResourceContext.getGroup(),

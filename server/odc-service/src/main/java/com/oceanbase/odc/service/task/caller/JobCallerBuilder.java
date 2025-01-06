@@ -66,8 +66,8 @@ public class JobCallerBuilder {
      * @param context
      * @return
      */
-    public static Map<String, String> buildK8sEnv(JobContext context) {
-        Map<String, String> environments = new JobEnvironmentFactory().build(context, TaskRunMode.K8S);
+    public static Map<String, String> buildK8sEnv(JobContext context, String logPath) {
+        Map<String, String> environments = new JobEnvironmentFactory().build(context, TaskRunMode.K8S, logPath);
 
         Map<String, String> jobProperties = context.getJobProperties();
 
@@ -101,7 +101,7 @@ public class JobCallerBuilder {
 
     public static JobCaller buildK8sJobCaller(PodConfig podConfig, JobContext context,
             ResourceManager resourceManager, Date jobCreateTime) {
-        Map<String, String> environments = buildK8sEnv(context);
+        Map<String, String> environments = buildK8sEnv(context, podConfig.getMountPath());
         // common environment variables
         environments.put(JobEnvKeyConstants.ODC_LOG_DIRECTORY, podConfig.getMountPath());
         // do encryption for sensitive information

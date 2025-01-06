@@ -111,4 +111,7 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
 
     // resource allocate will expired after resourceAllocateTimeOutSeconds
     private int resourceAllocateTimeOutSeconds = 600;
+
+    // config for max job count running in one region
+    private int maxAllowRunningJobs = 8;
 }

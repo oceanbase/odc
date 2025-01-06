@@ -17,6 +17,7 @@ package com.oceanbase.odc.supervisor;
 
 import org.apache.hadoop.classification.InterfaceStability.Evolving;
 
+import com.oceanbase.odc.common.BootAgentUtil;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.server.module.Modules;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
@@ -34,7 +35,9 @@ import sun.misc.SignalHandler;
 @Evolving
 public class SupervisorAgent {
     public static void main(String[] args) {
-
+        BootAgentUtil.setLogPathSysProperty();
+        // set log4j xml
+        BootAgentUtil.setLog4JConfigXml(SupervisorAgent.class.getClassLoader(), "log4j2-supervisor.xml");
         log.info("Supervisor agent started");
         SupervisorApplication supervisorApplication = null;
         try {

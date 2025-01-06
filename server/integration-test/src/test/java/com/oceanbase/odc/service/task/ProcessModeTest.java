@@ -50,6 +50,7 @@ import com.oceanbase.odc.service.task.caller.ProcessConfig;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
@@ -115,7 +116,8 @@ public class ProcessModeTest extends BaseJobTest {
         JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId);
         JobDefinition jd = buildJobDefinition();
         JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
-        Map<String, String> envMap = new JobEnvironmentFactory().build(jc, TaskRunMode.PROCESS);
+        Map<String, String> envMap =
+                new JobEnvironmentFactory().build(jc, TaskRunMode.PROCESS, LogUtils.getBaseLogPath());
         JobUtils.encryptEnvironments(envMap);
 
         environments.putAll(envMap);

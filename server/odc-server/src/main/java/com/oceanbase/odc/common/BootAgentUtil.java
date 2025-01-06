@@ -15,8 +15,14 @@
  */
 package com.oceanbase.odc.common;
 
+import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
 
 import com.oceanbase.odc.common.trace.TaskContextHolder;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
@@ -26,6 +32,7 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobEnvironmentEncryptor;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
+import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.executor.context.JobContextProviderFactory;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
@@ -36,7 +43,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2024/11/26 15:11
  */
 @Slf4j
-public class JobContextResolver {
+public class BootAgentUtil {
     public JobContext resolveJobContext(String[] args) {
         // 1 step: valid environment value not blank
         validEnvValues();
@@ -81,10 +88,9 @@ public class JobContextResolver {
         TaskContextHolder.trace(JobUtils.getUserId(), taskId);
     }
 
-    private void setLogPathSysProperty() {
+    public static void setLogPathSysProperty() {
         JobUtils.putEnvToSysProperties(JobEnvKeyConstants.ODC_LOG_DIRECTORY);
     }
-
 
     private void validEnvValues() {
         validNotBlank(JobEnvKeyConstants.ODC_TASK_RUN_MODE);
@@ -103,6 +109,28 @@ public class JobContextResolver {
 
     private void validNotBlank(String envKey) {
         Verify.notBlank(SystemUtils.getEnvOrProperty(envKey), envKey);
+    }
+
+    public static void setLog4JConfigXml(ClassLoader classLoader, String candidateLogConfName) {
+        String configurationFile = System.getProperty("log4j.configurationFile");
+        URI taskLogFile = null;
+        if (configurationFile != null) {
+            File file = new File(configurationFile);
+            if (file.exists() && file.isFile()) {
+                taskLogFile = file.toURI();
+            }
+        }
+        if (taskLogFile == null) {
+            try {
+                taskLogFile = classLoader.getResource(candidateLogConfName).toURI();
+            } catch (URISyntaxException e) {
+                throw new TaskRuntimeException("load default " + candidateLogConfName + " occur error:", e);
+            }
+        }
+
+        LoggerContext context = (LoggerContext) LogManager.getContext(false);
+        // this will force a reconfiguration, MDC context will to take effect
+        context.setConfigLocation(taskLogFile);
     }
 
 }

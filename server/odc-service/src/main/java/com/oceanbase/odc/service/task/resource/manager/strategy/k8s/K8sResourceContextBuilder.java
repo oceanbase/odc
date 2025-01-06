@@ -31,6 +31,7 @@ import com.oceanbase.odc.service.task.resource.DefaultResourceOperatorBuilder;
 import com.oceanbase.odc.service.task.resource.K8sResourceContext;
 import com.oceanbase.odc.service.task.resource.PodConfig;
 import com.oceanbase.odc.service.task.schedule.provider.JobImageNameProvider;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**
  * @author longpeng.zlp
@@ -71,9 +72,7 @@ public class K8sResourceContextBuilder {
         // reserve more 1024 MB for supervisor at most
         podConfig.setLimitMem(k8sProperties.getLimitMem() + 1024);
         podConfig.setEnableMount(k8sProperties.getEnableMount());
-        podConfig.setMountPath(
-                StringUtils.isNotBlank(k8sProperties.getMountPath()) ? k8sProperties.getMountPath()
-                        : JobConstants.ODC_EXECUTOR_DEFAULT_MOUNT_PATH);
+        podConfig.setMountPath(JobUtils.getLogBasePath(k8sProperties.getMountPath()));
         podConfig.setMountDiskSize(k8sProperties.getMountDiskSize());
         podConfig.setMaxNodeCount(k8sProperties.getMaxNodeCount());
         podConfig.setNodeCpu(k8sProperties.getNodeCpu());
@@ -91,6 +90,7 @@ public class K8sResourceContextBuilder {
         Map<String, String> env = new HashMap<>();
         env.put(JobEnvKeyConstants.ODC_SUPERVISOR_LISTEN_PORT,
                 String.valueOf(supervisorListenPort));
+        env.put(JobEnvKeyConstants.ODC_LOG_DIRECTORY, JobUtils.getLogBasePath(k8sProperties.getMountPath()));
         return env;
     }
 }

@@ -35,6 +35,7 @@ import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.resource.PodConfig;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -107,7 +108,7 @@ public class ImmediateJobDispatcher implements JobDispatcher {
             return JobCallerBuilder.buildK8sJobCaller(podConfig, context, resourceManager, je.getCreateTime());
         } else {
             return JobCallerBuilder.buildProcessCaller(context,
-                    new JobEnvironmentFactory().build(context, TaskRunMode.PROCESS));
+                    new JobEnvironmentFactory().build(context, TaskRunMode.PROCESS, LogUtils.getBaseLogPath()));
         }
     }
 
