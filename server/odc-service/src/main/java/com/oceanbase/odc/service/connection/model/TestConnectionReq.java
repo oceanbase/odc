@@ -150,6 +150,9 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
 
     private Map<String, Object> attributes;
 
+    @JsonProperty(access = Access.READ_ONLY)
+    private Long organizationId;
+
     public DialectType getDialectType() {
         if (Objects.nonNull(this.type)) {
             return this.type.getDialectType();
@@ -192,6 +195,7 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
         req.setCatalogName(connection.getCatalogName());
         req.setSessionInitScript(connection.getSessionInitScript());
         req.setJdbcUrlParameters(connection.getJdbcUrlParameters());
+        req.setOrganizationId(connection.getOrganizationId());
         return req;
     }
 
