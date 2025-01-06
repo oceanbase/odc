@@ -25,6 +25,7 @@ import java.util.List;
 import com.alibaba.druid.pool.DruidDataSource;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
+import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
 import com.oceanbase.tools.migrator.common.dto.TaskGenerator;
 import com.oceanbase.tools.migrator.common.element.PrimaryKey;
@@ -44,11 +45,18 @@ import lombok.extern.slf4j.Slf4j;
 public class DLMJobStore implements IJobStore {
 
     private DruidDataSource dataSource;
-    private boolean enableBreakpointRecovery = false;
+    private boolean enableBreakpointRecovery = true;
     @Setter
     private DlmTableUnit dlmTableUnit;
 
     public DLMJobStore(ConnectionConfig metaDBConfig) {
+        try {
+            DruidDataSourceFactory druidDataSourceFactory = new DruidDataSourceFactory(metaDBConfig);
+            dataSource = (DruidDataSource) druidDataSourceFactory.getDataSource();
+        } catch (Exception e) {
+            log.warn("Failed to connect to the meta database; closing save point.");
+            enableBreakpointRecovery = false;
+        }
 
     }
 
