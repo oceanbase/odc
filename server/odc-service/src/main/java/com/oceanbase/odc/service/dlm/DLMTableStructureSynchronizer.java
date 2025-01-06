@@ -94,11 +94,12 @@ public class DLMTableStructureSynchronizer {
             DBTableStructureComparator comparator = new DBTableStructureComparator(tgtTableEditor,
                     tgtConfig.getType().getDialectType(), srcConfig.getDefaultSchema(), tgtConfig.getDefaultSchema());
             List<String> changeSqlScript = new LinkedList<>();
+            targetType.remove(DBObjectType.TABLE);
             if (tgtTable == null) {
                 srcTable.setSchemaName(tgtConfig.getDefaultSchema());
                 srcTable.setName(tgtTableName);
                 changeSqlScript.add(tgtTableEditor.generateCreateObjectDDL(srcTable));
-            } else {
+            } else if (!targetType.isEmpty()) {
                 DBObjectComparisonResult result = comparator.compare(srcTable, tgtTable);
                 if (result.getComparisonResult() == ComparisonResult.INCONSISTENT) {
                     changeSqlScript = result.getSubDBObjectComparisonResult().stream()

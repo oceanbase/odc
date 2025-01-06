@@ -120,7 +120,7 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
     }
 
     private void syncTableStructure(DlmTableUnit tableUnit) {
-        if (tableUnit.getType() != JobType.MIGRATE || CollectionUtils.isEmpty(tableUnit.getSyncTableStructure())) {
+        if (tableUnit.getType() != JobType.MIGRATE) {
             return;
         }
         try {
