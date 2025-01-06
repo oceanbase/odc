@@ -87,6 +87,7 @@ public enum DatabasePermissionType implements Translatable {
             case TRUNCATE:
             case OTHERS:
             case UNKNOWN:
+            case CALL:
                 return CHANGE;
             default:
                 return null;

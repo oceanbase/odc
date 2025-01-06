@@ -308,6 +308,8 @@ public class DBSchemaExtractor {
                 if (relationName.contains(".")) {
                     String[] names = relationName.split("\\.");
                     relationFactor.setSchema(names[0]);
+                } else {
+                    relationFactor.setSchema(this.defaultSchema);
                 }
                 identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
             }
