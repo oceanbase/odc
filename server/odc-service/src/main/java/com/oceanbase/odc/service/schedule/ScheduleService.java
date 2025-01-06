@@ -42,6 +42,7 @@ import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cglib.beans.BeanMap;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.InputStreamResource;
@@ -151,6 +152,9 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @SkipAuthorize
 public class ScheduleService {
+
+    @Value("${odc.schedule.min-interval:600}")
+    private int minInterval;
     @Autowired
     private ScheduleRepository scheduleRepository;
 
@@ -415,10 +419,8 @@ public class ScheduleService {
                 throw new IllegalArgumentException("Invalid cron expression");
             }
             long intervalMills = nextFiveFireTimes.get(1).getTime() - nextFiveFireTimes.get(0).getTime();
-            if (intervalMills / 1000 < 10 * 60) {
-                throw new IllegalArgumentException(
-                        "The interval between weeks is too short. The minimum interval is 10 minutes.");
-            }
+            PreConditions.validArgumentState(intervalMills / 1000 > minInterval, ErrorCodes.ScheduleIntervalTooShort,
+                    new Object[] {minInterval}, null);
         }
     }
 
