@@ -183,7 +183,6 @@ public class DLMJobStore implements IJobStore {
     @Override
     public void storeTaskMeta(TaskMeta taskMeta) throws SQLException {
         if (enableBreakpointRecovery) {
-            log.info("start to store taskMeta:{}", taskMeta);
             StringBuilder sb = new StringBuilder();
             sb.append("INSERT INTO dlm_task_unit ");
             sb.append(
