@@ -631,12 +631,31 @@ public class DBSchemaExtractor {
     }
 
 
+    /**
+     * This class is used to extract database and table names for permission verification.
+     *
+     * <p>
+     * Note: The attributes {@code dbObjectName} and {@code dbObjectType} are used exclusively when the
+     * database object is a table, external table, or view. Those attributes are involved in specialized
+     * processing scenarios.
+     * </p>
+     *
+     * <p>
+     * Usage example: When differentiating between custom and system functions, those attributes are
+     * essential. If a function is custom, change permission of database is required; otherwise, only
+     * query permission is required.
+     * </p>
+     *
+     * @see #schema
+     * @see #table
+     * @see #dbObjectName
+     * @see #dbObjectType
+     */
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     @EqualsAndHashCode
     public static class DBSchemaIdentity {
-
         private String schema;
         private String table;
         private String dbObjectName;
