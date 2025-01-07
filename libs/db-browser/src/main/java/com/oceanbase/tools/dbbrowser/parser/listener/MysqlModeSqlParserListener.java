@@ -542,18 +542,6 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
         }
     }
 
-    @Override
-    public void enterSimple_func_expr(OBParser.Simple_func_exprContext ctx) {
-        sqlType = SqlType.CALL;
-        this.dbObjectType = DBObjectType.FUNCTION;
-    }
-
-    @Override
-    public void enterComplex_func_expr(OBParser.Complex_func_exprContext ctx) {
-        sqlType = SqlType.CALL;
-        this.dbObjectType = DBObjectType.FUNCTION;
-    }
-
     private String handleObjectName(String name) {
         return StringUtils.unquoteMySqlIdentifier(name);
     }

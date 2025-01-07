@@ -384,7 +384,7 @@ public class ParserUtilTest {
     public void test_mysql_select_func() {
         String sql = "select func()";
         BasicResult result = ParserUtil.parseMysqlType(sql);
-        Assert.assertEquals(SqlType.CALL, result.getSqlType());
+        Assert.assertEquals(SqlType.SELECT, result.getSqlType());
         Assert.assertEquals(DBObjectType.FUNCTION, result.getDbObjectType());
     }
 
