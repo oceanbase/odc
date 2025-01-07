@@ -87,4 +87,6 @@ public interface TaskFrameworkProperties {
 
     int getMaxAllowRunningJobs();
 
+    int getTaskSupervisorAgentListenPort();
+
 }

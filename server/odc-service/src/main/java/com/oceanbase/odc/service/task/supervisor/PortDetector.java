@@ -19,6 +19,7 @@ import java.net.ServerSocket;
 import java.util.HashSet;
 import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.function.Function;
 
 import lombok.Setter;
 
@@ -36,23 +37,27 @@ public class PortDetector {
     private int minPort;
     @Setter
     private int expiredMs;
+    @Setter
+    private Function<Integer, Boolean> portDetector;
+
     private PriorityQueue<AllocatedPortInfo> allocatedPortInfos = new PriorityQueue<>((ap1, ap2) -> {
         return Long.compare(ap1.getAllocatedTime(), ap2.getAllocatedTime());
     });
     private Set<Integer> allocatedSets = new HashSet<>();
 
-    private PortDetector() {
+    protected PortDetector() {
         maxPort = 10240;
         minPort = 9000;
         // 10s
         expiredMs = 10000;
+        portDetector = PortDetector::portInUse;
     }
 
     public synchronized int getPort() {
         long currentTimeMS = System.currentTimeMillis();
         // expire allocated tasks port
         while (!allocatedPortInfos.isEmpty()
-                && (currentTimeMS - allocatedPortInfos.peek().getAllocatedTime()) > expiredMs) {
+                && (currentTimeMS - allocatedPortInfos.peek().getAllocatedTime()) >= expiredMs) {
             AllocatedPortInfo allocatedPortInfo = allocatedPortInfos.poll();
             allocatedSets.remove(allocatedPortInfo.getPort());
         }

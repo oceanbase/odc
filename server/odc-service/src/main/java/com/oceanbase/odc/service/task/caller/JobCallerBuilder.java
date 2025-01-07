@@ -20,6 +20,7 @@ import java.util.Map;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.resource.ResourceManager;
+import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobConstants;
@@ -46,12 +47,17 @@ public class JobCallerBuilder {
      * @return
      */
     public static ProcessJobCaller buildProcessCaller(JobContext context, Map<String, String> environments) {
+        return buildProcessCaller(context, environments, JobConfigurationHolder.getJobConfiguration());
+    }
+
+    public static ProcessJobCaller buildProcessCaller(JobContext context, Map<String, String> environments,
+            JobConfiguration configuration) {
         JobUtils.encryptEnvironments(environments);
         setReportMode(environments, context);
         ProcessConfig config = new ProcessConfig();
         config.setEnvironments(environments);
         TaskFrameworkProperties taskFrameworkProperties =
-                JobConfigurationHolder.getJobConfiguration().getTaskFrameworkProperties();
+                configuration.getTaskFrameworkProperties();
         config.setJvmXmsMB(taskFrameworkProperties.getJobProcessMinMemorySizeInMB());
         config.setJvmXmxMB(taskFrameworkProperties.getJobProcessMaxMemorySizeInMB());
         String mainClassName = StringUtils.isBlank(taskFrameworkProperties.getProcessMainClassName())

@@ -21,6 +21,7 @@ import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.supervisor.endpoint.SupervisorEndpoint;
@@ -35,9 +36,16 @@ import lombok.extern.slf4j.Slf4j;
 public class TaskSupervisorUtil {
     public static SupervisorEndpoint getDefaultSupervisorEndpoint() {
         String host = SystemUtils.getLocalIpAddress();
-        ServerProperties serverProperties = SpringContextUtil.getBean(ServerProperties.class);
-        int port = serverProperties.getPort();
-        return new SupervisorEndpoint(host, (port + 1000) % 65535);
+        TaskFrameworkProperties properties = SpringContextUtil.getBean(TaskFrameworkProperties.class);
+        // first check configured value
+        int port = properties.getTaskSupervisorAgentListenPort();
+        if (port <= 0) {
+            // use server listen port + 1000
+            ServerProperties serverProperties = SpringContextUtil.getBean(ServerProperties.class);
+            int serverPropertiesPort = serverProperties.getPort();
+            port = ((serverPropertiesPort + 1000) % 65535);
+        }
+        return new SupervisorEndpoint(host, port);
     }
 
     /**
@@ -50,7 +58,7 @@ public class TaskSupervisorUtil {
         return (taskFrameworkProperties.isEnableTaskSupervisorAgent());
     }
 
-    public static JobContext buildJobContextFromJobEntity(JobEntity jobEntity) {
-        return new DefaultJobContextBuilder().build(jobEntity);
+    public static JobContext buildJobContextFromJobEntity(JobEntity jobEntity, JobConfiguration configuration) {
+        return new DefaultJobContextBuilder().build(jobEntity, configuration);
     }
 }

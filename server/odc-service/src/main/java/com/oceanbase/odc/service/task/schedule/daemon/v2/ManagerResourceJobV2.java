@@ -33,7 +33,7 @@ import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.resource.manager.TaskResourceManager;
-import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.service.TransactionManager;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -48,49 +48,47 @@ import lombok.extern.slf4j.Slf4j;
 @DisallowConcurrentExecution
 public class ManagerResourceJobV2 implements Job {
 
-    private JobConfiguration configuration;
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
-        configuration = JobConfigurationHolder.getJobConfiguration();
+        JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
         // safe check
         if (!configuration.getTaskFrameworkProperties().isEnableTaskSupervisorAgent()) {
             return;
         }
         // scan terminate job
-        TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
-        TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
-        processTaskResource(configuration.getTaskResourceManager(), taskFrameworkProperties);
-        processRealResource(taskFrameworkProperties, taskFrameworkService);
+        processTaskResource(configuration);
+        processRealResource(configuration);
     }
 
-    private void processTaskResource(TaskResourceManager taskResourceManager,
-            TaskFrameworkProperties taskFrameworkProperties) {
+    private void processTaskResource(JobConfiguration configuration) {
+        TaskResourceManager taskResourceManager = configuration.getTaskResourceManager();
+        TransactionManager transactionManager = configuration.getTransactionManager();
         try {
-            taskResourceManager.execute(configuration.getTransactionManager());
+            taskResourceManager.execute(transactionManager);
         } catch (Throwable e) {
             log.warn("process task resource failed cause", e);
         }
     }
 
-    private void processRealResource(TaskFrameworkProperties taskFrameworkProperties,
-            TaskFrameworkService taskFrameworkService) {
+    private void processRealResource(JobConfiguration configuration) {
+        TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
         if (!(taskFrameworkProperties.getRunMode() == TaskRunMode.K8S)) {
             return;
         }
-        Page<ResourceEntity> resources = taskFrameworkService.findAbandonedResource(0,
+        Page<ResourceEntity> resources = configuration.getTaskFrameworkService().findAbandonedResource(0,
                 taskFrameworkProperties.getSingleFetchDestroyExecutorJobRows());
-        resources.forEach(a -> {
+        resources.forEach(resource -> {
             try {
-                destroyResource(a);
+                destroyResource(configuration, resource);
             } catch (Throwable e) {
-                log.warn("Try to destroy failed, jobId={}.", a.getId(), e);
+                log.warn("Try to destroy failed, jobId={}.", resource.getId(), e);
             }
         });
     }
 
-    private void destroyResource(ResourceEntity resourceEntity) {
-        getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
+    private void destroyResource(JobConfiguration configuration, ResourceEntity resourceEntity) {
+        configuration.getTransactionManager().doInTransactionWithoutResult(() -> {
             ResourceID resourceID = new ResourceID(new ResourceLocation(resourceEntity.getRegion(),
                     resourceEntity.getGroupName()), resourceEntity.getResourceType(), resourceEntity.getNamespace(),
                     resourceEntity.getResourceName());
@@ -105,9 +103,5 @@ public class ManagerResourceJobV2 implements Job {
             }
             log.info("Job destroy resource succeed, resource={}", resourceEntity);
         });
-    }
-
-    private JobConfiguration getConfiguration() {
-        return configuration;
     }
 }

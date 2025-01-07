@@ -114,4 +114,8 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
 
     // config for max job count running in one region
     private int maxAllowRunningJobs = 8;
+
+    // negative means not given, this value should not be changed, cause a new port means a new agent
+    // server
+    private int taskSupervisorAgentListenPort = -1;
 }

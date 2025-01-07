@@ -102,6 +102,7 @@ public class StartPreparingJobV2 implements Job {
                     // expired task transfer to timeout, to try to send stop command
                     JobUtils.updateStatusAndCheck(jobEntity.getId(), jobEntity.getStatus(), JobStatus.TIMEOUT,
                             taskFrameworkService);
+                    continue;
                 }
                 // check rate limiter
                 if (!configuration.getStartJobRateLimiter().tryAcquire()) {
@@ -120,7 +121,7 @@ public class StartPreparingJobV2 implements Job {
 
     protected void allocateResource(JobConfiguration configuration, JobEntity jobEntity) {
         JobContext jobContext =
-                new DefaultJobContextBuilder().build(jobEntity);
+                new DefaultJobContextBuilder().build(jobEntity, configuration);
         configuration.getSupervisorAgentAllocator()
                 .submitAllocateSupervisorEndpointRequest(jobEntity.getRunMode().name(), jobContext,
                         retrieveJobRunningLocation(jobEntity, jobContext));
@@ -148,7 +149,7 @@ public class StartPreparingJobV2 implements Job {
                             taskFrameworkService);
                 } else {
                     JobContext jobContext =
-                            new DefaultJobContextBuilder().build(jobEntity);
+                            new DefaultJobContextBuilder().build(jobEntity, configuration);
                     Optional<SupervisorEndpoint> supervisorEndpoint = configuration.getSupervisorAgentAllocator()
                             .checkAllocateSupervisorEndpointState(jobContext);
                     // resource not ready yet, wait another round
@@ -216,11 +217,12 @@ public class StartPreparingJobV2 implements Job {
                 ? JobUtils.getLogBasePath(properties.getK8sProperties().getMountPath())
                 : LogUtils.getBaseLogPath();
         ProcessJobCaller jobCaller = JobCallerBuilder.buildProcessCaller(jobContext,
-                new JobEnvironmentFactory().build(jobContext, TaskRunMode.PROCESS, logPath));
+                new JobEnvironmentFactory().build(jobContext, TaskRunMode.PROCESS, configuration, logPath),
+                configuration);
         return jobCaller.getProcessConfig();
     }
 
-    private boolean checkJobIsExpired(JobEntity jobEntity) {
+    protected boolean checkJobIsExpired(JobEntity jobEntity) {
         SingleJobProperties jobProperties = SingleJobProperties.fromJobProperties(jobEntity.getJobProperties());
         if (jobProperties == null || jobProperties.getJobExpiredIfNotRunningAfterSeconds() == null) {
             return false;

@@ -32,6 +32,6 @@ public enum SupervisorEndpointState {
     ABANDON;
 
     public static SupervisorEndpointState fromString(String name) {
-        return SupervisorEndpointState.valueOf(StringUtils.upperCase(name));
+        return SupervisorEndpointState.valueOf(StringUtils.upperCase(StringUtils.trim(name)));
     }
 }

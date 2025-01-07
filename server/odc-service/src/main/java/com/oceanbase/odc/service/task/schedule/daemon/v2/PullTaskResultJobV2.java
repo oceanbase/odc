@@ -29,6 +29,7 @@ import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
@@ -60,10 +61,6 @@ import lombok.extern.slf4j.Slf4j;
 @DisallowConcurrentExecution
 public class PullTaskResultJobV2 implements Job {
 
-    private TaskFrameworkProperties taskFrameworkProperties;
-    private TaskFrameworkService taskFrameworkService;
-    private TaskExecutorClient taskExecutorClient;
-
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
@@ -71,33 +68,37 @@ public class PullTaskResultJobV2 implements Job {
         if (!configuration.getTaskFrameworkProperties().isEnableTaskSupervisorAgent()) {
             return;
         }
-        this.taskFrameworkProperties = configuration.getTaskFrameworkProperties();
-        this.taskFrameworkService = configuration.getTaskFrameworkService();
-        this.taskExecutorClient = configuration.getTaskExecutorClient();
+        List<JobEntity> runningJobs = getRunningJobs(configuration);
+        doRefreshJob(configuration, runningJobs);
+    }
 
-        int singlePullResultJobRows = taskFrameworkProperties.getSinglePullResultJobRows();
+    @VisibleForTesting
+    protected List<JobEntity> getRunningJobs(JobConfiguration configuration) {
+
+        int singlePullResultJobRows = configuration.getTaskFrameworkProperties().getSinglePullResultJobRows();
+        Instant now = Instant.now();
         // first pull heartbeat not received job, order by create time
         // then pull heartbeat task, order by heartbeat time
-        List<JobEntity> runningJobs = taskFrameworkService.findNeedPullResultJobs(0, singlePullResultJobRows).stream()
+        return configuration.getTaskFrameworkService().findNeedPullResultJobs(0, singlePullResultJobRows).stream()
                 .sorted((j1, j2) -> {
                     // desc order
-                    return Long.compare(getLastUpdateTimeInMillDurationInMillSeconds(j2),
-                            getLastUpdateTimeInMillDurationInMillSeconds(j1));
+                    return Long.compare(getLastUpdateTimeInMillDurationInMillSeconds(j2, now),
+                            getLastUpdateTimeInMillDurationInMillSeconds(j1, now));
                 }).collect(Collectors.toList());
-        doRefreshJob(runningJobs);
     }
 
     // refresh job has a timeout, if this round is timeout, next round will go again
-    public void doRefreshJob(List<JobEntity> runningJobs) {
+    public void doRefreshJob(JobConfiguration configuration, List<JobEntity> runningJobs) {
         if (CollectionUtils.isEmpty(runningJobs)) {
             return;
         }
+        TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
         CountDownLatch countDownLatch = new CountDownLatch(runningJobs.size());
         runningJobs.forEach(job -> taskFrameworkService.getTaskResultPullerExecutor().submit(new Runnable() {
             @Override
             public void run() {
                 try {
-                    tryProcessTaskResult(job);
+                    tryProcessTaskResult(configuration, job);
                 } catch (Throwable e) {
                     log.info("pull job result failed, job = {}, reason = {}", job, e);
                 } finally {
@@ -121,23 +122,24 @@ public class PullTaskResultJobV2 implements Job {
 
     // 1. filter current job need to be pulled, including doCanceling and running
     // 2. try pull result
-    // 3. if pull success
-    // a. update heartbeat, result json, if finished, transfer to correct status
-    // if pull failed
-    // a. check if heartbeat if outdated
+    // 3. if pull success, update heartbeat, result json, if finished, transfer to correct status
+    // if pull failed, check if heartbeat if outdated
     // async httpclient maybe needed
-    private void tryProcessTaskResult(JobEntity jobEntity) throws JobException {
+    private void tryProcessTaskResult(JobConfiguration configuration, JobEntity jobEntity) throws JobException {
+        TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
+        TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
+        TaskExecutorClient taskExecutorClient = configuration.getTaskExecutorClient();
         // only process RUNNING and DO_CANCELING state
         if (JobStatus.RUNNING != jobEntity.getStatus() && JobStatus.DO_CANCELING != jobEntity.getStatus()) {
             log.info("Invalid status, jobId={}, currentStatus={}", jobEntity.getId(), jobEntity.getStatus());
             return;
         }
         // try get result
-        TaskResultWrap resultWarp = tryPullTaskResult(jobEntity);
+        TaskResultWrap resultWarp = tryPullTaskResult(taskExecutorClient, jobEntity);
         TaskResult result = resultWarp.getTaskResult();
         // if result get failed and timeout, try terminate task
         if (null == result) {
-            if (isTaskTimeout(jobEntity)) {
+            if (isTaskTimeout(taskFrameworkProperties.getJobHeartTimeoutSeconds(), jobEntity)) {
                 // there may exist a situation may update failed, status from running to canceling updated by user
                 // but they all lead to stop task
                 int updateRows = taskFrameworkService.updateStatusByIdOldStatus(jobEntity.getId(),
@@ -178,10 +180,11 @@ public class PullTaskResultJobV2 implements Job {
             return;
         }
         // try finish task
-        tryCompleteTask(jobEntity, result);
+        tryCompleteTask(taskFrameworkService, jobEntity, result);
     }
 
-    protected TaskResultWrap tryPullTaskResult(JobEntity jobEntity) throws JobException {
+    protected TaskResultWrap tryPullTaskResult(TaskExecutorClient taskExecutorClient, JobEntity jobEntity)
+            throws JobException {
         // executor endpoint should be provided
         if (StringUtils.isBlank(jobEntity.getExecutorEndpoint())) {
             log.warn("executor endpoint should not be null", jobEntity.getId());
@@ -194,25 +197,25 @@ public class PullTaskResultJobV2 implements Job {
     }
 
     // to judge if task has timeout
-    protected boolean isTaskTimeout(JobEntity jobEntity) {
+    protected boolean isTaskTimeout(int heartbeatTimeout, JobEntity jobEntity) {
         // first check if heartbeat has received
-        long timeoutInMillionSeconds = getLastUpdateTimeInMillDurationInMillSeconds(jobEntity);
-        return timeoutInMillionSeconds / 1000 > taskFrameworkProperties.getJobHeartTimeoutSeconds();
+        long timeoutInMillionSeconds = getLastUpdateTimeInMillDurationInMillSeconds(jobEntity, Instant.now());
+        return timeoutInMillionSeconds / 1000 > heartbeatTimeout;
     }
 
-
-    private long getLastUpdateTimeInMillDurationInMillSeconds(JobEntity job) {
+    protected long getLastUpdateTimeInMillDurationInMillSeconds(JobEntity job, Instant nowInstant) {
         // check last heartbeat timeout
         // check create time
         if (job.getLastHeartTime() == null) {
-            return Duration.between(job.getCreateTime().toInstant(), Instant.now()).toMillis();
+            return Duration.between(job.getCreateTime().toInstant(), nowInstant).toMillis();
         } else {
-            return Duration.between(job.getLastHeartTime().toInstant(), Instant.now()).toMillis();
+            return Duration.between(job.getLastHeartTime().toInstant(), nowInstant).toMillis();
         }
     }
 
     // try complete task to terminate state and publish event
-    protected void tryCompleteTask(JobEntity jobEntity, TaskResult result) {
+    @VisibleForTesting
+    protected void tryCompleteTask(TaskFrameworkService taskFrameworkService, JobEntity jobEntity, TaskResult result) {
         JobStatusFsm jobStatusFsm = new JobStatusFsm();
         JobStatus expectedJobStatus = jobStatusFsm.determinateJobStatus(jobEntity.getStatus(), result.getStatus());
         // has received canceling command and receive task last response

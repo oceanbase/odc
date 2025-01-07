@@ -53,11 +53,9 @@ import lombok.extern.slf4j.Slf4j;
 @DisallowConcurrentExecution
 public class DoStopJobV2 implements Job {
 
-    private JobConfiguration configuration;
-
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
-        configuration = JobConfigurationHolder.getJobConfiguration();
+        JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
         // safe check
         if (!configuration.getTaskFrameworkProperties().isEnableTaskSupervisorAgent()) {
             return;
@@ -67,25 +65,26 @@ public class DoStopJobV2 implements Job {
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
         Page<JobEntity> jobs = taskFrameworkService.findNeedStoppedJobs(0,
                 taskFrameworkProperties.getSingleFetchCancelingJobRows());
-        jobs.forEach(a -> {
+        jobs.forEach(job -> {
             try {
-                sendStopToTask(taskFrameworkService, a);
+                sendStopToTask(configuration, taskFrameworkService, job);
             } catch (Throwable e) {
-                log.warn("Try to start job {} failed: ", a.getId(), e);
+                log.warn("Try to start job {} failed: ", job.getId(), e);
             }
         });
     }
 
-    private void sendStopToTask(TaskFrameworkService taskFrameworkService, JobEntity jobEntity) {
+    protected void sendStopToTask(JobConfiguration configuration, TaskFrameworkService taskFrameworkService,
+            JobEntity jobEntity) {
         // task has started, but receive cancel command or task run timeout
         // we send command to it
         if (!StringUtils.isBlank(jobEntity.getExecutorEndpoint())) {
             log.info("Prepare send stop to task, jobId={}. current task status = {}", jobEntity.getId(),
                     jobEntity.getStatus());
             try {
-                getConfiguration().getTaskSupervisorJobCaller().stopTaskDirectly(
+                configuration.getTaskSupervisorJobCaller().stopTaskDirectly(
                         buildExecutorEndpointFromIdentifier(jobEntity.getExecutorEndpoint()),
-                        TaskSupervisorUtil.buildJobContextFromJobEntity(jobEntity));
+                        TaskSupervisorUtil.buildJobContextFromJobEntity(jobEntity, configuration));
             } catch (JobException e) {
                 log.warn("Stop job occur error: ", e);
                 AlarmUtils.alarm(AlarmEventNames.TASK_CANCELED_FAILED,
@@ -116,10 +115,6 @@ public class DoStopJobV2 implements Job {
                 throw new TaskRuntimeException("do stop job can't process status for " + jobEntity.getId()
                         + " with status " + jobEntity.getStatus());
         }
-    }
-
-    private JobConfiguration getConfiguration() {
-        return configuration;
     }
 
     public static ExecutorEndpoint buildExecutorEndpointFromIdentifier(String executorEndpoint) {

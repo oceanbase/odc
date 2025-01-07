@@ -25,6 +25,7 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.data.domain.Page;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
@@ -66,11 +67,9 @@ import lombok.extern.slf4j.Slf4j;
 @DisallowConcurrentExecution
 public class DoFinishJobV2 implements Job {
 
-    private JobConfiguration configuration;
-
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
-        configuration = JobConfigurationHolder.getJobConfiguration();
+        JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
         // safe check
         if (!configuration.getTaskFrameworkProperties().isEnableTaskSupervisorAgent()) {
             return;
@@ -80,24 +79,26 @@ public class DoFinishJobV2 implements Job {
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
         Page<JobEntity> jobs = taskFrameworkService.findTerminalJob(0,
                 taskFrameworkProperties.getSingleFetchDestroyExecutorJobRows());
-        jobs.forEach(a -> {
+        jobs.forEach(job -> {
             try {
                 configuration.getTransactionManager()
-                        .doInTransactionWithoutResult(() -> destroyExecutor(taskFrameworkService, a));
+                        .doInTransactionWithoutResult(() -> destroyExecutor(configuration, taskFrameworkService, job));
             } catch (Throwable e) {
-                log.warn("Try to destroy failed, jobId={}.", a.getId(), e);
+                log.warn("Try to destroy failed, jobId={}.", job.getId(), e);
             }
         });
     }
 
-    private void destroyExecutor(TaskFrameworkService taskFrameworkService, JobEntity jobEntity) {
+    @VisibleForTesting
+    protected void destroyExecutor(JobConfiguration configuration, TaskFrameworkService taskFrameworkService,
+            JobEntity jobEntity) {
         if (!jobEntity.getStatus().isTerminated()) {
             log.warn("job status expected terminated, current job id = {}, status = {}", jobEntity.getId(),
                     jobEntity.getStatus());
             return;
         }
         try {
-            if (tryDestroyExecutor(jobEntity)) {
+            if (tryDestroyExecutor(configuration, jobEntity)) {
                 // update destroyed status
                 taskFrameworkService.updateExecutorToDestroyed(jobEntity.getId());
             }
@@ -119,13 +120,14 @@ public class DoFinishJobV2 implements Job {
         }
     }
 
-    private boolean tryDestroyExecutor(JobEntity jobEntity)
+    @VisibleForTesting
+    protected boolean tryDestroyExecutor(JobConfiguration configuration, JobEntity jobEntity)
             throws JobException {
         Optional<ResourceAllocateInfoEntity> resourceAllocateInfoEntity = configuration.getSupervisorAgentAllocator()
                 .queryResourceAllocateIntoEntity(jobEntity.getId());
         // allocate by latest version, resource allocate info table exists record
         if (resourceAllocateInfoEntity.isPresent()) {
-            destroyTaskByAgent(resourceAllocateInfoEntity.get(), jobEntity);
+            destroyTaskByAgent(configuration, resourceAllocateInfoEntity.get(), jobEntity);
             log.info("deallocate agent resource for job id = {}", jobEntity.getId());
             configuration.getSupervisorAgentAllocator().deallocateSupervisorEndpoint(jobEntity.getId());
             return true;
@@ -133,7 +135,7 @@ public class DoFinishJobV2 implements Job {
         // allocate by old odc version
         if (configuration.getTaskFrameworkProperties().getRunMode() == TaskRunMode.K8S) {
             // running in old k8s mode
-            releaseK8sResource(jobEntity);
+            releaseK8sResource(configuration, jobEntity);
             return true;
         } else {
             // running in old process mode
@@ -141,7 +143,9 @@ public class DoFinishJobV2 implements Job {
         }
     }
 
-    private void destroyTaskByAgent(ResourceAllocateInfoEntity entity, JobEntity jobEntity) throws JobException {
+    @VisibleForTesting
+    protected void destroyTaskByAgent(JobConfiguration configuration, ResourceAllocateInfoEntity entity,
+            JobEntity jobEntity) throws JobException {
         SupervisorEndpoint supervisorEndpoint = JsonUtils.fromJson(entity.getEndpoint(), SupervisorEndpoint.class);
         if (null == supervisorEndpoint) {
             if (ResourceAllocateState.FAILED.equal(entity.getResourceAllocateState())) {
@@ -156,7 +160,6 @@ public class DoFinishJobV2 implements Job {
         String executorIdentifierStr = jobEntity.getExecutorIdentifier();
         if (StringUtils.isBlank(executorIdentifierStr)) {
             // task not started
-            configuration.getSupervisorAgentAllocator().deallocateSupervisorEndpoint(jobEntity.getId());
             log.info("executor is empty, task not started, deallocate usage resource, job id = {}", jobEntity.getId());
             return;
         }
@@ -164,7 +167,7 @@ public class DoFinishJobV2 implements Job {
         ExecutorEndpoint executorEndpoint =
                 new ExecutorEndpoint("command", supervisorEndpoint.getHost(), supervisorEndpoint.getPort(),
                         identifier.getPort(), executorIdentifierStr);
-        JobContext jobContext = new DefaultJobContextBuilder().build(jobEntity);
+        JobContext jobContext = new DefaultJobContextBuilder().build(jobEntity, configuration);
         TaskCallerResult taskCallerResult = configuration.getTaskSupervisorJobCaller().destroyTask(supervisorEndpoint,
                 executorEndpoint, jobContext);
         if (null != taskCallerResult.getE()) {
@@ -173,7 +176,8 @@ public class DoFinishJobV2 implements Job {
     }
 
     // release old version odc process, only release task on local machine
-    private boolean tryDestroyProcess(JobEntity jobEntity) throws JobException {
+    @VisibleForTesting
+    protected boolean tryDestroyProcess(JobEntity jobEntity) throws JobException {
         // running in process mode
         String executorIdentifier = jobEntity.getExecutorIdentifier();
         if (StringUtils.isEmpty(executorIdentifier)) {
@@ -195,7 +199,8 @@ public class DoFinishJobV2 implements Job {
     }
 
     // release old version odc k8s resource, direct mark resource released
-    private void releaseK8sResource(JobEntity jobEntity) {
+    @VisibleForTesting
+    protected void releaseK8sResource(JobConfiguration configuration, JobEntity jobEntity) {
         String executorIdentifier = jobEntity.getExecutorIdentifier();
         if (StringUtils.isEmpty(executorIdentifier)) {
             log.info("executor is empty， ignore release resource");
