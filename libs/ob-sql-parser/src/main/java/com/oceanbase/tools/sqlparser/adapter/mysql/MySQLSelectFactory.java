@@ -32,8 +32,8 @@ import lombok.NonNull;
  *
  * @author yh263208
  * @date 2022-12-08 12:07
- * @since ODC_release_4.1.0
  * @see StatementFactory
+ * @since ODC_release_4.1.0
  */
 public class MySQLSelectFactory extends OBParserBaseVisitor<Select> implements StatementFactory<Select> {
 
@@ -44,11 +44,20 @@ public class MySQLSelectFactory extends OBParserBaseVisitor<Select> implements S
     }
 
     @Override
+    /**
+     * generate方法用于生成Select对象。
+     * @return Select对象
+     */
     public Select generate() {
         return visit(this.selectStmtContext);
     }
 
     @Override
+    /**
+     * visitSelect_stmt方法用于访问Select_stmtContext上下文，并生成Select对象。
+     * @param ctx Select_stmtContext上下文
+     * @return Select对象
+     */
     public Select visitSelect_stmt(Select_stmtContext ctx) {
         SelectBody selectBody;
         if (ctx.select_no_parens() != null) {

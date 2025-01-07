@@ -40,6 +40,9 @@ import lombok.NonNull;
  */
 public abstract class BaseDialectBasedRowMapper implements JdbcRowMapper {
     @Getter
+    /**
+     * 数据库方言类型
+     */
     private final DialectType dialectType;
 
     public BaseDialectBasedRowMapper(@NonNull DialectType dialectType) {
@@ -50,22 +53,38 @@ public abstract class BaseDialectBasedRowMapper implements JdbcRowMapper {
 
     @Override
     public List<Object> mapRow(@NonNull ResultSet resultSet) throws SQLException, IOException {
+        // 获取列数据映射器集合
         Collection<JdbcColumnMapper> mappers = getColumnDataMappers(dialectType);
         if (mappers == null) {
             throw new NullPointerException("Mappers is null by " + dialectType);
         }
+        // 获取结果集元数据
         ResultSetMetaData metaData = resultSet.getMetaData();
+        // 获取列数
         int columnCount = metaData.getColumnCount();
+        // 创建List<Object>对象
         List<Object> line = new ArrayList<>(columnCount);
+        // 遍历每一列
         for (int i = 0; i < columnCount; i++) {
+            // 创建数据类型工厂对象
             DataTypeFactory factory = new JdbcDataTypeFactory(metaData, i);
+            // 生成数据类型
             DataType dataType = factory.generate();
+            // 获取列数据映射器
             JdbcColumnMapper mapper = getColumnMapper(dataType, mappers);
+            // 将列数据映射为Object并添加到line中
             line.add(mapper.mapCell(new CellData(resultSet, i, dataType)));
         }
         return line;
     }
 
+    /**
+     * 获取列数据映射器
+     *
+     * @param dataType         数据类型
+     * @param candidateMappers 候选的列数据映射器集合
+     * @return 列数据映射器
+     */
     private JdbcColumnMapper getColumnMapper(DataType dataType, Collection<JdbcColumnMapper> candidateMappers) {
         for (JdbcColumnMapper mapper : candidateMappers) {
             if (mapper.supports(dataType)) {
@@ -75,6 +94,9 @@ public abstract class BaseDialectBasedRowMapper implements JdbcRowMapper {
         return new EmptyJdbcColumnMapper();
     }
 
+    /**
+     * 空的列数据映射器
+     */
     private static class EmptyJdbcColumnMapper implements JdbcColumnMapper {
 
         @Override
