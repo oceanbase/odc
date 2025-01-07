@@ -18,9 +18,11 @@ package com.oceanbase.odc.service.sqlcheck.rule;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.commons.collections4.CollectionUtils;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
@@ -54,6 +56,10 @@ public class NoPrimaryKeyExists implements SqlCheckRule {
             return Collections.emptyList();
         }
         CreateTable createTable = (CreateTable) statement;
+        if (Objects.nonNull(createTable.getLikeTable())
+                && StringUtils.isNotBlank(createTable.getLikeTable().getRelation())) {
+            return Collections.emptyList();
+        }
         boolean containsPk = createTable.getColumnDefinitions().stream()
                 .filter(c -> c.getColumnAttributes() != null
                         && CollectionUtils.isNotEmpty(c.getColumnAttributes().getConstraints()))

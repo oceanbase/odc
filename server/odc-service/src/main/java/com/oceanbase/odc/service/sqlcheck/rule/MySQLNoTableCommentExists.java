@@ -18,7 +18,9 @@ package com.oceanbase.odc.service.sqlcheck.rule;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
@@ -51,6 +53,10 @@ public class MySQLNoTableCommentExists implements SqlCheckRule {
             return Collections.emptyList();
         }
         CreateTable createTable = (CreateTable) statement;
+        if (Objects.nonNull(createTable.getLikeTable())
+                && StringUtils.isNotBlank(createTable.getLikeTable().getRelation())) {
+            return Collections.emptyList();
+        }
         TableOptions tableOptions = createTable.getTableOptions();
         if (tableOptions == null || tableOptions.getComment() == null) {
             return Collections.singletonList(SqlCheckUtil.buildViolation(
