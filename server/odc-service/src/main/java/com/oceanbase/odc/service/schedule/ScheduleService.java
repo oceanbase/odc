@@ -153,7 +153,7 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize
 public class ScheduleService {
 
-    @Value("${odc.schedule.min-interval:600}")
+    @Value("${odc.task.trigger.minimum-interval:600}")
     private int minInterval;
     @Autowired
     private ScheduleRepository scheduleRepository;
@@ -241,6 +241,7 @@ public class ScheduleService {
         ScheduleChangeParams scheduleChangeParams;
         switch (parameters.getOperationType()) {
             case CREATE: {
+                validateTriggerConfig(parameters.getTriggerConfig());
                 CreateScheduleReq createScheduleReq = new CreateScheduleReq();
                 createScheduleReq.setParameters(parameters.getScheduleTaskParameters());
                 createScheduleReq.setTriggerConfig(parameters.getTriggerConfig());
@@ -278,7 +279,6 @@ public class ScheduleService {
         // create or load target schedule
         if (req.getOperationType() == OperationType.CREATE) {
             PreConditions.notNull(req.getCreateScheduleReq(), "req.createScheduleReq");
-            validateTriggerConfig(req.getCreateScheduleReq().getTriggerConfig());
             ScheduleEntity entity = new ScheduleEntity();
 
             entity.setName(req.getCreateScheduleReq().getName());

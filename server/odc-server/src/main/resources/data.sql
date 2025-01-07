@@ -860,4 +860,3 @@ INSERT INTO `config_system_configuration` (`key`, `value`, `application`, `profi
 VALUES ('odc.session.kill-query-or-session.max-supported-ob-version', '4.2.5', 'odc', 'default', 'master',
         'Max OBVersion kill session or kill query supported, only take effect when value greater than 0')
 ON DUPLICATE KEY UPDATE `id`=`id`;
-INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.schedule.min-interval', '600', 'DLM 单个任务默认每秒行限制' ) ON DUPLICATE KEY UPDATE `id` = `id`;

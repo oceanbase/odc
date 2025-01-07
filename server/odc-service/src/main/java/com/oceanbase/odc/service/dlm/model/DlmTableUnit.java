@@ -23,6 +23,7 @@ import com.oceanbase.odc.service.schedule.model.DlmTableUnitStatistic;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.enums.JobType;
+import com.oceanbase.tools.migrator.limiter.LimiterConfig;
 
 import lombok.Data;
 
@@ -49,6 +50,10 @@ public class DlmTableUnit {
     private DataSourceInfo sourceDatasourceInfo;
 
     private DataSourceInfo targetDatasourceInfo;
+
+    private LimiterConfig sourceLimitConfig;
+
+    private LimiterConfig targetLimitConfig;
 
     private DlmTableUnitStatistic statistic;
 

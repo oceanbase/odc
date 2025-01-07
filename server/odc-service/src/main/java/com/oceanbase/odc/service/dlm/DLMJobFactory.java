@@ -55,6 +55,8 @@ public class DLMJobFactory extends JobFactory {
         req.setHistoryJob(historyJob);
         req.setSourceDs(parameters.getSourceDatasourceInfo());
         req.setTargetDs(parameters.getTargetDatasourceInfo());
+        req.setSourceLimitConfig(parameters.getSourceLimitConfig());
+        req.setTargetLimitConfig(parameters.getTargetLimitConfig());
         return super.createJob(req);
     }
 }

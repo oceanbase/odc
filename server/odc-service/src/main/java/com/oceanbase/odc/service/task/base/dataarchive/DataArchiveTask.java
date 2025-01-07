@@ -41,6 +41,7 @@ import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 import com.oceanbase.tools.migrator.core.meta.JobMeta;
 import com.oceanbase.tools.migrator.job.Job;
+import com.oceanbase.tools.migrator.limiter.LimiterConfig;
 import com.oceanbase.tools.migrator.task.CheckMode;
 
 import lombok.extern.slf4j.Slf4j;
@@ -161,6 +162,11 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             dlmTableUnit.setType(req.getJobType());
             dlmTableUnit.setStatistic(new DlmTableUnitStatistic());
             dlmTableUnit.setSyncTableStructure(req.getSyncTableStructure());
+            LimiterConfig limiterConfig = new LimiterConfig();
+            limiterConfig.setDataSizeLimit(req.getRateLimit().getDataSizeLimit());
+            limiterConfig.setRowLimit(req.getRateLimit().getRowLimit());
+            dlmTableUnit.setSourceLimitConfig(limiterConfig);
+            dlmTableUnit.setTargetLimitConfig(limiterConfig);
             dlmTableUnits.add(dlmTableUnit);
         });
         toDoList = new LinkedList<>(dlmTableUnits);
