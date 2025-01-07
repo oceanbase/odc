@@ -727,7 +727,7 @@ public class FlowInstanceService {
     }
 
     public <T> T mapFlowInstanceWithWritePermission(@NonNull Long flowInstanceId, Function<FlowInstance, T> mapper) {
-        return mapFlowInstance(flowInstanceId, mapper, flowPermissionHelper.withProjectOwnerCheck());
+        return mapFlowInstance(flowInstanceId, mapper, flowPermissionHelper.withExecutableCheck());
     }
 
     public <T> T mapFlowInstanceWithApprovalPermission(@NonNull Long flowInstanceId, Function<FlowInstance, T> mapper) {

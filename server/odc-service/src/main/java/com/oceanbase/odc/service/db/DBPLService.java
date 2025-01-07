@@ -51,6 +51,7 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
+import com.oceanbase.odc.core.sql.execute.mapper.DefaultJdbcRowMapper;
 import com.oceanbase.odc.core.sql.execute.task.DefaultSqlExecuteTaskManager;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
@@ -287,7 +288,8 @@ public class DBPLService {
         if (dialectType.isOracle()) {
             callback = new OBOracleCallFunctionBlockCallBack(req, -1);
         } else if (dialectType.isMysql()) {
-            callback = new OBMysqlCallFunctionCallBack(req, -1);
+            DefaultJdbcRowMapper defaultJdbcRowMapper = new DefaultJdbcRowMapper(session);
+            callback = new OBMysqlCallFunctionCallBack(req, -1, defaultJdbcRowMapper);
         } else {
             throw new IllegalArgumentException("Illegal dialect type, " + dialectType);
         }

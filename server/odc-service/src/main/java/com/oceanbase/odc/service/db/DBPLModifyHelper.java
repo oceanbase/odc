@@ -48,6 +48,7 @@ import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 
 import lombok.NonNull;
 
@@ -103,14 +104,14 @@ public class DBPLModifyHelper {
         String escapeRegexPlName = StringUtils.escapeRegex(plName)
                 .orElseThrow(() -> new IllegalStateException(String.format("%s name cannot be null", plType)));
         String tempPLSql = editPLSql.replaceFirst(escapeRegexPlName, tempPlName);
-        StringBuilder wrappedSqlBuilder = new StringBuilder();
+        MySQLSqlBuilder wrappedSqlBuilder = new MySQLSqlBuilder();
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
         SqlCommentProcessor processor = ConnectionSessionUtil.getSqlCommentProcessor(connectionSession);
         String delimiter = processor.getDelimiter();
         wrappedSqlBuilder.append("DELIMITER $$\n")
                 .append(tempPLSql).append(" $$\n")
-                .append("drop ").append(plType).append(" if exists ").append(tempPlName).append(" $$\n")
-                .append("drop ").append(plType).append(" if exists ").append(plName).append(" $$\n")
+                .append("drop ").append(plType).append(" if exists ").identifier(tempPlName).append(" $$\n")
+                .append("drop ").append(plType).append(" if exists ").identifier(plName).append(" $$\n")
                 .append(editPLSql).append(" $$\n")
                 .append("DELIMITER " + delimiter);
         String wrappedSql = wrappedSqlBuilder.toString();
@@ -118,7 +119,6 @@ public class DBPLModifyHelper {
         sqlAsyncExecuteReq.setSql(wrappedSql);
         sqlAsyncExecuteReq.setSplit(true);
         sqlAsyncExecuteReq.setContinueExecutionOnError(false);
-
         Lock editPLLock = obtainEditPLLock(connectionSession, plType);
         if (!editPLLock.tryLock(LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");

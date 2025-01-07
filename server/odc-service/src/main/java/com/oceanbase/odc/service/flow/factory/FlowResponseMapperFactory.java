@@ -61,8 +61,6 @@ import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.metadb.iam.UserRoleEntity;
 import com.oceanbase.odc.metadb.iam.UserRoleRepository;
-import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
-import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
 import com.oceanbase.odc.metadb.integration.IntegrationEntity;
 import com.oceanbase.odc.metadb.regulation.risklevel.RiskLevelRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
@@ -74,6 +72,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
+import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
 import com.oceanbase.odc.service.flow.ApprovalPermissionService;
 import com.oceanbase.odc.service.flow.instance.FlowInstance;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
@@ -83,7 +82,10 @@ import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp.FlowNodeI
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
+import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
+import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.iam.model.UserResourceRole;
 import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.integration.client.ApprovalClient;
 import com.oceanbase.odc.service.integration.model.ApprovalProperties;
@@ -134,7 +136,7 @@ public class FlowResponseMapperFactory {
     @Autowired
     private FlowInstanceRepository flowInstanceRepository;
     @Autowired
-    private UserResourceRoleRepository userResourceRoleRepository;
+    private ResourceRoleService resourceRoleService;
     @Autowired
     private RiskLevelRepository riskLevelRepository;
     @Autowired
@@ -226,9 +228,9 @@ public class FlowResponseMapperFactory {
                             && candidateResourceRoleIdentifiers.isEmpty()) {
                         return Collections.emptyList();
                     } else if (!candidateResourceRoleIdentifiers.isEmpty()) {
-                        Set<Long> resourceRoleUserIds = userResourceRoleRepository
-                                .findByResourceIdsAndResourceRoleIdsIn(candidateResourceRoleIdentifiers)
-                                .stream().map(UserResourceRoleEntity::getUserId).collect(Collectors.toSet());
+                        Set<Long> resourceRoleUserIds =
+                                resourceRoleService.listByResourceIdentifierIn(candidateResourceRoleIdentifiers)
+                                        .stream().map(UserResourceRole::getUserId).collect(Collectors.toSet());
                         return CollectionUtils.isEmpty(resourceRoleUserIds) ? Collections.emptyList()
                                 : userRepository.findByUserIdsAndEnabled(resourceRoleUserIds, true);
                     } else if (candidateUserIds.isEmpty()) {
@@ -329,6 +331,7 @@ public class FlowResponseMapperFactory {
                 .map(TaskEntity::getDatabaseId)
                 .filter(Objects::nonNull).collect(Collectors.toSet());
 
+        databaseIds.addAll(collectMultiDatabaseChangeDatabaseIds(taskId2TaskEntity));
         databaseIds.addAll(collectDBStructureComparisonDatabaseIds(taskId2TaskEntity));
         Set<Long> projectIds = new HashSet<>();
         Map<Long, Project> id2Project = new HashMap<>();
@@ -479,5 +482,18 @@ public class FlowResponseMapperFactory {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
         return applyProjectIds;
+    }
+
+    private Set<Long> collectMultiDatabaseChangeDatabaseIds(Map<Long, TaskEntity> taskId2TaskEntity) {
+        Set<Long> databaseIds = new HashSet<>();
+        taskId2TaskEntity.values().stream()
+                .filter(task -> task.getTaskType().equals(TaskType.MULTIPLE_ASYNC))
+                .forEach(task -> {
+                    MultipleDatabaseChangeParameters parameter = JsonUtils.fromJson(
+                            task.getParametersJson(), MultipleDatabaseChangeParameters.class);
+                    databaseIds.addAll(parameter.getDatabases().stream().map(DatabaseChangeDatabase::getId)
+                            .collect(Collectors.toSet()));
+                });
+        return databaseIds;
     }
 }
