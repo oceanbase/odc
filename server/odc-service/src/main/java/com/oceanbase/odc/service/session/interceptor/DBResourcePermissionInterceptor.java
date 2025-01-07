@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -98,32 +100,9 @@ public class DBResourcePermissionInterceptor extends BaseTimeConsumingIntercepto
                 .filter(entry -> Objects.isNull(entry.getKey().getSchema())
                         || existedDatabaseNames.contains(entry.getKey().getSchema()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        Map<String, List<DBFunction>> schema2Functions = identity2Types.entrySet().stream().filter(
-                entry -> DBObjectType.FUNCTION == entry.getKey().getDbObjectType() && Objects.nonNull(
-                        entry.getKey().getDbObjectType()) && entry.getValue().contains(SqlType.SELECT)
-                        && Objects.nonNull(
-                                entry.getKey().getSchema())
-                        && Objects.isNull(entry.getKey().getTable()))
-                .collect(
-                        Collectors.toMap(entry -> entry.getKey().getSchema(),
-                                entry -> dbFunctionService.list(session, entry.getKey().getSchema())));
-
-        Map<DBSchemaIdentity, Set<SqlType>> collect = identity2Types.entrySet().stream().map(entry -> {
-            if (DBObjectType.FUNCTION == entry.getKey().getDbObjectType() && Objects.nonNull(
-                    entry.getKey().getDbObjectType()) && entry.getValue().contains(SqlType.SELECT) && Objects.nonNull(
-                            entry.getKey().getSchema())
-                    && Objects.isNull(entry.getKey().getTable())
-                    && schema2Functions.containsKey(entry.getKey().getSchema())
-                    && schema2Functions.get(entry.getKey().getSchema()).contains(entry.getKey().getDbObjectName())) {
-                entry.getValue().add(SqlType.ALTER);
-                return entry;
-            } else {
-                return entry;
-            }
-        }).collect(Collectors.toMap(Entry::getKey, Entry::getValue));
-
+        processIdentity2TypesIfContainsCustomFunctions(session, identity2Types);
         Map<DBResource, Set<DatabasePermissionType>> resource2PermissionTypes =
-                DBResourcePermissionHelper.getDBResource2PermissionTypes(collect, connectionConfig, null);
+                DBResourcePermissionHelper.getDBResource2PermissionTypes(identity2Types, connectionConfig, null);
         List<UnauthorizedDBResource> unauthorizedDBResource = dbResourcePermissionHelper
                 .filterUnauthorizedDBResources(resource2PermissionTypes, false);
         if (CollectionUtils.isNotEmpty(unauthorizedDBResource)) {
@@ -131,6 +110,33 @@ public class DBResourcePermissionInterceptor extends BaseTimeConsumingIntercepto
             return false;
         }
         return true;
+    }
+
+    private void processIdentity2TypesIfContainsCustomFunctions(ConnectionSession session,
+            Map<DBSchemaIdentity, Set<SqlType>> identity2Types) {
+        Predicate<Entry<DBSchemaIdentity, Set<SqlType>>> isValidFunctionEntry =
+                entry -> DBObjectType.FUNCTION == entry.getKey().getDbObjectType() &&
+                        Objects.nonNull(entry.getKey().getDbObjectName()) &&
+                        entry.getValue().contains(SqlType.SELECT) &&
+                        Objects.nonNull(entry.getKey().getSchema());
+        Set<String> schemaSets = identity2Types.entrySet().stream().filter(isValidFunctionEntry)
+                .map(entry -> entry.getKey().getSchema())
+                .collect(Collectors.toSet());
+        if (CollectionUtils.isEmpty(schemaSets)) {
+            return;
+        }
+        Map<String, Set<String>> schema2Functions = schemaSets.stream()
+                .collect(
+                        Collectors.toMap(Function.identity(),
+                                schema -> dbFunctionService.list(session, schema).stream()
+                                        .map(DBFunction::getFunName)
+                                        .collect(Collectors.toSet())));
+        identity2Types.entrySet().stream()
+                .filter(isValidFunctionEntry
+                        .and(entry -> schema2Functions.containsKey(entry.getKey().getSchema()))
+                        .and(entry -> schema2Functions.get(entry.getKey().getSchema())
+                                .contains(entry.getKey().getDbObjectName())))
+                .forEach(entry -> entry.getValue().add(SqlType.ALTER));
     }
 
     @Override
