@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.iam.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 
@@ -50,6 +52,10 @@ public class GlobalResourceRoleUtil {
 
     public static String getGlobalRoleName(ResourceRoleName resourceRoleName) {
         return resourceRoleName2GlobalRoleName.get(resourceRoleName);
+    }
+
+    public static Set<String> getGlobalRoleName(Set<ResourceRoleName> resourceRoleNames) {
+        return resourceRoleNames.stream().map(resourceRoleName2GlobalRoleName::get).collect(Collectors.toSet());
     }
 
 }

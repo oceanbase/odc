@@ -34,9 +34,9 @@ import com.oceanbase.odc.core.authority.model.LoginSecurityManagerConfig;
 import com.oceanbase.odc.core.authority.permission.PermissionProvider;
 import com.oceanbase.odc.core.authority.session.factory.DefaultSecuritySessionFactory;
 import com.oceanbase.odc.metadb.iam.PermissionRepository;
-import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
 import com.oceanbase.odc.service.iam.ResourcePermissionExtractor;
 import com.oceanbase.odc.service.iam.ResourceRoleBasedPermissionExtractor;
+import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.DefaultPermissionProvider;
 import com.oceanbase.odc.service.iam.auth.EmptyAuthenticator;
@@ -55,10 +55,10 @@ public abstract class BaseAuthConfiguration {
 
     @Bean
     public SecurityManager servletSecurityManager(PermissionRepository permissionRepository,
-            ResourcePermissionExtractor permissionMapper, UserResourceRoleRepository resourceRoleRepository,
+            ResourcePermissionExtractor permissionMapper, ResourceRoleService resourceRoleService,
             ResourceRoleBasedPermissionExtractor resourceRoleBasedPermissionExtractor,
             AuthenticationFacade authenticationFacade) {
-        Collection<Authorizer> authorizers = authorizers(permissionRepository, permissionMapper, resourceRoleRepository,
+        Collection<Authorizer> authorizers = authorizers(permissionRepository, permissionMapper, resourceRoleService,
                 resourceRoleBasedPermissionExtractor);
         DefaultAuthorizerManager authorizerManager = new DefaultAuthorizerManager(authorizers);
         PermissionStrategy permissionStrategy = permissionStrategy();
@@ -94,7 +94,6 @@ public abstract class BaseAuthConfiguration {
     }
 
     protected abstract Collection<Authorizer> authorizers(PermissionRepository permissionRepository,
-            ResourcePermissionExtractor resourcePermissionExtractor, UserResourceRoleRepository resourceRoleRepository,
+            ResourcePermissionExtractor resourcePermissionExtractor, ResourceRoleService resourceRoleService,
             ResourceRoleBasedPermissionExtractor resourceRoleBasedPermissionExtractor);
-
 }

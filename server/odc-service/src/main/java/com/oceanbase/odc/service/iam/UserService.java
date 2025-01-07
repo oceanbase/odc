@@ -603,6 +603,7 @@ public class UserService {
         List<User> users =
                 userRepository.findByOrganizationId(authenticationFacade.currentOrganizationId()).stream()
                         .map(User::new).collect(Collectors.toList());
+        acquireRolesAndRoleIds(users);
         return new PaginatedData<>(users, CustomPage.empty());
     }
 

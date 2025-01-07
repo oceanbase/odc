@@ -184,7 +184,7 @@
   sqls:
     - "SELECT * FROM DB1.TABLE1@FAKE_DBLINK;"
   expected: [ ]
-# drop function ,procedure and trigger
+# drop function ,procedure and trigger with dbname
 - id: 23
   dialect_type: OB_MYSQL
   default_schema: DEFAULT_SCHEMA
@@ -233,7 +233,7 @@
   expected:
     - schema: DB1
       table: ~
-#drop sequence、type、package、synonym、public synonym for ob oracle
+#drop sequence、type、package、synonym、public synonym with dbname for ob oracle
 - id: 29
   dialect_type: OB_ORACLE
   default_schema: DEFAULT_SCHEMA
@@ -274,5 +274,94 @@
   expected:
     - schema: DB1
       table: ~
-
+# drop function ,procedure and trigger without dbname
+- id: 34
+  dialect_type: OB_MYSQL
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "drop function func1"
+  expected:
+    - schema: DEFAULT_SCHEMA
+      table: ~
+- id: 35
+  dialect_type: OB_MYSQL
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "drop procedure proc1"
+  expected:
+    - schema: DEFAULT_SCHEMA
+      table: ~
+- id: 36
+  dialect_type: OB_MYSQL
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "drop trigger trigger1"
+  expected:
+    - schema: DEFAULT_SCHEMA
+      table: ~
+- id: 37
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "DROP FUNCTION FUNC1"
+  expected:
+    - schema: DEFAULT_SCHEMA
+      table: ~
+- id: 38
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "DROP PROCEDURE PROC1"
+  expected:
+    - schema: DEFAULT_SCHEMA
+      table: ~
+- id: 39
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "DROP TRIGGER TRIGGER1"
+  expected:
+    - schema: DEFAULT_SCHEMA
+      table: ~
+#drop sequence、type、package、synonym、public synonym without dbname for ob oracle
+- id: 40
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "DROP SEQUENCE SEQ1"
+  expected:
+    - schema: DEFAULT_SCHEMA
+      table: ~
+- id: 41
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "DROP TYPE TYPE1"
+  expected:
+    - schema: DEFAULT_SCHEMA
+      table: ~
+- id: 42
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "DROP PACKAGE PACKAGE1"
+  expected:
+    - schema: DEFAULT_SCHEMA
+      table: ~
+- id: 43
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "DROP SYNONYM SYNONYM1"
+  expected:
+    - schema: DEFAULT_SCHEMA
+      table: ~
+- id : 44
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "DROP PUBLIC SYNONYM SYNONYM1"
+  expected:
+    - schema: DEFAULT_SCHEMA
+      table: ~
 

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.db.util;
+package com.oceanbase.odc.service.session;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,19 +30,33 @@ import org.junit.Test;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import com.oceanbase.odc.ServiceTestEnv;
+import com.oceanbase.odc.TestConnectionUtil;
+import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.core.sql.execute.mapper.DefaultJdbcRowMapper;
 import com.oceanbase.odc.service.db.model.CallFunctionReq;
 import com.oceanbase.odc.service.db.model.CallFunctionResp;
 import com.oceanbase.odc.service.db.model.PLOutParam;
+import com.oceanbase.odc.service.db.util.OBMysqlCallFunctionCallBack;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBPLParam;
 import com.oceanbase.tools.dbbrowser.model.DBPLParamMode;
 
-public class OBMysqlCallFunctionCallBackTest {
+/**
+ * @description:
+ * @author: zijia.cj
+ * @date: 2024/12/30 15:52
+ * @since: 4.3.3
+ */
+public class OBMysqlCallFunctionCallBackTest extends ServiceTestEnv {
 
-    public static final String TEST_CASE_1 = "func_test";
-    public static final String TEST_CASE_2 = "func_test_1";
-    public static final String TEST_CASE_3 = "func_test_2";
+    public static final String TEST_CASE_1 = "TEST_CASE_1";
+    public static final String TEST_CASE_2 = "TEST_CASE_2";
+    public static final String TEST_CASE_3 = "TEST_CASE_3";
+    public static final String TEST_CASE_4 = "func_test_4";
+
 
     @BeforeClass
     public static void setUp() throws IOException {
@@ -58,6 +72,7 @@ public class OBMysqlCallFunctionCallBackTest {
         mysql.execute("DROP FUNCTION " + TEST_CASE_1);
         mysql.execute("DROP FUNCTION " + TEST_CASE_2);
         mysql.execute("DROP FUNCTION " + TEST_CASE_3);
+        mysql.execute("DROP FUNCTION " + TEST_CASE_4);
     }
 
     @Test
@@ -83,7 +98,10 @@ public class OBMysqlCallFunctionCallBackTest {
         function.setReturnType("int");
         callFunctionReq.setFunction(function);
 
-        ConnectionCallback<CallFunctionResp> callback = new OBMysqlCallFunctionCallBack(callFunctionReq, -1);
+        ConnectionSession session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        DefaultJdbcRowMapper defaultJdbcRowMapper = new DefaultJdbcRowMapper(session);
+        ConnectionCallback<CallFunctionResp> callback =
+                new OBMysqlCallFunctionCallBack(callFunctionReq, -1, defaultJdbcRowMapper);
         JdbcTemplate jdbcTemplate =
                 new JdbcTemplate(TestDBConfigurations.getInstance().getTestOBMysqlConfiguration().getDataSource());
         CallFunctionResp actual = jdbcTemplate.execute(callback);
@@ -128,7 +146,10 @@ public class OBMysqlCallFunctionCallBackTest {
         function.setReturnType("int");
         callFunctionReq.setFunction(function);
 
-        ConnectionCallback<CallFunctionResp> callback = new OBMysqlCallFunctionCallBack(callFunctionReq, -1);
+        ConnectionSession session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        DefaultJdbcRowMapper defaultJdbcRowMapper = new DefaultJdbcRowMapper(session);
+        ConnectionCallback<CallFunctionResp> callback =
+                new OBMysqlCallFunctionCallBack(callFunctionReq, -1, defaultJdbcRowMapper);
         JdbcTemplate jdbcTemplate =
                 new JdbcTemplate(TestDBConfigurations.getInstance().getTestOBMysqlConfiguration().getDataSource());
         CallFunctionResp actual = jdbcTemplate.execute(callback);
@@ -173,7 +194,10 @@ public class OBMysqlCallFunctionCallBackTest {
         function.setReturnType("int");
         callFunctionReq.setFunction(function);
 
-        ConnectionCallback<CallFunctionResp> callback = new OBMysqlCallFunctionCallBack(callFunctionReq, -1);
+        ConnectionSession session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        DefaultJdbcRowMapper defaultJdbcRowMapper = new DefaultJdbcRowMapper(session);
+        ConnectionCallback<CallFunctionResp> callback =
+                new OBMysqlCallFunctionCallBack(callFunctionReq, -1, defaultJdbcRowMapper);
         JdbcTemplate jdbcTemplate =
                 new JdbcTemplate(TestDBConfigurations.getInstance().getTestOBMysqlConfiguration().getDataSource());
         CallFunctionResp actual = jdbcTemplate.execute(callback);
@@ -205,7 +229,10 @@ public class OBMysqlCallFunctionCallBackTest {
         function.setParams(list);
         callFunctionReq.setFunction(function);
 
-        ConnectionCallback<CallFunctionResp> callback = new OBMysqlCallFunctionCallBack(callFunctionReq, -1);
+        ConnectionSession session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        DefaultJdbcRowMapper defaultJdbcRowMapper = new DefaultJdbcRowMapper(session);
+        ConnectionCallback<CallFunctionResp> callback =
+                new OBMysqlCallFunctionCallBack(callFunctionReq, -1, defaultJdbcRowMapper);
         JdbcTemplate jdbcTemplate =
                 new JdbcTemplate(TestDBConfigurations.getInstance().getTestOBMysqlConfiguration().getDataSource());
         CallFunctionResp actual = jdbcTemplate.execute(callback);
@@ -215,6 +242,48 @@ public class OBMysqlCallFunctionCallBackTest {
         plOutParam.setParamName(TEST_CASE_3);
         plOutParam.setDataType("varchar(20)");
         plOutParam.setValue(input);
+        expect.setReturnValue(plOutParam);
+        expect.setOutParams(null);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void doInConnection_returnTypeIsYear_callSucceed() {
+        testCallFunctionWhenReturnIsYear("2024", "2024");
+        testCallFunctionWhenReturnIsYear("0000", "0000");
+        testCallFunctionWhenReturnIsYear("0", "2000");
+        testCallFunctionWhenReturnIsYear("1", "2001");
+        testCallFunctionWhenReturnIsYear("99", "1999");
+    }
+
+    private static void testCallFunctionWhenReturnIsYear(String input, String expectOutput) {
+        CallFunctionReq callFunctionReq = new CallFunctionReq();
+        DBFunction function = new DBFunction();
+        function.setFunName(TEST_CASE_4);
+        List<DBPLParam> list = new ArrayList<>();
+        DBPLParam param = new DBPLParam();
+        param.setParamName("p1");
+        param.setDefaultValue(input);
+        param.setDataType("year");
+        param.setParamMode(DBPLParamMode.IN);
+        list.add(param);
+        function.setParams(list);
+        function.setReturnType("year");
+        callFunctionReq.setFunction(function);
+
+        ConnectionSession session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        DefaultJdbcRowMapper defaultJdbcRowMapper = new DefaultJdbcRowMapper(session);
+        ConnectionCallback<CallFunctionResp> callback =
+                new OBMysqlCallFunctionCallBack(callFunctionReq, -1, defaultJdbcRowMapper);
+        JdbcTemplate jdbcTemplate =
+                new JdbcTemplate(TestDBConfigurations.getInstance().getTestOBMysqlConfiguration().getDataSource());
+        CallFunctionResp actual = jdbcTemplate.execute(callback);
+
+        CallFunctionResp expect = new CallFunctionResp();
+        PLOutParam plOutParam = new PLOutParam();
+        plOutParam.setParamName(TEST_CASE_4);
+        plOutParam.setDataType("year");
+        plOutParam.setValue(expectOutput);
         expect.setReturnValue(plOutParam);
         expect.setOutParams(null);
         Assert.assertEquals(expect, actual);
@@ -230,5 +299,4 @@ public class OBMysqlCallFunctionCallBackTest {
             return new ArrayList<>(Arrays.asList(substitutor.replace(new String(buffer)).split(delimiter)));
         }
     }
-
 }
