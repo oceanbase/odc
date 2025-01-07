@@ -39,6 +39,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import javax.validation.constraints.NotNull;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.SetUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -232,8 +234,8 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     private List<JdbcGeneralResult> additionalKillIfNecessary(ConnectionSession connectionSession,
             List<JdbcGeneralResult> results, List<SqlTupleSessionId> sqlTupleSessionIds) {
         Map<String, ServerAddress> sessionId2SvrAddr =
-                getSessionList(connectionSession, null).stream().collect(
-                        Collectors.toMap(OdcDBSession::getSessionId,
+                getSessionList(connectionSession, s -> s.getSvrIp() != null)
+                        .stream().collect(Collectors.toMap(OdcDBSession::getSessionId,
                                 s -> extractServerAddress(MoreObjects.firstNonNull(s.getSvrIp(), ""))));
         Map<String, String> sqlId2SessionId = sqlTupleSessionIds.stream().collect(
                 Collectors.toMap(s -> s.getSqlTuple().getSqlId(), SqlTupleSessionId::getSessionId));
@@ -423,22 +425,23 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
 
     // extract text(query from the dictionary) to server address(ip, port)
     // the text is expected be like 0.0.0.0:8888
+    @NotNull
     private ServerAddress extractServerAddress(String text) {
         String trimmed = StringUtils.trim(text);
         if (StringUtils.isBlank(trimmed)) {
             log.info("unable to extract server address, text is empty");
-            return null;
+            throw new IllegalStateException("Empty server address!");
         }
         Matcher matcher = SERVER_PATTERN.matcher(trimmed);
         if (!matcher.matches()) {
             log.info("unable to extract server address, does not match pattern");
-            return null;
+            throw new IllegalStateException("Invalid server address!");
         }
         String ipAddress = matcher.group("ip");
         String port = matcher.group("port");
         if (StringUtils.isEmpty(ipAddress) || StringUtils.isEmpty(port)) {
             log.info("unable to extract server address, ipAddress={}, port={}", ipAddress, port);
-            return null;
+            throw new IllegalStateException("Invalid server address!");
         }
         return new ServerAddress(ipAddress, port);
     }

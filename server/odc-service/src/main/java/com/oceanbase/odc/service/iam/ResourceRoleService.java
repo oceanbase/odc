@@ -204,6 +204,13 @@ public class ResourceRoleService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal usage")
+    public Set<Long> listUserIdsByResourceTypeAndResourceId(ResourceType resourceType, Long resourceId) {
+        return listByResourceTypeAndResourceId(resourceType, resourceId).stream().map(UserResourceRole::getUserId)
+                .collect(Collectors.toSet());
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("internal usage")
     public List<UserResourceRole> listByResourceTypeAndResourceIdIn(ResourceType resourceType,
             @NotEmpty Collection<Long> resourceIds) {
         List<UserResourceRole> userResourceRoles =

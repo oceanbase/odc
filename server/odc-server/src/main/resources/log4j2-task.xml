@@ -55,6 +55,11 @@
                         <PatternLayout>
                             <pattern>[%d{yyyy-MM-dd HH:mm:ss z}] [%X{taskId}] [%p] %m%n</pattern>
                         </PatternLayout>
+                        <Policies>
+                            <OnStartupTriggeringPolicy minSize="104857600"/>
+                            <TimeBasedTriggeringPolicy interval="24" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="100MB"/>
+                        </Policies>
                         <Filters>
                             <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
                             <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
@@ -73,6 +78,11 @@
                         <PatternLayout>
                             <pattern>[%d{yyyy-MM-dd HH:mm:ss z}] [%X{taskId}] [%p] %m%n</pattern>
                         </PatternLayout>
+                        <Policies>
+                            <OnStartupTriggeringPolicy minSize="104857600"/>
+                            <TimeBasedTriggeringPolicy interval="24" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="100MB"/>
+                        </Policies>
                         <Filters>
                             <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
                             <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
