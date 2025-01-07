@@ -246,6 +246,12 @@ public class SqlSplitter {
         return delimiter;
     }
 
+    /**
+     * 将输入的 SQL 语句分割成多个语句，并返回一个 OffsetString 列表。
+     *
+     * @param sql 待分割的 SQL 语句
+     * @return 分割后的 OffsetString 列表
+     */
     public List<OffsetString> split(String sql) {
         if (StringUtils.isBlank(sql)) {
             return new ArrayList<>();
@@ -265,6 +271,7 @@ public class SqlSplitter {
             int type = token.getType();
             if (type < Token.MIN_USER_TOKEN_TYPE) {
                 // invalid token type
+                // 无效的 token 类型
                 continue;
             }
 
@@ -276,8 +283,9 @@ public class SqlSplitter {
                 labelRightCount = 0;
             }
             if (this.removeCommentPrefix
-                    && 0 == currentStmtBuilder.length()
-                    && innerUtils.isBlankOrComment(type)) {
+                && 0 == currentStmtBuilder.length()
+                && innerUtils.isBlankOrComment(type)) {
+                // 无效的 token 类型
                 continue;
             }
             if (innerUtils.isPLStartPatternIgnoreTypes(type)) {
@@ -285,7 +293,9 @@ public class SqlSplitter {
                     currentOffset.setValue(offset);
                 }
                 // skip analysis blank, comment and other PL block start math pattern ignore types
+                // 跳过分析空白、注释和其他 PL 块起始匹配模式忽略类型
                 currentStmtBuilder.append(text);
+                // 无效的 token 类型
                 continue;
             }
 
@@ -295,6 +305,7 @@ public class SqlSplitter {
                 }
                 if (cacheTokenTypes.size() == 1 && innerUtils.isDelimiterCommand(token)) {
                     pos = executeDelimiterCommand(tokens, pos);
+                    // 无效的 token 类型
                     continue;
                 }
                 if (isPLBlockStart()) {
@@ -302,6 +313,7 @@ public class SqlSplitter {
                     if (StringUtils.isBlank(currentStmtBuilder.toString()) && type != tokenDefinition.SPACES()) {
                         currentOffset.setValue(offset);
                     }
+                    // 跳过分析空白、注释和其他 PL 块起始匹配模式忽略类型
                     currentStmtBuilder.append(text);
                     this.state = State.PL_STMT;
                     cacheTokenTypes.clear();
@@ -311,12 +323,14 @@ public class SqlSplitter {
                     if (StringUtils.isBlank(currentStmtBuilder.toString()) && type != tokenDefinition.SPACES()) {
                         currentOffset.setValue(offset);
                     }
+                    // 跳过分析空白、注释和其他 PL 块起始匹配模式忽略类型
                     currentStmtBuilder.append(text);
                 }
             } else if (this.state == State.PL_STMT) {
                 // sql statement inside PL block end
+                // SQL 语句在 PL 块内部结束
                 if (SQL_DELIMITER == type || PL_ELSE == type || PL_THEN == type || PL_RIGHTPAREN == type
-                        || (labelRightCount == 2 && PL_GREATER_THAN_OP == type) || PL_LEFTPAREN == type) {
+                    || (labelRightCount == 2 && PL_GREATER_THAN_OP == type) || PL_LEFTPAREN == type) {
                     plCacheTokenTypes.clear();
                     labelRightCount = 0;
                 } else if (plCacheTokenTypes.size() < MAX_PL_PATTEN_TYPE_SIZE) {
@@ -327,9 +341,10 @@ public class SqlSplitter {
                 } else if (!subPLStack.empty() && (type == tokenDefinition.IS() || type == tokenDefinition.AS())) {
                     // `IS` may run into case like `cursor cur1 is select col from for_loop_cursor_t;`
                     // in this case, it does not have parent pl block
+                    // 在这种情况下，它不具有父级 PL 块
                     subPLStack.peek().matchIsOrAs = true;
                 } else if (!subPLStack.empty() && subPLStack.peek().startSymbol == PLStartSymbol.CREATE_TYPE
-                        && (type == tokenDefinition.MEMBER() || type == tokenDefinition.STATIC())) {
+                           && (type == tokenDefinition.MEMBER() || type == tokenDefinition.STATIC())) {
                     // temporarily set matchMemberOrStatic in parent subPLLevel
                     // when encounters sub Function / Procedure in create type
                     // set sub Function / Procedure's matchMemberOrStatic
@@ -354,13 +369,14 @@ public class SqlSplitter {
                     if (StringUtils.isBlank(currentStmtBuilder.toString()) && type != tokenDefinition.SPACES()) {
                         currentOffset.setValue(offset);
                     }
+                    // 跳过分析空白、注释和其他 PL 块起始匹配模式忽略类型
                     currentStmtBuilder.append(text);
                     // add additional tokens in which may contains in pl block ending tokens
                     // like end[;] / end [object_name;] / end [loop;] / end [if;] / end [case;]
                     if (posShift > 0) {
                         for (int index = 1; index <= posShift; index++) {
                             if (StringUtils.isBlank(currentStmtBuilder.toString())
-                                    && type != tokenDefinition.SPACES()) {
+                                && type != tokenDefinition.SPACES()) {
                                 currentOffset.setValue(offset);
                             }
                             currentStmtBuilder.append(tokens[pos - posShift + index].getText());
