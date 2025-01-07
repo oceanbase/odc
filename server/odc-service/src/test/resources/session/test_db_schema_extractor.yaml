@@ -67,6 +67,8 @@
   expected:
     - schema: default_schema
       table: null
+      db_object_name: func
+      db_object_type: FUNCTION
 - id: 9
   dialect_type: OB_MYSQL
   default_schema: default_schema
@@ -375,6 +377,8 @@
   expected:
     - schema: DEFAULT_SCHEMA
       table: ~
+      db_object_name: func1
+      db_object_type: FUNCTION
 - id: 46
   dialect_type: OB_MYSQL
   default_schema: DEFAULT_SCHEMA
@@ -383,6 +387,8 @@
   expected:
     - schema: db1
       table: ~
+      db_object_name: func1
+      db_object_type: FUNCTION
 
 
 
