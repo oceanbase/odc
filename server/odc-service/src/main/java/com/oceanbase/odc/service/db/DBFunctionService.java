@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.db;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
 
@@ -28,7 +27,6 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.plugin.schema.api.FunctionExtensionPoint;
 import com.oceanbase.odc.service.common.model.ResourceSql;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
-import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 
@@ -37,8 +35,6 @@ import lombok.NonNull;
 @Service
 @SkipAuthorize("inside connect session")
 public class DBFunctionService {
-    @Autowired
-    private ConnectConsoleService consoleService;
 
     public List<DBFunction> list(ConnectionSession connectionSession, String dbName) {
         return connectionSession.getSyncJdbcExecutor(
