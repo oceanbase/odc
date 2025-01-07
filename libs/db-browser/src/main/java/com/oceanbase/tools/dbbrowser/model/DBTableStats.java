@@ -15,7 +15,6 @@
  */
 package com.oceanbase.tools.dbbrowser.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 
@@ -32,7 +31,6 @@ import lombok.Data;
 public class DBTableStats {
     @JsonProperty(access = Access.READ_ONLY)
     private Long rowCount;
-    @JsonIgnore
     private Long dataSizeInBytes;
     private String tableSize;
 }
