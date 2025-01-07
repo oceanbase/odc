@@ -119,13 +119,13 @@ public class DBResourcePermissionInterceptor extends BaseTimeConsumingIntercepto
                         Objects.nonNull(entry.getKey().getDbObjectName()) &&
                         entry.getValue().contains(SqlType.SELECT) &&
                         Objects.nonNull(entry.getKey().getSchema());
-        Set<String> schemaSets = identity2Types.entrySet().stream().filter(isValidFunctionEntry)
+        Set<String> schemas = identity2Types.entrySet().stream().filter(isValidFunctionEntry)
                 .map(entry -> entry.getKey().getSchema())
                 .collect(Collectors.toSet());
-        if (CollectionUtils.isEmpty(schemaSets)) {
+        if (CollectionUtils.isEmpty(schemas)) {
             return;
         }
-        Map<String, Set<String>> schema2Functions = schemaSets.stream()
+        Map<String, Set<String>> schema2Functions = schemas.stream()
                 .collect(
                         Collectors.toMap(Function.identity(),
                                 schema -> dbFunctionService.list(session, schema).stream()
