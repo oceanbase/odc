@@ -76,6 +76,12 @@ public class DoStopJobV2 implements Job {
 
     protected void sendStopToTask(JobConfiguration configuration, TaskFrameworkService taskFrameworkService,
             JobEntity jobEntity) {
+        JobEntity lockedEntity = configuration.getTaskFrameworkService().findWithPessimisticLock(jobEntity.getId());
+        // may operate by old version odc, for compatible
+        if (lockedEntity.getStatus() != jobEntity.getStatus()) {
+            log.warn("job status bas been modified, prev job = {}, current job = {}", jobEntity, lockedEntity);
+            return;
+        }
         // task has started, but receive cancel command or task run timeout
         // we send command to it
         if (!StringUtils.isBlank(jobEntity.getExecutorEndpoint())) {

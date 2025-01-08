@@ -118,4 +118,7 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
     // negative means not given, this value should not be changed, cause a new port means a new agent
     // server
     private int taskSupervisorAgentListenPort = -1;
+
+    // keep supervisor endpoint alive for a period if there is no task running on it or release it
+    private int supervisorEndpointKeepAliveSeconds = 300;
 }

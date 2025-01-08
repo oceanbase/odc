@@ -82,7 +82,7 @@ public class DoFinishJobV2 implements Job {
         jobs.forEach(job -> {
             try {
                 configuration.getTransactionManager()
-                        .doInTransactionWithoutResult(() -> destroyExecutor(configuration, taskFrameworkService, job));
+                        .doInTransactionWithoutResult(() -> destroyExecutor(configuration, job));
             } catch (Throwable e) {
                 log.warn("Try to destroy failed, jobId={}.", job.getId(), e);
             }
@@ -90,8 +90,14 @@ public class DoFinishJobV2 implements Job {
     }
 
     @VisibleForTesting
-    protected void destroyExecutor(JobConfiguration configuration, TaskFrameworkService taskFrameworkService,
-            JobEntity jobEntity) {
+    protected void destroyExecutor(JobConfiguration configuration, JobEntity jobEntity) {
+        TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
+        JobEntity lockedEntity = configuration.getTaskFrameworkService().findWithPessimisticLock(jobEntity.getId());
+        // may operate by old version odc, for compatible
+        if (lockedEntity.getStatus() != jobEntity.getStatus()) {
+            log.warn("job status bas been modified, prev job = {}, current job = {}", jobEntity, lockedEntity);
+            return;
+        }
         if (!jobEntity.getStatus().isTerminated()) {
             log.warn("job status expected terminated, current job id = {}, status = {}", jobEntity.getId(),
                     jobEntity.getStatus());

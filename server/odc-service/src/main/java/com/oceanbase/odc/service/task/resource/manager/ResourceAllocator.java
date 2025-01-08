@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.task.ResourceAllocateInfoEntity;
 import com.oceanbase.odc.metadb.task.SupervisorEndpointEntity;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
@@ -69,17 +70,14 @@ public class ResourceAllocator {
     // allocate for one allocate info
     protected void allocate(ResourceAllocateInfoEntity resourceAllocateInfo) {
         try {
-            if (!isAllocateInfoValid(resourceAllocateInfo)) {
-                return;
-            }
             ResourceAllocateState resourceAllocateState =
                     ResourceAllocateState.fromString(resourceAllocateInfo.getResourceAllocateState());
             if (resourceAllocateState == ResourceAllocateState.PREPARING) {
                 // handle preparing info
-                handleAllocateResourceInfoInPreparing(resourceAllocateInfo);
+                handleAllocateResourceInfoInPreparingState(resourceAllocateInfo);
             } else if (resourceAllocateState == ResourceAllocateState.CREATING_RESOURCE) {
                 // handle creating resource info
-                handleAllocateResourceInfoInCreatingResource(resourceAllocateInfo);
+                handleAllocateResourceInfoInCreatingResourceState(resourceAllocateInfo);
             } else {
                 log.warn("invalid state for allocate supervisor agent, current is " + resourceAllocateInfo);
             }
@@ -90,8 +88,14 @@ public class ResourceAllocator {
     }
 
     // handle prepare allocate resource state
-    protected void handleAllocateResourceInfoInPreparing(ResourceAllocateInfoEntity allocateInfoEntity)
+    protected void handleAllocateResourceInfoInPreparingState(ResourceAllocateInfoEntity allocateInfoEntity)
             throws Exception {
+        // no resource allocated, directly change to failed state to tell user resource allocate failed
+        if (!isAllocateInfoValid(allocateInfoEntity)) {
+            log.info("resource prepare expired for entity =  {}", allocateInfoEntity);
+            resourceAllocateInfoRepositoryWrap.failedAllocateForId(allocateInfoEntity.getTaskId());
+            return;
+        }
         SupervisorEndpointEntity supervisorEndpoint = chooseSupervisorEndpoint(allocateInfoEntity);
         if (null != supervisorEndpoint) {
             // allocate success
@@ -120,8 +124,15 @@ public class ResourceAllocator {
     }
 
     // handle creating resource allocate resource state
-    protected void handleAllocateResourceInfoInCreatingResource(ResourceAllocateInfoEntity allocateInfoEntity)
+    protected void handleAllocateResourceInfoInCreatingResourceState(ResourceAllocateInfoEntity allocateInfoEntity)
             throws Exception {
+        if (!isAllocateInfoValid(allocateInfoEntity)) {
+            // resource is creating and use finished, release load, let
+            // TaskResourceManager.detectIfResourceIsReady determinate how to process resource
+            releaseSupervisorEndPointLoad(allocateInfoEntity);
+            resourceAllocateInfoRepositoryWrap.failedAllocateForId(allocateInfoEntity.getTaskId());
+            return;
+        }
         SupervisorEndpointEntity supervisorEndpoint =
                 resourceManageStrategy.detectIfResourceIsReady(allocateInfoEntity);
         if (null != supervisorEndpoint) {
@@ -138,20 +149,24 @@ public class ResourceAllocator {
         }
     }
 
-    // if resource entity is valid
     protected boolean isAllocateInfoValid(ResourceAllocateInfoEntity allocateInfoEntity) {
-        if (isAllocateInfoExpired(allocateInfoEntity)) {
-            log.info("resource prepare expired for entity =  {}", allocateInfoEntity);
-            resourceAllocateInfoRepositoryWrap.failedAllocateForId(allocateInfoEntity.getTaskId());
+        boolean isExpired = isAllocateInfoExpired(allocateInfoEntity);
+        if (isExpired || ResourceUsageState
+                .fromString(allocateInfoEntity.getResourceUsageState()) == ResourceUsageState.FINISHED) {
+            // job is canceled or resource not prepare success for a long time
+            log.info("resource preparing failed cause {}, entity =  {}",
+                    isExpired ? "expired" : "resource not needed anymore", allocateInfoEntity);
             return false;
+        } else {
+            return true;
         }
-        // resource not need any more
-        if (ResourceUsageState.fromString(allocateInfoEntity.getResourceUsageState()) == ResourceUsageState.FINISHED) {
-            log.info("resource prepare canceled for entity = {}", allocateInfoEntity);
-            resourceAllocateInfoRepositoryWrap.finishedAllocateForId(allocateInfoEntity.getTaskId());
-            return false;
+    }
+
+    protected void releaseSupervisorEndPointLoad(ResourceAllocateInfoEntity allocateInfoEntity) {
+        SupervisorEndpoint endpoint = JsonUtils.fromJson(allocateInfoEntity.getEndpoint(), SupervisorEndpoint.class);
+        if (null != endpoint) {
+            supervisorEndpointRepositoryWrap.releaseLoad(endpoint, allocateInfoEntity.getResourceId());
         }
-        return true;
     }
 
     /**

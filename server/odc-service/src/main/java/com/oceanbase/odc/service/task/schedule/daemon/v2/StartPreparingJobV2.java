@@ -120,6 +120,12 @@ public class StartPreparingJobV2 implements Job {
     }
 
     protected void allocateResource(JobConfiguration configuration, JobEntity jobEntity) {
+        JobEntity lockedEntity = configuration.getTaskFrameworkService().findWithPessimisticLock(jobEntity.getId());
+        // may operate by old version odc, for compatible
+        if (lockedEntity.getStatus() != jobEntity.getStatus()) {
+            log.warn("job status bas been modified, prev job = {}, current job = {}", jobEntity, lockedEntity);
+            return;
+        }
         JobContext jobContext =
                 new DefaultJobContextBuilder().build(jobEntity, configuration);
         configuration.getSupervisorAgentAllocator()

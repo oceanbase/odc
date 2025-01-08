@@ -106,7 +106,8 @@ public class K8SResourceManageStrategy implements ResourceManageStrategy {
             return supervisorEndpointRepositoryWrap.save(podResource, k8sPodResource.getId(), 0);
         } catch (Throwable e) {
             log.warn("save k8s pod resource to endpoint failed", e);
-            resourceManager.release(k8sPodResource.getResource().resourceID());
+            // roll back create resource operation
+            resourceManager.destroy(k8sPodResource.getResource().resourceID());
             throw new RuntimeException("save resource to db failed", e);
         }
     }

@@ -28,6 +28,7 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
 import com.google.common.collect.Lists;
+import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.enums.JobStatus;
@@ -61,6 +62,7 @@ public class StartPreparingJobV2Test extends DaemonV2TestBase {
         jobEntity.setCreateTime(new Date(System.currentTimeMillis()));
         Mockito.when(taskFrameworkService.find(Lists.newArrayList(JobStatus.PREPARING), 0,
                 taskFrameworkProperties.getSingleFetchPreparingJobRows())).thenReturn(page);
+        Mockito.when(taskFrameworkService.findWithPessimisticLock(ArgumentMatchers.any())).thenReturn(jobEntity);
         startPreparingJobV2.processPreparingJob(configuration);
         // check allocate resource parameters
         ArgumentCaptor<JobContext> jobContextCapture = ArgumentCaptor.forClass(JobContext.class);
@@ -71,6 +73,22 @@ public class StartPreparingJobV2Test extends DaemonV2TestBase {
         Assert.assertEquals(jobContextCapture.getValue().getJobIdentity().getId().longValue(), 1024);
         Assert.assertEquals(applierNameCapture.getValue(), "K8S");
         Assert.assertEquals(locationCapture.getValue(), new ResourceLocation("test", "test"));
+    }
+
+    @Test
+    public void testProcessPreparingJobStatusChanged() {
+        jobEntity.setStatus(JobStatus.PREPARING);
+        jobEntity.setCreateTime(new Date(System.currentTimeMillis()));
+        JobEntity modified = new JobEntity();
+        modified.setStatus(JobStatus.RUNNING);
+        Mockito.when(taskFrameworkService.find(Lists.newArrayList(JobStatus.PREPARING), 0,
+                taskFrameworkProperties.getSingleFetchPreparingJobRows())).thenReturn(page);
+        Mockito.when(taskFrameworkService.findWithPessimisticLock(ArgumentMatchers.any())).thenReturn(modified);
+        startPreparingJobV2.processPreparingJob(configuration);
+        // check allocate resource parameters
+        Mockito.verify(supervisorAgentAllocator, Mockito.never()).submitAllocateSupervisorEndpointRequest(
+                ArgumentMatchers.any(),
+                ArgumentMatchers.any(), ArgumentMatchers.any());
     }
 
     @Test

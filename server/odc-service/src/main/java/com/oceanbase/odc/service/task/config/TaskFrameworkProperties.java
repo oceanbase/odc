@@ -89,4 +89,6 @@ public interface TaskFrameworkProperties {
 
     int getTaskSupervisorAgentListenPort();
 
+    int getSupervisorEndpointKeepAliveSeconds();
+
 }

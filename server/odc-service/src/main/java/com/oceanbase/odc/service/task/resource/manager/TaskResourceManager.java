@@ -42,6 +42,7 @@ public class TaskResourceManager {
     protected final RemoteTaskSupervisorProxy remoteTaskSupervisorProxy;
     protected final ResourceManageStrategy resourceManageStrategy;
     protected final ResourceDeAllocator resourceDeAllocator;
+    protected final TaskFrameworkProperties taskFrameworkProperties;
 
     public TaskResourceManager(SupervisorEndpointRepository supervisorEndpointRepository,
             ResourceAllocateInfoRepository resourceAllocateInfoRepository,
@@ -56,6 +57,7 @@ public class TaskResourceManager {
                 taskFrameworkProperties);
         this.resourceDeAllocator = new ResourceDeAllocator(supervisorEndpointRepositoryWrap,
                 resourceAllocateInfoRepositoryWrap, remoteTaskSupervisorProxy, resourceManageStrategy);
+        this.taskFrameworkProperties = taskFrameworkProperties;
     }
 
     /**
@@ -109,8 +111,7 @@ public class TaskResourceManager {
     protected boolean isSupervisorEndpointExpired(SupervisorEndpointEntity entity) {
         Duration between = Duration.between(entity.getUpdateTime().toInstant(), Instant.now());
         // 300 seconds considered as timeout
-        // TODO(lx): config it
-        return (between.toMillis() / 1000 > 360);
+        return (between.toMillis() / 1000 > taskFrameworkProperties.getSupervisorEndpointKeepAliveSeconds());
     }
 
 

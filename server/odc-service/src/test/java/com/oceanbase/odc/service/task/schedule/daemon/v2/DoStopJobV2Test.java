@@ -22,6 +22,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
+import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.supervisor.endpoint.ExecutorEndpoint;
@@ -39,6 +40,18 @@ public class DoStopJobV2Test extends DaemonV2TestBase {
         super.init();
         doStopJobV2 = new DoStopJobV2();
         executorEndpoint = "http://host:9999";
+    }
+
+    @Test
+    public void testDoStopJobStatusChanged() throws JobException {
+        jobEntity.setExecutorEndpoint(executorEndpoint);
+        jobEntity.setStatus(JobStatus.CANCELING);
+        JobEntity modified = new JobEntity();
+        modified.setStatus(JobStatus.FAILED);
+        Mockito.when(taskFrameworkService.findWithPessimisticLock(ArgumentMatchers.any())).thenReturn(modified);
+        doStopJobV2.sendStopToTask(configuration, configuration.getTaskFrameworkService(), jobEntity);
+        Mockito.verify(taskFrameworkService, Mockito.never()).updateStatusByIdOldStatus(ArgumentMatchers.any(),
+                ArgumentMatchers.any(), ArgumentMatchers.any());
     }
 
     @Test
@@ -62,6 +75,7 @@ public class DoStopJobV2Test extends DaemonV2TestBase {
     private void doSendStop(JobStatus jobStatus) throws JobException {
         jobEntity.setExecutorEndpoint(executorEndpoint);
         jobEntity.setStatus(jobStatus);
+        Mockito.when(taskFrameworkService.findWithPessimisticLock(ArgumentMatchers.any())).thenReturn(jobEntity);
         doStopJobV2.sendStopToTask(configuration, configuration.getTaskFrameworkService(), jobEntity);
         ArgumentCaptor<ExecutorEndpoint> executorEndpointArgumentCaptor =
                 ArgumentCaptor.forClass(ExecutorEndpoint.class);
