@@ -236,6 +236,7 @@ public class ConnectionTesting {
         config.setServiceName(req.getServiceName());
         config.setUserRole(req.getUserRole());
         config.setCatalogName(req.getCatalogName());
+        config.setRegion(req.getRegion());
 
         OBTenantEndpoint endpoint = req.getEndpoint();
         if (Objects.nonNull(endpoint) && OceanBaseAccessMode.IC_PROXY == endpoint.getAccessMode()) {

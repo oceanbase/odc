@@ -58,7 +58,7 @@ public enum ConnectType {
     }
 
     public boolean isDefaultSchemaRequired() {
-        return isODPSharding() || this.dialectType == DialectType.FILE_SYSTEM;
+        return isODPSharding();
     }
 
     public static ConnectType from(DialectType dialectType) {

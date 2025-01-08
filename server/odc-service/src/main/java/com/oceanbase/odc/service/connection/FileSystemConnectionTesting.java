@@ -62,6 +62,7 @@ public class FileSystemConnectionTesting {
 
     public ConnectionTestResult test(@NonNull ConnectionConfig config) {
         PreConditions.notBlank(config.getPassword(), "AccessKeySecret");
+        PreConditions.notBlank(config.getRegion(), "Region");
         URI uri = URI.create(config.getHost());
         ObjectStorageConfiguration storageConfig = new ObjectStorageConfiguration();
         storageConfig.setAccessKeyId(config.getUsername());
