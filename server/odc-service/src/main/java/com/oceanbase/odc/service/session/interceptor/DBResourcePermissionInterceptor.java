@@ -133,7 +133,7 @@ public class DBResourcePermissionInterceptor extends BaseTimeConsumingIntercepto
                                         .collect(Collectors.toSet())));
         identity2Types.entrySet().stream()
                 .filter(isValidFunctionEntry
-                        .and(entry -> schema2Functions.containsKey(entry.getKey().getSchema()))
+                        .and(entry -> Objects.nonNull(schema2Functions.get(entry.getKey().getSchema())))
                         .and(entry -> schema2Functions.get(entry.getKey().getSchema())
                                 .contains(entry.getKey().getDbObjectName())))
                 .forEach(entry -> entry.getValue().add(SqlType.ALTER));
