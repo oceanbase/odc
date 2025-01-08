@@ -861,6 +861,10 @@ VALUES ('odc.session.kill-query-or-session.max-supported-ob-version', '4.2.5', '
         'Max OBVersion kill session or kill query supported, only take effect when value greater than 0')
 ON DUPLICATE KEY UPDATE `id`=`id`;
 
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES('odc.task.dlm.limit.switch', 'true',
+'Explosion-proof current limiting switch of mysql/oracle' )
+ON DUPLICATE KEY UPDATE `id` = `id`;
+
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES('odc.task.dlm.session.limit.ratio', '25',
 'The ratio of oracle/mysql active sessions to the maximum number of connections allowed' )
 ON DUPLICATE KEY UPDATE `id` = `id`;

@@ -87,6 +87,7 @@ public abstract class AbstractDlmJob implements OdcJob {
         ConnectionConfig config = databaseService.findDataSourceForTaskById(databaseId);
         DataSourceInfo dataSourceInfo = DataSourceInfoMapper.toDataSourceInfo(config, db.getName());
         dataSourceInfo.setDatabaseName(db.getName());
+        dataSourceInfo.setLimitSwitch(dlmConfiguration.isLimitSwitch());
         dataSourceInfo.setSessionLimitRatio(dlmConfiguration.getSessionLimitRatio());
         return dataSourceInfo;
     }
