@@ -16,11 +16,11 @@
 package com.oceanbase.odc.service.connection;
 
 import java.io.ByteArrayInputStream;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Component;
 
@@ -51,30 +51,30 @@ import lombok.NonNull;
 @Component
 public class FileSystemConnectionTesting {
 
-    private static final String COS_ENDPOINT_REGEX = "cos\\.(\\w+-\\w+)\\.myqcloud\\.com";
-    private static final String OSS_ENDPOINT_REGEX = "oss-([a-zA-Z0-9-]+)\\.aliyuncs\\.com";
-    private static final String OBS_ENDPOINT_REGEX = "obs\\.([a-zA-Z0-9-]+)\\.myhuaweicloud\\.com";
-    private static final String S3_ENDPOINT_REGEX = "s3\\.([a-zA-Z0-9-]+)\\.amazonaws\\.com(\\.cn)?";
+    private static final String COS_ENDPOINT_PATTERN = "cos.{0}.myqcloud.com";
+    private static final String OBS_ENDPOINT_PATTERN = "obs.{0}.myhuaweicloud.com";
+    private static final String OSS_ENDPOINT_PATTERN = "oss-{0}.aliyuncs.com";
+    private static final String S3_ENDPOINT_GLOBAL_PATTERN = "s3.{0}.amazonaws.com";
+    private static final String S3_ENDPOINT_CN_PATTERN = "s3.{0}.amazonaws.com.cn";
+
     private static final String TMP_FILE_NAME_PREFIX = "odc-test-object-";
     private static final String TMP_TEST_DATA = "This is a test object to check read and write permissions.";
 
     public ConnectionTestResult test(@NonNull ConnectionConfig config) {
         PreConditions.notBlank(config.getPassword(), "AccessKeySecret");
-        PreConditions.notBlank(config.getDefaultSchema(), "Bucket");
-        String[] splitPath = config.getDefaultSchema().split("/", 2);
-        String bucketName = splitPath[0];
-        String path = splitPath.length > 1 ? splitPath[1] : "";
+        URI uri = URI.create(config.getHost());
         ObjectStorageConfiguration storageConfig = new ObjectStorageConfiguration();
         storageConfig.setAccessKeyId(config.getUsername());
         storageConfig.setAccessKeySecret(config.getPassword());
-        storageConfig.setBucketName(bucketName);
-        storageConfig.setRegion(getRegion(config));
+        storageConfig.setBucketName(uri.getAuthority());
+        storageConfig.setRegion(config.getRegion());
         storageConfig.setCloudProvider(getCloudProvider(config.getType()));
-        storageConfig.setPublicEndpoint(config.getHost());
+        storageConfig.setPublicEndpoint(getEndPointByRegion(config.getType(), config.getRegion()));
         try {
             CloudClient cloudClient =
                     new CloudResourceConfigurations.CloudClientBuilder().generateCloudClient(storageConfig);
-            String objectKey = path + generateTempFileName();
+            String objectKey = uri.getPath().endsWith("/") ? uri.getPath() + generateTempFileName()
+                    : uri.getPath() + "/" + generateTempFileName();
             cloudClient.putObject(storageConfig.getBucketName(), objectKey,
                     new ByteArrayInputStream(TMP_TEST_DATA.getBytes(StandardCharsets.UTF_8)), new ObjectMetadata());
             DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest();
@@ -107,16 +107,6 @@ public class FileSystemConnectionTesting {
         }
     }
 
-    private String getRegion(ConnectionConfig config) {
-        Pattern pattern = Pattern.compile(getEndPointRegex(config.getType()));
-        Matcher matcher = pattern.matcher(config.getHost());
-        if (matcher.find()) {
-            return matcher.group(1);
-        } else {
-            throw new UnExpectedException("Illegal endpoint");
-        }
-    }
-
     private CloudProvider getCloudProvider(ConnectType type) {
         switch (type) {
             case COS:
@@ -132,18 +122,22 @@ public class FileSystemConnectionTesting {
         }
     }
 
-    private String getEndPointRegex(ConnectType type) {
+    private static String getEndPointByRegion(ConnectType type, String region) {
         switch (type) {
             case COS:
-                return COS_ENDPOINT_REGEX;
-            case OBS:
-                return OBS_ENDPOINT_REGEX;
-            case S3A:
-                return S3_ENDPOINT_REGEX;
+                return MessageFormat.format(COS_ENDPOINT_PATTERN, region);
             case OSS:
-                return OSS_ENDPOINT_REGEX;
+                return MessageFormat.format(OSS_ENDPOINT_PATTERN, region);
+            case OBS:
+                return MessageFormat.format(OBS_ENDPOINT_PATTERN, region);
+            case S3A:
+                // Note there is a difference of Top-Level Domain between cn and global regions.
+                if (region.startsWith("cn-")) {
+                    return MessageFormat.format(S3_ENDPOINT_CN_PATTERN, region);
+                }
+                return MessageFormat.format(S3_ENDPOINT_GLOBAL_PATTERN, region);
             default:
-                throw new UnExpectedException();
+                throw new IllegalArgumentException("regionToEndpoint is not applicable for storageType " + type);
         }
     }
 
