@@ -134,12 +134,11 @@ public class ResourceRoleService {
         Map<String, Long> resourceRoleName2Id = resourceRoleRepository.findByResourceType(ResourceType.ODC_PROJECT)
                 .stream().map(resourceRoleMapper::entityToModel)
                 .collect(Collectors.toMap(role -> role.getRoleName().name(), ResourceRole::getId, (v1, v2) -> v2));
-
-        Set<String> derivedFromGlobalResourceRole = globalResourceRoles.stream()
-                .map(i -> StringUtils.join("*", ":", resourceRoleName2Id.get(i.name())))
-                .collect(Collectors.toSet());
-        derivedFromGlobalResourceRole.addAll(resourceRoleIdentifiers);
-        return derivedFromGlobalResourceRole;
+        projectRepository.findAllByOrganizationId(organizationId).stream()
+                .forEach(p -> globalResourceRoles.stream()
+                        .map(r -> StringUtils.join(p.getId(), ":", resourceRoleName2Id.get(r.name())))
+                        .forEach(resourceRoleIdentifiers::add));
+        return resourceRoleIdentifiers;
     }
 
     @SkipAuthorize
@@ -164,14 +163,13 @@ public class ResourceRoleService {
         if (CollectionUtils.isEmpty(globalResourceRoles)) {
             return result;
         }
-        projectRepository.findAllByOrganizationId(organizationId).stream().filter(p -> !p.getArchived())
-                .forEach(p -> {
-                    if (!result.containsKey(p.getId())) {
-                        result.put(p.getId(), globalResourceRoles);
-                    } else {
-                        result.get(p.getId()).addAll(globalResourceRoles);
-                    }
-                });
+        projectRepository.findAllByOrganizationId(organizationId).stream().forEach(p -> {
+            if (!result.containsKey(p.getId())) {
+                result.put(p.getId(), globalResourceRoles);
+            } else {
+                result.get(p.getId()).addAll(globalResourceRoles);
+            }
+        });
         return result;
     }
 

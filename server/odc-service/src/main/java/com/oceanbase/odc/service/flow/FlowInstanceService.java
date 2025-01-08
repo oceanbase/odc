@@ -1072,24 +1072,29 @@ public class FlowInstanceService {
     private void completeApprovalInstance(@NonNull Long flowInstanceId,
             @NonNull Consumer<FlowApprovalInstance> consumer, Boolean skipAuth) {
         List<FlowApprovalInstance> instances =
-                mapFlowInstanceWithApprovalPermission(flowInstanceId,
-                        flowInstance -> flowInstance.filterInstanceNode(instance -> {
-                            if (instance.getNodeType() != FlowNodeType.APPROVAL_TASK) {
-                                return false;
-                            }
-                            return instance.getStatus() == FlowNodeStatus.EXECUTING
-                                    || instance.getStatus() == FlowNodeStatus.WAIT_FOR_CONFIRM;
-                        }).stream().map(instance -> {
-                            Verify.verify(instance instanceof FlowApprovalInstance,
-                                    "FlowApprovalInstance's type is illegal");
-                            return (FlowApprovalInstance) instance;
-                        }).collect(Collectors.toList()));
+                skipAuth ? mapFlowInstanceWithoutPermissionCheck(flowInstanceId,
+                        generateApprovalMapper())
+                        : mapFlowInstanceWithApprovalPermission(flowInstanceId, generateApprovalMapper());
         PreConditions.validExists(ResourceType.ODC_FLOW_APPROVAL_INSTANCE,
                 "flowInstanceId", flowInstanceId, () -> instances.size() > 0);
         Verify.singleton(instances, "ApprovalInstance");
         FlowApprovalInstance target = instances.get(0);
         Verify.verify(target.isPresentOnThisMachine(), "Approval instance is not on this machine");
         consumer.accept(target);
+    }
+
+    private Function<FlowInstance, List<FlowApprovalInstance>> generateApprovalMapper() {
+        return flowInstance -> flowInstance.filterInstanceNode(instance -> {
+            if (instance.getNodeType() != FlowNodeType.APPROVAL_TASK) {
+                return false;
+            }
+            return instance.getStatus() == FlowNodeStatus.EXECUTING
+                    || instance.getStatus() == FlowNodeStatus.WAIT_FOR_CONFIRM;
+        }).stream().map(instance -> {
+            Verify.verify(instance instanceof FlowApprovalInstance,
+                    "FlowApprovalInstance's type is illegal");
+            return (FlowApprovalInstance) instance;
+        }).collect(Collectors.toList());
     }
 
     private void initVariables(Map<String, Object> variables, TaskEntity taskEntity, TaskEntity preCheckTaskEntity,
