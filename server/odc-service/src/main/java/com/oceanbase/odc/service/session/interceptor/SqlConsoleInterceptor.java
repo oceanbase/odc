@@ -188,12 +188,15 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
                 if (Objects.nonNull(parseResult.getSyntaxError()) && parseResult.getSyntaxError()) {
                     continue;
                 }
+                // 判断当前 SQL 类型是否被允许执行
                 if (!allowSqlTypesOpt.get().contains(parseResult.getSqlType().name())) {
+                    // 获取规则服务中指定规则集 ID 和规则名的规则
                     ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.ALLOW_SQL_TYPES.getRuleName())
                         .ifPresent(rule -> {
                             Rule violationRule = new Rule();
                             RuleViolation violation = new RuleViolation();
                             violation.setLevel(rule.getLevel());
+                            // 设置违规信息的本地化消息
                             violation.setLocalizedMessage(SqlConsoleRules.ALLOW_SQL_TYPES
                                 .getLocalizedMessage(new Object[] {rule.getProperties()
                                                                        .get(rule.getMetadata().getPropertyMetadatas()
@@ -206,6 +209,7 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
                             violationRule.setViolation(violation);
                             violatedRules.add(violationRule);
                         });
+                    // 不允许执行
                     allowExecute.set(false);
                 }
             }

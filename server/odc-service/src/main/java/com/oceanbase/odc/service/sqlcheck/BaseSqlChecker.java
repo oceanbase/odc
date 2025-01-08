@@ -106,8 +106,17 @@ abstract class BaseSqlChecker implements SqlChecker {
         });
     }
 
+    /**
+     * 对输入的列表进行 SQL 检查
+     *
+     * @param inputs   待检查的列表
+     * @param context  SQL 检查上下文
+     * @param function 用于将列表元素转换为 SQL 语句和语句编号的函数
+     * @return 检查结果列表
+     */
     private <T> List<CheckViolation> doCheck(List<T> inputs, SqlCheckContext context,
-            Function<T, Pair<Integer, Statement>> function) {
+        Function<T, Pair<Integer, Statement>> function) {
+        // 创建 SQL 检查上下文
         final SqlCheckContext checkContext;
         if (context != null) {
             checkContext = context;
@@ -115,16 +124,19 @@ abstract class BaseSqlChecker implements SqlChecker {
         } else {
             checkContext = new SqlCheckContext();
         }
+        // 将列表元素转换为 SQL 语句和语句编号的列表
         List<Pair<Integer, Statement>> stmts = inputs.stream()
-                .map(function)
-                .filter(stmt -> Objects.nonNull(stmt) && Objects.nonNull(stmt.right))
-                .collect(Collectors.toList());
+            .map(function)
+            .filter(stmt -> Objects.nonNull(stmt) && Objects.nonNull(stmt.right))
+            .collect(Collectors.toList());
+        // 设置当前语句编号和总语句数
         if (checkContext.currentStmtIndex == null) {
             checkContext.currentStmtIndex = 0L;
         }
         if (checkContext.totalStmtCount == null) {
             checkContext.totalStmtCount = (long) stmts.size();
         }
+        // 对每个 SQL 语句进行检查，并返回检查结果列表
         return stmts.stream().flatMap(holder -> {
             List<CheckViolation> violations = doCheck(holder.right, checkContext);
             violations.stream().forEach(v -> {
