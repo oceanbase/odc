@@ -74,8 +74,8 @@ public class FileSystemConnectionTesting {
         try {
             CloudClient cloudClient =
                     new CloudResourceConfigurations.CloudClientBuilder().generateCloudClient(storageConfig);
-            String objectKey = uri.getPath().endsWith("/") ? uri.getPath() + generateTempFileName()
-                    : uri.getPath() + "/" + generateTempFileName();
+            String objectKey = uri.getPath().endsWith("/") ? uri.getAuthority() + uri.getPath() + generateTempFileName()
+                    : uri.getAuthority() + uri.getPath() + "/" + generateTempFileName();
             cloudClient.putObject(storageConfig.getBucketName(), objectKey,
                     new ByteArrayInputStream(TMP_TEST_DATA.getBytes(StandardCharsets.UTF_8)), new ObjectMetadata());
             DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest();
