@@ -58,13 +58,13 @@ public class UpdateDatasourceListener extends AbstractEventListener<UpsertDataso
         DatabaseEntity entity = null;
         if (!CollectionUtils.isEmpty(byConnectionId)) {
             List<Long> toBeDelete = byConnectionId.stream().filter(
-                    o -> !connectionConfig.getDefaultSchema().equals(o.getName())).map(DatabaseEntity::getId).collect(
+                    o -> !connectionConfig.getHost().equals(o.getName())).map(DatabaseEntity::getId).collect(
                             Collectors.toList());
             if (!toBeDelete.isEmpty()) {
                 databaseRepository.deleteAllById(toBeDelete);
             }
             Optional<DatabaseEntity> existed = byConnectionId.stream().filter(
-                    o -> connectionConfig.getDefaultSchema().equals(o.getName())).findFirst();
+                    o -> connectionConfig.getHost().equals(o.getName())).findFirst();
             if (existed.isPresent()) {
                 entity = existed.get();
             }
@@ -73,7 +73,7 @@ public class UpdateDatasourceListener extends AbstractEventListener<UpsertDataso
         entity = entity == null ? new DatabaseEntity() : entity;
         entity.setDatabaseId(com.oceanbase.odc.common.util.StringUtils.uuid());
         entity.setOrganizationId(connectionConfig.getOrganizationId());
-        entity.setName(connectionConfig.getDefaultSchema());
+        entity.setName(connectionConfig.getHost());
         entity.setProjectId(connectionConfig.getProjectId());
         entity.setConnectionId(connectionConfig.getId());
         entity.setEnvironmentId(connectionConfig.getEnvironmentId());
