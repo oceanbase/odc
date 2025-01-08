@@ -92,11 +92,19 @@ public class ColumnNameInBlackList implements SqlCheckRule {
         return this.blackList.stream().anyMatch(s -> StringUtils.equalsIgnoreCase(s, str));
     }
 
+    /**
+     * 根据给定的SQL语句和列定义流，检查是否存在违规情况
+     *
+     * @param sql    给定的SQL语句
+     * @param stream 列定义流
+     * @return 返回违规情况列表
+     */
     private List<CheckViolation> builds(String sql, Stream<ColumnDefinition> stream) {
+        // 过滤出包含在黑名单中的列定义，并将其转化为违规情况
         return stream.filter(d -> containsIgnoreCase(d.getColumnReference().getColumn()))
-                .map(d -> SqlCheckUtil.buildViolation(sql, d.getColumnReference(), getType(), new Object[] {
-                        d.getColumnReference().getColumn(), String.join(",", blackList)}))
-                .collect(Collectors.toList());
+            .map(d -> SqlCheckUtil.buildViolation(sql, d.getColumnReference(), getType(), new Object[] {
+                d.getColumnReference().getColumn(), String.join(",", blackList)}))
+            .collect(Collectors.toList());
     }
 
 }
