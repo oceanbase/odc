@@ -136,8 +136,10 @@ public class VersionDiffConfigService {
                 }
 
                 // killSession that is greater than the specified version is currently not supported
-                if (SUPPORT_KILL_SESSION.equalsIgnoreCase(configKey)
-                        || SUPPORT_KILL_QUERY.equalsIgnoreCase(configKey)) {
+                // Only effect OB mode dialect
+                if ((SUPPORT_KILL_SESSION.equalsIgnoreCase(configKey) || SUPPORT_KILL_QUERY.equalsIgnoreCase(configKey))
+                        && (DialectType.OB_MYSQL == connectionSession.getDialectType()
+                                || DialectType.OB_ORACLE == connectionSession.getDialectType())) {
                     Optional<Configuration> nonSupport = systemConfigs.stream().filter(
                             c -> c.getKey().equalsIgnoreCase(MAX_SUPPORT_KILL_OB_VERSION)).findFirst();
                     if (nonSupport.isPresent()) {
