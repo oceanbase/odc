@@ -446,11 +446,6 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         return new ServerAddress(ipAddress, port);
     }
 
-    public static void main(String[] args) {
-        Matcher matcher = SERVER_PATTERN.matcher("11.162.217.57:15945");
-        System.out.println(matcher.matches());
-    }
-
     private CompletableFuture<Void> doKillAllSessions(List<OdcDBSession> list, ConnectionSession connectionSession,
             Executor executor) {
         return CompletableFuture.supplyAsync((Supplier<Void>) () -> {
