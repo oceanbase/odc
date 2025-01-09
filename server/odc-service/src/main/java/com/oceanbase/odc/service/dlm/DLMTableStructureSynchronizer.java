@@ -129,11 +129,10 @@ public class DLMTableStructureSynchronizer {
 
     public static boolean isSupportedSyncTableStructure(DialectType srcType, String srcVersion, DialectType tgtType,
             String tgtVersion) {
-        // only supports MySQL or OBMySQL
-        if (!srcType.isMysql() || !tgtType.isMysql()) {
+        if (srcType != tgtType) {
             return false;
         }
-        if (srcType != tgtType) {
+        if (!srcType.isOceanbase() && !srcType.isMysql()) {
             return false;
         }
         // unsupported MySQL versions below 5.7.0
