@@ -26,6 +26,7 @@ import com.oceanbase.odc.common.dfa.AbstractDfa;
 import com.oceanbase.odc.common.dfa.DfaStateTransfer;
 import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.resource.k8s.model.K8sPod;
+import com.oceanbase.odc.service.resource.k8s.model.K8sResource;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +46,7 @@ public class K8sPodStatusDfa extends AbstractDfa<ResourceState, K8sPod> {
         ResourceState[] fromState = new ResourceState[] {
                 ResourceState.CREATING, ResourceState.AVAILABLE, ResourceState.ERROR_STATE
         };
-        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(fromState)
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(ResourceState.CREATING)
                 .matchesK8sResource(getCreatingPodMatchers()).to(ResourceState.CREATING).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(ResourceState.CREATING)
                 .matchesK8sResource(Collections.singletonList(Objects::isNull)).to(ResourceState.CREATING).build());
@@ -54,12 +55,16 @@ public class K8sPodStatusDfa extends AbstractDfa<ResourceState, K8sPod> {
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(fromState)
                 .matchesK8sResource(getAvailablePodMatchers()).to(ResourceState.AVAILABLE).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>()
-                .from(ResourceState.AVAILABLE, ResourceState.ERROR_STATE)
+                .from(ResourceState.AVAILABLE, ResourceState.ERROR_STATE, ResourceState.UNKNOWN)
                 .matchesK8sResource(Collections.singletonList(Objects::isNull)).to(ResourceState.UNKNOWN).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(ResourceState.DESTROYING)
                 .matchesK8sResource(Collections.singletonList(Objects::isNull)).to(ResourceState.DESTROYED).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(ResourceState.DESTROYING)
                 .matchesK8sResource(Collections.singletonList(Objects::nonNull)).to(ResourceState.DESTROYING).build());
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(ResourceState.UNKNOWN)
+                .matchesK8sResource(getAvailablePodMatchers()).to(ResourceState.AVAILABLE).build());
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(ResourceState.UNKNOWN)
+                .matchesK8sResource(getErrorPodMatchers()).to(ResourceState.ERROR_STATE).build());
         return new K8sPodStatusDfa(transfers);
     }
 
@@ -71,7 +76,7 @@ public class K8sPodStatusDfa extends AbstractDfa<ResourceState, K8sPod> {
         return Collections.singletonList(m1);
     }
 
-    private static List<K8sPodMatcher> getCreatingPodMatchers() {
+    private static List<K8sResourceMatcher<K8sPod>> getCreatingPodMatchers() {
         K8sPodMatcher m1 = new K8sPodMatcher();
         m1.setPodStatusIn(Collections.singleton("Pending"));
         m1.setForAllContainers(true);
@@ -87,7 +92,7 @@ public class K8sPodStatusDfa extends AbstractDfa<ResourceState, K8sPod> {
         m3.setContainerStatusIn(K8sPodContainerStatus.getNonErrorStatuses());
         m3.setMinMatchesCountInHasContainerStatuses(1);
         m3.setHasContainerStatuses(K8sPodContainerStatus.getCreatingStatuses());
-        return Arrays.asList(m1, m2, m3);
+        return Arrays.asList(m1, m2, m3, Objects::isNull);
     }
 
     private static List<K8sPodMatcher> getErrorPodMatchers() {

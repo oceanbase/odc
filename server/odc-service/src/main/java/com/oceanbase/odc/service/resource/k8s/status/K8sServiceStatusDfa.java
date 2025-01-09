@@ -61,9 +61,6 @@ public class K8sServiceStatusDfa extends AbstractDfa<ResourceState, K8sService> 
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sService>()
                 .from(ResourceState.UNKNOWN)
                 .matchesK8sResource(getNonNullMatchers()).to(ResourceState.AVAILABLE).build());
-        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sService>()
-                .from(ResourceState.UNKNOWN)
-                .matchesK8sResource(getNullMatchers()).to(ResourceState.DESTROYED).build());
         return new K8sServiceStatusDfa(transfers);
     }
 
