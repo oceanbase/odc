@@ -48,7 +48,7 @@ public class DLMResultProcessor extends DLMProcessorMatcher implements ResultPro
 
     @Override
     public void process(TaskResult result) {
-        log.info("Start refresh result,result={}", result.getResultJson());
+        log.info("Start refresh result,jobIdentity={}", result.getJobIdentity());
         try {
             List<DlmTableUnit> dlmTableUnits = JsonUtils.fromJson(result.getResultJson(),
                     new TypeReference<List<DlmTableUnit>>() {});

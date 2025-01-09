@@ -398,8 +398,11 @@ public class ConnectionService {
 
     @SkipAuthorize("odc internal usage")
     public List<ConnectionConfig> listByOrganizationId(@NonNull Long organizationId) {
-        return entitiesToModels(repository.findByOrganizationIdOrderByNameAsc(organizationId), organizationId, true,
+        List<ConnectionConfig> connectionConfigs = entitiesToModels(
+                repository.findByOrganizationIdOrderByNameAsc(organizationId), organizationId, true,
                 true);
+        fullFillAttributes(connectionConfigs);
+        return connectionConfigs;
     }
 
     @SkipAuthorize("odc internal usage")
