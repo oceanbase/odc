@@ -48,20 +48,6 @@ public class DataSourceInfoMapper {
         connectionConfig.setPort(dataSourceInfo.getPort());
         connectionConfig.setUsername(dataSourceInfo.getUsername());
         connectionConfig.setType(ConnectType.valueOf(dataSourceInfo.getType().name()));
-        // convert full username to native user name
-        if (dataSourceInfo.getType() == DatasourceType.OB_ORACLE) {
-            String userName = connectionConfig.getUsername();
-            if (userName.contains("#")) {
-                userName = userName.split("#")[0];
-            }
-            if (userName.contains("@")) {
-                userName = userName.split("@")[0];
-            }
-            if (userName.contains("\"")) {
-                userName = userName.replace("\"", "");
-            }
-            connectionConfig.setUsername(userName);
-        }
         return connectionConfig;
     }
 
@@ -89,8 +75,19 @@ public class DataSourceInfoMapper {
                 break;
             }
             case OB_ORACLE:
-                dataSourceInfo.setUsername(OBConsoleDataSourceFactory.getUsername(connectionConfig));
                 dataSourceInfo.setType(DatasourceType.OB_ORACLE);
+                // convert full username to native user name
+                String userName = connectionConfig.getUsername();
+                if (userName.contains("#")) {
+                    userName = userName.split("#")[0];
+                }
+                if (userName.contains("@")) {
+                    userName = userName.split("@")[0];
+                }
+                if (userName.contains("\"")) {
+                    userName = userName.replaceAll("\"", "");
+                }
+                dataSourceInfo.setUsername(userName);
                 break;
             case POSTGRESQL:
                 dataSourceInfo.setUsername(connectionConfig.getUsername());

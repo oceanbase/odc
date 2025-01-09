@@ -27,7 +27,6 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.dlm.DLMJobFactory;
 import com.oceanbase.odc.service.dlm.DLMJobStore;
 import com.oceanbase.odc.service.dlm.DLMTableStructureSynchronizer;
-import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnitParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
@@ -123,9 +122,7 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             return;
         }
         try {
-            DLMTableStructureSynchronizer.sync(
-                    DataSourceInfoMapper.toConnectionConfig(tableUnit.getSourceDatasourceInfo()),
-                    DataSourceInfoMapper.toConnectionConfig(tableUnit.getTargetDatasourceInfo()),
+            DLMTableStructureSynchronizer.sync(tableUnit.getSourceDatasourceInfo(), tableUnit.getTargetDatasourceInfo(),
                     tableUnit.getTableName(), tableUnit.getTargetTableName(),
                     tableUnit.getSyncTableStructure());
         } catch (Exception e) {
