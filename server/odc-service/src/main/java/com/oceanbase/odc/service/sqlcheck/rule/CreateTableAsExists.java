@@ -28,22 +28,19 @@ import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
-import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
 
 import lombok.NonNull;
 
 /**
- * {@link MySQLNoTableCommentExists}
- *
- * @author yh263208
- * @date 2023-06-12 15:23
- * @since ODC_release_4.2.0
+ * @description:
+ * @author: zijia.cj
+ * @date: 2025/1/8 17:34
+ * @since: 4.3.3
  */
-public class MySQLNoTableCommentExists implements SqlCheckRule {
-
+public class CreateTableAsExists implements SqlCheckRule {
     @Override
     public SqlCheckRuleType getType() {
-        return SqlCheckRuleType.NO_TABLE_COMMENT_EXISTS;
+        return SqlCheckRuleType.CREATE_TABLE_AS_EXISTS;
     }
 
     @Override
@@ -52,21 +49,16 @@ public class MySQLNoTableCommentExists implements SqlCheckRule {
             return Collections.emptyList();
         }
         CreateTable createTable = (CreateTable) statement;
-        if (Objects.nonNull(createTable.getLikeTable()) || Objects.nonNull(createTable.getAs())) {
-            return Collections.emptyList();
-        }
-        TableOptions tableOptions = createTable.getTableOptions();
-        if (tableOptions == null || tableOptions.getComment() == null) {
+        if ((Objects.nonNull(createTable.getAs()))) {
             return Collections.singletonList(SqlCheckUtil.buildViolation(
-                    statement.getText(), statement, getType(), new Object[] {createTable.getTableName()}));
+                    statement.getText(), statement, getType(), new Object[] {}));
         }
         return Collections.emptyList();
     }
 
     @Override
     public List<DialectType> getSupportsDialectTypes() {
-        // oracle 场景下无法在建表过程中加表注释
-        return Arrays.asList(DialectType.OB_MYSQL, DialectType.MYSQL, DialectType.ODP_SHARDING_OB_MYSQL);
+        return Arrays.asList(DialectType.OB_MYSQL, DialectType.MYSQL, DialectType.OB_ORACLE,
+                DialectType.ODP_SHARDING_OB_MYSQL, DialectType.ORACLE);
     }
-
 }
