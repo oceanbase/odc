@@ -330,6 +330,10 @@ public class ScheduleService {
                         || targetSchedule.getStatus() == ScheduleStatus.COMPLETED, ErrorCodes.DeleteNotAllowed, null,
                         "Delete schedule is not allowed.");
             }
+            if (req.getOperationType() == OperationType.DELETE) {
+                PreConditions.validRequestState(!hasExecutingTask(targetSchedule.getId()), ErrorCodes.DeleteNotAllowed,
+                        null, "Delete schedule is not allowed, ");
+            }
         }
 
         ScheduleChangeLog scheduleChangelog;
