@@ -1571,7 +1571,7 @@
       value: ODP_SHARDING_OB_MYSQL
 - id: 62
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.create-table-as-exists.name}
-  description: ${com.oceanbase.odc.builtin-resource.regulation.rule.create-table-as-exists.description}
+  description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.sql-check.create-table-as-exists.description}
   type: SQL_CHECK
   builtIn: 1
   labels:
