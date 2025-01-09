@@ -44,7 +44,7 @@ public class K8sServiceStatusDfa extends AbstractDfa<ResourceState, K8sService> 
                 .from(ResourceState.CREATING)
                 .matchesK8sResource(getNullMatchers()).to(ResourceState.CREATING).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sService>()
-                .from(ResourceState.AVAILABLE)
+                .from(ResourceState.AVAILABLE, ResourceState.UNKNOWN)
                 .matchesK8sResource(getNullMatchers()).to(ResourceState.UNKNOWN).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sService>()
                 .from(ResourceState.CREATING)

@@ -26,7 +26,6 @@ import com.oceanbase.odc.common.dfa.AbstractDfa;
 import com.oceanbase.odc.common.dfa.DfaStateTransfer;
 import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.resource.k8s.model.K8sPod;
-import com.oceanbase.odc.service.resource.k8s.model.K8sResource;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -46,7 +45,7 @@ public class K8sPodStatusDfa extends AbstractDfa<ResourceState, K8sPod> {
         ResourceState[] fromState = new ResourceState[] {
                 ResourceState.CREATING, ResourceState.AVAILABLE, ResourceState.ERROR_STATE
         };
-        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(ResourceState.CREATING)
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(fromState)
                 .matchesK8sResource(getCreatingPodMatchers()).to(ResourceState.CREATING).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sPod>().from(ResourceState.CREATING)
                 .matchesK8sResource(Collections.singletonList(Objects::isNull)).to(ResourceState.CREATING).build());

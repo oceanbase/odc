@@ -45,7 +45,7 @@ public class K8sDeploymentStatusDfa extends AbstractDfa<ResourceState, K8sDeploy
         ResourceState[] fromState = new ResourceState[] {
                 ResourceState.CREATING, ResourceState.AVAILABLE, ResourceState.ERROR_STATE
         };
-        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>().from(ResourceState.CREATING)
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>().from(fromState)
                 .matchesK8sResource(getCreatingDeploymentMatchers(current)).to(ResourceState.CREATING).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sDeployment>().from(ResourceState.CREATING)
                 .matchesK8sResource(Collections.singletonList(Objects::isNull)).to(ResourceState.CREATING).build());
