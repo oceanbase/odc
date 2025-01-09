@@ -75,19 +75,8 @@ public class DataSourceInfoMapper {
                 break;
             }
             case OB_ORACLE:
+                dataSourceInfo.setUsername(OBConsoleDataSourceFactory.getUsername(connectionConfig));
                 dataSourceInfo.setType(DatasourceType.OB_ORACLE);
-                // convert full username to native user name
-                String userName = connectionConfig.getUsername();
-                if (userName.contains("#")) {
-                    userName = userName.split("#")[0];
-                }
-                if (userName.contains("@")) {
-                    userName = userName.split("@")[0];
-                }
-                if (userName.contains("\"")) {
-                    userName = userName.replaceAll("\"", "");
-                }
-                dataSourceInfo.setUsername(userName);
                 break;
             case POSTGRESQL:
                 dataSourceInfo.setUsername(connectionConfig.getUsername());
