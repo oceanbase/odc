@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
@@ -50,8 +49,7 @@ public class CreateTableLikeExists implements SqlCheckRule {
             return Collections.emptyList();
         }
         CreateTable createTable = (CreateTable) statement;
-        if ((Objects.nonNull(createTable.getLikeTable())
-                && StringUtils.isNotBlank(createTable.getLikeTable().getRelation()))) {
+        if (Objects.nonNull(createTable.getLikeTable())) {
             return Collections.singletonList(SqlCheckUtil.buildViolation(
                     statement.getText(), statement, getType(), new Object[] {}));
         }
