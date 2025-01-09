@@ -75,7 +75,7 @@ public class K8sPodStatusDfa extends AbstractDfa<ResourceState, K8sPod> {
         return Collections.singletonList(m1);
     }
 
-    private static List<K8sResourceMatcher<K8sPod>> getCreatingPodMatchers() {
+    private static List<K8sPodMatcher> getCreatingPodMatchers() {
         K8sPodMatcher m1 = new K8sPodMatcher();
         m1.setPodStatusIn(Collections.singleton("Pending"));
         m1.setForAllContainers(true);
@@ -91,7 +91,7 @@ public class K8sPodStatusDfa extends AbstractDfa<ResourceState, K8sPod> {
         m3.setContainerStatusIn(K8sPodContainerStatus.getNonErrorStatuses());
         m3.setMinMatchesCountInHasContainerStatuses(1);
         m3.setHasContainerStatuses(K8sPodContainerStatus.getCreatingStatuses());
-        return Arrays.asList(m1, m2, m3, Objects::isNull);
+        return Arrays.asList(m1, m2, m3);
     }
 
     private static List<K8sPodMatcher> getErrorPodMatchers() {
