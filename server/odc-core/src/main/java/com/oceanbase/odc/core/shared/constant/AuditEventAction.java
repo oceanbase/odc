@@ -349,10 +349,6 @@ public enum AuditEventAction implements Translatable {
 
     CREATE_PROJECT,
 
-    ARCHIVE_PROJECT,
-
-    DELETE_PROJECT,
-
     CREATE_ENVIRONMENT,
 
     UPDATE_ENVIRONMENT,

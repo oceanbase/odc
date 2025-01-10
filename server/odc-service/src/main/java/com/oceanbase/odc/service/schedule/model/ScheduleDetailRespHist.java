@@ -23,7 +23,6 @@ import com.oceanbase.odc.common.i18n.Internationalizable;
 import com.oceanbase.odc.core.shared.OrganizationIsolated;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
-import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
@@ -74,7 +73,6 @@ public class ScheduleDetailRespHist implements OrganizationIsolated {
     private Set<InnerUser> candidateApprovers;
     private List<FlowInstanceEntity> jobs;
     private ScheduleTaskParameters jobParameters;
-    private Project project;
 
     @Override
     public String resourceType() {

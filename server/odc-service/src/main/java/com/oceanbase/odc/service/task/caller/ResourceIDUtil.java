@@ -32,8 +32,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class ResourceIDUtil {
-    public static final String REGION_PROP_NAME = "regionName";
-    public static final String GROUP_PROP_NAME = "cloudProvider";
+    public static final String DEFAULT_REGION_PROP_NAME = "region";
+    public static final String DEFAULT_GROUP_PROP_NAME = "cloudProvider";
     public static final String DEFAULT_PROP_VALUE = "local";
 
     /**
@@ -70,8 +70,8 @@ public class ResourceIDUtil {
      */
     public static ResourceID getResourceID(ExecutorIdentifier executorIdentifier,
             Map<String, String> jobProperties) {
-        String region = checkAndGetJobProperties(jobProperties, REGION_PROP_NAME, DEFAULT_PROP_VALUE);
-        String group = checkAndGetJobProperties(jobProperties, GROUP_PROP_NAME, DEFAULT_PROP_VALUE);
+        String region = checkAndGetJobProperties(jobProperties, DEFAULT_REGION_PROP_NAME, DEFAULT_PROP_VALUE);
+        String group = checkAndGetJobProperties(jobProperties, DEFAULT_GROUP_PROP_NAME, DEFAULT_PROP_VALUE);
         return new ResourceID(new ResourceLocation(region, group), DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE,
                 executorIdentifier.getNamespace(),
                 executorIdentifier.getExecutorName());

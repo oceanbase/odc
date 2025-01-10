@@ -63,7 +63,6 @@ import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.model.UserResourceRole;
-import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.test.tool.TestRandom;
 
 /**
@@ -100,9 +99,6 @@ public class ProjectServiceTest extends ServiceTestEnv {
 
     @MockBean
     private ProjectPermissionValidator projectPermissionValidator;
-
-    @MockBean
-    private ScheduleService scheduleService;
 
     @Before
     public void setUp() {
@@ -185,8 +181,6 @@ public class ProjectServiceTest extends ServiceTestEnv {
         doNothing().when(projectPermissionValidator).checkProjectRole(anyCollection(), anyList());
         SetArchivedReq req = new SetArchivedReq();
         req.setArchived(true);
-        Mockito.when(scheduleService.listUnfinishedSchedulesByProjectId(Pageable.unpaged(), saved.getId()))
-                .thenReturn(Page.empty());
         Project archived = projectService.setArchived(saved.getId(), req);
         Assert.assertTrue(archived.getArchived());
     }
@@ -207,8 +201,6 @@ public class ProjectServiceTest extends ServiceTestEnv {
         doNothing().when(projectPermissionValidator).checkProjectRole(anyCollection(), anyList());
         SetArchivedReq req = new SetArchivedReq();
         req.setArchived(true);
-        Mockito.when(scheduleService.listUnfinishedSchedulesByProjectId(Pageable.unpaged(), saved.getId()))
-                .thenReturn(Page.empty());
         projectService.setArchived(saved.getId(), req);
         Assert.assertTrue(projectService.batchDelete(new HashSet<>(Arrays.asList(saved.getId()))));
     }

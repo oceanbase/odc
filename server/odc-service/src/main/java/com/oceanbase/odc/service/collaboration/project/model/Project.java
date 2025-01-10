@@ -129,8 +129,5 @@ public class Project implements SecurityResource, OrganizationIsolated, Serializ
         private String name;
 
         private ResourceRoleName role;
-
-        @JsonProperty(access = Access.READ_ONLY)
-        private boolean derivedFromGlobalProjectRole;
     }
 }

@@ -21,10 +21,7 @@ import static com.oceanbase.odc.service.integration.util.EncryptionUtil.PRIVATE_
 import static com.oceanbase.odc.service.integration.util.EncryptionUtil.PRIVATE_KEY_SUFFIX;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.security.KeyFactory;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -36,11 +33,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.springframework.boot.context.properties.PropertyMapper;
-import org.springframework.core.io.DefaultResourceLoader;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
-import org.springframework.core.io.UrlResource;
-import org.springframework.security.saml2.Saml2Exception;
 import org.springframework.security.saml2.core.Saml2X509Credential;
 import org.springframework.security.saml2.core.Saml2X509Credential.Saml2X509CredentialType;
 import org.springframework.security.saml2.provider.service.registration.RelyingPartyRegistration;
@@ -55,18 +47,14 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
 import com.oceanbase.odc.service.integration.saml.SamlParameter.Signing;
 
-import lombok.Setter;
-
 public final class SamlRegistrationConfigHelper {
-
-    private static final ResourceLoader resourceLoader = new DefaultResourceLoader();
 
     public static RelyingPartyRegistration asRegistration(SSOIntegrationConfig ssoIntegrationConfig) {
         Verify.verify("SAML".equals(ssoIntegrationConfig.getType()), "Invalid type=" + ssoIntegrationConfig.getType());
         SamlParameter parameter = (SamlParameter) ssoIntegrationConfig.getSsoParameter();
         boolean usingMetadata = StringUtils.hasText(parameter.getMetadataUri());
         Builder builder = (usingMetadata)
-                ? fromMetadataLocation(parameter.getMetadataUri())
+                ? RelyingPartyRegistrations.fromMetadataLocation(parameter.getMetadataUri())
                         .registrationId(parameter.getRegistrationId())
                 : RelyingPartyRegistration.withRegistrationId(parameter.getRegistrationId());
         builder.assertionConsumerServiceLocation(parameter.getAcsLocation());
@@ -84,22 +72,6 @@ public final class SamlRegistrationConfigHelper {
         boolean signRequest = registration.getAssertingPartyDetails().getWantAuthnRequestsSigned();
         validateSigningCredentials(parameter, signRequest);
         return registration;
-    }
-
-    public static RelyingPartyRegistration.Builder fromMetadataLocation(String metadataLocation) {
-        Resource resource = resourceLoader.getResource(metadataLocation);
-        if (resource instanceof UrlResource) {
-            UrlResource urlResource = (UrlResource) resource;
-            resource = new TimeoutUrlResourceAdaptor(urlResource.getURL());
-        }
-        try (InputStream source = resource.getInputStream()) {
-            return RelyingPartyRegistrations.fromMetadata(source);
-        } catch (IOException ex) {
-            if (ex.getCause() instanceof Saml2Exception) {
-                throw (Saml2Exception) ex.getCause();
-            }
-            throw new Saml2Exception(ex);
-        }
     }
 
     private static void addCredentialIfNotNull(Collection<Saml2X509Credential> credentials,
@@ -210,23 +182,6 @@ public final class SamlRegistrationConfigHelper {
                     parameter.getSigning() != null && parameter.getSigning().getCertificate() != null
                             && parameter.getSigning().getPrivateKey() != null,
                     "Signing credentials must not be empty when authentication requests require signing.");
-        }
-    }
-
-    @Setter
-    static class TimeoutUrlResourceAdaptor extends UrlResource {
-
-        private int connectTimeout = 2000;
-        private int readTimeout = 2000;
-
-        public TimeoutUrlResourceAdaptor(URL url) {
-            super(url);
-        }
-
-        @Override
-        protected void customizeConnection(HttpURLConnection con) throws IOException {
-            con.setConnectTimeout(connectTimeout);
-            con.setReadTimeout(readTimeout);
         }
     }
 }

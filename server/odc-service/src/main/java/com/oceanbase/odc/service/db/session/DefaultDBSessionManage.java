@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.db.session;
 import static com.oceanbase.odc.core.shared.constant.DialectType.OB_MYSQL;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -38,8 +37,6 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.SetUtils;
@@ -234,8 +231,8 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     private List<JdbcGeneralResult> additionalKillIfNecessary(ConnectionSession connectionSession,
             List<JdbcGeneralResult> results, List<SqlTupleSessionId> sqlTupleSessionIds) {
         Map<String, ServerAddress> sessionId2SvrAddr =
-                getSessionList(connectionSession, s -> s.getSvrIp() != null)
-                        .stream().collect(Collectors.toMap(OdcDBSession::getSessionId,
+                getSessionList(connectionSession, null).stream().collect(
+                        Collectors.toMap(OdcDBSession::getSessionId,
                                 s -> extractServerAddress(MoreObjects.firstNonNull(s.getSvrIp(), ""))));
         Map<String, String> sqlId2SessionId = sqlTupleSessionIds.stream().collect(
                 Collectors.toMap(s -> s.getSqlTuple().getSqlId(), SqlTupleSessionId::getSessionId));
@@ -303,19 +300,38 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
                 || VersionUtils.isLessThan(obVersion, GLOBAL_CLIENT_SESSION_OB_VERSION_NUMBER)) {
             return false;
         }
-        // Check whether the global session is open
-        // If the global session is open, the "time" column will be displayed in the result set after
-        // executing the sql statement of "show processlist"
-        return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                .query("show processlist", rs -> {
-                    try {
-                        int columnIndex = rs.findColumn("time");
-                        return columnIndex > 0;
-                    } catch (SQLException e) {
-                        log.warn("Failed to find the column 'time' in the result set", e);
-                        return false;
-                    }
-                });
+        try {
+            Integer proxyId = getOBProxyConfig(connectionSession, "proxy_id");
+            Integer clientSessionIdVersion = getOBProxyConfig(connectionSession, "client_session_id_version");
+
+            return proxyId != null
+                    && proxyId >= GLOBAL_CLIENT_SESSION_PROXY_ID_MIN
+                    && proxyId <= GLOBAL_CLIENT_SESSION_PROXY_ID_MAX
+                    && clientSessionIdVersion != null
+                    && clientSessionIdVersion == GLOBAL_CLIENT_SESSION_ID_VERSION;
+        } catch (Exception e) {
+            log.warn("Failed to determine if global client session is enabled: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Gets the value of OBProxy's configuration variable If an exception occurs or the version does not
+     * support, return null.
+     * 
+     * @param connectionSession
+     * @param configName
+     * @return
+     */
+    private Integer getOBProxyConfig(ConnectionSession connectionSession, String configName) {
+        try {
+            return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
+                    .query("show proxyconfig like '" + configName + "';",
+                            rs -> rs.next() ? rs.getInt("value") : null);
+        } catch (Exception e) {
+            log.warn("Failed to obtain the value of OBProxy's configuration variable: {}", e.getMessage());
+            return null;
+        }
     }
 
     private boolean isUnknownThreadIdError(Exception e) {
@@ -425,23 +441,22 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
 
     // extract text(query from the dictionary) to server address(ip, port)
     // the text is expected be like 0.0.0.0:8888
-    @NotNull
     private ServerAddress extractServerAddress(String text) {
         String trimmed = StringUtils.trim(text);
         if (StringUtils.isBlank(trimmed)) {
             log.info("unable to extract server address, text is empty");
-            throw new IllegalStateException("Empty server address!");
+            return null;
         }
         Matcher matcher = SERVER_PATTERN.matcher(trimmed);
         if (!matcher.matches()) {
             log.info("unable to extract server address, does not match pattern");
-            throw new IllegalStateException("Invalid server address!");
+            return null;
         }
         String ipAddress = matcher.group("ip");
         String port = matcher.group("port");
         if (StringUtils.isEmpty(ipAddress) || StringUtils.isEmpty(port)) {
             log.info("unable to extract server address, ipAddress={}, port={}", ipAddress, port);
-            throw new IllegalStateException("Invalid server address!");
+            return null;
         }
         return new ServerAddress(ipAddress, port);
     }

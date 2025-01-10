@@ -35,6 +35,8 @@ public interface UserResourceRoleRepository extends OdcJpaRepository<UserResourc
 
     List<UserResourceRoleEntity> findByUserId(Long userId);
 
+    List<UserResourceRoleEntity> findByResourceId(Long resourceId);
+
     @Modifying
     @Transactional
     @Query(value = "delete from iam_user_resource_role t where t.user_id =:userId", nativeQuery = true)

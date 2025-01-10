@@ -36,10 +36,6 @@ public enum TaskStatus {
         return Arrays.asList(PREPARING, RUNNING);
     }
 
-    public boolean isProcessing() {
-        return getProcessingStatus().contains(this);
-    }
-
     public boolean isTerminated() {
         return TaskStatus.CANCELED == this || TaskStatus.FAILED == this || TaskStatus.DONE == this;
     }

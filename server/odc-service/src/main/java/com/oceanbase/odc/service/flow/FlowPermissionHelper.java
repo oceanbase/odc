@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.flow;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -62,11 +62,11 @@ public class FlowPermissionHelper {
                         .hasProjectRole(flowInstance.getProjectId(), ResourceRoleName.all()));
     }
 
-    public Consumer<FlowInstance> withProjectOwnerOrDBACheck() {
+    public Consumer<FlowInstance> withProjectOwnerCheck() {
         return withProjectPermissionCheck(
                 flowInstance -> flowInstance.getProjectId() != null && projectPermissionValidator
                         .hasProjectRole(flowInstance.getProjectId(),
-                                Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA)));
+                                Collections.singletonList(ResourceRoleName.OWNER)));
     }
 
     public Consumer<FlowInstance> withApprovableCheck() {
@@ -77,16 +77,6 @@ public class FlowPermissionHelper {
             PreConditions.validExists(ResourceType.ODC_FLOW_INSTANCE, "id", flowInstance.getId(),
                     () -> flowInstanceIds.contains(flowInstance.getId()));
             horizontalDataPermissionValidator.checkCurrentOrganization(flowInstance);
-        };
-    }
-
-    public Consumer<FlowInstance> withExecutableCheck() {
-        return flowInstance -> {
-            try {
-                withCreatorCheck().accept(flowInstance);
-            } catch (Exception ex) {
-                withProjectOwnerOrDBACheck().accept(flowInstance);
-            }
         };
     }
 

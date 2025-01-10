@@ -76,8 +76,8 @@ public class LocalMockK8sJobClient implements K8sJobClientSelector {
 
         @Override
         public Optional<K8sPodResource> get(String namespace, String arn) throws JobException {
-            K8sPodResource ret = new K8sPodResource(ResourceIDUtil.REGION_PROP_NAME,
-                    ResourceIDUtil.GROUP_PROP_NAME, DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE,
+            K8sPodResource ret = new K8sPodResource(ResourceIDUtil.DEFAULT_REGION_PROP_NAME,
+                    ResourceIDUtil.DEFAULT_GROUP_PROP_NAME, DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE,
                     namespace, arn, ResourceState.AVAILABLE,
                     "127.0.0.1", new Date(System.currentTimeMillis()));
             return Optional.of(ret);

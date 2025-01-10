@@ -233,11 +233,8 @@ public class ResourceManager {
     @SkipAuthorize("odc internal usage")
     public String destroy(@NonNull ResourceID resourceID) throws Exception {
         Optional<ResourceEntity> optional = this.resourceRepository.findByResourceID(resourceID);
-        if (!optional.isPresent()) { // may old version job
+        if (!optional.isPresent()) {
             log.warn("Resource is not found, resourceID={}", resourceID);
-        } else if (optional.get().getStatus() == ResourceState.DESTROYING) {
-            log.warn("Resource is already in destroying state, resourceID={}", resourceID);
-            return null;
         }
         return doDestroy(resourceID);
     }

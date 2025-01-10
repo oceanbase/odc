@@ -28,7 +28,6 @@ import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -48,7 +47,6 @@ import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
-import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 
 import lombok.NonNull;
 
@@ -101,17 +99,15 @@ public class DBPLModifyHelper {
             DBObjectType plType, String tempPlName) throws Exception {
         String plName = editPLReq.getObjectName();
         String editPLSql = editPLReq.getSql();
-        String escapeRegexPlName = StringUtils.escapeRegex(plName)
-                .orElseThrow(() -> new IllegalStateException(String.format("%s name cannot be null", plType)));
-        String tempPLSql = editPLSql.replaceFirst(escapeRegexPlName, tempPlName);
-        MySQLSqlBuilder wrappedSqlBuilder = new MySQLSqlBuilder();
+        String tempPLSql = editPLSql.replaceFirst(plName, tempPlName);
+        StringBuilder wrappedSqlBuilder = new StringBuilder();
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
         SqlCommentProcessor processor = ConnectionSessionUtil.getSqlCommentProcessor(connectionSession);
         String delimiter = processor.getDelimiter();
         wrappedSqlBuilder.append("DELIMITER $$\n")
                 .append(tempPLSql).append(" $$\n")
-                .append("drop ").append(plType).append(" if exists ").identifier(tempPlName).append(" $$\n")
-                .append("drop ").append(plType).append(" if exists ").identifier(plName).append(" $$\n")
+                .append("drop ").append(plType).append(" if exists ").append(tempPlName).append(" $$\n")
+                .append("drop ").append(plType).append(" if exists ").append(plName).append(" $$\n")
                 .append(editPLSql).append(" $$\n")
                 .append("DELIMITER " + delimiter);
         String wrappedSql = wrappedSqlBuilder.toString();
@@ -119,6 +115,7 @@ public class DBPLModifyHelper {
         sqlAsyncExecuteReq.setSql(wrappedSql);
         sqlAsyncExecuteReq.setSplit(true);
         sqlAsyncExecuteReq.setContinueExecutionOnError(false);
+
         Lock editPLLock = obtainEditPLLock(connectionSession, plType);
         if (!editPLLock.tryLock(LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");

@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
@@ -84,10 +83,6 @@ public class DBSchemaSyncTaskManager {
     @Autowired
     private GlobalSearchProperties globalSearchProperties;
 
-    @Value("${odc.integration.bastion.enabled:false}")
-    private boolean bastionEnabled;
-
-
     private final LoadingCache<Long, UserEntity> datasourceId2UserEntity = CacheBuilder.newBuilder().maximumSize(100)
             .expireAfterWrite(10, TimeUnit.MINUTES)
             .build(new CacheLoader<Long, UserEntity>() {
@@ -124,8 +119,7 @@ public class DBSchemaSyncTaskManager {
         }
         List<Database> databases = databaseService.listExistDatabasesByConnectionId(dataSource.getId());
         databases.removeIf(e -> (syncProperties.isBlockExclusionsWhenSyncDbSchemas()
-                && syncProperties.getExcludeSchemas(dataSource.getDialectType()).contains(e.getName())
-                && !bastionEnabled)
+                && syncProperties.getExcludeSchemas(dataSource.getDialectType()).contains(e.getName()))
                 || e.getObjectSyncStatus() == DBObjectSyncStatus.PENDING);
         submitTaskByDatabases(databases);
     }

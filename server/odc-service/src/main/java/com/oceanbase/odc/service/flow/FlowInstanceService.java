@@ -727,7 +727,7 @@ public class FlowInstanceService {
     }
 
     public <T> T mapFlowInstanceWithWritePermission(@NonNull Long flowInstanceId, Function<FlowInstance, T> mapper) {
-        return mapFlowInstance(flowInstanceId, mapper, flowPermissionHelper.withExecutableCheck());
+        return mapFlowInstance(flowInstanceId, mapper, flowPermissionHelper.withProjectOwnerCheck());
     }
 
     public <T> T mapFlowInstanceWithApprovalPermission(@NonNull Long flowInstanceId, Function<FlowInstance, T> mapper) {
@@ -769,7 +769,7 @@ public class FlowInstanceService {
             } else if (CollectionUtils.isNotEmpty(parameters.getExportDbObjects())) {
                 ConnectionConfig config = connectionService.getBasicWithoutPermissionCheck(req.getConnectionId());
                 parameters.getExportDbObjects().forEach(item -> {
-                    if (item.getDbObjectType() == ObjectType.TABLE || item.getDbObjectType() == ObjectType.VIEW) {
+                    if (item.getDbObjectType() == ObjectType.TABLE) {
                         resource2Types.put(
                                 DBResource.from(config, req.getDatabaseName(), item.getObjectName(),
                                         ResourceType.ODC_TABLE),
@@ -1072,29 +1072,24 @@ public class FlowInstanceService {
     private void completeApprovalInstance(@NonNull Long flowInstanceId,
             @NonNull Consumer<FlowApprovalInstance> consumer, Boolean skipAuth) {
         List<FlowApprovalInstance> instances =
-                skipAuth ? mapFlowInstanceWithoutPermissionCheck(flowInstanceId,
-                        generateApprovalMapper())
-                        : mapFlowInstanceWithApprovalPermission(flowInstanceId, generateApprovalMapper());
+                mapFlowInstanceWithApprovalPermission(flowInstanceId,
+                        flowInstance -> flowInstance.filterInstanceNode(instance -> {
+                            if (instance.getNodeType() != FlowNodeType.APPROVAL_TASK) {
+                                return false;
+                            }
+                            return instance.getStatus() == FlowNodeStatus.EXECUTING
+                                    || instance.getStatus() == FlowNodeStatus.WAIT_FOR_CONFIRM;
+                        }).stream().map(instance -> {
+                            Verify.verify(instance instanceof FlowApprovalInstance,
+                                    "FlowApprovalInstance's type is illegal");
+                            return (FlowApprovalInstance) instance;
+                        }).collect(Collectors.toList()));
         PreConditions.validExists(ResourceType.ODC_FLOW_APPROVAL_INSTANCE,
                 "flowInstanceId", flowInstanceId, () -> instances.size() > 0);
         Verify.singleton(instances, "ApprovalInstance");
         FlowApprovalInstance target = instances.get(0);
         Verify.verify(target.isPresentOnThisMachine(), "Approval instance is not on this machine");
         consumer.accept(target);
-    }
-
-    private Function<FlowInstance, List<FlowApprovalInstance>> generateApprovalMapper() {
-        return flowInstance -> flowInstance.filterInstanceNode(instance -> {
-            if (instance.getNodeType() != FlowNodeType.APPROVAL_TASK) {
-                return false;
-            }
-            return instance.getStatus() == FlowNodeStatus.EXECUTING
-                    || instance.getStatus() == FlowNodeStatus.WAIT_FOR_CONFIRM;
-        }).stream().map(instance -> {
-            Verify.verify(instance instanceof FlowApprovalInstance,
-                    "FlowApprovalInstance's type is illegal");
-            return (FlowApprovalInstance) instance;
-        }).collect(Collectors.toList());
     }
 
     private void initVariables(Map<String, Object> variables, TaskEntity taskEntity, TaskEntity preCheckTaskEntity,

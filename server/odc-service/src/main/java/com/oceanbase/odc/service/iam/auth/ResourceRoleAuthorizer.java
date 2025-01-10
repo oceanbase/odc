@@ -23,8 +23,8 @@ import java.util.stream.Collectors;
 
 import com.oceanbase.odc.core.authority.permission.Permission;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
+import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
 import com.oceanbase.odc.service.iam.ResourceRoleBasedPermissionExtractor;
-import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.model.User;
 
 /**
@@ -33,12 +33,12 @@ import com.oceanbase.odc.service.iam.model.User;
  * @Description: []
  */
 public class ResourceRoleAuthorizer extends BaseAuthorizer {
-    protected final ResourceRoleService resourceRoleService;
+    protected final UserResourceRoleRepository repository;
     protected final ResourceRoleBasedPermissionExtractor permissionMapper;
 
-    public ResourceRoleAuthorizer(ResourceRoleService resourceRoleService,
+    public ResourceRoleAuthorizer(UserResourceRoleRepository repository,
             ResourceRoleBasedPermissionExtractor permissionMapper) {
-        this.resourceRoleService = resourceRoleService;
+        this.repository = repository;
         this.permissionMapper = permissionMapper;
     }
 
@@ -52,8 +52,8 @@ public class ResourceRoleAuthorizer extends BaseAuthorizer {
          * find all user-related resource role, and implies with permissions respectively
          */
         List<UserResourceRoleEntity> resourceRoles =
-                resourceRoleService.listByUserId(odcUser.getId()).stream()
-                        .filter(Objects::nonNull).map(ResourceRoleService::toEntity).collect(Collectors.toList());
+                repository.findByUserId(odcUser.getId()).stream()
+                        .filter(Objects::nonNull).collect(Collectors.toList());
         if (resourceRoles.isEmpty()) {
             return Collections.emptyList();
         }

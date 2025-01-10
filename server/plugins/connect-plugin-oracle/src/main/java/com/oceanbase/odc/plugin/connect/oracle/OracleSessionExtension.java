@@ -52,7 +52,7 @@ public class OracleSessionExtension extends OBOracleSessionExtension {
 
     @Override
     public String getKillSessionSql(@NonNull String connectionId) {
-        return "ALTER SYSTEM KILL SESSION '" + connectionId + "'" + " IMMEDIATE";
+        return "ALTER SYSTEM KILL SESSION '" + connectionId + "'";
     }
 
     @Override

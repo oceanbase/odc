@@ -134,7 +134,6 @@ public class ScheduleResponseMapperFactory {
         scheduleDetailResp.setCreateTime(schedule.getCreateTime());
         scheduleDetailResp.setUpdateTime(schedule.getUpdateTime());
         scheduleDetailResp.setProjectId(schedule.getProjectId());
-        scheduleDetailResp.setProject(projectService.detail(schedule.getProjectId()));
         scheduleDetailResp.setDescription(schedule.getDescription());
 
         scheduleDetailResp.setNextFireTimes(
@@ -263,7 +262,6 @@ public class ScheduleResponseMapperFactory {
         resp.setStatus(schedule.getStatus());
 
         resp.setProjectId(schedule.getProjectId());
-        resp.setProject(projectService.detail(schedule.getProjectId()));
         resp.setJobParameters(schedule.getParameters());
         resp.setTriggerConfig(schedule.getTriggerConfig());
         resp.setNextFireTimes(QuartzCronExpressionUtils.getNextFiveFireTimes(schedule.getTriggerConfig()));

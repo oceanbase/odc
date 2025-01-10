@@ -174,7 +174,7 @@ public class FlowTaskInstanceService {
     public FlowInstanceDetailResp executeTask(@NotNull Long id) throws IOException {
         List<FlowTaskInstance> instances =
                 filterTaskInstance(id, instance -> instance.getStatus() == FlowNodeStatus.PENDING,
-                        flowPermissionHelper.withExecutableCheck());
+                        flowPermissionHelper.withCreatorCheck());
         PreConditions.validExists(ResourceType.ODC_FLOW_TASK_INSTANCE, "flowInstanceId", id,
                 () -> instances.size() > 0);
         Verify.singleton(instances, "FlowTaskInstance");

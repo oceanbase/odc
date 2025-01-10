@@ -149,7 +149,7 @@ public class DBSchemaExtractor {
                 visitor.visit(ast.getRoot());
                 identities = visitor.getIdentities();
             } else {
-                OBMySQLRelationFactorVisitor visitor = new OBMySQLRelationFactorVisitor(defaultSchema);
+                OBMySQLRelationFactorVisitor visitor = new OBMySQLRelationFactorVisitor();
                 visitor.visit(ast.getRoot());
                 identities = visitor.getIdentities();
             }
@@ -167,7 +167,7 @@ public class DBSchemaExtractor {
                 visitor.visit(ast.getRoot());
                 identities = visitor.getIdentities();
             } else {
-                OBOracleRelationFactorVisitor visitor = new OBOracleRelationFactorVisitor(defaultSchema);
+                OBOracleRelationFactorVisitor visitor = new OBOracleRelationFactorVisitor();
                 visitor.visit(ast.getRoot());
                 identities = visitor.getIdentities();
             }
@@ -200,18 +200,15 @@ public class DBSchemaExtractor {
 
         private final Set<DBSchemaIdentity> identities = new HashSet<>();
 
-        private final String defaultSchema;
-
-        private OBMySQLRelationFactorVisitor(String defaultSchema) {
-            this.defaultSchema = defaultSchema;
-        }
-
         @Override
         public RelationFactor visitDrop_function_stmt(
                 com.oceanbase.tools.sqlparser.obmysql.OBParser.Drop_function_stmtContext ctx) {
             RelationFactor relationFactor = MySQLFromReferenceFactory.getRelationFactor(
                     ctx.relation_factor().normal_relation_factor());
-            return extractIdentityExceptTableAndView(relationFactor);
+            if (relationFactor.getSchema() != null) {
+                identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
+            }
+            return null;
         }
 
         @Override
@@ -219,7 +216,10 @@ public class DBSchemaExtractor {
                 com.oceanbase.tools.sqlparser.obmysql.OBParser.Drop_procedure_stmtContext ctx) {
             RelationFactor relationFactor = MySQLFromReferenceFactory.getRelationFactor(
                     ctx.relation_factor().normal_relation_factor());
-            return extractIdentityExceptTableAndView(relationFactor);
+            if (relationFactor.getSchema() != null) {
+                identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
+            }
+            return null;
         }
 
         @Override
@@ -227,7 +227,10 @@ public class DBSchemaExtractor {
                 com.oceanbase.tools.sqlparser.obmysql.OBParser.Drop_trigger_stmtContext ctx) {
             RelationFactor relationFactor = MySQLFromReferenceFactory.getRelationFactor(
                     ctx.relation_factor().normal_relation_factor());
-            return extractIdentityExceptTableAndView(relationFactor);
+            if (relationFactor.getSchema() != null) {
+                identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
+            }
+            return null;
         }
 
         @Override
@@ -319,15 +322,6 @@ public class DBSchemaExtractor {
                 identities.add(new DBSchemaIdentity(rf.getSchema(), rf.getRelation()));
             }
         }
-
-        private RelationFactor extractIdentityExceptTableAndView(RelationFactor relationFactor) {
-            if (StringUtils.isNotBlank(relationFactor.getSchema())) {
-                identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
-            } else if (StringUtils.isNotBlank(defaultSchema)) {
-                identities.add(new DBSchemaIdentity(defaultSchema, null));
-            }
-            return null;
-        }
     }
 
 
@@ -392,58 +386,65 @@ public class DBSchemaExtractor {
 
         private final Set<DBSchemaIdentity> identities = new HashSet<>();
 
-        private final String defaultSchema;
-
-        private OBOracleRelationFactorVisitor() {
-            this.defaultSchema = null;
-        }
-
-        private OBOracleRelationFactorVisitor(String defaultSchema) {
-            this.defaultSchema = defaultSchema;
-        }
-
         @Override
         public RelationFactor visitDrop_package_stmt(OBParser.Drop_package_stmtContext ctx) {
             RelationFactor relationFactor = OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor());
-            return extractIdentityExceptTableAndView(relationFactor);
+            if (relationFactor.getSchema() != null) {
+                identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
+            }
+            return null;
         }
 
         @Override
         public RelationFactor visitDrop_procedure_stmt(OBParser.Drop_procedure_stmtContext ctx) {
             RelationFactor relationFactor = OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor());
-            return extractIdentityExceptTableAndView(relationFactor);
+            if (relationFactor.getSchema() != null) {
+                identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
+            }
+            return null;
         }
 
         @Override
         public RelationFactor visitDrop_function_stmt(OBParser.Drop_function_stmtContext ctx) {
             RelationFactor relationFactor = OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor());
-            return extractIdentityExceptTableAndView(relationFactor);
+            if (relationFactor.getSchema() != null) {
+                identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
+            }
+            return null;
         }
 
         @Override
         public RelationFactor visitDrop_trigger_stmt(OBParser.Drop_trigger_stmtContext ctx) {
             RelationFactor relationFactor = OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor());
-            return extractIdentityExceptTableAndView(relationFactor);
+            if (relationFactor.getSchema() != null) {
+                identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
+            }
+            return null;
         }
 
         @Override
         public RelationFactor visitDrop_type_stmt(OBParser.Drop_type_stmtContext ctx) {
             RelationFactor relationFactor = OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor());
-            return extractIdentityExceptTableAndView(relationFactor);
+            if (relationFactor.getSchema() != null) {
+                identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
+            }
+            return null;
         }
 
         @Override
         public RelationFactor visitDrop_sequence_stmt(OBParser.Drop_sequence_stmtContext ctx) {
             RelationFactor relationFactor = OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor());
-            return extractIdentityExceptTableAndView(relationFactor);
+            if (relationFactor.getSchema() != null) {
+                identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
+            }
+            return null;
         }
 
         @Override
         public RelationFactor visitDrop_synonym_stmt(OBParser.Drop_synonym_stmtContext ctx) {
-            if (Objects.nonNull(ctx.database_factor()) && StringUtils.isNotBlank(ctx.database_factor().getText())) {
-                identities.add(new DBSchemaIdentity(ctx.database_factor().getText(), null));
-            } else if (StringUtils.isNotBlank(defaultSchema)) {
-                identities.add(new DBSchemaIdentity(defaultSchema, null));
+            String databaseName = ctx.database_factor().getText();
+            if (databaseName != null) {
+                identities.add(new DBSchemaIdentity(databaseName, null));
             }
             return null;
         }
@@ -558,14 +559,6 @@ public class DBSchemaExtractor {
             }
         }
 
-        private RelationFactor extractIdentityExceptTableAndView(RelationFactor relationFactor) {
-            if (StringUtils.isNotBlank(relationFactor.getSchema())) {
-                identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
-            } else if (StringUtils.isNotBlank(defaultSchema)) {
-                identities.add(new DBSchemaIdentity(defaultSchema, null));
-            }
-            return null;
-        }
     }
 
 

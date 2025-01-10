@@ -21,7 +21,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -79,16 +78,16 @@ public class LogicalDatabaseChangeTask extends TaskBase<Map<String, ExecutionRes
     public LogicalDatabaseChangeTask() {}
 
     @Override
-    protected void doInit(JobContext context) {
+    protected void doInit(JobContext context) throws Exception {
         Map<String, String> jobParameters = context.getJobParameters();
         taskParameters = JsonUtils.fromJson(jobParameters.get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
                 PublishLogicalDatabaseChangeReq.class);
         sqlRewriter = new RelationFactorRewriter();
         executionGroups = new ArrayList<>();
-        initExecutorContext();
     }
 
-    private void initExecutorContext() {
+    @Override
+    public boolean start() throws Exception {
         try {
             DialectType dialectType = taskParameters.getLogicalDatabaseResp().getDialectType();
             DetailLogicalDatabaseResp detailLogicalDatabaseResp = taskParameters.getLogicalDatabaseResp();
@@ -181,13 +180,6 @@ public class LogicalDatabaseChangeTask extends TaskBase<Map<String, ExecutionRes
         } catch (Exception ex) {
             log.warn("start logical database change task failed, ", ex);
             context.getExceptionListener().onException(ex);
-        }
-    }
-
-    @Override
-    public boolean start() throws Exception {
-        if (Objects.isNull(this.executionGroupContext)) {
-            log.warn("logical database change task is not initialized");
             return false;
         }
         while (!Thread.currentThread().isInterrupted()) {
