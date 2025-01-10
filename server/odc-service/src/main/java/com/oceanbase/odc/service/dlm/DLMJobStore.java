@@ -105,6 +105,12 @@ public class DLMJobStore implements IJobStore {
                 .forEach((k, v) -> dlmTableUnit.getStatistic().getPartName2MaxKey().put(k, v.getSqlString()));
         taskGenerator.getPartName2MinKey()
                 .forEach((k, v) -> dlmTableUnit.getStatistic().getPartName2MinKey().put(k, v.getSqlString()));
+        if (taskGenerator.getGlobalMaxKey() != null) {
+            dlmTableUnit.getStatistic().setGlobalMaxKey(taskGenerator.getGlobalMaxKey().getSqlString());
+        }
+        if (taskGenerator.getGlobalMinKey() != null) {
+            dlmTableUnit.getStatistic().setGlobalMinKey(taskGenerator.getGlobalMinKey().getSqlString());
+        }
         if (enableBreakpointRecovery) {
             StringBuilder sb = new StringBuilder();
             sb.append("INSERT INTO dlm_task_generator ");
