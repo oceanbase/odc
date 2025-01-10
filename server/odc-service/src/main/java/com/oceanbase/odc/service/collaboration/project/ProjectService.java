@@ -562,6 +562,7 @@ public class ProjectService {
         projectPermissionValidator.checkProjectRole(project.getId(), roleNames);
     }
 
+    @SkipAuthorize("inside method permission check")
     public void checkUnfinishedTickets(@NonNull Long projectId) {
         if (flowInstanceService.listUnfinishedFlowInstances(Pageable.unpaged(), projectId).hasContent()) {
             throw new BadRequestException(
