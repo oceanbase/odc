@@ -47,7 +47,7 @@ public class K8sConfigMapStatusDfa extends AbstractDfa<ResourceState, K8sConfigM
                 .from(ResourceState.AVAILABLE)
                 .matchesK8sResource(getNullMatchers()).to(ResourceState.UNKNOWN).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sConfigMap>()
-                .from(ResourceState.CREATING)
+                .from(ResourceState.CREATING, ResourceState.UNKNOWN)
                 .matchesK8sResource(getNonNullMatchers()).to(ResourceState.AVAILABLE).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sConfigMap>()
                 .from(ResourceState.AVAILABLE)
