@@ -121,6 +121,7 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
         SPECIAL_TYPE_NAMES.add("bigint");
         SPECIAL_TYPE_NAMES.add("float");
         SPECIAL_TYPE_NAMES.add("double");
+        SPECIAL_TYPE_NAMES.add("year");
     }
 
     public MySQLNoLessThan5700SchemaAccessor(@NonNull JdbcOperations jdbcOperations) {
@@ -605,6 +606,11 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
 
     protected void fillPrecisionAndScale(DBTableColumn column) {
         String typeName = column.getTypeName();
+
+        // 在mysql较高版本中，ddl和表结构对比中，year的长度会被强制置为4。如果columntype=yaer(2)时，这里的year的长度会是2
+        if ("year".equalsIgnoreCase(typeName)) {
+            column.setPrecision(4L);
+        }
         if (SPECIAL_TYPE_NAMES.contains(Objects.isNull(typeName) ? null : typeName.toLowerCase())) {
             String precisionAndScale = DBSchemaAccessorUtil.parsePrecisionAndScale(column.getFullTypeName());
             if (StringUtils.isBlank(precisionAndScale)) {
