@@ -718,9 +718,8 @@ public class ScheduleService {
         if (status == ScheduleStatus.PAUSE) {
             return;
         }
-        int runningTask = scheduleTaskService.listTaskByJobNameAndStatus(scheduleId.toString(),
-                TaskStatus.getProcessingStatus()).size();
-        if (runningTask > 0) {
+        Optional<ScheduleTask> latestTask = getLatestTask(scheduleId);
+        if (latestTask.isPresent() && latestTask.get().getStatus().isProcessing()) {
             status = ScheduleStatus.ENABLED;
         } else {
             try {
