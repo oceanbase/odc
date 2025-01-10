@@ -28,12 +28,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.oceanbase.odc.core.flow.util.EmptyExecutionListener;
 import com.oceanbase.odc.metadb.flow.FlowInstanceApprovalViewEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceApprovalViewRepository;
-import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
-import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
+import com.oceanbase.odc.service.iam.ResourceRoleService;
+import com.oceanbase.odc.service.iam.model.UserResourceRole;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
@@ -59,9 +59,9 @@ public class ApprovalStatusNotifyListener extends EmptyExecutionListener {
     @Autowired
     private FlowableAdaptor flowableAdaptor;
     @Autowired
-    FlowInstanceApprovalViewRepository flowInstanceApprovalViewRepository;
+    private FlowInstanceApprovalViewRepository flowInstanceApprovalViewRepository;
     @Autowired
-    UserResourceRoleRepository userResourceRoleRepository;
+    private ResourceRoleService resourceRoleService;
 
     @Override
     protected void onExecutiuonStart(DelegateExecution execution) {
@@ -79,12 +79,12 @@ public class ApprovalStatusNotifyListener extends EmptyExecutionListener {
             List<FlowInstanceApprovalViewEntity> approvals =
                     flowInstanceApprovalViewRepository.findByIdIn(Collections.singletonList(target.getId()));
             if (CollectionUtils.isNotEmpty(approvals)) {
-                List<UserResourceRoleEntity> userResourceRoles =
-                        userResourceRoleRepository.findByResourceIdsAndResourceRoleIdsIn(
+                List<UserResourceRole> userResourceRoles =
+                        resourceRoleService.listByResourceIdentifierIn(
                                 approvals.stream().map(FlowInstanceApprovalViewEntity::getResourceRoleIdentifier)
                                         .collect(Collectors.toSet()));
                 approverIds = CollectionUtils.isEmpty(userResourceRoles) ? null
-                        : userResourceRoles.stream().map(UserResourceRoleEntity::getUserId).collect(Collectors.toSet());
+                        : userResourceRoles.stream().map(UserResourceRole::getUserId).collect(Collectors.toSet());
             }
             Event event = eventBuilder.ofPendingApprovalTask(taskEntity, approverIds);
             broker.enqueueEvent(event);

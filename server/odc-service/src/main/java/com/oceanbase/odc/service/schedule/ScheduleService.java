@@ -322,19 +322,18 @@ public class ScheduleService {
             targetSchedule = nullSafeGetByIdWithCheckPermission(req.getScheduleId(), true);
             if (req.getOperationType() == OperationType.UPDATE) {
                 validateTriggerConfig(req.getUpdateScheduleReq().getTriggerConfig());
+                PreConditions.validRequestState(targetSchedule.getStatus() == ScheduleStatus.PAUSE,
+                        ErrorCodes.UpdateNotAllowed, null, "Update schedule is not allowed.");
             }
-            if (req.getOperationType() == OperationType.UPDATE
-                    && (targetSchedule.getStatus() != ScheduleStatus.PAUSE
-                            || hasExecutingTask(targetSchedule.getId()))) {
-                log.warn("Update schedule is not allowed,status={}", targetSchedule.getStatus());
-                throw new IllegalStateException("Update schedule is not allowed.");
+            if (req.getOperationType() == OperationType.PAUSE) {
+                PreConditions.validRequestState(!hasExecutingTask(targetSchedule.getId()), ErrorCodes.PauseNotAllowed,
+                        null, "Pause schedule is not allowed.");
             }
-            if (req.getOperationType() == OperationType.DELETE
-                    && targetSchedule.getStatus() != ScheduleStatus.TERMINATED
-                    && targetSchedule.getStatus() != ScheduleStatus.COMPLETED) {
-                log.warn("Delete schedule is not allowed,status={}", targetSchedule.getStatus());
-                throw new IllegalStateException(
-                        "Delete schedule is not allowed, only can delete terminated schedule or finished schedule.");
+            if (req.getOperationType() == OperationType.DELETE) {
+                PreConditions.validRequestState(targetSchedule.getStatus() == ScheduleStatus.TERMINATED
+                        || targetSchedule.getStatus() == ScheduleStatus.COMPLETED
+                        || !hasExecutingTask(targetSchedule.getId()), ErrorCodes.DeleteNotAllowed, null,
+                        "Delete schedule is not allowed.");
             }
         }
 
@@ -394,7 +393,13 @@ public class ScheduleService {
                             ScheduleChangeStatus.APPROVING));
             log.info("Create change log success,changLog={}", changeLog);
             req.setScheduleChangeLogId(changeLog.getId());
-            Long approvalFlowInstanceId = approvalFlowService.create(req);
+            Long approvalFlowInstanceId;
+            if (organizationService.get(targetSchedule.getId()).isPresent()
+                    && organizationService.get(targetSchedule.getId()).get().getType() == OrganizationType.INDIVIDUAL) {
+                approvalFlowInstanceId = null;
+            } else {
+                approvalFlowInstanceId = approvalFlowService.create(req);
+            }
             if (approvalFlowInstanceId != null) {
                 changeLog.setFlowInstanceId(approvalFlowInstanceId);
                 scheduleChangeLogService.updateFlowInstanceIdById(changeLog.getId(), approvalFlowInstanceId);
@@ -715,9 +720,8 @@ public class ScheduleService {
         if (status == ScheduleStatus.PAUSE) {
             return;
         }
-        int runningTask = scheduleTaskService.listTaskByJobNameAndStatus(scheduleId.toString(),
-                TaskStatus.getProcessingStatus()).size();
-        if (runningTask > 0) {
+        Optional<ScheduleTask> latestTask = getLatestTask(scheduleId);
+        if (latestTask.isPresent() && latestTask.get().getStatus().isProcessing()) {
             status = ScheduleStatus.ENABLED;
         } else {
             try {
@@ -824,7 +828,7 @@ public class ScheduleService {
 
     public Page<ScheduleOverviewHist> listUnfinishedSchedulesByProjectId(@NonNull Pageable pageable,
             @NonNull Long projectId) {
-        return list(pageable, QueryScheduleParams.builder().projectId(projectId)
+        return list(pageable, QueryScheduleParams.builder().projectIds(Collections.singleton(projectId))
                 .statuses(ScheduleStatus.listUnfinishedStatus()).build());
     }
 

@@ -18,9 +18,11 @@ package com.oceanbase.odc.service.iam;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -61,5 +63,14 @@ public class GlobalResourceRoleService {
         }
         return userRoleRepository.findByOrganizationIdAndNameIn(
                 organizationId, Arrays.asList(GlobalResourceRoleUtil.getGlobalRoleName(resourceRoleName)));
+    }
+
+    public List<UserGlobalResourceRole> findGlobalResourceRoleUsersByOrganizationIdAndRoleIn(Long organizationId,
+            Set<ResourceRoleName> resourceRoleNames) {
+        if (CollectionUtils.isEmpty(resourceRoleNames)) {
+            return Collections.emptyList();
+        }
+        return userRoleRepository.findByOrganizationIdAndNameIn(organizationId,
+                GlobalResourceRoleUtil.getGlobalRoleName(resourceRoleNames));
     }
 }

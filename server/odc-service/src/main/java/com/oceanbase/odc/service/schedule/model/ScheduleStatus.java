@@ -43,6 +43,6 @@ public enum ScheduleStatus {
     DELETED;
 
     public static List<ScheduleStatus> listUnfinishedStatus() {
-        return Collections.unmodifiableList(Arrays.asList(CREATING, APPROVING, PAUSE, ENABLED));
+        return Collections.unmodifiableList(Arrays.asList(CREATING, APPROVING, ENABLED));
     }
 }

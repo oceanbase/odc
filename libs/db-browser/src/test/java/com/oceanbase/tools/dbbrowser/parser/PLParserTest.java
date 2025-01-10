@@ -58,6 +58,172 @@ public class PLParserTest {
     }
 
     @Test
+    public void testParseMysqlProcedureContainsDefiner() {
+        String pl = "create DEFINER = `root`@`%` PROCEDURE testProduce (out p1 int) \n" + "BEGIN \n"
+                + "DECLARE Eno INT DEFAULT 10000;\n"
+                + "DECLARE En VARCHAR(20);\n" + "DECLARE J VARCHAR(20);\n" + "DECLARE M INT DEFAULT 80000;\n"
+                + "DECLARE H YEAR;\n" + "DECLARE Dno INT;\n" + "DECLARE i INT DEFAULT 1; \n" + "RETURN;\n" + "END;";
+        ParseMysqlPLResult result = PLParser.parseObMysql(pl);
+        Assert.assertEquals(7, result.getVaribaleList().size());
+        Assert.assertEquals("testProduce", result.getPlName());
+        Assert.assertEquals("PROCEDURE", result.getPlType());
+        Assert.assertEquals(1, result.getParamList().size());
+    }
+
+    @Test
+    public void testParseMysqlProcedureContainsDefinerWithoutParams() {
+        String pl = "CREATE DEFINER = `root`@`%` PROCEDURE simple_procedure()\n" +
+                "BEGIN\n" +
+                "    SELECT 'Hello, World!';\n" +
+                "END";
+        ParseMysqlPLResult result = PLParser.parseObMysql(pl);
+        Assert.assertEquals(0, result.getVaribaleList().size());
+        Assert.assertEquals("simple_procedure", result.getPlName());
+        Assert.assertEquals("PROCEDURE", result.getPlType());
+        Assert.assertEquals(0, result.getParamList().size());
+    }
+
+    @Test
+    public void testParseMysqlProcedureContainsDefinerWithInput() {
+        String pl = "CREATE DEFINER = `root`@`%` PROCEDURE greet_user(IN user_name VARCHAR(50))\n" +
+                "BEGIN\n" +
+                "    SELECT CONCAT('Hello, ', user_name, '!');\n" +
+                "END";
+        ParseMysqlPLResult result = PLParser.parseObMysql(pl);
+        Assert.assertEquals(0, result.getVaribaleList().size());
+        Assert.assertEquals("greet_user", result.getPlName());
+        Assert.assertEquals("PROCEDURE", result.getPlType());
+        Assert.assertEquals(1, result.getParamList().size());
+    }
+
+    @Test
+    public void testParseMysqlProcedureContainsDefinerWithInputAndOutput() {
+        String pl = "CREATE DEFINER = `root`@`%` PROCEDURE get_user_name(IN user_id INT, OUT user_name VARCHAR(50))\n" +
+                "BEGIN\n" +
+                "    SELECT name INTO user_name FROM users WHERE id = user_id;\n" +
+                "END";
+        ParseMysqlPLResult result = PLParser.parseObMysql(pl);
+        Assert.assertEquals(0, result.getVaribaleList().size());
+        Assert.assertEquals("get_user_name", result.getPlName());
+        Assert.assertEquals("PROCEDURE", result.getPlType());
+        Assert.assertEquals(2, result.getParamList().size());
+    }
+
+    @Test
+    public void testParseMysqlProcedureContainsDefinerAndCondition() {
+        String pl =
+                "CREATE DEFINER = `root`@`%` PROCEDURE check_user_status(IN user_id INT, OUT user_status VARCHAR(20))\n"
+                        +
+                        "BEGIN\n" +
+                        "    DECLARE user_count INT;\n" +
+                        "\n" +
+                        "    SELECT COUNT(*) INTO user_count FROM users WHERE id = user_id;\n" +
+                        "\n" +
+                        "    IF user_count > 0 THEN\n" +
+                        "        SELECT status INTO user_status FROM users WHERE id = user_id;\n" +
+                        "    ELSE\n" +
+                        "        SET user_status = 'User not found';\n" +
+                        "    END IF;\n" +
+                        "END";
+        ParseMysqlPLResult result = PLParser.parseObMysql(pl);
+        Assert.assertEquals(1, result.getVaribaleList().size());
+        Assert.assertEquals("check_user_status", result.getPlName());
+        Assert.assertEquals("PROCEDURE", result.getPlType());
+        Assert.assertEquals(2, result.getParamList().size());
+    }
+
+    @Test
+    public void testParseMysqlProcedureContainsDefinerAndFunction() {
+        String pl = "CREATE DEFINER = `root`@`%` PROCEDURE calculate_user_average_age(OUT average_age FLOAT)\n" +
+                "BEGIN\n" +
+                "    SELECT AVG(age) INTO average_age FROM users;\n" +
+                "END";
+        ParseMysqlPLResult result = PLParser.parseObMysql(pl);
+        Assert.assertEquals(0, result.getVaribaleList().size());
+        Assert.assertEquals("calculate_user_average_age", result.getPlName());
+        Assert.assertEquals("PROCEDURE", result.getPlType());
+        Assert.assertEquals(1, result.getParamList().size());
+    }
+
+    @Test
+    public void testParseMysqlProcedureContainsDefinerAndCursor() {
+        String pl = "CREATE DEFINER = `root`@`%` PROCEDURE list_all_users()\n" +
+                "BEGIN\n" +
+                "    DECLARE done INT DEFAULT 0;\n" +
+                "    DECLARE user_id INT;\n" +
+                "    DECLARE user_name VARCHAR(50);\n" +
+                "\n" +
+                "    DECLARE user_cursor CURSOR FOR SELECT id, name FROM users;\n" +
+                "    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;\n" +
+                "\n" +
+                "    OPEN user_cursor;\n" +
+                "\n" +
+                "    read_loop: LOOP\n" +
+                "        FETCH user_cursor INTO user_id, user_name;\n" +
+                "        IF done THEN\n" +
+                "            LEAVE read_loop;\n" +
+                "        END IF;\n" +
+                "        SELECT CONCAT('User ID: ', user_id, ', User Name: ', user_name);\n" +
+                "    END LOOP;\n" +
+                "\n" +
+                "    CLOSE user_cursor;\n" +
+                "END";
+        ParseMysqlPLResult result = PLParser.parseObMysql(pl);
+        Assert.assertEquals(5, result.getVaribaleList().size());
+        Assert.assertEquals("list_all_users", result.getPlName());
+        Assert.assertEquals("PROCEDURE", result.getPlType());
+        Assert.assertEquals(0, result.getParamList().size());
+    }
+
+    @Test
+    public void testParseMysqlProcedureContainsDefinerAndException() {
+        String pl =
+                "CREATE DEFINER = `root`@`%` PROCEDURE safe_update_user_email(IN user_id INT, IN new_email VARCHAR(100), OUT result_message VARCHAR(100))\n"
+                        +
+                        "BEGIN\n" +
+                        "    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION\n" +
+                        "    BEGIN\n" +
+                        "        SET result_message = 'An error occurred while updating the email.';\n" +
+                        "    END;\n" +
+                        "\n" +
+                        "    UPDATE users SET email = new_email WHERE id = user_id;\n" +
+                        "    IF ROW_COUNT() = 0 THEN\n" +
+                        "        SET result_message = 'No user found with the provided ID.';\n" +
+                        "    ELSE\n" +
+                        "        SET result_message = 'Email updated successfully.';\n" +
+                        "    END IF;\n" +
+                        "END";
+        ParseMysqlPLResult result = PLParser.parseObMysql(pl);
+        Assert.assertEquals(1, result.getVaribaleList().size());
+        Assert.assertEquals("safe_update_user_email", result.getPlName());
+        Assert.assertEquals("PROCEDURE", result.getPlType());
+        Assert.assertEquals(3, result.getParamList().size());
+    }
+
+    @Test
+    public void testParseMysqlProcedureContainsDefinerAndMultipleTables() {
+        String pl =
+                "CREATE DEFINER = `root`@`%` PROCEDURE activate_user_and_log(IN user_id INT, OUT result_message VARCHAR(100))\n"
+                        +
+                        "BEGIN\n" +
+                        "    UPDATE users SET status = 'active' WHERE id = user_id;\n" +
+                        "    \n" +
+                        "    IF ROW_COUNT() > 0 THEN\n" +
+                        "        INSERT INTO logs (user_id, action, created_at) VALUES (user_id, 'Activated user', NOW());\n"
+                        +
+                        "        SET result_message = 'User activated and logged.';\n" +
+                        "    ELSE\n" +
+                        "        SET result_message = 'User not found for activation.';\n" +
+                        "    END IF;\n" +
+                        "END";
+        ParseMysqlPLResult result = PLParser.parseObMysql(pl);
+        Assert.assertEquals(0, result.getVaribaleList().size());
+        Assert.assertEquals("activate_user_and_log", result.getPlName());
+        Assert.assertEquals("PROCEDURE", result.getPlType());
+        Assert.assertEquals(2, result.getParamList().size());
+    }
+
+    @Test
     public void testParseOracleProcedure() {
         String pl = "create procedure pl_test(p1 in int default 1, p2 in varchar2) \n" + "is \n" + "v1 number;\n"
                 + "begin \n"

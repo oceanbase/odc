@@ -46,6 +46,7 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -225,6 +226,9 @@ public class DatabaseService {
     @Autowired
     private ConnectionSyncHistoryService connectionSyncHistoryService;
 
+    @Value("${odc.integration.bastion.enabled:false}")
+    private boolean bastionEnabled;
+
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public Database detail(@NonNull Long id) {
@@ -245,6 +249,12 @@ public class DatabaseService {
     @SkipAuthorize("internal usage")
     public Database detailSkipPermissionCheck(@NonNull Long id) {
         return entityToModel(databaseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
+    }
+
+    @SkipAuthorize("internal usage")
+    public Database detailSkipPermissionCheckForRead(@NonNull Long id) {
+        return entityToModelForRead(databaseRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
     }
 
@@ -549,7 +559,7 @@ public class DatabaseService {
     private void syncTeamDataSources(ConnectionConfig connection)
             throws ExecutionException, InterruptedException, TimeoutException {
         Long currentProjectId = connection.getProjectId();
-        boolean blockExcludeSchemas = dbSchemaSyncProperties.isBlockExclusionsWhenSyncDbToProject();
+        boolean blockExcludeSchemas = dbSchemaSyncProperties.isBlockExclusionsWhenSyncDbToProject() && !bastionEnabled;
         List<String> excludeSchemas = dbSchemaSyncProperties.getExcludeSchemas(connection.getDialectType());
         DataSource teamDataSource = getDataSourceFactory(connection).getDataSource();
         ExecutorService executorService = Executors.newFixedThreadPool(1);
@@ -675,7 +685,7 @@ public class DatabaseService {
         if (currentProjectId != null) {
             projectId = currentProjectId;
             if (dbSchemaSyncProperties.isBlockExclusionsWhenSyncDbToProject()
-                    && blockedDatabaseNames.contains(database.getName())) {
+                    && blockedDatabaseNames.contains(database.getName()) && !bastionEnabled) {
                 projectId = database.getProjectId();
             }
         } else {
@@ -905,7 +915,7 @@ public class DatabaseService {
                 ErrorCodes.AccessDenied, null, "Lack of update permission on current datasource");
         Map<Long, ConnectionConfig> id2Conn = connectionService.innerListByIds(connectionIds).stream()
                 .collect(Collectors.toMap(ConnectionConfig::getId, c -> c, (c1, c2) -> c2));
-        if (dbSchemaSyncProperties.isBlockExclusionsWhenSyncDbToProject()) {
+        if (dbSchemaSyncProperties.isBlockExclusionsWhenSyncDbToProject() && !bastionEnabled) {
             connectionIds = databases.stream().filter(database -> {
                 ConnectionConfig connection = id2Conn.get(database.getConnectionId());
                 return connection != null && !dbSchemaSyncProperties.getExcludeSchemas(connection.getDialectType())
@@ -983,6 +993,24 @@ public class DatabaseService {
             return database;
         });
     }
+
+    private Database entityToModelForRead(DatabaseEntity entity, boolean includesPermittedAction) {
+        Database model = databaseMapper.entityToModel(entity);
+        if (Objects.nonNull(entity.getProjectId())) {
+            model.setProject(projectService.detail(entity.getProjectId()));
+        }
+        // for logical database, the connection id may be null
+        if (entity.getConnectionId() != null) {
+            model.setDataSource(connectionService.getBasicWithoutPermissionCheck(entity.getConnectionId()));
+        }
+        model.setEnvironment(environmentService.detailSkipPermissionCheck(entity.getEnvironmentId()));
+        if (includesPermittedAction) {
+            model.setAuthorizedPermissionTypes(
+                    permissionHelper.getDBPermissions(Collections.singleton(entity.getId())).get(entity.getId()));
+        }
+        return model;
+    }
+
 
     private Database entityToModel(DatabaseEntity entity, boolean includesPermittedAction) {
         Database model = databaseMapper.entityToModel(entity);
