@@ -42,6 +42,10 @@ public class DataArchiveTableConfig {
     // the sql condition such as "gmt_create < '2023-01-01'"
     private String conditionExpression;
 
+    private String minKey;
+
+    private String maxKey;
+
     private Map<String, String> partName2MinKey = new HashMap<>();
 
     private Map<String, String> partName2MaxKey = new HashMap<>();

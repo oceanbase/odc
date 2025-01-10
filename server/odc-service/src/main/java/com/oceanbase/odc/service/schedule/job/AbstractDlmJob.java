@@ -140,6 +140,8 @@ public abstract class AbstractDlmJob implements OdcJob {
                     && tableName2Unit.get(o.getTableName()).getStatistic() != null) {
                 o.setPartName2MinKey(tableName2Unit.get(o.getTableName()).getStatistic().getPartName2MinKey());
                 o.setPartName2MaxKey(tableName2Unit.get(o.getTableName()).getStatistic().getPartName2MaxKey());
+                o.setMinKey(tableName2Unit.get(o.getTableName()).getStatistic().getGlobalMinKey());
+                o.setMaxKey(tableName2Unit.get(o.getTableName()).getStatistic().getGlobalMaxKey());
             }
         });
 
