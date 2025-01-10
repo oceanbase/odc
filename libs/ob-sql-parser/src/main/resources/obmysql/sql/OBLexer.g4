@@ -568,6 +568,18 @@ ROWID
     : R O W I D
     ;
 
+SPACE
+    : S P A C E
+    ;
+
+NGRAM
+    : N G R A M
+    ;
+
+BENG
+    : B E N G
+    ;
+
 DEFAULT
     : ( D E F A U L T )
     ;

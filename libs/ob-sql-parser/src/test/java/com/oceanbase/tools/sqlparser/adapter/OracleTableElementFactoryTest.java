@@ -324,7 +324,7 @@ public class OracleTableElementFactoryTest {
     public void generate_columnDefForeignConstraintDeleteSetNull_generateSuccees() {
         StatementFactory<TableElement> factory = new OracleTableElementFactory(
                 getTableElementContext(
-                        "tb.col varchar2(64) references a.b(a,b,c) on delete set null rely using index with parser 'aaa' using btree enable novalidate"));
+                        "tb.col varchar2(64) references a.b(a,b,c) on delete set null rely using index with parser space using btree enable novalidate"));
         ColumnDefinition actual = (ColumnDefinition) factory.generate();
 
         DataType dataType = new CharacterType("varchar2", new BigDecimal("64"));
@@ -334,7 +334,7 @@ public class OracleTableElementFactoryTest {
         state.setRely(true);
         state.setUsingIndexFlag(true);
         IndexOptions indexOptions = new IndexOptions();
-        indexOptions.setWithParser("'aaa'");
+        indexOptions.setWithParser("space");
         indexOptions.setUsingBtree(true);
         state.setIndexOptions(indexOptions);
         state.setEnable(true);
@@ -815,7 +815,7 @@ public class OracleTableElementFactoryTest {
     public void generate_uniqueIndexColumnAscId_succeed() {
         StatementFactory<TableElement> factory = new OracleTableElementFactory(
                 getTableElementContext(
-                        "unique (col asc id 16, col1) using index using btree global with parser 'aaaa'"));
+                        "unique (col asc id 16, col1) using index using btree global with parser space"));
         OutOfLineConstraint actual = (OutOfLineConstraint) factory.generate();
 
         SortColumn s1 = new SortColumn(new RelationReference("col", null));
@@ -826,7 +826,7 @@ public class OracleTableElementFactoryTest {
         IndexOptions indexOptions = new IndexOptions();
         indexOptions.setUsingBtree(true);
         indexOptions.setGlobal(true);
-        indexOptions.setWithParser("'aaaa'");
+        indexOptions.setWithParser("space");
         state.setIndexOptions(indexOptions);
         state.setUsingIndexFlag(true);
         OutOfLineConstraint expect = new OutOfLineConstraint(state, Arrays.asList(s1, s2));
@@ -845,7 +845,7 @@ public class OracleTableElementFactoryTest {
     public void generate_foreignKey_succeed() {
         StatementFactory<TableElement> factory = new OracleTableElementFactory(
                 getTableElementContext(
-                        "constraint fk_name foreign key (col, col1) references tb_name (col2, col3) on delete cascade using index using btree global with parser 'aaaa'"));
+                        "constraint fk_name foreign key (col, col1) references tb_name (col2, col3) on delete cascade using index using btree global with parser space"));
         TableElement actual = factory.generate();
 
         SortColumn s1 = new SortColumn(new ColumnReference(null, null, "col"));
@@ -858,7 +858,7 @@ public class OracleTableElementFactoryTest {
         IndexOptions indexOptions = new IndexOptions();
         indexOptions.setUsingBtree(true);
         indexOptions.setGlobal(true);
-        indexOptions.setWithParser("'aaaa'");
+        indexOptions.setWithParser("space");
         state.setIndexOptions(indexOptions);
         state.setUsingIndexFlag(true);
         OutOfLineForeignConstraint expect = new OutOfLineForeignConstraint(state, Arrays.asList(s1, s2), reference);
@@ -870,7 +870,7 @@ public class OracleTableElementFactoryTest {
     public void generate_checkKey_succeed() {
         StatementFactory<TableElement> factory = new OracleTableElementFactory(
                 getTableElementContext(
-                        "constraint ck_name check(col > 12) using index using btree global with parser 'aaaa'"));
+                        "constraint ck_name check(col > 12) using index using btree global with parser space"));
         TableElement actual = factory.generate();
 
         RelationReference r = new RelationReference("col", null);
@@ -880,7 +880,7 @@ public class OracleTableElementFactoryTest {
         IndexOptions indexOptions = new IndexOptions();
         indexOptions.setUsingBtree(true);
         indexOptions.setGlobal(true);
-        indexOptions.setWithParser("'aaaa'");
+        indexOptions.setWithParser("space");
         state.setIndexOptions(indexOptions);
         state.setUsingIndexFlag(true);
         OutOfLineCheckConstraint expect = new OutOfLineCheckConstraint(state, checkExpr);
