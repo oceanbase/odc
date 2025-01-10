@@ -100,24 +100,36 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     @Override
     protected synchronized Void start(Long taskId, TaskService taskService, DelegateExecution execution) {
         try {
+            // 创建一个Map对象用于存储变量
             Map<String, String> variables = new HashMap<>();
+            // 将taskId转换为字符串并存储到variables中
             variables.putIfAbsent("mocktask.workspace", taskId + "");
+            // 将variables中的变量存储到TraceContextHolder中
             TraceContextHolder.span(variables);
+            // 如果任务已经被取消，则记录日志并返回null
             if (this.cancelled) {
                 log.warn("MockData task has been cancelled, taskId={}, activityId={}", taskId,
-                        execution.getCurrentActivityId());
+                    execution.getCurrentActivityId());
                 return null;
             }
+            // 记录任务开始的日志
             log.info("MockData task starts, taskId={}, activityId={}", taskId, execution.getCurrentActivityId());
+            // 获取MockTaskConfig对象
             MockTaskConfig mockTaskConfig = getMockTaskConfig(taskId, execution);
+            // 创建ObMockerFactory对象
             ObMockerFactory factory = new ObMockerFactory(mockTaskConfig);
+            // 创建ObDataMocker对象
             ObDataMocker mocker = factory.create(new CustomMockScheduler(taskId,
-                    TraceContextHolder.getTraceContext(), ossTaskReferManager, cloudObjectStorageService));
+                TraceContextHolder.getTraceContext(), ossTaskReferManager, cloudObjectStorageService));
+            // 启动MockContext
             context = mocker.start();
+            // 启动任务
             taskService.start(taskId, getResult(taskId));
+            // 如果MockContext为空，则抛出异常
             Verify.notNull(context, "MockContext can not be null");
             return null;
         } catch (Exception e) {
+            // 如果发生异常，则将异常信息存储到thrown中并重新抛出异常
             thrown = e;
             throw e;
         }
