@@ -18,12 +18,15 @@ package com.oceanbase.odc.service.task.caller;
 
 import static com.oceanbase.odc.service.task.constants.JobConstants.ODC_EXECUTOR_CANNOT_BE_DESTROYED;
 
+import java.io.File;
 import java.io.IOException;
+import java.lang.ProcessBuilder.Redirect;
 import java.text.MessageFormat;
 import java.util.Objects;
 import java.util.Optional;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.response.OdcResult;
@@ -58,6 +61,10 @@ public class ProcessJobCaller extends BaseJobCaller {
         String executorName = JobUtils.generateExecutorName(context.getJobIdentity());
         ProcessBuilder pb = new ExecutorProcessBuilderFactory().getProcessBuilder(
                 processConfig, context.getJobIdentity().getId(), executorName);
+        log.info("start task with processConfig={}, env={}", JobUtils.toJson(processConfig),
+                JsonUtils.toJson(pb.environment()));
+        pb.redirectErrorStream(true);
+        pb.redirectOutput(Redirect.appendTo(new File("process-call.log")));
         Process process;
         try {
             process = pb.start();

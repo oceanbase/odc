@@ -49,8 +49,6 @@ public interface ScheduleTaskRepository extends JpaRepository<ScheduleTaskEntity
 
     Optional<ScheduleTaskEntity> findByIdAndJobName(Long id, String scheduleId);
 
-    List<ScheduleTaskEntity> findByJobNameAndStatusIn(String jobName, List<TaskStatus> statuses);
-
     @Query(value = "select * from schedule_task where job_name=:jobName and job_group = :jobGroup order by id desc limit 1",
             nativeQuery = true)
     Optional<ScheduleTaskEntity> getLatestScheduleTaskByJobNameAndJobGroup(@Param("jobName") String jobName,
