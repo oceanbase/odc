@@ -606,8 +606,10 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
 
     protected void fillPrecisionAndScale(DBTableColumn column) {
         String typeName = column.getTypeName();
-
-        // 在mysql较高版本中，ddl和表结构对比中，year的长度会被强制置为4。如果columntype=yaer(2)时，这里的year的长度会是2
+        /*
+        In higher mysql version(from 5.7.5),Year's precision is set to default 4 in ddl sql and table construction compare,
+        especially when columntype=yaer(2),the year's precision will be set 2
+        */
         if ("year".equalsIgnoreCase(typeName)) {
             column.setPrecision(4L);
         }
