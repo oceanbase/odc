@@ -82,8 +82,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DefaultDBSessionManage implements DBSessionManageFacade {
 
-    private static final String SERVER_REGEX = ".*/\\*(?<ip>([0-9]{1,3}.){1,3}([0-9]{1,3})):"
-            + "(?<port>[0-9]{1,5})\\*/.*";
+    private static final String SERVER_REGEX = ".*(?<ip>([0-9]{1,3}.){1,3}([0-9]{1,3})):"
+            + "(?<port>[0-9]{1,5}).*";
     private static final Pattern SERVER_PATTERN = Pattern.compile(SERVER_REGEX);
     private static final ConnectionMapper CONNECTION_MAPPER = ConnectionMapper.INSTANCE;
     private static final String GLOBAL_CLIENT_SESSION_OB_PROXY_VERSION_NUMBER = "4.2.3";
@@ -129,6 +129,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     }
 
     @Override
+    @SkipAuthorize("odc internal usage")
     public boolean supportKillConsoleQuery(ConnectionSession session) {
         if (Objects.nonNull(session) && ConnectionSessionUtil.isLogicalSession(session)) {
             return false;

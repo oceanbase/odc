@@ -80,7 +80,7 @@ public class MySQLIndexOptionsFactory extends OBParserBaseVisitor<IndexOptions>
             } else if (option.CTXCAT() != null) {
                 indexOptions.setCtxcat(getReference(option));
             } else if (option.WITH() != null && option.PARSER() != null) {
-                indexOptions.setWithParser(option.STRING_VALUE().getText());
+                indexOptions.setWithParser(option.relation_name().getText());
             } else if (option.WITH() != null && option.ROWID() != null) {
                 indexOptions.setWithRowId(true);
             } else if (option.WITH() != null && option.vec_index_params() != null) {

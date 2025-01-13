@@ -251,7 +251,16 @@ public enum SqlCheckRuleType implements Translatable {
     /**
      * Unable to judge restrict the number of lines affected by SQL
      */
-    ESTIMATE_SQL_AFFECTED_ROWS_FAILED("estimate-sql-affected-rows-failed");
+    ESTIMATE_SQL_AFFECTED_ROWS_FAILED("estimate-sql-affected-rows-failed"),
+    /**
+     * Create like statement exists
+     */
+    CREATE_TABLE_LIKE_EXISTS("create-table-like-exists"),
+    /**
+     * Create as statement exists
+     */
+    CREATE_TABLE_AS_EXISTS("create-table-as-exists");
+
 
     private final String name;
     private static final String NAME_CODE = "name";

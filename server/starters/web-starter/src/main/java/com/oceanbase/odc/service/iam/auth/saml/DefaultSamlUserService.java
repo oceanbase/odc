@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.saml2.provider.service.authentication.Saml2Authentication;
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.service.iam.auth.MappingRuleConvert;
 import com.oceanbase.odc.service.iam.auth.SsoUserDetailService;
 import com.oceanbase.odc.service.iam.auth.oauth2.MappingResult;
@@ -33,6 +34,7 @@ public class DefaultSamlUserService {
     @Autowired
     private MappingRuleConvert mappingRuleConvert;
 
+    @SkipAuthorize
     public User loadUser(Saml2Authentication saml2Authentication) {
         MappingResult mappingResult = mappingRuleConvert.resolveSamlMappingResult(saml2Authentication);
         return ssoUserDetailService.getOrCreateUser(mappingResult);
