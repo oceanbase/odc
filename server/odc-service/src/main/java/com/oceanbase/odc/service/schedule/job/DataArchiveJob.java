@@ -48,6 +48,7 @@ public class DataArchiveJob extends AbstractDlmJob {
         parameters.setScheduleTaskId(taskEntity.getId());
         parameters.setJobType(JobType.MIGRATE);
         parameters.setTables(dataArchiveParameters.getTables());
+        parameters.setFireTime(context.getFireTime());
         for (DataArchiveTableConfig tableConfig : parameters.getTables()) {
             tableConfig.setConditionExpression(StringUtils.isNotEmpty(tableConfig.getConditionExpression())
                     ? DataArchiveConditionUtil.parseCondition(tableConfig.getConditionExpression(),

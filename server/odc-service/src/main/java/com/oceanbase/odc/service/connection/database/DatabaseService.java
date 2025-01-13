@@ -65,6 +65,7 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
@@ -528,6 +529,9 @@ public class DatabaseService {
         Optional<Organization> organizationOpt = Optional.empty();
         try {
             connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
+            if (connection.getDialectType() == DialectType.FILE_SYSTEM) {
+                return true;
+            }
             horizontalDataPermissionValidator.checkCurrentOrganization(connection);
             organizationOpt = organizationService.get(connection.getOrganizationId());
             Organization organization =

@@ -184,6 +184,23 @@ public class AmazonCloudClient implements CloudClient {
     }
 
     @Override
+    public PutObjectResult putObject(String bucketName, String key, InputStream in, ObjectMetadata metadata)
+            throws CloudException {
+        return callAmazonMethod("Put object", () -> {
+            com.amazonaws.services.s3.model.ObjectMetadata objectMetadata = toS3(metadata);
+            PutObjectRequest putRequest = new PutObjectRequest(bucketName, key, in, objectMetadata);
+            if (metadata.hasTag()) {
+                putRequest.withTagging(toS3(metadata.getTagging()));
+            }
+            com.amazonaws.services.s3.model.PutObjectResult s3Result = s3.putObject(putRequest);
+            PutObjectResult result = new PutObjectResult();
+            result.setVersionId(s3Result.getVersionId());
+            result.setETag(s3Result.getETag());
+            return result;
+        });
+    }
+
+    @Override
     public CopyObjectResult copyObject(String bucketName, String from, String to)
             throws CloudException {
         return callAmazonMethod("Copy object to", () -> {

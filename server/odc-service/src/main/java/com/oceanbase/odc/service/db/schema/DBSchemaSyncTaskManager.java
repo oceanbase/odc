@@ -35,6 +35,7 @@ import org.springframework.stereotype.Component;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -118,6 +119,9 @@ public class DBSchemaSyncTaskManager {
     }
 
     public void submitTaskByDataSource(@NonNull ConnectionConfig dataSource) {
+        if (dataSource.getDialectType() == DialectType.FILE_SYSTEM) {
+            return;
+        }
         List<Database> databases = databaseService.listExistDatabasesByConnectionId(dataSource.getId());
         databases.removeIf(e -> (syncProperties.isBlockExclusionsWhenSyncDbSchemas()
                 && syncProperties.getExcludeSchemas(dataSource.getDialectType()).contains(e.getName())

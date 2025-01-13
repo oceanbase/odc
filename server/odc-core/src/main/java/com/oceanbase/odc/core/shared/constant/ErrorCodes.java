@@ -170,6 +170,7 @@ public enum ErrorCodes implements ErrorCode {
     // Schedule
     AlterScheduleExists,
     InvalidCronExpression,
+    ScheduleIntervalTooShort,
     UpdateNotAllowed,
     PauseNotAllowed,
     DeleteNotAllowed,
@@ -315,7 +316,13 @@ public enum ErrorCodes implements ErrorCode {
      * workspace
      */
     WorkspaceDatabaseUserTypeMustBeAdmin,
-    ;
+    /**
+     * oss
+     */
+    BucketNotExist,
+    InvalidAccessKeyId,
+    SignatureDoesNotMatch,
+    UnsupportedSyncTableStructure;
 
     @Override
     public String code() {

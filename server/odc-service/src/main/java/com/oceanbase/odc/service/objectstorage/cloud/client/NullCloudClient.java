@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.objectstorage.cloud.client;
 
 import java.io.File;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Date;
 import java.util.List;
@@ -73,6 +74,12 @@ public class NullCloudClient implements CloudClient {
 
     @Override
     public PutObjectResult putObject(String bucketName, String key, File file, ObjectMetadata metadata)
+            throws CloudException {
+        throw new UnsupportedException();
+    }
+
+    @Override
+    public PutObjectResult putObject(String bucketName, String key, InputStream in, ObjectMetadata metadata)
             throws CloudException {
         throw new UnsupportedException();
     }

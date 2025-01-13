@@ -64,6 +64,11 @@
                             <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
                             <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
                         </Filters>
+                        <Policies>
+                            <OnStartupTriggeringPolicy/>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
                     </RollingFile>
                 </Route>
             </Routes>
@@ -87,6 +92,11 @@
                             <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
                             <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
                         </Filters>
+                        <Policies>
+                            <OnStartupTriggeringPolicy/>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
                     </RollingFile>
                 </Route>
             </Routes>
@@ -115,6 +125,9 @@
             <AppenderRef ref="ExecutorFileAppender"/>
         </Logger>
         <Logger name="com.oceanbase.odc.service.plugin.PluginProperties" level="INFO" additivity="false">
+            <AppenderRef ref="ExecutorFileAppender"/>
+        </Logger>
+        <Logger name="com.oceanbase.odc.agent" level="INFO" additivity="false">
             <AppenderRef ref="ExecutorFileAppender"/>
         </Logger>
         <!-- 执行器日志输出 end -->

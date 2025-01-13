@@ -13,35 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
+package com.oceanbase.odc.service.connection.event;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.oceanbase.odc.common.event.AbstractEvent;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
-import lombok.Data;
+import lombok.Getter;
 
 /**
- * @Author：tinker
- * @Date: 2024/5/9 09:39
+ * @Author：tianke
+ * @Date: 2024/12/30 10:41
  * @Descripition:
  */
-@Data
-public class DlmTableUnitStatistic {
+public class UpsertDatasourceEvent extends AbstractEvent {
 
-    private Long processedRowCount = 0L;
+    @Getter
+    private ConnectionConfig connectionConfig;
 
-    private Long readRowCount = 0L;
+    public UpsertDatasourceEvent(ConnectionConfig connectionConfig) {
+        super(connectionConfig, "UpsertDatasourceEvent");
+        this.connectionConfig = connectionConfig;
 
-    private Long processedRowsPerSecond = 0L;
-
-    private Long readRowsPerSecond = 0L;
-
-    private String globalMinKey;
-
-    private String globalMaxKey;
-
-    private Map<String, String> partName2MinKey = new HashMap<>();
-
-    private Map<String, String> partName2MaxKey = new HashMap<>();
-
+    }
 }
