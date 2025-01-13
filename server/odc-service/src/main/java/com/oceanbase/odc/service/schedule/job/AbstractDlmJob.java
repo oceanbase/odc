@@ -30,6 +30,7 @@ import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.dlm.DLMConfiguration;
 import com.oceanbase.odc.service.dlm.DLMService;
 import com.oceanbase.odc.service.dlm.DataSourceInfoMapper;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
@@ -65,6 +66,8 @@ public abstract class AbstractDlmJob implements OdcJob {
     public JobScheduler jobScheduler = null;
     public final TaskFrameworkService taskFrameworkService;
 
+    public final DLMConfiguration dlmConfiguration;
+
 
     public AbstractDlmJob() {
         scheduleTaskRepository = SpringContextUtil.getBean(ScheduleTaskRepository.class);
@@ -74,6 +77,7 @@ public abstract class AbstractDlmJob implements OdcJob {
         taskFrameworkService = SpringContextUtil.getBean(TaskFrameworkService.class);
         jobScheduler = SpringContextUtil.getBean(JobScheduler.class);
         dlmService = SpringContextUtil.getBean(DLMService.class);
+        dlmConfiguration = SpringContextUtil.getBean(DLMConfiguration.class);
     }
 
     public DataSourceInfo getDataSourceInfo(Long databaseId) {
@@ -81,6 +85,8 @@ public abstract class AbstractDlmJob implements OdcJob {
         ConnectionConfig config = databaseService.findDataSourceForTaskById(databaseId);
         DataSourceInfo dataSourceInfo = DataSourceInfoMapper.toDataSourceInfo(config, db.getName());
         dataSourceInfo.setDatabaseName(db.getName());
+        dataSourceInfo.setSessionLimitRatio(dlmConfiguration.getSessionLimitingRatio());
+        dataSourceInfo.setEnabledLimit(dlmConfiguration.isSessionLimitingEnabled());
         return dataSourceInfo;
     }
 

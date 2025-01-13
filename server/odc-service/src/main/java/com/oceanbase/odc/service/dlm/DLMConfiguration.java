@@ -49,4 +49,10 @@ public class DLMConfiguration {
     @Value("${odc.task.dlm.default-scan-batch-size:10000}")
     private int defaultScanBatchSize;
 
+    @Value("${odc.task.dlm.session-limiting.enabled:true}")
+    private boolean sessionLimitingEnabled;
+
+    @Value("${odc.task.dlm.session-limiting-ratio:25}")
+    private int sessionLimitingRatio;
+
 }
