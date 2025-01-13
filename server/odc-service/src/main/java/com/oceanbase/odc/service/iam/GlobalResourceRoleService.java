@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.metadb.iam.UserRoleRepository;
@@ -41,6 +42,7 @@ public class GlobalResourceRoleService {
     @Autowired
     private UserRoleRepository userRoleRepository;
 
+    @SkipAuthorize("odc internal usage")
     public List<UserGlobalResourceRole> findGlobalResourceRoleUsersByOrganizationId(Long organizationId) {
         return userRoleRepository.findByOrganizationIdAndNameIn(
                 organizationId,
@@ -48,6 +50,7 @@ public class GlobalResourceRoleService {
                         GlobalResourceRoleUtil.GLOBAL_PROJECT_SECURITY_ADMINISTRATOR));
     }
 
+    @SkipAuthorize("odc internal usage")
     public List<UserGlobalResourceRole> findGlobalResourceRoleUsersByOrganizationIdAndUserId(Long organizationId,
             Long userId) {
         return userRoleRepository.findByOrganizationIdAndUserIdAndNameIn(organizationId, userId,
@@ -55,7 +58,7 @@ public class GlobalResourceRoleService {
                         GlobalResourceRoleUtil.GLOBAL_PROJECT_SECURITY_ADMINISTRATOR));
     }
 
-
+    @SkipAuthorize("odc internal usage")
     public List<UserGlobalResourceRole> findGlobalResourceRoleUsersByOrganizationIdAndRole(Long organizationId,
             ResourceType resourceType, ResourceRoleName resourceRoleName) {
         if (resourceType != ResourceType.ODC_PROJECT) {
@@ -65,6 +68,7 @@ public class GlobalResourceRoleService {
                 organizationId, Arrays.asList(GlobalResourceRoleUtil.getGlobalRoleName(resourceRoleName)));
     }
 
+    @SkipAuthorize("odc internal usage")
     public List<UserGlobalResourceRole> findGlobalResourceRoleUsersByOrganizationIdAndRoleIn(Long organizationId,
             Set<ResourceRoleName> resourceRoleNames) {
         if (CollectionUtils.isEmpty(resourceRoleNames)) {

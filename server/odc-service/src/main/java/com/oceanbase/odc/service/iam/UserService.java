@@ -462,12 +462,14 @@ public class UserService {
         }
     }
 
+    @SkipAuthorize("odc internal usage")
     public Set<String> getCurrentUserResourceRoleIdentifiers() {
         long currentUserId = authenticationFacade.currentUserId();
         long currentOrganizationId = authenticationFacade.currentOrganizationId();
         return resourceRoleService.getResourceRoleIdentifiersByUserId(currentOrganizationId, currentUserId);
     }
 
+    @SkipAuthorize("odc internal usage")
     public Set<Long> getCurrentUserJoinedProjectIds() {
         return resourceRoleService.getProjectId2ResourceRoleNames().keySet();
     }

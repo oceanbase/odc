@@ -330,9 +330,9 @@ public class ScheduleService {
                         null, "Pause schedule is not allowed.");
             }
             if (req.getOperationType() == OperationType.DELETE) {
-                PreConditions.validRequestState(targetSchedule.getStatus() == ScheduleStatus.TERMINATED
-                        || targetSchedule.getStatus() == ScheduleStatus.COMPLETED
-                        || !hasExecutingTask(targetSchedule.getId()), ErrorCodes.DeleteNotAllowed, null,
+                PreConditions.validRequestState((targetSchedule.getStatus() == ScheduleStatus.TERMINATED
+                        || targetSchedule.getStatus() == ScheduleStatus.COMPLETED)
+                        && !hasExecutingTask(targetSchedule.getId()), ErrorCodes.DeleteNotAllowed, null,
                         "Delete schedule is not allowed.");
             }
         }

@@ -244,6 +244,7 @@ public class IntegrationService {
         return new IntegrationConfig(entity);
     }
 
+    @SkipAuthorize("odc internal usage")
     public IntegrationConfig getDecodeConfig(IntegrationEntity entity) {
         IntegrationConfig integrationConfig = new IntegrationConfig(entity);
         String secret = decodeSecret(entity.getSecret(), entity.getSalt(), entity.getOrganizationId());

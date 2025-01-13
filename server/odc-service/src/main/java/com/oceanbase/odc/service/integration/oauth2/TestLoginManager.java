@@ -134,6 +134,7 @@ public class TestLoginManager {
         return null;
     }
 
+    @SkipAuthorize
     public void saveSamlInfoIfNeed(String info) {
         HttpServletRequest currentRequest = WebRequestUtils.getCurrentRequest();
         Verify.notNull(currentRequest, "currentRequest");
@@ -258,6 +259,7 @@ public class TestLoginManager {
         }
     }
 
+    @SkipAuthorize
     public void abortIfSamlTestLogin() {
         HttpServletRequest currentRequest = WebRequestUtils.getCurrentRequest();
         if (currentRequest == null) {
