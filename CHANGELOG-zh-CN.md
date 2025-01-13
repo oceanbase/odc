@@ -26,10 +26,10 @@
 - 增加项目归档检测机制，归档前会检测项目中是否存在未结束的工单及周期任务。
 - 支持删除项目，对于已归档的项目支持对其进行删除操作。
 - 支持用户申请视图权限，对用户访问视图做了更细粒度的权限控制
-- SQL 窗口拓展了可执行的 SQL 类型，新支持了 call、comment、set session 等类型。
+- SQL 窗口拓展了可执行的 SQL 类型，新支持 `call`、`comment`、`set session` 等类型。
 - SQL 检查规范了支持原生 Oracle 数据源。
 - 支持原生 Oracle 数据源的变更走变更审批流程。
-- 新增 2 条 SQL 检查规则，支持规范 create like 及 create as 建表语句。
+- 新增 2 条 SQL 检查规则，支持规范 `create like` 及 `create as` 建表语句。
 
 SQL 开发
 
@@ -62,7 +62,7 @@ SQL 开发
 
 数据源
 
-- 堡垒机集成场景数据库同步失败
+- 堡垒机集成场景不会同步 `information_schema` 等内置数据库到项目内。
 - 数据库同步异常挂起时无法恢复
 
 工单
@@ -72,20 +72,22 @@ SQL 开发
 - 逻辑库变更任务启动时 NPE 异常导致失败
 - 非当前账号创建结构对比任务无法正常执行
 - Oracle 导出表结构存在虚拟列时导出会失败
+- OceanBase MySQL 源端库或目标库里若有一张表的 DDL 里指定全文索引的分词器，结构比对任务失败
+- MySQL 结构比对含有 year 类型的表时生成的 DDL 有误
 
 变更管控
 
 - 任务状态检查异常导致归档项目失败
-- 外部审批集成不生效
 - 没有导出权限也能导出视图
 
 SQL 开发
 
 - SQL Check 特定场景下产生 NPE 异常
-- DROP PL 需要数据库变更任务的权限
-- Kill session 时，可能产生 NPE 异常
+- DROP PL 需要数据库变更的权限
 - 函数返回值类型为 Year 时无法正常显示
 - 当 PL 名称包含 @ 时 create 和 drop 语句将失败
+- 查看原生 oracle 扩展了统计信息（DBMS_STATS.CREATE_EXTENDED_STATS）的表详情失败
+
 
 
 ## 4.3.2 (2024-09-27)
