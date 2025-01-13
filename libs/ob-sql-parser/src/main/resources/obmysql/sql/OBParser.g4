@@ -1861,18 +1861,11 @@ index_option
     | COMMENT STRING_VALUE
     | (STORING|CTXCAT) LeftParen column_name_list RightParen
     | WITH ROWID
-    | WITH PARSER index_with_parser
+    | WITH PARSER relation_name
     | WITH LeftParen vec_index_params RightParen
     | index_using_algorithm
     | visibility_option
     | parallel_option
-    ;
-
-index_with_parser
-    : SPACE
-    | NGRAM
-    | BENG
-    | STRING_VALUE
     ;
 
 index_using_algorithm
