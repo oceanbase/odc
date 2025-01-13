@@ -1869,7 +1869,10 @@ index_option
     ;
 
 index_with_parser
-    : SPACE | NGRAM | BENG
+    : SPACE
+    | NGRAM
+    | BENG
+    | STRING_VALUE
     ;
 
 index_using_algorithm

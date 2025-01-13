@@ -693,7 +693,7 @@ public class MySQLTableElementFactoryTest {
     @Test
     public void generate_indexBtree_succeed() {
         StatementFactory<TableElement> factory = new MySQLTableElementFactory(
-                getTableElementContext("index idx_name using btree (col, col1) global with parser ngram"));
+                getTableElementContext("index idx_name using btree (col, col1) global with parser 'aaaa'"));
         OutOfLineIndex actual = (OutOfLineIndex) factory.generate();
 
         SortColumn s1 = new SortColumn(new ColumnReference(null, null, "col"));
@@ -702,7 +702,7 @@ public class MySQLTableElementFactoryTest {
         IndexOptions indexOptions = new IndexOptions();
         indexOptions.setUsingBtree(true);
         indexOptions.setGlobal(true);
-        indexOptions.setWithParser("ngram");
+        indexOptions.setWithParser("'aaaa'");
         expect.setIndexOptions(indexOptions);
         Assert.assertEquals(expect, actual);
     }
@@ -711,7 +711,7 @@ public class MySQLTableElementFactoryTest {
     public void generate_exprIndexBtree_succeed() {
         StatementFactory<TableElement> factory = new MySQLTableElementFactory(
                 getTableElementContext(
-                        "index idx_name using btree ((CASE a WHEN 1 THEN 11 WHEN 2 THEN 22 ELSE 33 END)) global with parser beng"));
+                        "index idx_name using btree ((CASE a WHEN 1 THEN 11 WHEN 2 THEN 22 ELSE 33 END)) global with parser 'aaaa'"));
         OutOfLineIndex actual = (OutOfLineIndex) factory.generate();
 
         List<WhenClause> whenClauses = new ArrayList<>();
@@ -725,7 +725,7 @@ public class MySQLTableElementFactoryTest {
         IndexOptions indexOptions = new IndexOptions();
         indexOptions.setUsingBtree(true);
         indexOptions.setGlobal(true);
-        indexOptions.setWithParser("beng");
+        indexOptions.setWithParser("'aaaa'");
         expect.setIndexOptions(indexOptions);
         Assert.assertEquals(expect, actual);
     }
@@ -911,7 +911,7 @@ public class MySQLTableElementFactoryTest {
     public void generate_uniqueIndexColumnAscId_succeed() {
         StatementFactory<TableElement> factory = new MySQLTableElementFactory(
                 getTableElementContext(
-                        "unique index idx_name using btree (col asc id 16, col1) global with parser space"));
+                        "unique index idx_name using btree (col asc id 16, col1) global with parser 'aaaa'"));
         TableElement actual = factory.generate();
 
         SortColumn s1 = new SortColumn(new ColumnReference(null, null, "col"));
@@ -922,7 +922,7 @@ public class MySQLTableElementFactoryTest {
         IndexOptions indexOptions = new IndexOptions();
         indexOptions.setUsingBtree(true);
         indexOptions.setGlobal(true);
-        indexOptions.setWithParser("space");
+        indexOptions.setWithParser("'aaaa'");
         state.setIndexOptions(indexOptions);
         OutOfLineConstraint expect = new OutOfLineConstraint(state, Arrays.asList(s1, s2));
         expect.setUniqueKey(true);
@@ -977,7 +977,7 @@ public class MySQLTableElementFactoryTest {
     @Test
     public void generate_uniqueIndexColumnAscIdNoIndexOps_succeed() {
         StatementFactory<TableElement> factory = new MySQLTableElementFactory(
-                getTableElementContext("unique index idx_name (col asc id 16, col1) global with parser space"));
+                getTableElementContext("unique index idx_name (col asc id 16, col1) global with parser 'aaaa'"));
         TableElement actual = factory.generate();
 
         SortColumn s1 = new SortColumn(new ColumnReference(null, null, "col"));
@@ -987,7 +987,7 @@ public class MySQLTableElementFactoryTest {
         ConstraintState state = new ConstraintState();
         IndexOptions indexOptions = new IndexOptions();
         indexOptions.setGlobal(true);
-        indexOptions.setWithParser("space");
+        indexOptions.setWithParser("'aaaa'");
         state.setIndexOptions(indexOptions);
         OutOfLineConstraint expect = new OutOfLineConstraint(state, Arrays.asList(s1, s2));
         expect.setUniqueKey(true);
@@ -1175,7 +1175,7 @@ public class MySQLTableElementFactoryTest {
     }
 
     @Test
-    public void generate_outOfLineIndexFullTextIndex_getWithParser_Succeed(){
+    public void generate_outOfLineIndexFullTextIndex_getWithParser_Succeed() {
         StatementFactory<TableElement> factory = new MySQLTableElementFactory(
                 getTableElementContext("FULLTEXT KEY idx1 (name) WITH PARSER space"));
         TableElement actual = factory.generate();
