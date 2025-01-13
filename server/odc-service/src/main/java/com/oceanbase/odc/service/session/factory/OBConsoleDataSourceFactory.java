@@ -53,6 +53,7 @@ import com.oceanbase.odc.service.session.initializer.DataSourceInitScriptInitial
 
 import lombok.NonNull;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Long connection connection pool factory class, used to construct a long connection connection
@@ -63,6 +64,8 @@ import lombok.Setter;
  * @since ODC_release_3.2.2
  * @see DataSourceFactory
  */
+
+@Slf4j
 public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
 
     private String username;
@@ -189,6 +192,10 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         jdbcUrlParams.put("allowUrlInLocalInfile", "false");
         jdbcUrlParams.put("allowLoadLocalInfileInPath", "");
         jdbcUrlParams.put("autoDeserialize", "false");
+        // prevent local DNS resolution when using a proxy service
+        if (jdbcUrlParams.containsKey("socksProxyHost")) {
+            jdbcUrlParams.put("socksProxyRemoteDns", "true");
+        }
         return jdbcUrlParams;
     }
 
@@ -224,6 +231,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
             }
         }
         dataSource.addInitializer(new DataSourceInitScriptInitializer(connectionConfig));
+        log.info("Create datasource success, jdbcUrl: {}, username: {}", jdbcUrl, username);
         return dataSource;
     }
 

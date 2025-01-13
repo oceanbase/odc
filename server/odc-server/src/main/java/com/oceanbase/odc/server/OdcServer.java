@@ -46,6 +46,7 @@ import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.authority.interceptor.MethodAuthorizedPostProcessor;
 import com.oceanbase.odc.migrate.AbstractMetaDBMigrate;
+import com.oceanbase.odc.server.module.Modules;
 import com.oceanbase.odc.service.config.SystemConfigBootstrap;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
@@ -85,6 +86,7 @@ public class OdcServer {
         if (Objects.equals(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_BOOT_MODE),
                 JobConstants.ODC_BOOT_MODE_EXECUTOR)) {
             log.info("ODC start as task executor mode");
+            Modules.load();
             new TaskApplication().run(args);
             log.info("Task executor exit.");
             return;

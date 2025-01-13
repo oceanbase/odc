@@ -55,6 +55,11 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
     int updateReportResult(@Param("param") JobEntity entity, @Param("id") Long id,
             @Param("oldStatus") JobStatus oldStatus);
 
+    @Transactional
+    @Query(value = "update job_job set result_json=:resultJson where id=:id", nativeQuery = true)
+    @Modifying
+    int updateResultJson(@Param("resultJson") String resultJson, @Param("id") Long id);
+
     /**
      * update lastHeartTime and lastReportTime only, for task result no progress scenario
      */

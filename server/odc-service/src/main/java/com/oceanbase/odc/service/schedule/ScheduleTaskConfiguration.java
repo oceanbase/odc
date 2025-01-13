@@ -22,7 +22,9 @@ import org.springframework.context.annotation.Configuration;
 import com.oceanbase.odc.service.schedule.alarm.DefaultScheduleAlarmClient;
 import com.oceanbase.odc.service.schedule.alarm.ScheduleAlarmClient;
 import com.oceanbase.odc.service.schedule.flowtask.ApprovalFlowClient;
-import com.oceanbase.odc.service.schedule.flowtask.DefaultApprovalFlowClient;
+import com.oceanbase.odc.service.schedule.flowtask.NoApprovalFlowClient;
+import com.oceanbase.odc.service.schedule.util.DefaultScheduleDescriptionGenerator;
+import com.oceanbase.odc.service.schedule.util.ScheduleDescriptionGenerator;
 
 /**
  * @Author：tinker
@@ -37,12 +39,18 @@ public class ScheduleTaskConfiguration {
     @Bean
     @ConditionalOnMissingBean(ApprovalFlowClient.class)
     public ApprovalFlowClient approvalFlowService() {
-        return new DefaultApprovalFlowClient();
+        return new NoApprovalFlowClient();
     }
 
     @Bean
     @ConditionalOnMissingBean(ScheduleAlarmClient.class)
     public ScheduleAlarmClient scheduleAlarmClient() {
         return new DefaultScheduleAlarmClient();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ScheduleDescriptionGenerator.class)
+    public ScheduleDescriptionGenerator scheduleDescriptionGenerator() {
+        return new DefaultScheduleDescriptionGenerator();
     }
 }

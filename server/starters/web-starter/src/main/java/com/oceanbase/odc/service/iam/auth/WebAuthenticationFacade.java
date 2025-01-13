@@ -18,11 +18,14 @@ package com.oceanbase.odc.service.iam.auth;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.service.common.util.ConditionalOnProperty;
+
 /**
  * @author yizhou.xw
  * @version : PrivateAuthenticationFacadeImpl.java, v 0.1 2021-07-26 9:41
  */
 @Profile("alipay")
 @Service
+@ConditionalOnProperty(value = "odc.iam.auth.type", havingValues = {"local", "alipay", "buc", "oauth2"})
 public class WebAuthenticationFacade extends DefaultAuthenticationFacade {
 }

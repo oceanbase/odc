@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -42,8 +43,11 @@ import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.metadb.schedule.LatestTaskMappingEntity;
 import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
+import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.metadb.task.JobRepository;
 import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -64,11 +68,14 @@ import com.oceanbase.odc.service.schedule.model.ScheduleDetailRespHist;
 import com.oceanbase.odc.service.schedule.model.ScheduleOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleOverviewAttributes;
 import com.oceanbase.odc.service.schedule.model.ScheduleOverviewHist;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskListOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskType;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanAttributes;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
+import com.oceanbase.odc.service.sqlplan.model.SqlPlanTaskResult;
 
 import lombok.NonNull;
 
@@ -102,8 +109,10 @@ public class ScheduleResponseMapperFactory {
     private FlowInstanceRepository flowInstanceRepository;
     @Autowired
     private ApprovalPermissionService approvalPermissionService;
-
-
+    @Autowired
+    private ScheduleRepository scheduleRepository;
+    @Autowired
+    private JobRepository jobRepository;
 
     public ScheduleDetailResp generateScheduleDetailResp(@NonNull Schedule schedule) {
         ScheduleDetailResp scheduleDetailResp = new ScheduleDetailResp();
@@ -166,6 +175,7 @@ public class ScheduleResponseMapperFactory {
             ScheduleOverview overview = new ScheduleOverview();
             overview.setScheduleId(o.getId());
             overview.setScheduleName(o.getName());
+            overview.setType(o.getType());
             overview.setCreator(new InnerUser(users.get(o.getCreatorId()).get(0), null));
             overview.setStatus(o.getStatus());
             overview.setTriggerConfig(JsonUtils.fromJson(o.getTriggerConfigJson(), TriggerConfig.class));
@@ -177,6 +187,65 @@ public class ScheduleResponseMapperFactory {
             }
             return overview;
         }).collect(Collectors.toMap(ScheduleOverview::getScheduleId, o -> o));
+    }
+
+    public Map<Long, ScheduleTaskListOverview> generateScheduleTaskOverviewListMapper(
+            Collection<ScheduleTaskEntity> taskEntities) {
+        if (taskEntities.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Set<Long> scheduleIds = taskEntities.stream().map(o -> Long.parseLong(o.getJobName())).collect(
+                Collectors.toSet());
+
+        Map<Long, ScheduleEntity> id2Schedule = scheduleRepository.findAllById(scheduleIds).stream().collect(
+                Collectors.toMap(ScheduleEntity::getId, o -> o));
+
+        // get creator info
+        Set<Long> creatorIds =
+                id2Schedule.values().stream().map(ScheduleEntity::getCreatorId).collect(Collectors.toSet());
+        Map<Long, List<UserEntity>> users = userRepository.findByUserIds(creatorIds).stream().collect(
+                Collectors.groupingBy(UserEntity::getId));
+
+        // get database info
+        Set<Long> databaseIds =
+                id2Schedule.values().stream().map(ScheduleEntity::getDatabaseId).collect(Collectors.toSet());
+        Map<Long, Database> id2Database = getDatabaseByIds(databaseIds).stream()
+                .collect(Collectors.toMap(Database::getId, Function.identity()));
+
+        // get job result json
+        List<Long> jobIds = taskEntities.stream().map(ScheduleTaskEntity::getJobId).filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        Map<Long, String> resultMap = jobRepository.findAllById(jobIds).stream()
+                .filter(jobEntity -> jobEntity.getResultJson() != null)
+                .collect(Collectors.toMap(JobEntity::getId, JobEntity::getResultJson));
+
+        Map<Long, ScheduleOverviewAttributes> scheduleId2Attributes = generateAttributes(
+                id2Schedule.values());
+        return taskEntities.stream().map(task -> {
+            ScheduleTaskListOverview t = new ScheduleTaskListOverview();
+            ScheduleEntity schedule = id2Schedule.get(Long.parseLong(task.getJobName()));
+            t.setId(task.getId());
+            t.setScheduleId(schedule.getId().toString());
+            t.setStatus(task.getStatus());
+            t.setType(ScheduleTaskType.valueOf(task.getJobGroup()));
+            t.setLastExecutionTime(task.getFireTime());
+            t.setCreateTime(task.getCreateTime());
+            t.setUpdateTime(task.getUpdateTime());
+            t.setScheduleName(schedule.getName());
+            t.setCreator(new InnerUser(users.get(schedule.getCreatorId()).get(0), null));
+            String attributesJson;
+            if (t.getType() == ScheduleTaskType.SQL_PLAN) {
+                SqlPlanAttributes attributes = (SqlPlanAttributes) scheduleId2Attributes.get(schedule.getId());
+                attributes.setTaskResult(JsonUtils.fromJson(resultMap.get(task.getJobId()), SqlPlanTaskResult.class));
+                attributesJson = JsonUtils.toJson(attributes);
+            } else {
+                attributesJson = JsonUtils.toJson(scheduleId2Attributes.get(schedule.getId()));
+            }
+            t.setAttributes(JSON.parseObject(attributesJson));
+            return t;
+        }).collect(Collectors.toMap(ScheduleTaskListOverview::getId, o -> o));
     }
 
     @Deprecated
@@ -287,9 +356,6 @@ public class ScheduleResponseMapperFactory {
         }).collect(Collectors.toMap(ScheduleOverviewHist::getId, o -> o));
     }
 
-    public List<Database> getDatabaseInfoByIds(Set<Long> databaseIds) {
-        return getDatabaseByIds(databaseIds);
-    }
 
     private Map<Long, ScheduleOverviewAttributes> generateAttributes(Collection<ScheduleEntity> schedules) {
         Map<ScheduleType, List<ScheduleEntity>> type2Entity = schedules.stream().collect(
@@ -365,15 +431,15 @@ public class ScheduleResponseMapperFactory {
     }
 
     private List<Database> getDatabaseByIds(Set<Long> ids) {
-        List<Database> databases = databaseService.listDatabasesDetailsByIds(ids);
+        List<Database> databases = databaseService.listDatabasesByIds(ids);
         Set<Long> connectionIds =
                 databases.stream().filter(e -> e.getDataSource() != null && e.getDataSource().getId() != null)
                         .map(e -> e.getDataSource().getId()).collect(Collectors.toSet());
-        Map<Long, ConnectionConfig> id2Connection = dataSourceService.innerListByIds(connectionIds)
-                .stream().collect(Collectors.toMap(ConnectionConfig::getId, o -> o));
+        Map<Long, ConnectionConfig> id2Connection =
+                dataSourceService.internalListSkipUserCheck(connectionIds, false, false)
+                        .stream().collect(Collectors.toMap(ConnectionConfig::getId, o -> o));
         databases.forEach(database -> {
-            if (Objects.nonNull(database.getDataSource())
-                    && id2Connection.containsKey(database.getDataSource().getId())) {
+            if (id2Connection.containsKey(database.getDataSource().getId())) {
                 database.setDataSource(id2Connection.get(database.getDataSource().getId()));
             }
         });

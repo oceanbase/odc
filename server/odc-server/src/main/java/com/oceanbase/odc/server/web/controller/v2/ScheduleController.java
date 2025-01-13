@@ -152,23 +152,22 @@ public class ScheduleController {
     }
 
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks", method = RequestMethod.GET)
-    public PaginatedResponse<ScheduleTaskOverview> listTask(
+    public PaginatedResponse<ScheduleTaskOverview> listScheduleTaskForSchedule(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
             @PathVariable Long scheduleId) {
         return Responses.paginated(scheduleService.listScheduleTaskOverview(pageable, scheduleId));
     }
 
 
-    // list all schedule task by schedule type, type can not be null, currently only for sql plan
     @RequestMapping(value = "/tasks", method = RequestMethod.GET)
-    public PaginatedResponse<ScheduleTaskListOverview> listAllTask(
+    public PaginatedResponse<ScheduleTaskListOverview> listScheduleTask(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
             @RequestParam(required = false, name = "dataSourceId") Set<Long> datasourceIds,
             @RequestParam(required = false, name = "databaseName") String databaseName,
             @RequestParam(required = false, name = "tenantId") String tenantId,
             @RequestParam(required = false, name = "clusterId") String clusterId,
-            @RequestParam(required = false, name = "id") Long id,
-            @RequestParam(required = false, name = "scheduleId") Long scheduleId,
+            @RequestParam(required = false, name = "id") String id,
+            @RequestParam(required = false, name = "scheduleId") String scheduleId,
             @RequestParam(required = false, name = "scheduleName") String scheduleName,
             @RequestParam(required = false, name = "status") List<TaskStatus> status,
             @RequestParam(required = true, name = "scheduleType") ScheduleType scheduleType,
@@ -193,7 +192,7 @@ public class ScheduleController {
                 .projectId(projectId)
                 .build();
 
-        return Responses.paginated(scheduleService.listScheduleTaskOverviewByScheduleType(pageable, req));
+        return Responses.paginated(scheduleService.listScheduleTaskListOverview(pageable, req));
     }
 
     // schedule
@@ -238,21 +237,24 @@ public class ScheduleController {
     public PaginatedResponse<ScheduleOverview> list(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
             @RequestParam(required = false, name = "dataSourceId") Set<Long> datasourceIds,
+            @RequestParam(required = false, name = "dataSourceName") String dataSourceName,
             @RequestParam(required = false, name = "databaseName") String databaseName,
             @RequestParam(required = false, name = "tenantId") String tenantId,
             @RequestParam(required = false, name = "clusterId") String clusterId,
-            @RequestParam(required = false, name = "id") Long id,
+            @RequestParam(required = false, name = "id") String id,
             @RequestParam(required = false, name = "name") String name,
             @RequestParam(required = false, name = "status") List<ScheduleStatus> status,
             @RequestParam(required = false, name = "type") ScheduleType type,
             @RequestParam(required = false, name = "startTime") Date startTime,
             @RequestParam(required = false, name = "endTime") Date endTime,
             @RequestParam(required = false, name = "creator") String creator,
-            @RequestParam(required = false, name = "projectId") Long projectId) {
-
+            @RequestParam(required = false, name = "projectUniqueIdentifier") String projectUniqueIdentifier,
+            @RequestParam(required = false, name = "projectId") Long projectId,
+            @RequestParam(required = false, name = "triggerStrategy") String triggerStrategy) {
         QueryScheduleParams req = QueryScheduleParams.builder()
                 .id(id)
                 .name(name)
+                .dataSourceName(dataSourceName)
                 .dataSourceIds(datasourceIds)
                 .databaseName(databaseName)
                 .tenantId(tenantId)
@@ -263,6 +265,8 @@ public class ScheduleController {
                 .endTime(endTime)
                 .creator(creator)
                 .projectId(projectId)
+                .projectUniqueIdentifier(projectUniqueIdentifier)
+                .triggerStrategy(triggerStrategy)
                 .build();
 
         return Responses.paginated(scheduleService.listScheduleOverview(pageable, req));

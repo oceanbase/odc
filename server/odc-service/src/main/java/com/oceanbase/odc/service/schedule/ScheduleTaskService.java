@@ -15,13 +15,9 @@
  */
 package com.oceanbase.odc.service.schedule;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.quartz.JobKey;
@@ -32,8 +28,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.alibaba.fastjson.JSON;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -42,20 +38,17 @@ import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskSpecs;
-import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.JobRepository;
-import com.oceanbase.odc.service.common.model.InnerUser;
-import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseChangeService;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
 import com.oceanbase.odc.service.dlm.DLMService;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.factory.ScheduleResponseMapperFactory;
@@ -64,20 +57,14 @@ import com.oceanbase.odc.service.schedule.model.DataArchiveClearParameters;
 import com.oceanbase.odc.service.schedule.model.DataArchiveRollbackParameters;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleTaskParams;
-import com.oceanbase.odc.service.schedule.model.Schedule;
 import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
-import com.oceanbase.odc.service.schedule.model.ScheduleTaskListOverview;
-import com.oceanbase.odc.service.schedule.model.ScheduleTaskListOverviewMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverviewMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskType;
-import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
-import com.oceanbase.odc.service.sqlplan.model.SqlPlanAttributes;
-import com.oceanbase.odc.service.sqlplan.model.SqlPlanTaskResult;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
@@ -171,6 +158,7 @@ public class ScheduleTaskService {
     /**
      * Trigger an existing task to retry or resume a terminated task.
      */
+    @Transactional(rollbackFor = Exception.class)
     public void start(Long id) {
         ScheduleTask scheduleTask = nullSafeGetModelById(id);
         if (!scheduleTask.getStatus().isRetryAllowed()) {
@@ -179,6 +167,24 @@ public class ScheduleTaskService {
                     id);
             throw new IllegalStateException(
                     "The task cannot be restarted because it is currently in progress or has already completed.");
+        }
+        switch (ScheduleTaskType.valueOf(scheduleTask.getJobGroup())) {
+            case DATA_ARCHIVE:
+            case DATA_ARCHIVE_ROLLBACK:
+            case DATA_ARCHIVE_DELETE:
+            case DATA_DELETE: {
+                List<DlmTableUnit> tableUnits = dlmService.findByScheduleTaskId(scheduleTask.getId()).stream()
+                        .peek(unit -> {
+                            // Re-run all unfinished tableUnits
+                            if (unit.getStatus() != TaskStatus.DONE) {
+                                unit.setStatus(TaskStatus.PREPARING);
+                            }
+                        }).collect(Collectors.toList());
+                dlmService.createOrUpdateDlmTableUnits(tableUnits);
+                break;
+            }
+            default:
+                break;
         }
         try {
             JobKey jobKey = new JobKey(scheduleTask.getJobName(), scheduleTask.getJobGroup());
@@ -266,58 +272,9 @@ public class ScheduleTaskService {
         return list(pageable, scheduleId).map(ScheduleTaskOverviewMapper::map);
     }
 
-    public Page<ScheduleTaskListOverview> getConditionalScheduleTaskListResp(Pageable pageable,
+    public Page<ScheduleTaskEntity> listEntity(Pageable pageable,
             QueryScheduleTaskParams params) {
-        Map<String, Schedule> scheduleMap = params.getSchedules().stream()
-                .collect(Collectors.toMap(schedule -> schedule.getId().toString(), Function.identity()));
-
-        Specification<ScheduleTaskEntity> specification =
-                Specification.where(ScheduleTaskSpecs.jobNameIn(scheduleMap.keySet()))
-                        .and(ScheduleTaskSpecs.jobIdEquals(params.getScheduleId()))
-                        .and(ScheduleTaskSpecs.statusIn(params.getStatuses()))
-                        .and(ScheduleTaskSpecs.fireTimeLate(params.getStartTime()))
-                        .and(ScheduleTaskSpecs.fireTimeBefore(params.getEndTime()));
-
-        Page<ScheduleTask> scheduleTaskPage = scheduleTaskRepository.findAll(specification, pageable).map(
-                scheduleTaskMapper::entityToModel);
-
-        if (scheduleTaskPage.isEmpty()) {
-            return Page.empty();
-        }
-
-        // get creator info
-        Set<Long> creatorIds = params.getSchedules().stream().map(Schedule::getCreatorId).collect(Collectors.toSet());
-        Map<Long, List<UserEntity>> users = userRepository.findByIdIn(creatorIds).stream().collect(
-                Collectors.groupingBy(UserEntity::getId));
-
-        // get database info
-        Set<Long> databaseIds = params.getSchedules().stream().map(Schedule::getDatabaseId).collect(Collectors.toSet());
-        Map<Long, Database> databaseMap = scheduleResponseMapperFactory.getDatabaseInfoByIds(databaseIds).stream()
-                .collect(Collectors.toMap(Database::getId, Function.identity()));
-
-        // get job result json
-        List<Long> jobIds = scheduleTaskPage.getContent().stream().map(ScheduleTask::getJobId).filter(Objects::nonNull)
-                .collect(Collectors.toList());
-
-        Map<Long, String> resultMap = jobRepository.findAllById(jobIds).stream()
-                .filter(jobEntity -> jobEntity.getResultJson() != null)
-                .collect(Collectors.toMap(JobEntity::getId, JobEntity::getResultJson));
-
-        return scheduleTaskPage.map(task -> {
-            Schedule schedule = scheduleMap.get(task.getJobName());
-            ScheduleTaskListOverview overview = ScheduleTaskListOverviewMapper.map(task);
-            overview.setScheduleName(schedule.getName());
-            overview.setCreator(new InnerUser(users.get(schedule.getCreatorId()).get(0), null));
-            if (schedule.getType() == ScheduleType.SQL_PLAN) {
-                SqlPlanAttributes attribute = new SqlPlanAttributes();
-                attribute.setDatabaseInfo(databaseMap.get(schedule.getDatabaseId()));
-                attribute.setTaskResult(JsonUtils.fromJson(resultMap.get(task.getJobId()), SqlPlanTaskResult.class));
-                Map<Long, String> id2Attributes = new HashMap<>();
-                id2Attributes.put(task.getId(), JsonUtils.toJson(attribute));
-                overview.setAttributes(JSON.parseObject(id2Attributes.get(task.getId())));
-            }
-            return overview;
-        });
+        return scheduleTaskRepository.find(pageable, params);
     }
 
     public List<ScheduleTask> listByJobNames(Set<String> jobNames) {

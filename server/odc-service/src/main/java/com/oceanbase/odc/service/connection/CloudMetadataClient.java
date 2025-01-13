@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.connection;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -85,6 +86,11 @@ public interface CloudMetadataClient {
     OBDatabaseUser getSysTenantUser(@NotBlank String instanceId);
 
     boolean supportsCloudParentUid();
+
+    OBDatabaseUser createDatabaseUser(String instanceId, String tenantId, OBDatabaseUser user,
+            Map<String, String> roles);
+
+    void deleteDatabaseUsers(String instanceId, String tenantId, List<String> users);
 
     enum CloudPermissionAction {
         READONLY,

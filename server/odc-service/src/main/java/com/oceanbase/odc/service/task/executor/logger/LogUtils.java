@@ -96,4 +96,5 @@ public class LogUtils {
     public static String generateScheduleTaskLogFileName(@NonNull Long scheduleId, Long scheduleTaskId) {
         return String.format(SCHEDULE_LOG_FILE_NAME_PATTERN, scheduleId, scheduleTaskId);
     }
+
 }

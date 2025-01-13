@@ -15,7 +15,10 @@
  */
 package com.oceanbase.odc.service.schedule.flowtask;
 
+import org.springframework.stereotype.Component;
+
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.service.common.util.ConditionalOnProperty;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
@@ -28,6 +31,8 @@ import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
  * @Descripition:
  */
 
+@Component
+@ConditionalOnProperty(value = "odc.iam.auth.type", havingValues = {"local", "alipay", "buc", "oauth2"})
 public class DefaultApprovalFlowClient implements ApprovalFlowClient {
 
     @Override

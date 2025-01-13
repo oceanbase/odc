@@ -104,6 +104,7 @@ public class ExecutorRequestHandler {
                     // assign final error message
                     DefaultTaskResultBuilder.assignErrorMessage(result, task);
                     taskMonitor.markLogMetaCollected();
+                    log.info("Task log metadata collected, ji={}.", ji.getId());
                 }
                 DefaultTaskResult copiedResult = ObjectUtil.deepCopy(result, DefaultTaskResult.class);
                 return Responses.ok(copiedResult);

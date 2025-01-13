@@ -20,7 +20,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -138,7 +137,7 @@ public class CloudObjectStorageService {
     }
 
     public URL generateDownloadUrl(@NotBlank String objectName, Long expirationSeconds) throws IOException {
-        return cloudObjectStorageClient.generateDownloadUrl(objectName, expirationSeconds);
+        return cloudObjectStorageClient.generateDownloadUrl(objectName, expirationSeconds, null);
     }
 
     public URL generateUploadUrl(@NotBlank String objectName) {
@@ -164,8 +163,8 @@ public class CloudObjectStorageService {
      * @throws IOException
      */
     public boolean delete(@NotBlank String objectName) throws IOException {
-        List<String> deletedObjectNames = delete(Collections.singletonList(objectName));
-        return !deletedObjectNames.isEmpty();
+        cloudObjectStorageClient.deleteObject(objectName);
+        return true;
     }
 
     /**
@@ -194,6 +193,20 @@ public class CloudObjectStorageService {
         } catch (IOException e) {
             throw new RuntimeException("download to temp file failed,objectName=" + objectName, e);
         }
+    }
+
+    /**
+     * get object inputStream by objectName
+     * 
+     * @param objectName objectName
+     * @return inputStream of object
+     */
+    public InputStream getObject(@NotBlank String objectName) throws IOException {
+        return cloudObjectStorageClient.getObject(objectName);
+    }
+
+    public InputStream getAbortableObject(@NotBlank String objectName) throws IOException {
+        return cloudObjectStorageClient.getAbortableObject(objectName);
     }
 
     ObjectStorageConfiguration getObjectStorageConfiguration() {

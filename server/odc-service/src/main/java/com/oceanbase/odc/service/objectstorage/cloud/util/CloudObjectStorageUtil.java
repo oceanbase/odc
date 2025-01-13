@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.objectstorage.cloud.util;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -76,11 +77,17 @@ public class CloudObjectStorageUtil {
         SimpleDateFormat format = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
         format.setTimeZone(TimeZone.getDefault());
         builder.append(prefix).append(format.format(date)).append("/")
+                .append(StringUtils.isEmpty(userId) ? "" : userId + "/")
                 .append(dateFormat.format(date)).append("/")
                 .append(digest).append("/")
                 .append(subPath).append("/")
                 .append(fileName);
         return builder.toString();
+    }
+
+    public static String generateOneDayObjectName(@NonNull String fileName) {
+        return CloudObjectStorageUtil.generateObjectName(null, UUID.randomUUID().toString(),
+                CloudObjectStorageConstants.TEMP_ONE_DAY_DIR, fileName);
     }
 
     public static String getOriginalFileName(String objectName) {

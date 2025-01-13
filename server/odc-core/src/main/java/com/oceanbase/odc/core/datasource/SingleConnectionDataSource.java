@@ -33,6 +33,7 @@ import com.oceanbase.odc.common.event.AbstractEvent;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.core.datasource.event.ConnectionResetEvent;
 import com.oceanbase.odc.core.datasource.event.GetConnectionFailedEvent;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 
@@ -79,7 +80,10 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     @Override
     public Connection getConnection() throws SQLException {
         if (Objects.isNull(this.connection)) {
-            return innerCreateConnection();
+            Connection conn = innerCreateWhenConnectionIsNull();
+            if (conn != null) {
+                return conn;
+            }
         }
         Lock thisLock = this.lock;
         if (!tryLock(thisLock)) {
@@ -88,6 +92,11 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         }
         try {
             if (this.connection.isClosed() || !this.connection.isValid(getLoginTimeout())) {
+                try {
+                    ConnectionSessionUtil.logSocketInfo(this.connection, "SingleConnectionDataSource#getConnection()");
+                } catch (Exception ignore) {
+                    // eat the exception
+                }
                 if (!this.autoReconnect) {
                     throw new SQLException("Connection was closed or not valid");
                 }
@@ -153,6 +162,10 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         } catch (InterruptedException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    private synchronized Connection innerCreateWhenConnectionIsNull() throws SQLException {
+        return this.connection == null ? innerCreateConnection() : null;
     }
 
     private Connection getConnectionProxy(@NonNull Connection connection, @NonNull Lock thisLock) {
