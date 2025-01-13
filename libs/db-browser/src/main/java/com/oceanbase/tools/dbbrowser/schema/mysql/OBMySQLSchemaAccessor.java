@@ -289,16 +289,21 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             fillWarning(indexList, DBObjectType.INDEX, "table ddl is blank, can not set index range by parse ddl");
             return;
         }
-        ParseSqlResult result = SqlParser.parseMysql(ddl);
-        if (CollectionUtils.isEmpty(result.getIndexes())) {
-            fillWarning(indexList, DBObjectType.INDEX, "parse index DDL failed");
-        } else {
-            indexList.forEach(index -> result.getIndexes().forEach(dbIndex -> {
-                if (StringUtils.equals(index.getName(), dbIndex.getName())) {
-                    index.setGlobal("GLOBAL".equalsIgnoreCase(dbIndex.getRange().name()));
-                    index.setColumnGroups(dbIndex.getColumnGroups());
-                }
-            }));
+        try {
+            ParseSqlResult result = SqlParser.parseMysql(ddl);
+            if (CollectionUtils.isEmpty(result.getIndexes())) {
+                fillWarning(indexList, DBObjectType.INDEX, "parse index DDL failed");
+            } else {
+                indexList.forEach(index -> result.getIndexes().forEach(dbIndex -> {
+                    if (StringUtils.equals(index.getName(), dbIndex.getName())) {
+                        index.setGlobal("GLOBAL".equalsIgnoreCase(dbIndex.getRange().name()));
+                        index.setColumnGroups(dbIndex.getColumnGroups());
+                    }
+                }));
+            }
+        } catch (Exception e) {
+            fillWarning(indexList, DBObjectType.INDEX, "failed to set index info by parse ddl");
+            log.warn("failed to set index info by parse ddl:{}", ddl, e);
         }
     }
 
