@@ -380,6 +380,7 @@ public class IntegrationService {
         }
     }
 
+    @SkipAuthorize("odc internal usage")
     public SSOCredential generateSSOCredential() {
         return new SSOCredential(samlCredentialManager.generateCertWithCachedPrivateKey());
     }
