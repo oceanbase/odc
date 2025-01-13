@@ -118,7 +118,7 @@ public class R4237DefaultRuleApplyingMigrate implements JdbcMigratable {
              * environment.<br>
              */
             List<DefaultRuleApplyingEntity> defaultEnvDefaultRuleApplyings =
-                    toAdd.stream().filter(e -> e.getRulesetName().endsWith("default-default-ruleset.name"))
+                    toAdd.stream().filter(e -> e.getRulesetName().endsWith("default-default-ruleset.name}"))
                             .collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(defaultEnvDefaultRuleApplyings)) {
                 RulesetRepository rulesetRepository = SpringContextUtil.getBean(RulesetRepository.class);

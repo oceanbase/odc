@@ -118,6 +118,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         }
     }
 
+    @SkipAuthorize
     @Override
     public boolean supportKillConsoleQuery(ConnectionSession session) {
         if (Objects.nonNull(session) && ConnectionSessionUtil.isLogicalSession(session)) {
