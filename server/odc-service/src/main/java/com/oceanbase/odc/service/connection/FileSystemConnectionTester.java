@@ -49,7 +49,7 @@ import lombok.NonNull;
  */
 
 @Component
-public class FileSystemConnectionTesting {
+public class FileSystemConnectionTester {
 
     private static final String COS_ENDPOINT_PATTERN = "cos.{0}.myqcloud.com";
     private static final String OBS_ENDPOINT_PATTERN = "obs.{0}.myhuaweicloud.com";
@@ -84,7 +84,7 @@ public class FileSystemConnectionTesting {
             cloudClient.deleteObjects(deleteObjectsRequest);
             return ConnectionTestResult.success(config.getType());
         } catch (CloudException e) {
-            if (e.getCause() instanceof OSSException) {
+            if (e.getCause() != null && e.getCause() instanceof OSSException) {
                 OSSException cause = (OSSException) e.getCause();
                 switch (cause.getErrorCode()) {
                     case OSSErrorCode.ACCESS_DENIED:

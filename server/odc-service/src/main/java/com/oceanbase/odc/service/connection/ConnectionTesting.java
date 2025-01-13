@@ -75,7 +75,7 @@ public class ConnectionTesting {
     @Autowired
     private CloudMetadataClient cloudMetadataClient;
     @Autowired
-    private FileSystemConnectionTesting fileSystemConnectionTesting;
+    private FileSystemConnectionTester fileSystemConnectionTesting;
     @Value("${odc.sdk.test-connect.query-timeout-seconds:2}")
     private int queryTimeoutSeconds = 2;
 
