@@ -224,7 +224,7 @@ public class SqlParserTest {
                 + "  `title` varchar(200) DEFAULT NULL,\n"
                 + "  `content` text DEFAULT NULL,\n"
                 + "  PRIMARY KEY (`id`), \n"
-                + " FULLTEXT KEY `title` (`title`, `content`) CTXCAT(`title`, `content`) WITH PARSER 'TAOBAO_CHN' BLOCK_SIZE 16384\n"
+                + " FULLTEXT KEY `title` (`title`, `content`) CTXCAT(`title`, `content`) WITH PARSER TAOBAO_CHN BLOCK_SIZE 16384\n"
                 + ") ";
         ParseSqlResult result = SqlParser.parseMysql(sql);
         Assert.assertEquals(1, result.getIndexes().size());
