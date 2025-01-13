@@ -605,6 +605,7 @@ public class ConnectionService {
         return updateConnectionConfig(id, connection, true);
     }
 
+    @SkipAuthorize("odc internal usage")
     public ConnectionConfig updateWithoutPermissionCheck(@NotNull Long id,
             @NotNull @Valid ConnectionConfig connection) {
         return updateConnectionConfig(id, connection, false);

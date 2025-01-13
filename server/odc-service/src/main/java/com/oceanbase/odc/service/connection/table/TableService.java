@@ -209,6 +209,7 @@ public class TableService {
     }
 
     // sync normal table
+    @SkipAuthorize("odc internal usage")
     public void syncDBTables(@NotNull Connection connection, @NotNull Database database,
             @NotNull DialectType dialectType) throws InterruptedException {
         syncDBTables(connection, database, dialectType, dbTableSyncer);
