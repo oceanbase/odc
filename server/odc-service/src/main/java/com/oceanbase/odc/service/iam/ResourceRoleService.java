@@ -390,6 +390,7 @@ public class ResourceRoleService {
         return model;
     }
 
+    @SkipAuthorize("internal usage")
     public static UserResourceRoleEntity toEntity(UserResourceRole model) {
         UserResourceRoleEntity entity = new UserResourceRoleEntity();
         entity.setResourceId(model.getResourceId());

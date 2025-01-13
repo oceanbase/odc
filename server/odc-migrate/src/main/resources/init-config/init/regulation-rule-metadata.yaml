@@ -1553,3 +1553,39 @@
       value: OB_MYSQL
     - label: SUPPORTED_DIALECT_TYPE
       value: MYSQL
+- id: 61
+  name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.create-table-like-exists.name}
+  description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.create-table-like-exists.description}
+  type: SQL_CHECK
+  builtIn: 1
+  labels:
+    - label: SUB_TYPE
+      value: DDL
+    - label: SUB_TYPE
+      value: TABLE
+    - label: SUPPORTED_DIALECT_TYPE
+      value: OB_MYSQL
+    - label: SUPPORTED_DIALECT_TYPE
+      value: MYSQL
+    - label: SUPPORTED_DIALECT_TYPE
+      value: ODP_SHARDING_OB_MYSQL
+- id: 62
+  name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.create-table-as-exists.name}
+  description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.create-table-as-exists.description}
+  type: SQL_CHECK
+  builtIn: 1
+  labels:
+    - label: SUB_TYPE
+      value: DDL
+    - label: SUB_TYPE
+      value: TABLE
+    - label: SUPPORTED_DIALECT_TYPE
+      value: MYSQL
+    - label: SUPPORTED_DIALECT_TYPE
+      value: ORACLE
+    - label: SUPPORTED_DIALECT_TYPE
+      value: OB_MYSQL
+    - label: SUPPORTED_DIALECT_TYPE
+      value: OB_ORACLE
+    - label: SUPPORTED_DIALECT_TYPE
+      value: ODP_SHARDING_OB_MYSQL

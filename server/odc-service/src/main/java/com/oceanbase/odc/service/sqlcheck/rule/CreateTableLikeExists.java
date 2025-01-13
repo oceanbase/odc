@@ -15,13 +15,12 @@
  */
 package com.oceanbase.odc.service.sqlcheck.rule;
 
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
@@ -33,23 +32,15 @@ import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import lombok.NonNull;
 
 /**
- * {@link BaseMissingRequiredColumns}
- *
- * @author yh263208
- * @date 2023-06-27 15:46
- * @since ODC_release_4.2.0
+ * @description:
+ * @author: zijia.cj
+ * @date: 2025/1/8 17:31
+ * @since: 4.3.3
  */
-public abstract class BaseMissingRequiredColumns implements SqlCheckRule {
-
-    private final Set<String> requiredColumns;
-
-    public BaseMissingRequiredColumns(@NonNull Set<String> requiredColumns) {
-        this.requiredColumns = requiredColumns;
-    }
-
+public class CreateTableLikeExists implements SqlCheckRule {
     @Override
     public SqlCheckRuleType getType() {
-        return SqlCheckRuleType.MISSING_REQUIRED_COLUMNS;
+        return SqlCheckRuleType.CREATE_TABLE_LIKE_EXISTS;
     }
 
     @Override
@@ -58,20 +49,15 @@ public abstract class BaseMissingRequiredColumns implements SqlCheckRule {
             return Collections.emptyList();
         }
         CreateTable createTable = (CreateTable) statement;
-        if (Objects.nonNull(createTable.getLikeTable()) || Objects.nonNull(createTable.getAs())) {
-            return Collections.emptyList();
+        if (Objects.nonNull(createTable.getLikeTable())) {
+            return Collections.singletonList(SqlCheckUtil.buildViolation(
+                    statement.getText(), statement, getType(), new Object[] {}));
         }
-        List<String> columns = createTable.getColumnDefinitions().stream()
-                .map(d -> unquoteIdentifier(d.getColumnReference().getColumn())).collect(Collectors.toList());
-        Set<String> tmp = new HashSet<>(requiredColumns);
-        tmp.removeIf(s -> columns.contains(unquoteIdentifier(s)));
-        if (tmp.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return Collections.singletonList(SqlCheckUtil.buildViolation(
-                statement.getText(), statement, getType(), new Object[] {String.join(",", tmp)}));
+        return Collections.emptyList();
     }
 
-    protected abstract String unquoteIdentifier(String identifier);
-
+    @Override
+    public List<DialectType> getSupportsDialectTypes() {
+        return Arrays.asList(DialectType.MYSQL, DialectType.OB_MYSQL, DialectType.ODP_SHARDING_OB_MYSQL);
+    }
 }
