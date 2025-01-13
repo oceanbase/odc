@@ -128,7 +128,6 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         }
     }
 
-    @SkipAuthorize
     @Override
     @SkipAuthorize("odc internal usage")
     public boolean supportKillConsoleQuery(ConnectionSession session) {
