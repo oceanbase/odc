@@ -99,13 +99,14 @@ public class ConnectionTesting {
         if (req.getAccountType() == ConnectionAccountType.SYS_READ) {
             connectionConfig.setDefaultSchema(null);
         }
-        return connectionConfig.getDialectType() == DialectType.FILE_SYSTEM
-                ? fileSystemConnectionTesting.test(connectionConfig)
-                : test(connectionConfig);
+        return test(connectionConfig);
     }
 
     public ConnectionTestResult test(@NonNull ConnectionConfig config) {
         ConnectType type = config.getType();
+        if (type.getDialectType() == DialectType.FILE_SYSTEM) {
+            return fileSystemConnectionTesting.test(config);
+        }
         try {
             /**
              * 进行连接测试时需要关注的值有一个 {@link ConnectType}， 容易产生问题信息主要是两个：{@code username}, {@code defaultSchema} 首先分析
