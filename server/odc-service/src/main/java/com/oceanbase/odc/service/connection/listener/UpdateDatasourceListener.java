@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.common.event.AbstractEventListener;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
@@ -71,7 +72,7 @@ public class UpdateDatasourceListener extends AbstractEventListener<UpsertDataso
         }
         // create or update
         entity = entity == null ? new DatabaseEntity() : entity;
-        entity.setDatabaseId(com.oceanbase.odc.common.util.StringUtils.uuid());
+        entity.setDatabaseId(StringUtils.uuid());
         entity.setOrganizationId(connectionConfig.getOrganizationId());
         entity.setName(connectionConfig.getHost());
         entity.setProjectId(connectionConfig.getProjectId());
