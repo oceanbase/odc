@@ -454,7 +454,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
                     .forEach(sessionList -> {
                         SessionExtensionPoint sessionExtension =
                                 ConnectionPluginUtil.getSessionExtension(connectionSession.getDialectType());
-                        Map<String, String> connectionId2KillSql = sessionExtension.getKillQuerySqls(
+                        Map<String, String> connectionId2KillSql = sessionExtension.getKillSessionSqls(
                                 sessionList.stream().map(OdcDBSession::getSessionId).collect(Collectors.toSet()));
                         doKill(connectionSession, connectionId2KillSql);
                     });
