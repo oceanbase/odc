@@ -36,7 +36,8 @@
 
 * Added GUI support for OceanBase external tables.
 * Added support for displaying secondary partitions in OceanBase partitioned tables.
-* Added support for editing stored procedures/functions in OceanBase MySQL mode.
+* Added support for editing stored procedures in OceanBase MySQL mode.
+* Added compatibility with OBServer IP routing in ODP.
 
 **Other Enhancements**
 
@@ -44,7 +45,6 @@
 * Added session kill capability for native Oracle data sources.
 * Added compatibility for OceanBase V4.2.5 and V4.3.3.
 * Added support for OBKV SQL mode.
-* Added compatibility with OBServer IP routing in ODP.
 * Enabled secure cookie mechanism for enhanced data transmission security.
 * Added column width adjustment support for forms (ticket lists, database lists).
 
@@ -69,17 +69,14 @@
 
 * Fixed approval workflow triggering in personal workspace for data archiving tickets.
 * Fixed status inconsistency in data archiving/cleanup task execution records.
-* Fixed NPE errors during logical database change task initialization.
 * Fixed structure comparison task execution issues for non-current account users.
 * Fixed Oracle table structure export failures with virtual columns.
 * Fixed structure comparison failures for OceanBase MySQL tables with full-text index tokenizers.
-* Fixed incorrect DDL generation for MySQL tables with year type in structure comparison.
 * Fixed operation record viewing failures for periodic tasks with numerous subtasks.
 * Fixed non-working configuration retention in export tasks.
 
 **Change Management**
 
-* Fixed project archiving failures due to task status check errors.
 * Fixed unauthorized view exports.
 * Fixed partition plan disable issues affecting project archiving.
 
@@ -89,11 +86,12 @@
 * Fixed PL drop requiring database change permissions.
 * Fixed display issues for functions with year return type.
 * Fixed PL creation and drop failures with @ in names.
-* Fixed table detail viewing failures for Oracle tables with extended statistics (DBMS_STATS.CREATE_EXTENDED_STATS).
+* Fixed table detail viewing failures for Oracle tables with extended statistics (`DBMS_STATS.CREATE_EXTENDED_STATS`).
 * Fixed ineffective row limit for Insert statements.
 * Fixed null pointer exceptions when exporting array function result sets.
-* Fixed result set export errors with Chinese commas in SQL statements in OBOracle mode.
+* Fixed result set export errors with Chinese commas in SQL statements in OceanBase Oracle mode.
 * Fixed missing run button for package subprocedures in Chrome 118.
+* Fixed error when viewing subprocedures in package headers.
 
 **Other**
 
