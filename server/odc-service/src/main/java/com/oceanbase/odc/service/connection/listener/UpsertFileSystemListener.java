@@ -25,7 +25,6 @@ import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
@@ -43,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class UpdateDatasourceListener extends AbstractEventListener<UpsertDatasourceEvent> {
+public class UpsertFileSystemListener extends AbstractEventListener<UpsertDatasourceEvent> {
 
     @Autowired
     private DatabaseRepository databaseRepository;
@@ -52,7 +51,7 @@ public class UpdateDatasourceListener extends AbstractEventListener<UpsertDataso
     public void onEvent(UpsertDatasourceEvent event) {
 
         ConnectionConfig connectionConfig = event.getConnectionConfig();
-        if (connectionConfig.getDialectType() != DialectType.FILE_SYSTEM) {
+        if (!connectionConfig.getType().isFileSystem()) {
             return;
         }
         List<DatabaseEntity> byConnectionId = databaseRepository.findByConnectionId(connectionConfig.getId());
