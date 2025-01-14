@@ -36,7 +36,7 @@ SQL 开发
 - 支持 OceanBase 外表白屏化管理
 - 支持 OceanBase 分区表的二级分区展示
 - 支持编辑 OceanBase MySQL 模式的函数和存储过程
-- 适配 ODP 指定 observer ip 路由功能
+- 支持通过 OBProxy 进行 PL 调试
 
 其他
 
@@ -88,7 +88,6 @@ SQL 开发
 - 查看原生 Oracle 扩展了统计信息（`DBMS_STATS.CREATE_EXTENDED_STATS`）的表详情失败
 - 限制 SQL 影响的行数时，insert 语句不生效
 - 导出数组函数结果集时，空指针异常问题
-- OceanBase Oracle 模式下，若 SQL 中含有中文逗号，导出结果集时报错
 - 在 Chrome 118 版本的浏览器中，右键单击软件包子程序时没有运行按钮
 - 查看程序包包头中的子程序时报错
 

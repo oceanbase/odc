@@ -37,7 +37,7 @@
 * Added GUI support for OceanBase external tables.
 * Added support for displaying secondary partitions in OceanBase partitioned tables.
 * Added support for editing stored procedures in OceanBase MySQL mode.
-* Added compatibility with OBServer IP routing in ODP.
+* Added support for PL debugging via OBProxy.
 
 **Other Enhancements**
 
@@ -89,7 +89,6 @@
 * Fixed table detail viewing failures for Oracle tables with extended statistics (`DBMS_STATS.CREATE_EXTENDED_STATS`).
 * Fixed ineffective row limit for Insert statements.
 * Fixed null pointer exceptions when exporting array function result sets.
-* Fixed result set export errors with Chinese commas in SQL statements in OceanBase Oracle mode.
 * Fixed missing run button for package subprocedures in Chrome 118.
 * Fixed error when viewing subprocedures in package headers.
 
