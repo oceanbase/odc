@@ -41,7 +41,7 @@ public class OBMySQLNoLessThan400StatsAccessor extends OBMySQLStatsAccessor {
             + "  STATE, "
             + "  `USER_CLIENT_IP` as HOST, "
             + "  HOST as PROXY_HOST, "
-            + "  CONCAT(SVR_IP, ':', SVR_PORT) AS SVR_IP, "
+            + "  CONCAT(SVR_IP, ':', SQL_PORT) AS SVR_IP, "
             + "  TIME as EXECUTE_TIME, "
             + "  CASE "
             + "    WHEN `TRANS_STATE` IS NULL OR `TRANS_STATE` IN ('', 'IDLE', 'IN_TERMINATE', 'ABORTED', "
