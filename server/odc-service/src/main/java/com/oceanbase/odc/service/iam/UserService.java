@@ -370,7 +370,7 @@ public class UserService {
             throw new UnsupportedException(ErrorCodes.IllegalOperation, new Object[] {"admin account"},
                     "Operation on admin account is not allowed");
         }
-        permissionValidator.checkCurrentOrganization(new User(userEntity));
+        permissionValidator.checkCurrentOrganization(nullSafeGetUser(id));
 
         UserDeleteEvent event = new UserDeleteEvent();
         event.setUserId(id);
@@ -738,7 +738,7 @@ public class UserService {
         }
         userEntity.setEnabled(updateUserReq.isEnabled());
         userEntity.setDescription(updateUserReq.getDescription());
-        permissionValidator.checkCurrentOrganization(new User(userEntity));
+        permissionValidator.checkCurrentOrganization(nullSafeGetUser(id));
         userRepository.update(userEntity);
         publishTriggerEventAfterTx(new User(userEntity), TriggerEvent.USER_UPDATED);
         log.info("User has been updated: {}", userEntity);
@@ -787,7 +787,7 @@ public class UserService {
             throw new UnsupportedException(ErrorCodes.IllegalOperation, new Object[] {"admin account"},
                     "Operation on admin account is not allowed");
         }
-        permissionValidator.checkCurrentOrganization(new User(userEntity));
+        permissionValidator.checkCurrentOrganization(nullSafeGetUser(id));
         userEntity.setEnabled(enabled);
         userRepository.update(userEntity);
         User user = new User(userEntity);
@@ -810,8 +810,9 @@ public class UserService {
                     "New password has to be different from old password");
             SecurityContextUtils.setCurrentUser(new User(userEntity));
         } else {
-            userEntity = nullSafeGet(authenticationFacade.currentUserId());
-            permissionValidator.checkCurrentOrganization(authenticationFacade.currentUser());
+            long currentUserId = authenticationFacade.currentUserId();
+            userEntity = nullSafeGet(currentUserId);
+            permissionValidator.checkCurrentOrganization(nullSafeGetUser(currentUserId));
         }
         String previousPassword = userEntity.getPassword();
         FailedLoginAttemptLimiter attemptLimiter = userIdChangePasswordAttamptCache.get(userEntity.getId());
@@ -858,7 +859,7 @@ public class UserService {
     @PreAuthenticate(actions = "update", resourceType = "ODC_USER", indexOfIdParam = 0)
     public User resetPassword(long id, String password) {
         UserEntity userEntity = nullSafeGet(id);
-        permissionValidator.checkCurrentOrganization(new User(userEntity));
+        permissionValidator.checkCurrentOrganization(nullSafeGetUser(id));
         String previousPassword = userEntity.getPassword();
 
         PreConditions.validPassword(password);
@@ -885,6 +886,14 @@ public class UserService {
     }
 
     @SkipAuthorize("odc internal usage")
+    public User nullSafeGetUser(long id) {
+        UserEntity entity = nullSafeGet(id);
+        User user = new User(entity);
+        user.setOrganizationIds(userOrganizationRepository.findAllOrganizationIdByUserId(entity.getId()));
+        return user;
+    }
+
+    @SkipAuthorize("odc internal usage")
     public UserEntity nullSafeGet(String accountName) {
         return userRepository.findByAccountName(accountName)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_USER, "accountName", accountName));
@@ -899,7 +908,13 @@ public class UserService {
                     .collect(Collectors.joining(","));
             throw new NotFoundException(ResourceType.ODC_USER, "id", absentIds);
         }
-        return entities.stream().map(User::new).collect(Collectors.toList());
+        List<User> users = new ArrayList<>();
+        entities.stream().forEach(entity -> {
+            User user = new User(entity);
+            user.setOrganizationIds(userOrganizationRepository.findAllOrganizationIdByUserId(entity.getId()));
+            users.add(user);
+        });
+        return users;
     }
 
     @SkipAuthorize("odc internal usage")

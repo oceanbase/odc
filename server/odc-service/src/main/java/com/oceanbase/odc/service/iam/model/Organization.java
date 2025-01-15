@@ -25,8 +25,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.common.i18n.Internationalizable;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
-import com.oceanbase.odc.core.shared.OrganizationIsolated;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.ResourceBindToSingleOrganization;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.metadb.iam.OrganizationEntity;
@@ -40,7 +40,7 @@ import lombok.ToString;
  */
 @Data
 @ToString(exclude = "secret")
-public class Organization implements Serializable, SecurityResource, OrganizationIsolated {
+public class Organization implements Serializable, SecurityResource, ResourceBindToSingleOrganization {
     @JsonProperty(access = Access.READ_ONLY)
     private Long id;
     @JsonProperty(access = Access.READ_ONLY)

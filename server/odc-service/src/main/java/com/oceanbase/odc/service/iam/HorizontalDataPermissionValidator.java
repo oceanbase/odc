@@ -17,13 +17,16 @@ package com.oceanbase.odc.service.iam;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.core.shared.OrganizationIsolated;
+import com.oceanbase.odc.core.shared.OrganizationResource;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.ResourceBindToMultiOrganizations;
+import com.oceanbase.odc.core.shared.ResourceBindToSingleOrganization;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -34,19 +37,27 @@ public class HorizontalDataPermissionValidator {
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
-    public final <T extends OrganizationIsolated> void checkCurrentOrganization(T object) {
+    public final <T extends OrganizationResource> void checkCurrentOrganization(T object) {
         checkCurrentOrganization(Collections.singletonList(object));
     }
 
-    public final <T extends OrganizationIsolated> void checkCurrentOrganization(List<T> objects) {
+    public final <T extends OrganizationResource> void checkCurrentOrganization(List<T> objects) {
         Validate.notNull(objects,
                 "Resources can not be null for HorizontalDataPermissionValidator#checkCurrentOrganization");
         Long currentOrganizationId = authenticationFacade.currentOrganizationId();
         for (T item : objects) {
-            Long organizationId = item.organizationId();
-            Verify.notNull(organizationId, "organizationId");
-            PreConditions.validExists(ResourceType.valueOf(item.resourceType()), "id", item.id(),
-                    () -> currentOrganizationId.equals(organizationId));
+            if (item instanceof ResourceBindToSingleOrganization) {
+                Long organizationId = ((ResourceBindToSingleOrganization) item).organizationId();
+                Verify.notNull(organizationId, "organizationId");
+                PreConditions.validExists(ResourceType.valueOf(item.resourceType()), "id", item.id(),
+                        () -> currentOrganizationId.equals(organizationId));
+            } else if (item instanceof ResourceBindToMultiOrganizations) {
+                Set<Long> organizationIds = ((ResourceBindToMultiOrganizations) item).organizationIds();
+                PreConditions.validExists(ResourceType.valueOf(item.resourceType()), "id", item.id(),
+                        () -> organizationIds.contains(currentOrganizationId));
+            } else {
+                throw new IllegalArgumentException("Unsupported type " + item.getClass().getName());
+            }
         }
     }
 

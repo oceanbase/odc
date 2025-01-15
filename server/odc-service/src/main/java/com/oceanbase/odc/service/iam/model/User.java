@@ -34,8 +34,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.common.json.SensitiveInput;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
-import com.oceanbase.odc.core.shared.OrganizationIsolated;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.ResourceBindToMultiOrganizations;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.UserType;
@@ -51,7 +51,7 @@ import lombok.ToString;
 
 @Data
 @ToString(exclude = {"password"})
-public class User implements Principal, UserDetails, SecurityResource, OrganizationIsolated, OidcUser {
+public class User implements Principal, UserDetails, SecurityResource, ResourceBindToMultiOrganizations, OidcUser {
 
     private static final long serialVersionUID = -7525670432276629968L;
 
@@ -100,6 +100,12 @@ public class User implements Principal, UserDetails, SecurityResource, Organizat
      */
     @JsonProperty(access = Access.READ_ONLY)
     private Long organizationId;
+
+    /**
+     * All organizations to which the user belongs to
+     */
+    @JsonProperty(access = Access.READ_ONLY)
+    private Set<Long> organizationIds;
 
     @JsonProperty(access = Access.READ_ONLY)
     private OrganizationType organizationType;
@@ -189,11 +195,6 @@ public class User implements Principal, UserDetails, SecurityResource, Organizat
     }
 
     @Override
-    public Long organizationId() {
-        return this.organizationId;
-    }
-
-    @Override
     public Long id() {
         return this.id;
     }
@@ -211,5 +212,10 @@ public class User implements Principal, UserDetails, SecurityResource, Organizat
     @Override
     public OidcIdToken getIdToken() {
         return null;
+    }
+
+    @Override
+    public Set<Long> organizationIds() {
+        return this.organizationIds;
     }
 }
