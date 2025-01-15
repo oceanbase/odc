@@ -16,18 +16,25 @@
 package com.oceanbase.odc.service.sqlcheck.rule;
 
 import java.io.StringReader;
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.JdbcOperations;
 
+import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
@@ -38,11 +45,16 @@ import com.oceanbase.tools.sqlparser.OBMySQLParser;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
+import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
+import com.oceanbase.tools.sqlparser.statement.common.DataType;
+import com.oceanbase.tools.sqlparser.statement.common.NumberType;
+import com.oceanbase.tools.sqlparser.statement.createtable.ColumnAttributes;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import com.oceanbase.tools.sqlparser.statement.createtable.GenerateOption.Type;
 import com.oceanbase.tools.sqlparser.statement.createtable.InLineConstraint;
 import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineConstraint;
+import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
 import com.oceanbase.tools.sqlparser.statement.droptable.DropTable;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 import com.oceanbase.tools.sqlparser.statement.truncate.TruncateTable;
@@ -56,13 +68,41 @@ import lombok.NonNull;
  * @date 2024-03-05 21:12
  * @since ODC_release_4.2.4
  * @ref https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000000252799
+ * @ref https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000002017083
  */
 public class MySQLOfflineDdlExists implements SqlCheckRule {
+    // compatible map
+    // array[0] represent ranking
+    // array[1] represent default precision
+    private static final Map<String, int[]> INTEGER_RANKING_MAP = new HashMap<String, int[]>() {
+        {
+            put("BOOL", new int[] {0, 1});
+            put("BOOLEAN", new int[] {0, 1});
+            put("TINYINT", new int[] {1, 4});
+            put("SMALLINT", new int[] {2, 6});
+            put("MEDIUMINT", new int[] {4, 9});
+            put("INT", new int[] {4, 11});
+            put("INTEGER", new int[] {4, 11});
+            put("BIGINT", new int[] {5, 20});
+        }
+    };
+
+    private static final int[] INVALID_INTEGER_RANKING_VALUE = new int[] {-1, 0};
+
+    private static final Map<String, Integer> TEXT_RANKING_MAP = new HashMap<String, Integer>() {
+        {
+            put("TEXT", 0);
+            put("MEDIUMTEXT", 1);
+            put("LONGTEXT", 2);
+        }
+    };
 
     private final JdbcOperations jdbcOperations;
+    private final Supplier<String> dbVersionSupplier;
 
-    public MySQLOfflineDdlExists(JdbcOperations jdbcOperations) {
+    public MySQLOfflineDdlExists(Supplier<String> dbVersionSupplier, JdbcOperations jdbcOperations) {
         this.jdbcOperations = jdbcOperations;
+        this.dbVersionSupplier = dbVersionSupplier;
     }
 
     @Override
@@ -75,13 +115,14 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
         if (statement instanceof AlterTable) {
             AlterTable alterTable = (AlterTable) statement;
             CreateTable createTable = getTable(alterTable.getSchema(), alterTable.getTableName(), context);
+            String dbVersion = getDBVersion();
             return alterTable.getAlterTableActions().stream().flatMap(action -> {
                 List<CheckViolation> violations = new ArrayList<>();
                 violations.addAll(addColumnInLocation(statement, action));
                 violations.addAll(changeColumnInLocation(statement, action));
                 violations.addAll(addAutoIncrementColumn(statement, action));
                 violations.addAll(changeColumnToAutoIncrement(statement, createTable, action));
-                violations.addAll(changeColumnDataType(statement, createTable, action));
+                violations.addAll(changeColumnDataType(dbVersion, statement, createTable, action));
                 violations.addAll(changeColumnToPrimaryKey(createTable, statement, action));
                 violations.addAll(addOrDropStoredVirtualColumn(statement, action));
                 violations.addAll(dropColumn(statement, action));
@@ -102,6 +143,16 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
         return Collections.emptyList();
     }
 
+    protected String getDBVersion() {
+        String version = null;
+        try {
+            // get version failed, return null version
+            version = dbVersionSupplier == null ? null : dbVersionSupplier.get();
+        } catch (Throwable e) {
+        }
+        return version;
+    }
+
     protected List<CheckViolation> addColumnInLocation(Statement statement, AlterTableAction action) {
         return addColumn(action, definition -> {
             if (definition.getLocation() != null) {
@@ -112,16 +163,231 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
         });
     }
 
-    protected List<CheckViolation> changeColumnDataType(Statement statement, CreateTable target,
+    protected List<CheckViolation> changeColumnDataType(String dbVersion, Statement statement, CreateTable target,
             AlterTableAction action) {
+        boolean isOb4x = VersionUtils.isGreaterThan(dbVersion, "4.0.0");
         return changeColumn(action, changed -> {
             ColumnDefinition origin = extractColumnDefFrom(target, changed.getColumnReference());
-            if (origin == null || Objects.equals(origin.getDataType(), changed.getDataType())) {
+            // only ob 4.x check online feature
+            if (isOb4x) {
+                if (isOnLineDDL(origin, changed, target.getTableOptions())) {
+                    return null;
+                }
+            } else if (origin == null || Objects.equals(origin.getDataType(), changed.getDataType())) {
                 return null;
             }
             return SqlCheckUtil.buildViolation(statement.getText(), action, getType(),
                     new Object[] {"MODIFY COLUMN DATA TYPE"});
         });
+    }
+
+
+    // check if data type change is online ddl
+    // 1. modify （add/remove/change）default value
+    // 2. change null flag null / not null
+    // 3. increase precision of char/varchar/text/number
+    protected boolean isOnLineDDL(ColumnDefinition origin, ColumnDefinition target, TableOptions tableOptions) {
+        // actually origin should not be bull
+        DataType originDataType = origin.getDataType();
+        DataType targetDataType = target.getDataType();
+        // check attribute
+        if (isAttributeChanged(origin, target)) {
+            return false;
+        }
+        // check foreign key constraint define, reference and be referenced
+        if (!objectEquals(origin.getForeignReference(), target.getForeignReference())
+                || !objectEquals(origin.getGenerateOption(), target.getGenerateOption())) {
+            return false;
+        }
+        return isDataTypePrecisionExtend(originDataType, targetDataType, tableOptions)
+                || isDataTypeCompatible(originDataType, targetDataType);
+    }
+
+    protected boolean isAttributeChanged(ColumnDefinition origin, ColumnDefinition target) {
+        ColumnAttributes originAttributes = origin.getColumnAttributes();
+        ColumnAttributes targetAttributes = target.getColumnAttributes();
+        if (!objectEquals(getField(originAttributes, ColumnAttributes::getAutoIncrement),
+                getField(targetAttributes, ColumnAttributes::getAutoIncrement))) {
+            // auto increment change not support
+            return true;
+        } else if (!objectEquals(getField(originAttributes, ColumnAttributes::getCollation),
+                getField(targetAttributes, ColumnAttributes::getCollation))) {
+            // collation change not support
+            return true;
+        } else if (!collectionEquals(getField(originAttributes, ColumnAttributes::getForeignConstraints),
+                getField(targetAttributes, ColumnAttributes::getForeignConstraints))) {
+            // inline constraint changed
+            return true;
+        } else {
+            // check constraint changed
+            return !collectionEquals(getField(originAttributes, ColumnAttributes::getCheckConstraints),
+                    getField(targetAttributes, ColumnAttributes::getCheckConstraints));
+        }
+    }
+
+    private static <T extends Comparable<T>> int compare(T origin, T target) {
+        if (null == origin && null == target) {
+            return 0;
+        }
+        // default precision not decided, always return 1 mean shrink
+        if (null == origin || null == target) {
+            return 1;
+        }
+        return origin.compareTo(target);
+    }
+
+    private static <T> boolean objectEquals(T origin, T target) {
+        if (null == origin && null == target) {
+            return true;
+        }
+        if (null == origin || null == target) {
+            return false;
+        }
+        return origin.equals(target);
+    }
+
+    private static <T extends Collection> boolean collectionEquals(T origin, T target) {
+        boolean originEmpty = CollectionUtils.isEmpty(origin);
+        boolean targetEmpty = CollectionUtils.isEmpty(target);
+        if (originEmpty && targetEmpty) {
+            return true;
+        }
+        if (originEmpty || targetEmpty) {
+            return false;
+        }
+        return CollectionUtils.isEqualCollection(origin, target);
+    }
+
+    private static <T> T getField(ColumnAttributes attributes, Function<ColumnAttributes, T> valueSupplier) {
+        if (null == attributes) {
+            return null;
+        }
+        return valueSupplier.apply(attributes);
+    }
+
+    /**
+     * only check number, varchar, char type
+     *
+     * @return
+     */
+    protected boolean isDataTypePrecisionExtend(DataType origin, DataType target, TableOptions tableOptions) {
+        if (!StringUtils.equalsIgnoreCase(origin.getName(), target.getName())
+                && !(isDecimalDataType(origin) && isDecimalDataType(target))) {
+            return false;
+        }
+        if (origin instanceof NumberType && target instanceof NumberType) {
+            // compare number type with same type name
+            return isNumberExtend((NumberType) origin, (NumberType) target);
+        } else if (origin instanceof CharacterType && target instanceof CharacterType) {
+            // compare character type
+            CharacterType originCharacter = (CharacterType) origin;
+            CharacterType targetCharacter = (CharacterType) target;
+            if (!isCharsetAndCollationCompatible(originCharacter, targetCharacter, tableOptions)
+                    || !StringUtils.equalsIgnoreCase(originCharacter.getLengthOption(),
+                            targetCharacter.getLengthOption())) {
+                return false;
+            }
+            return compare(originCharacter.getLength(), (targetCharacter.getLength())) <= 0;
+        } else {
+            return false;
+        }
+    }
+
+    protected boolean isNumberExtend(NumberType originNumber, NumberType targetNumber) {
+        if (!objectEquals(originNumber.getSigned(), targetNumber.getSigned())
+                || originNumber.isStarPresicion() != targetNumber.isStarPresicion()
+                || originNumber.isZeroFill() != targetNumber.isZeroFill()) {
+            return false;
+        }
+        // decimal(10, 4) -> decimal(10, 5) also a offline ddl
+        return compare(originNumber.getScale() == null ? new BigDecimal(0) : originNumber.getScale(),
+                targetNumber.getScale() == null ? new BigDecimal(0) : targetNumber.getScale()) == 0
+                && compare(getDefaultPrecision(originNumber), getDefaultPrecision(targetNumber)) <= 0;
+    }
+
+    protected BigDecimal getDefaultPrecision(NumberType number) {
+        if (number.getPrecision() != null) {
+            return number.getPrecision();
+        }
+        int precision =
+                INTEGER_RANKING_MAP.getOrDefault(number.getName().toUpperCase(), INVALID_INTEGER_RANKING_VALUE)[1];
+        return new BigDecimal(precision);
+    }
+
+
+    // assume table's default charset gbk, default collate gbk_bin.
+    // for create table column definition '`c6` varchar(60) COLLATE gbk_bin'.
+    // 'modify c6 varchar(80) charset gbk' is offline ddl.
+    // 'modify c6 varchar(80) charset gbk collate gbk_bin' is online ddl.
+    // 'modify c6 varchar(80) collate gbk_bin' is online ddl.
+    // 'modify c6 varchar(80)' is online ddl.
+    // for create table column definition '`c6` varchar(60) charset gbk'.
+    // 'modify c6 varchar(120) charset gbk' is online ddl.
+    // 'modify c6 varchar(120) charset gbk COLLATE gbk_bin' is offline ddl.
+    // 'modify c6 varchar(120) collate gbk_bin' is offline ddl.
+    // 'modify c6 varchar(120)' is offline ddl.
+    // so the point is collate change compare, if collate changed in ddl definition, it must be a
+    // offline ddl modify ddl charset.
+    // if collate can derived from table option depends on if charset is provided.
+    protected boolean isCharsetAndCollationCompatible(CharacterType origin, CharacterType target,
+            TableOptions tableOptions) {
+        // first check collation, collation should not be derived if charset provided
+        String originCollation = getCollationDependsOnCharset(origin, tableOptions.getCollation());
+        String targetCollation = getCollationDependsOnCharset(target, tableOptions.getCollation());
+        if (!StringUtils.equalsIgnoreCase(originCollation, targetCollation)) {
+            return false;
+        }
+        // check charset
+        String originCharset = getOrDefault(origin, CharacterType::getCharset, tableOptions.getCharset());
+        String targetCharset = getOrDefault(target, CharacterType::getCharset, tableOptions.getCharset());
+        return StringUtils.equalsIgnoreCase(originCharset, targetCharset);
+    }
+
+    protected String getCollationDependsOnCharset(CharacterType characterType, String defaultCollation) {
+        String collation = null;
+        if (StringUtils.isEmpty(characterType.getCharset())) {
+            // if collation and charset not supplied, use given or default collation
+            collation = getOrDefault(characterType, CharacterType::getCollation, defaultCollation);
+        } else {
+            // charset provided, collation not derived from table option
+            collation = characterType.getCollation();
+        }
+        return collation;
+    }
+
+    protected String getOrDefault(CharacterType characterType, Function<CharacterType, String> valueFunc,
+            String defaultValue) {
+        String value = valueFunc.apply(characterType);
+        if (StringUtils.isEmpty(value)) {
+            value = defaultValue;
+        }
+        return value;
+    }
+
+    protected boolean isDecimalDataType(DataType dataType) {
+        return StringUtils.equalsIgnoreCase(dataType.getName(), "DECIMAL")
+                || StringUtils.equalsIgnoreCase(dataType.getName(), "DEC")
+                || StringUtils.equalsIgnoreCase(dataType.getName(), "NUMBER");
+    }
+
+    protected boolean isDataTypeCompatible(DataType origin, DataType target) {
+        if (origin instanceof NumberType && target instanceof NumberType) {
+            // check integer
+            int originRanking =
+                    INTEGER_RANKING_MAP.getOrDefault(origin.getName().toUpperCase(), INVALID_INTEGER_RANKING_VALUE)[0];
+            int targetRanking =
+                    INTEGER_RANKING_MAP.getOrDefault(target.getName().toUpperCase(), INVALID_INTEGER_RANKING_VALUE)[0];
+            // type, scale and precision should be extended as well
+            return originRanking >= 0 && targetRanking >= 0 && originRanking <= targetRanking
+                    && isNumberExtend((NumberType) origin, (NumberType) target);
+        } else if (origin instanceof CharacterType && target instanceof CharacterType) {
+            // check integer
+            int originRanking = TEXT_RANKING_MAP.getOrDefault(origin.getName().toUpperCase(), -1);
+            int targetRanking = TEXT_RANKING_MAP.getOrDefault(target.getName().toUpperCase(), -1);
+            return originRanking >= 0 && targetRanking >= 0 && originRanking <= targetRanking;
+        } else {
+            return false;
+        }
     }
 
     protected List<CheckViolation> changePartition(Statement statement, AlterTableAction action) {

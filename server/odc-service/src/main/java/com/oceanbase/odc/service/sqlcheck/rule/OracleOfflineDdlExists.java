@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.springframework.jdbc.core.JdbcOperations;
@@ -50,8 +51,8 @@ import lombok.NonNull;
  */
 public class OracleOfflineDdlExists extends MySQLOfflineDdlExists {
 
-    public OracleOfflineDdlExists(JdbcOperations jdbcOperations) {
-        super(jdbcOperations);
+    public OracleOfflineDdlExists(Supplier<String> dbVersionSupplier, JdbcOperations jdbcOperations) {
+        super(dbVersionSupplier, jdbcOperations);
     }
 
     @Override

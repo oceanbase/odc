@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.junit.Assert;
@@ -84,6 +85,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.TruncateTableExists;
  * @since ODC_release_4.1.0
  */
 public class OracleSqlCheckerTest {
+    private Supplier<String> defaultVersionSupplier = () -> "10.1";
 
     @Test
     public void check_sqlWithColumnLeftCalculation_violationGenerated() {
@@ -1193,7 +1195,7 @@ public class OracleSqlCheckerTest {
         Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.any(RowMapper.class)))
                 .thenReturn(sqls[4]);
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
-                null, Collections.singletonList(new OracleOfflineDdlExists(jdbcTemplate)));
+                null, Collections.singletonList(new OracleOfflineDdlExists(defaultVersionSupplier, jdbcTemplate)));
         List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.OFFLINE_SCHEMA_CHANGE_EXISTS;
@@ -1236,7 +1238,7 @@ public class OracleSqlCheckerTest {
                 + "return v1;\n"
                 + "end; $$";
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE, "$$",
-                SqlCheckRules.getAllDefaultRules(null, DialectType.OB_ORACLE));
+                SqlCheckRules.getAllDefaultRules(null, defaultVersionSupplier, DialectType.OB_ORACLE));
         Assert.assertTrue(sqlChecker.check(sql).isEmpty());
     }
 
@@ -1248,7 +1250,7 @@ public class OracleSqlCheckerTest {
                 + "return v1;\n"
                 + "end; $$";
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE, "$$",
-                SqlCheckRules.getAllDefaultRules(null, DialectType.OB_ORACLE));
+                SqlCheckRules.getAllDefaultRules(null, defaultVersionSupplier, DialectType.OB_ORACLE));
         List<CheckViolation> actual = sqlChecker.check(sql);
 
         SqlCheckRuleType type = SqlCheckRuleType.SYNTAX_ERROR;
