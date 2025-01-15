@@ -31,14 +31,8 @@ public class HostUtilsTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testExtractServerAddress_InvalidExpression1() {
-        String ipAndPort = "1.1.1.1.1:1234";
-        HostUtils.extractServerAddress(ipAndPort);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testExtractServerAddress_InvalidExpression2() {
-        String ipAndPort = "1.1.1?1:1234";
+    public void testExtractServerAddress_InvalidExpression() {
+        String ipAndPort = "1.1.1.1";
         HostUtils.extractServerAddress(ipAndPort);
     }
 }

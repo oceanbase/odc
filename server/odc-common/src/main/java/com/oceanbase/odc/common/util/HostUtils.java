@@ -15,9 +15,6 @@
  */
 package com.oceanbase.odc.common.util;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import javax.validation.constraints.NotNull;
 
 import lombok.Data;
@@ -30,10 +27,6 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class HostUtils {
-    // valid expression examples: 0.0.0.0:8888, 127.1:8888, etc
-    private static final String SERVER_REGEX = "(?<ip>([0-9]{1,3}\\.){1,3}([0-9]{1,3})):(?<port>[0-9]{1,5})";
-    private static final Pattern SERVER_PATTERN = Pattern.compile(SERVER_REGEX);
-
 
     @NotNull
     public static ServerAddress extractServerAddress(String ipAndPort) {
@@ -42,18 +35,16 @@ public class HostUtils {
             log.info("unable to extract server address, text is empty");
             throw new IllegalArgumentException("Empty server address!");
         }
-        Matcher matcher = SERVER_PATTERN.matcher(trimmed);
-        if (!matcher.matches()) {
-            log.info("unable to extract server address, does not match pattern");
+        String[] segments = StringUtils.split(trimmed, ":");
+        if (segments.length != 2) {
+            log.info("unable to extract server address, segments={}", segments);
             throw new IllegalArgumentException("Invalid server address!");
         }
-        String ipAddress = matcher.group("ip");
-        String port = matcher.group("port");
-        if (StringUtils.isEmpty(ipAddress) || StringUtils.isEmpty(port)) {
-            log.info("unable to extract server address, ipAddress={}, port={}", ipAddress, port);
+        if (StringUtils.isEmpty(segments[0]) || StringUtils.isEmpty(segments[1])) {
+            log.info("unable to extract server address, segments={}", segments);
             throw new IllegalArgumentException("Invalid server address!");
         }
-        return new ServerAddress(ipAddress, port);
+        return new ServerAddress(segments[0], segments[1]);
     }
 
 
