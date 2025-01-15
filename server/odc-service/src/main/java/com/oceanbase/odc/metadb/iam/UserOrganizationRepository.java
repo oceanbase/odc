@@ -16,9 +16,12 @@
 package com.oceanbase.odc.metadb.iam;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 public interface UserOrganizationRepository extends JpaRepository<UserOrganizationEntity, Long>,
@@ -31,4 +34,7 @@ public interface UserOrganizationRepository extends JpaRepository<UserOrganizati
     int deleteByUserIdAndOrganizationId(Long userId, Long organizationId);
 
     List<UserOrganizationEntity> findByOrganizationId(Long organizationId);
+
+    @Query("select e.organizationId from UserOrganizationEntity e where e.userId=:userId")
+    Set<Long> findAllOrganizationIdByUserId(@Param("userId") Long userId);
 }

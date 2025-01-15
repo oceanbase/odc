@@ -15,12 +15,7 @@
  */
 package com.oceanbase.odc.core.shared;
 
-public interface OrganizationIsolated {
-
-    String resourceType();
-
+public interface ResourceBindToSingleOrganization extends OrganizationResource {
     Long organizationId();
-
-    Long id();
 
 }

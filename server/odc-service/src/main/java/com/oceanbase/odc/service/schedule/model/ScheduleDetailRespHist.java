@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.oceanbase.odc.common.i18n.Internationalizable;
-import com.oceanbase.odc.core.shared.OrganizationIsolated;
+import com.oceanbase.odc.core.shared.ResourceBindToSingleOrganization;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
@@ -37,7 +37,7 @@ import lombok.Data;
  */
 
 @Data
-public class ScheduleDetailRespHist implements OrganizationIsolated {
+public class ScheduleDetailRespHist implements ResourceBindToSingleOrganization {
 
 
     private Long id;

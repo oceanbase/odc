@@ -20,7 +20,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
-import com.oceanbase.odc.core.shared.OrganizationIsolated;
+import com.oceanbase.odc.core.shared.ResourceBindToSingleOrganization;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.metadb.automation.AutomationRuleEntity;
 
@@ -32,7 +32,7 @@ import lombok.Data;
  */
 
 @Data
-public class AutomationRule implements OrganizationIsolated {
+public class AutomationRule implements ResourceBindToSingleOrganization {
     @JsonProperty(access = Access.READ_ONLY)
     private Long id;
     private String name;

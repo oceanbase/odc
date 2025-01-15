@@ -25,7 +25,7 @@ import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.common.i18n.Internationalizable;
 import com.oceanbase.odc.common.json.NormalDialectTypeOutput;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
-import com.oceanbase.odc.core.shared.OrganizationIsolated;
+import com.oceanbase.odc.core.shared.ResourceBindToSingleOrganization;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
@@ -39,7 +39,7 @@ import lombok.Data;
  */
 
 @Data
-public class Rule implements SecurityResource, OrganizationIsolated, Serializable {
+public class Rule implements SecurityResource, ResourceBindToSingleOrganization, Serializable {
 
     @JsonProperty(access = Access.READ_ONLY)
     private Long id;
