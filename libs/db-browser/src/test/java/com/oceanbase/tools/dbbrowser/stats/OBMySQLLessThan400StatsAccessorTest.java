@@ -25,12 +25,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.tools.dbbrowser.env.BaseTestEnv;
 import com.oceanbase.tools.dbbrowser.model.DBSession;
-import com.oceanbase.tools.dbbrowser.stats.mysql.OBMySQLLessThan400StatsAccessor;
+import com.oceanbase.tools.dbbrowser.stats.mysql.OBMySQLStatsAccessor;
 
 public class OBMySQLLessThan400StatsAccessorTest extends BaseTestEnv {
     @Test
     public void listAllSessions() {
-        DBStatsAccessor accessor = new OBMySQLLessThan400StatsAccessor(new JdbcTemplate(getOBMySQLDataSource()));
+        DBStatsAccessor accessor = new OBMySQLStatsAccessor(new JdbcTemplate(getOBMySQLDataSource()));
         List<DBSession> sessions = accessor.listAllSessions();
         Assert.assertTrue(sessions.size() > 0);
         sessions.stream().forEach(s -> Assert.assertNotNull(s.getSvrIp()));
