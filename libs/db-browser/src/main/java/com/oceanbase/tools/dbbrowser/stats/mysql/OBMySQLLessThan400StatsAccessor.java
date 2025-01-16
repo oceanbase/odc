@@ -22,6 +22,7 @@ import java.util.Map;
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.tools.dbbrowser.model.DBSession;
+import com.oceanbase.tools.dbbrowser.util.StringUtils;
 
 import lombok.NonNull;
 
@@ -43,7 +44,7 @@ public class OBMySQLLessThan400StatsAccessor extends MySQLNoLessThan5700StatsAcc
         Map<String, String> sessionId2SvrIp = new HashMap<>();
         jdbcOperations.query(LIST_SESSIONS_BY_SHOW_PROCESSLIST, rs -> {
             String id = rs.getString("ID");
-            String svrIp = rs.getString("IP") + ":" + rs.getString("PORT");
+            String svrIp = StringUtils.join(rs.getString("IP"), ":", rs.getString("PORT"));
             sessionId2SvrIp.put(id, svrIp);
         });
         sessions.forEach(session -> session.setSvrIp(sessionId2SvrIp.get(session.getId())));
