@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 
+import com.google.common.base.MoreObjects;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
@@ -52,6 +53,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
+    private static final Integer DEFAULT_INSERT_BATCH_SIZE = 100;
+
     public LoadParameterFactory(DataTransferConfig config, File workingDir, File logDir) {
         super(config, workingDir, logDir);
     }
@@ -83,9 +86,8 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
             }
             if (transferConfig.isTransferData()) {
                 parameter.setTruncatable(transferConfig.isTruncateTableBeforeImport());
-                if (transferConfig.getBatchCommitNum() != null) {
-                    parameter.setBatchSize(transferConfig.getBatchCommitNum());
-                }
+                parameter.setBatchSize(
+                        MoreObjects.firstNonNull(transferConfig.getBatchCommitNum(), DEFAULT_INSERT_BATCH_SIZE));
                 if (transferConfig.getSkippedDataType() != null) {
                     parameter.getExcludeDataTypes().addAll(transferConfig.getSkippedDataType());
                 }
@@ -95,6 +97,11 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
             parameter.setTruncatable(transferConfig.isTruncateTableBeforeImport());
             setCsvMappings(parameter, transferConfig);
             setWhiteListForExternalCsv(parameter, transferConfig, workingDir);
+            parameter.setBatchSize(
+                    MoreObjects.firstNonNull(transferConfig.getBatchCommitNum(), DEFAULT_INSERT_BATCH_SIZE));
+            if (transferConfig.getSkippedDataType() != null) {
+                parameter.getExcludeDataTypes().addAll(transferConfig.getSkippedDataType());
+            }
         } else if (transferConfig.getDataTransferFormat() == DataTransferFormat.SQL) {
             parameter.setReplaceObjectIfExists(true);
         }
