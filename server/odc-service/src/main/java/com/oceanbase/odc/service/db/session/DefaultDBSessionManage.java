@@ -171,11 +171,22 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
                 // do nothing
             }
         }
-
-        List<OdcDBSession> checkedList = getSessionList(connectionSession, filter);
-        if (CollectionUtils.isNotEmpty(checkedList)) {
-            throw new IllegalStateException("kill session failed, has session reserved");
+        long startTimeMs = System.currentTimeMillis();
+        long endTimeMs = startTimeMs + 1500L;
+        while (System.currentTimeMillis() < endTimeMs) {
+            List<OdcDBSession> checkedList = getSessionList(connectionSession, filter);
+            if (CollectionUtils.isEmpty(getSessionList(connectionSession, filter))) {
+                log.info("All sessions killed, elapsed time: {}ms", System.currentTimeMillis() - startTimeMs);
+                return;
+            }
+            log.info("Has sessions reserved:{}", checkedList);
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                log.warn("Thread sleep interrupted", e);
+            }
         }
+        throw new IllegalStateException("kill session failed, has session reserved");
     }
 
     private List<KillResult> doKill(ConnectionSession session, Map<String, String> connectionId2KillSqls) {
