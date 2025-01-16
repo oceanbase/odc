@@ -209,7 +209,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         ConnectionSession creteConnectionSession = null;
         try {
             creteConnectionSession = factory.generateSession();
-            return DBStatsAccessors.create(connectionSession)
+            return DBStatsAccessors.create(creteConnectionSession)
                     .listAllSessions()
                     .stream()
                     .map(OdcDBSession::from)
