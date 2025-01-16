@@ -30,7 +30,7 @@ import com.oceanbase.tools.dbbrowser.stats.mysql.OBMySQLLessThan400StatsAccessor
 public class OBMySQLLessThan400StatsAccessorTest extends BaseTestEnv {
     @Test
     public void listAllSessions() {
-        DBStatsAccessor accessor = new OBMySQLLessThan400StatsAccessor(new JdbcTemplate(getMySQLDataSource()));
+        DBStatsAccessor accessor = new OBMySQLLessThan400StatsAccessor(new JdbcTemplate(getOBMySQLDataSource()));
         List<DBSession> sessions = accessor.listAllSessions();
         Assert.assertTrue(sessions.size() > 0);
         sessions.stream().forEach(s -> Assert.assertNotNull(s.getSvrIp()));

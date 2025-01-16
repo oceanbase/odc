@@ -79,7 +79,7 @@ public abstract class BaseTestEnv extends BasePropertiesEnv {
         initDataSource(mysqlParseResult, MYSQL_DS_KEY);
 
         OracleConnectionConfig oracleConfig = buildOracleConnectionConfig();
-        initOracleDataSource(oracleConfig);
+        // initOracleDataSource(oracleConfig);
 
         Thread shutdownHookThread = new Thread(() -> {
             clear(obMysqlParseResult, OB_MYSQL_DS_KEY);
@@ -88,7 +88,7 @@ public abstract class BaseTestEnv extends BasePropertiesEnv {
             log.info("Clear OB Oracle user succeed, user={}", TEST_OB_ORACLE_DATABASE_NAME);
             clear(mysqlParseResult, MYSQL_DS_KEY);
             log.info("Clear MySQL database succeed, database={}", TEST_MYSQL_DATABASE_NAME);
-            clear(oracleConfig);
+            // clear(oracleConfig);
             log.info("Clear Oracle user succeed, user={}", TEST_ORACLE_DATABASE_NAME);
             DATASOURCE_MAP.values().forEach(SingleConnectionDataSource::destroy);
             log.info("Clear datasource succeed");
