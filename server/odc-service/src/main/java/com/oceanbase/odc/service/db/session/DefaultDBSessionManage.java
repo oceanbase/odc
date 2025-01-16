@@ -62,12 +62,14 @@ import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.db.browser.DBStatsAccessors;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 
 import lombok.AllArgsConstructor;
@@ -200,12 +202,25 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     }
 
     private List<OdcDBSession> getSessionList(ConnectionSession connectionSession, Predicate<OdcDBSession> filter) {
-        return DBStatsAccessors.create(connectionSession)
-                .listAllSessions()
-                .stream()
-                .map(OdcDBSession::from)
-                .filter(filter == null ? a -> true : filter)
-                .collect(Collectors.toList());
+        CreateSessionReq keyFromId = new DefaultConnectSessionIdGenerator().getKeyFromId(connectionSession.getId());
+        Long dsId = keyFromId.getDsId();
+        ConnectionConfig connectionConfig = connectionService.getForConnect(dsId);
+        DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(connectionConfig);
+        ConnectionSession creteConnectionSession = null;
+        try {
+            creteConnectionSession = factory.generateSession();
+            return DBStatsAccessors.create(connectionSession)
+                    .listAllSessions()
+                    .stream()
+                    .map(OdcDBSession::from)
+                    .filter(filter == null ? a -> true : filter)
+                    .collect(Collectors.toList());
+        } finally {
+            if (creteConnectionSession != null) {
+                creteConnectionSession.expire();
+            }
+        }
+
     }
 
     private List<JdbcGeneralResult> executeSqls(ConnectionSession connectionSession, List<SqlTuple> sqlTuples) {
