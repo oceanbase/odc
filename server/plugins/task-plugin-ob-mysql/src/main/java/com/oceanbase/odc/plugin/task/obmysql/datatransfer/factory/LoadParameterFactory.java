@@ -95,6 +95,12 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
             parameter.setTruncatable(transferConfig.isTruncateTableBeforeImport());
             setCsvMappings(parameter, transferConfig);
             setWhiteListForExternalCsv(parameter, transferConfig, workingDir);
+            if (transferConfig.getBatchCommitNum() != null) {
+                parameter.setBatchSize(transferConfig.getBatchCommitNum());
+            }
+            if (transferConfig.getSkippedDataType() != null) {
+                parameter.getExcludeDataTypes().addAll(transferConfig.getSkippedDataType());
+            }
         } else if (transferConfig.getDataTransferFormat() == DataTransferFormat.SQL) {
             parameter.setReplaceObjectIfExists(true);
         }
