@@ -26,8 +26,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import com.oceanbase.tools.dbbrowser.AbstractDBBrowserFactory;
 import com.oceanbase.tools.dbbrowser.stats.mysql.DorisStatsAccessor;
 import com.oceanbase.tools.dbbrowser.stats.mysql.MySQLNoLessThan5700StatsAccessor;
+import com.oceanbase.tools.dbbrowser.stats.mysql.OBMySQLLessThan400StatsAccessor;
 import com.oceanbase.tools.dbbrowser.stats.mysql.OBMySQLNoLessThan400StatsAccessor;
-import com.oceanbase.tools.dbbrowser.stats.mysql.OBMySQLStatsAccessor;
 import com.oceanbase.tools.dbbrowser.stats.mysql.ODPOBMySQLStatsAccessor;
 import com.oceanbase.tools.dbbrowser.stats.oracle.OBOracleLessThan2270StatsAccessor;
 import com.oceanbase.tools.dbbrowser.stats.oracle.OBOracleNoLessThan2270StatsAccessor;
@@ -70,7 +70,7 @@ public class DBStatsAccessorFactory extends AbstractDBBrowserFactory<DBStatsAcce
             // OB 版本 >= 4.0.0
             return new OBMySQLNoLessThan400StatsAccessor(getJdbcOperations());
         } else {
-            return new OBMySQLStatsAccessor(getJdbcOperations());
+            return new OBMySQLLessThan400StatsAccessor(getJdbcOperations());
         }
     }
 
