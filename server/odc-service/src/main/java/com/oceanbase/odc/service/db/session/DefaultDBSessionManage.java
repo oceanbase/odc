@@ -204,7 +204,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     private List<OdcDBSession> getSessionList(ConnectionSession connectionSession, Predicate<OdcDBSession> filter) {
         CreateSessionReq keyFromId = new DefaultConnectSessionIdGenerator().getKeyFromId(connectionSession.getId());
         Long dsId = keyFromId.getDsId();
-        ConnectionConfig connectionConfig = connectionService.getForConnect(dsId);
+        ConnectionConfig connectionConfig = connectionService.getForConnectionSkipPermissionCheck(dsId);
         DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(connectionConfig);
         ConnectionSession creteConnectionSession = null;
         try {
