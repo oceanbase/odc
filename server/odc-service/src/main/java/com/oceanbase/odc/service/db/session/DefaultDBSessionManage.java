@@ -62,14 +62,12 @@ import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.db.browser.DBStatsAccessors;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
-import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 
 import lombok.AllArgsConstructor;
@@ -86,9 +84,6 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
     private static final String GLOBAL_CLIENT_SESSION_OB_PROXY_VERSION_NUMBER = "4.2.3";
     private static final String GLOBAL_CLIENT_SESSION_OB_VERSION_NUMBER = "4.2.5";
     private static final String ORACLE_MODEL_KILL_SESSION_WITH_BLOCK_OB_VERSION_NUMBER = "4.2.1.0";
-    private static final byte GLOBAL_CLIENT_SESSION_PROXY_ID_MIN = 0;
-    private static final short GLOBAL_CLIENT_SESSION_PROXY_ID_MAX = 8191;
-    private static final byte GLOBAL_CLIENT_SESSION_ID_VERSION = 2;
 
     @Autowired
     private DBSessionService dbSessionService;
@@ -144,10 +139,20 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         Verify.notNull(conn, "ConnectionConfig");
         SessionExtensionPoint sessionExtension =
                 ConnectionPluginUtil.getSessionExtension(conn.getDialectType());
-        Map<String, String> connectionId2KillSql = sessionExtension.getKillQuerySqls(SetUtils.hashSet(connectionId));
-        List<KillResult> results = doKill(session, connectionId2KillSql);
-        Verify.singleton(results, "killResults");
-        return results.get(0).isKilled();
+        DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(conn);
+        ConnectionSession copiedSession = null;
+        try {
+            copiedSession = factory.generateSession();
+            Map<String, String> connectionId2KillSql = sessionExtension.getKillQuerySqls(
+                    SetUtils.hashSet(connectionId));
+            List<KillResult> results = doKill(copiedSession, connectionId2KillSql);
+            Verify.singleton(results, "killResults");
+            return results.get(0).isKilled();
+        } finally {
+            if (copiedSession != null) {
+                copiedSession.expire();
+            }
+        }
     }
 
     @Override
@@ -201,26 +206,14 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
                 .collect(Collectors.toList());
     }
 
+    // Will reuse the ConnectionSession to get the session list
     private List<OdcDBSession> getSessionList(ConnectionSession connectionSession, Predicate<OdcDBSession> filter) {
-        CreateSessionReq keyFromId = new DefaultConnectSessionIdGenerator().getKeyFromId(connectionSession.getId());
-        Long dsId = keyFromId.getDsId();
-        ConnectionConfig connectionConfig = connectionService.getForConnectionSkipPermissionCheck(dsId);
-        DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(connectionConfig);
-        ConnectionSession creteConnectionSession = null;
-        try {
-            creteConnectionSession = factory.generateSession();
-            return DBStatsAccessors.create(creteConnectionSession)
-                    .listAllSessions()
-                    .stream()
-                    .map(OdcDBSession::from)
-                    .filter(filter == null ? a -> true : filter)
-                    .collect(Collectors.toList());
-        } finally {
-            if (creteConnectionSession != null) {
-                creteConnectionSession.expire();
-            }
-        }
-
+        return DBStatsAccessors.create(connectionSession)
+                .listAllSessions()
+                .stream()
+                .map(OdcDBSession::from)
+                .filter(filter == null ? a -> true : filter)
+                .collect(Collectors.toList());
     }
 
     private List<JdbcGeneralResult> executeSqls(ConnectionSession connectionSession, List<SqlTuple> sqlTuples) {
