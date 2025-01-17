@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2025 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,4 +14,11 @@
  * limitations under the License.
  */
 
-alter table `integration_integration` modify column `secret` mediumtext DEFAULT null;
+
+ALTER TABLE `integration_integration` CHANGE COLUMN `secret` `secret_old` VARCHAR(512);
+ALTER TABLE `integration_integration` ADD COLUMN `secret` MEDIUMTEXT;
+update `integration_integration` set `secret` = `secret_old`;
+
+
+
+
