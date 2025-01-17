@@ -172,7 +172,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
             }
         }
         long startTimeMs = System.currentTimeMillis();
-        long endTimeMs = startTimeMs + 1500L;
+        long endTimeMs = startTimeMs + 2000L;
         while (System.currentTimeMillis() < endTimeMs) {
             List<OdcDBSession> checkedList = getSessionList(connectionSession, filter);
             if (CollectionUtils.isEmpty(getSessionList(connectionSession, filter))) {
