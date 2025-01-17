@@ -98,15 +98,6 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    public void killSession_directLink() {
-        String sql = "kill session 12345";
-        injectAsyncJdbcExecutor(JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
-        List<JdbcGeneralResult> jdbcGeneralResults = defaultConnectSessionManage.executeKillSession(
-                sessionService.nullSafeGet(sessionid), Collections.singletonList(SqlTuple.newTuple(sql)), sql);
-        Assert.assertFalse(jdbcGeneralResults.isEmpty());
-    }
-
-    @Test
     public void getAsyncResult_wrongKillSessionSql_failedResult() throws Exception {
         String sql = "kill session /*";
         JdbcGeneralResult failedResult = JdbcGeneralResult.failedResult(SqlTuple.newTuple(sql), new Exception("test"));

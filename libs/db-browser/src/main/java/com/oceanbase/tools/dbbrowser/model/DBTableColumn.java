@@ -122,7 +122,7 @@ public class DBTableColumn implements DBObject, DBObjectWarningDescriptor {
     private String collationName;
 
     /**
-     * MySQL special
+     * The generation column's expression
      */
     private String genExpression;
 

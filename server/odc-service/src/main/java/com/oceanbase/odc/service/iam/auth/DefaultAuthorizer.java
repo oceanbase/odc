@@ -16,13 +16,12 @@
 package com.oceanbase.odc.service.iam.auth;
 
 import java.security.Principal;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.core.authority.auth.Authorizer;
-import com.oceanbase.odc.core.authority.auth.SecurityContext;
 import com.oceanbase.odc.core.authority.permission.Permission;
 import com.oceanbase.odc.metadb.iam.PermissionEntity;
 import com.oceanbase.odc.metadb.iam.PermissionRepository;
@@ -47,33 +46,15 @@ public class DefaultAuthorizer extends BaseAuthorizer {
         this.permissionMapper = permissionMapper;
     }
 
-    // Todo 权限增加缓存
     @Override
-    public boolean isPermitted(Principal principal, Collection<Permission> permissions, SecurityContext context) {
+    protected List<Permission> listPermittedPermissions(Principal principal) {
         User odcUser = (User) principal;
         if (Objects.isNull(odcUser.getId())) {
-            return false;
+            return Collections.emptyList();
         }
         List<PermissionEntity> permissionEntities = repository.findByUserIdAndUserStatusAndRoleStatusAndOrganizationId(
                 odcUser.getId(), true, true, odcUser.getOrganizationId()).stream().filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        if (permissionEntities.isEmpty()) {
-            return false;
-        }
-        Collection<Permission> permissionCollection =
-                permissionMapper.getResourcePermissions(permissionEntities);
-        for (Permission permission : permissions) {
-            boolean accessDenied = true;
-            for (Permission resourcePermission : permissionCollection) {
-                if (resourcePermission.implies(permission)) {
-                    accessDenied = false;
-                    break;
-                }
-            }
-            if (accessDenied) {
-                return false;
-            }
-        }
-        return true;
+        return permissionMapper.getResourcePermissions(permissionEntities);
     }
 }

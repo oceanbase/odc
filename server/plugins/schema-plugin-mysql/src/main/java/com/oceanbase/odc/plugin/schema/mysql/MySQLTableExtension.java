@@ -22,6 +22,7 @@ import org.pf4j.Extension;
 import com.oceanbase.odc.plugin.schema.mysql.utils.DBAccessorUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
@@ -44,9 +45,14 @@ public class MySQLTableExtension extends OBMySQLTableExtension {
         table.setOwner(schemaName);
         table.setName(tableName);
         table.setColumns(schemaAccessor.listTableColumns(schemaName, tableName));
-        table.setConstraints(schemaAccessor.listTableConstraints(schemaName, tableName));
         table.setPartition(schemaAccessor.getPartition(schemaName, tableName));
-        table.setIndexes(schemaAccessor.listTableIndexes(schemaName, tableName));
+        if (!schemaAccessor.isExternalTable(schemaName, tableName)) {
+            table.setConstraints(schemaAccessor.listTableConstraints(schemaName, tableName));
+            table.setIndexes(schemaAccessor.listTableIndexes(schemaName, tableName));
+            table.setType(DBObjectType.TABLE);
+        } else {
+            table.setType(DBObjectType.EXTERNAL_TABLE);
+        }
         table.setDDL(schemaAccessor.getTableDDL(schemaName, tableName));
         table.setTableOptions(schemaAccessor.getTableOptions(schemaName, tableName));
         table.setStats(getTableStats(connection, schemaName, tableName));
@@ -66,6 +72,11 @@ public class MySQLTableExtension extends OBMySQLTableExtension {
     @Override
     protected DBStatsAccessor getStatsAccessor(Connection connection) {
         return DBAccessorUtil.getStatsAccessor(connection);
+    }
+
+    @Override
+    public boolean syncExternalTableFiles(Connection connection, String schemaName, String tableName) {
+        throw new UnsupportedOperationException("not implemented yet");
     }
 
 }

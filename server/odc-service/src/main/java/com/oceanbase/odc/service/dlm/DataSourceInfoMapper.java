@@ -27,7 +27,8 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
-import com.oceanbase.tools.migrator.common.enums.DataBaseType;
+import com.oceanbase.tools.migrator.common.enums.DatasourceType;
+import com.oceanbase.tools.migrator.datasource.fs.FileFormat;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,28 +44,13 @@ public class DataSourceInfoMapper {
         ConnectionConfig connectionConfig = new ConnectionConfig();
         connectionConfig.setDefaultSchema(dataSourceInfo.getDatabaseName());
         connectionConfig.setPassword(dataSourceInfo.getPassword());
-        connectionConfig.setHost(dataSourceInfo.getIp());
+        connectionConfig.setHost(dataSourceInfo.getHost());
         connectionConfig.setPort(dataSourceInfo.getPort());
-        connectionConfig.setUsername(dataSourceInfo.getFullUserName());
-        connectionConfig.setType(ConnectType.valueOf(dataSourceInfo.getDatabaseType().name()));
-        // convert full username to native user name
-        if (dataSourceInfo.getDatabaseType() == DataBaseType.OB_ORACLE) {
-            String userName = connectionConfig.getUsername();
-            if (userName.contains("#")) {
-                userName = userName.split("#")[0];
-            }
-            if (userName.contains("@")) {
-                userName = userName.split("@")[0];
-            }
-            if (userName.contains("\"")) {
-                userName = userName.replace("\"", "");
-            }
-            connectionConfig.setUsername(userName);
-            connectionConfig.setTenantName(dataSourceInfo.getTenantName());
-            connectionConfig.setClusterName(dataSourceInfo.getClusterName());
-        }
+        connectionConfig.setUsername(dataSourceInfo.getUsername());
+        connectionConfig.setType(ConnectType.valueOf(dataSourceInfo.getType().name()));
         return connectionConfig;
     }
+
 
     public static DataSourceInfo toDataSourceInfo(ConnectionConfig connectionConfig, String schemaName) {
         DataSourceInfo dataSourceInfo = new DataSourceInfo();
@@ -73,40 +59,45 @@ public class DataSourceInfoMapper {
         if (StringUtils.isNotEmpty(connectionConfig.getPassword())) {
             dataSourceInfo.setPassword(connectionConfig.getPassword());
         }
-        dataSourceInfo.setIp(connectionConfig.getHost());
+        dataSourceInfo.setHost(connectionConfig.getHost());
         dataSourceInfo.setPort(connectionConfig.getPort());
         switch (connectionConfig.getDialectType()) {
             case DORIS:
             case MYSQL: {
-                dataSourceInfo.setFullUserName(connectionConfig.getUsername());
-                dataSourceInfo.setDatabaseType(DataBaseType.MYSQL);
+                dataSourceInfo.setUsername(connectionConfig.getUsername());
+                dataSourceInfo.setType(DatasourceType.MYSQL);
                 break;
             }
             case OB_MYSQL: {
                 dataSourceInfo
-                        .setFullUserName(OBConsoleDataSourceFactory.getUsername(connectionConfig));
-                dataSourceInfo.setDatabaseType(DataBaseType.OB_MYSQL);
-                dataSourceInfo.setClusterName(connectionConfig.getClusterName());
-                dataSourceInfo.setSysDatabaseName("oceanbase");
+                        .setUsername(OBConsoleDataSourceFactory.getUsername(connectionConfig));
+                dataSourceInfo.setType(DatasourceType.OB_MYSQL);
                 break;
             }
             case OB_ORACLE:
-                dataSourceInfo.setFullUserName(OBConsoleDataSourceFactory.getUsername(connectionConfig));
-                dataSourceInfo.setClusterName(connectionConfig.getClusterName());
-                dataSourceInfo.setTenantName(connectionConfig.getTenantName());
-                dataSourceInfo.setDatabaseType(DataBaseType.OB_ORACLE);
+                dataSourceInfo.setUsername(OBConsoleDataSourceFactory.getUsername(connectionConfig));
+                dataSourceInfo.setType(DatasourceType.OB_ORACLE);
                 break;
             case POSTGRESQL:
-                dataSourceInfo.setFullUserName(connectionConfig.getUsername());
+                dataSourceInfo.setUsername(connectionConfig.getUsername());
                 connectionConfig.setDefaultSchema(schemaName);
                 String jdbcUrl = getJdbcUrl(connectionConfig) + "&stringtype=unspecified";
-                dataSourceInfo.setJdbcUrl(jdbcUrl);
-                dataSourceInfo.setDatabaseType(DataBaseType.POSTGRESQL);
+                dataSourceInfo.setUrl(jdbcUrl);
+                dataSourceInfo.setType(DatasourceType.POSTGRESQL);
                 break;
             case ORACLE:
-                dataSourceInfo.setJdbcUrl(getJdbcUrl(connectionConfig));
-                dataSourceInfo.setDatabaseType(DataBaseType.ORACLE);
-                dataSourceInfo.setFullUserName(getOracleUsername(connectionConfig));
+                dataSourceInfo.setUrl(getJdbcUrl(connectionConfig));
+                dataSourceInfo.setType(DatasourceType.ORACLE);
+                dataSourceInfo.setUsername(getOracleUsername(connectionConfig));
+                break;
+            case FILE_SYSTEM:
+                dataSourceInfo.setHost(connectionConfig.getHost());
+                dataSourceInfo.setType(DatasourceType.valueOf(connectionConfig.getType().name()));
+                dataSourceInfo.setUsername(connectionConfig.getUsername());
+                dataSourceInfo.setPassword(connectionConfig.getPassword());
+                dataSourceInfo.setFileFormat(FileFormat.CSV);
+                dataSourceInfo.setRegion(connectionConfig.getRegion());
+                dataSourceInfo.setDefaultCharset("UTF-8");
                 break;
             default:
                 log.warn(String.format("Unsupported datasource type:%s", connectionConfig.getDialectType()));

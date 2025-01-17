@@ -52,6 +52,7 @@ import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -151,6 +152,7 @@ public class FlowResponseMapperFactoryTest extends ServiceTestEnv {
                         id -> Collections.singletonList(TestRandom.nextObject(Date.class)))
                 .getCandidatesByFlowInstanceId(
                         id -> Collections.singleton(TestRandom.nextObject(UserEntity.class)))
+                .getProjectById(id -> TestRandom.nextObject(Project.class))
                 .build();
         FlowInstanceDetailResp detailResp = mapper.map(instanceEntity);
 

@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.objectstorage.cloud;
 
 import java.io.File;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Date;
 import java.util.List;
@@ -60,6 +61,9 @@ public interface CloudObjectStorage {
     CompleteMultipartUploadResult completeMultipartUpload(CompleteMultipartUploadRequest request) throws CloudException;
 
     PutObjectResult putObject(String bucketName, String key, File file, ObjectMetadata metadata) throws CloudException;
+
+    PutObjectResult putObject(String bucketName, String key, InputStream in, ObjectMetadata metadata)
+            throws CloudException;
 
     default PutObjectResult putObject(String bucketName, String key, File file) {
         return putObject(bucketName, key, file, null);

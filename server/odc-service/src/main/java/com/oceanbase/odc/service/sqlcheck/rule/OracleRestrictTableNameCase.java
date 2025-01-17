@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.sqlcheck.rule;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -89,7 +90,7 @@ public class OracleRestrictTableNameCase implements SqlCheckRule {
 
     @Override
     public List<DialectType> getSupportsDialectTypes() {
-        return Collections.singletonList(DialectType.OB_ORACLE);
+        return Arrays.asList(DialectType.OB_ORACLE, DialectType.ORACLE);
     }
 
     private boolean verify(@NonNull String name) {

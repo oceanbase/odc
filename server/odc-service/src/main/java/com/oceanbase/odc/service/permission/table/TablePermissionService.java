@@ -167,7 +167,8 @@ public class TablePermissionService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, actions = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public List<UserTablePermission> batchCreate(@NotNull Long projectId,
             @NotNull @Valid CreateTablePermissionReq req) {
         Set<Long> projectIds = projectService.getMemberProjectIds(req.getUserId());
@@ -242,7 +243,8 @@ public class TablePermissionService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, actions = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public List<UserTablePermission> batchRevoke(@NotNull Long projectId, @NotEmpty List<Long> ids) {
         List<UserTablePermissionEntity> entities =
                 userTablePermissionRepository.findByProjectIdAndIdIn(projectId, ids);

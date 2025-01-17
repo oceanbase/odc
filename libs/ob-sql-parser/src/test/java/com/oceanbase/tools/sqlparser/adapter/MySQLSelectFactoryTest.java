@@ -116,7 +116,7 @@ public class MySQLSelectFactoryTest {
     @Test
     public void generate_orderAndLimitUnion_generateSelectSucceed() {
         Select_stmtContext context = getSelectContext(
-                "select col.* abc from tab order by col desc limit 3 union distinct select * from dual");
+                "select col.* abc from tab order by col desc approx limit 3 union distinct select * from dual");
         StatementFactory<Select> factory = new MySQLSelectFactory(context);
         Select actual = factory.generate();
 
@@ -124,6 +124,7 @@ public class MySQLSelectFactoryTest {
         Projection p = new Projection(r, "abc");
         NameReference from = new NameReference(null, "tab", null);
         SelectBody selectBody = new SelectBody(Collections.singletonList(p), Collections.singletonList(from));
+        selectBody.setApproximate(true);
         SortKey s = new SortKey(new ColumnReference(null, null, "col"), SortDirection.DESC);
         selectBody.setOrderBy(new OrderBy(Collections.singletonList(s)));
         selectBody.setLimit(new Limit(new ConstExpression("3")));
@@ -236,7 +237,8 @@ public class MySQLSelectFactoryTest {
     @Test
     public void generate_fromSelectStatment_generateSelectSucceed() {
         Select_stmtContext context =
-                getSelectContext("select abc.* from (select * from tab order by col1 desc) as of snapshot 1 abc");
+                getSelectContext(
+                        "select abc.* from lateral (select * from tab order by col1 desc) as of snapshot 1 abc");
         StatementFactory<Select> factory = new MySQLSelectFactory(context);
         Select actual = factory.generate();
 
@@ -249,6 +251,7 @@ public class MySQLSelectFactoryTest {
         fromBody.setOrderBy(orderBy);
         FlashbackUsage flashbackUsage = new FlashbackUsage(FlashBackType.AS_OF_SNAPSHOT, new ConstExpression("1"));
         ExpressionReference from = new ExpressionReference(fromBody, "abc");
+        from.setLateral(true);
         from.setFlashbackUsage(flashbackUsage);
         Select expect = new Select(new SelectBody(Collections.singletonList(p), Collections.singletonList(from)));
         Assert.assertEquals(expect, actual);

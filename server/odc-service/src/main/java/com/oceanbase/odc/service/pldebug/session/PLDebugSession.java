@@ -38,6 +38,7 @@ import com.oceanbase.odc.service.pldebug.model.PLDebugPrintBacktrace;
 import com.oceanbase.odc.service.pldebug.model.PLDebugResult;
 import com.oceanbase.odc.service.pldebug.model.PLDebugVariable;
 import com.oceanbase.odc.service.pldebug.model.StartPLDebugReq;
+import com.oceanbase.odc.service.pldebug.util.PLUtils;
 
 import lombok.Data;
 import lombok.Setter;
@@ -80,7 +81,8 @@ public class PLDebugSession {
             public void run() {
                 if (Objects.nonNull(debuggerSession) && debuggerSession.detectSessionAlive()) {
                     try (Statement stmt = debuggerSession.getConnection().createStatement()) {
-                        stmt.execute("CALL DBMS_DEBUG.PING()");
+                        stmt.execute(PLUtils.getSpecifiedRoute(debuggerSession.getPlDebugODPSpecifiedRoute())
+                                + "CALL DBMS_DEBUG.PING()");
                     } catch (Exception e) {
                         log.debug("Failed to call DBMS_DEBUG.PING()", e);
                     }
@@ -242,7 +244,8 @@ public class PLDebugSession {
 
     private void detach() {
         try (Statement stmt = debuggerSession.getConnection().createStatement()) {
-            stmt.execute("call dbms_debug.detach_session();");
+            stmt.execute(PLUtils.getSpecifiedRoute(debuggerSession.getPlDebugODPSpecifiedRoute())
+                    + "call dbms_debug.detach_session();");
         } catch (Exception e) {
             log.warn("fail to detach session on debugger", e);
         }
@@ -250,7 +253,8 @@ public class PLDebugSession {
 
     private void debugOff() {
         try (Statement stmt = debuggeeSession.getConnection().createStatement()) {
-            stmt.execute("call dbms_debug.debug_off();");
+            stmt.execute(PLUtils.getSpecifiedRoute(debuggeeSession.getPlDebugODPSpecifiedRoute())
+                    + "call dbms_debug.debug_off();");
         } catch (Exception e) {
             log.warn("fail to debug off on debuggee", e);
         }

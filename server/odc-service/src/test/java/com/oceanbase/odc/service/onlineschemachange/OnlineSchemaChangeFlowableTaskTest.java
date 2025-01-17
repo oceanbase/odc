@@ -131,6 +131,7 @@ public class OnlineSchemaChangeFlowableTaskTest {
         Assert.assertTrue(
                 scheduleTasksUpdateHint.hasDiff(new OnlineSchemaChangeFlowableTask.ScheduleTasksUpdateHint(0)));
         Assert.assertTrue(scheduleTasksUpdateHint.hasDiff(new OnlineSchemaChangeFlowableTask.ScheduleTasksUpdateHint(1,
+
                 Collections.singletonMap(1L, OmsStepName.FULL_TRANSFER.name()), taskMap)));
         Map<Long, String> muted = new HashMap<>(scheduleTasksUpdateHint.getTaskStepsMap());
         muted.put(2L, OmsStepName.APP_SWITCH.name());

@@ -26,6 +26,8 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.math.NumberUtils;
+
 import com.oceanbase.odc.common.graph.Graph;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
@@ -83,7 +85,8 @@ public class PlanGraphBuilder {
         graph.insertVertex(operator);
         id2Operator.put(operator.getGraphId(), operator);
         if (!"-1".equals(parentId)) {
-            graph.insertEdge(id2Operator.get(parentId), operator, (int) jsonMap.get("EST.ROWS"));
+            int rows = NumberUtils.isDigits(jsonMap.get("EST.ROWS").toString()) ? (int) jsonMap.get("EST.ROWS") : 0;
+            graph.insertEdge(id2Operator.get(parentId), operator, rows);
         }
         operator.setStatus(QueryStatus.PREPARING);
         String name = (String) jsonMap.get("NAME");

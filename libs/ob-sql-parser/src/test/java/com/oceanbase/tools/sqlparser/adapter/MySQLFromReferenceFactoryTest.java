@@ -15,10 +15,7 @@
  */
 package com.oceanbase.tools.sqlparser.adapter;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
@@ -38,14 +35,7 @@ import com.oceanbase.tools.sqlparser.statement.Operator;
 import com.oceanbase.tools.sqlparser.statement.common.BraceBlock;
 import com.oceanbase.tools.sqlparser.statement.common.GeneralDataType;
 import com.oceanbase.tools.sqlparser.statement.common.NumberType;
-import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
-import com.oceanbase.tools.sqlparser.statement.expression.CompoundExpression;
-import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
-import com.oceanbase.tools.sqlparser.statement.expression.ExpressionParam;
-import com.oceanbase.tools.sqlparser.statement.expression.FunctionCall;
-import com.oceanbase.tools.sqlparser.statement.expression.FunctionParam;
-import com.oceanbase.tools.sqlparser.statement.expression.JsonOnOption;
-import com.oceanbase.tools.sqlparser.statement.expression.NullExpression;
+import com.oceanbase.tools.sqlparser.statement.expression.*;
 import com.oceanbase.tools.sqlparser.statement.select.ExpressionReference;
 import com.oceanbase.tools.sqlparser.statement.select.FlashBackType;
 import com.oceanbase.tools.sqlparser.statement.select.FlashbackUsage;
@@ -169,6 +159,7 @@ public class MySQLFromReferenceFactoryTest {
         FunctionParam op2 = new ExpressionParam(new ColumnReference(null, null, "col1"));
         op2.addOption(new NumberType("int", null, null));
         op2.addOption(new ConstExpression("123"));
+        op2.addOption(new JsonOption());
         fcall.addOption(op2);
 
         FunctionParam op3 = new ExpressionParam(new ColumnReference(null, null, "col2"));
@@ -177,7 +168,9 @@ public class MySQLFromReferenceFactoryTest {
         op3.addOption(new ConstExpression("123"));
         JsonOnOption onOption = new JsonOnOption();
         onOption.setOnEmpty(new NullExpression());
-        op3.addOption(onOption);
+        JsonOption jsonOpt = new JsonOption();
+        jsonOpt.setOnOption(onOption);
+        op3.addOption(jsonOpt);
         fcall.addOption(op3);
 
         FunctionParam op4 = new ExpressionParam(new ColumnReference(null, null, "col3"));
@@ -186,7 +179,9 @@ public class MySQLFromReferenceFactoryTest {
         op4.addOption(new ConstExpression("123"));
         onOption = new JsonOnOption();
         onOption.setOnError(new ConstExpression("error_p"));
-        op4.addOption(onOption);
+        jsonOpt = new JsonOption();
+        jsonOpt.setOnOption(onOption);
+        op4.addOption(jsonOpt);
         fcall.addOption(op4);
 
         FunctionParam op5 = new ExpressionParam(new ColumnReference(null, null, "col4"));
@@ -196,7 +191,9 @@ public class MySQLFromReferenceFactoryTest {
         onOption = new JsonOnOption();
         onOption.setOnEmpty(new NullExpression());
         onOption.setOnError(new ConstExpression("error_p"));
-        op5.addOption(onOption);
+        jsonOpt = new JsonOption();
+        jsonOpt.setOnOption(onOption);
+        op5.addOption(jsonOpt);
         fcall.addOption(op5);
         ExpressionReference expect = new ExpressionReference(fcall, null);
         Assert.assertEquals(expect, actual);
@@ -295,6 +292,21 @@ public class MySQLFromReferenceFactoryTest {
 
         NameReference expect = new NameReference("mysql", "tab", null);
         expect.setPartitionUsage(new PartitionUsage(PartitionType.PARTITION, Arrays.asList("col1", "col2")));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_nameRefWithExternalPartition_generateNameRefSucceed() {
+        Table_referenceContext context = getTableReferenceContext(
+                "select a from mysql.tab partition (col1=@@global.lalal, col2='aaa')");
+        StatementFactory<FromReference> factory = new MySQLFromReferenceFactory(context);
+        FromReference actual = factory.generate();
+
+        NameReference expect = new NameReference("mysql", "tab", null);
+        Map<String, Expression> partitionMap = new HashMap<>();
+        partitionMap.put("col1", new ConstExpression("@@global.lalal"));
+        partitionMap.put("col2", new ConstExpression("'aaa'"));
+        expect.setPartitionUsage(new PartitionUsage(PartitionType.PARTITION, partitionMap));
         Assert.assertEquals(expect, actual);
     }
 

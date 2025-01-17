@@ -230,7 +230,7 @@ public class OBMySQLGetDBTableByParserTest {
         Assert.assertEquals("col3", partition.getSubpartition().getPartitionOption().getColumnNames().get(1));
         Assert.assertEquals(DBTablePartitionType.KEY, partition.getSubpartition().getPartitionOption().getType());
         Assert.assertEquals(2, partition.getSubpartition().getPartitionOption().getColumnNames().size());
-        Assert.assertTrue(partition.getSubpartition().getPartitionOption().getPartitionsNum() == 3);
+        Assert.assertNull(partition.getSubpartition().getPartitionOption().getPartitionsNum());
     }
 
     @Test
@@ -278,7 +278,7 @@ public class OBMySQLGetDBTableByParserTest {
         Assert.assertEquals(false, partition.getSubpartitionTemplated());
         Assert.assertEquals(DBTablePartitionType.HASH, partition.getSubpartition().getPartitionOption().getType());
         Assert.assertEquals("col2", partition.getSubpartition().getPartitionOption().getColumnNames().get(0));
-        Assert.assertTrue(partition.getSubpartition().getPartitionOption().getPartitionsNum() == 3);
+        Assert.assertNull(partition.getSubpartition().getPartitionOption().getPartitionsNum());
     }
 
     @Test
@@ -345,4 +345,660 @@ public class OBMySQLGetDBTableByParserTest {
         Assert.assertEquals(constraints.get(0).getName(), "idx_name");
         Assert.assertEquals(constraints.get(0).getType(), DBConstraintType.UNIQUE_KEY);
     }
+
+    @Test
+    public void getSubpartition_RangeColumnsAndRange_ColumnKey_Template_Success() {
+        String ddl = "CREATE TABLE t_ranges_range (col1 INT NOT NULL,col2 varchar(50),col3 INT NOT NULL) \n"
+                + "PARTITION BY RANGE COLUMNS(col1)\n"
+                + "SUBPARTITION BY RANGE(col3)\n"
+                + "SUBPARTITION TEMPLATE \n"
+                + "(SUBPARTITION mp0 VALUES LESS THAN(1000),\n"
+                + " SUBPARTITION mp1 VALUES LESS THAN(2000),\n"
+                + " SUBPARTITION mp2 VALUES LESS THAN(3000)\n"
+                + ")\n"
+                + "(PARTITION p0 VALUES LESS THAN(100),\n"
+                + " PARTITION p1 VALUES LESS THAN(200),\n"
+                + " PARTITION p2 VALUES LESS THAN(300)\n"
+                + "); \n";
+        OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3L, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col3", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertTrue(partition.getSubpartitionTemplated());
+        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0smp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("1000", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubpartition_RangeColumnsAndRange_ExpressionKey_Template_Success() {
+        String ddl = "CREATE TABLE t_ranges_range_expr (col1 INT NOT NULL,col2 varchar(50),col3 INT NOT NULL) \n"
+                + "PARTITION BY RANGE COLUMNS(col1)\n"
+                + "SUBPARTITION BY RANGE(ABS(col3))\n"
+                + "SUBPARTITION TEMPLATE \n"
+                + "(SUBPARTITION mp0 VALUES LESS THAN(1000),\n"
+                + " SUBPARTITION mp1 VALUES LESS THAN(2000),\n"
+                + " SUBPARTITION mp2 VALUES LESS THAN(3000)\n"
+                + ")\n"
+                + "(PARTITION p0 VALUES LESS THAN(100),\n"
+                + " PARTITION p1 VALUES LESS THAN(200),\n"
+                + " PARTITION p2 VALUES LESS THAN(300)\n"
+                + "); \n";
+        OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3L, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
+        Assert.assertEquals("ABS(col3)", subpartition.getPartitionOption().getExpression());
+        Assert.assertTrue(partition.getSubpartitionTemplated());
+        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0smp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("1000", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubpartition_RangeAndRange_ColumnKey_NoTemplate_Success() {
+        String ddl = "CREATE TABLE range_range(col1 INT,col2 INT) \n"
+                + "       PARTITION BY RANGE(col1)\n"
+                + "       SUBPARTITION BY RANGE(col2)\n"
+                + "        (PARTITION p0 VALUES LESS THAN(100)\n"
+                + "           (SUBPARTITION sp0 VALUES LESS THAN(100),\n"
+                + "            SUBPARTITION sp1 VALUES LESS THAN(200),\n"
+                + "            SUBPARTITION sp2 VALUES LESS THAN(300),\n"
+                + "            SUBPARTITION sp3 VALUES LESS THAN(400)\n"
+                + "           ),\n"
+                + "         PARTITION p1 VALUES LESS THAN(200)\n"
+                + "           (SUBPARTITION sp4 VALUES LESS THAN(100),\n"
+                + "            SUBPARTITION sp5 VALUES LESS THAN(200),\n"
+                + "            SUBPARTITION sp6 VALUES LESS THAN(300),\n"
+                + "            SUBPARTITION sp7 VALUES LESS THAN(400)\n"
+                + "            )\n"
+                + "         );\n";
+        OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2L, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertFalse(partition.getSubpartitionTemplated());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("100", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubpartition_RangeAndRange_ExpressionKey_NoTemplate_Success() {
+        String ddl = "CREATE TABLE range_range_expr(col1 INT,col2 TIMESTAMP) \n"
+                + "       PARTITION BY RANGE(col1)\n"
+                + "       SUBPARTITION BY RANGE(UNIX_TIMESTAMP(col2))\n"
+                + "        (PARTITION p0 VALUES LESS THAN(100)\n"
+                + "           (SUBPARTITION sp0 VALUES LESS THAN(UNIX_TIMESTAMP('2021/04/01')),\n"
+                + "            SUBPARTITION sp1 VALUES LESS THAN(UNIX_TIMESTAMP('2021/07/01')),\n"
+                + "            SUBPARTITION sp2 VALUES LESS THAN(UNIX_TIMESTAMP('2021/10/01')),\n"
+                + "            SUBPARTITION sp3 VALUES LESS THAN(UNIX_TIMESTAMP('2022/01/01'))\n"
+                + "           ),\n"
+                + "         PARTITION p1 VALUES LESS THAN(200)\n"
+                + "           (SUBPARTITION sp4 VALUES LESS THAN(UNIX_TIMESTAMP('2021/04/01')),\n"
+                + "            SUBPARTITION sp5 VALUES LESS THAN(UNIX_TIMESTAMP('2021/07/01')),\n"
+                + "            SUBPARTITION sp6 VALUES LESS THAN(UNIX_TIMESTAMP('2021/10/01')),\n"
+                + "            SUBPARTITION sp7 VALUES LESS THAN(UNIX_TIMESTAMP('2022/01/01'))\n"
+                + "            )\n"
+                + "         );\n";
+        OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2L, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
+        Assert.assertEquals("UNIX_TIMESTAMP(col2)", subpartition.getPartitionOption().getExpression());
+        Assert.assertFalse(partition.getSubpartitionTemplated());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("UNIX_TIMESTAMP('2021/04/01')",
+                subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubpartition_RangeColumnsAndRangeColumns_ColumnKey_Template_Success() {
+        String ddl = "CREATE TABLE t_ranges_ranges(col1 INT,col2 INT,col3 INT) \n"
+                + "       PARTITION BY RANGE COLUMNS(col1)\n"
+                + "       SUBPARTITION BY RANGE COLUMNS(col2,col3)\n"
+                + "       SUBPARTITION TEMPLATE \n"
+                + "        (SUBPARTITION mp0 VALUES LESS THAN(1000,1000),\n"
+                + "         SUBPARTITION mp1 VALUES LESS THAN(2000,2000),\n"
+                + "         SUBPARTITION mp2 VALUES LESS THAN(3000,3000)\n"
+                + "        )\n"
+                + "        (PARTITION p0 VALUES LESS THAN(100),\n"
+                + "         PARTITION p1 VALUES LESS THAN(200),\n"
+                + "         PARTITION p2 VALUES LESS THAN(300)\n"
+                + "        ); ";
+        OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("col3", subpartition.getPartitionOption().getColumnNames().get(1));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertTrue(partition.getSubpartitionTemplated());
+        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0smp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("1000", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("1000", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(1));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubpartition_RangeColumnsAndRangeColumns_ColumnKey_NoTemplate_Success() {
+        String ddl = "CREATE TABLE ranges_ranges (col1 INT NOT NULL,col2 INT NOT NULL,col3 INT NOT NULL) \n"
+                + "PARTITION BY RANGE COLUMNS(col1)\n"
+                + "SUBPARTITION BY RANGE COLUMNS(col2,col3)\n"
+                + "(PARTITION p0 VALUES LESS THAN(100)\n"
+                + "  (SUBPARTITION sp0 VALUES LESS THAN(1000,1000),\n"
+                + "   SUBPARTITION sp1 VALUES LESS THAN(2000,2000),\n"
+                + "   SUBPARTITION sp2 VALUES LESS THAN(3000,3000)),\n"
+                + " PARTITION p1 VALUES LESS THAN(200)\n"
+                + "  (SUBPARTITION sp3 VALUES LESS THAN(1000,1000),\n"
+                + "   SUBPARTITION sp4 VALUES LESS THAN(2000,2000),\n"
+                + "   SUBPARTITION sp5 VALUES LESS THAN(3000,3000))\n"
+                + ");\n";
+        OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("col3", subpartition.getPartitionOption().getColumnNames().get(1));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertFalse(partition.getSubpartitionTemplated());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("1000", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("1000", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(1));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubpartition_RangeColumnsAndList_ColumnKey_Template_Success() {
+        String ddl = "CREATE TABLE t_ranges_list(col1 INT,col2 INT) \n"
+                + "       PARTITION BY RANGE COLUMNS(col1)\n"
+                + "       SUBPARTITION BY LIST(col2)\n"
+                + "       SUBPARTITION TEMPLATE \n"
+                + "        (SUBPARTITION mp0 VALUES IN(1,3),\n"
+                + "         SUBPARTITION mp1 VALUES IN(4,6),\n"
+                + "         SUBPARTITION mp2 VALUES IN(7)\n"
+                + "        )\n"
+                + "        (PARTITION p0 VALUES LESS THAN(100),\n"
+                + "         PARTITION p1 VALUES LESS THAN(200),\n"
+                + "         PARTITION p2 VALUES LESS THAN(300)\n"
+                + "        ); \n";
+        OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertTrue(partition.getSubpartitionTemplated());
+        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0smp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("3", subpartition.getPartitionDefinitions().get(0).getValuesList().get(1).get(0));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubpartition_RangeColumnsAndList_ExpressionKey_Template_Success() {
+        String ddl = "CREATE TABLE t_ranges_list_expr(col1 INT,col2 INT) \n"
+                + "       PARTITION BY RANGE COLUMNS(col1)\n"
+                + "       SUBPARTITION BY LIST(abs(col2))\n"
+                + "       SUBPARTITION TEMPLATE \n"
+                + "        (SUBPARTITION mp0 VALUES IN(1,3),\n"
+                + "         SUBPARTITION mp1 VALUES IN(4,6),\n"
+                + "         SUBPARTITION mp2 VALUES IN(7)\n"
+                + "        )\n"
+                + "        (PARTITION p0 VALUES LESS THAN(100),\n"
+                + "         PARTITION p1 VALUES LESS THAN(200),\n"
+                + "         PARTITION p2 VALUES LESS THAN(300)\n"
+                + "        ); \n";
+        OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
+        Assert.assertEquals("abs(col2)", subpartition.getPartitionOption().getExpression());
+        Assert.assertTrue(partition.getSubpartitionTemplated());
+        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0smp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("3", subpartition.getPartitionDefinitions().get(0).getValuesList().get(1).get(0));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubpartition_RangeColumnsAndList_ColumnKey_NoTemplate_Success() {
+        String ddl = "CREATE TABLE ranges_list (col1 INT,col2 INT) \n"
+                + "       PARTITION BY RANGE COLUMNS(col1)\n"
+                + "       SUBPARTITION BY LIST(col2)\n"
+                + "       (PARTITION p0 VALUES LESS THAN(100)\n"
+                + "         (SUBPARTITION sp0 VALUES IN(1,3),\n"
+                + "          SUBPARTITION sp1 VALUES IN(4,6),\n"
+                + "          SUBPARTITION sp2 VALUES IN(7,9)),\n"
+                + "        PARTITION p1 VALUES LESS THAN(200)\n"
+                + "         (SUBPARTITION sp3 VALUES IN(1,3))\n"
+                + "       ); \n";
+        OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertFalse(partition.getSubpartitionTemplated());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("3", subpartition.getPartitionDefinitions().get(0).getValuesList().get(1).get(0));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubpartition_RangeColumnsAndList_ExpressionKey_NoTemplate_Success() {
+        String ddl = "CREATE TABLE ranges_list_expr (col1 INT,col2 INT) \n"
+                + "       PARTITION BY RANGE COLUMNS(col1)\n"
+                + "       SUBPARTITION BY LIST(abs(col2))\n"
+                + "       (PARTITION p0 VALUES LESS THAN(100)\n"
+                + "         (SUBPARTITION sp0 VALUES IN(1,3),\n"
+                + "          SUBPARTITION sp1 VALUES IN(4,6),\n"
+                + "          SUBPARTITION sp2 VALUES IN(7,9)),\n"
+                + "        PARTITION p1 VALUES LESS THAN(200)\n"
+                + "         (SUBPARTITION sp3 VALUES IN(1,3))\n"
+                + "       ); \n";
+        OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
+        Assert.assertEquals("abs(col2)", subpartition.getPartitionOption().getExpression());
+        Assert.assertFalse(partition.getSubpartitionTemplated());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("3", subpartition.getPartitionDefinitions().get(0).getValuesList().get(1).get(0));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubpartition_RangeColumnsAndListColumns_ColumnKey_Template_Success() {
+        String ddl = "CREATE TABLE t_ranges_lists(col1 INT,col2 INT,col3 INT) \n"
+                + "       PARTITION BY RANGE COLUMNS(col1)\n"
+                + "       SUBPARTITION BY LIST COLUMNS(col2,col3)\n"
+                + "       SUBPARTITION TEMPLATE \n"
+                + "        (SUBPARTITION mp0 VALUES IN((1,1),(3,3)),\n"
+                + "         SUBPARTITION mp1 VALUES IN((4,4),(6,6)),\n"
+                + "         SUBPARTITION mp2 VALUES IN((7,7),(8,8))\n"
+                + "        )\n"
+                + "        (PARTITION p0 VALUES LESS THAN(100),\n"
+                + "         PARTITION p1 VALUES LESS THAN(200),\n"
+                + "         PARTITION p2 VALUES LESS THAN(300)\n"
+                + "        ); \n";
+        OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.LIST_COLUMNS, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("col3", subpartition.getPartitionOption().getColumnNames().get(1));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertTrue(partition.getSubpartitionTemplated());
+        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0smp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(1));
+        Assert.assertEquals("3", subpartition.getPartitionDefinitions().get(0).getValuesList().get(1).get(0));
+        Assert.assertEquals("3", subpartition.getPartitionDefinitions().get(0).getValuesList().get(1).get(1));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubpartition_RangeColumnsAndListColumns_ColumnKey_NoTemplate_Success() {
+        String ddl = "CREATE TABLE ranges_lists (col1 INT,col2 INT,col3 INT) \n"
+                + "       PARTITION BY RANGE COLUMNS(col1)\n"
+                + "       SUBPARTITION BY LIST COLUMNS(col2,col3)\n"
+                + "       (PARTITION p0 VALUES LESS THAN(100)\n"
+                + "         (SUBPARTITION sp0 VALUES IN(1,1),\n"
+                + "          SUBPARTITION sp1 VALUES IN(4,4),\n"
+                + "          SUBPARTITION sp2 VALUES IN(7,7)),\n"
+                + "        PARTITION p1 VALUES LESS THAN(200)\n"
+                + "         (SUBPARTITION sp3 VALUES IN(9,9),\n"
+                + "          SUBPARTITION sp4 VALUES IN(10,10),\n"
+                + "          SUBPARTITION sp5 VALUES IN(11,11))\n"
+                + "       ); \n";
+        OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.LIST_COLUMNS, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("col3", subpartition.getPartitionOption().getColumnNames().get(1));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertFalse(partition.getSubpartitionTemplated());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(1).get(0));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubpartition_RangeColumnsAndHash_ColumnKey_Template_Success() {
+        String ddl = "CREATE TABLE `t_ranges_hash` (\n"
+                + "  `col1` int(11) DEFAULT NULL,\n"
+                + "  `col2` int(11) DEFAULT NULL\n"
+                + ") \n"
+                + " partition by range columns(col1) subpartition by hash(col2) subpartition template (\n"
+                + "subpartition `p0`,\n"
+                + "subpartition `p1`,\n"
+                + "subpartition `p2`,\n"
+                + "subpartition `p3`,\n"
+                + "subpartition `p4`)\n"
+                + "(partition `p0` values less than (100),\n"
+                + "partition `p1` values less than (200),\n"
+                + "partition `p2` values less than (300))";
+        OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertTrue(partition.getSubpartitionTemplated());
+        Assert.assertEquals(5L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubpartition_RangeColumnsAndHash_ExpressionKey_Template_Success() {
+        String ddl = "CREATE TABLE `t_ranges_hash_expr` (\n"
+                + "  `col1` int(11) DEFAULT NULL,\n"
+                + "  `col2` int(11) DEFAULT NULL\n"
+                + ") \n"
+                + " partition by range columns(col1) subpartition by hash(abs(col2)) subpartition template (\n"
+                + "subpartition `p0`,\n"
+                + "subpartition `p1`,\n"
+                + "subpartition `p2`,\n"
+                + "subpartition `p3`,\n"
+                + "subpartition `p4`)\n"
+                + "(partition `p0` values less than (100),\n"
+                + "partition `p1` values less than (200),\n"
+                + "partition `p2` values less than (300))";
+        OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
+        Assert.assertEquals("abs(col2)", subpartition.getPartitionOption().getExpression());
+        Assert.assertTrue(partition.getSubpartitionTemplated());
+        Assert.assertEquals(5L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubpartition_RangeColumnsAndHash_ColumnKey_NoTemplate_Success() {
+        String ddl = "CREATE TABLE ranges_hash (col1 INT,col2 INT) \n"
+                + "       PARTITION BY RANGE COLUMNS(col1)\n"
+                + "       SUBPARTITION BY HASH(col2)\n"
+                + "       (PARTITION p0 VALUES LESS THAN(100)\n"
+                + "         (SUBPARTITION sp0,\n"
+                + "          SUBPARTITION sp1,\n"
+                + "          SUBPARTITION sp2),\n"
+                + "        PARTITION p1 VALUES LESS THAN(200)\n"
+                + "         (SUBPARTITION sp3,\n"
+                + "          SUBPARTITION sp4,\n"
+                + "          SUBPARTITION sp5)\n"
+                + "       ); \n";
+        OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertFalse(partition.getSubpartitionTemplated());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubpartition_RangeColumnsAndHash_ExpressionKey_NoTemplate_Success() {
+        String ddl = "CREATE TABLE ranges_hash_expr (col1 INT,col2 INT) \n"
+                + "       PARTITION BY RANGE COLUMNS(col1)\n"
+                + "       SUBPARTITION BY HASH(abs(col2))\n"
+                + "       (PARTITION p0 VALUES LESS THAN(100)\n"
+                + "         (SUBPARTITION sp0,\n"
+                + "          SUBPARTITION sp1,\n"
+                + "          SUBPARTITION sp2),\n"
+                + "        PARTITION p1 VALUES LESS THAN(200)\n"
+                + "         (SUBPARTITION sp3,\n"
+                + "          SUBPARTITION sp4,\n"
+                + "          SUBPARTITION sp5)\n"
+                + "       ); \n";
+        OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
+        Assert.assertEquals("abs(col2)", subpartition.getPartitionOption().getExpression());
+        Assert.assertFalse(partition.getSubpartitionTemplated());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubpartition_RangeColumnsAndKey_ColumnKey_Template_Success() {
+        String ddl = "CREATE TABLE `t_ranges_key` (\n"
+                + "  `col1` int(11) DEFAULT NULL,\n"
+                + "  `col2` int(11) DEFAULT NULL\n"
+                + ") \n"
+                + " partition by range columns(col1) subpartition by key(col2) subpartition template (\n"
+                + "subpartition `p0`,\n"
+                + "subpartition `p1`,\n"
+                + "subpartition `p2`)\n"
+                + "(partition `p0` values less than (100),\n"
+                + "partition `p1` values less than (200),\n"
+                + "partition `p2` values less than (300))";
+        OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.KEY, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertTrue(partition.getSubpartitionTemplated());
+        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubpartition_RangeColumnsAndKey_ColumnKey_NoTemplate_Success() {
+        String ddl = "CREATE TABLE `ranges_key` (\n"
+                + "  `col1` int(11) NOT NULL,\n"
+                + "  `col2` varchar(50) DEFAULT NULL,\n"
+                + "  `col3` int(11) NOT NULL\n"
+                + ") \n"
+                + " partition by range columns(col1) subpartition by key(col3)\n"
+                + "(partition `p0` values less than (100) (\n"
+                + "subpartition `sp0`,\n"
+                + "subpartition `sp1`,\n"
+                + "subpartition `sp2`),\n"
+                + "partition `p1` values less than (200) (\n"
+                + "subpartition `sp3`,\n"
+                + "subpartition `sp4`))";
+        OBMySQLGetDBTableByParser table = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("col1", partition.getPartitionOption().getColumnNames().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.KEY, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col3", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertFalse(partition.getSubpartitionTemplated());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
 }

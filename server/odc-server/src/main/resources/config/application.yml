@@ -53,6 +53,10 @@ server:
   servlet:
     session:
       timeout: 8h
+      cookie:
+        name: JSESSIONID
+        http-only: true
+        secure: true
     encoding:
       charset: UTF-8
   tomcat:

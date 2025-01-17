@@ -141,7 +141,7 @@ public class SqlCheckService {
         }
         Environment env = this.environmentService.detail(environmentId);
         List<Rule> rules = this.ruleService.list(env.getRulesetId(), QueryRuleMetadataParams.builder().build());
-        OBConsoleDataSourceFactory factory = new OBConsoleDataSourceFactory(config, true, false);
+        OBConsoleDataSourceFactory factory = new OBConsoleDataSourceFactory(config, true, false, false);
         factory.resetSchema(origin -> OBConsoleDataSourceFactory.getSchema(databaseName, config.getDialectType()));
         SqlCheckContext checkContext = new SqlCheckContext((long) sqls.size());
         try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource()) {

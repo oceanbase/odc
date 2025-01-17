@@ -90,7 +90,7 @@ public class DBSchemaSyncService {
                     Connection conn = dataSource.getConnection()) {
                 boolean success = true;
                 for (DBSchemaSyncer syncer : syncers) {
-                    if (syncer.supports(config.getDialectType())) {
+                    if (syncer.supports(config.getDialectType(), conn)) {
                         try {
                             syncer.sync(conn, database, config.getDialectType());
                         } catch (UnsupportedOperationException | UnsupportedException | NotImplementedException e) {

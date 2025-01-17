@@ -46,7 +46,7 @@ public class DataArchiveConditionUtilTest {
         String condition = "select * from test where gmt_create>'${start}' and gmt_create<'${end}'";
         OffsetConfig config = new OffsetConfig();
         config.setName("start");
-        config.setPattern("yyyy-MM-dd HH:mm:ss|+10m");
+        config.setPattern("yyyy-MM-dd|+10M");
         OffsetConfig config2 = new OffsetConfig();
         config2.setName("end");
         config2.setOperator(Operator.PLUS);
@@ -58,12 +58,11 @@ public class DataArchiveConditionUtilTest {
         variables.add(config2);
         String result = DataArchiveConditionUtil.parseCondition(condition, variables, date);
 
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
-        calendar.add(Calendar.MINUTE, 10);
+        calendar.add(Calendar.MONTH, 10);
         String expect = condition.replace("${start}", sdf.format(calendar.getTime()));
-        sdf = new SimpleDateFormat("yyyy-MM-dd");
         calendar.setTime(date);
         calendar.add(Calendar.DAY_OF_MONTH, 1);
         expect = expect.replace("${end}", sdf.format(calendar.getTime()));
@@ -76,7 +75,7 @@ public class DataArchiveConditionUtilTest {
         String condition = "select * from test where gmt_create>'${start}' and gmt_create<'${end}'";
         OffsetConfig config = new OffsetConfig();
         config.setName("start");
-        config.setPattern("yyyy-MM-dd HH:mm:ss|+10m");
+        config.setPattern("yyyy-MM-dd HH:mm:ss|+10M");
         List<OffsetConfig> variables = new LinkedList<>();
         variables.add(config);
 

@@ -33,7 +33,7 @@ import com.oceanbase.odc.service.info.OdcInfoService;
 import com.oceanbase.odc.service.integration.model.Oauth2Parameter;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
 import com.oceanbase.odc.service.integration.oauth2.AddableClientRegistrationManager;
-import com.oceanbase.odc.service.integration.oauth2.Oauth2StateManager;
+import com.oceanbase.odc.service.integration.oauth2.SSOStateManager;
 import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 
 import lombok.SneakyThrows;
@@ -44,14 +44,14 @@ public class CustomOAuth2AuthorizationRequestResolver implements OAuth2Authoriza
 
     private final AddableClientRegistrationManager addableClientRegistrationManager;
     private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
-    private Oauth2StateManager oauth2StateManager;
+    private SSOStateManager sSOStateManager;
     private AntPathRequestMatcher authorizationRequestMatcher;
 
     public CustomOAuth2AuthorizationRequestResolver(AddableClientRegistrationManager addableClientRegistrationManager,
-            StatefulUuidStateIdGenerator statefulUuidStateIdGenerator, Oauth2StateManager oauth2StateManager) {
+            StatefulUuidStateIdGenerator statefulUuidStateIdGenerator, SSOStateManager sSOStateManager) {
         this.addableClientRegistrationManager = addableClientRegistrationManager;
         this.statefulUuidStateIdGenerator = statefulUuidStateIdGenerator;
-        this.oauth2StateManager = oauth2StateManager;
+        this.sSOStateManager = sSOStateManager;
         DefaultOAuth2AuthorizationRequestResolver defaultOAuth2AuthorizationRequestResolver =
                 new DefaultOAuth2AuthorizationRequestResolver(
                         addableClientRegistrationManager, "/oauth2/authorization");
@@ -95,10 +95,10 @@ public class CustomOAuth2AuthorizationRequestResolver implements OAuth2Authoriza
             String state = authorizationRequest.getState();
             String originRedirectUrl = authorizationRequest.getRedirectUri();
             UriComponentsBuilder.fromUriString(originRedirectUrl).build().getQueryParams()
-                    .forEach((key, value) -> oauth2StateManager.setStateParameter(state, key, urlDecode(value.get(0))));
+                    .forEach((key, value) -> sSOStateManager.setStateParameter(state, key, urlDecode(value.get(0))));
             URL url = new URL(originRedirectUrl);
             String urlWithoutQuery = new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getPath()).toString();
-            oauth2StateManager.setOdcParameters(state, request);
+            sSOStateManager.setOdcParameters(state, request);
 
             return OAuth2AuthorizationRequest.from(authorizationRequest)
                     .redirectUri(urlWithoutQuery)

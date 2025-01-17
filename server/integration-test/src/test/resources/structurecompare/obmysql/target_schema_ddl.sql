@@ -96,3 +96,7 @@ create table `update_options`(
   `c1` INT(11) NOT NULL,
   `c2` INT(11) NOT NULL
 ) CHARACTER SET = gb18030 COLLATE = gb18030_chinese_ci COMMENT = 'comment2';
+
+CREATE TABLE `bit_column_default_value` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'auto increment id'
+);

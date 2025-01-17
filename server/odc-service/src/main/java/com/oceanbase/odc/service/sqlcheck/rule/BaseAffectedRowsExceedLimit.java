@@ -18,6 +18,8 @@ package com.oceanbase.odc.service.sqlcheck.rule;
 import java.util.Collections;
 import java.util.List;
 
+import org.springframework.jdbc.core.JdbcOperations;
+
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
@@ -61,6 +63,78 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
             // eat the exception
         }
         return Collections.emptyList();
+    }
+
+    /**
+     * OB execute 'explain' statement
+     *
+     * @param originalSql target sql
+     * @param jdbcOperations jdbc Object
+     * @return affected rows
+     */
+    public long getOBAffectedRows(String originalSql, JdbcOperations jdbcOperations) {
+        /**
+         * <pre>
+         *     obclient> explain delete from T1 where 1=1;
+         * +-------------------------------------------------------+
+         * | Query Plan                                            |
+         * +-------------------------------------------------------+
+         * | =================================================     |
+         * | |ID|OPERATOR         |NAME|EST.ROWS|EST.TIME(us)|     |
+         * | -------------------------------------------------     |
+         * | |0 |DELETE           |    |2       |21          |     |
+         * | |1 |└─TABLE FULL SCAN|t1  |2       |5           |     |
+         * | =================================================     |
+         * | Outputs & filters:                                    |
+         * | -------------------------------------                 |
+         * |   0 - output(nil), filter(nil)                        |
+         * |       table_columns([{t1: ({t1: (t1.id)})}])          |
+         * |   1 - output([t1.id]), filter(nil), rowset=16         |
+         * |       access([t1.id]), partitions(p0)                 |
+         * |       is_index_back=false, is_global_index=false,     |
+         * |       range_key([t1.id]), range(MIN ; MAX)always true |
+         * +-------------------------------------------------------+
+         * 14 rows in set (0.00 sec)
+         * </pre>
+         */
+        String explainSql = "EXPLAIN " + originalSql;
+        List<String> queryResults = jdbcOperations.query(explainSql, (rs, rowNum) -> rs.getString("Query Plan"));
+        return getOBAndOracleAffectRowsFromResult(queryResults);
+    }
+
+    public long getOBAndOracleAffectRowsFromResult(List<String> queryResults) {
+        long estRowsValue = 0;
+        for (int rowNum = 0; rowNum < queryResults.size(); rowNum++) {
+            String resultRow = queryResults.get(rowNum);
+            estRowsValue = getEstRowsValue(resultRow);
+            if (estRowsValue != 0) {
+                break;
+            }
+        }
+        return estRowsValue;
+    }
+
+    private long getEstRowsValue(String singleRow) {
+        String[] parts = singleRow.split("\\|");
+        if (parts.length > 5) {
+            String value = parts[4].trim();
+            return parseLong(value);
+        }
+        return 0;
+    }
+
+    /**
+     * Safely parse a long value.
+     *
+     * @param value string to parse
+     * @return parsed long or 0 if parsing fails
+     */
+    private long parseLong(String value) {
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     public abstract long getStatementAffectedRows(Statement statement) throws Exception;

@@ -20,11 +20,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
@@ -34,15 +34,20 @@ import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
+import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.exception.OBException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.OdcDBSession;
 import com.oceanbase.odc.core.sql.util.OdcDBSessionRowMapper;
+import com.oceanbase.odc.plugin.connect.api.HostAddress;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.pldebug.model.PLDebugODPSpecifiedRoute;
 import com.oceanbase.odc.service.pldebug.util.CallProcedureCallBack;
 import com.oceanbase.odc.service.pldebug.util.OBOracleCallFunctionCallBack;
+import com.oceanbase.odc.service.pldebug.util.PLUtils;
 import com.oceanbase.odc.service.session.initializer.BackupInstanceInitializer;
 import com.oceanbase.odc.service.session.initializer.DataSourceInitScriptInitializer;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
@@ -71,6 +76,7 @@ public abstract class AbstractDebugSession implements AutoCloseable {
     protected DebugDataSource newDataSource;
     protected JdbcOperations jdbcOperations;
     protected DialectType dialectType;
+    protected PLDebugODPSpecifiedRoute plDebugODPSpecifiedRoute;
     private static final String OB_JDBC_PROTOCOL = "oceanbase";
 
     public abstract boolean detectSessionAlive();
@@ -79,8 +85,15 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         try {
             // -1 means statement queryTimeout will be default 0,
             // By default there is no limit on the amount of time allowed for a running statement to complete
-            return getJdbcOperations().execute(
-                    new CallProcedureCallBack(procedure, -1, getSqlBuilder()));
+            CallProcedureCallBack callProcedureCallBack;
+            if (this.plDebugODPSpecifiedRoute == null) {
+                callProcedureCallBack =
+                        new CallProcedureCallBack(procedure, -1, getSqlBuilder());
+            } else {
+                callProcedureCallBack =
+                        new CallProcedureCallBack(procedure, -1, getSqlBuilder(), this.plDebugODPSpecifiedRoute);
+            }
+            return getJdbcOperations().execute(callProcedureCallBack);
         } catch (Exception e) {
             throw OBException.executePlFailed(String.format("Error occurs when calling procedure={%s}, message=%s",
                     procedure.getProName(), e.getMessage()));
@@ -90,10 +103,16 @@ public abstract class AbstractDebugSession implements AutoCloseable {
     public DBFunction executeFunction(DBFunction dbFunction) {
         // -1 means statement queryTimeout will be default 0,
         // By default there is no limit on the amount of time allowed for a running statement to complete
-        ConnectionCallback<DBFunction> functionConnectionCallback =
-                new OBOracleCallFunctionCallBack(dbFunction, -1);
+        OBOracleCallFunctionCallBack obOracleCallFunctionCallBack;
+        if (this.plDebugODPSpecifiedRoute == null) {
+            obOracleCallFunctionCallBack =
+                    new OBOracleCallFunctionCallBack(dbFunction, -1);
+        } else {
+            obOracleCallFunctionCallBack =
+                    new OBOracleCallFunctionCallBack(dbFunction, -1, this.plDebugODPSpecifiedRoute);
+        }
         try {
-            return getJdbcOperations().execute(functionConnectionCallback);
+            return getJdbcOperations().execute(obOracleCallFunctionCallBack);
         } catch (Exception e) {
             throw OBException.executePlFailed(String.format("Error occurs when calling dbFunction={%s}, message=%s",
                     dbFunction.getFunName(), e.getMessage()));
@@ -111,21 +130,57 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         this.connection = newDataSource.getConnection();
     }
 
-    protected DebugDataSource acquireDataSource(ConnectionSession connectionSession, List<String> initSqls) {
+    protected DebugDataSource acquireDataSource(@NonNull ConnectionSession connectionSession,
+            @NonNull List<String> initSqls) {
         ConnectionConfig config = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
-        DebugDataSource dataSource = new DebugDataSource(config, initSqls);
         String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
-        String host;
-        Integer port;
-        if (StringUtils.isBlank(config.getClusterName())) {
-            host = config.getHost();
-            port = config.getPort();
+        Verify.equals(DialectType.OB_ORACLE, config.getDialectType(), "Only support OB_ORACLE");
+        if (connectionSession.getConnectType() == ConnectType.OB_ORACLE
+                && StringUtils.isBlank(config.getClusterName())) {
+            // current connection is a direct observer
+            return buildDataSource(config, initSqls, null,
+                    buildJdbcUrl(new HostAddress(config.getHost(), config.getPort()), schema));
         } else {
-            String directServerIp = getDirectServerIp(connectionSession);
-            host = directServerIp.split(":")[0];
-            port = Integer.parseInt(directServerIp.split(":")[1]);
+            Optional<DebugDataSource> odpSpecifiedRouteDataSource =
+                    tryGetODPSpecifiedRouteDataSource(connectionSession, initSqls, config,
+                            schema);
+            if (odpSpecifiedRouteDataSource.isPresent()) {
+                return odpSpecifiedRouteDataSource.get();
+            }
+            // cloud ob oracle not support direct connection to observer
+            if (connectionSession.getConnectType() == ConnectType.CLOUD_OB_ORACLE) {
+                throw new IllegalStateException(String.format(
+                        "ODP specified route is not supported for cloud ob oracle connection, ODP version: %s",
+                        ConnectionSessionUtil.getObProxyVersion(connectionSession)));
+            }
+            // use direct connection observer
+            return buildDataSource(config, initSqls, null,
+                    buildJdbcUrl(getOBServerHostAddress(connectionSession), schema));
         }
-        String url = String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, host, port, schema);
+    }
+
+    private Optional<DebugDataSource> tryGetODPSpecifiedRouteDataSource(ConnectionSession connectionSession,
+            List<String> initSqls,
+            ConnectionConfig config, String schema) {
+        String obProxyVersion = ConnectionSessionUtil.getObProxyVersion(connectionSession);
+        if (ConnectionSessionUtil.isSupportObProxyRoute(obProxyVersion)) {
+            HostAddress directServerIp = getOBServerHostAddress(connectionSession);
+            this.plDebugODPSpecifiedRoute =
+                    new PLDebugODPSpecifiedRoute(directServerIp.getHost(), directServerIp.getPort());
+            return Optional.of(buildDataSource(config, initSqls, this.plDebugODPSpecifiedRoute,
+                    buildJdbcUrl(new HostAddress(config.getHost(), config.getPort()), schema)));
+        }
+        return Optional.empty();
+    }
+
+    private String buildJdbcUrl(HostAddress hostAddress, String schema) {
+        return String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, hostAddress.getHost(), hostAddress.getPort(),
+                schema);
+    }
+
+    private DebugDataSource buildDataSource(ConnectionConfig config, List<String> initSqls,
+            PLDebugODPSpecifiedRoute route, String url) {
+        DebugDataSource dataSource = new DebugDataSource(config, initSqls, route);
         dataSource.setUrl(url);
         dataSource.setUsername(buildUserName(config));
         dataSource.setPassword(config.getPassword());
@@ -133,7 +188,7 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         return dataSource;
     }
 
-    private String getDirectServerIp(ConnectionSession connectionSession) {
+    private HostAddress getOBServerHostAddress(ConnectionSession connectionSession) {
         List<OdcDBSession> sessions =
                 connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY)
                         .query("show full processlist", new OdcDBSessionRowMapper());
@@ -150,7 +205,8 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         if (StringUtils.isEmpty(directServerIp)) {
             throw new UnexpectedException("Empty direct server ip and port from 'show full processlist'");
         }
-        return directServerIp;
+        String[] ipParts = directServerIp.split(":");
+        return new HostAddress(ipParts[0], Integer.parseInt(ipParts[1]));
     }
 
     private String buildUserName(ConnectionConfig connectionConfig) {
@@ -182,7 +238,8 @@ public abstract class AbstractDebugSession implements AutoCloseable {
 
     protected void enableDbmsOutput(Statement statement) {
         try {
-            statement.execute(String.format("call dbms_output.enable(%s);", PL_LOG_CACHE_SIZE));
+            statement.execute(String.format("%s call dbms_output.enable(%s);",
+                    PLUtils.getSpecifiedRoute(this.plDebugODPSpecifiedRoute), PL_LOG_CACHE_SIZE));
         } catch (Exception e) {
             log.warn("enable dbms output failed, dbms_output may not exists, sid={}, reason={}",
                     connectionSession.getId(),
@@ -194,11 +251,14 @@ public abstract class AbstractDebugSession implements AutoCloseable {
 
         private final List<String> initSqls;
         private final List<ConnectionInitializer> initializers;
+        private final PLDebugODPSpecifiedRoute plDebugODPSpecifiedRoute;
 
-        public DebugDataSource(@NonNull ConnectionConfig connectionConfig, List<String> initSqls) {
+        public DebugDataSource(@NonNull ConnectionConfig connectionConfig, List<String> initSqls,
+                PLDebugODPSpecifiedRoute plDebugODPSpecifiedRoute) {
             this.initSqls = initSqls;
             this.initializers = Arrays.asList(new BackupInstanceInitializer(connectionConfig),
                     new DataSourceInitScriptInitializer(connectionConfig, true));
+            this.plDebugODPSpecifiedRoute = plDebugODPSpecifiedRoute;
         }
 
         @Override
@@ -207,7 +267,7 @@ public abstract class AbstractDebugSession implements AutoCloseable {
             if (CollectionUtils.isNotEmpty(this.initSqls)) {
                 try (Statement statement = con.createStatement()) {
                     for (String stmt : this.initSqls) {
-                        statement.execute(stmt);
+                        statement.execute(PLUtils.getSpecifiedRoute(plDebugODPSpecifiedRoute) + stmt);
                     }
                 }
             }

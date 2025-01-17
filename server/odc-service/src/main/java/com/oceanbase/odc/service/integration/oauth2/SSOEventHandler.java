@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.service.integration.IntegrationConfigurationValidator;
+import com.oceanbase.odc.service.integration.IntegrationConfigurationProcessor;
 import com.oceanbase.odc.service.integration.IntegrationEvent;
 import com.oceanbase.odc.service.integration.IntegrationEventHandler;
 import com.oceanbase.odc.service.integration.IntegrationService;
@@ -41,7 +41,7 @@ public class SSOEventHandler implements IntegrationEventHandler {
     private LdapConfigRegistrationManager ldapConfigRegistrationManager;
 
     @Autowired
-    private IntegrationConfigurationValidator configurationValidator;
+    private IntegrationConfigurationProcessor integrationConfigurationProcessor;
 
     @Autowired
     private IntegrationService integrationService;
@@ -71,7 +71,7 @@ public class SSOEventHandler implements IntegrationEventHandler {
     public void preUpdate(IntegrationEvent integrationEvent) {
         IntegrationConfig preConfig = integrationEvent.getPreConfig();
         IntegrationConfig currentConfig = integrationEvent.getCurrentConfig();
-        configurationValidator.checkNotEnabledInDbBeforeSave(currentConfig.getEnabled(),
+        integrationConfigurationProcessor.checkNotEnabledInDbBeforeSave(currentConfig.getEnabled(),
                 currentConfig.getOrganizationId(), currentConfig.getId());
         // current config will not have secret when it is updated, secret can't change, so use preConfig
         String decryptSecret = integrationService.decodeSecret(preConfig.getEncryption().getSecret(),
@@ -108,7 +108,9 @@ public class SSOEventHandler implements IntegrationEventHandler {
         Verify.verify(config.getType() == SSO, "wrong integration type");
         SSOIntegrationConfig ssoIntegrationConfig =
                 JsonUtils.fromJson(config.getConfiguration(), SSOIntegrationConfig.class);
-        ssoIntegrationConfig.fillDecryptSecret(decryptConfiguration);
+        if (!ssoIntegrationConfig.isSaml()) {
+            ssoIntegrationConfig.fillDecryptSecret(decryptConfiguration);
+        }
         return ssoIntegrationConfig;
     }
 }

@@ -46,7 +46,7 @@ public class RestrictColumnNameCaseFactory implements SqlCheckRuleFactory {
                 lowercase = Boolean.valueOf(parameters.get(lowerKey).toString());
             }
         }
-        return dialectType == DialectType.OB_ORACLE ? new OracleRestrictColumnNameCase(lowercase, uppercase) : null;
+        return dialectType.isOracle() ? new OracleRestrictColumnNameCase(lowercase, uppercase) : null;
     }
 
 }

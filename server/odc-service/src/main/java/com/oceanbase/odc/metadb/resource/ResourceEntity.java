@@ -37,7 +37,7 @@ import lombok.ToString;
 
 /**
  * resource table definition for task
- * 
+ *
  * @author longpeng.zlp
  * @date 2024/8/14 17:37
  */
@@ -48,6 +48,8 @@ import lombok.ToString;
 public class ResourceEntity {
     public static final String CREATE_TIME = "createTime";
     public static final String STATUS = "status";
+    public static final String TYPE = "resourceType";
+
     /**
      * id for task
      */

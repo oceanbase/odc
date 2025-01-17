@@ -72,6 +72,24 @@ public class MySQLInsertFactoryTest {
     }
 
     @Test
+    public void generate_insertWithHighPriority_succeed() {
+        StatementFactory<Insert> factory = new MySQLInsertFactory(
+                getInsertContext("insert high_priority overwrite a.b values(1,default)"));
+        Insert actual = factory.generate();
+
+        RelationFactor factor = new RelationFactor("b");
+        factor.setSchema("a");
+        InsertTable insertTable = new InsertTable(factor);
+        List<List<Expression>> values = new ArrayList<>();
+        values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("default")));
+        insertTable.setValues(values);
+        Insert expect = new Insert(Collections.singletonList(insertTable), null);
+        expect.setHighPriority(true);
+        expect.setOverwrite(true);
+        Assert.assertEquals(actual, expect);
+    }
+
+    @Test
     public void generate_simpleReplace_succeed() {
         StatementFactory<Insert> factory = new MySQLInsertFactory(getInsertContext(
                 "replace a.b() select col.* abc from dual"));

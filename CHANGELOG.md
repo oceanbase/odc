@@ -1,3 +1,102 @@
+# OceanBase Developer Center (ODC) CHANGELOG
+
+## 4.3.3 (2025-01-13)
+
+### Feature Changes
+
+**Data Lifecycle Management**
+
+* Added archiving paths from Oracle to Object Storage.
+* Added archiving paths from MySQL to Object Storage.
+* Added archiving paths from OceanBase MySQL to Object Storage.
+* Added archiving paths from OceanBase Oracle to Object Storage.
+* Added archiving paths from PostgreSQL to Object Storage.
+* Added support for editing history review with content comparison.
+* Introduced dynamic target table definition to support storing historical data by day, month, or other time units.
+* Added ability to delete archiving and cleanup tasks when completed or terminated.
+* Optimized rollback logic to only revert data archived in the current task.
+
+**Online Schema Change**
+
+* Added retry mechanism with enhanced retry logic for various failure scenarios.
+* Added status display for online schema changes, allowing progress tracking of running tasks.
+
+**Change Risk Management**
+
+* Introduced global project roles including Global Project Admin, Global Security Admin, and Global DBA.
+* Added project archiving validation to check for unfinished tickets and periodic tasks before archiving.
+* Added support for project deletion for archived projects.
+* Implemented fine-grained view permission control with user-initiated permission requests.
+* Expanded executable SQL types in SQL window to include `call`, `comment`, `set session`, and more.
+* Extended SQL check support for native Oracle data sources.
+* Added change approval workflow for native Oracle data sources.
+* Added 2 new SQL check rules for standardizing `create like` and `create as` table creation statements.
+
+**SQL Development**
+
+* Added GUI support for OceanBase external tables.
+* Added support for displaying secondary partitions in OceanBase partitioned tables.
+* Added support for editing stored procedures in OceanBase MySQL mode.
+* Added support for PL debugging via OBProxy.
+
+**Other Enhancements**
+
+* Added SAML single sign-on support.
+* Added session kill capability for native Oracle data sources.
+* Added compatibility for OceanBase V4.2.5 and V4.3.3.
+* Added support for OBKV SQL mode.
+* Enabled secure cookie mechanism for enhanced data transmission security.
+* Added column width adjustment support for forms (ticket lists, database lists).
+
+### Usability Improvements
+
+* Added persistent project search criteria to reduce frequent searches.
+* Maintained last used project context across user sessions.
+* Standardized risk identification rule conditions using operators and English expressions to avoid ambiguity.
+* Enhanced connection keep-alive logic with 3-minute database request intervals.
+* Added project column in non-project ticket module for quick project identification.
+* Extended "Create Again" functionality to all ticket types except logical database changes, partition plans, and shadow tables.
+* Refined ticket management scope: admins and DBAs can manage all project tickets, while other roles can only manage self-initiated tickets. Also, all members can view tickets in their projects.
+
+### Bug Fixes
+
+**Data Sources**
+
+* Fixed synchronization of system databases like `information_schema` to projects in bastion host integration scenarios.
+* Resolved database synchronization suspension issues.
+
+**Tickets**
+
+* Fixed approval workflow triggering in personal workspace for data archiving tickets.
+* Fixed status inconsistency in data archiving/cleanup task execution records.
+* Fixed structure comparison task execution issues for non-current account users.
+* Fixed Oracle table structure export failures with virtual columns.
+* Fixed structure comparison failures for OceanBase MySQL tables with full-text index tokenizers.
+* Fixed operation record viewing failures for periodic tasks with numerous subtasks.
+* Fixed non-working configuration retention in export tasks.
+
+**Change Management**
+
+* Fixed unauthorized view exports.
+* Fixed partition plan disable issues affecting project archiving.
+
+**SQL Development**
+
+* Fixed NPE exceptions in specific SQL check scenarios.
+* Fixed PL drop requiring database change permissions.
+* Fixed display issues for functions with year return type.
+* Fixed PL creation and drop failures with @ in names.
+* Fixed table detail viewing failures for Oracle tables with extended statistics (`DBMS_STATS.CREATE_EXTENDED_STATS`).
+* Fixed ineffective row limit for Insert statements.
+* Fixed null pointer exceptions when exporting array function result sets.
+* Fixed missing run button for package subprocedures in Chrome 118.
+* Fixed error when viewing subprocedures in package headers.
+
+**Other**
+
+* Fixed last used project not opening on subsequent ODC access.
+
+
 ## 4.3.2 (2024-09-27)
 
 ### Feature Changes

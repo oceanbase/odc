@@ -46,10 +46,7 @@ import lombok.NonNull;
  */
 @Component
 public class ChannelConfigValidator {
-    private static final Pattern ILLEGAL_CHARACTERS_PATTERN = Pattern.compile("[@#;$,\\[\\]{}\\-\\\\^\"<>]");
-    private static final String DINGTALK_WEBHOOK_PREFIX = "https://oapi.dingtalk.com/robot";
-    private static final String FEISHU_WEBHOOK_PREFIX = "https://open.feishu.cn/open-apis/bot";
-    private static final String WECOM_WEBHOOK_PREFIX = "https://qyapi.weixin.qq.com/cgi-bin/webhook";
+    private static final Pattern ILLEGAL_CHARACTERS_PATTERN = Pattern.compile("[@#;$,\\[\\]{}\\\\^\"<>]");
 
     @Autowired
     private IntegrationConfigProperties integrationConfigProperties;
@@ -59,13 +56,13 @@ public class ChannelConfigValidator {
     public void validate(@NonNull ChannelType type, BaseChannelConfig channelConfig) {
         switch (type) {
             case DingTalk:
-                validateDingTalkChannelConfig((DingTalkChannelConfig) channelConfig);
+                validateWebhook(((DingTalkChannelConfig) channelConfig).getWebhook());
                 return;
             case WeCom:
-                validateWeComChannelConfig((WeComChannelConfig) channelConfig);
+                validateWebhook(((WeComChannelConfig) channelConfig).getWebhook());
                 return;
             case Feishu:
-                validateFeishuChannelConfig((WebhookChannelConfig) channelConfig);
+                validateWebhook(((WebhookChannelConfig) channelConfig).getWebhook());
                 return;
             case Webhook:
                 validateWebhookChannelConfig((WebhookChannelConfig) channelConfig);
@@ -75,45 +72,9 @@ public class ChannelConfigValidator {
         }
     }
 
-    private void validateDingTalkChannelConfig(DingTalkChannelConfig channelConfig) {
-        Verify.notEmpty(channelConfig.getWebhook(), "webhook");
-        Verify.verify(channelConfig.getWebhook().startsWith(DINGTALK_WEBHOOK_PREFIX),
-                "please input an valid Dingtalk webhook");
-    }
-
-    private void validateFeishuChannelConfig(WebhookChannelConfig channelConfig) {
-        Verify.notEmpty(channelConfig.getWebhook(), "webhook");
-        Verify.verify(channelConfig.getWebhook().startsWith(FEISHU_WEBHOOK_PREFIX),
-                "please input an valid Feishu webhook");
-    }
-
-    private void validateWeComChannelConfig(WeComChannelConfig channelConfig) {
-        Verify.notEmpty(channelConfig.getWebhook(), "webhook");
-        Verify.verify(channelConfig.getWebhook().startsWith(WECOM_WEBHOOK_PREFIX),
-                "please input an valid WeCom webhook");
-    }
-
     private void validateWebhookChannelConfig(WebhookChannelConfig channelConfig) {
-        Verify.notEmpty(channelConfig.getWebhook(), "webhook");
-        Verify.verify(
-                channelConfig.getWebhook().startsWith("http://") || channelConfig.getWebhook().startsWith("https://"),
-                "Webhook should start with 'http://' or 'https://'");
-        if (ILLEGAL_CHARACTERS_PATTERN.matcher(channelConfig.getWebhook()).find()) {
-            throw new IllegalArgumentException("Webhook contains illegal characters");
-        }
-        try {
-            if (CollectionUtils.isNotEmpty(integrationConfigProperties.getUrlWhiteList())) {
-                Verify.verify(SSRFChecker.checkUrlInWhiteList(channelConfig.getWebhook(),
-                        integrationConfigProperties.getUrlWhiteList()),
-                        "The webhook is forbidden due to SSRF protection");
-            } else {
-                Verify.verify(SSRFChecker.checkHostNotInBlackList(new URL(channelConfig.getWebhook()).getHost(),
-                        notificationProperties.getHostBlackList()),
-                        "The webhook is forbidden due to SSRF protection");
-            }
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        }
+        validateWebhook(channelConfig.getWebhook());
+
         String httpProxy = channelConfig.getHttpProxy();
         Verify.verify(StringUtils.isEmpty(httpProxy) || httpProxy.split(":").length == 3,
                 "Illegal http proxy, it should be like 'http(s)://host:port'");
@@ -134,5 +95,28 @@ public class ChannelConfigValidator {
             }
         }
 
+    }
+
+    private void validateWebhook(String webhook) {
+        Verify.notEmpty(webhook, "webhook");
+        Verify.verify(
+                webhook.startsWith("http://") || webhook.startsWith("https://"),
+                "Webhook should start with 'http://' or 'https://'");
+        if (ILLEGAL_CHARACTERS_PATTERN.matcher(webhook).find()) {
+            throw new IllegalArgumentException("Webhook contains illegal characters");
+        }
+        try {
+            if (CollectionUtils.isNotEmpty(integrationConfigProperties.getUrlWhiteList())) {
+                Verify.verify(SSRFChecker.checkUrlInWhiteList(webhook,
+                        integrationConfigProperties.getUrlWhiteList()),
+                        "The webhook is forbidden due to SSRF protection");
+            } else {
+                Verify.verify(SSRFChecker.checkHostNotInBlackList(new URL(webhook).getHost(),
+                        notificationProperties.getHostBlackList()),
+                        "The webhook is forbidden due to SSRF protection");
+            }
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

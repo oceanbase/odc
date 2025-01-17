@@ -84,6 +84,22 @@ public class TestResult {
         return fail(ErrorCodes.ConnectionInitScriptFailed, new String[] {message});
     }
 
+    public static TestResult bucketNotExist(String bucketName) {
+        return fail(ErrorCodes.BucketNotExist, new String[] {bucketName});
+    }
+
+    public static TestResult invalidAccessKeyId(String accessKeyId) {
+        return fail(ErrorCodes.InvalidAccessKeyId, new String[] {accessKeyId});
+    }
+
+    public static TestResult akAccessDenied(String accessKeyId) {
+        return fail(ErrorCodes.AccessDenied, new String[] {accessKeyId});
+    }
+
+    public static TestResult signatureDoesNotMatch(String accessKeyId) {
+        return fail(ErrorCodes.SignatureDoesNotMatch, new String[] {accessKeyId});
+    }
+
     public static TestResult success() {
         TestResult result = new TestResult();
         result.setActive(true);

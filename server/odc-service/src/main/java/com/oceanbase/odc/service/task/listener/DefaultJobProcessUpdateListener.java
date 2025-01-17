@@ -25,7 +25,7 @@ import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
-import com.oceanbase.odc.service.task.executor.task.TaskResult;
+import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
@@ -56,7 +56,6 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
                         updateScheduleTaskStatus(taskEntity.getId(), TaskStatus.RUNNING, TaskStatus.PREPARING);
                     }
                 });
-
     }
 
     private void updateScheduleTaskStatus(Long id, TaskStatus status, TaskStatus previousStatus) {
@@ -68,7 +67,6 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
             log.warn("Update scheduleTask status from {} to {} failed, scheduleTaskId={}", previousStatus, status,
                     id);
         }
-
     }
 
 }

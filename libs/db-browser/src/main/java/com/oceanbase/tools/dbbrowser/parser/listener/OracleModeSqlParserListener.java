@@ -284,6 +284,7 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
         if (scopeToken.getType() == OBLexer.GLOBAL || scopeToken.getType() == OBLexer.GLOBAL_ALIAS) {
             setDbObjectType(DBObjectType.GLOBAL_VARIABLE);
         } else if (scopeToken.getType() == OBLexer.SESSION || scopeToken.getType() == OBLexer.SESSION_ALIAS) {
+            sqlType = sqlType.SET_SESSION;
             setDbObjectType(DBObjectType.SESSION_VARIABLE);
         }
     }
@@ -601,7 +602,7 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
 
     @Override
     public void enterAlter_session_stmt(Alter_session_stmtContext ctx) {
-        setSqlType(SqlType.ALTER);
+        setSqlType(SqlType.ALTER_SESSION);
         this.dbObjectType = DBObjectType.OTHERS;
     }
 
@@ -698,6 +699,27 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
     public void enterRollback_stmt(Rollback_stmtContext ctx) {
         setSqlType(SqlType.ROLLBACK);
         this.dbObjectType = DBObjectType.OTHERS;
+    }
+
+    @Override
+    public void enterSet_comment_stmt(OBParser.Set_comment_stmtContext ctx) {
+        // comment on xxx
+        setSqlType(SqlType.COMMENT_ON);
+        if (ctx.TABLE() != null) {
+            this.dbObjectType = DBObjectType.TABLE;
+            return;
+        }
+        if (ctx.COLUMN() != null) {
+            this.dbObjectType = DBObjectType.COLUMN;
+            return;
+        }
+        this.dbObjectType = DBObjectType.OTHERS;
+    }
+
+    @Override
+    public void enterCall_stmt(OBParser.Call_stmtContext ctx) {
+        setSqlType(SqlType.CALL);
+        this.dbObjectType = DBObjectType.PROCEDURE;
     }
 
 }

@@ -27,7 +27,10 @@ import org.quartz.JobExecutionException;
 import org.quartz.JobKey;
 import org.quartz.UnableToInterruptJobException;
 
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.monitor.DefaultMeterName;
 import com.oceanbase.odc.service.monitor.MeterKey;
@@ -75,6 +78,16 @@ public abstract class AbstractQuartzJob implements InterruptableJob {
             sendEndMetric();
         } catch (Exception e) {
             sendFailedMetric();
+            try {
+                log.info("Start to update schedule task status to failed,jobKey={}", jobKey);
+                ScheduleTaskRepository taskRepository = SpringContextUtil.getBean(ScheduleTaskRepository.class);
+                ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
+                if (taskEntity != null && taskEntity.getId() != null) {
+                    taskRepository.updateStatusById(taskEntity.getId(), TaskStatus.FAILED);
+                }
+            } catch (Exception innerException) {
+                log.warn("Update schedule task status failed.", innerException);
+            }
             log.warn("Job execute failed,job key={},fire time={}.",
                     context.getJobDetail().getKey(), context.getFireTime(), e);
         } finally {

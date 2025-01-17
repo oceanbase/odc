@@ -93,6 +93,19 @@ public class ConnectionInfoUtil {
         log.debug("Init DB version completed.");
     }
 
+    public static void initOdpVersionIfExists(@NonNull ConnectionSession connectionSession) {
+        DialectType dialectType = connectionSession.getDialectType();
+        if (dialectType != null && dialectType.isOceanbase()) {
+            String odpVersion = getSyncJdbcExecutor(connectionSession).execute(OBUtils::getODPVersion);
+            if (odpVersion == null) {
+                log.debug("OB Proxy does not exist or failed to obtain OB Proxy version.");
+                return;
+            }
+            connectionSession.setAttribute(ConnectionSessionConstants.ODP_VERSION, odpVersion);
+            log.debug("Init OB Proxy version completed.");
+        }
+    }
+
     public static void killQuery(@NonNull String connectionId,
             @NonNull DataSourceFactory dataSourceFactory, DialectType dialectType) throws Exception {
         DataSource dataSource = dataSourceFactory.getDataSource();

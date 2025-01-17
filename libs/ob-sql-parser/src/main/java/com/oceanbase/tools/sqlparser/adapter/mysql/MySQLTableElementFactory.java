@@ -243,6 +243,12 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
             ColumnAttributes attributes = visitGeneratedColumnAttributeList(ctx.opt_generated_column_attribute_list());
             definition.setColumnAttributes(attributes);
         }
+        if (ctx.references_clause() != null) {
+            definition.setForeignReference(visitForeignReference(ctx.references_clause()));
+        }
+        if (ctx.SERIAL() != null) {
+            definition.setSerial(true);
+        }
         if (ctx.FIRST() != null) {
             definition.setLocation(new Location(ctx.FIRST().getText(), null));
         } else if (ctx.BEFORE() != null) {
@@ -422,8 +428,14 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
             attribute = new InLineCheckConstraint(ctx, constraintName, state,
                     new MySQLExpressionFactory(ctx.expr()).generate());
             attributes.setConstraints(Collections.singletonList(attribute));
-        } else if (ctx.DEFAULT() != null || ctx.ORIG_DEFAULT() != null) {
-            Expression expr = visitNowOrSignedLiteral(ctx.now_or_signed_literal());
+        } else if ((ctx.DEFAULT() != null || ctx.ORIG_DEFAULT() != null)
+                && (ctx.now_or_signed_literal() != null || ctx.expr() != null)) {
+            Expression expr = null;
+            if (ctx.now_or_signed_literal() != null) {
+                expr = visitNowOrSignedLiteral(ctx.now_or_signed_literal());
+            } else if (ctx.expr() != null) {
+                expr = new MySQLExpressionFactory(ctx.expr()).generate();
+            }
             if (ctx.DEFAULT() != null) {
                 attributes.setDefaultValue(expr);
             } else {
@@ -450,6 +462,16 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
                 skipIndexTypes.add(ctx.skip_index_type().getText());
             }
             attributes.setSkipIndexTypes(skipIndexTypes);
+        } else if (ctx.lob_chunk_size() != null) {
+            if (ctx.lob_chunk_size().STRING_VALUE() != null) {
+                attributes.setLobChunkSize(ctx.lob_chunk_size().STRING_VALUE().getText());
+            } else if (ctx.lob_chunk_size().INTNUM() != null) {
+                attributes.setLobChunkSize(ctx.lob_chunk_size().INTNUM().getText());
+            }
+        } else if (ctx.COLUMN_FORMAT() != null) {
+            attributes.setColumnFormat(ctx.col_attri_value.getText());
+        } else if (ctx.STORAGE() != null) {
+            attributes.setStorage(ctx.col_attri_value.getText());
         }
         return attributes;
     }

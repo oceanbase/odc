@@ -162,4 +162,19 @@ public class ODPOBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor 
         throw new UnsupportedOperationException("Not supported yet");
     }
 
+    @Override
+    public List<String> showExternalTables(String schemaName) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public List<String> showExternalTablesLike(String schemaName, String tableNameLike) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public List<DBObjectIdentity> listExternalTables(String schemaName, String tableNameLike) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
 }

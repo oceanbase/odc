@@ -18,18 +18,14 @@ package com.oceanbase.odc.service.schedule.processor;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
-import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.DLMConfiguration;
-import com.oceanbase.odc.service.dlm.DLMTableStructureSynchronizer;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
-import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
@@ -65,12 +61,15 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
             Database sourceDb = databaseService.detail(parameters.getSourceDatabaseId());
             Database targetDb = databaseService.detail(parameters.getTargetDataBaseId());
             supportDataArchivingLink(sourceDb.getDataSource(), targetDb.getDataSource());
+            if (!parameters.getSyncTableStructure().isEmpty()) {
+                PreConditions.validArgumentState(sourceDb.getDialectType() != targetDb.getDialectType(),
+                        ErrorCodes.UnsupportedSyncTableStructure,
+                        new Object[] {sourceDb.getDialectType(), targetDb.getDialectType()}, null);
+            }
             ConnectionConfig sourceDs = sourceDb.getDataSource();
             sourceDs.setDefaultSchema(sourceDb.getName());
             ConnectionSessionFactory sourceSessionFactory = new DefaultConnectSessionFactory(sourceDs);
-            ConnectionSessionFactory targetSessionFactory = new DefaultConnectSessionFactory(targetDb.getDataSource());
             ConnectionSession sourceSession = sourceSessionFactory.generateSession();
-            ConnectionSession targetSession = targetSessionFactory.generateSession();
             try {
                 if (parameters.isFullDatabase()) {
                     parameters.setTables(getAllTables(sourceSession, sourceDb.getName()));
@@ -78,36 +77,9 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
                 if (parameters.getTables().isEmpty()) {
                     throw new IllegalArgumentException("The table list is empty.");
                 }
-                DialectType sourceDbType = sourceSession.getDialectType();
-                DialectType targetDbType = targetSession.getDialectType();
-                InformationExtensionPoint sourceInformation =
-                        ConnectionPluginUtil.getInformationExtension(sourceDbType);
-                InformationExtensionPoint targetInformation =
-                        ConnectionPluginUtil.getInformationExtension(targetDbType);
-                String sourceDbVersion =
-                        sourceSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
-                                sourceInformation::getDBVersion);
-                String targetDbVersion =
-                        targetSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
-                                targetInformation::getDBVersion);
-                if (!parameters.getSyncTableStructure().isEmpty()) {
-                    boolean supportedSyncTableStructure = DLMTableStructureSynchronizer.isSupportedSyncTableStructure(
-                            sourceDbType, sourceDbVersion, targetDbType, targetDbVersion);
-                    if (!supportedSyncTableStructure) {
-                        log.warn(
-                                "Synchronization of table structure is unsupported,sourceDbType={},sourceDbVersion={},targetDbType={},targetDbVersion={}",
-                                sourceDbType,
-                                sourceDbVersion, targetDbType, targetDbVersion);
-                        throw new UnsupportedException(String.format(
-                                "Synchronization of table structure is unsupported,sourceDbType=%s,sourceDbVersion=%s,targetDbType=%s,targetDbVersion=%s",
-                                sourceDbType,
-                                sourceDbVersion, targetDbType, targetDbVersion));
-                    }
-                }
                 checkTableAndCondition(sourceSession, sourceDb, parameters.getTables(), parameters.getVariables());
             } finally {
                 sourceSession.expire();
-                targetSession.expire();
             }
             log.info("Data archive preprocessing has been completed.");
         }
