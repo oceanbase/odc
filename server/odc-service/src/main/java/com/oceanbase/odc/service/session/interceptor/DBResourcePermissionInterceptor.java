@@ -18,8 +18,11 @@ package com.oceanbase.odc.service.session.interceptor;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -34,6 +37,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.DBResource;
 import com.oceanbase.odc.service.connection.database.model.UnauthorizedDBResource;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.db.DBFunctionService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
@@ -44,6 +48,8 @@ import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.session.model.SqlTuplesWithViolation;
 import com.oceanbase.odc.service.session.util.DBSchemaExtractor;
 import com.oceanbase.odc.service.session.util.DBSchemaExtractor.DBSchemaIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBFunction;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 
 import lombok.NonNull;
@@ -66,6 +72,9 @@ public class DBResourcePermissionInterceptor extends BaseTimeConsumingIntercepto
 
     @Autowired
     private DBResourcePermissionHelper dbResourcePermissionHelper;
+
+    @Autowired
+    private DBFunctionService dbFunctionService;
 
     @Override
     public int getOrder() {
@@ -91,6 +100,7 @@ public class DBResourcePermissionInterceptor extends BaseTimeConsumingIntercepto
                 .filter(entry -> Objects.isNull(entry.getKey().getSchema())
                         || existedDatabaseNames.contains(entry.getKey().getSchema()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        processIdentity2TypesIfContainsCustomFunctions(session, identity2Types);
         Map<DBResource, Set<DatabasePermissionType>> resource2PermissionTypes =
                 DBResourcePermissionHelper.getDBResource2PermissionTypes(identity2Types, connectionConfig, null);
         List<UnauthorizedDBResource> unauthorizedDBResource = dbResourcePermissionHelper
@@ -100,6 +110,33 @@ public class DBResourcePermissionInterceptor extends BaseTimeConsumingIntercepto
             return false;
         }
         return true;
+    }
+
+    private void processIdentity2TypesIfContainsCustomFunctions(ConnectionSession session,
+            Map<DBSchemaIdentity, Set<SqlType>> identity2Types) {
+        Predicate<Entry<DBSchemaIdentity, Set<SqlType>>> isValidFunctionEntry =
+                entry -> DBObjectType.FUNCTION == entry.getKey().getDbObjectType() &&
+                        Objects.nonNull(entry.getKey().getDbObjectName()) &&
+                        entry.getValue().contains(SqlType.SELECT) &&
+                        Objects.nonNull(entry.getKey().getSchema());
+        Set<String> schemas = identity2Types.entrySet().stream().filter(isValidFunctionEntry)
+                .map(entry -> entry.getKey().getSchema())
+                .collect(Collectors.toSet());
+        if (CollectionUtils.isEmpty(schemas)) {
+            return;
+        }
+        Map<String, Set<String>> schema2Functions = schemas.stream()
+                .collect(
+                        Collectors.toMap(Function.identity(),
+                                schema -> dbFunctionService.list(session, schema).stream()
+                                        .map(DBFunction::getFunName)
+                                        .collect(Collectors.toSet())));
+        identity2Types.entrySet().stream()
+                .filter(isValidFunctionEntry
+                        .and(entry -> Objects.nonNull(schema2Functions.get(entry.getKey().getSchema())))
+                        .and(entry -> schema2Functions.get(entry.getKey().getSchema())
+                                .contains(entry.getKey().getDbObjectName())))
+                .forEach(entry -> entry.getValue().add(SqlType.ALTER));
     }
 
     @Override

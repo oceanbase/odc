@@ -33,6 +33,7 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseMysqlPLResult;
@@ -154,8 +155,11 @@ public class DBSchemaExtractor {
                 identities = visitor.getIdentities();
             }
             identities = identities.stream()
-                    .filter(e -> Objects.nonNull(e.getSchema()) || Objects.nonNull(e.getTable())).map(e -> {
-                        DBSchemaIdentity i = new DBSchemaIdentity(e.getSchema(), e.getTable());
+                    .filter(e -> Objects.nonNull(e.getSchema()) || Objects.nonNull(e.getTable())
+                            || Objects.nonNull(e.getDbObjectName()))
+                    .map(e -> {
+                        DBSchemaIdentity i = new DBSchemaIdentity(e.getSchema(), e.getTable(), e.getDbObjectName(),
+                                e.getDbObjectType());
                         String schema = StringUtils.isNotBlank(i.getSchema()) ? i.getSchema() : defaultSchema;
                         i.setSchema(StringUtils.unquoteMySqlIdentifier(schema));
                         i.setTable(StringUtils.unquoteMySqlIdentifier(i.getTable()));
@@ -308,8 +312,12 @@ public class DBSchemaExtractor {
                 if (relationName.contains(".")) {
                     String[] names = relationName.split("\\.");
                     relationFactor.setSchema(names[0]);
+                    relationName = names[1];
+                } else {
+                    relationFactor.setSchema(this.defaultSchema);
                 }
-                identities.add(new DBSchemaIdentity(relationFactor.getSchema(), null));
+                identities.add(
+                        new DBSchemaIdentity(relationFactor.getSchema(), null, relationName, DBObjectType.FUNCTION));
             }
             return null;
         }
@@ -623,15 +631,40 @@ public class DBSchemaExtractor {
     }
 
 
+    /**
+     * This class is used to extract database and table names for permission verification.
+     *
+     * <p>
+     * Note: The attributes {@code dbObjectName} and {@code dbObjectType} are used exclusively when the
+     * database object is a table, external table, or view. Those attributes are involved in specialized
+     * processing scenarios.
+     * </p>
+     *
+     * <p>
+     * Usage example: When differentiating between custom and system functions, those attributes are
+     * essential. If a function is custom, change permission of database is required; otherwise, only
+     * query permission is required.
+     * </p>
+     *
+     * @see #schema
+     * @see #table
+     * @see #dbObjectName
+     * @see #dbObjectType
+     */
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     @EqualsAndHashCode
     public static class DBSchemaIdentity {
-
         private String schema;
         private String table;
+        private String dbObjectName;
+        private DBObjectType dbObjectType;
 
+        public DBSchemaIdentity(String schema, String table) {
+            this.schema = schema;
+            this.table = table;
+        }
     }
 
 }

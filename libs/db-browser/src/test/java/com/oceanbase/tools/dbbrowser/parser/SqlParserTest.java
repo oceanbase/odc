@@ -358,5 +358,10 @@ public class SqlParserTest {
         Assert.assertEquals(SqlType.ALTER, actual.getSqlType());
     }
 
-
+    @Test
+    public void parseMysql_selectFunction_getSqlTypeSucceed() {
+        ParseSqlResult actual = SqlParser.parseMysql("select func();");
+        Assert.assertEquals(null, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.SELECT, actual.getSqlType());
+    }
 }
