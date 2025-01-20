@@ -78,6 +78,8 @@ public class R4237DefaultRuleApplyingMigrate implements JdbcMigratable {
         Map<String, List<DefaultRuleApplyingEntity>> actualRulesetName2RuleApplyings = defaultRuleApplyingRepository
                 .findAll().stream().collect(Collectors.groupingBy(DefaultRuleApplyingEntity::getRulesetName));
         List<DefaultRuleApplyingEntity> toAdd = new ArrayList<>();
+        List<DefaultRuleApplyingEntity> toUpdate = new ArrayList<>();
+
         for (InnerDefaultRuleApplying expectedApplying : expected) {
             String rulesetName = expectedApplying.getRulesetName();
             MetadataEntity metadataEntity = metadataName2Metadata.get(expectedApplying.getRuleName());
@@ -99,7 +101,7 @@ public class R4237DefaultRuleApplyingMigrate implements JdbcMigratable {
                         actualRuleApplying.setLevel(expectedApplying.getLevel());
                         actualRuleApplying.setAppliedDialectTypes(expectedApplying.getAppliedDialectTypes());
                         actualRuleApplying.setPropertiesJson(expectedApplying.getPropertiesJson());
-                        toAdd.add(actualRuleApplying);
+                        toUpdate.add(actualRuleApplying);
                     }
                 } else {
                     toAdd.add(generateNewEntity(expectedApplying, rulesetName, metadataEntity.getId()));
@@ -107,9 +109,13 @@ public class R4237DefaultRuleApplyingMigrate implements JdbcMigratable {
             }
         }
         if (CollectionUtils.isNotEmpty(toAdd)) {
-            log.info("default rule applying changed, start saving, size={}", toAdd.size());
+            log.info("Start saving new applyings, size={}", toAdd.size());
             defaultRuleApplyingRepository.saveAll(toAdd);
-            log.info("saving changed default rule applying succeed, size={}", toAdd.size());
+            log.info("Saving new default rule applying succeed, size={}", toAdd.size());
+
+            log.info("Start updating rule applyings, size={}", toUpdate.size());
+            defaultRuleApplyingRepository.saveAll(toUpdate);
+            log.info("Updating default rule applying succeed, size={}", toUpdate.size());
 
             /**
              * For migrating the customized environment's SQL rules:<br>
