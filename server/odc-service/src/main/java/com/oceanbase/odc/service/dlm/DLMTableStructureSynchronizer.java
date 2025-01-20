@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -91,6 +92,14 @@ public class DLMTableStructureSynchronizer {
                     Collections.singletonList(srcTableName)).get(srcTableName);
             DBTable tgtTable = tgtAccessor.getTables(tgtConfig.getDefaultSchema(),
                     Collections.singletonList(tgtTableName)).get(tgtTableName);
+            if (tgtConfig.getType().getDialectType().isMysql()) {
+                if (srcTable != null) {
+                    StringUtils.quoteColumnDefaultValuesForMySQL(srcTable);
+                }
+                if (tgtTable != null) {
+                    StringUtils.quoteColumnDefaultValuesForMySQL(tgtTable);
+                }
+            }
             DBTableStructureComparator comparator = new DBTableStructureComparator(tgtTableEditor,
                     tgtConfig.getType().getDialectType(), srcConfig.getDefaultSchema(), tgtConfig.getDefaultSchema());
             List<String> changeSqlScript = new LinkedList<>();
