@@ -46,7 +46,6 @@ import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.paramete
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.factory.BaseTransferJobFactory;
 import com.oceanbase.odc.plugin.task.oracle.datatransfer.job.OracleSchemaExportJob;
 import com.oceanbase.odc.plugin.task.oracle.datatransfer.job.OracleSqlScriptImportJob;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
@@ -71,7 +70,7 @@ public class OracleTransferJobFactory extends BaseTransferJobFactory {
     @Override
     protected List<DataTransferObject> queryTransferObjects(Connection connection, boolean transferDDL) {
         List<DataTransferObject> objects = new ArrayList<>();
-        new OracleTableExtension().list(connection, transferConfig.getSchemaName(), DBObjectType.TABLE)
+        new OracleTableExtension().list(connection, transferConfig.getSchemaName())
                 .forEach(table -> objects.add(new DataTransferObject(ObjectType.TABLE, table.getName())));
         if (transferDDL) {
             new OracleViewExtension().list(connection, transferConfig.getSchemaName())

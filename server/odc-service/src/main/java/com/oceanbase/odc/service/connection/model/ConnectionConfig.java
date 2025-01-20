@@ -546,13 +546,6 @@ public class ConnectionConfig
         return o == null ? null : o.toString();
     }
 
-    public void setRegion(@NotNull String region) {
-        if (this.attributes == null) {
-            attributes = new HashMap<>();
-        }
-        attributes.put(REGION, region);
-    }
-
     public String getRegion() {
         if (this.attributes == null) {
             return null;

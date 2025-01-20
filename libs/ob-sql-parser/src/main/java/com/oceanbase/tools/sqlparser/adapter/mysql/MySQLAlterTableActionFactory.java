@@ -15,18 +15,18 @@
  */
 package com.oceanbase.tools.sqlparser.adapter.mysql;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Add_external_table_partition_actionsContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_column_behaviorContext;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_column_group_actionContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_column_group_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_column_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_constraint_optionContext;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_external_table_actionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_index_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_table_actionContext;
@@ -35,7 +35,6 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Modify_partition_infoConte
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Name_listContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Opt_partition_range_or_listContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
-import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction.AlterColumnBehavior;
 import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
@@ -64,12 +63,8 @@ public class MySQLAlterTableActionFactory extends OBParserBaseVisitor<AlterTable
         this.parserRuleContext = alterTableActionContext;
     }
 
-    public MySQLAlterTableActionFactory(@NonNull Alter_column_group_actionContext alterTableActionContext) {
+    public MySQLAlterTableActionFactory(@NonNull Alter_column_group_optionContext alterTableActionContext) {
         this.parserRuleContext = alterTableActionContext;
-    }
-
-    public MySQLAlterTableActionFactory(@NonNull Alter_external_table_actionContext alterExternalTableActionContext) {
-        this.parserRuleContext = alterExternalTableActionContext;
     }
 
     @Override
@@ -101,20 +96,6 @@ public class MySQLAlterTableActionFactory extends OBParserBaseVisitor<AlterTable
     }
 
     @Override
-    public AlterTableAction visitAlter_external_table_action(Alter_external_table_actionContext ctx) {
-        AlterTableAction action = new AlterTableAction(ctx);
-        action.setExternalTableLocation(ctx.STRING_VALUE().getText());
-        if (ctx.DROP() != null && ctx.PARTITION() != null) {
-            action.setDropExternalTablePartition(true);
-        } else if (ctx.ADD() != null && ctx.PARTITION() != null) {
-            Map<String, Expression> externalTablePartition = new HashMap<>();
-            visitAddExternalTablePartitionActions(externalTablePartition, ctx.add_external_table_partition_actions());
-            action.setAddExternalTablePartition(externalTablePartition);
-        }
-        return action;
-    }
-
-    @Override
     public AlterTableAction visitAlter_column_option(Alter_column_optionContext ctx) {
         AlterTableAction alterTableAction = new AlterTableAction(ctx);
         if (ctx.ADD() != null) {
@@ -127,10 +108,6 @@ public class MySQLAlterTableActionFactory extends OBParserBaseVisitor<AlterTable
                         .collect(Collectors.toList());
             }
             alterTableAction.setAddColumns(addColumns);
-            if (ctx.lob_storage_clause() != null) {
-                alterTableAction.setLobStorageOption(
-                        MySQLTableOptionsFactory.getLobStorageOption(ctx.lob_storage_clause()));
-            }
         } else if (ctx.DROP() != null) {
             String option = null;
             if (ctx.CASCADE() != null) {
@@ -154,8 +131,6 @@ public class MySQLAlterTableActionFactory extends OBParserBaseVisitor<AlterTable
             AlterColumnBehavior behavior = new AlterColumnBehavior(aCtx);
             if (aCtx.signed_literal() != null) {
                 behavior.setDefaultValue(MySQLTableElementFactory.getSignedLiteral(aCtx.signed_literal()));
-            } else if (aCtx.expr() != null) {
-                behavior.setDefaultValue(new MySQLExpressionFactory(aCtx.expr()).generate());
             }
             alterTableAction.alterColumnBehavior(colRef, behavior);
         } else if (ctx.RENAME() != null) {
@@ -236,9 +211,6 @@ public class MySQLAlterTableActionFactory extends OBParserBaseVisitor<AlterTable
                     getPartitionElements(ctx.opt_partition_range_or_list()));
         } else if (ctx.REMOVE() != null && ctx.PARTITIONING() != null) {
             alterTableAction.setRemovePartitioning(true);
-        } else if (ctx.EXCHANGE() != null && ctx.PARTITION() != null) {
-            alterTableAction.setExchangePartition(ctx.relation_name().getText(),
-                    MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor()));
         }
         return alterTableAction;
     }
@@ -269,7 +241,7 @@ public class MySQLAlterTableActionFactory extends OBParserBaseVisitor<AlterTable
     }
 
     @Override
-    public AlterTableAction visitAlter_column_group_action(Alter_column_group_actionContext ctx) {
+    public AlterTableAction visitAlter_column_group_option(Alter_column_group_optionContext ctx) {
         AlterTableAction action = new AlterTableAction(ctx);
         List<ColumnGroupElement> columnGroupElements = ctx.column_group_list().column_group_element()
                 .stream().map(c -> new MySQLColumnGroupElementFactory(c).generate()).collect(Collectors.toList());
@@ -299,17 +271,6 @@ public class MySQLAlterTableActionFactory extends OBParserBaseVisitor<AlterTable
         }
         return pCtx.opt_list_partition_list().list_partition_list().list_partition_element().stream()
                 .map(c -> new MySQLPartitionElementFactory(c).generate()).collect(Collectors.toList());
-    }
-
-    private void visitAddExternalTablePartitionActions(Map<String, Expression> externalTablePartition,
-            Add_external_table_partition_actionsContext context) {
-        if (context == null) {
-            return;
-        }
-        Expression value = new MySQLExpressionFactory()
-                .visit(context.add_external_table_partition_action().expr_const());
-        externalTablePartition.put(context.add_external_table_partition_action().column_name().getText(), value);
-        visitAddExternalTablePartitionActions(externalTablePartition, context.add_external_table_partition_actions());
     }
 
 }

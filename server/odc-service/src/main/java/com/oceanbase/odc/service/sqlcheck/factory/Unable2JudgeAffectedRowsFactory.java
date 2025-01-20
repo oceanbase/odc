@@ -23,7 +23,7 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
-import com.oceanbase.odc.service.sqlcheck.rule.BaseAffectedRowsExceedLimit;
+import com.oceanbase.odc.service.sqlcheck.rule.MySQLAffectedRowsExceedLimit;
 import com.oceanbase.odc.service.sqlcheck.rule.Unable2JudgeAffectedRows;
 
 import lombok.NonNull;
@@ -44,7 +44,7 @@ public class Unable2JudgeAffectedRowsFactory implements SqlCheckRuleFactory {
     @Override
     public SqlCheckRule generate(@NonNull DialectType dialectType, Map<String, Object> parameters) {
         SqlAffectedRowsFactory sqlAffectedRowsFactory = new SqlAffectedRowsFactory(this.jdbc);
-        BaseAffectedRowsExceedLimit targetRule = (BaseAffectedRowsExceedLimit) sqlAffectedRowsFactory
+        MySQLAffectedRowsExceedLimit targetRule = (MySQLAffectedRowsExceedLimit) sqlAffectedRowsFactory
                 .generate(dialectType, parameters);
         return new Unable2JudgeAffectedRows(targetRule);
     }

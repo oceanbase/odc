@@ -57,10 +57,9 @@ public class DatabaseRepositoryTest extends ServiceTestEnv {
         d2.setObjectLastSyncTime(syncTime);
         d2.setObjectSyncStatus(DBObjectSyncStatus.SYNCED);
         this.databaseRepository.saveAll(Arrays.asList(d1, d2));
-        int affectRows =
-                this.databaseRepository.setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeIsNullOrBefore(
-                        DBObjectSyncStatus.SYNCING, DBObjectSyncStatus.SYNCING,
-                        new Date(System.currentTimeMillis() - 86400 * 2));
+        int affectRows = this.databaseRepository.setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeBefore(
+                DBObjectSyncStatus.SYNCING, DBObjectSyncStatus.SYNCING,
+                new Date(System.currentTimeMillis() - 86400 * 2));
         Assert.assertEquals(0, affectRows);
     }
 
@@ -73,7 +72,7 @@ public class DatabaseRepositoryTest extends ServiceTestEnv {
         d2.setObjectLastSyncTime(new Date(System.currentTimeMillis() - 86400));
         d2.setObjectSyncStatus(DBObjectSyncStatus.SYNCED);
         this.databaseRepository.saveAll(Arrays.asList(d1, d2));
-        this.databaseRepository.setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeIsNullOrBefore(
+        this.databaseRepository.setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeBefore(
                 DBObjectSyncStatus.INITIALIZED, DBObjectSyncStatus.SYNCED,
                 new Date(System.currentTimeMillis() - 86400 / 2));
         Set<DBObjectSyncStatus> actual = this.databaseRepository.findAll().stream()

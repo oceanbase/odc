@@ -46,26 +46,6 @@ public class ExecutorIdentifierTest {
     }
 
     @Test
-    public void test_parser_decode() {
-
-        // old version1
-        String str2 = "http://odc:8989/default/xxx:xxxx001";
-        ExecutorIdentifier identifierOld = ExecutorIdentifierParser.parser(str2);
-        Assert.assertEquals(identifierOld.getNamespace(), "default");
-        Assert.assertEquals(identifierOld.getExecutorName(), "xxx:xxxx001");
-        // old version2
-        String str3 = "http://odc:8989/xxx:xxxx001";
-        ExecutorIdentifier identifierOld2 = ExecutorIdentifierParser.parser(str3);
-        Assert.assertNull(identifierOld2.getNamespace());
-        Assert.assertEquals(identifierOld2.getExecutorName(), "xxx:xxxx001");
-        // old version3
-        String str4 = "http://odc:8989/";
-        ExecutorIdentifier identifierOld3 = ExecutorIdentifierParser.parser(str4);
-        Assert.assertNull(identifierOld3.getNamespace());
-        Assert.assertEquals(identifierOld3.getExecutorName(), "");
-    }
-
-    @Test
     public void test_executorDefaultValue_successful() throws JobException {
         ExecutorIdentifier identifier = DefaultExecutorIdentifier.builder().namespace(null)
                 .executorName("test").build();

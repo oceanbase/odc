@@ -37,7 +37,7 @@ import lombok.Setter;
 @Setter
 @EqualsAndHashCode(callSuper = false)
 public class ArrayType extends BaseStatement implements DataType {
-
+    private final String typeName = "ARRAY";
     private final DataType elementType;
 
     public ArrayType(@NonNull ParserRuleContext context, @NonNull DataType elementType) {
@@ -45,23 +45,17 @@ public class ArrayType extends BaseStatement implements DataType {
         this.elementType = elementType;
     }
 
-    public ArrayType(@NonNull DataType elementType) {
+    public ArrayType(DataType elementType) {
         this.elementType = elementType;
     }
 
     @Override
     public String getName() {
-        return "ARRAY";
+        return this.typeName;
     }
 
     @Override
     public List<String> getArguments() {
         return Collections.emptyList();
     }
-
-    @Override
-    public String toString() {
-        return getName() + "(" + this.elementType + ")";
-    }
-
 }

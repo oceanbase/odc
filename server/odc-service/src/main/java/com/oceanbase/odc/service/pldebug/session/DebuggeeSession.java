@@ -36,7 +36,6 @@ import com.oceanbase.odc.service.db.model.DBMSOutput;
 import com.oceanbase.odc.service.pldebug.model.PLDebugResult;
 import com.oceanbase.odc.service.pldebug.model.StartPLDebugReq;
 import com.oceanbase.odc.service.pldebug.util.PLDebugTask;
-import com.oceanbase.odc.service.pldebug.util.PLUtils;
 import com.oceanbase.tools.dbbrowser.model.DBPLParam;
 import com.oceanbase.tools.dbbrowser.model.DBPLParamMode;
 import com.oceanbase.tools.dbbrowser.model.DBProcedure;
@@ -78,8 +77,7 @@ public class DebuggeeSession extends AbstractDebugSession {
                     DBProcedure.of("DBMS_DEBUG", "SET_TIMEOUT_BEHAVIOUR", Collections.singletonList(param));
             executeProcedure(dbProcedure);
             // 初始化debug_id
-            stmt.executeQuery(PLUtils.getSpecifiedRoute(this.plDebugODPSpecifiedRoute)
-                    + "select dbms_debug.initialize() from dual;");
+            stmt.executeQuery("select dbms_debug.initialize() from dual;");
             try (ResultSet resultSet = stmt.getResultSet()) {
                 if (resultSet.next()) {
                     debugId = resultSet.getString(1);
@@ -88,7 +86,7 @@ public class DebuggeeSession extends AbstractDebugSession {
             // 打开pl的日志输出
             enableDbmsOutput(stmt);
             // 打开调试开关
-            stmt.execute(PLUtils.getSpecifiedRoute(this.plDebugODPSpecifiedRoute) + "call dbms_debug.debug_on();");
+            stmt.execute("call dbms_debug.debug_on();");
         } catch (SQLSyntaxErrorException e) {
             if (Objects.equals(e.getErrorCode(), ERROR_CODE)
                     && StringUtils.contains(e.getMessage(), PL_DEBUGGING_ERROR_CODE)) {

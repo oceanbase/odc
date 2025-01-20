@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.permission;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -278,8 +277,7 @@ public class DBResourcePermissionHelper {
             }
         });
         Set<Long> dbIds = resource2Types.keySet().stream().map(DBResource::getDatabaseId).collect(Collectors.toSet());
-        List<DBObjectEntity> tbEntities = dbObjectRepository.findByDatabaseIdInAndTypeIn(dbIds,
-                Arrays.asList(DBObjectType.TABLE, DBObjectType.VIEW, DBObjectType.EXTERNAL_TABLE));
+        List<DBObjectEntity> tbEntities = dbObjectRepository.findByDatabaseIdInAndType(dbIds, DBObjectType.TABLE);
         Map<Long, DBObjectEntity> tbId2Entity =
                 tbEntities.stream().collect(Collectors.toMap(DBObjectEntity::getId, e -> e));
         Map<Long, Map<String, DBObjectEntity>> dbId2tbName2tbEntity = new HashMap<>();

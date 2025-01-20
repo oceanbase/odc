@@ -70,7 +70,7 @@ public class TooLongCharLength implements SqlCheckRule {
     @Override
     public List<DialectType> getSupportsDialectTypes() {
         return Arrays.asList(DialectType.OB_ORACLE, DialectType.OB_MYSQL, DialectType.MYSQL,
-                DialectType.ODP_SHARDING_OB_MYSQL, DialectType.ORACLE);
+                DialectType.ODP_SHARDING_OB_MYSQL);
     }
 
     private List<CheckViolation> builds(String sql, Stream<ColumnDefinition> stream) {

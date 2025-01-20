@@ -83,8 +83,8 @@ import com.oceanbase.odc.service.connection.database.model.UnauthorizedDBResourc
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.session.DefaultDBSessionManage;
-import com.oceanbase.odc.service.db.session.KillResult;
 import com.oceanbase.odc.service.db.session.KillSessionOrQueryReq;
+import com.oceanbase.odc.service.db.session.KillSessionResult;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
 import com.oceanbase.odc.service.feature.AllFeatures;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -246,7 +246,10 @@ public class ConnectConsoleService {
             PreConditions.lessThanOrEqualTo("sqlLength", LimitMetric.SQL_LENGTH,
                     StringUtils.length(request.getSql()), maxSqlLength);
         }
-
+        SqlAsyncExecuteResp result = filterKillSession(connectionSession, request);
+        if (result != null) {
+            return result;
+        }
         List<OffsetString> sqls = request.ifSplitSqls()
                 ? SqlUtils.splitWithOffset(connectionSession, request.getSql(),
                         sessionProperties.isOracleRemoveCommentPrefix())
@@ -284,7 +287,6 @@ public class ConnectConsoleService {
                 .collect(Collectors.toList());
         try {
             if (!sqlInterceptService.preHandle(request, response, connectionSession, executeContext)) {
-                response.setApprovalRequired(true);
                 return response;
             }
         } finally {
@@ -502,7 +504,7 @@ public class ConnectConsoleService {
     }
 
     @SkipAuthorize
-    public List<KillResult> killSessionOrQuery(KillSessionOrQueryReq request) {
+    public List<KillSessionResult> killSessionOrQuery(KillSessionOrQueryReq request) {
         if (!connectionService.checkPermission(
                 Long.valueOf(request.getDatasourceId()), Collections.singletonList("update"))) {
             throw new AccessDeniedException();
@@ -541,6 +543,34 @@ public class ConnectConsoleService {
         return false;
     }
 
+    /**
+     * for some special sql execution(eg. kill session). This will be required to connect to specific
+     * observer
+     *
+     * @param connectionSession connection engine
+     * @param request odc sql object
+     * @return result of sql execution
+     */
+    private SqlAsyncExecuteResp filterKillSession(ConnectionSession connectionSession, SqlAsyncExecuteReq request)
+            throws Exception {
+        String sqlScript = request.getSql().trim().toLowerCase();
+        if (!sqlScript.startsWith("kill ") || !sqlScript.contains("/*")) {
+            return null;
+        }
+        List<SqlTuple> sqlTuples = SqlTuple.newTuples(
+                Arrays.stream(sqlScript.split(";")).filter(StringUtils::isNotBlank).collect(Collectors.toList()));
+        List<JdbcGeneralResult> results =
+                defaultDbSessionManage.executeKillSession(connectionSession, sqlTuples, sqlScript);
+
+        AsyncExecuteContext executeContext =
+                new AsyncExecuteContext(sqlTuples, new HashMap<>());
+        Future<List<JdbcGeneralResult>> successFuture = FutureResult.successResult(results);
+        executeContext.setFuture(successFuture);
+        executeContext.addSqlExecutionResults(successFuture.get());
+        String id = ConnectionSessionUtil.setExecuteContext(connectionSession, executeContext);
+        return SqlAsyncExecuteResp.newSqlAsyncExecuteResp(id, sqlTuples);
+    }
+
     private SqlExecuteResult generateResult(@NonNull ConnectionSession connectionSession,
             @NonNull JdbcGeneralResult generalResult, @NonNull Map<String, Object> cxt) {
         SqlExecuteResult result = new SqlExecuteResult(generalResult);
@@ -553,7 +583,7 @@ public class ConnectConsoleService {
             log.warn("Failed to init sql type", e);
         }
         try (TraceStage s = watch.start(SqlExecuteStages.INIT_EDITABLE_INFO)) {
-            resultTable = result.initEditableInfo(connectionSession, cxt);
+            resultTable = result.initEditableInfo();
         } catch (Exception e) {
             log.warn("Failed to init editable info", e);
         }
@@ -590,4 +620,5 @@ public class ConnectConsoleService {
         }
         return queryLimit;
     }
+
 }

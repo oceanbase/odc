@@ -38,8 +38,6 @@ public class FullTextSearch extends FunctionCall {
     private final String against;
     @Setter
     private TextSearchMode searchMode;
-    @Setter
-    private boolean withQueryExpansion;
 
     public FullTextSearch(@NonNull ParserRuleContext context,
             @NonNull List<FunctionParam> params, @NonNull String against) {
@@ -60,9 +58,6 @@ public class FullTextSearch extends FunctionCall {
         builder.append(" AGAINST(").append(this.against);
         if (this.searchMode != null) {
             builder.append(" ").append(this.searchMode.getValue());
-        }
-        if (this.withQueryExpansion) {
-            builder.append(" WITH QUERY EXPANSION");
         }
         return builder.append(")").toString();
     }

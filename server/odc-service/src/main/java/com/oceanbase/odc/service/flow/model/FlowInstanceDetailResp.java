@@ -41,7 +41,6 @@ import com.oceanbase.odc.metadb.iam.RoleEntity;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.flow.instance.BaseFlowNodeInstance;
@@ -100,7 +99,6 @@ public class FlowInstanceDetailResp {
     private boolean rollbackable;
     private Date completeTime;
     private List<FlowNodeInstanceDetailResp> nodeList;
-    private Project project;
 
     @Getter
     @Builder
@@ -115,7 +113,6 @@ public class FlowInstanceDetailResp {
         private final Function<Long, List<FlowTaskExecutionStrategy>> getExecutionStrategyByFlowInstanceId;
         private final Function<Long, RiskLevel> getRiskLevelByRiskLevelId;
         private final Function<Long, Set<UserEntity>> getCandidatesByFlowInstanceId;
-        private final Function<Long, Project> getProjectById;
 
         public FlowInstanceDetailResp map(@NonNull FlowInstanceEntity entity) {
             FlowInstanceDetailResp resp = FlowInstanceDetailResp.withId(entity.getId());
@@ -123,7 +120,6 @@ public class FlowInstanceDetailResp {
             resp.setCreateTime(entity.getCreateTime());
             resp.setStatus(entity.getStatus());
             resp.setProjectId(entity.getProjectId());
-            resp.setProject(getProjectById.apply(entity.getProjectId()));
             resp.setOrganizationId(entity.getOrganizationId());
             Set<UserEntity> candidates = getCandidatesByFlowInstanceId.apply(entity.getId());
             if (candidates != null) {
@@ -176,7 +172,6 @@ public class FlowInstanceDetailResp {
             resp.setStatus(flowInstance.getStatus());
             resp.setDescription(flowInstance.getDescription());
             resp.setProjectId(flowInstance.getProjectId());
-            resp.setProject(getProjectById.apply(flowInstance.getProjectId()));
 
             List<BaseFlowNodeInstance> instances =
                     flowInstance.filterInstanceNode(instance -> FlowNodeType.SERVICE_TASK == instance.getNodeType()

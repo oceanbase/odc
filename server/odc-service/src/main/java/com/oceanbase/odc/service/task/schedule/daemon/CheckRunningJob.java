@@ -26,7 +26,6 @@ import org.quartz.JobExecutionException;
 import org.springframework.data.domain.Page;
 
 import com.oceanbase.odc.common.util.SilentExecutor;
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
@@ -80,102 +79,76 @@ public class CheckRunningJob implements Job {
     private void doHandleJobRetryingOrFailed(JobEntity jobEntity) {
         log.info("Start to handle heartbeat timeout job, jobId={}.", jobEntity.getId());
         TaskFrameworkService taskFrameworkService = getConfiguration().getTaskFrameworkService();
-        // query from db
-        JobEntity refreshedJobEntity = taskFrameworkService.findWithPessimisticLock(jobEntity.getId());
-        // TODO(lx): confirm this logic why job not in running status not handle
-        if (refreshedJobEntity.getStatus() != JobStatus.RUNNING) {
-            log.warn("Current job is not RUNNING, abort continue, jobId={}.", refreshedJobEntity.getId());
+        JobEntity a = taskFrameworkService.findWithPessimisticLock(jobEntity.getId());
+
+        if (a.getStatus() != JobStatus.RUNNING) {
+            log.warn("Current job is not RUNNING, abort continue, jobId={}.", a.getId());
             return;
         }
-        try {
-            tryFinishJob(taskFrameworkService, refreshedJobEntity);
-        } finally {
-            // mark resource as released to let resource collector collect resource
-            if (TaskRunMode.K8S == refreshedJobEntity.getRunMode()) {
-                ResourceManagerUtil.markResourceReleased(refreshedJobEntity, refreshedJobEntity.getExecutorIdentifier(),
-                        getConfiguration().getResourceManager());
-                log.info("CheckRunningJob release resource for job = {}", jobEntity);
-            }
-        }
-    }
-
-    private void tryFinishJob(TaskFrameworkService taskFrameworkService, JobEntity jobEntity) {
-        boolean isNeedRetry = checkJobIfRetryNecessary(jobEntity);
+        boolean isNeedRetry = checkJobIfRetryNecessary(a);
         if (isNeedRetry) {
             log.info("Need to restart job, try to set status to RETRYING, jobId={}, oldStatus={}.",
-                    jobEntity.getId(), jobEntity.getStatus());
+                    a.getId(), a.getStatus());
             int rows;
-            if (TaskRunMode.K8S == jobEntity.getRunMode()) {
-                rows = taskFrameworkService.updateExecutorEndpoint(jobEntity.getId(), null);
-                log.info("Clear executor endpoint why retry task, jobId={}, rows={}", jobEntity.getId(), rows);
+            if (TaskRunMode.K8S == a.getRunMode()) {
+                rows = taskFrameworkService.updateExecutorEndpoint(a.getId(), null);
+                log.info("Clear executor endpoint why retry task, jobId={}, rows={}", a.getId(), rows);
             }
             rows = taskFrameworkService
-                    .updateStatusDescriptionByIdOldStatus(jobEntity.getId(), JobStatus.RUNNING,
+                    .updateStatusDescriptionByIdOldStatus(a.getId(), JobStatus.RUNNING,
                             JobStatus.RETRYING, "Heart timeout and retrying job");
             if (rows > 0) {
-                log.info("Set job status to RETRYING, jobId={}, oldStatus={}.", jobEntity.getId(),
-                        jobEntity.getStatus());
+                log.info("Set job status to RETRYING, jobId={}, oldStatus={}.", a.getId(), a.getStatus());
             } else {
                 throw new TaskRuntimeException("Set job status to RETRYING failed, jobId=" + jobEntity.getId());
             }
 
         } else {
             log.info("No need to restart job, try to set status to FAILED, jobId={},oldStatus={}.",
-                    jobEntity.getId(), jobEntity.getStatus());
+                    a.getId(), a.getStatus());
             TaskFrameworkProperties taskFrameworkProperties = getConfiguration().getTaskFrameworkProperties();
             int rows = taskFrameworkService
-                    .updateStatusToFailedWhenHeartTimeout(jobEntity.getId(),
+                    .updateStatusToFailedWhenHeartTimeout(a.getId(),
                             taskFrameworkProperties.getJobHeartTimeoutSeconds(),
                             "Heart timeout and set job to status FAILED.");
             if (rows > 0) {
-                log.info("Set job status to FAILED accomplished, jobId={}, oldStatus={}.", jobEntity.getId(),
-                        jobEntity.getStatus());
+                log.info("Set job status to FAILED accomplished, jobId={}, oldStatus={}.", a.getId(), a.getStatus());
                 Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
                         .item(AlarmUtils.ORGANIZATION_NAME, Optional.ofNullable(jobEntity.getOrganizationId()).map(
                                 Object::toString).orElse(StrUtil.EMPTY))
-                        .item(AlarmUtils.TASK_JOB_ID_NAME, String.valueOf(jobEntity.getId()))
+                        .item(AlarmUtils.TASK_JOB_ID_NAME, jobEntity.getId().toString())
                         .item(AlarmUtils.MESSAGE_NAME,
-                                MessageFormat.format("Job running failed due to heart timeout, jobId={0}",
-                                        jobEntity.getId()))
+                                MessageFormat.format("Job running failed due to heart timeout, jobId={0}", a.getId()))
                         .build();
                 AlarmUtils.alarm(AlarmEventNames.TASK_HEARTBEAT_TIMEOUT, eventMessage);
             } else {
                 throw new TaskRuntimeException("Set job status to FAILED failed, jobId=" + jobEntity.getId());
             }
         }
-        if (!getConfiguration().getJobDispatcher().canBeFinish(JobIdentity.of(jobEntity.getId()))) {
-            log.info("Cannot destroy executor, jobId={}.", jobEntity.getId());
+        if (!getConfiguration().getJobDispatcher().canBeDestroy(JobIdentity.of(a.getId()))) {
+            log.info("Cannot destroy executor, jobId={}.", a.getId());
             throw new TaskRuntimeException("Cannot destroy executor, jobId={}" + jobEntity.getId());
         }
 
         // First try to stop remote job
         try {
-            log.info("Try to stop remote job, jobId={}.", jobEntity.getId());
-            if (StringUtils.isEmpty(jobEntity.getExecutorIdentifier())) {
-                log.info("found invalid job = {}, resource destroy not confirmed, set status to failed", jobEntity);
-                taskFrameworkService
-                        .updateStatusDescriptionByIdOldStatus(jobEntity.getId(), JobStatus.RUNNING,
-                                JobStatus.FAILED, "old job not determinate resource has created");
-                return;
-            }
-            getConfiguration().getJobDispatcher().stop(JobIdentity.of(jobEntity.getId()));
+            log.info("Try to stop remote job, jobId={}.", a.getId());
+            getConfiguration().getJobDispatcher().stop(JobIdentity.of(a.getId()));
         } catch (JobException e) {
             // Process will continue if stop failed and not rollback transaction
-            log.warn("Try to stop remote failed, jobId={}.", jobEntity.getId(), e);
+            log.warn("Try to stop remote failed, jobId={}.", a.getId(), e);
         }
 
-        // Second finish job and clean it all
+        // Second destroy executor
         try {
-            log.info("Try to destroy executor, jobId={}.", jobEntity.getId());
-            getConfiguration().getJobDispatcher().finish(JobIdentity.of(jobEntity.getId()));
+            log.info("Try to destroy executor, jobId={}.", a.getId());
+            getConfiguration().getJobDispatcher().destroy(JobIdentity.of(a.getId()));
         } catch (JobException e) {
             throw new TaskRuntimeException(e);
         }
         if (!isNeedRetry) {
-            // set status to destroyed
-            taskFrameworkService.updateExecutorToDestroyed(jobEntity.getId());
             getConfiguration().getEventPublisher().publishEvent(
-                    new JobTerminateEvent(JobIdentity.of(jobEntity.getId()), JobStatus.FAILED));
+                    new JobTerminateEvent(JobIdentity.of(a.getId()), JobStatus.FAILED));
         }
     }
 

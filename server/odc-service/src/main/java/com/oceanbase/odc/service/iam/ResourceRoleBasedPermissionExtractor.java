@@ -49,11 +49,11 @@ public class ResourceRoleBasedPermissionExtractor {
     @Autowired
     private ResourceRoleRepository repository;
 
-    public List<Permission> getResourcePermissions(List<UserResourceRoleEntity> entities) {
+    public List<ResourceRoleBasedPermission> getResourcePermissions(List<UserResourceRoleEntity> entities) {
         if (CollectionUtils.isEmpty(entities)) {
             return Collections.EMPTY_LIST;
         }
-        List<Permission> permissions = new ArrayList<>();
+        List<ResourceRoleBasedPermission> permissions = new ArrayList<>();
         Map<Long, List<UserResourceRoleEntity>> resourceId2Entities =
                 entities.stream().collect(Collectors.groupingBy(UserResourceRoleEntity::getResourceId));
         for (Entry<Long, List<UserResourceRoleEntity>> entry : resourceId2Entities.entrySet()) {
@@ -70,7 +70,7 @@ public class ResourceRoleBasedPermissionExtractor {
             if (!(permission instanceof ResourceRoleBasedPermission)) {
                 throw new IllegalStateException("Permission's type is illegal " + permission);
             }
-            permissions.add(permission);
+            permissions.add((ResourceRoleBasedPermission) permission);
 
         }
         return permissions;

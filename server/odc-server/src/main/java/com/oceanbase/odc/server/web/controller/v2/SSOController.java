@@ -27,10 +27,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.integration.IntegrationService;
-import com.oceanbase.odc.service.integration.SSOCredential;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
-import com.oceanbase.odc.service.integration.oauth2.SSOStateManager;
+import com.oceanbase.odc.service.integration.oauth2.Oauth2StateManager;
 import com.oceanbase.odc.service.integration.oauth2.SSOTestInfo;
 import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
 import com.oceanbase.odc.service.state.model.StateName;
@@ -44,15 +42,12 @@ public class SSOController {
     private TestLoginManager testLoginManager;
 
     @Autowired
-    private SSOStateManager SSOStateManager;
-
-    @Autowired
-    private IntegrationService integrationService;
+    private Oauth2StateManager oauth2StateManager;
 
     @PostMapping(value = "/test/start")
     public SuccessResponse<SSOTestInfo> addTestClientRegistration(@RequestBody IntegrationConfig config,
-            @RequestParam(required = false) String type, @RequestParam(required = false) String odcBackUrl) {
-        return Responses.ok(testLoginManager.getSSOTestInfo(config, type, odcBackUrl));
+            @RequestParam(required = false) String type) {
+        return Responses.ok(testLoginManager.getSSOTestInfo(config, type));
     }
 
     /**
@@ -70,12 +65,7 @@ public class SSOController {
     @GetMapping("/state")
     @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#state")
     public SuccessResponse<Map<String, String>> getTestClientInfo(@RequestParam String state) {
-        return Responses.ok(SSOStateManager.getStateParameters(state));
-    }
-
-    @GetMapping("/credential")
-    public SuccessResponse<SSOCredential> generateSSOCredential() {
-        return Responses.ok(integrationService.generateSSOCredential());
+        return Responses.ok(oauth2StateManager.getStateParameters(state));
     }
 
 }

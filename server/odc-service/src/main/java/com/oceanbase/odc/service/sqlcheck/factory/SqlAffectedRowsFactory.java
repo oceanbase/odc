@@ -24,12 +24,10 @@ import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLAffectedRowsExceedLimit;
-import com.oceanbase.odc.service.sqlcheck.rule.OracleAffectedRowsExceedLimit;
 
 import lombok.NonNull;
 
 public class SqlAffectedRowsFactory implements SqlCheckRuleFactory {
-    public static final long DEFAULT_MAX_SQL_AFFECTED_ROWS = 1000L;
 
     private final JdbcOperations jdbc;
 
@@ -45,21 +43,9 @@ public class SqlAffectedRowsFactory implements SqlCheckRuleFactory {
     @Override
     public SqlCheckRule generate(@NonNull DialectType dialectType, Map<String, Object> parameters) {
         String key = getParameterNameKey("allowed-max-sql-affected-count");
-        long maxSqlAffectedRows = DEFAULT_MAX_SQL_AFFECTED_ROWS;
-        if (parameters != null && !parameters.isEmpty() && parameters.get(key) != null) {
-            maxSqlAffectedRows = Long.valueOf(parameters.get(key).toString());
+        if (parameters == null || parameters.isEmpty() || parameters.get(key) == null) {
+            return new MySQLAffectedRowsExceedLimit(1000L, dialectType, jdbc);
         }
-        switch (dialectType) {
-            case ORACLE:
-            case OB_ORACLE:
-                return new OracleAffectedRowsExceedLimit(maxSqlAffectedRows, dialectType,
-                        jdbc);
-            case MYSQL:
-            case OB_MYSQL:
-                return new MySQLAffectedRowsExceedLimit(maxSqlAffectedRows, dialectType,
-                        jdbc);
-            default:
-                throw new IllegalArgumentException("Unsupported dialect type: " + dialectType);
-        }
+        return new MySQLAffectedRowsExceedLimit(Long.valueOf(parameters.get(key).toString()), dialectType, jdbc);
     }
 }

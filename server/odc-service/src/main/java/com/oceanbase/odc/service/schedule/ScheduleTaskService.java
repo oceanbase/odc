@@ -69,7 +69,6 @@ import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
-import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -140,7 +139,7 @@ public class ScheduleTaskService {
                 // sql plan task detail should display sql content
                 res.setParameters(JsonUtils.toJson(scheduleTask.getParameters()));
                 jobRepository.findByIdNative(scheduleTask.getJobId())
-                        .ifPresent(jobEntity -> res.setExecutionDetails(JobUtils.retrieveJobResultStr(jobEntity)));
+                        .ifPresent(jobEntity -> res.setExecutionDetails(jobEntity.getResultJson()));
                 break;
             case LOGICAL_DATABASE_CHANGE:
                 res.setExecutionDetails(
@@ -284,6 +283,10 @@ public class ScheduleTaskService {
                 .collect(Collectors.toList());
     }
 
+    public List<ScheduleTaskEntity> listTaskByJobNameAndStatus(String jobName, List<TaskStatus> statuses) {
+        return scheduleTaskRepository.findByJobNameAndStatusIn(jobName, statuses);
+    }
+
     public ScheduleTask nullSafeGetByJobId(Long jobId) {
         return findByJobId(jobId)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE_TASK, "jobId", jobId));
@@ -318,6 +321,24 @@ public class ScheduleTaskService {
         return scheduleTaskMapper.entityToModel(scheduleEntityOptional
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE_TASK, "id", id)));
     }
+
+
+    public void correctScheduleTaskStatus(Long scheduleId) {
+        List<ScheduleTaskEntity> toBeCorrectedList = listTaskByJobNameAndStatus(
+                scheduleId.toString(), TaskStatus.getProcessingStatus());
+        // For the scenario where the task framework is switched from closed to open, it is necessary to
+        // correct
+        // the status of tasks that were not completed while in the closed state.
+        if (taskFrameworkEnabledProperties.isEnabled()) {
+            toBeCorrectedList =
+                    toBeCorrectedList.stream().filter(o -> o.getJobId() == null).collect(Collectors.toList());
+        }
+        toBeCorrectedList.forEach(task -> {
+            updateStatusById(task.getId(), TaskStatus.CANCELED);
+            log.info("Task status correction successful,scheduleTaskId={}", task.getId());
+        });
+    }
+
 
     @SkipAuthorize("odc internal usage")
     public void triggerDataArchiveDelete(Long scheduleTaskId) {

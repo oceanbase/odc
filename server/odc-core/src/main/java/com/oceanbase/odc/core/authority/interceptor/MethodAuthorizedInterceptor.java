@@ -110,26 +110,19 @@ public class MethodAuthorizedInterceptor implements MethodInterceptor {
             }
         }
         List<String> actions = Arrays.asList(annotation.actions());
-        List<String> resourceRoles = Arrays.asList(annotation.hasAnyResourceRole());
-        String resourceRole = annotation.hasResourceRole();
-
-        if (CollectionUtils.isNotEmpty(actions)
-                && (CollectionUtils.isNotEmpty(resourceRoles) || StringUtils.isNotBlank(resourceRole))) {
-            return getSecurityManager().getPermissionByActionsAndResourceRoles(
-                    new DefaultSecurityResource(resourceId, resourceType), actions, resourceRoles);
-        }
-
+        List<String> roles = Arrays.asList(annotation.hasAnyResourceRole());
+        String role = annotation.hasResourceRole();
         if (CollectionUtils.isNotEmpty(actions)) {
             return getSecurityManager().getPermissionByActions(new DefaultSecurityResource(resourceId, resourceType),
                     actions);
-        } else if (CollectionUtils.isNotEmpty(resourceRoles)) {
+        } else if (CollectionUtils.isNotEmpty(roles)) {
             return getSecurityManager().getPermissionByResourceRoles(
                     new DefaultSecurityResource(resourceId, resourceType),
-                    resourceRoles);
-        } else if (StringUtils.isNotBlank(resourceRole)) {
+                    roles);
+        } else if (StringUtils.isNotBlank(role)) {
             return getSecurityManager().getPermissionByResourceRoles(
                     new DefaultSecurityResource(resourceId, resourceType),
-                    Collections.singleton(resourceRole));
+                    Collections.singleton(role));
         } else {
             throw new NullPointerException("The actions and hasAnyRole are both empty");
         }

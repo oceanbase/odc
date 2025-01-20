@@ -29,7 +29,7 @@ public class TruncateTableExistsFactory implements SqlCheckRuleFactory {
 
     @Override
     public SqlCheckRuleType getSupportsType() {
-        return SqlCheckRuleType.TRUNCATE_TABLE_EXISTS;
+        return SqlCheckRuleType.TRUNCATE_TBLE_EXISTS;
     }
 
     @Override

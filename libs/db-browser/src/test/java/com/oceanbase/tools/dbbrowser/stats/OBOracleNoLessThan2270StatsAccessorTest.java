@@ -50,6 +50,5 @@ public class OBOracleNoLessThan2270StatsAccessorTest extends BaseTestEnv {
         DBStatsAccessor accessor = new OBOracleNoLessThan2270StatsAccessor(new JdbcTemplate(getOBOracleDataSource()));
         List<DBSession> sessions = accessor.listAllSessions();
         Assert.assertTrue(sessions.size() > 0);
-        sessions.stream().forEach(s -> Assert.assertNotNull(s.getSvrIp()));
     }
 }

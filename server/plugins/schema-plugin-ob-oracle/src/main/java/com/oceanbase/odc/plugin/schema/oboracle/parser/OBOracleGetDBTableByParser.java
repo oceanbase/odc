@@ -28,12 +28,13 @@ import java.util.stream.Collectors;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.plugin.schema.obmysql.parser.BaseOBGetDBTableByParser;
+import com.oceanbase.odc.plugin.schema.obmysql.parser.GetDBTableByParser;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintDeferability;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBForeignKeyModifyRule;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
@@ -61,10 +62,7 @@ import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineForeignConst
 import com.oceanbase.tools.sqlparser.statement.createtable.Partition;
 import com.oceanbase.tools.sqlparser.statement.createtable.RangePartition;
 import com.oceanbase.tools.sqlparser.statement.createtable.RangePartitionElement;
-import com.oceanbase.tools.sqlparser.statement.createtable.SubPartitionOption;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableElement;
-import com.oceanbase.tools.sqlparser.statement.expression.CollectionExpression;
-import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.RelationReference;
 
 import lombok.Getter;
@@ -77,7 +75,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.0
  */
 @Slf4j
-public class OBOracleGetDBTableByParser extends BaseOBGetDBTableByParser {
+public class OBOracleGetDBTableByParser implements GetDBTableByParser {
     @Getter
     private final CreateTable createTableStmt;
     private final Connection connection;
@@ -95,11 +93,6 @@ public class OBOracleGetDBTableByParser extends BaseOBGetDBTableByParser {
         this.schemaName = schemaName;
         this.tableName = tableName;
         this.createTableStmt = parseTableDDL(schemaName, tableName);
-    }
-
-    @Override
-    public CreateTable getCreateTableStmt() {
-        return this.createTableStmt;
     }
 
     private CreateTable parseTableDDL(@NonNull String schemaName, @NonNull String tableName) {
@@ -121,6 +114,11 @@ public class OBOracleGetDBTableByParser extends BaseOBGetDBTableByParser {
             log.warn("Failed to parse table ddl, error message={}", e.getMessage());
         }
         return statement;
+    }
+
+    @Override
+    public List<DBTableColumn> listColumns() {
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
@@ -245,7 +243,7 @@ public class OBOracleGetDBTableByParser extends BaseOBGetDBTableByParser {
         return constraints;
     }
 
-    protected String removeIdentifiers(String str) {
+    private String removeIdentifiers(String str) {
         if (Objects.isNull(str)) {
             return "";
         }
@@ -374,18 +372,40 @@ public class OBOracleGetDBTableByParser extends BaseOBGetDBTableByParser {
     }
 
     @Override
-    protected String generateTemplateSubPartitionName(String partitionName, String subPartitionName) {
-        return removeIdentifiers(partitionName) + 'S' + removeIdentifiers(subPartitionName);
-    }
+    public DBTablePartition getPartition() {
+        DBTablePartition partition = new DBTablePartition();
+        partition.setPartitionOption(new DBTablePartitionOption());
+        partition.setPartitionDefinitions(new ArrayList<>());
 
-    @Override
-    protected void fillSubPartitionKey(DBTablePartitionOption subPartitionOption,
-            DBTablePartitionType subDBTablePartitionType, SubPartitionOption parsedSubPartitionOption) {
-        // expressions are not supported, multiple columns are supported as partition keys
-        subPartitionOption.setColumnNames(parsedSubPartitionOption.getSubPartitionTargets() == null ? null
-                : parsedSubPartitionOption.getSubPartitionTargets().stream()
-                        .map(item -> removeIdentifiers(item.getText()))
-                        .collect(Collectors.toList()));
+        if (Objects.isNull(createTableStmt)) {
+            partition.setWarning("Failed to parse ob oracle table ddl");
+            return partition;
+        }
+        Partition partitionStmt = createTableStmt.getPartition();
+        if (Objects.isNull(partitionStmt)) {
+            return partition;
+        }
+        if (partitionStmt instanceof HashPartition) {
+            parseHashPartitionStmt((HashPartition) partitionStmt, partition);
+        } else if (partitionStmt instanceof RangePartition) {
+            parseRangePartitionStmt((RangePartition) partitionStmt, partition);
+        } else if (partitionStmt instanceof ListPartition) {
+            parseListPartitionStmt((ListPartition) partitionStmt, partition);
+        }
+
+        /**
+         * In order to adapt to the front-end only the expression field is used for Hash、List and Range
+         * partition types
+         */
+        if (Objects.nonNull(partition.getPartitionOption().getType())
+                && partition.getPartitionOption().getType().supportExpression()
+                && StringUtils.isBlank(partition.getPartitionOption().getExpression())) {
+            List<String> columnNames = partition.getPartitionOption().getColumnNames();
+            if (!columnNames.isEmpty()) {
+                partition.getPartitionOption().setExpression(String.join(", ", columnNames));
+            }
+        }
+        return partition;
     }
 
     private void parseHashPartitionStmt(HashPartition statement, DBTablePartition partition) {
@@ -450,32 +470,11 @@ public class OBOracleGetDBTableByParser extends BaseOBGetDBTableByParser {
             DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
             partitionDefinition.setOrdinalPosition(i);
             List<List<String>> valuesList = new ArrayList<>();
-            for (Expression listExpr : element.getListExprs()) {
-                if (listExpr instanceof CollectionExpression) {
-                    valuesList.add(
-                            ((CollectionExpression) listExpr).getExpressionList().stream()
-                                    .map(Expression::getText)
-                                    .collect(Collectors.toList()));
-                } else if (listExpr instanceof ConstExpression) {
-                    valuesList.add(Collections.singletonList(listExpr.getText()));
-                }
-            }
+            element.getListExprs().forEach(item -> valuesList.add(Collections.singletonList(item.getText())));
             partitionDefinition.setValuesList(valuesList);
             partitionDefinition.setName(removeIdentifiers(element.getRelation()));
             partitionDefinition.setType(DBTablePartitionType.LIST);
             partition.getPartitionDefinitions().add(partitionDefinition);
-        }
-    }
-
-
-    @Override
-    protected void parsePartitionStmt(DBTablePartition partition, Partition partitionStmt) {
-        if (partitionStmt instanceof HashPartition) {
-            parseHashPartitionStmt((HashPartition) partitionStmt, partition);
-        } else if (partitionStmt instanceof RangePartition) {
-            parseRangePartitionStmt((RangePartition) partitionStmt, partition);
-        } else if (partitionStmt instanceof ListPartition) {
-            parseListPartitionStmt((ListPartition) partitionStmt, partition);
         }
     }
 

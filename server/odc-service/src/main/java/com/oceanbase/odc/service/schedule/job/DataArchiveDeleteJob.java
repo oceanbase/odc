@@ -65,7 +65,6 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
 
         DLMJobReq parameters = getDLMJobReq(dataArchiveTask.getJobId());
         parameters.setJobType(JobType.DELETE);
-        parameters.setFireTime(context.getFireTime());
         parameters.setScheduleTaskId(taskEntity.getId());
         parameters
                 .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName())));

@@ -78,7 +78,6 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     protected UserRole userRole;
     private String catalogName;
     private boolean autoReConnect;
-    private boolean keepAlive;
     private Map<String, String> parameters;
     protected final ConnectionConfig connectionConfig;
     private final Boolean autoCommit;
@@ -88,16 +87,16 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     protected final ConnectionExtensionPoint connectionExtensionPoint;
 
     public OBConsoleDataSourceFactory(@NonNull ConnectionConfig connectionConfig, Boolean autoCommit) {
-        this(connectionConfig, autoCommit, true, true, false);
+        this(connectionConfig, autoCommit, true);
     }
 
     public OBConsoleDataSourceFactory(@NonNull ConnectionConfig connectionConfig,
-            Boolean autoCommit, boolean initConnection, boolean keepAlive) {
-        this(connectionConfig, autoCommit, initConnection, true, keepAlive);
+            Boolean autoCommit, boolean initConnection) {
+        this(connectionConfig, autoCommit, initConnection, true);
     }
 
     public OBConsoleDataSourceFactory(@NonNull ConnectionConfig connectionConfig,
-            Boolean autoCommit, boolean initConnection, boolean autoReConnect, boolean keepAlive) {
+            Boolean autoCommit, boolean initConnection, boolean autoReConnect) {
         this.autoCommit = autoCommit;
         this.connectionConfig = connectionConfig;
         this.initConnection = initConnection;
@@ -112,7 +111,6 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         this.catalogName = connectionConfig.getCatalogName();
         this.parameters = getJdbcParams(connectionConfig);
         this.autoReConnect = autoReConnect;
-        this.keepAlive = keepAlive;
         this.connectionExtensionPoint = ConnectionPluginUtil.getConnectionExtension(connectionConfig.getDialectType());
     }
 
@@ -204,7 +202,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     @Override
     public DataSource getDataSource() {
         String jdbcUrl = getJdbcUrl();
-        SingleConnectionDataSource dataSource = new SingleConnectionDataSource(autoReConnect, keepAlive);
+        SingleConnectionDataSource dataSource = new SingleConnectionDataSource(autoReConnect);
         dataSource.setEventPublisher(eventPublisher);
         dataSource.setUrl(jdbcUrl);
         dataSource.setUsername(username);

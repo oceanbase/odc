@@ -16,10 +16,7 @@
 package com.oceanbase.odc.server.web.controller.v2;
 
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.List;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -31,7 +28,6 @@ import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.connection.table.TableService;
 import com.oceanbase.odc.service.connection.table.model.QueryTableParams;
 import com.oceanbase.odc.service.connection.table.model.Table;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -52,15 +48,10 @@ public class DBSchemaController {
     @RequestMapping(value = "/tables", method = RequestMethod.GET)
     public ListResponse<Table> list(@RequestParam(name = "databaseId") Long databaseId,
             @RequestParam(name = "includePermittedAction", required = false,
-                    defaultValue = "false") boolean includePermittedAction,
-            @RequestParam(required = false, name = "type") List<DBObjectType> types)
+                    defaultValue = "false") boolean includePermittedAction)
             throws SQLException, InterruptedException {
-        if (CollectionUtils.isEmpty(types)) {
-            types = Collections.singletonList(DBObjectType.TABLE);
-        }
         QueryTableParams params = QueryTableParams.builder()
                 .databaseId(databaseId)
-                .types(types)
                 .includePermittedAction(includePermittedAction)
                 .build();
         return Responses.list(tableService.list(params));

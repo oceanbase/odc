@@ -33,8 +33,6 @@ import com.google.common.collect.ImmutableSet;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.integration.model.Encryption.EncryptionAlgorithm;
-import com.oceanbase.odc.service.integration.saml.SamlParameter;
-import com.oceanbase.odc.service.integration.saml.SamlParameter.SecretInfo;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -63,11 +61,18 @@ public class SSOIntegrationConfig implements Serializable {
             @JsonSubTypes.Type(value = Oauth2Parameter.class, name = "OAUTH2"),
             @JsonSubTypes.Type(value = OidcParameter.class, names = "OIDC"),
             @JsonSubTypes.Type(value = LdapParameter.class, names = "LDAP"),
-            @JsonSubTypes.Type(value = SamlParameter.class, names = "SAML"),
     })
     SSOParameter ssoParameter;
 
     MappingRule mappingRule;
+
+    public boolean isOauth2OrOidc() {
+        return ImmutableSet.of("OAUTH2", "OIDC").contains(type);
+    }
+
+    public boolean isLdap() {
+        return Objects.equals(type, "LDAP");
+    }
 
     public static SSOIntegrationConfig of(IntegrationConfig integrationConfig, Long organizationId) {
         SSOIntegrationConfig ssoIntegrationConfig =
@@ -90,10 +95,6 @@ public class SSOIntegrationConfig implements Serializable {
                                 .equals(EncryptionAlgorithm.RAW));
                 LdapParameter ldapParameter = (LdapParameter) ssoIntegrationConfig.getSsoParameter();
                 ldapParameter.setManagerPassword(integrationConfig.getEncryption().getSecret());
-                break;
-            case "SAML":
-                SamlParameter samlParameter = (SamlParameter) ssoIntegrationConfig.getSsoParameter();
-                samlParameter.fillSecret(integrationConfig.getEncryption().getSecret());
                 break;
             default:
                 throw new UnsupportedOperationException("unknown type=" + ssoIntegrationConfig.getType());
@@ -118,25 +119,11 @@ public class SSOIntegrationConfig implements Serializable {
         return split[1];
     }
 
-    public boolean isOauth2OrOidc() {
-        return ImmutableSet.of("OAUTH2", "OIDC").contains(type);
-    }
-
-    public boolean isLdap() {
-        return Objects.equals(type, "LDAP");
-    }
-
-    public boolean isSaml() {
-        return Objects.equals(type, "SAML");
-    }
-
     public String resolveRegistrationId() {
         if (isOauth2OrOidc()) {
             return ((Oauth2Parameter) ssoParameter).getRegistrationId();
         } else if (isLdap()) {
             return ((LdapParameter) ssoParameter).getRegistrationId();
-        } else if (isSaml()) {
-            return ((SamlParameter) ssoParameter).getRegistrationId();
         } else {
             throw new UnsupportedOperationException();
 
@@ -145,69 +132,6 @@ public class SSOIntegrationConfig implements Serializable {
 
     public Long resolveOrganizationId() {
         return parseOrganizationId(resolveRegistrationId());
-    }
-
-    public String resolveLoginRedirectUrl() {
-        switch (type) {
-            case "OAUTH2":
-            case "OIDC":
-                return ((Oauth2Parameter) ssoParameter).getLoginRedirectUrl();
-            case "SAML":
-                return ((SamlParameter) ssoParameter).resolveLoginUrl();
-            default:
-                return null;
-        }
-    }
-
-    public String resolveLogoutUrl() {
-        switch (type) {
-            case "OAUTH2":
-            case "OIDC":
-                return ((Oauth2Parameter) ssoParameter).getLogoutUrl();
-            default:
-                throw new UnsupportedOperationException("unknown type=" + type);
-        }
-    }
-
-    public void fillDecryptSecret(String decryptSecret) {
-        if (isOauth2OrOidc()) {
-            ((Oauth2Parameter) ssoParameter).setSecret(decryptSecret);
-        }
-        if (isLdap()) {
-            ((LdapParameter) ssoParameter).setManagerPassword(decryptSecret);
-        }
-        if (isSaml()) {
-            SecretInfo secretInfo = JsonUtils.fromJson(decryptSecret, SecretInfo.class);
-            SamlParameter samlParameter = (SamlParameter) ssoParameter;
-            samlParameter.getSigning().setPrivateKey(secretInfo.getSigningPrivateKey());
-            samlParameter.getDecryption().setPrivateKey(secretInfo.getDecryptionPrivateKey());
-        }
-    }
-
-    public ClientRegistration toClientRegistration() {
-        switch (type) {
-            case "OAUTH2":
-                return ((Oauth2Parameter) ssoParameter).toClientRegistration();
-            case "OIDC":
-                return ((OidcParameter) ssoParameter).toClientRegistration();
-            default:
-                throw new UnsupportedOperationException("unknown type=" + type);
-        }
-    }
-
-    public ClientRegistration toTestClientRegistration(String testType) {
-        switch (type) {
-            case "OAUTH2":
-                Oauth2Parameter oauth2 = (Oauth2Parameter) ssoParameter;
-                oauth2.amendTestParameter(testType);
-                return ((Oauth2Parameter) ssoParameter).toClientRegistration();
-            case "OIDC":
-                OidcParameter oidc = (OidcParameter) ssoParameter;
-                oidc.amendTestParameter(testType);
-                return ((OidcParameter) ssoParameter).toClientRegistration();
-            default:
-                throw new UnsupportedOperationException("unknown type=" + type);
-        }
     }
 
     @Getter
@@ -234,6 +158,61 @@ public class SSOIntegrationConfig implements Serializable {
 
         public String toAutomationExpression() {
             return "extra#" + attributeName;
+        }
+    }
+
+    public String resolveLoginRedirectUrl() {
+        switch (type) {
+            case "OAUTH2":
+            case "OIDC":
+                return ((Oauth2Parameter) ssoParameter).getLoginRedirectUrl();
+            default:
+                throw new UnsupportedOperationException("unknown type=" + type);
+        }
+    }
+
+    public String resolveLogoutUrl() {
+        switch (type) {
+            case "OAUTH2":
+            case "OIDC":
+                return ((Oauth2Parameter) ssoParameter).getLogoutUrl();
+            default:
+                throw new UnsupportedOperationException("unknown type=" + type);
+        }
+    }
+
+    public void fillDecryptSecret(String decryptSecret) {
+        if (isOauth2OrOidc()) {
+            ((Oauth2Parameter) ssoParameter).setSecret(decryptSecret);
+        }
+        if (isLdap()) {
+            ((LdapParameter) ssoParameter).setManagerPassword(decryptSecret);
+        }
+    }
+
+    public ClientRegistration toClientRegistration() {
+        switch (type) {
+            case "OAUTH2":
+                return ((Oauth2Parameter) ssoParameter).toClientRegistration();
+            case "OIDC":
+                return ((OidcParameter) ssoParameter).toClientRegistration();
+            default:
+                throw new UnsupportedOperationException("unknown type=" + type);
+        }
+    }
+
+    public ClientRegistration toTestClientRegistration(String testType) {
+        switch (type) {
+            case "OAUTH2":
+                Oauth2Parameter oauth2 = (Oauth2Parameter) ssoParameter;
+                oauth2.amendTestParameter(testType);
+                return ((Oauth2Parameter) ssoParameter).toClientRegistration();
+            case "OIDC":
+                OidcParameter oidc = (OidcParameter) ssoParameter;
+                oidc.amendTestParameter(testType);
+                return ((OidcParameter) ssoParameter).toClientRegistration();
+            default:
+                throw new UnsupportedOperationException("unknown type=" + type);
         }
     }
 

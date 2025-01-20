@@ -36,7 +36,6 @@ import com.oceanbase.odc.metadb.dbobject.DBColumnRepository;
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncer;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -59,9 +58,6 @@ public abstract class AbstractDBColumnSyncer<T extends ExtensionPoint> implement
 
     @Override
     public void sync(@NonNull Connection connection, @NonNull Database database, @NonNull DialectType dialectType) {
-        if (database.getType() != DatabaseType.PHYSICAL) {
-            return;
-        }
         T extensionPoint = getExtensionPoint(dialectType);
         if (extensionPoint == null) {
             return;
@@ -115,7 +111,7 @@ public abstract class AbstractDBColumnSyncer<T extends ExtensionPoint> implement
     }
 
     @Override
-    public boolean supports(@NonNull DialectType dialectType, @NonNull Connection connection) {
+    public boolean supports(@NonNull DialectType dialectType) {
         return getExtensionPoint(dialectType) != null;
     }
 

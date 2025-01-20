@@ -31,7 +31,6 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.core.sql.util.DBPLObjectUtil;
 import com.oceanbase.odc.core.sql.util.JdbcDataTypeUtil;
-import com.oceanbase.odc.service.pldebug.model.PLDebugODPSpecifiedRoute;
 import com.oceanbase.tools.dbbrowser.model.DBPLParam;
 import com.oceanbase.tools.dbbrowser.model.DBPLParamMode;
 import com.oceanbase.tools.dbbrowser.model.DBProcedure;
@@ -51,7 +50,6 @@ public class CallProcedureCallBack implements ConnectionCallback<List<DBPLParam>
     private final DBProcedure procedure;
     private final SqlBuilder sqlBuilder;
     private final int timeoutSeconds;
-    private final PLDebugODPSpecifiedRoute plDebugODPSpecifiedRoute;
 
     public CallProcedureCallBack(@NonNull DBProcedure procedure,
             int timeoutSeconds, @NonNull SqlBuilder sqlBuilder) {
@@ -60,23 +58,10 @@ public class CallProcedureCallBack implements ConnectionCallback<List<DBPLParam>
         this.procedure = procedure;
         this.sqlBuilder = sqlBuilder;
         this.timeoutSeconds = timeoutSeconds;
-        this.plDebugODPSpecifiedRoute = null;
-    }
-
-    public CallProcedureCallBack(@NonNull DBProcedure procedure,
-            int timeoutSeconds, @NonNull SqlBuilder sqlBuilder,
-            @NonNull PLDebugODPSpecifiedRoute plDebugODPSpecifiedRoute) {
-        Validate.notBlank(procedure.getProName(), "Procedure name can not be blank");
-        DBPLObjectUtil.checkParams(procedure);
-        this.procedure = procedure;
-        this.sqlBuilder = sqlBuilder;
-        this.timeoutSeconds = timeoutSeconds;
-        this.plDebugODPSpecifiedRoute = plDebugODPSpecifiedRoute;
     }
 
     @Override
     public List<DBPLParam> doInConnection(Connection con) throws SQLException, DataAccessException {
-        sqlBuilder.append(PLUtils.getSpecifiedRoute(this.plDebugODPSpecifiedRoute));
         sqlBuilder.append("CALL ");
         if (StringUtils.isNotBlank(procedure.getPackageName())) {
             sqlBuilder.identifier(procedure.getPackageName()).append(".");

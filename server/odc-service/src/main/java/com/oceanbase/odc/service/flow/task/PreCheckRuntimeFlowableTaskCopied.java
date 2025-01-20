@@ -66,11 +66,11 @@ import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.task.TaskService;
-import com.oceanbase.odc.service.task.base.precheck.PreCheckTask;
-import com.oceanbase.odc.service.task.base.precheck.PreCheckTaskParameters;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
+import com.oceanbase.odc.service.task.runtime.PreCheckTask;
+import com.oceanbase.odc.service.task.runtime.PreCheckTaskParameters;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
@@ -141,8 +141,7 @@ public class PreCheckRuntimeFlowableTaskCopied extends BaseODCFlowTaskDelegate<V
             if (jobEntity.getStatus() != JobStatus.DONE) {
                 throw new ServiceTaskError(new RuntimeException("Pre-check task failed"));
             }
-            this.preCheckResult =
-                    JsonUtils.fromJson(JobUtils.retrieveJobResultStr(jobEntity), PreCheckTaskResult.class);
+            this.preCheckResult = JsonUtils.fromJson(jobEntity.getResultJson(), PreCheckTaskResult.class);
             if (Objects.nonNull(this.preCheckResult)) {
                 this.preCheckResult.setExecutorInfo(new ExecutorInfo(this.hostProperties));
                 storeTaskResultToFile(this.preCheckResult.getSqlCheckResult());

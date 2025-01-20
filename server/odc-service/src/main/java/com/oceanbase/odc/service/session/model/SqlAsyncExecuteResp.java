@@ -39,7 +39,6 @@ public class SqlAsyncExecuteResp {
     private List<SqlTuplesWithViolation> sqls;
     private List<UnauthorizedDBResource> unauthorizedDBResources;
     private boolean logicalSql;
-    private boolean approvalRequired;
 
     public SqlAsyncExecuteResp(boolean logicalSql) {
         this.logicalSql = logicalSql;

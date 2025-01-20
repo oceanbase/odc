@@ -27,7 +27,7 @@ import com.oceanbase.tools.dbbrowser.util.OracleDataDictTableNames;
  * @author jingtian
  * @date 2024/4/15
  */
-public class OBOracleBetween4000And4100SchemaAccessor extends OBOracleBetween410And432SchemaAccessor {
+public class OBOracleBetween4000And4100SchemaAccessor extends OBOracleSchemaAccessor {
     public OBOracleBetween4000And4100SchemaAccessor(JdbcOperations jdbcOperations,
             OracleDataDictTableNames dataDictTableNames) {
         super(jdbcOperations, dataDictTableNames);

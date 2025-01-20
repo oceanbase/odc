@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.iam.auth;
 
 import java.security.Principal;
 import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
 
 import com.oceanbase.odc.core.authority.auth.Authorizer;
@@ -44,28 +43,6 @@ public abstract class BaseAuthorizer implements Authorizer {
         }
     }
 
-    @Override
-    public boolean isPermitted(Principal principal, Collection<Permission> permissions, SecurityContext context) {
-        User odcUser = (User) principal;
-        if (Objects.isNull(odcUser.getId())) {
-            return false;
-        }
-        List<Permission> permittedPermissions = listPermittedPermissions(principal);
-        for (Permission permission : permissions) {
-            boolean accessDenied = true;
-            for (Permission resourcePermission : permittedPermissions) {
-                if (resourcePermission.implies(permission)) {
-                    accessDenied = false;
-                    break;
-                }
-            }
-            if (accessDenied) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     /**
      * An <code>Authorizer</code> may not work for all <code>Principal</code> of the
      * <code>Subject</code>, so a method is needed to indicate whether a certain <code>Authorizer</code>
@@ -78,6 +55,4 @@ public abstract class BaseAuthorizer implements Authorizer {
     public boolean supports(Class<? extends Principal> principal) {
         return User.class.isAssignableFrom(principal);
     }
-
-    protected abstract List<Permission> listPermittedPermissions(Principal principal);
 }

@@ -47,8 +47,8 @@ import com.oceanbase.odc.service.connection.model.CreateSessionResp;
 import com.oceanbase.odc.service.connection.model.DBSessionResp;
 import com.oceanbase.odc.service.connection.model.MultiSessionsReq;
 import com.oceanbase.odc.service.db.session.DBSessionService;
-import com.oceanbase.odc.service.db.session.KillResult;
 import com.oceanbase.odc.service.db.session.KillSessionOrQueryReq;
+import com.oceanbase.odc.service.db.session.KillSessionResult;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreViewResp;
@@ -213,7 +213,7 @@ public class ConnectSessionController {
      */
     @ApiOperation(value = "kill session", notes = "终止会话接口")
     @RequestMapping(value = "/sessions/killSession", method = RequestMethod.POST)
-    public SuccessResponse<List<KillResult>> killSession(@RequestBody KillSessionOrQueryReq req) {
+    public SuccessResponse<List<KillSessionResult>> killSession(@RequestBody KillSessionOrQueryReq req) {
         return Responses.success(consoleService.killSessionOrQuery(req));
     }
 

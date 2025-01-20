@@ -31,7 +31,6 @@ import org.springframework.jdbc.core.ConnectionCallback;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.sql.util.DBPLObjectUtil;
 import com.oceanbase.odc.core.sql.util.JdbcDataTypeUtil;
-import com.oceanbase.odc.service.pldebug.model.PLDebugODPSpecifiedRoute;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBPLParam;
 import com.oceanbase.tools.dbbrowser.model.DBPLParamMode;
@@ -54,29 +53,16 @@ public class OBOracleCallFunctionCallBack implements ConnectionCallback<DBFuncti
     private final DBFunction function;
     private final int timeoutSeconds;
 
-    private final PLDebugODPSpecifiedRoute plDebugODPSpecifiedRoute;
-
     public OBOracleCallFunctionCallBack(@NonNull DBFunction function, int timeoutSeconds) {
         Validate.notBlank(function.getFunName(), "Function name can not be blank");
         DBPLObjectUtil.checkParams(function);
         this.function = function;
         this.timeoutSeconds = timeoutSeconds;
-        this.plDebugODPSpecifiedRoute = null;
-    }
-
-    public OBOracleCallFunctionCallBack(@NonNull DBFunction function, int timeoutSeconds,
-            @NonNull PLDebugODPSpecifiedRoute plDebugODPSpecifiedRoute) {
-        Validate.notBlank(function.getFunName(), "Function name can not be blank");
-        DBPLObjectUtil.checkParams(function);
-        this.function = function;
-        this.timeoutSeconds = timeoutSeconds;
-        this.plDebugODPSpecifiedRoute = plDebugODPSpecifiedRoute;
     }
 
     @Override
     public DBFunction doInConnection(Connection con) throws SQLException, DataAccessException {
         SqlBuilder sqlBuilder = new OracleSqlBuilder();
-        sqlBuilder.append(PLUtils.getSpecifiedRoute(plDebugODPSpecifiedRoute));
         // oracle mode 支持输出参数，因此通过jdbc调用，则需要转换为call procedure
         List<DBPLParam> params = new ArrayList<>();
         if (function.getParams() != null) {
@@ -115,15 +101,8 @@ public class OBOracleCallFunctionCallBack implements ConnectionCallback<DBFuncti
                 p.setDataType(function.getReturnType());
                 params.add(p);
                 proc.setParams(params);
-                CallProcedureCallBack callBack;
-                if (this.plDebugODPSpecifiedRoute == null) {
-                    callBack =
-                            new CallProcedureCallBack(proc, timeoutSeconds, new OracleSqlBuilder());
-                } else {
-                    callBack =
-                            new CallProcedureCallBack(proc, timeoutSeconds, new OracleSqlBuilder(),
-                                    this.plDebugODPSpecifiedRoute);
-                }
+                CallProcedureCallBack callBack =
+                        new CallProcedureCallBack(proc, timeoutSeconds, new OracleSqlBuilder());
                 List<DBPLParam> callResult = callBack.doInConnection(con);
                 if (CollectionUtils.isEmpty(callResult)) {
                     return function;
@@ -135,7 +114,7 @@ public class OBOracleCallFunctionCallBack implements ConnectionCallback<DBFuncti
                 return function;
             } finally {
                 try (Statement stmt = con.createStatement()) {
-                    stmt.execute(PLUtils.getSpecifiedRoute(plDebugODPSpecifiedRoute) + "DROP PROCEDURE " + plName);
+                    stmt.execute("DROP PROCEDURE " + plName);
                 }
             }
         }

@@ -15,6 +15,7 @@
  */
 package com.oceanbase.tools.sqlparser.statement.expression;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,8 +35,7 @@ import lombok.NonNull;
 @Getter
 @EqualsAndHashCode(callSuper = true)
 public class ArrayExpression extends BaseExpression {
-
-    private final List<Expression> expressions;
+    private List<Expression> expressions = new ArrayList<>();
 
     public ArrayExpression(@NonNull ParserRuleContext context, @NonNull List<Expression> expressions) {
         super(context);
@@ -50,5 +50,4 @@ public class ArrayExpression extends BaseExpression {
     protected String doToString() {
         return "[" + this.expressions.stream().map(Object::toString).collect(Collectors.joining(",")) + "]";
     }
-
 }

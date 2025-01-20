@@ -35,7 +35,6 @@ import com.oceanbase.odc.service.db.model.OdcGenerateUpdateTableDDLReq;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.state.model.StateName;
 import com.oceanbase.odc.service.state.model.StatefulRoute;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 
 import io.swagger.annotations.ApiOperation;
@@ -71,7 +70,7 @@ public class DBTableControllerV1 {
         // parse sid and database name, sid:1-1:d:database:t:tb1
         ResourceIdentifier i = ResourceIDParser.parse(sid);
         return OdcResult.ok(new OdcDBTable(tableService.getTable(
-                sessionService.nullSafeGet(i.getSid(), true), i.getDatabase(), i.getTable(), DBObjectType.TABLE)));
+                sessionService.nullSafeGet(i.getSid(), true), i.getDatabase(), i.getTable())));
     }
 
     @ApiOperation(value = "getUpdateSql", notes = "获取修改表名的sql")

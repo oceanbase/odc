@@ -16,14 +16,11 @@
 package com.oceanbase.odc.service.dlm.model;
 
 import java.util.Date;
-import java.util.Set;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.schedule.model.DlmTableUnitStatistic;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.enums.JobType;
-import com.oceanbase.tools.migrator.limiter.LimiterConfig;
 
 import lombok.Data;
 
@@ -51,10 +48,6 @@ public class DlmTableUnit {
 
     private DataSourceInfo targetDatasourceInfo;
 
-    private LimiterConfig sourceLimitConfig;
-
-    private LimiterConfig targetLimitConfig;
-
     private DlmTableUnitStatistic statistic;
 
     private DlmTableUnitParameters parameters;
@@ -66,7 +59,5 @@ public class DlmTableUnit {
     private Date startTime;
 
     private Date endTime;
-
-    private Set<DBObjectType> syncTableStructure;
 
 }

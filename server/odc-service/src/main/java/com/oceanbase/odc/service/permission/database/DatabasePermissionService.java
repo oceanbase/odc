@@ -153,8 +153,7 @@ public class DatabasePermissionService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, actions = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT",
-            indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public List<UserDatabasePermission> batchCreate(@NotNull Long projectId,
             @NotNull @Valid CreateDatabasePermissionReq req) {
         Set<Long> projectIds = projectService.getMemberProjectIds(req.getUserId());
@@ -221,8 +220,7 @@ public class DatabasePermissionService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, actions = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT",
-            indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public List<UserDatabasePermission> batchRevoke(@NotNull Long projectId, @NotEmpty List<Long> ids) {
         List<UserDatabasePermissionEntity> entities =
                 userDatabasePermissionRepository.findByProjectIdAndIdIn(projectId, ids);

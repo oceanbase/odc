@@ -26,7 +26,6 @@ import com.oceanbase.odc.core.shared.OrganizationIsolated;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.Data;
 
@@ -61,13 +60,6 @@ public class Table implements SecurityResource, OrganizationIsolated, Serializab
 
     @JsonProperty(access = Access.READ_ONLY)
     private Set<DatabasePermissionType> authorizedPermissionTypes;
-
-    /**
-     * Used to distinguish between external and basic tables, and additional table types may be added
-     * later.
-     */
-    @JsonProperty(access = Access.READ_ONLY)
-    private DBObjectType type;
 
     @Override
     public String resourceId() {

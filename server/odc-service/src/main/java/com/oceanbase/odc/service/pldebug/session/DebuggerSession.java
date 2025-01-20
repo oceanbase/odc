@@ -56,7 +56,6 @@ import com.oceanbase.odc.service.pldebug.model.PLDebugVariable;
 import com.oceanbase.odc.service.pldebug.model.StartPLDebugReq;
 import com.oceanbase.odc.service.pldebug.operator.DBPLOperators;
 import com.oceanbase.odc.service.pldebug.operator.GetPLErrorCallBack;
-import com.oceanbase.odc.service.pldebug.util.PLUtils;
 import com.oceanbase.tools.dbbrowser.model.DBBasicPLObject;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -108,19 +107,16 @@ public class DebuggerSession extends AbstractDebugSession {
         debugType = req.getDebugType();
         ddl = req.getAnonymousBlock();
         this.syncEnabled = syncEnabled;
-        if (debuggeeSession.getPlDebugODPSpecifiedRoute() != null) {
-            this.plDebugODPSpecifiedRoute = debuggeeSession.getPlDebugODPSpecifiedRoute();
-        }
+
         // Debugger must connect to database host the same as debuggee
-        // Set the timeout period, which is measured in microseconds (µs)
+        // 设置超时时间, 单位：us
         List<String> initSqls = Collections.singletonList(
                 String.format("set session ob_query_timeout = %s;", DEBUG_TIMEOUT_MS * 1000));
         acquireNewConnection(debuggeeSession.getConnectionSession(),
                 () -> cloneDataSource(debuggeeSession.getNewDataSource(), initSqls));
         try (Statement stmt = connection.createStatement()) {
-            // Mount this new session of debugger to the previously initialized debuggee
-            stmt.execute(String.format("%s call dbms_debug.attach_session(%s);", PLUtils.getSpecifiedRoute(
-                    this.plDebugODPSpecifiedRoute), debuggeeSession.getDebugId()));
+            // 绑定调试目标id
+            stmt.execute(String.format("call dbms_debug.attach_session(%s);", debuggeeSession.getDebugId()));
         } catch (Exception e) {
             log.warn("Call dbms_debug.attach_session() failed", e);
             throw OBException
@@ -186,7 +182,7 @@ public class DebuggerSession extends AbstractDebugSession {
 
     private DebugDataSource cloneDataSource(DebugDataSource originDataSource, List<String> initSqls) {
         ConnectionConfig config = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
-        DebugDataSource debuggerDataSource = new DebugDataSource(config, initSqls, this.plDebugODPSpecifiedRoute);
+        DebugDataSource debuggerDataSource = new DebugDataSource(config, initSqls);
         debuggerDataSource.setUrl(originDataSource.getUrl());
         debuggerDataSource.setUsername(originDataSource.getUsername());
         debuggerDataSource.setPassword(originDataSource.getPassword());
@@ -251,8 +247,7 @@ public class DebuggerSession extends AbstractDebugSession {
         boolean alive = false;
         try (Statement stmt = connection.createStatement()) {
             // 探测PL对象执行线程是否存活
-            stmt.execute(PLUtils.getSpecifiedRoute(this.plDebugODPSpecifiedRoute)
-                    + "select dbms_debug.target_program_running() from dual");
+            stmt.execute("select dbms_debug.target_program_running() from dual");
             try (ResultSet resultSet = stmt.getResultSet()) {
                 if (resultSet.next()) {
                     alive = resultSet.getBoolean(1);
@@ -374,8 +369,7 @@ public class DebuggerSession extends AbstractDebugSession {
         dbplError.setType(debugType.name());
         ConnectionConfig connectionConfig =
                 (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
-        return getJdbcOperations()
-                .execute(new GetPLErrorCallBack(connectionConfig, dbplError, this.plDebugODPSpecifiedRoute));
+        return getJdbcOperations().execute(new GetPLErrorCallBack(connectionConfig, dbplError));
     }
 
     public List<PLDebugBreakpoint> setBreakpoints(List<PLDebugBreakpoint> breakpoints) {

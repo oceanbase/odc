@@ -24,14 +24,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
 
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.sql.execute.mapper.JdbcRowMapper;
-import com.oceanbase.odc.core.sql.execute.model.JdbcQueryResult;
+import com.oceanbase.odc.core.sql.util.JdbcDataTypeUtil;
 import com.oceanbase.odc.service.db.model.CallFunctionReq;
 import com.oceanbase.odc.service.db.model.CallFunctionResp;
 import com.oceanbase.odc.service.db.model.PLOutParam;
@@ -41,25 +39,21 @@ import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
 import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public class OBMysqlCallFunctionCallBack implements ConnectionCallback<CallFunctionResp> {
 
     private final DBFunction function;
     private final int timeoutSeconds;
-    private final JdbcRowMapper rowDataMapper;
 
-    public OBMysqlCallFunctionCallBack(@NonNull CallFunctionReq callFunctionReq, int timeoutSeconds,
-            @NonNull JdbcRowMapper rowDataMapper) {
+    public OBMysqlCallFunctionCallBack(@NonNull CallFunctionReq callFunctionReq, int timeoutSeconds) {
         Validate.notBlank(callFunctionReq.getFunction().getFunName(), "Function name can not be blank");
         this.function = callFunctionReq.getFunction();
         this.timeoutSeconds = timeoutSeconds;
-        this.rowDataMapper = rowDataMapper;
     }
 
     @Override
     public CallFunctionResp doInConnection(Connection con) throws SQLException, DataAccessException {
+        CallFunctionResp callFunctionResp = new CallFunctionResp();
         List<DBPLParam> params = new ArrayList<>();
         if (function.getParams() != null) {
             params = function.getParams();
@@ -82,38 +76,23 @@ public class OBMysqlCallFunctionCallBack implements ConnectionCallback<CallFunct
             if (this.timeoutSeconds > 0) {
                 stmt.setQueryTimeout(this.timeoutSeconds);
             }
+            PLOutParam plOutParam = new PLOutParam();
             try (ResultSet res = stmt.executeQuery(sqlBuilder.toString())) {
                 if (!res.next()) {
-                    return generateDefaultReturnValue();
-                }
-                JdbcQueryResult jdbcQueryResult = new JdbcQueryResult(res.getMetaData(), rowDataMapper);
-                jdbcQueryResult.addLine(res);
-                List<List<Object>> rows = jdbcQueryResult.getRows();
-                if (CollectionUtils.size(rows) == 1 && CollectionUtils.size(rows.get(0)) == 1) {
-                    CallFunctionResp callFunctionResp = new CallFunctionResp();
-                    PLOutParam plOutParam = new PLOutParam();
-                    plOutParam.setValue(String.valueOf(rows.get(0).get(0)));
+                    plOutParam.setValue(function.getReturnValue());
                     plOutParam.setDataType(function.getReturnType());
                     callFunctionResp.setReturnValue(plOutParam);
-                    callFunctionResp.setOutParams(null);
                     return callFunctionResp;
                 }
-                throw new IllegalStateException("The return value of a function must be unique");
+                Object value = JdbcDataTypeUtil.getValueFromResultSet(
+                        res, 1, function.getReturnType());
+                plOutParam.setValue(String.valueOf(value));
+                plOutParam.setDataType(function.getReturnType());
+                callFunctionResp.setReturnValue(plOutParam);
             }
-        } catch (Exception e) {
-            log.warn("Failed to call function {}", function.getFunName(), e);
-            CallFunctionResp callFunctionResp = generateDefaultReturnValue();
-            callFunctionResp.setErrorMessage(e.getMessage());
-            return callFunctionResp;
         }
-    }
-
-    private CallFunctionResp generateDefaultReturnValue() {
-        CallFunctionResp callFunctionResp = new CallFunctionResp();
-        PLOutParam plOutParam = new PLOutParam();
-        plOutParam.setValue(function.getReturnValue());
-        plOutParam.setDataType(function.getReturnType());
-        callFunctionResp.setReturnValue(plOutParam);
+        callFunctionResp.setOutParams(null);
         return callFunctionResp;
     }
+
 }

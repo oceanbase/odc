@@ -27,7 +27,6 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -68,17 +67,20 @@ public class DoCancelingJob implements Job {
         getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
             JobEntity lockedEntity = taskFrameworkService.findWithPessimisticLock(jobEntity.getId());
             if (lockedEntity.getStatus() == JobStatus.CANCELING) {
-                if (!configuration.getTaskFrameworkService().refreshLogMetaForCancelJob(lockedEntity.getId())) {
+                if (!configuration.getTaskFrameworkService().refreshLogMeta(lockedEntity.getId())) {
                     log.info(
                             "Job is canceling but log have not uploaded, continue monitor result, jobId={}, currentStatus={}",
                             lockedEntity.getId(), lockedEntity.getStatus());
                     return;
                 }
-                // mark resource as released
-                if (TaskRunMode.K8S == lockedEntity.getRunMode()) {
-                    ResourceManagerUtil.markResourceReleased(lockedEntity, lockedEntity.getExecutorIdentifier(),
-                            getConfiguration().getResourceManager());
-                    log.info("DoCancelingJob release resource for job = {}", jobEntity);
+                JobStatus currentStatus = taskFrameworkService.find(lockedEntity.getId()).getStatus();
+                if (currentStatus.isTerminated()) {
+                    // the job terminated before we update it to CANCELED
+                    log.info("Job is already terminated, jobId={},currentStatus={}", lockedEntity.getId(),
+                            currentStatus);
+                    getConfiguration().getEventPublisher().publishEvent(
+                            new JobTerminateEvent(JobIdentity.of(lockedEntity.getId()), currentStatus));
+                    return;
                 }
                 // For transaction atomic, first update to CANCELED, then stop remote job in executor,
                 // if stop remote failed, transaction will be rollback
@@ -98,9 +100,6 @@ public class DoCancelingJob implements Job {
                 // MessageFormat.format("Cancel job failed, jobId={0}", lockedEntity.getId()));
                 // throw new TaskRuntimeException(e);
                 // }
-                // set status to destroyed
-                // TODO(lx): do finish action before release resource
-                taskFrameworkService.updateExecutorToDestroyed(jobEntity.getId());
                 log.info("Job be cancelled successfully, jobId={}, oldStatus={}.", lockedEntity.getId(),
                         lockedEntity.getStatus());
                 getConfiguration().getEventPublisher().publishEvent(

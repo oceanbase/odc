@@ -15,10 +15,8 @@
  */
 package com.oceanbase.odc.service.sqlcheck.rule;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -68,11 +66,7 @@ public class OracleNoTableCommentExists implements SqlCheckRule {
         if (statement instanceof SetComment) {
             setComments.add(new Pair<>((SetComment) statement, null));
         } else if (statement instanceof CreateTable) {
-            CreateTable createTable = (CreateTable) statement;
-            if (Objects.nonNull(createTable.getLikeTable()) || Objects.nonNull(createTable.getAs())) {
-                return Collections.emptyList();
-            }
-            createTables.add(new Pair<>(createTable, null));
+            createTables.add(new Pair<>((CreateTable) statement, null));
         }
         Set<String> tblNames = setComments.stream().filter(s -> s.left.getTable() != null).map(s -> {
             RelationFactor t = s.left.getTable();
@@ -92,7 +86,7 @@ public class OracleNoTableCommentExists implements SqlCheckRule {
 
     @Override
     public List<DialectType> getSupportsDialectTypes() {
-        return Arrays.asList(DialectType.OB_ORACLE, DialectType.ORACLE);
+        return Collections.singletonList(DialectType.OB_ORACLE);
     }
 
     private String getKey(CreateTable c) {

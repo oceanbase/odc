@@ -68,8 +68,7 @@ public class StartPreparingJob implements Job {
             configuration.getTaskFrameworkDisabledHandler().handleJobToFailed();
             return;
         }
-        // check if local compute resource is enough for process mode
-        if (!ResourceDetectUtil.isProcessResourceAvailable(configuration.getTaskFrameworkProperties())) {
+        if (!ResourceDetectUtil.isResourceAvailable(configuration.getTaskFrameworkProperties())) {
             return;
         }
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();

@@ -63,7 +63,7 @@ public class MySQLSqlScriptImportJob extends BaseSqlScriptImportJob {
         try (Connection conn = dataSource.getConnection()) {
             switch (object.getType()) {
                 case "TABLE":
-                    objects = new MySQLTableExtension().list(conn, object.getSchema(), DBObjectType.TABLE);
+                    objects = new MySQLTableExtension().list(conn, object.getSchema());
                     break;
                 case "VIEW":
                     objects = new MySQLViewExtension().list(conn, object.getSchema());

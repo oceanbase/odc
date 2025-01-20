@@ -377,11 +377,6 @@ OdcServer 启动设置示意如下
 
 ![image.png](../en-US/images/idea-run-configuration-start-odc-server-2.png)
 
-环境变量（environment variables）配置示意如下
-
-![image.png](../en-US/images/idea-run-configuration-start-odc-server-3.png)
-
-
 # 4. 前后端集成和联调
 
 ## 4.1 基于静态资源服务器的前后端联调 <a id='4.1'></a>

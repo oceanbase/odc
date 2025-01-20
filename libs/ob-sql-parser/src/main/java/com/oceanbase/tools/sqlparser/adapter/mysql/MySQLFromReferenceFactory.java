@@ -15,7 +15,9 @@
  */
 package com.oceanbase.tools.sqlparser.adapter.mysql;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -106,11 +108,7 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
         if (ctx.tbl_name() != null) {
             return visit(ctx.tbl_name());
         } else if (ctx.table_subquery() != null) {
-            ExpressionReference reference = (ExpressionReference) visit(ctx.table_subquery());
-            if (ctx.LATERAL() != null) {
-                reference.setLateral(true);
-            }
-            return reference;
+            return visit(ctx.table_subquery());
         } else if (ctx.table_reference() != null) {
             FromReference from = visit(ctx.table_reference());
             if (ctx.LeftBrace() == null || ctx.OJ() == null || ctx.RightBrace() == null) {
@@ -125,9 +123,6 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
         }
         StatementFactory<SelectBody> factory = new MySQLSelectBodyFactory(ctx.select_with_parens());
         ExpressionReference reference = new ExpressionReference(ctx, factory.generate(), null);
-        if (ctx.LATERAL() != null) {
-            reference.setLateral(true);
-        }
         if (ctx.use_flashback() != null) {
             reference.setFlashbackUsage(visitFlashbackUsage(ctx.use_flashback()));
         }
@@ -198,7 +193,7 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
         }
         NameReference nameReference = new NameReference(ctx, factor.getSchema(), factor.getRelation(), alias);
         if (ctx.use_partition() != null) {
-            nameReference.setPartitionUsage(visitPartitionUsage(ctx.use_partition()));
+            nameReference.setPartitionUsage(visitPartitonUsage(ctx.use_partition()));
         }
         if (ctx.use_flashback() != null) {
             nameReference.setFlashbackUsage(visitFlashbackUsage(ctx.use_flashback()));
@@ -301,17 +296,10 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
         return new FlashbackUsage(ctx, FlashBackType.AS_OF_SNAPSHOT, factory.generate());
     }
 
-    public static PartitionUsage visitPartitionUsage(Use_partitionContext usePartition) {
-        if (usePartition.name_list() != null) {
-            List<String> nameList = new ArrayList<>();
-            visitNameList(usePartition.name_list(), nameList);
-            return new PartitionUsage(usePartition, PartitionType.PARTITION, nameList);
-        }
-        Map<String, Expression> externalTablePartition = new HashMap<>();
-        usePartition.external_table_partitions().external_table_partition()
-                .forEach(ctx -> externalTablePartition.put(ctx.relation_name().getText(),
-                        new MySQLExpressionFactory().visit(ctx.expr_const())));
-        return new PartitionUsage(usePartition, PartitionType.PARTITION, externalTablePartition);
+    public static PartitionUsage visitPartitonUsage(Use_partitionContext usePartition) {
+        List<String> nameList = new ArrayList<>();
+        visitNameList(usePartition.name_list(), nameList);
+        return new PartitionUsage(usePartition, PartitionType.PARTITION, nameList);
     }
 
     private static void visitNameList(Name_listContext ctx, List<String> nameList) {

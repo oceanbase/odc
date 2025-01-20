@@ -51,8 +51,6 @@ public class ExpressionReference extends BaseStatement implements FromReference 
     @Setter
     private FlashbackUsage flashbackUsage;
     @Setter
-    private boolean lateral;
-    @Setter
     private List<String> aliasColumns;
 
     public ExpressionReference(@NonNull ParserRuleContext context,
@@ -69,11 +67,7 @@ public class ExpressionReference extends BaseStatement implements FromReference 
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        if (this.lateral) {
-            builder.append("LATERAL ");
-        }
-        builder.append(this.target.toString());
+        StringBuilder builder = new StringBuilder(this.target.toString());
         if (this.flashbackUsage != null) {
             builder.append(" ").append(this.flashbackUsage.toString());
         }

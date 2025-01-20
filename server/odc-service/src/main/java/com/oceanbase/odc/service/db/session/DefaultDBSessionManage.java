@@ -18,10 +18,8 @@ package com.oceanbase.odc.service.db.session;
 import static com.oceanbase.odc.core.shared.constant.DialectType.OB_MYSQL;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -35,17 +33,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.SetUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
-import com.oceanbase.odc.common.util.HostUtils;
-import com.oceanbase.odc.common.util.HostUtils.ServerAddress;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -59,20 +55,22 @@ import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.model.OdcDBSession;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
-import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.util.ConnectionInfoUtil;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.db.browser.DBStatsAccessors;
-import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
+import com.oceanbase.odc.service.db.session.DBSessionService.SessionIdKillSql;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -80,10 +78,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DefaultDBSessionManage implements DBSessionManageFacade {
 
+    private static final String SERVER_REGEX = ".*/\\*(?<ip>([0-9]{1,3}.){1,3}([0-9]{1,3})):"
+            + "(?<port>[0-9]{1,5})\\*/.*";
+    private static final Pattern SERVER_PATTERN = Pattern.compile(SERVER_REGEX);
     private static final ConnectionMapper CONNECTION_MAPPER = ConnectionMapper.INSTANCE;
     private static final String GLOBAL_CLIENT_SESSION_OB_PROXY_VERSION_NUMBER = "4.2.3";
     private static final String GLOBAL_CLIENT_SESSION_OB_VERSION_NUMBER = "4.2.5";
     private static final String ORACLE_MODEL_KILL_SESSION_WITH_BLOCK_OB_VERSION_NUMBER = "4.2.1.0";
+    private static final byte GLOBAL_CLIENT_SESSION_PROXY_ID_MIN = 0;
+    private static final short GLOBAL_CLIENT_SESSION_PROXY_ID_MAX = 8191;
+    private static final byte GLOBAL_CLIENT_SESSION_ID_VERSION = 2;
 
     @Autowired
     private DBSessionService dbSessionService;
@@ -93,7 +97,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
 
     @Override
     @SkipAuthorize
-    public List<KillResult> killSessionOrQuery(KillSessionOrQueryReq request) {
+    public List<KillSessionResult> killSessionOrQuery(KillSessionOrQueryReq request) {
         Verify.notNull(request.getSessionIds(), "session can not be null");
         Verify.notNull(request.getDatasourceId(), "connection session id can not be null");
         ConnectionConfig connectionConfig = connectionService.getForConnect(Long.valueOf(request.getDatasourceId()));
@@ -101,15 +105,9 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         ConnectionSession connectionSession = null;
         try {
             connectionSession = factory.generateSession();
-            Map<String, String> connectionId2KillSql;
-            SessionExtensionPoint sessionExtension =
-                    ConnectionPluginUtil.getSessionExtension(connectionConfig.getDialectType());
-            if (KillSessionOrQueryReq.KILL_QUERY_TYPE.equals(request.getKillType())) {
-                connectionId2KillSql = sessionExtension.getKillQuerySqls(new HashSet<>(request.getSessionIds()));
-            } else {
-                connectionId2KillSql = sessionExtension.getKillSessionSqls(new HashSet<>(request.getSessionIds()));
-            }
-            return doKill(connectionSession, connectionId2KillSql);
+            List<SessionIdKillSql> session =
+                    dbSessionService.getKillSql(connectionSession, request.getSessionIds(), request.getKillType());
+            return doKillSessionOrQuery(connectionSession, session);
         } catch (Exception e) {
             log.info("kill session failed,datasourceId#{}", request.getDatasourceId(), e);
             throw e;
@@ -120,8 +118,8 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         }
     }
 
+    @SkipAuthorize
     @Override
-    @SkipAuthorize("odc internal usage")
     public boolean supportKillConsoleQuery(ConnectionSession session) {
         if (Objects.nonNull(session) && ConnectionSessionUtil.isLogicalSession(session)) {
             return false;
@@ -137,22 +135,19 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         Verify.notNull(connectionId, "ConnectionId");
         ConnectionConfig conn = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
         Verify.notNull(conn, "ConnectionConfig");
-        SessionExtensionPoint sessionExtension =
-                ConnectionPluginUtil.getSessionExtension(conn.getDialectType());
-        DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(conn);
-        ConnectionSession copiedSession = null;
+        DruidDataSourceFactory factory = new DruidDataSourceFactory(conn);
         try {
-            copiedSession = factory.generateSession();
-            Map<String, String> connectionId2KillSql = sessionExtension.getKillQuerySqls(
-                    SetUtils.hashSet(connectionId));
-            List<KillResult> results = doKill(copiedSession, connectionId2KillSql);
-            Verify.singleton(results, "killResults");
-            return results.get(0).isKilled();
-        } finally {
-            if (copiedSession != null) {
-                copiedSession.expire();
+            ConnectionInfoUtil.killQuery(connectionId, factory, session.getDialectType());
+        } catch (Exception e) {
+            if (session.getDialectType().isOceanbase()) {
+                ConnectionSessionUtil.killQueryByDirectConnect(connectionId, factory);
+                log.info("Kill query by direct connect succeed, connectionId={}", connectionId);
+            } else {
+                log.warn("Kill query occur error, connectionId={}", connectionId, e);
+                return false;
             }
         }
+        return true;
     }
 
     @Override
@@ -170,7 +165,12 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         try {
             // max kill 1024 sessions by once and filter current session
             log.info("Begin kill all session");
-            waitingForResult(() -> doKillAllSessions(list, connectionSession, executor), lockTableTimeOutSeconds);
+            waitingForResult(
+                    () -> doKillAllSessions(
+                            list,
+                            connectionSession,
+                            executor),
+                    lockTableTimeOutSeconds);
         } finally {
             try {
                 executor.shutdownNow();
@@ -178,46 +178,13 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
                 // do nothing
             }
         }
-        long startTimeMs = System.currentTimeMillis();
-        long endTimeMs = startTimeMs + 2000L;
-        while (System.currentTimeMillis() < endTimeMs) {
-            List<OdcDBSession> checkedList = getSessionList(connectionSession, filter);
-            if (CollectionUtils.isEmpty(getSessionList(connectionSession, filter))) {
-                log.info("All sessions killed, elapsed time: {}ms", System.currentTimeMillis() - startTimeMs);
-                return;
-            }
-            log.info("Has sessions reserved:{}", checkedList);
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                log.warn("Thread sleep interrupted", e);
-            }
+
+        List<OdcDBSession> checkedList = getSessionList(connectionSession, filter);
+        if (CollectionUtils.isNotEmpty(checkedList)) {
+            throw new IllegalStateException("kill session failed, has session reserved");
         }
-        throw new IllegalStateException("kill session failed, has session reserved");
     }
 
-    private List<KillResult> doKill(ConnectionSession session, Map<String, String> connectionId2KillSqls) {
-        List<SqlTupleSessionId> sqlTupleSessionIds = connectionId2KillSqls.entrySet().stream().map(entry -> {
-            String connectionId = entry.getKey();
-            String killSql = entry.getValue();
-            return new SqlTupleSessionId(SqlTuple.newTuple(killSql), connectionId);
-        }).collect(Collectors.toList());
-
-        Map<String, String> sqlId2SessionId = sqlTupleSessionIds.stream().collect(
-                Collectors.toMap(s -> s.getSqlTuple().getSqlId(), SqlTupleSessionId::getSessionId));
-
-        List<JdbcGeneralResult> jdbcGeneralResults = executeSqls(session, sqlTupleSessionIds.stream()
-                .map(SqlTupleSessionId::getSqlTuple)
-                .collect(Collectors.toList()));
-        if (session.getDialectType().isOceanbase()) {
-            jdbcGeneralResults = additionalKillIfNecessary(session, jdbcGeneralResults, sqlTupleSessionIds);
-        }
-        return jdbcGeneralResults.stream()
-                .map(res -> new KillResult(res, sqlId2SessionId.get(res.getSqlTuple().getSqlId())))
-                .collect(Collectors.toList());
-    }
-
-    // Will reuse the ConnectionSession to get the session list
     private List<OdcDBSession> getSessionList(ConnectionSession connectionSession, Predicate<OdcDBSession> filter) {
         return DBStatsAccessors.create(connectionSession)
                 .listAllSessions()
@@ -227,12 +194,41 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
                 .collect(Collectors.toList());
     }
 
-    private List<JdbcGeneralResult> executeSqls(ConnectionSession connectionSession, List<SqlTuple> sqlTuples) {
+    private List<KillSessionResult> doKillSessionOrQuery(
+            ConnectionSession connectionSession, List<SessionIdKillSql> killSessionSqls) {
+        List<SqlTupleSessionId> sqlTupleSessionIds = killSessionSqls.stream().map(
+                s -> new SqlTupleSessionId(SqlTuple.newTuple(s.getKillSql()), s.getSessionId()))
+                .collect(Collectors.toList());
+        Map<String, String> sqlId2SessionId = sqlTupleSessionIds.stream().collect(
+                Collectors.toMap(s -> s.getSqlTuple().getSqlId(), SqlTupleSessionId::getSessionId));
+
+        List<SqlTuple> sqlTuples =
+                sqlTupleSessionIds.stream().map(SqlTupleSessionId::getSqlTuple).collect(Collectors.toList());
+        List<JdbcGeneralResult> jdbcGeneralResults =
+                executeKillSession(connectionSession, sqlTuples, sqlTuples.toString());
+        return jdbcGeneralResults.stream()
+                .map(res -> new KillSessionResult(res, sqlId2SessionId.get(res.getSqlTuple().getSqlId())))
+                .collect(Collectors.toList());
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public List<JdbcGeneralResult> executeKillSession(ConnectionSession connectionSession, List<SqlTuple> sqlTuples,
+            String sqlScript) {
+        List<JdbcGeneralResult> results = executeKillCommands(connectionSession, sqlTuples, sqlScript);
+        if (connectionSession.getDialectType() == DialectType.OB_MYSQL
+                || connectionSession.getDialectType() == DialectType.OB_ORACLE) {
+            return processResults(connectionSession, results);
+        }
+        return results;
+    }
+
+    private List<JdbcGeneralResult> executeKillCommands(ConnectionSession connectionSession, List<SqlTuple> sqlTuples,
+            String sqlScript) {
         List<JdbcGeneralResult> results =
                 connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
                         .execute(new OdcStatementCallBack(sqlTuples, connectionSession, true, null, false));
         if (results == null) {
-            log.warn("Execution of the kill session command failed with unknown error, sql={}", sqlTuples);
+            log.warn("Execution of the kill session command failed with unknown error, sql={}", sqlScript);
             throw new InternalServerError("Unknown error");
         }
         return results;
@@ -246,20 +242,10 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
      * @param results
      * @return
      */
-    private List<JdbcGeneralResult> additionalKillIfNecessary(ConnectionSession connectionSession,
-            List<JdbcGeneralResult> results, List<SqlTupleSessionId> sqlTupleSessionIds) {
-        Map<String, ServerAddress> sessionId2SvrAddr =
-                getSessionList(connectionSession, s -> s.getSvrIp() != null)
-                        .stream().collect(Collectors.toMap(OdcDBSession::getSessionId,
-                                s -> HostUtils.extractServerAddress(MoreObjects.firstNonNull(s.getSvrIp(), ""))));
-        Map<String, String> sqlId2SessionId = sqlTupleSessionIds.stream().collect(
-                Collectors.toMap(s -> s.getSqlTuple().getSqlId(), SqlTupleSessionId::getSessionId));
-
+    private List<JdbcGeneralResult> processResults(ConnectionSession connectionSession,
+            List<JdbcGeneralResult> results) {
         Boolean isDirectedOBServer = isObServerDirected(connectionSession);
-        String obProxyVersion = null;
-        if (Boolean.FALSE.equals(isDirectedOBServer)) {
-            obProxyVersion = ConnectionSessionUtil.getObProxyVersion(connectionSession);
-        }
+        String obProxyVersion = getObProxyVersion(connectionSession, isDirectedOBServer);
         String obVersion = ConnectionSessionUtil.getVersion(connectionSession);
         boolean isEnabledGlobalClientSession =
                 isGlobalClientSessionEnabled(connectionSession, obProxyVersion, obVersion);
@@ -272,9 +258,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
                 if (isUnknownThreadIdError(e)) {
                     jdbcGeneralResult = handleUnknownThreadIdError(connectionSession,
                             jdbcGeneralResult, isDirectedOBServer,
-                            isEnabledGlobalClientSession, isSupportedOracleModeKillSession,
-                            sessionId2SvrAddr.getOrDefault(
-                                    sqlId2SessionId.get(jdbcGeneralResult.getSqlTuple().getSqlId()), null));
+                            isEnabledGlobalClientSession, isSupportedOracleModeKillSession);
                 } else {
                     log.warn("Failed to execute sql in kill session scenario, sqlTuple={}",
                             jdbcGeneralResult.getSqlTuple(), e);
@@ -309,6 +293,27 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         return null;
     }
 
+    /**
+     * Get the OBProxy version number. If an exception occurs or the version does not support, return
+     * null.
+     *
+     * @param connectionSession
+     * @param isDirectedOBServer
+     * @return
+     */
+    private String getObProxyVersion(ConnectionSession connectionSession, Boolean isDirectedOBServer) {
+        if (Boolean.TRUE.equals(isDirectedOBServer)) {
+            return null;
+        }
+        try {
+            return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
+                    .queryForObject("select proxy_version()", String.class);
+        } catch (Exception e) {
+            log.warn("Failed to obtain the OBProxy version number: {}", e.getMessage());
+            return null;
+        }
+    }
+
     private boolean isGlobalClientSessionEnabled(ConnectionSession connectionSession, String obProxyVersion,
             String obVersion) {
         // verification version requirement
@@ -318,19 +323,38 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
                 || VersionUtils.isLessThan(obVersion, GLOBAL_CLIENT_SESSION_OB_VERSION_NUMBER)) {
             return false;
         }
-        // Check whether the global session is open
-        // If the global session is open, the "time" column will be displayed in the result set after
-        // executing the sql statement of "show processlist"
-        return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                .query("show processlist", rs -> {
-                    try {
-                        int columnIndex = rs.findColumn("time");
-                        return columnIndex > 0;
-                    } catch (SQLException e) {
-                        log.warn("Failed to find the column 'time' in the result set", e);
-                        return false;
-                    }
-                });
+        try {
+            Integer proxyId = getOBProxyConfig(connectionSession, "proxy_id");
+            Integer clientSessionIdVersion = getOBProxyConfig(connectionSession, "client_session_id_version");
+
+            return proxyId != null
+                    && proxyId >= GLOBAL_CLIENT_SESSION_PROXY_ID_MIN
+                    && proxyId <= GLOBAL_CLIENT_SESSION_PROXY_ID_MAX
+                    && clientSessionIdVersion != null
+                    && clientSessionIdVersion == GLOBAL_CLIENT_SESSION_ID_VERSION;
+        } catch (Exception e) {
+            log.warn("Failed to determine if global client session is enabled: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Gets the value of OBProxy's configuration variable If an exception occurs or the version does not
+     * support, return null.
+     * 
+     * @param connectionSession
+     * @param configName
+     * @return
+     */
+    private Integer getOBProxyConfig(ConnectionSession connectionSession, String configName) {
+        try {
+            return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
+                    .query("show proxyconfig like '" + configName + "';",
+                            rs -> rs.next() ? rs.getInt("value") : null);
+        } catch (Exception e) {
+            log.warn("Failed to obtain the value of OBProxy's configuration variable: {}", e.getMessage());
+            return null;
+        }
     }
 
     private boolean isUnknownThreadIdError(Exception e) {
@@ -339,8 +363,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
 
     private JdbcGeneralResult handleUnknownThreadIdError(ConnectionSession connectionSession,
             JdbcGeneralResult jdbcGeneralResult, Boolean isDirectedOBServer,
-            boolean isEnabledGlobalClientSession, boolean isSupportedOracleModeKillSession,
-            ServerAddress directServerAddress) {
+            boolean isEnabledGlobalClientSession, boolean isSupportedOracleModeKillSession) {
         if (Boolean.TRUE.equals(isDirectedOBServer)) {
             log.info("The current connection mode is directing observer, return error result directly");
             return jdbcGeneralResult;
@@ -354,7 +377,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
                     jdbcGeneralResult.getSqlTuple());
         }
         return tryKillSessionViaDirectConnectObServer(connectionSession, jdbcGeneralResult,
-                jdbcGeneralResult.getSqlTuple(), directServerAddress);
+                jdbcGeneralResult.getSqlTuple());
     }
 
     private boolean isOracleModeKillSessionSupported(String obVersion, ConnectionSession connectionSession) {
@@ -406,10 +429,10 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
      * @return
      */
     private JdbcGeneralResult tryKillSessionViaDirectConnectObServer(ConnectionSession connectionSession,
-            JdbcGeneralResult jdbcGeneralResult, SqlTuple sqlTuple, ServerAddress serverAddress) {
+            JdbcGeneralResult jdbcGeneralResult, SqlTuple sqlTuple) {
         try {
             log.info("Kill query/session Unknown thread id error, try direct connect observer");
-            directLinkServerAndExecute(sqlTuple.getExecutedSql(), connectionSession, serverAddress);
+            directLinkServerAndExecute(sqlTuple.getExecutedSql(), connectionSession);
             return JdbcGeneralResult.successResult(sqlTuple);
         } catch (Exception e) {
             log.warn("Failed to direct connect observer {}", e.getMessage());
@@ -417,8 +440,9 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         }
     }
 
-    private void directLinkServerAndExecute(String sql, ConnectionSession session, ServerAddress serverAddress)
+    private void directLinkServerAndExecute(String sql, ConnectionSession session)
             throws Exception {
+        ServerAddress serverAddress = extractServerAddress(sql);
         if (Objects.isNull(serverAddress)) {
             throw new Exception("ServerAddress not found");
         }
@@ -438,22 +462,46 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         }
     }
 
+    ServerAddress extractServerAddress(String sql) {
+        String removeBlank = org.apache.commons.lang3.StringUtils.replace(sql, "\\s+", "");
+        if (org.apache.commons.lang3.StringUtils.isBlank(removeBlank)) {
+            log.debug("unable to extract server address, sql was empty");
+            return null;
+        }
+        int startPos = org.apache.commons.lang3.StringUtils.indexOf(removeBlank, "/*");
+        if (-1 == startPos) {
+            log.debug("unable to extract server address, no comment found");
+            return null;
+        }
+        String subStr = org.apache.commons.lang3.StringUtils.substring(removeBlank, startPos);
+        Matcher matcher = SERVER_PATTERN.matcher(subStr);
+        if (!matcher.matches()) {
+            log.info("unable to extract server address, does not match pattern");
+            return null;
+        }
+        String ipAddress = matcher.group("ip");
+        String port = matcher.group("port");
+        if (org.apache.commons.lang3.StringUtils.isEmpty(ipAddress)
+                || org.apache.commons.lang3.StringUtils.isEmpty(port)) {
+            log.info("unable to extract server address, ipAddress={}, port={}", ipAddress, port);
+            return null;
+        }
+        return new ServerAddress(ipAddress, port);
+    }
 
     private CompletableFuture<Void> doKillAllSessions(List<OdcDBSession> list, ConnectionSession connectionSession,
             Executor executor) {
+
         return CompletableFuture.supplyAsync((Supplier<Void>) () -> {
             Lists.partition(list, 1024)
                     .forEach(sessionList -> {
-                        SessionExtensionPoint sessionExtension =
-                                ConnectionPluginUtil.getSessionExtension(connectionSession.getDialectType());
-                        Map<String, String> connectionId2KillSql = sessionExtension.getKillSessionSqls(
-                                sessionList.stream().map(OdcDBSession::getSessionId).collect(Collectors.toSet()));
-                        doKill(connectionSession, connectionId2KillSql);
+                        doKillSessionOrQuery(connectionSession, getKillSql(sessionList));
                     });
             return null;
         }, executor).exceptionally(ex -> {
             throw new CompletionException(ex);
         });
+
     }
 
     private <T> void waitingForResult(Supplier<CompletableFuture<T>> completableFutureSupplier,
@@ -466,6 +514,30 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             log.warn("Kill all sessions occur error", e);
             throw new IllegalStateException("Kill all sessions occur error", e);
+        }
+    }
+
+    private List<SessionIdKillSql> getKillSql(@NonNull List<OdcDBSession> allSession) {
+        return allSession.stream()
+                .map(dbSession -> {
+                    StringBuilder sqlBuilder = new StringBuilder();
+                    sqlBuilder.append("kill ");
+                    sqlBuilder.append(dbSession.getSessionId());
+                    if (dbSession.getSvrIp() != null) {
+                        sqlBuilder.append(" /*").append(dbSession.getSvrIp()).append("*/");
+                    }
+                    return new SessionIdKillSql(dbSession.getSessionId(), sqlBuilder.append(";").toString());
+                }).collect(Collectors.toList());
+    }
+
+    @Data
+    static class ServerAddress {
+        String ipAddress;
+        String port;
+
+        public ServerAddress(String ipAddress, String port) {
+            this.ipAddress = ipAddress;
+            this.port = port;
         }
     }
 

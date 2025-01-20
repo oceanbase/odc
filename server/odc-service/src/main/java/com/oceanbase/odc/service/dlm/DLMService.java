@@ -97,9 +97,6 @@ public class DLMService {
             DlmTableUnitEntity entity;
             if (entityOptional.isPresent()) {
                 entity = entityOptional.get();
-                if (entity.getStatus() == TaskStatus.DONE) {
-                    return;
-                }
                 entity.setStatistic(JsonUtils.toJson(o.getStatistic()));
                 entity.setStatus(o.getStatus());
                 entity.setStartTime(o.getStartTime());

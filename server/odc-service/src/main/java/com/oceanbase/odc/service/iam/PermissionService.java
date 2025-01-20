@@ -120,4 +120,5 @@ public class PermissionService {
             log.info("Clear expired permission, count: {}, expired time: {}", count, expiredTime);
         }
     }
+
 }

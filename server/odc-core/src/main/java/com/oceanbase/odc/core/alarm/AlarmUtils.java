@@ -30,7 +30,6 @@ public final class AlarmUtils {
     public static final String TENANT_NAME = "Tenant";
     public static final String ORGANIZATION_NAME = "OrganizationId";
     public static final String MESSAGE_NAME = "Message";
-    public static final String ODC_RESOURCE = "OdcResource";
     public static final String ALARM_TARGET_NAME = "AlarmTarget";
     public static final String ALARM_FIRE_ERROR_NAME = "AlarmFireError";
     public static final String FAILED_REASON_NAME = "FailedReason";
@@ -38,8 +37,6 @@ public final class AlarmUtils {
      * TaskFramework alarm message names
      */
     public static final String TASK_JOB_ID_NAME = "JobId";
-    public static final String RESOURCE_ID_NAME = "ResourceID";
-    public static final String RESOURCE_TYPE = "ResourceType";
     public static final String TASK_TYPE_NAME = "TaskType";
     public static final String SCHEDULE_ID_NAME = "ScheduleId";
     public static final Collection<String> TASK_FRAMEWORK_ALARM_DIGEST_NAMES =

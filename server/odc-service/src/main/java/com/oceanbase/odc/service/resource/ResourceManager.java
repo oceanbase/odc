@@ -37,6 +37,7 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.metadb.resource.ResourceRepository;
 import com.oceanbase.odc.metadb.resource.ResourceSpecs;
+import com.oceanbase.odc.service.resource.k8s.DefaultResourceOperatorBuilder;
 import com.oceanbase.odc.service.resource.k8s.model.QueryResourceParams;
 
 import lombok.NonNull;
@@ -44,7 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * resource manager to holds resource allocate and free
- *
+ * 
  * @author longpeng.zlp
  * @date 2024/8/26 20:17
  */
@@ -142,7 +143,7 @@ public class ResourceManager {
 
     /**
      * query resource state with resource id
-     *
+     * 
      * @param resourceID
      * @return
      * @throws Exception
@@ -207,24 +208,24 @@ public class ResourceManager {
         if (!savedResource.isPresent()) {
             // create resource_resource with DESTROYING state
             ResourceEntity resourceEntity = new ResourceEntity();
-            resourceEntity.setResourceType(resourceID.getType());
+            resourceEntity.setResourceType(DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE);
             resourceEntity.setEndpoint("unknown");
             resourceEntity.setCreateTime(new Date(System.currentTimeMillis()));
             resourceEntity.setRegion(resourceID.getResourceLocation().getRegion());
             resourceEntity.setGroupName(resourceID.getResourceLocation().getGroup());
             resourceEntity.setNamespace(resourceID.getNamespace());
             resourceEntity.setResourceName(resourceID.getIdentifier());
-            resourceEntity.setStatus(ResourceState.ABANDONED);
+            resourceEntity.setStatus(ResourceState.DESTROYING);
             resourceRepository.save(resourceEntity);
         } else {
             // update resource state to destroying
-            resourceRepository.updateResourceStatus(resourceID, ResourceState.ABANDONED);
+            resourceRepository.updateResourceStatus(resourceID, ResourceState.DESTROYING);
         }
     }
 
     /**
      * real destroy by resource id
-     *
+     * 
      * @param resourceID
      * @return
      * @throws Exception
@@ -233,11 +234,8 @@ public class ResourceManager {
     @SkipAuthorize("odc internal usage")
     public String destroy(@NonNull ResourceID resourceID) throws Exception {
         Optional<ResourceEntity> optional = this.resourceRepository.findByResourceID(resourceID);
-        if (!optional.isPresent()) { // may old version job
+        if (!optional.isPresent()) {
             log.warn("Resource is not found, resourceID={}", resourceID);
-        } else if (optional.get().getStatus() == ResourceState.DESTROYING) {
-            log.warn("Resource is already in destroying state, resourceID={}", resourceID);
-            return null;
         }
         return doDestroy(resourceID);
     }
