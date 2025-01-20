@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -58,6 +59,7 @@ public abstract class StringUtils extends org.apache.commons.lang3.StringUtils {
     private static final Pattern PORT_PATTERN =
             Pattern.compile("^(([1-9]\\d{0,3}|[1-5]\\d{4}|6[0-4]\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553"
                     + "[0-5]))$");
+    private static final char[] REGULAR_CHARS = {'.', '*', '+', '?', '^', '$', '[', ']', '(', ')', '{', '}', '|', '\\'};
     private static final String ORACLE_ESCAPE_KEYWORD = "ESCAPE '\\'";
     private static final String DEFAULT_VARIABLE_PREFIX = "${";
     private static final String DEFAULT_VARIABLE_SUFFIX = "}";
@@ -65,6 +67,22 @@ public abstract class StringUtils extends org.apache.commons.lang3.StringUtils {
     private static final char ORACLE_IDENTIFIER_WRAP_CHAR = '"';
 
     private StringUtils() {}
+
+    public static Optional<String> escapeRegex(String str) {
+        return Optional.ofNullable(str).map(s -> {
+            if (s.isEmpty()) {
+                return "";
+            }
+            StringBuilder escapedString = new StringBuilder();
+            for (char c : s.toCharArray()) {
+                if (isRegularChar(c)) {
+                    escapedString.append('\\');
+                }
+                escapedString.append(c);
+            }
+            return escapedString.toString();
+        });
+    }
 
     public static Boolean checkMysqlIdentifierQuoted(final String str) {
         if (StringUtils.isBlank(str)) {
@@ -173,7 +191,7 @@ public abstract class StringUtils extends org.apache.commons.lang3.StringUtils {
             table.getColumns().forEach(column -> {
                 String defaultValue = column.getDefaultValue();
                 if (StringUtils.isNotEmpty(defaultValue)) {
-                    if (!isDefaultValueBuiltInFunction(column)) {
+                    if (!isDefaultValueBuiltInFunction(column) && !DataTypeUtil.isBitType(column.getTypeName())) {
                         column.setDefaultValue("'".concat(defaultValue.replace("'", "''")).concat("'"));
                     }
                 }
@@ -470,5 +488,14 @@ public abstract class StringUtils extends org.apache.commons.lang3.StringUtils {
             throw new IllegalStateException(str + " is not translatable");
         }
         return str.substring(DEFAULT_VARIABLE_PREFIX.length(), str.length() - DEFAULT_VARIABLE_SUFFIX.length());
+    }
+
+    private static boolean isRegularChar(char c) {
+        for (char special : REGULAR_CHARS) {
+            if (c == special) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -22,7 +22,8 @@ import java.util.List;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_column_group_optionContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_column_group_actionContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_external_table_actionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_table_actionsContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_table_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
@@ -58,8 +59,10 @@ public class MySQLAlterTableFactory extends OBParserBaseVisitor<AlterTable> impl
         List<AlterTableAction> actions = null;
         if (ctx.alter_table_actions() != null) {
             actions = getAlterTableActions(ctx.alter_table_actions());
-        } else if (ctx.alter_column_group_option() != null) {
-            actions = getAlterTableActions(ctx.alter_column_group_option());
+        } else if (ctx.alter_column_group_action() != null) {
+            actions = getAlterTableActions(ctx.alter_column_group_action());
+        } else if (ctx.alter_external_table_action() != null) {
+            actions = getAlterTableActions(ctx.alter_external_table_action());
         }
         AlterTable alterTable = new AlterTable(ctx, factor, actions);
         if (ctx.EXTERNAL() != null) {
@@ -83,7 +86,11 @@ public class MySQLAlterTableFactory extends OBParserBaseVisitor<AlterTable> impl
         return actions;
     }
 
-    private List<AlterTableAction> getAlterTableActions(Alter_column_group_optionContext context) {
+    private List<AlterTableAction> getAlterTableActions(Alter_column_group_actionContext context) {
+        return Collections.singletonList(new MySQLAlterTableActionFactory(context).generate());
+    }
+
+    private List<AlterTableAction> getAlterTableActions(Alter_external_table_actionContext context) {
         return Collections.singletonList(new MySQLAlterTableActionFactory(context).generate());
     }
 

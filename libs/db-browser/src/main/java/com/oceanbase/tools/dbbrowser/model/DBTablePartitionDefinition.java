@@ -19,4 +19,5 @@ import lombok.Data;
 
 @Data
 public class DBTablePartitionDefinition extends DBTableAbstractPartitionDefinition {
+    private DBTablePartitionDefinition parentPartitionDefinition;
 }

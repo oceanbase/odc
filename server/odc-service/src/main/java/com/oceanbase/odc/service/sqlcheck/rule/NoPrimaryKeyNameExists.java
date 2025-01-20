@@ -78,7 +78,7 @@ public class NoPrimaryKeyNameExists implements SqlCheckRule {
     @Override
     public List<DialectType> getSupportsDialectTypes() {
         return Arrays.asList(DialectType.MYSQL, DialectType.OB_MYSQL, DialectType.OB_ORACLE,
-                DialectType.ODP_SHARDING_OB_MYSQL);
+                DialectType.ODP_SHARDING_OB_MYSQL, DialectType.ORACLE);
     }
 
     private List<Statement> builds(Stream<ColumnDefinition> stream) {

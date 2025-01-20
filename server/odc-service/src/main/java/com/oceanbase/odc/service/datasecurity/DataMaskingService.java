@@ -61,8 +61,8 @@ import com.oceanbase.odc.service.datasecurity.util.DataMaskingUtil;
 import com.oceanbase.odc.service.datasecurity.util.MaskingAlgorithmUtil;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
-import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnReq;
-import com.oceanbase.odc.service.task.runtime.QuerySensitiveColumnResp;
+import com.oceanbase.odc.service.task.base.databasechange.QuerySensitiveColumnReq;
+import com.oceanbase.odc.service.task.base.databasechange.QuerySensitiveColumnResp;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 
 import lombok.NonNull;

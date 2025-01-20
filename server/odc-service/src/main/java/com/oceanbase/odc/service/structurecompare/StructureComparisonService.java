@@ -106,7 +106,7 @@ public class StructureComparisonService {
         try {
             StorageObject storageObject =
                     objectStorageFacade.loadObject("structure-comparison".concat(File.separator)
-                            .concat(authenticationFacade.currentUserIdStr()), taskEntity.getStorageObjectId());
+                            .concat(String.valueOf(taskEntity.getCreatorId())), taskEntity.getStorageObjectId());
             Validate.notNull(storageObject, "StorageObject can not be null");
             Validate.notNull(storageObject.getMetadata(), "ObjectMetadata can not be null");
             if (storageObject.getMetadata().getTotalLength() > MAX_TOTAL_SCRIPT_SIZE_BYTES) {
@@ -147,6 +147,7 @@ public class StructureComparisonService {
     }
 
     private void checkPermission(@NonNull StructureComparisonTaskEntity taskEntity) {
-        flowInstanceService.mapFlowInstance(taskEntity.getFlowInstanceId(), flowInstance -> flowInstance, false);
+        flowInstanceService.mapFlowInstanceWithReadPermission(taskEntity.getFlowInstanceId(),
+                flowInstance -> flowInstance);
     }
 }

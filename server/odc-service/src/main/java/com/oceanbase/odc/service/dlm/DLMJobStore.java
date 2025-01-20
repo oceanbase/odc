@@ -16,37 +16,24 @@
 package com.oceanbase.odc.service.dlm;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import com.alibaba.druid.pool.DruidDataSource;
-import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
-import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
-import com.oceanbase.odc.service.schedule.job.DLMJobReq;
-import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
+import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
-import com.oceanbase.tools.migrator.common.dto.TableSizeInfo;
 import com.oceanbase.tools.migrator.common.dto.TaskGenerator;
 import com.oceanbase.tools.migrator.common.element.PrimaryKey;
-import com.oceanbase.tools.migrator.common.exception.JobException;
-import com.oceanbase.tools.migrator.common.exception.JobSqlException;
-import com.oceanbase.tools.migrator.common.meta.TableMeta;
-import com.oceanbase.tools.migrator.core.IJobStore;
 import com.oceanbase.tools.migrator.core.handler.genarator.GeneratorStatus;
-import com.oceanbase.tools.migrator.core.handler.genarator.GeneratorType;
-import com.oceanbase.tools.migrator.core.meta.ClusterMeta;
-import com.oceanbase.tools.migrator.core.meta.JobMeta;
 import com.oceanbase.tools.migrator.core.meta.TaskMeta;
-import com.oceanbase.tools.migrator.core.meta.TenantMeta;
+import com.oceanbase.tools.migrator.core.store.IJobStore;
 
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -58,16 +45,19 @@ import lombok.extern.slf4j.Slf4j;
 public class DLMJobStore implements IJobStore {
 
     private DruidDataSource dataSource;
-    private boolean enableBreakpointRecovery = false;
-    private Map<String, DlmTableUnit> dlmTableUnits;
-    private Map<String, String> jobParameters;
+    private boolean enableBreakpointRecovery = true;
+    @Setter
+    private DlmTableUnit dlmTableUnit;
 
     public DLMJobStore(ConnectionConfig metaDBConfig) {
+        try {
+            DruidDataSourceFactory druidDataSourceFactory = new DruidDataSourceFactory(metaDBConfig);
+            dataSource = (DruidDataSource) druidDataSourceFactory.getDataSource();
+        } catch (Exception e) {
+            log.warn("Failed to connect to the meta database; closing save point.");
+            enableBreakpointRecovery = false;
+        }
 
-    }
-
-    public void setDlmTableUnits(Map<String, DlmTableUnit> dlmTableUnits) {
-        this.dlmTableUnits = dlmTableUnits;
     }
 
     public void destroy() {
@@ -82,7 +72,7 @@ public class DLMJobStore implements IJobStore {
     }
 
     @Override
-    public TaskGenerator getTaskGenerator(String generatorId, String jobId) throws SQLException {
+    public TaskGenerator getTaskGenerator(String jobId) throws SQLException {
         if (enableBreakpointRecovery) {
             try (Connection conn = dataSource.getConnection();
                     PreparedStatement ps = conn.prepareStatement(
@@ -92,15 +82,14 @@ public class DLMJobStore implements IJobStore {
                 if (resultSet.next()) {
                     TaskGenerator taskGenerator = new TaskGenerator();
                     taskGenerator.setId(resultSet.getString("generator_id"));
-                    taskGenerator.setGeneratorType(GeneratorType.valueOf(resultSet.getString("type")));
                     taskGenerator.setGeneratorStatus(GeneratorStatus.valueOf(resultSet.getString("status")));
                     taskGenerator.setJobId(jobId);
                     taskGenerator.setTaskCount(resultSet.getInt("task_count"));
                     taskGenerator
-                            .setGeneratorSavePoint(PrimaryKey.valuesOf(resultSet.getString("primary_key_save_point")));
+                            .setPrimaryKeySavePoint(PrimaryKey.valuesOf(resultSet.getString("primary_key_save_point")));
                     taskGenerator.setProcessedDataSize(resultSet.getLong("processed_row_count"));
                     taskGenerator.setProcessedDataSize(resultSet.getLong("processed_data_size"));
-                    taskGenerator.setGeneratorPartitionSavepoint(resultSet.getString("partition_save_point"));
+                    taskGenerator.setPartitionSavePoint(resultSet.getString("partition_save_point"));
                     log.info("Load task generator success.jobId={}", jobId);
                     return taskGenerator;
                 }
@@ -112,6 +101,16 @@ public class DLMJobStore implements IJobStore {
 
     @Override
     public void storeTaskGenerator(TaskGenerator taskGenerator) throws SQLException {
+        taskGenerator.getPartName2MaxKey()
+                .forEach((k, v) -> dlmTableUnit.getStatistic().getPartName2MaxKey().put(k, v.getSqlString()));
+        taskGenerator.getPartName2MinKey()
+                .forEach((k, v) -> dlmTableUnit.getStatistic().getPartName2MinKey().put(k, v.getSqlString()));
+        if (taskGenerator.getGlobalMaxKey() != null) {
+            dlmTableUnit.getStatistic().setGlobalMaxKey(taskGenerator.getGlobalMaxKey().getSqlString());
+        }
+        if (taskGenerator.getGlobalMinKey() != null) {
+            dlmTableUnit.getStatistic().setGlobalMinKey(taskGenerator.getGlobalMinKey().getSqlString());
+        }
         if (enableBreakpointRecovery) {
             StringBuilder sb = new StringBuilder();
             sb.append("INSERT INTO dlm_task_generator ");
@@ -130,11 +129,11 @@ public class DLMJobStore implements IJobStore {
                 ps.setLong(3, taskGenerator.getProcessedDataSize());
                 ps.setLong(4, taskGenerator.getProcessedRowCount());
                 ps.setString(5, taskGenerator.getGeneratorStatus().name());
-                ps.setString(6, GeneratorType.AUTO.name());
+                ps.setString(6, "");
                 ps.setLong(7, taskGenerator.getTaskCount());
-                ps.setString(8, taskGenerator.getGeneratorSavePoint() == null ? ""
-                        : taskGenerator.getGeneratorSavePoint().toSqlString());
-                ps.setString(9, taskGenerator.getGeneratorPartitionSavepoint());
+                ps.setString(8, taskGenerator.getPrimaryKeySavePoint() == null ? ""
+                        : taskGenerator.getPrimaryKeySavePoint().toSqlString());
+                ps.setString(9, taskGenerator.getPartitionSavePoint());
                 if (ps.executeUpdate() == 1) {
                     log.info("Update task generator success.jobId={}", taskGenerator.getJobId());
                 } else {
@@ -145,39 +144,34 @@ public class DLMJobStore implements IJobStore {
     }
 
     @Override
-    public void bindGeneratorToJob(String s, TaskGenerator taskGenerator) throws SQLException {
-
-    }
-
-    @Override
-    public JobStatistic getJobStatistic(String s) throws JobException {
+    public JobStatistic getJobStatistic(String s) throws SQLException {
         return new JobStatistic();
     }
 
     @Override
-    public void storeJobStatistic(JobMeta jobMeta) throws JobSqlException {
-        dlmTableUnits.get(jobMeta.getJobId()).getStatistic().setProcessedRowCount(jobMeta.getJobStat().getRowCount());
-        dlmTableUnits.get(jobMeta.getJobId()).getStatistic()
-                .setProcessedRowsPerSecond(jobMeta.getJobStat().getAvgRowCount());
+    public void storeJobStatistic(JobStatistic jobStatistic) throws SQLException {
+        dlmTableUnit.getStatistic()
+                .setProcessedRowCount(jobStatistic.getRowCount().get());
+        dlmTableUnit.getStatistic()
+                .setProcessedRowsPerSecond(jobStatistic.getRowCountPerSeconds());
 
-        dlmTableUnits.get(jobMeta.getJobId()).getStatistic().setReadRowCount(jobMeta.getJobStat().getReadRowCount());
-        dlmTableUnits.get(jobMeta.getJobId()).getStatistic()
-                .setReadRowsPerSecond(jobMeta.getJobStat().getAvgReadRowCount());
+        dlmTableUnit.getStatistic().setReadRowCount(jobStatistic.getReadRowCount().get());
+        dlmTableUnit.getStatistic()
+                .setReadRowsPerSecond(jobStatistic.getReadRowCountPerSeconds());
     }
 
     @Override
-    public List<TaskMeta> getTaskMeta(JobMeta jobMeta) throws SQLException {
+    public List<TaskMeta> loadUnfinishedTask(String generatorId) throws SQLException {
         if (enableBreakpointRecovery) {
             try (Connection conn = dataSource.getConnection();
                     PreparedStatement ps = conn.prepareStatement(
                             "select * from dlm_task_unit where generator_id = ? AND status !='SUCCESS'")) {
-                ps.setString(1, jobMeta.getGenerator().getId());
+                ps.setString(1, generatorId);
                 ResultSet resultSet = ps.executeQuery();
                 List<TaskMeta> taskMetas = new LinkedList<>();
                 while (resultSet.next()) {
                     TaskMeta taskMeta = new TaskMeta();
                     taskMeta.setTaskIndex(resultSet.getLong("task_index"));
-                    taskMeta.setJobMeta(jobMeta);
                     taskMeta.setGeneratorId(resultSet.getString("generator_id"));
                     taskMeta.setTaskStatus(com.oceanbase.tools.migrator.common.enums.TaskStatus
                             .valueOf(resultSet.getString("status")));
@@ -197,7 +191,6 @@ public class DLMJobStore implements IJobStore {
     @Override
     public void storeTaskMeta(TaskMeta taskMeta) throws SQLException {
         if (enableBreakpointRecovery) {
-            log.info("start to store taskMeta:{}", taskMeta);
             StringBuilder sb = new StringBuilder();
             sb.append("INSERT INTO dlm_task_unit ");
             sb.append(
@@ -228,7 +221,8 @@ public class DLMJobStore implements IJobStore {
     }
 
     @Override
-    public Long getAbnormalTaskIndex(String jobId) {
+    public long getAbnormalTaskCount(String jobId) {
+        long count = 0;
         if (enableBreakpointRecovery) {
             try (Connection conn = dataSource.getConnection();
                     PreparedStatement ps = conn.prepareStatement(
@@ -236,78 +230,14 @@ public class DLMJobStore implements IJobStore {
                 ps.setString(1, jobId);
                 ResultSet resultSet = ps.executeQuery();
                 if (resultSet.next()) {
-                    long count = resultSet.getLong(1);
-                    return count > 0 ? count : null;
+                    count = resultSet.getLong(1);
                 }
             } catch (Exception ignored) {
                 log.warn("Get abnormal task failed.jobId={}", jobId);
             }
         }
-        return null;
+        return count;
     }
 
-    @Override
-    public void updateTableSizeInfo(TableSizeInfo tableSizeInfo, long l) {
 
-    }
-
-    @Override
-    public void updateLimiter(JobMeta jobMeta) {
-        try {
-            RateLimitConfiguration params;
-            if (jobParameters.containsKey(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG)) {
-                params = JsonUtils.fromJson(
-                        jobParameters.get(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG),
-                        RateLimitConfiguration.class);
-            } else {
-                DLMJobReq dlmJobReq = JsonUtils.fromJson(
-                        jobParameters.get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
-                        DLMJobReq.class);
-                params = dlmJobReq.getRateLimit();
-            }
-            if (params.getDataSizeLimit() != null) {
-                setClusterLimitConfig(jobMeta.getSourceCluster(), params.getDataSizeLimit());
-                setClusterLimitConfig(jobMeta.getTargetCluster(), params.getDataSizeLimit());
-                setTenantLimitConfig(jobMeta.getSourceTenant(), params.getDataSizeLimit());
-                setTenantLimitConfig(jobMeta.getTargetTenant(), params.getDataSizeLimit());
-                log.info("Update rate limit success,dataSizeLimit={}", params.getDataSizeLimit());
-            }
-            if (params.getRowLimit() != null) {
-                setTableLimitConfig(jobMeta.getTargetTableMeta(), params.getRowLimit());
-                setTableLimitConfig(jobMeta.getSourceTableMeta(), params.getRowLimit());
-                log.info("Update rate limit success,rowLimit={}", params.getRowLimit());
-            }
-        } catch (Exception e) {
-            log.warn("Update rate limit failed,errorMsg={}", e.getMessage());
-            setClusterLimitConfig(jobMeta.getSourceCluster(), 1024);
-            setClusterLimitConfig(jobMeta.getTargetCluster(), 1024);
-            setTenantLimitConfig(jobMeta.getSourceTenant(), 1024);
-            setTenantLimitConfig(jobMeta.getTargetTenant(), 1024);
-            setTableLimitConfig(jobMeta.getTargetTableMeta(), 1000);
-            setTableLimitConfig(jobMeta.getSourceTableMeta(), 1000);
-        }
-    }
-
-    public void setJobParameters(Map<String, String> jobParameters) {
-        this.jobParameters = jobParameters;
-    }
-
-    private void setClusterLimitConfig(ClusterMeta clusterMeta, long dataSizeLimit) {
-        clusterMeta.setReadSizeLimit(dataSizeLimit);
-        clusterMeta.setWriteSizeLimit(dataSizeLimit);
-        clusterMeta.setWriteUsedQuota(1);
-        clusterMeta.setReadUsedQuota(1);
-    }
-
-    private void setTenantLimitConfig(TenantMeta tenantMeta, long dataSizeLimit) {
-        tenantMeta.setReadSizeLimit(dataSizeLimit);
-        tenantMeta.setWriteSizeLimit(dataSizeLimit);
-        tenantMeta.setWriteUsedQuota(1);
-        tenantMeta.setReadUsedQuota(1);
-    }
-
-    private void setTableLimitConfig(TableMeta tableMeta, int rowLimit) {
-        tableMeta.setReadRowCountLimit(rowLimit);
-        tableMeta.setWriteRowCountLimit(rowLimit);
-    }
 }

@@ -21,8 +21,8 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.ServiceTestEnv;
+import com.oceanbase.odc.service.task.base.databasechange.DatabaseChangeTask;
 import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.runtime.DatabaseChangeTask;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
 
 /**

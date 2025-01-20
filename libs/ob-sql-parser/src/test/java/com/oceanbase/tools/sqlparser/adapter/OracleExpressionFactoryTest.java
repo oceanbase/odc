@@ -33,6 +33,7 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Bit_exprContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.ExprContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.PredicateContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Single_row_functionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Xml_functionContext;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Expression.ReferenceOperator;
@@ -56,14 +57,14 @@ import com.oceanbase.tools.sqlparser.statement.expression.ExpressionParam;
 import com.oceanbase.tools.sqlparser.statement.expression.FullTextSearch;
 import com.oceanbase.tools.sqlparser.statement.expression.FunctionCall;
 import com.oceanbase.tools.sqlparser.statement.expression.FunctionParam;
-import com.oceanbase.tools.sqlparser.statement.expression.JsonConstraint;
-import com.oceanbase.tools.sqlparser.statement.expression.JsonConstraint.ScalarsMode;
-import com.oceanbase.tools.sqlparser.statement.expression.JsonConstraint.StrictMode;
-import com.oceanbase.tools.sqlparser.statement.expression.JsonConstraint.UniqueMode;
-import com.oceanbase.tools.sqlparser.statement.expression.JsonConstraint.WrapperMode;
 import com.oceanbase.tools.sqlparser.statement.expression.JsonKeyValue;
 import com.oceanbase.tools.sqlparser.statement.expression.JsonOnOption;
 import com.oceanbase.tools.sqlparser.statement.expression.JsonOnOption.OnMismatch;
+import com.oceanbase.tools.sqlparser.statement.expression.JsonOption;
+import com.oceanbase.tools.sqlparser.statement.expression.JsonOption.ScalarsMode;
+import com.oceanbase.tools.sqlparser.statement.expression.JsonOption.StrictMode;
+import com.oceanbase.tools.sqlparser.statement.expression.JsonOption.UniqueMode;
+import com.oceanbase.tools.sqlparser.statement.expression.JsonOption.WrapperMode;
 import com.oceanbase.tools.sqlparser.statement.expression.NullExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ParamWithAssign;
 import com.oceanbase.tools.sqlparser.statement.expression.RelationReference;
@@ -1610,6 +1611,41 @@ public class OracleExpressionFactoryTest {
     }
 
     @Test
+    public void generate_spatialCellid_generateSucceed() {
+        Single_row_functionContext context = getSingleRowFunctionContext("spatial_cellid('aaa')");
+        OracleExpressionFactory factory = new OracleExpressionFactory();
+        Expression actual = factory.visit(context);
+
+        FunctionCall expect = new FunctionCall("spatial_cellid",
+                Collections.singletonList(new ExpressionParam(new ConstExpression("'aaa'"))));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_spatialMbr_generateSucceed() {
+        Single_row_functionContext context = getSingleRowFunctionContext("spatial_mbr('aaa')");
+        OracleExpressionFactory factory = new OracleExpressionFactory();
+        Expression actual = factory.visit(context);
+
+        FunctionCall expect = new FunctionCall("spatial_mbr",
+                Collections.singletonList(new ExpressionParam(new ConstExpression("'aaa'"))));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_sdoRelate_generateSucceed() {
+        Single_row_functionContext context = getSingleRowFunctionContext("sdo_relate('aaa', 123, 456)");
+        OracleExpressionFactory factory = new OracleExpressionFactory();
+        Expression actual = factory.visit(context);
+
+        FunctionCall expect = new FunctionCall("sdo_relate", Arrays.asList(
+                new ExpressionParam(new ConstExpression("'aaa'")),
+                new ExpressionParam(new ConstExpression("123")),
+                new ExpressionParam(new ConstExpression("456"))));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_deleteXml_generateSucceed() {
         Xml_functionContext context = getXmlExprContext("deletexml(1,2,3)");
         OracleExpressionFactory factory = new OracleExpressionFactory();
@@ -2032,7 +2068,7 @@ public class OracleExpressionFactoryTest {
         Expression actual = factory.generate();
 
         Expression left = new ConstExpression("'aaa'");
-        JsonConstraint right = new JsonConstraint();
+        JsonOption right = new JsonOption();
         right.setStrictMode(StrictMode.LAX);
         right.setScalarsMode(ScalarsMode.ALLOW_SCALARS);
         right.setUniqueMode(UniqueMode.WITH_UNIQUE_KEYS);
@@ -2047,7 +2083,7 @@ public class OracleExpressionFactoryTest {
         Expression actual = factory.generate();
 
         Expression left = new ConstExpression("'aaa'");
-        JsonConstraint right = new JsonConstraint();
+        JsonOption right = new JsonOption();
         Expression expect = new CompoundExpression(left, right, Operator.EQ);
         Assert.assertEquals(expect, actual);
     }
@@ -2107,7 +2143,9 @@ public class OracleExpressionFactoryTest {
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnError(new BoolValue(true));
         jsonOnOption.setOnEmpty(new ConstExpression("error_p"));
-        expect.addOption(jsonOnOption);
+        JsonOption jsonOpt = new JsonOption();
+        jsonOpt.setOnOption(jsonOnOption);
+        expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
 
@@ -2122,7 +2160,9 @@ public class OracleExpressionFactoryTest {
         FunctionCall expect = new FunctionCall("func", Arrays.asList(p1, p2));
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnError(new BoolValue(true));
-        expect.addOption(jsonOnOption);
+        JsonOption jsonOpt = new JsonOption();
+        jsonOpt.setOnOption(jsonOnOption);
+        expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
 
@@ -2135,9 +2175,11 @@ public class OracleExpressionFactoryTest {
         FunctionParam p1 = new ExpressionParam(new ConstExpression("12"));
         FunctionParam p2 = new ExpressionParam(new ConstExpression("12"));
         FunctionCall expect = new FunctionCall("func", Arrays.asList(p1, p2));
+        JsonOption jsonOpt = new JsonOption();
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnError(new ConstExpression("error_p"));
-        expect.addOption(jsonOnOption);
+        jsonOpt.setOnOption(jsonOnOption);
+        expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
 
@@ -2167,10 +2209,10 @@ public class OracleExpressionFactoryTest {
         expect.addOption(new OrderBy(Collections.singletonList(s)));
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnNull(new ConstExpression("absent"));
-        expect.addOption(jsonOnOption);
         expect.addOption(new GeneralDataType("raw", Collections.singletonList("12")));
-        JsonConstraint c = new JsonConstraint();
+        JsonOption c = new JsonOption();
         c.setStrictMode(StrictMode.STRICT);
+        c.setOnOption(jsonOnOption);
         expect.addOption(c);
         Assert.assertEquals(expect, actual);
     }
@@ -2210,11 +2252,11 @@ public class OracleExpressionFactoryTest {
         expect.addOption(new ConstExpression("format json"));
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnNull(new NullExpression());
-        expect.addOption(jsonOnOption);
         expect.addOption(new CharacterType("nvarchar2", new BigDecimal("12")));
-        JsonConstraint c = new JsonConstraint();
+        JsonOption c = new JsonOption();
         c.setStrictMode(StrictMode.STRICT);
         c.setUniqueMode(UniqueMode.WITH_UNIQUE_KEYS);
+        c.setOnOption(jsonOnOption);
         expect.addOption(c);
         Assert.assertEquals(expect, actual);
     }
@@ -2235,7 +2277,9 @@ public class OracleExpressionFactoryTest {
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnError(new BoolValue(true));
         jsonOnOption.setOnEmpty(new ConstExpression("error_p"));
-        expect.addOption(jsonOnOption);
+        JsonOption jsonOpt = new JsonOption();
+        jsonOpt.setOnOption(jsonOnOption);
+        expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
 
@@ -2246,7 +2290,7 @@ public class OracleExpressionFactoryTest {
         Expression actual = factory.generate();
 
         Expression left = new ConstExpression("'aaa'");
-        JsonConstraint right = new JsonConstraint();
+        JsonOption right = new JsonOption();
         right.setStrictMode(StrictMode.STRICT);
         right.setScalarsMode(ScalarsMode.DISALLOW_SCALARS);
         right.setUniqueMode(UniqueMode.WITHOUT_UNIQUE_KEYS);
@@ -2273,7 +2317,9 @@ public class OracleExpressionFactoryTest {
         FunctionCall expect = new FunctionCall("json_object", Collections.emptyList());
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnNull(new ConstExpression("absent"));
-        expect.addOption(jsonOnOption);
+        JsonOption jsonOpt = new JsonOption();
+        jsonOpt.setOnOption(jsonOnOption);
+        expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
 
@@ -2297,11 +2343,11 @@ public class OracleExpressionFactoryTest {
         FunctionCall expect = new FunctionCall("json_object", Collections.emptyList());
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnNull(new NullExpression());
-        expect.addOption(jsonOnOption);
         expect.addOption(new GeneralDataType("json", null));
-        JsonConstraint jc = new JsonConstraint();
+        JsonOption jc = new JsonOption();
         jc.setStrictMode(StrictMode.STRICT);
         jc.setUniqueMode(UniqueMode.WITH_UNIQUE_KEYS);
+        jc.setOnOption(jsonOnOption);
         expect.addOption(jc);
         Assert.assertEquals(expect, actual);
     }
@@ -2316,11 +2362,11 @@ public class OracleExpressionFactoryTest {
         FunctionCall expect = new FunctionCall("json_object", Collections.singletonList(p));
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnNull(new NullExpression());
-        expect.addOption(jsonOnOption);
         expect.addOption(new GeneralDataType("json", null));
-        JsonConstraint jc = new JsonConstraint();
+        JsonOption jc = new JsonOption();
         jc.setStrictMode(StrictMode.STRICT);
         jc.setUniqueMode(UniqueMode.WITH_UNIQUE_KEYS);
+        jc.setOnOption(jsonOnOption);
         expect.addOption(jc);
         Assert.assertEquals(expect, actual);
     }
@@ -2344,7 +2390,7 @@ public class OracleExpressionFactoryTest {
                 new ExpressionParam(
                         new JsonKeyValue(new ConstExpression("'  asdasdas  '"), new RelationReference("col3", null)));
         FunctionCall expect = new FunctionCall("json_object", Arrays.asList(p, p1, p2, p3, p4));
-        JsonConstraint jc = new JsonConstraint();
+        JsonOption jc = new JsonOption();
         jc.setStrictMode(StrictMode.STRICT);
         expect.addOption(jc);
         Assert.assertEquals(expect, actual);
@@ -2357,7 +2403,7 @@ public class OracleExpressionFactoryTest {
         Expression actual = factory.generate();
 
         FunctionCall expect = new FunctionCall("json_object", Collections.emptyList());
-        JsonConstraint jc = new JsonConstraint();
+        JsonOption jc = new JsonOption();
         jc.setUniqueMode(UniqueMode.WITH_UNIQUE_KEYS);
         expect.addOption(jc);
         Assert.assertEquals(expect, actual);
@@ -2373,6 +2419,7 @@ public class OracleExpressionFactoryTest {
         p2.addOption(new ConstExpression("format json"));
         FunctionParam p3 = new ExpressionParam(new ConstExpression("'aaa'"));
         FunctionCall expect = new FunctionCall("json_query", Arrays.asList(p2, p3));
+        expect.addOption(new JsonOption());
         Assert.assertEquals(expect, actual);
     }
 
@@ -2389,18 +2436,19 @@ public class OracleExpressionFactoryTest {
         FunctionParam p3 = new ExpressionParam(new ConstExpression("'aaa'"));
         FunctionCall expect = new FunctionCall("json_query", Arrays.asList(p2, p3));
         expect.addOption(new GeneralDataType("json", null));
-        expect.addOption(new ConstExpression("truncate"));
-        expect.addOption(new ConstExpression("pretty"));
-        expect.addOption(new ConstExpression("ascii"));
-        JsonConstraint jsonConstraint = new JsonConstraint();
-        jsonConstraint.setScalarsMode(ScalarsMode.ALLOW_SCALARS);
-        jsonConstraint.setWrapperMode(WrapperMode.WITH_CONDITIONAL_WRAPPER);
-        expect.addOption(jsonConstraint);
+
+        JsonOption jsonOpt = new JsonOption();
+        jsonOpt.setTruncate(true);
+        jsonOpt.setPretty(true);
+        jsonOpt.setAscii(true);
+        jsonOpt.setScalarsMode(ScalarsMode.ALLOW_SCALARS);
+        jsonOpt.setWrapperMode(WrapperMode.WITH_CONDITIONAL_WRAPPER);
+        expect.addOption(jsonOpt);
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnMismatches(Collections.singletonList(new OnMismatch(new ConstExpression("dot"), null)));
         jsonOnOption.setOnEmpty(new ConstExpression("empty"));
         jsonOnOption.setOnError(new NullExpression());
-        expect.addOption(jsonOnOption);
+        jsonOpt.setOnOption(jsonOnOption);
         Assert.assertEquals(expect, actual);
     }
 
@@ -2426,12 +2474,12 @@ public class OracleExpressionFactoryTest {
             p2.addOption(new ConstExpression("format json"));
             FunctionParam p3 = new ExpressionParam(new ConstExpression("'aaa'"));
             FunctionCall expect = new FunctionCall("json_query", Arrays.asList(p2, p3));
-            JsonConstraint jsonConstraint = new JsonConstraint();
-            jsonConstraint.setWrapperMode(WrapperMode.valueOf(s.replace(" ", "_")));
-            expect.addOption(jsonConstraint);
+            JsonOption jsonOpt = new JsonOption();
+            jsonOpt.setWrapperMode(WrapperMode.valueOf(s.replace(" ", "_")));
             JsonOnOption jsonOnOption = new JsonOnOption();
             jsonOnOption.setOnMismatches(Collections.singletonList(new OnMismatch(new NullExpression(), null)));
-            expect.addOption(jsonOnOption);
+            jsonOpt.setOnOption(jsonOnOption);
+            expect.addOption(jsonOpt);
             Assert.assertEquals(expect, actual);
         }
     }
@@ -2445,8 +2493,10 @@ public class OracleExpressionFactoryTest {
         FunctionParam p2 = new ExpressionParam(new ConstExpression("'a'"));
         FunctionParam p3 = new ExpressionParam(new ConstExpression("2"));
         FunctionCall expect = new FunctionCall("json_mergepatch", Arrays.asList(p2, p3));
-        expect.addOption(new ConstExpression("PRETTY"));
-        expect.addOption(new ConstExpression("ASCII"));
+        JsonOption jsonOpt = new JsonOption();
+        jsonOpt.setAscii(true);
+        jsonOpt.setPretty(true);
+        expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
 
@@ -2460,11 +2510,13 @@ public class OracleExpressionFactoryTest {
         FunctionParam p3 = new ExpressionParam(new ConstExpression("2"));
         FunctionCall expect = new FunctionCall("json_mergepatch", Arrays.asList(p2, p3));
         expect.addOption(new GeneralDataType("json", null));
-        expect.addOption(new ConstExpression("PRETTY"));
-        expect.addOption(new ConstExpression("ASCII"));
+        JsonOption jsonOpt = new JsonOption();
+        jsonOpt.setPretty(true);
+        jsonOpt.setAscii(true);
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnError(new NullExpression());
-        expect.addOption(jsonOnOption);
+        jsonOpt.setOnOption(jsonOnOption);
+        expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
 
@@ -2482,12 +2534,14 @@ public class OracleExpressionFactoryTest {
         CharacterType characterType = new CharacterType("varchar2", new BigDecimal("12"));
         characterType.setBinary(true);
         expect.addOption(characterType);
-        expect.addOption(new ConstExpression("TRUNCATE"));
-        expect.addOption(new ConstExpression("PRETTY"));
-        expect.addOption(new ConstExpression("ASCII"));
+        JsonOption jsonOpt = new JsonOption();
+        jsonOpt.setTruncate(true);
+        jsonOpt.setAscii(true);
+        jsonOpt.setPretty(true);
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnError(new ConstExpression("error_p"));
-        expect.addOption(jsonOnOption);
+        jsonOpt.setOnOption(jsonOnOption);
+        expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
 
@@ -2526,8 +2580,10 @@ public class OracleExpressionFactoryTest {
         FunctionCall expect = new FunctionCall("json_array", Arrays.asList(p2, p3));
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnNull(new ConstExpression("absent"));
-        expect.addOption(jsonOnOption);
+        JsonOption jsonOpt = new JsonOption();
+        jsonOpt.setOnOption(jsonOnOption);
         expect.addOption(new GeneralDataType("json", null));
+        expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
 
@@ -2543,9 +2599,9 @@ public class OracleExpressionFactoryTest {
         FunctionCall expect = new FunctionCall("json_array", Arrays.asList(p2, p3));
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnNull(new NullExpression());
-        expect.addOption(jsonOnOption);
-        JsonConstraint jc = new JsonConstraint();
+        JsonOption jc = new JsonOption();
         jc.setStrictMode(StrictMode.STRICT);
+        jc.setOnOption(jsonOnOption);
         expect.addOption(jc);
         Assert.assertEquals(expect, actual);
     }
@@ -2560,6 +2616,7 @@ public class OracleExpressionFactoryTest {
         p2.addOption(new ConstExpression("format json"));
         FunctionParam p3 = new ExpressionParam(new ConstExpression("'aaa'"));
         FunctionCall expect = new FunctionCall("json_value", Arrays.asList(p2, p3));
+        expect.addOption(new JsonOption());
         Assert.assertEquals(expect, actual);
     }
 
@@ -2575,15 +2632,17 @@ public class OracleExpressionFactoryTest {
         FunctionParam p3 = new ExpressionParam(new ConstExpression("'aaa'"));
         FunctionCall expect = new FunctionCall("json_value", Arrays.asList(p2, p3));
         expect.addOption(new CharacterType("nchar", new BigDecimal("2")));
-        expect.addOption(new ConstExpression("truncate"));
-        expect.addOption(new ConstExpression("ascii"));
+        JsonOption jsonOpt = new JsonOption();
+        jsonOpt.setTruncate(true);
+        jsonOpt.setAscii(true);
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnError(new ConstExpression("1"));
         jsonOnOption.setOnEmpty(new NullExpression());
         jsonOnOption.setOnMismatches(Arrays.asList(new OnMismatch(new ConstExpression("ignore"),
                 Collections.singletonList("MISSING DATA")),
                 new OnMismatch(new NullExpression(), Collections.emptyList())));
-        expect.addOption(jsonOnOption);
+        jsonOpt.setOnOption(jsonOnOption);
+        expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
 
@@ -2601,15 +2660,18 @@ public class OracleExpressionFactoryTest {
         CharacterType characterType = new CharacterType("varchar2", new BigDecimal("2"));
         characterType.setBinary(true);
         expect.addOption(characterType);
-        expect.addOption(new ConstExpression("truncate"));
-        expect.addOption(new ConstExpression("ascii"));
+
+        JsonOption jsonOpt = new JsonOption();
+        jsonOpt.setTruncate(true);
+        jsonOpt.setAscii(true);
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnEmpty(new ConstExpression("1"));
         jsonOnOption.setOnError(new ConstExpression("error_p"));
         jsonOnOption.setOnMismatches(Arrays.asList(new OnMismatch(new ConstExpression("ignore"),
                 Collections.singletonList("MISSING DATA")),
                 new OnMismatch(new NullExpression(), Collections.emptyList())));
-        expect.addOption(jsonOnOption);
+        jsonOpt.setOnOption(jsonOnOption);
+        expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
 
@@ -2626,15 +2688,17 @@ public class OracleExpressionFactoryTest {
         FunctionCall expect = new FunctionCall("json_value", Arrays.asList(p2, p3));
         CharacterType characterType = new CharacterType("char", null);
         expect.addOption(characterType);
-        expect.addOption(new ConstExpression("truncate"));
-        expect.addOption(new ConstExpression("ascii"));
+        JsonOption jsonOpt = new JsonOption();
+        jsonOpt.setTruncate(true);
+        jsonOpt.setAscii(true);
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnEmpty(new ConstExpression("1"));
         jsonOnOption.setOnError(new ConstExpression("error_p"));
         jsonOnOption.setOnMismatches(Arrays.asList(new OnMismatch(new ConstExpression("ignore"),
                 Collections.singletonList("MISSING DATA")),
                 new OnMismatch(new NullExpression(), Collections.emptyList())));
-        expect.addOption(jsonOnOption);
+        jsonOpt.setOnOption(jsonOnOption);
+        expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
 
@@ -2650,15 +2714,17 @@ public class OracleExpressionFactoryTest {
         FunctionParam p3 = new ExpressionParam(new ConstExpression("'aaa'"));
         FunctionCall expect = new FunctionCall("json_value", Arrays.asList(p2, p3));
         expect.addOption(new GeneralDataType("raw", null));
-        expect.addOption(new ConstExpression("truncate"));
-        expect.addOption(new ConstExpression("ascii"));
+        JsonOption jsonOpt = new JsonOption();
+        jsonOpt.setTruncate(true);
+        jsonOpt.setAscii(true);
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnEmpty(new ConstExpression("1"));
         jsonOnOption.setOnError(new ConstExpression("error_p"));
         jsonOnOption.setOnMismatches(Arrays.asList(new OnMismatch(new ConstExpression("ignore"),
                 Collections.singletonList("MISSING DATA")),
                 new OnMismatch(new NullExpression(), Collections.emptyList())));
-        expect.addOption(jsonOnOption);
+        jsonOpt.setOnOption(jsonOnOption);
+        expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
 
@@ -2675,15 +2741,17 @@ public class OracleExpressionFactoryTest {
         FunctionCall expect = new FunctionCall("json_value", Arrays.asList(p2, p3));
         CharacterType characterType = new CharacterType("nvarchar2", null);
         expect.addOption(characterType);
-        expect.addOption(new ConstExpression("truncate"));
-        expect.addOption(new ConstExpression("ascii"));
+        JsonOption jsonOpt = new JsonOption();
+        jsonOpt.setTruncate(true);
+        jsonOpt.setAscii(true);
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnEmpty(new ConstExpression("1"));
         jsonOnOption.setOnError(new ConstExpression("error_p"));
         jsonOnOption.setOnMismatches(Arrays.asList(new OnMismatch(new ConstExpression("ignore"),
                 Collections.singletonList("MISSING DATA")),
                 new OnMismatch(new NullExpression(), Collections.emptyList())));
-        expect.addOption(jsonOnOption);
+        jsonOpt.setOnOption(jsonOnOption);
+        expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
 
@@ -2756,50 +2824,59 @@ public class OracleExpressionFactoryTest {
         p1.addOption(new ConstExpression("format json"));
         FunctionParam p2 = new ExpressionParam(new ConstExpression("'aaa'"));
         FunctionCall expect = new FunctionCall("json_table", Arrays.asList(p1, p2));
+        JsonOption jsonOpt = new JsonOption();
         JsonOnOption onOption = new JsonOnOption();
         onOption.setOnError(new ConstExpression("error_p"));
         onOption.setOnEmpty(new NullExpression());
-        expect.addOption(onOption);
+        jsonOpt.setOnOption(onOption);
+        expect.addOption(jsonOpt);
 
         FunctionParam op1 = new ExpressionParam(new ColumnReference(null, null, "\"abcd\""));
         op1.addOption(new ConstExpression("FOR ORDINALITY"));
         expect.addOption(op1);
         FunctionParam op2 = new ExpressionParam(new ColumnReference(null, null, "col1"));
         op2.addOption(new NumberType("int", null, null));
-        op2.addOption(new ConstExpression("truncate"));
+        JsonOption jsonOpt1 = new JsonOption();
+        jsonOpt1.setAsis(true);
+        jsonOpt1.setTruncate(true);
         op2.addOption(new ConstExpression("exists"));
         op2.addOption(new ConstExpression("123"));
         onOption = new JsonOnOption();
         onOption.setOnEmpty(new BoolValue(true));
-        op2.addOption(onOption);
+        jsonOpt1.setOnOption(onOption);
+        op2.addOption(jsonOpt1);
         expect.addOption(op2);
         FunctionParam op3 = new ExpressionParam(new ColumnReference(null, null, "col2"));
         op3.addOption(new GeneralDataType("json", null));
-        JsonConstraint jc = new JsonConstraint();
+        JsonOption jc = new JsonOption();
+        jc.setAsis(true);
         jc.setScalarsMode(ScalarsMode.DISALLOW_SCALARS);
         jc.setWrapperMode(WrapperMode.WITH_CONDITIONAL_ARRAY_WRAPPER);
-        op3.addOption(jc);
         op3.addOption(new ColumnReference(null, null, "col21"));
         onOption = new JsonOnOption();
         onOption.setOnEmpty(new ConstExpression("empty"));
-        op3.addOption(onOption);
+        jc.setOnOption(onOption);
+        op3.addOption(jc);
         expect.addOption(op3);
 
         FunctionParam op4 = new ExpressionParam(new ColumnReference(null, null, "col3"));
         op4.addOption(new GeneralDataType("blob", null));
         op4.addOption(new ConstExpression("format json"));
-        op4.addOption(new ConstExpression("truncate"));
-        jc = new JsonConstraint();
+        jc = new JsonOption();
+        jc.setAsis(true);
+        jc.setTruncate(true);
         jc.setScalarsMode(ScalarsMode.ALLOW_SCALARS);
         jc.setWrapperMode(WrapperMode.WITH_ARRAY_WRAPPER);
-        op4.addOption(jc);
         op4.addOption(new ColumnReference(null, null, "col31"));
-        op4.addOption(onOption);
+        op4.addOption(jc);
+        jc.setOnOption(onOption);
         expect.addOption(op4);
 
         FunctionParam op5 = new ExpressionParam(new ColumnReference(null, null, "col4"));
         op5.addOption(new CharacterType("nchar", new BigDecimal("12")));
-        op5.addOption(new ConstExpression("truncate"));
+        jc = new JsonOption();
+        jc.setTruncate(true);
+        jc.setAsis(true);
         ColumnReference rc = new ColumnReference(null, null, "col41");
         CollectionExpression es = new CollectionExpression();
         es.addExpression(new ConstExpression("*"));
@@ -2807,7 +2884,8 @@ public class OracleExpressionFactoryTest {
         op5.addOption(rc);
         onOption = new JsonOnOption();
         onOption.setOnEmpty(new CompoundExpression(new ConstExpression("3"), null, Operator.SUB));
-        op5.addOption(onOption);
+        jc.setOnOption(onOption);
+        op5.addOption(jc);
         expect.addOption(op5);
         FunctionParam op6 = new ExpressionParam(new ConstExpression("nested path"));
         op6.addOption(new ConstExpression("123"));
@@ -2833,48 +2911,57 @@ public class OracleExpressionFactoryTest {
         p1.addOption(new ConstExpression("format json"));
         FunctionParam p2 = new ExpressionParam(new ConstExpression("'aaa'"));
         FunctionCall expect = new FunctionCall("json_table", Arrays.asList(p1, p2));
+        JsonOption jsonOpt = new JsonOption();
         JsonOnOption onOption = new JsonOnOption();
         onOption.setOnError(new ConstExpression("error_p"));
         onOption.setOnEmpty(new CompoundExpression(new ConstExpression("5"), null, Operator.SUB));
-        expect.addOption(onOption);
+        jsonOpt.setOnOption(onOption);
+        expect.addOption(jsonOpt);
 
         FunctionParam op1 = new ExpressionParam(new ColumnReference(null, null, "\"abcd\""));
         op1.addOption(new ConstExpression("FOR ORDINALITY"));
         expect.addOption(op1);
         FunctionParam op2 = new ExpressionParam(new ColumnReference(null, null, "col1"));
         op2.addOption(new NumberType("int", null, null));
-        op2.addOption(new ConstExpression("truncate"));
+        JsonOption jsonOpt1 = new JsonOption();
+        jsonOpt1.setAsis(true);
+        jsonOpt1.setTruncate(true);
         op2.addOption(new ConstExpression("exists"));
         op2.addOption(new ConstExpression("123"));
         onOption = new JsonOnOption();
         onOption.setOnEmpty(new BoolValue(true));
-        op2.addOption(onOption);
+        jsonOpt1.setOnOption(onOption);
+        op2.addOption(jsonOpt1);
         expect.addOption(op2);
         FunctionParam op3 = new ExpressionParam(new ColumnReference(null, null, "col2"));
         op3.addOption(new GeneralDataType("json", null));
-        JsonConstraint jc = new JsonConstraint();
+        JsonOption jc = new JsonOption();
+        jc.setAsis(true);
         jc.setWrapperMode(WrapperMode.WITH_CONDITIONAL_ARRAY_WRAPPER);
-        op3.addOption(jc);
         op3.addOption(new ColumnReference(null, null, "col21"));
         onOption = new JsonOnOption();
         onOption.setOnEmpty(new ConstExpression("empty"));
-        op3.addOption(onOption);
+        jc.setOnOption(onOption);
+        op3.addOption(jc);
         expect.addOption(op3);
 
         FunctionParam op4 = new ExpressionParam(new ColumnReference(null, null, "col3"));
         op4.addOption(new GeneralDataType("blob", null));
         op4.addOption(new ConstExpression("format json"));
-        op4.addOption(new ConstExpression("truncate"));
-        jc = new JsonConstraint();
+        jc = new JsonOption();
+        jc.setAsis(true);
+        jc.setTruncate(true);
         jc.setScalarsMode(ScalarsMode.ALLOW_SCALARS);
-        op4.addOption(jc);
         op4.addOption(new ColumnReference(null, null, "col31"));
-        op4.addOption(onOption);
+        op4.addOption(jc);
+        jc.setOnOption(onOption);
         expect.addOption(op4);
 
         FunctionParam op5 = new ExpressionParam(new ColumnReference(null, null, "col4"));
         op5.addOption(new CharacterType("nchar", new BigDecimal("12")));
-        op5.addOption(new ConstExpression("truncate"));
+        jc = new JsonOption();
+        jc.setTruncate(true);
+        jc.setAsis(true);
         ColumnReference rc = new ColumnReference(null, null, "col41");
         CollectionExpression es = new CollectionExpression();
         es.addExpression(new ConstExpression("*"));
@@ -2882,7 +2969,8 @@ public class OracleExpressionFactoryTest {
         op5.addOption(rc);
         onOption = new JsonOnOption();
         onOption.setOnEmpty(new CompoundExpression(new ConstExpression("3"), null, Operator.SUB));
-        op5.addOption(onOption);
+        jc.setOnOption(onOption);
+        op5.addOption(jc);
         expect.addOption(op5);
         FunctionParam op6 = new ExpressionParam(new ConstExpression("nested path"));
         op6.addOption(new ConstExpression("123"));
@@ -2900,9 +2988,11 @@ public class OracleExpressionFactoryTest {
         ExpressionParam p1 = new ExpressionParam(new ConstExpression("'[1,]'"));
         ExpressionParam p2 = new ExpressionParam(new ConstExpression("'[1]'"));
         FunctionCall expect = new FunctionCall("json_equal", Arrays.asList(p1, p2));
+        JsonOption jsonOpt = new JsonOption();
         JsonOnOption jsonOnOption = new JsonOnOption();
         jsonOnOption.setOnError(new BoolValue(false));
-        expect.addOption(jsonOnOption);
+        jsonOpt.setOnOption(jsonOnOption);
+        expect.addOption(jsonOpt);
         Assert.assertEquals(expect, actual);
     }
 
@@ -2928,6 +3018,14 @@ public class OracleExpressionFactoryTest {
         OBParser parser = new OBParser(tokens);
         parser.setErrorHandler(new BailErrorStrategy());
         return parser.expr();
+    }
+
+    private Single_row_functionContext getSingleRowFunctionContext(String expr) {
+        OBLexer lexer = new OBLexer(CharStreams.fromString(expr));
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        OBParser parser = new OBParser(tokens);
+        parser.setErrorHandler(new BailErrorStrategy());
+        return parser.single_row_function();
     }
 
     private Xml_functionContext getXmlExprContext(String expr) {

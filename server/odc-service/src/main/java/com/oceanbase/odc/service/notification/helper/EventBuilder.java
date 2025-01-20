@@ -15,10 +15,12 @@
  */
 package com.oceanbase.odc.service.notification.helper;
 
+import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.APPROVER_ACCOUNT;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.APPROVER_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.APPROVER_NAME;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.CLUSTER_NAME;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.CONNECTION_ID;
+import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.CREATOR_ACCOUNT;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.CREATOR_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.CREATOR_NAME;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.DATABASE_ID;
@@ -50,7 +52,9 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
@@ -84,6 +88,7 @@ import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter.ApplyTable;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 
 import lombok.extern.slf4j.Slf4j;
@@ -155,6 +160,7 @@ public class EventBuilder {
         Event event = ofTask(task, TaskEvent.APPROVED);
         if (approver == null) {
             event.getLabels().putIfNonNull(APPROVER_NAME, AUTO_APPROVAL_KEY);
+            event.getLabels().putIfNonNull(APPROVER_ACCOUNT, AUTO_APPROVAL_KEY);
         } else {
             event.getLabels().put(APPROVER_ID, approver + "");
         }
@@ -166,6 +172,7 @@ public class EventBuilder {
         Event event = ofTask(task, TaskEvent.APPROVAL_REJECTION);
         if (approver == null) {
             event.getLabels().putIfNonNull(APPROVER_NAME, AUTO_APPROVAL_KEY);
+            event.getLabels().putIfNonNull(APPROVER_ACCOUNT, AUTO_APPROVAL_KEY);
         } else {
             event.getLabels().put(APPROVER_ID, approver + "");
         }
@@ -242,6 +249,19 @@ public class EventBuilder {
                             : database.getEnvironment().getName(), database.getName()))
                     .collect(Collectors.joining(",")));
             labels.putIfNonNull(PROJECT_ID, projectId);
+        } else if (task.getTaskType() == TaskType.ALTER_SCHEDULE) {
+            AlterScheduleParameters parameter = JsonUtils.fromJson(task.getParametersJson(),
+                    AlterScheduleParameters.class);
+            ScheduleChangeParams scheduleChangeParams = parameter.getScheduleChangeParams();
+            Verify.notNull(scheduleChangeParams, "scheduleChangeParams");
+            ScheduleEntity schedule = scheduleRepository.findById(scheduleChangeParams.getScheduleId())
+                    .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE, "id",
+                            scheduleChangeParams.getScheduleId()));
+            projectId = schedule.getProjectId();
+            labels.putIfNonNull(PROJECT_ID, projectId);
+            labels.putIfNonNull(DATABASE_ID, schedule.getDatabaseId());
+            labels.putIfNonNull(DATABASE_NAME, schedule.getDatabaseName());
+            labels.putIfNonNull(TASK_TYPE, schedule.getType().name());
         } else {
             throw new UnexpectedException("task.databaseId should not be null");
         }
@@ -318,6 +338,7 @@ public class EventBuilder {
             try {
                 UserEntity user = userService.nullSafeGet(labels.getLongFromString(CREATOR_ID));
                 labels.putIfNonNull(CREATOR_NAME, user.getName());
+                labels.putIfNonNull(CREATOR_ACCOUNT, user.getAccountName());
             } catch (Exception e) {
                 log.warn("failed to query creator info.", e);
             }
@@ -339,14 +360,19 @@ public class EventBuilder {
             try {
                 if ("null".equals(labels.get(APPROVER_ID))) {
                     labels.putIfNonNull(APPROVER_NAME, AUTO_APPROVAL_KEY);
+                    labels.putIfNonNull(APPROVER_ACCOUNT, AUTO_APPROVAL_KEY);
                 } else if (labels.get(APPROVER_ID).startsWith("[")) {
                     List<Long> approverIds = JsonUtils.fromJsonList(labels.get(APPROVER_ID), Long.class);
                     List<User> approvers = userService.batchNullSafeGet(approverIds);
                     labels.putIfNonNull(APPROVER_NAME,
                             String.join(" | ", approvers.stream().map(User::getName).collect(Collectors.toSet())));
+                    labels.putIfNonNull(APPROVER_ACCOUNT,
+                            String.join(" | ",
+                                    approvers.stream().map(User::getAccountName).collect(Collectors.toSet())));
                 } else {
                     UserEntity user = userService.nullSafeGet(labels.getLongFromString(APPROVER_ID));
                     labels.putIfNonNull(APPROVER_NAME, user.getName());
+                    labels.putIfNonNull(APPROVER_ACCOUNT, user.getAccountName());
                 }
             } catch (Exception e) {
                 log.warn("failed to query approver.", e);

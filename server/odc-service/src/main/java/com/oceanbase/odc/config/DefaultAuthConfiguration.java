@@ -20,9 +20,10 @@ import java.util.Collection;
 
 import com.oceanbase.odc.core.authority.auth.Authorizer;
 import com.oceanbase.odc.metadb.iam.PermissionRepository;
-import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
 import com.oceanbase.odc.service.iam.ResourcePermissionExtractor;
 import com.oceanbase.odc.service.iam.ResourceRoleBasedPermissionExtractor;
+import com.oceanbase.odc.service.iam.ResourceRoleService;
+import com.oceanbase.odc.service.iam.auth.ComposedAuthorizer;
 import com.oceanbase.odc.service.iam.auth.DefaultAuthorizer;
 import com.oceanbase.odc.service.iam.auth.ResourceRoleAuthorizer;
 
@@ -38,10 +39,13 @@ public class DefaultAuthConfiguration extends BaseAuthConfiguration {
 
     @Override
     protected Collection<Authorizer> authorizers(PermissionRepository permissionRepository,
-            ResourcePermissionExtractor resourcePermissionExtractor, UserResourceRoleRepository resourceRoleRepository,
+            ResourcePermissionExtractor resourcePermissionExtractor, ResourceRoleService resourceRoleService,
             ResourceRoleBasedPermissionExtractor resourceRoleBasedPermissionExtractor) {
-        return Arrays.asList(new DefaultAuthorizer(permissionRepository, resourcePermissionExtractor),
-                new ResourceRoleAuthorizer(resourceRoleRepository, resourceRoleBasedPermissionExtractor));
+        DefaultAuthorizer defaultAuthorizer = new DefaultAuthorizer(permissionRepository, resourcePermissionExtractor);
+        ResourceRoleAuthorizer resourceRoleAuthorizer =
+                new ResourceRoleAuthorizer(resourceRoleService, resourceRoleBasedPermissionExtractor);
+        ComposedAuthorizer composedAuthorizer = new ComposedAuthorizer(defaultAuthorizer, resourceRoleAuthorizer);
+        return Arrays.asList(defaultAuthorizer, resourceRoleAuthorizer, composedAuthorizer);
     }
 
 }

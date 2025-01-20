@@ -15,9 +15,7 @@
  */
 package com.oceanbase.tools.sqlparser.adapter;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
@@ -194,13 +192,20 @@ public class MySQLCreateIndexFactoryTest {
     @Test
     public void generate_CreateVectorIndex_Succeed() {
         StatementFactory<CreateIndex> factory = new MySQLCreateIndexFactory(
-                getCreateIdxContext("create vector index vec_idx1 on t_vec(c2) with (distance=l2, type=hnsw);"));
+                getCreateIdxContext("create vector index vec_idx1 on t_vec(c2) " +
+                        "key_block_size=1234 with (distance=l2, type=hnsw);"));
         CreateIndex actual = factory.generate();
 
         CreateIndex expected = new CreateIndex(new RelationFactor("vec_idx1"),
-                new RelationFactor("t_vec"), Arrays.asList(
+                new RelationFactor("t_vec"), Collections.singletonList(
                         new SortColumn(new ColumnReference(null, null, "c2"))));
-        expected.setIndexOptions(new IndexOptions());
+        IndexOptions indexOptions = new IndexOptions();
+        indexOptions.setKeyBlockSize(1234);
+        Map<String, String> params = new HashMap<>();
+        params.put("distance", "l2");
+        params.put("type", "hnsw");
+        indexOptions.setVectorIndexParams(params);
+        expected.setIndexOptions(indexOptions);
         expected.setVector(true);
 
         Assert.assertEquals(expected, actual);

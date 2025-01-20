@@ -1,0 +1,66 @@
+kind: resource
+version: v2
+templates:
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_role_permission
+      unique_keys: [ "role_id", "permission_id" ]
+    specs:
+      - column_name: role_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_4_3_3_4__iam_role.yaml
+            field_path: templates.0.specs.0.value
+      - column_name: permission_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_4_3_3_3__iam_permission.yaml
+            field_path: templates.0.specs.0.value
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_role_permission
+      unique_keys: [ "role_id", "permission_id" ]
+    specs:
+      - column_name: role_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_4_3_3_4__iam_role.yaml
+            field_path: templates.1.specs.0.value
+      - column_name: permission_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_4_3_3_3__iam_permission.yaml
+            field_path: templates.1.specs.0.value
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_role_permission
+      unique_keys: [ "role_id", "permission_id" ]
+    specs:
+      - column_name: role_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_4_3_3_4__iam_role.yaml
+            field_path: templates.2.specs.0.value
+      - column_name: permission_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_4_3_3_3__iam_permission.yaml
+            field_path: templates.2.specs.0.value
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long

@@ -302,13 +302,13 @@ public class CloudObjectStorageClient implements ObjectStorageClient {
      * 也就是杭州的client只允许操作杭州的bucket，不允许跨域操作
      */
     private void validateBucket() {
-        if (objectStorageConfiguration.getCloudProvider() != CloudProvider.ALIBABA_CLOUD) {
-            return;
-        }
         String bucketName = getBucketName();
         boolean isExist = publicEndpointCloudObjectStorage.doesBucketExist(bucketName);
         Verify.verify(isExist, String.format("object storage bucket '%s' not exists", bucketName));
 
+        if (objectStorageConfiguration.getCloudProvider() != CloudProvider.ALIBABA_CLOUD) {
+            return;
+        }
         String region = objectStorageConfiguration.getRegion();
         if (StringUtils.isNotEmpty(region)) {
             String location = publicEndpointCloudObjectStorage.getBucketLocation(bucketName);

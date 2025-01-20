@@ -1,0 +1,324 @@
+sqls:
+  list-basic-table-columns: |-
+    SELECT
+      OWNER,
+      TABLE_NAME,
+      COLUMN_NAME,
+      DATA_TYPE,
+      COMMENTS
+    FROM
+      SYS.ALL_TAB_COLS NATURAL JOIN SYS.ALL_COL_COMMENTS
+    WHERE
+      OWNER = ? AND TABLE_NAME = ? AND USER_GENERATED='YES'
+    ORDER BY
+      COLUMN_ID ASC
+  list-basic-schema-table-columns: |-
+    SELECT
+      OWNER,
+      TABLE_NAME,
+      COLUMN_NAME,
+      DATA_TYPE,
+      COMMENTS
+    FROM
+      SYS.ALL_TAB_COLS NATURAL JOIN SYS.ALL_COL_COMMENTS
+    WHERE
+      OWNER = ?
+      AND TABLE_NAME IN (
+        SELECT
+          TABLE_NAME
+        FROM
+          SYS.ALL_TABLES
+        WHERE
+          OWNER = ? AND EXTERNAL='NO'
+      ) AND USER_GENERATED='YES'
+    ORDER BY
+      TABLE_NAME ASC,
+      COLUMN_ID ASC
+  list-basic-external-table-columns: |-
+    SELECT
+      OWNER,
+      TABLE_NAME,
+      COLUMN_NAME,
+      DATA_TYPE,
+      COMMENTS
+    FROM
+      SYS.ALL_TAB_COLS NATURAL JOIN SYS.ALL_COL_COMMENTS
+    WHERE
+      OWNER = ? AND TABLE_NAME = ? AND USER_GENERATED='YES'
+    ORDER BY
+      COLUMN_ID ASC
+  list-basic-schema-external-table-columns: |-
+    SELECT
+      OWNER,
+      TABLE_NAME,
+      COLUMN_NAME,
+      DATA_TYPE,
+      COMMENTS
+    FROM
+      SYS.ALL_TAB_COLS NATURAL JOIN SYS.ALL_COL_COMMENTS
+    WHERE
+      OWNER = ?
+      AND TABLE_NAME IN (
+        SELECT
+          TABLE_NAME
+        FROM
+          SYS.ALL_TABLES
+        WHERE
+          OWNER = ? AND EXTERNAL='YES'
+      ) AND USER_GENERATED='YES'
+    ORDER BY
+      TABLE_NAME ASC,
+      COLUMN_ID ASC
+  list-basic-view-columns: |-
+    SELECT
+      OWNER,
+      TABLE_NAME,
+      COLUMN_NAME,
+      DATA_TYPE,
+      COMMENTS
+    FROM
+      SYS.ALL_TAB_COLS NATURAL JOIN SYS.ALL_COL_COMMENTS
+    WHERE
+      OWNER = ? AND TABLE_NAME = ? AND USER_GENERATED='YES'
+    ORDER BY
+      COLUMN_ID ASC
+  list-basic-schema-view-columns: |-
+    SELECT
+      OWNER,
+      TABLE_NAME,
+      COLUMN_NAME,
+      DATA_TYPE,
+      COMMENTS
+    FROM
+      SYS.ALL_TAB_COLS NATURAL JOIN SYS.ALL_COL_COMMENTS
+    WHERE
+      OWNER = ?
+      AND TABLE_NAME IN (
+        SELECT
+          VIEW_NAME
+        FROM
+          SYS.ALL_VIEWS
+        WHERE
+          OWNER = ?
+      ) AND USER_GENERATED='YES'
+    ORDER BY
+      TABLE_NAME ASC,
+      COLUMN_ID ASC
+  list-basic-schema-columns-info: |-
+    SELECT
+      OWNER,
+      TABLE_NAME,
+      COLUMN_NAME
+    FROM
+      SYS.ALL_TAB_COLS
+    WHERE
+      OWNER = ?
+    ORDER BY
+      TABLE_NAME ASC,
+      COLUMN_ID ASC
+  list-table-columns: |-
+    SELECT
+      OWNER,
+      TABLE_NAME,
+      COLUMN_ID,
+      COLUMN_NAME,
+      DATA_TYPE,
+      DATA_SCALE,
+      DATA_PRECISION,
+      DATA_LENGTH,
+      CHAR_LENGTH,
+      DATA_TYPE_MOD,
+      CHAR_USED,
+      NULLABLE,
+      DATA_DEFAULT,
+      HIDDEN_COLUMN,
+      VIRTUAL_COLUMN
+    FROM
+      SYS.ALL_TAB_COLS
+    WHERE
+      OWNER = ? AND TABLE_NAME = ? and USER_GENERATED='YES'
+    ORDER BY
+      COLUMN_ID ASC
+  list-schema-columns: |-
+    SELECT
+      OWNER,
+      TABLE_NAME,
+      COLUMN_ID,
+      COLUMN_NAME,
+      DATA_TYPE,
+      DATA_SCALE,
+      DATA_PRECISION,
+      DATA_LENGTH,
+      CHAR_LENGTH,
+      DATA_TYPE_MOD,
+      CHAR_USED,
+      NULLABLE,
+      DATA_DEFAULT,
+      HIDDEN_COLUMN,
+      VIRTUAL_COLUMN
+    FROM
+      SYS.ALL_TAB_COLS
+    WHERE
+      OWNER = ? and USER_GENERATED='YES'
+    ORDER BY
+      COLUMN_ID ASC
+  list-table-indexes: |-
+    SELECT
+      IDX.OWNER,
+      IDX.TABLE_OWNER,
+      IDX.TABLE_NAME,
+      IDX.INDEX_NAME,
+      IDX_COL.COLUMN_NAME,
+      IDX_COL.COLUMN_POSITION,
+      IDX.INDEX_TYPE,
+      IDX.UNIQUENESS,
+      IDX.COMPRESSION,
+      IDX.VISIBILITY,
+      IDX.STATUS
+    FROM
+      SYS.ALL_IND_COLUMNS IDX_COL 
+      LEFT JOIN 
+        SYS.ALL_INDEXES IDX ON IDX_COL.TABLE_OWNER = IDX.TABLE_OWNER 
+        AND IDX_COL.TABLE_NAME = IDX.TABLE_NAME 
+        AND IDX_COL.INDEX_NAME = IDX.INDEX_NAME
+    WHERE
+      IDX.TABLE_OWNER = ? AND IDX.TABLE_NAME = ?
+    ORDER BY
+      IDX.INDEX_NAME,
+      IDX_COL.COLUMN_POSITION ASC
+  list-schema-index: |-
+    SELECT
+      IDX.OWNER,
+      IDX.TABLE_OWNER,
+      IDX.TABLE_NAME,
+      IDX.INDEX_NAME,
+      IDX_COL.COLUMN_NAME,
+      IDX_COL.COLUMN_POSITION,
+      IDX.INDEX_TYPE,
+      IDX.UNIQUENESS,
+      IDX.COMPRESSION,
+      IDX.VISIBILITY,
+      IDX.STATUS
+    FROM
+      SYS.ALL_IND_COLUMNS IDX_COL 
+      LEFT JOIN 
+        SYS.ALL_INDEXES IDX ON IDX_COL.TABLE_OWNER = IDX.TABLE_OWNER 
+        AND IDX_COL.TABLE_NAME = IDX.TABLE_NAME 
+        AND IDX_COL.INDEX_NAME = IDX.INDEX_NAME
+    WHERE
+      IDX.TABLE_OWNER = ?
+    ORDER BY
+      IDX.TABLE_NAME,
+      IDX.INDEX_NAME,
+      IDX_COL.COLUMN_POSITION ASC
+  list-table-constraints: |-
+    SELECT
+      t1.OWNER,
+      t1.CONSTRAINT_NAME,
+      t1.CONSTRAINT_TYPE,
+      t1.TABLE_NAME,
+      t1.SEARCH_CONDITION,
+      t1.R_OWNER,
+      t1.R_CONSTRAINT_NAME,
+      t1.DELETE_RULE,
+      t1.STATUS,
+      t1.DEFERRABLE,
+      t1.DEFERRED,
+      t1.VALIDATED,
+      t2.TABLE_NAME as R_TABLE_NAME,
+      t2.COLUMN_NAME as R_COLUMN_NAME,
+      t3.position as POSITION,
+      t3.COLUMN_NAME as COLUMN_NAME
+    FROM
+      SYS.ALL_CONSTRAINTS t1
+      JOIN SYS.ALL_CONS_COLUMNS t3 on t1.CONSTRAINT_NAME = t3.CONSTRAINT_NAME and t1.OWNER = t3.OWNER
+      LEFT JOIN SYS.ALL_CONS_COLUMNS t2 on t2.CONSTRAINT_NAME = t1.R_CONSTRAINT_NAME
+      AND t2.OWNER = t1.R_OWNER
+    WHERE
+      t1.OWNER = ? and t1.TABLE_NAME = ?
+    ORDER BY
+      t1.CONSTRAINT_NAME,
+      t3.position ASC
+  list-schema-constraints: |-
+    SELECT
+      t1.OWNER,
+      t1.CONSTRAINT_NAME,
+      t1.CONSTRAINT_TYPE,
+      t1.TABLE_NAME,
+      t1.SEARCH_CONDITION,
+      t1.R_OWNER,
+      t1.R_CONSTRAINT_NAME,
+      t1.DELETE_RULE,
+      t1.STATUS,
+      t1.DEFERRABLE,
+      t1.DEFERRED,
+      t1.VALIDATED,
+      t2.TABLE_NAME as R_TABLE_NAME,
+      t2.COLUMN_NAME as R_COLUMN_NAME,
+      t3.position as POSITION,
+      t3.COLUMN_NAME as COLUMN_NAME
+    FROM
+      SYS.ALL_CONSTRAINTS t1
+      JOIN SYS.ALL_CONS_COLUMNS t3 on t1.CONSTRAINT_NAME = t3.CONSTRAINT_NAME and t1.OWNER = t3.OWNER
+      LEFT JOIN SYS.ALL_CONS_COLUMNS t2 on t2.CONSTRAINT_NAME = t1.R_CONSTRAINT_NAME
+      AND t2.OWNER = t1.R_OWNER
+    WHERE
+      t1.OWNER = ?
+    ORDER BY
+      t1.TABLE_NAME,
+      t1.CONSTRAINT_NAME,
+      t3.position ASC
+  get-partition-option: |-
+    SELECT
+      PARTITIONING_TYPE
+    FROM
+      SYS.ALL_PART_TABLES
+    WHERE
+      OWNER = ?
+      AND TABLE_NAME = ?
+  list-partitions-options: |-
+    SELECT
+      TABLE_NAME,
+      PARTITIONING_TYPE
+    FROM
+      SYS.ALL_PART_TABLES
+    WHERE
+      OWNER = ?
+  list-partition-definitions: |-
+    SELECT
+      PARTITION_NAME,
+      PARTITION_POSITION,
+      HIGH_VALUE
+    FROM
+      SYS.ALL_TAB_PARTITIONS
+    WHERE
+      TABLE_OWNER = ?
+      AND TABLE_NAME = ?
+    ORDER BY
+      PARTITION_POSITION ASC
+  list-partitions-definitions: |-
+    SELECT
+      TABLE_NAME,
+      PARTITION_NAME,
+      PARTITION_POSITION,
+      HIGH_VALUE
+    FROM
+      SYS.ALL_TAB_PARTITIONS
+    WHERE
+      TABLE_OWNER = ?
+    ORDER BY
+      PARTITION_POSITION ASC
+  list-database: |-
+    select 
+      USERNAME, 
+      USERID 
+    from 
+      ALL_USERS
+  get-database: |-
+    SELECT 
+      USERNAME, 
+      USERID 
+    from 
+      SYS.ALL_USERS
+    WHERE
+      USERNAME = ?

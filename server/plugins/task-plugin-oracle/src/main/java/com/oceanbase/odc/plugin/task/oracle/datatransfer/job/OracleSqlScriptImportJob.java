@@ -72,7 +72,7 @@ public class OracleSqlScriptImportJob extends BaseSqlScriptImportJob {
             ObjectType type = ObjectType.valueOfName(object.getType());
             switch (type) {
                 case TABLE:
-                    objects = new OracleTableExtension().list(conn, object.getSchema());
+                    objects = new OracleTableExtension().list(conn, object.getSchema(), DBObjectType.TABLE);
                     break;
                 case VIEW:
                     objects = new OracleViewExtension().list(conn, object.getSchema());

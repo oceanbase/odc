@@ -33,6 +33,7 @@ import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobConfi
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobContent.Parameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.MySQLWriterPluginParameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.factory.BaseTransferJobFactory;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
@@ -55,7 +56,7 @@ public class DorisTransferJobFactory extends BaseTransferJobFactory {
 
     @Override
     protected List<DataTransferObject> queryTransferObjects(Connection connection, boolean transferDDL) {
-        return new DorisTableExtension().list(connection, transferConfig.getSchemaName()).stream()
+        return new DorisTableExtension().list(connection, transferConfig.getSchemaName(), DBObjectType.TABLE).stream()
                 .map(table -> new DataTransferObject(ObjectType.TABLE, table.getName()))
                 .collect(Collectors.toList());
     }

@@ -1,0 +1,78 @@
+kind: resource
+version: v2
+templates:
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 73
+        data_type: java.lang.Long
+      - column_name: action
+        value: "OWNER"
+      - column_name: resource_identifier
+        value: "ODC_PROJECT:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "global project owner permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 74
+        data_type: java.lang.Long
+      - column_name: action
+        value: "DBA"
+      - column_name: resource_identifier
+        value: "ODC_PROJECT:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "global project DBA permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 75
+        data_type: java.lang.Long
+      - column_name: action
+        value: "SECURITY_ADMINISTRATOR"
+      - column_name: resource_identifier
+        value: "ODC_PROJECT:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "global project Security Administrator permission"

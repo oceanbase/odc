@@ -259,3 +259,9 @@ insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min
 
 insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_column_group', 'OB_MYSQL', 'true', '4.3.0', CURRENT_TIMESTAMP)  ON DUPLICATE KEY update `config_key`=`config_key`;
 insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_column_group', 'OB_ORACLE', 'true', '4.3.0', CURRENT_TIMESTAMP)  ON DUPLICATE KEY update `config_key`=`config_key`;
+
+-- supports ob external table
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_external_table', 'OB_MYSQL', 'true', '4.3.2', CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_external_table', 'OB_ORACLE', 'true', '4.3.2', CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_kill_session','ORACLE','true','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_value`=VALUES(`config_value`);

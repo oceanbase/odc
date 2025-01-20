@@ -63,6 +63,7 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
         DataSourceInfo tempDataSource = parameters.getSourceDs();
         parameters.setSourceDs(parameters.getTargetDs());
         parameters.setTargetDs(tempDataSource);
+        parameters.setFireTime(context.getFireTime());
         parameters
                 .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName())));
         parameters.getTables().forEach(o -> {

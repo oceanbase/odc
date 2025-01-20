@@ -406,4 +406,22 @@ public class DefaultDBStructureComparatorTest extends PluginTestEnv {
         excepted.setChangeScript("-- Unsupported operation to modify table partition type\n");
         Assert.assertEquals(excepted, actual);
     }
+
+    @Test
+    public void test_bitColumnDefaultValue() {
+        List<DBObjectComparisonResult> actuals = results.stream().filter(
+                item -> item.getDbObjectName().equals("bit_column_default_value")).collect(Collectors.toList())
+                .get(0).getSubDBObjectComparisonResult().stream()
+                .filter(item -> item.getDbObjectType().equals(DBObjectType.COLUMN)
+                        && item.getComparisonResult().equals(ComparisonResult.ONLY_IN_SOURCE))
+                .collect(
+                        Collectors.toList());
+
+        DBObjectComparisonResult expect =
+                new DBObjectComparisonResult(DBObjectType.COLUMN, "bit_data_1", sourceSchemaName, targetSchemaName);
+        expect.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
+        expect.setChangeScript("ALTER TABLE `" + targetSchemaName
+                + "`.`bit_column_default_value` ADD COLUMN `bit_data_1` bit(1) DEFAULT b'0' NOT NULL;\n");
+        Assert.assertEquals(expect, actuals.get(0));
+    }
 }

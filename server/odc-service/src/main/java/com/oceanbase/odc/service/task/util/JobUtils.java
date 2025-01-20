@@ -30,12 +30,14 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.caller.JobEnvironmentEncryptor;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
+import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.jasypt.AccessEnvironmentJasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.jasypt.DefaultJasyptEncryptor;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
@@ -187,5 +189,10 @@ public class JobUtils {
 
     public static String decrypt(String key, String salt, String encrypted) {
         return new JobEnvironmentEncryptor().decrypt(key, salt, encrypted);
+    }
+
+    public static String retrieveJobResultStr(JobEntity jobEntity) {
+        TaskResult taskResult = JsonUtils.fromJson(jobEntity.getResultJson(), TaskResult.class);
+        return null == taskResult ? null : taskResult.getResultJson();
     }
 }

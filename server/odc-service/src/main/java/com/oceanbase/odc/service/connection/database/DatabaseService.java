@@ -46,6 +46,7 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -64,6 +65,7 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
@@ -130,7 +132,7 @@ import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
-import com.oceanbase.odc.service.task.runtime.PreCheckTaskParameters.AuthorizedDatabase;
+import com.oceanbase.odc.service.task.base.precheck.PreCheckTaskParameters.AuthorizedDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 
 import lombok.NonNull;
@@ -224,6 +226,9 @@ public class DatabaseService {
     @Autowired
     private ConnectionSyncHistoryService connectionSyncHistoryService;
 
+    @Value("${odc.integration.bastion.enabled:false}")
+    private boolean bastionEnabled;
+
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public Database detail(@NonNull Long id) {
@@ -244,6 +249,12 @@ public class DatabaseService {
     @SkipAuthorize("internal usage")
     public Database detailSkipPermissionCheck(@NonNull Long id) {
         return entityToModel(databaseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
+    }
+
+    @SkipAuthorize("internal usage")
+    public Database detailSkipPermissionCheckForRead(@NonNull Long id) {
+        return entityToModelForRead(databaseRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
     }
 
@@ -364,7 +375,7 @@ public class DatabaseService {
                 || !connectionService.checkPermission(req.getDataSourceId(), Collections.singletonList("update"))) {
             throw new AccessDeniedException();
         }
-        DataSource dataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
+        DataSource dataSource = new OBConsoleDataSourceFactory(connection, true, false, false).getDataSource();
         try (Connection conn = dataSource.getConnection()) {
             createDatabase(req, conn, connection);
             DBDatabase dbDatabase = dbSchemaService.detail(connection.getDialectType(), conn, req.getName());
@@ -518,6 +529,9 @@ public class DatabaseService {
         Optional<Organization> organizationOpt = Optional.empty();
         try {
             connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
+            if (connection.getDialectType() == DialectType.FILE_SYSTEM) {
+                return true;
+            }
             horizontalDataPermissionValidator.checkCurrentOrganization(connection);
             organizationOpt = organizationService.get(connection.getOrganizationId());
             Organization organization =
@@ -538,7 +552,7 @@ public class DatabaseService {
         }
     }
 
-    @SkipAuthorize("internal usage")
+    @SkipAuthorize("odc internal usage")
     public int updateEnvironmentIdByConnectionId(@NotNull Long environmentId, @NotNull Long connectionId) {
         return databaseRepository.setEnvironmentIdByConnectionId(environmentId, connectionId);
     }
@@ -546,7 +560,7 @@ public class DatabaseService {
     private void syncTeamDataSources(ConnectionConfig connection)
             throws ExecutionException, InterruptedException, TimeoutException {
         Long currentProjectId = connection.getProjectId();
-        boolean blockExcludeSchemas = dbSchemaSyncProperties.isBlockExclusionsWhenSyncDbToProject();
+        boolean blockExcludeSchemas = dbSchemaSyncProperties.isBlockExclusionsWhenSyncDbToProject() && !bastionEnabled;
         List<String> excludeSchemas = dbSchemaSyncProperties.getExcludeSchemas(connection.getDialectType());
         DataSource teamDataSource = getDataSourceFactory(connection).getDataSource();
         ExecutorService executorService = Executors.newFixedThreadPool(1);
@@ -659,7 +673,8 @@ public class DatabaseService {
     }
 
     private OBConsoleDataSourceFactory getDataSourceFactory(ConnectionConfig connection) {
-        OBConsoleDataSourceFactory obConsoleDataSourceFactory = new OBConsoleDataSourceFactory(connection, true, false);
+        OBConsoleDataSourceFactory obConsoleDataSourceFactory =
+                new OBConsoleDataSourceFactory(connection, true, false, false);
         LocalEventPublisher localEventPublisher = new LocalEventPublisher();
         localEventPublisher.addEventListener(new GetConnectionFailedEventListener());
         obConsoleDataSourceFactory.setEventPublisher(localEventPublisher);
@@ -671,7 +686,7 @@ public class DatabaseService {
         if (currentProjectId != null) {
             projectId = currentProjectId;
             if (dbSchemaSyncProperties.isBlockExclusionsWhenSyncDbToProject()
-                    && blockedDatabaseNames.contains(database.getName())) {
+                    && blockedDatabaseNames.contains(database.getName()) && !bastionEnabled) {
                 projectId = database.getProjectId();
             }
         } else {
@@ -803,15 +818,17 @@ public class DatabaseService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, actions = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public boolean modifyDatabasesOwners(@NotNull Long projectId, @NotNull @Valid ModifyDatabaseOwnerReq req) {
         databaseRepository.findByIdIn(req.getDatabaseIds()).forEach(database -> {
             if (!projectId.equals(database.getProjectId())) {
                 throw new AccessDeniedException();
             }
         });
-        Set<Long> memberIds = resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, projectId).stream()
-                .map(UserResourceRole::getUserId).collect(Collectors.toSet());
+        Set<Long> memberIds =
+                resourceRoleService.listByResourceTypeAndResourceId(ResourceType.ODC_PROJECT, projectId).stream()
+                        .map(UserResourceRole::getUserId).collect(Collectors.toSet());
         if (!memberIds.containsAll(req.getOwnerIds())) {
             throw new AccessDeniedException();
         }
@@ -851,8 +868,9 @@ public class DatabaseService {
     @Transactional(rollbackFor = Exception.class)
     public void refreshExpiredPendingDBObjectStatus() {
         Date syncDate = new Date(System.currentTimeMillis() - this.globalSearchProperties.getMaxPendingMillis());
-        int affectRows = this.databaseRepository.setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeBefore(
-                DBObjectSyncStatus.INITIALIZED, DBObjectSyncStatus.PENDING, syncDate);
+        int affectRows =
+                this.databaseRepository.setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeIsNullOrBefore(
+                        DBObjectSyncStatus.INITIALIZED, DBObjectSyncStatus.PENDING, syncDate);
         log.info("Refresh outdated pending objects status, syncDate={}, affectRows={}", syncDate, affectRows);
     }
 
@@ -883,7 +901,8 @@ public class DatabaseService {
         }
         if (CollectionUtils.isNotEmpty(req.getOwnerIds())) {
             Set<Long> memberIds =
-                    resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, req.getProjectId()).stream()
+                    resourceRoleService.listByResourceTypeAndResourceId(ResourceType.ODC_PROJECT, req.getProjectId())
+                            .stream()
                             .map(UserResourceRole::getUserId).collect(Collectors.toSet());
             PreConditions.validArgumentState(memberIds.containsAll(req.getOwnerIds()), ErrorCodes.AccessDenied, null,
                     "Invalid ownerIds");
@@ -897,7 +916,7 @@ public class DatabaseService {
                 ErrorCodes.AccessDenied, null, "Lack of update permission on current datasource");
         Map<Long, ConnectionConfig> id2Conn = connectionService.innerListByIds(connectionIds).stream()
                 .collect(Collectors.toMap(ConnectionConfig::getId, c -> c, (c1, c2) -> c2));
-        if (dbSchemaSyncProperties.isBlockExclusionsWhenSyncDbToProject()) {
+        if (dbSchemaSyncProperties.isBlockExclusionsWhenSyncDbToProject() && !bastionEnabled) {
             connectionIds = databases.stream().filter(database -> {
                 ConnectionConfig connection = id2Conn.get(database.getConnectionId());
                 return connection != null && !dbSchemaSyncProperties.getExcludeSchemas(connection.getDialectType())
@@ -934,7 +953,7 @@ public class DatabaseService {
         Map<Long, List<UserResourceRole>> databaseId2UserResourceRole = new HashMap<>();
         Map<Long, User> userId2User = new HashMap<>();
         List<UserResourceRole> userResourceRoles =
-                resourceRoleService.listByResourceTypeAndIdIn(ResourceType.ODC_DATABASE, databaseIds);
+                resourceRoleService.listByResourceTypeAndResourceIdIn(ResourceType.ODC_DATABASE, databaseIds);
         if (CollectionUtils.isNotEmpty(userResourceRoles)) {
             databaseId2UserResourceRole = userResourceRoles.stream()
                     .collect(Collectors.groupingBy(UserResourceRole::getResourceId, Collectors.toList()));
@@ -975,6 +994,24 @@ public class DatabaseService {
             return database;
         });
     }
+
+    private Database entityToModelForRead(DatabaseEntity entity, boolean includesPermittedAction) {
+        Database model = databaseMapper.entityToModel(entity);
+        if (Objects.nonNull(entity.getProjectId())) {
+            model.setProject(projectService.detail(entity.getProjectId()));
+        }
+        // for logical database, the connection id may be null
+        if (entity.getConnectionId() != null) {
+            model.setDataSource(connectionService.getBasicWithoutPermissionCheck(entity.getConnectionId()));
+        }
+        model.setEnvironment(environmentService.detailSkipPermissionCheck(entity.getEnvironmentId()));
+        if (includesPermittedAction) {
+            model.setAuthorizedPermissionTypes(
+                    permissionHelper.getDBPermissions(Collections.singleton(entity.getId())).get(entity.getId()));
+        }
+        return model;
+    }
+
 
     private Database entityToModel(DatabaseEntity entity, boolean includesPermittedAction) {
         Database model = databaseMapper.entityToModel(entity);

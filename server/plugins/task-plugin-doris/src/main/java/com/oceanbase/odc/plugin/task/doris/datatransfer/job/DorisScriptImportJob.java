@@ -63,7 +63,8 @@ public class DorisScriptImportJob extends BaseSqlScriptImportJob {
         DBObjectIdentity target =
                 DBObjectIdentity.of(object.getSchema(), DBObjectType.getEnumByName(object.getType()), object.getName());
         try (Connection conn = dataSource.getConnection()) {
-            List<DBObjectIdentity> tables = new DorisTableExtension().list(conn, object.getSchema());
+            List<DBObjectIdentity> tables =
+                    new DorisTableExtension().list(conn, object.getSchema(), DBObjectType.TABLE);
             return CollectionUtils.containsAny(tables, target);
         }
     }

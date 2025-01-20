@@ -222,6 +222,7 @@ public class ShadowTableComparingService {
             }
             return;
         }
-        flowInstanceService.mapFlowInstance(taskEntity.getFlowInstanceId(), flowInstance -> flowInstance, false);
+        flowInstanceService.mapFlowInstanceWithReadPermission(taskEntity.getFlowInstanceId(),
+                flowInstance -> flowInstance);
     }
 }

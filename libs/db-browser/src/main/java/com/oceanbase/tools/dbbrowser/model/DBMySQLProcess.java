@@ -15,6 +15,8 @@
  */
 package com.oceanbase.tools.dbbrowser.model;
 
+import com.oceanbase.tools.dbbrowser.util.StringUtils;
+
 import lombok.Data;
 
 /**
@@ -55,6 +57,16 @@ public class DBMySQLProcess {
      */
     private String host;
 
+    /**
+     * observer ip, refer to the column `Ip` in the result set of `SHOW FULL PROCESSLIST`
+     */
+    private String ip;
+
+    /**
+     * observer SQL port, refer to the column `Port` in the result set of `SHOW FULL PROCESSLIST`
+     */
+    private String port;
+
     public DBSession toDBSession() {
         DBSession session = new DBSession();
         session.setId(id);
@@ -66,6 +78,7 @@ public class DBMySQLProcess {
         session.setHost(host);
         session.setProxyHost(host);
         session.setExecuteTime(Integer.parseInt(time));
+        session.setSvrIp(StringUtils.join(ip, ":", port));
         return session;
     }
 }

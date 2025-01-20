@@ -171,6 +171,23 @@ public class AlibabaCloudClient implements CloudClient {
     }
 
     @Override
+    public PutObjectResult putObject(String bucketName, String key, InputStream in, ObjectMetadata metadata)
+            throws CloudException {
+        PutObjectResult putObject = callOssMethod("Put object", () -> {
+            com.aliyun.oss.model.ObjectMetadata objectMetadata = toOss(metadata);
+            com.aliyun.oss.model.PutObjectResult ossResult = oss.putObject(bucketName, key, in, objectMetadata);
+            PutObjectResult result = new PutObjectResult();
+            result.setVersionId(ossResult.getVersionId());
+            result.setETag(ossResult.getETag());
+            result.setRequestId(ossResult.getRequestId());
+            result.setClientCRC(ossResult.getClientCRC());
+            result.setServerCRC(ossResult.getServerCRC());
+            return result;
+        });
+        return putObject;
+    }
+
+    @Override
     public CopyObjectResult copyObject(String bucketName, String from, String to)
             throws CloudException {
         return callOssMethod("Copy object to", () -> {

@@ -71,7 +71,8 @@ public class Encryption {
 
     public enum EncryptionAlgorithm {
         /**
-         * No encryption
+         * No encryption. Especially， for sso integration, raw means that each type sso handle the
+         * encryption and decryption process themselves, Encryption#secret just store it.
          */
         RAW,
 

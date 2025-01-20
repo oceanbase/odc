@@ -21,6 +21,9 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class DBPLOperators {
 
     public static DBPLOperator create(ConnectionSession connectionSession) {
@@ -33,8 +36,17 @@ public class DBPLOperators {
 
         if (connectType == ConnectType.OB_ORACLE) {
             return new OraclePLOperator(connectionSession);
+        } else if (connectType == ConnectType.CLOUD_OB_ORACLE) {
+            String obProxyVersion = ConnectionSessionUtil.getObProxyVersion(connectionSession);
+            if (ConnectionSessionUtil.isSupportObProxyRoute(obProxyVersion)) {
+                return new OraclePLOperator(connectionSession);
+            } else {
+                throw new UnsupportedException(String.format(
+                        "ODP version not supported, the version number must be greater than or equal to 3.1.11"));
+            }
         } else {
             throw new UnsupportedException(String.format("ConnectType '%s' not supported", connectType));
         }
     }
+
 }

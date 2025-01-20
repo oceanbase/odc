@@ -555,3 +555,19 @@
   in_connection: 0
   enabled: 1
   id: 100
+
+- type: "PROJECT_MANAGEMENT"
+  action: "ARCHIVE_PROJECT"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.ProjectController.setArchived"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 101
+
+- type: "PROJECT_MANAGEMENT"
+  action: "DELETE_PROJECT"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.ProjectController.batchDelete"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 102

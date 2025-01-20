@@ -17,6 +17,7 @@ package com.oceanbase.odc.common.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -96,5 +97,50 @@ public class MapUtilsTest {
         Map<String, String> map = new HashMap<>();
         map.put("a", "2,");
         MapUtils.formatKvString(map);
+    }
+
+    @Test
+    public void isEquals_emptyAndNull_equals() {
+        // empty and null is equals
+        Assert.assertTrue(MapUtils.isEqual(new HashMap<String, String>(), null, String::equals));
+        Assert.assertTrue(MapUtils.isEqual(null, null, String::equals));
+    }
+
+    @Test
+    public void isEquals_differentMapSize_notEquals() {
+        // size not equals
+        Assert.assertFalse(MapUtils.isEqual(new HashMap<String, String>(), new TreeMap<String, String>() {
+            {
+                put("key1", "value1");
+            }
+        }, String::equals));
+    }
+
+    @Test
+    public void isEquals_sameValue_equals() {
+        // value equals
+        Assert.assertTrue(MapUtils.isEqual(new HashMap<String, String>() {
+            {
+                put("key1", "value1");
+            }
+        }, new TreeMap<String, String>() {
+            {
+                put("key1", "value1");
+            }
+        }, String::equals));
+    }
+
+    @Test
+    public void isEquals_differentValue_notEquals() {
+        // value not equals
+        Assert.assertFalse(MapUtils.isEqual(new HashMap<String, String>() {
+            {
+                put("key1", "value1");
+            }
+        }, new TreeMap<String, String>() {
+            {
+                put("key1", null);
+            }
+        }, String::equals));
     }
 }

@@ -41,7 +41,7 @@ public class TruncateTableExists implements SqlCheckRule {
 
     @Override
     public SqlCheckRuleType getType() {
-        return SqlCheckRuleType.TRUNCATE_TBLE_EXISTS;
+        return SqlCheckRuleType.TRUNCATE_TABLE_EXISTS;
     }
 
     @Override

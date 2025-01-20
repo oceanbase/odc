@@ -18,6 +18,8 @@ package com.oceanbase.tools.sqlparser.adapter;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
@@ -29,6 +31,7 @@ import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLAlterTableFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_table_stmtContext;
+import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
@@ -37,6 +40,7 @@ import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
+import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
 
 public class MySQLAlterTableFactoryTest {
 
@@ -68,6 +72,52 @@ public class MySQLAlterTableFactoryTest {
         AlterTable actual = factory.generate();
 
         AlterTable expect = new AlterTable(getRelationFactor("a", "b"), null);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_alterExternalTableAddEmptyPartition_succeed() {
+        StatementFactory<AlterTable> factory = new MySQLAlterTableFactory(
+                getAlterContext("alter external table a.b add partition () location 'abcd'"));
+        AlterTable actual = factory.generate();
+
+        AlterTableAction action = new AlterTableAction();
+        action.setExternalTableLocation("'abcd'");
+        action.setAddExternalTablePartition(new HashMap<>());
+        AlterTable expect = new AlterTable(getRelationFactor("a", "b"), Collections.singletonList(action));
+        expect.setExternal(true);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_alterExternalTableAddPartition_succeed() {
+        StatementFactory<AlterTable> factory = new MySQLAlterTableFactory(
+                getAlterContext(
+                        "alter external table a.b add partition (col='aaa', col1=@@global.ss) location 'abcd'"));
+        AlterTable actual = factory.generate();
+
+        AlterTableAction action = new AlterTableAction();
+        action.setExternalTableLocation("'abcd'");
+        Map<String, Expression> partitions = new HashMap<>();
+        partitions.put("col", new ConstExpression("'aaa'"));
+        partitions.put("col1", new ConstExpression("@@global.ss"));
+        action.setAddExternalTablePartition(partitions);
+        AlterTable expect = new AlterTable(getRelationFactor("a", "b"), Collections.singletonList(action));
+        expect.setExternal(true);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_alterExternalTableDropPartition_succeed() {
+        StatementFactory<AlterTable> factory = new MySQLAlterTableFactory(
+                getAlterContext("alter external table a.b drop partition location 'abcd'"));
+        AlterTable actual = factory.generate();
+
+        AlterTableAction action = new AlterTableAction();
+        action.setExternalTableLocation("'abcd'");
+        action.setDropExternalTablePartition(true);
+        AlterTable expect = new AlterTable(getRelationFactor("a", "b"), Collections.singletonList(action));
+        expect.setExternal(true);
         Assert.assertEquals(expect, actual);
     }
 
@@ -121,4 +171,5 @@ public class MySQLAlterTableFactoryTest {
         relationFactor.setSchema(schema);
         return relationFactor;
     }
+
 }

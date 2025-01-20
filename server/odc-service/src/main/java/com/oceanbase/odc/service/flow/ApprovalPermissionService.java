@@ -39,12 +39,12 @@ import com.oceanbase.odc.metadb.iam.RoleRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.metadb.iam.UserRoleRepository;
-import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.iam.model.UserResourceRole;
 
 import lombok.NonNull;
 
@@ -163,12 +163,12 @@ public class ApprovalPermissionService {
         if (resourceRoleIdentifiers.isEmpty()) {
             return new HashMap<>();
         }
-        Map<String, Set<Long>> identifier2UserIds = userResourceRoleRepository.findByResourceIdsAndResourceRoleIdsIn(
-                resourceRoleIdentifiers).stream()
+        Map<String, Set<Long>> identifier2UserIds = resourceRoleService
+                .listByResourceIdentifierIn(resourceRoleIdentifiers).stream()
                 .collect(Collectors.groupingBy(o -> String.format("%s:%s", o.getResourceId(), o.getResourceRoleId())))
                 .entrySet()
                 .stream().collect(Collectors.toMap(entry -> entry.getKey(),
-                        entry -> entry.getValue().stream().map(UserResourceRoleEntity::getUserId).collect(
+                        entry -> entry.getValue().stream().map(UserResourceRole::getUserId).collect(
                                 Collectors.toSet())));
         // map approval instance ids to users ids
         Map<Long, Set<Long>> instanceId2UserIds =

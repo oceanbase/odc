@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.iam;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -37,12 +38,14 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
+import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleRepository;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.ResourceRole;
+import com.oceanbase.odc.service.iam.model.UserGlobalResourceRole;
 import com.oceanbase.odc.service.iam.model.UserResourceRole;
 
 import lombok.NonNull;
@@ -62,6 +65,15 @@ public class ResourceRoleService {
 
     @Autowired
     private UserResourceRoleRepository userResourceRoleRepository;
+
+    @Autowired
+    private PermissionService permissionService;
+
+    @Autowired
+    private GlobalResourceRoleService globalResourceRoleService;
+
+    @Autowired
+    private ProjectRepository projectRepository;
 
     @Autowired
     private AuthenticationFacade authenticationFacade;
@@ -108,27 +120,57 @@ public class ResourceRoleService {
     public Set<String> getResourceRoleIdentifiersByUserId(long organizationId, long userId) {
         List<UserResourceRoleEntity> userResourceRoleEntities =
                 userResourceRoleRepository.findByOrganizationIdAndUserId(organizationId, userId);
-        if (CollectionUtils.isEmpty(userResourceRoleEntities)) {
-            return Collections.emptySet();
-        }
-        return userResourceRoleEntities.stream()
+        List<ResourceRoleName> globalResourceRoles =
+                globalResourceRoleService.findGlobalResourceRoleUsersByOrganizationIdAndUserId(organizationId, userId)
+                        .stream().map(UserGlobalResourceRole::getResourceRole).collect(Collectors.toList());
+
+        Set<String> resourceRoleIdentifiers = userResourceRoleEntities.stream()
                 .map(i -> StringUtils.join(i.getResourceId(), ":", i.getResourceRoleId()))
                 .collect(Collectors.toSet());
+        if (CollectionUtils.isEmpty(globalResourceRoles)) {
+            return resourceRoleIdentifiers;
+        }
+        // Has global resource role
+        Map<String, Long> resourceRoleName2Id = resourceRoleRepository.findByResourceType(ResourceType.ODC_PROJECT)
+                .stream().map(resourceRoleMapper::entityToModel)
+                .collect(Collectors.toMap(role -> role.getRoleName().name(), ResourceRole::getId, (v1, v2) -> v2));
+        projectRepository.findAllByOrganizationId(organizationId).stream()
+                .forEach(p -> globalResourceRoles.stream()
+                        .map(r -> StringUtils.join(p.getId(), ":", resourceRoleName2Id.get(r.name())))
+                        .forEach(resourceRoleIdentifiers::add));
+        return resourceRoleIdentifiers;
     }
 
     @SkipAuthorize
     public Map<Long, Set<ResourceRoleName>> getProjectId2ResourceRoleNames() {
-        return getProjectId2ResourceRoleNames(authenticationFacade.currentUserId());
+        return getProjectId2ResourceRoleNames(authenticationFacade.currentUserId(),
+                authenticationFacade.currentOrganizationId());
     }
 
     @SkipAuthorize
-    public Map<Long, Set<ResourceRoleName>> getProjectId2ResourceRoleNames(Long userId) {
+    public Map<Long, Set<ResourceRoleName>> getProjectId2ResourceRoleNames(Long userId, Long organizationId) {
         Map<Long, ResourceRole> id2ResourceRoles = resourceRoleRepository.findByResourceType(ResourceType.ODC_PROJECT)
                 .stream().map(resourceRoleMapper::entityToModel)
                 .collect(Collectors.toMap(ResourceRole::getId, resourceRole -> resourceRole, (v1, v2) -> v2));
-        return userResourceRoleRepository.findByUserIdAndResourceType(userId, ResourceType.ODC_PROJECT).stream()
+        Map<Long, Set<ResourceRoleName>> result = userResourceRoleRepository
+                .findByUserIdAndResourceTypeAndOrganizationId(userId, ResourceType.ODC_PROJECT, organizationId).stream()
                 .collect(Collectors.groupingBy(UserResourceRoleEntity::getResourceId, Collectors.mapping(
                         e -> id2ResourceRoles.get(e.getResourceRoleId()).getRoleName(), Collectors.toSet())));
+        Set<ResourceRoleName> globalResourceRoles =
+                globalResourceRoleService.findGlobalResourceRoleUsersByOrganizationIdAndUserId(organizationId, userId)
+                        .stream()
+                        .map(UserGlobalResourceRole::getResourceRole).collect(Collectors.toSet());
+        if (CollectionUtils.isEmpty(globalResourceRoles)) {
+            return result;
+        }
+        projectRepository.findAllByOrganizationId(organizationId).stream().forEach(p -> {
+            if (!result.containsKey(p.getId())) {
+                result.put(p.getId(), globalResourceRoles);
+            } else {
+                result.get(p.getId()).addAll(globalResourceRoles);
+            }
+        });
+        return result;
     }
 
     @SkipAuthorize("internal usage")
@@ -138,15 +180,54 @@ public class ResourceRoleService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal usage")
-    public List<UserResourceRole> listByResourceTypeAndId(ResourceType resourceType, Long resourceId) {
-        return fromEntities(userResourceRoleRepository.listByResourceTypeAndId(resourceType, resourceId));
+    public List<UserResourceRole> listByResourceTypeAndResourceId(ResourceType resourceType, Long resourceId) {
+        List<UserResourceRole> userResourceRoles =
+                fromEntities(userResourceRoleRepository.listByResourceTypeAndId(resourceType, resourceId));
+        if (resourceType == ResourceType.ODC_DATABASE) {
+            return userResourceRoles;
+        }
+        List<UserGlobalResourceRole> globalResourceRoles =
+                globalResourceRoleService
+                        .findGlobalResourceRoleUsersByOrganizationId(authenticationFacade.currentOrganizationId());
+        if (CollectionUtils.isEmpty(globalResourceRoles)) {
+            return userResourceRoles;
+        }
+        Map<ResourceRoleName, Long> resourceRoleName2Id = getProjectResourceRoleName2Id();
+        globalResourceRoles.stream().map(
+                i -> new UserResourceRole(i.getUserId(), resourceId, ResourceType.ODC_PROJECT, i.getResourceRole(),
+                        resourceRoleName2Id.get(i.getResourceRole()), true))
+                .forEach(userResourceRoles::add);
+        return userResourceRoles;
     }
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal usage")
-    public List<UserResourceRole> listByResourceTypeAndIdIn(ResourceType resourceType,
+    public Set<Long> listUserIdsByResourceTypeAndResourceId(ResourceType resourceType, Long resourceId) {
+        return listByResourceTypeAndResourceId(resourceType, resourceId).stream().map(UserResourceRole::getUserId)
+                .collect(Collectors.toSet());
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("internal usage")
+    public List<UserResourceRole> listByResourceTypeAndResourceIdIn(ResourceType resourceType,
             @NotEmpty Collection<Long> resourceIds) {
-        return fromEntities(userResourceRoleRepository.listByResourceTypeAndIdIn(resourceType, resourceIds));
+        List<UserResourceRole> userResourceRoles =
+                fromEntities(userResourceRoleRepository.listByResourceTypeAndIdIn(resourceType, resourceIds));
+        if (resourceType == ResourceType.ODC_DATABASE) {
+            return userResourceRoles;
+        }
+        List<UserGlobalResourceRole> globalResourceRoles =
+                globalResourceRoleService
+                        .findGlobalResourceRoleUsersByOrganizationId(authenticationFacade.currentOrganizationId());
+        if (CollectionUtils.isEmpty(globalResourceRoles)) {
+            return userResourceRoles;
+        }
+        Map<ResourceRoleName, Long> resourceRoleName2Id = getProjectResourceRoleName2Id();
+        globalResourceRoles.stream().flatMap(i -> resourceIds.stream().map(
+                resourceId -> new UserResourceRole(i.getUserId(), resourceId, ResourceType.ODC_PROJECT,
+                        i.getResourceRole(), resourceRoleName2Id.get(i.getResourceRole()), true)))
+                .forEach(userResourceRoles::add);
+        return userResourceRoles;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -183,19 +264,105 @@ public class ResourceRoleService {
 
     @SkipAuthorize("internal authenticated")
     public List<UserResourceRole> listByOrganizationIdAndUserId(Long organizationId, Long userId) {
-        return fromEntities(userResourceRoleRepository.findByOrganizationIdAndUserId(organizationId, userId));
+        List<UserResourceRole> userResourceRoles =
+                fromEntities(userResourceRoleRepository.findByOrganizationIdAndUserId(organizationId, userId));
+        List<UserGlobalResourceRole> globalResourceRoles =
+                globalResourceRoleService.findGlobalResourceRoleUsersByOrganizationIdAndUserId(organizationId, userId);
+        if (CollectionUtils.isEmpty(globalResourceRoles)) {
+            return userResourceRoles;
+        }
+        Map<ResourceRoleName, Long> resourceRoleName2Id = getProjectResourceRoleName2Id();
+        projectRepository.findAllByOrganizationId(organizationId).stream()
+                .forEach(p -> globalResourceRoles.stream()
+                        .map(i -> new UserResourceRole(i.getUserId(), p.getId(), ResourceType.ODC_PROJECT,
+                                i.getResourceRole(), resourceRoleName2Id.get(i.getResourceRole()), true))
+                        .forEach(userResourceRoles::add));
+        return userResourceRoles;
     }
 
     @SkipAuthorize("internal usage")
     public List<UserResourceRole> listByUserId(Long userId) {
-        return fromEntities(userResourceRoleRepository.findByUserId(userId));
+        List<UserResourceRole> userResourceRoles = fromEntities(userResourceRoleRepository.findByUserId(userId));
+        List<UserGlobalResourceRole> globalResourceRoles =
+                globalResourceRoleService.findGlobalResourceRoleUsersByOrganizationIdAndUserId(
+                        authenticationFacade.currentOrganizationId(),
+                        userId);
+        if (CollectionUtils.isEmpty(globalResourceRoles)) {
+            return userResourceRoles;
+        }
+        Map<ResourceRoleName, Long> resourceRoleName2Id = getProjectResourceRoleName2Id();
+        projectRepository.findAllByOrganizationId(authenticationFacade.currentOrganizationId()).stream()
+                .forEach(p -> globalResourceRoles.stream()
+                        .map(i -> new UserResourceRole(i.getUserId(), p.getId(), ResourceType.ODC_PROJECT,
+                                i.getResourceRole(), resourceRoleName2Id.get(i.getResourceRole()), true))
+                        .forEach(userResourceRoles::add));
+        return userResourceRoles;
     }
 
     @SkipAuthorize("internal usage")
     public List<UserResourceRole> listByResourceIdAndTypeAndName(Long resourceId, ResourceType resourceType,
             String roleName) {
-        return fromEntities(
+        List<UserResourceRole> userResourceRoles = fromEntities(
                 userResourceRoleRepository.findByResourceIdAndTypeAndName(resourceId, resourceType, roleName));
+        if (resourceType == ResourceType.ODC_DATABASE) {
+            return userResourceRoles;
+        }
+        List<UserGlobalResourceRole> globalResourceRoles =
+                globalResourceRoleService.findGlobalResourceRoleUsersByOrganizationIdAndRole(
+                        authenticationFacade.currentOrganizationId(), resourceType, ResourceRoleName.valueOf(roleName));
+        if (CollectionUtils.isEmpty(globalResourceRoles)) {
+            return userResourceRoles;
+        }
+        Map<ResourceRoleName, Long> resourceRoleName2Id = getProjectResourceRoleName2Id();
+        globalResourceRoles.stream().map(i -> new UserResourceRole(i.getUserId(), resourceId, resourceType,
+                i.getResourceRole(), resourceRoleName2Id.get(i.getResourceRole()), true))
+                .forEach(userResourceRoles::add);
+        return userResourceRoles;
+    }
+
+    @SkipAuthorize("internal usage")
+    public List<UserResourceRole> listByResourceIdentifierIn(Set<String> resourceIdentifiers) {
+        List<UserResourceRole> userResourceRoles =
+                fromEntities(userResourceRoleRepository.findByResourceIdsAndResourceRoleIdsIn(resourceIdentifiers));
+        List<UserGlobalResourceRole> globalUserResourceRoles = globalResourceRoleService
+                .findGlobalResourceRoleUsersByOrganizationIdAndRoleIn(authenticationFacade.currentOrganizationId(),
+                        filterResourceRoleNames(ResourceType.ODC_PROJECT, resourceIdentifiers));
+        if (CollectionUtils.isEmpty(globalUserResourceRoles)) {
+            return userResourceRoles;
+        }
+        Map<ResourceRoleName, Long> resourceRoleName2Id = getProjectResourceRoleName2Id();
+        projectRepository.findAllByOrganizationId(authenticationFacade.currentOrganizationId()).stream()
+                .forEach(p -> globalUserResourceRoles.stream()
+                        .map(i -> new UserResourceRole(i.getUserId(), p.getId(), ResourceType.ODC_PROJECT,
+                                i.getResourceRole(), resourceRoleName2Id.get(i.getResourceRole()), true))
+                        .forEach(userResourceRoles::add));
+        return userResourceRoles;
+    }
+
+    private Map<ResourceRoleName, Long> getProjectResourceRoleName2Id() {
+        return resourceRoleRepository.findByResourceType(ResourceType.ODC_PROJECT).stream().collect(Collectors.toMap(
+                ResourceRoleEntity::getRoleName, ResourceRoleEntity::getId, (v1, v2) -> v2));
+    }
+
+    private Set<ResourceRoleName> filterResourceRoleNames(ResourceType resourceType, Set<String> resourceIdentifiers) {
+        if (CollectionUtils.isEmpty(resourceIdentifiers)) {
+            return Collections.emptySet();
+        }
+        Map<Long, ResourceRoleName> id2ResourceRoleName = resourceRoleRepository.findByResourceType(resourceType)
+                .stream()
+                .collect(Collectors.toMap(ResourceRoleEntity::getId, ResourceRoleEntity::getRoleName, (v1, v2) -> v2));
+        Set<ResourceRoleName> filtered = new HashSet<>();
+        resourceIdentifiers.stream().forEach(identifier -> {
+            String[] parts = identifier.split(":");
+            if (parts.length != 2) {
+                throw new UnexpectedException("invalid resource identifier, identifier=" + identifier);
+            }
+            Long roleId = Long.parseLong(parts[1]);
+            if (id2ResourceRoleName.containsKey(roleId)) {
+                filtered.add(id2ResourceRoleName.get(roleId));
+            }
+        });
+        return filtered;
     }
 
     private List<UserResourceRole> fromEntities(Collection<UserResourceRoleEntity> entities) {
@@ -219,7 +386,17 @@ public class ResourceRoleService {
         model.setResourceType(resourceRole.getResourceType());
         model.setResourceId(entity.getResourceId());
         model.setUserId(entity.getUserId());
+        model.setResourceRoleId(resourceRole.getId());
         return model;
+    }
+
+    @SkipAuthorize("internal usage")
+    public static UserResourceRoleEntity toEntity(UserResourceRole model) {
+        UserResourceRoleEntity entity = new UserResourceRoleEntity();
+        entity.setResourceId(model.getResourceId());
+        entity.setUserId(model.getUserId());
+        entity.setResourceRoleId(model.getResourceRoleId());
+        return entity;
     }
 
 }

@@ -358,9 +358,13 @@ public class OracleCreateTableFactoryTest {
 
     @Test
     public void generate_formatTableOp_succeed() {
-        Create_table_stmtContext context = getCreateTableContext(
-                "create table any_schema.abcd (id varchar(64)) format=(ENCODING='aaaa',LINE_DELIMITER=123,SKIP_HEADER=12,"
-                        + "EMPTY_FIELD_AS_NULL=true,NULL_IF_EXETERNAL=(1,2,3))");
+        Create_table_stmtContext context = getCreateTableContext("create table any_schema.abcd (id varchar(64)) "
+                + "properties=(ACCESSID='abcd', PROJECT_NAME='ooop') "
+                + "partition_type=USER_SPECIFIED "
+                + "micro_index_clustered=true "
+                + "auto_refresh=OFF "
+                + "format=(ENCODING='aaaa',LINE_DELIMITER=123,SKIP_HEADER=12,"
+                + "EMPTY_FIELD_AS_NULL=true,NULL_IF_EXETERNAL=(1,2,3))");
         StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
         CreateTable actual = factory.generate();
 
@@ -380,6 +384,13 @@ public class OracleCreateTableFactoryTest {
         map.put("NULL_IF_EXETERNAL", es);
         map.put("LINE_DELIMITER", new ConstExpression("123"));
         tableOptions.setFormat(map);
+        tableOptions.setPartitionType("USER_SPECIFIED");
+        tableOptions.setMicroIndexClustered(true);
+        tableOptions.setAutoRefresh("OFF");
+        Map<String, String> externalProperties = new HashMap<>();
+        externalProperties.put("ACCESSID", "'abcd'");
+        externalProperties.put("PROJECT_NAME", "'ooop'");
+        tableOptions.setExternalProperties(externalProperties);
         expect.setTableOptions(tableOptions);
         Assert.assertEquals(expect, actual);
     }
