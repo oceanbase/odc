@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.junit.Assert;
@@ -91,6 +92,8 @@ import com.oceanbase.odc.service.sqlcheck.rule.Unable2JudgeAffectedRows;
  * @since ODC_release_4.1.0
  */
 public class MySQLCheckerTest {
+
+    private Supplier<String> defaulDbVersionSupplier = () -> "4.2.5";
 
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
@@ -1152,7 +1155,7 @@ public class MySQLCheckerTest {
         Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.any(RowMapper.class)))
                 .thenReturn(sqls[4]);
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL,
-                null, Collections.singletonList(new MySQLOfflineDdlExists(jdbcTemplate)));
+                null, Collections.singletonList(new MySQLOfflineDdlExists(() -> "3.2.1", jdbcTemplate)));
         List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.OFFLINE_SCHEMA_CHANGE_EXISTS;
@@ -1168,6 +1171,92 @@ public class MySQLCheckerTest {
                 new Object[] {"ADD COLUMN IN THE MIDDLE (BEFORE/AFTER/FIRST)"});
 
         List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6, c7);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void check_offlineDdl_Ob4xModifyDataType_violationGenerated() {
+        String createTableSql = "create table ddltest(id int not null primary key,"
+                + "c1 int default 123,"
+                + "c11 int GENERATED ALWAYS AS (c1 + 1),"
+                + "c2 bigint comment 'this is com' check (c2 > 10),"
+                + "c3 varchar(10) default null,"
+                + "c33 varchar(10) collate utf8mb4_bin default null,"
+                + "c333 varchar(10) charset utf8mb4 default null,"
+                + "c4 text(20),"
+                + "c5 dec(10, 1) comment 'this is com',"
+                + " foreign key (c2) references test2(id),"
+                + " check(c1 > c2)"
+                + ") DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin";
+        String[] sqls = {
+                // alarm section
+                "alter table ddltest modify c1 bigint(10) default 123", // shrink precision
+                "alter table ddltest modify c1 int(10) default 234", // shrink precision
+                "alter table ddltest modify c1 varchar(20) default '123'", // change type
+                "alter table ddltest modify c11 int GENERATED ALWAYS AS (c1 + 2)", // change generate option
+                "alter table ddltest modify c11 int", // remove generate option
+                "alter table ddltest modify c2 bigint comment 'this is com'", // remove check func
+                "alter table ddltest modify c3 varchar(10) charset gbk", // change charset
+                "alter table ddltest modify c3 varchar(10) collate gbk_bin", // change collate
+                "alter table ddltest modify c3 varchar(64) check (c3 is not null)", // add check
+                "alter table ddltest modify c5 decimal(5, 1) default 'this is com'", // shrink precision
+                "alter table ddltest modify c5 decimal(10, 2) default 'this is com'", // change scale
+                "alter table ddltest modify c333 varchar(10) charset utf8mb4 collate utf8mb4_bin", // collate change
+                "alter table ddltest modify c333 varchar(10) collate utf8mb4_bin", // collate change
+                "alter table ddltest modify c333 varchar(20)", // collate change
+                "alter table ddltest modify c33 varchar(10) charset utf8mb4", // collate change
+
+                // not alarm section
+                "alter table ddltest modify c1 bigint default 123", // extend precision
+                "alter table ddltest modify c1 int default 234", // change default value
+                "alter table ddltest modify c1 int default 123 comment 'new com'", // add comment
+                "alter table ddltest modify c3 varchar(64)", // extend precision
+                "alter table ddltest modify c4 mediumtext", // extend precision
+                "alter table ddltest modify c33 varchar(10) charset utf8mb4 collate utf8mb4_bin", // collate not change
+                "alter table ddltest modify c33 varchar(10) collate utf8mb4_bin", // collate not change
+                "alter table ddltest modify c33 varchar(30)", // collate not change
+                "alter table ddltest modify c333 varchar(10) charset utf8mb4", // collate not change
+        };
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+        Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.any(RowMapper.class)))
+                .thenReturn(createTableSql);
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL,
+                null, Collections.singletonList(new MySQLOfflineDdlExists(defaulDbVersionSupplier, jdbcTemplate)));
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
+
+        SqlCheckRuleType type = SqlCheckRuleType.OFFLINE_SCHEMA_CHANGE_EXISTS;
+        CheckViolation c1 =
+                new CheckViolation(sqls[0], 1, 20, 20, 51, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c2 =
+                new CheckViolation(sqls[1], 1, 20, 20, 48, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c3 =
+                new CheckViolation(sqls[2], 1, 20, 20, 54, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c4 =
+                new CheckViolation(sqls[3], 1, 20, 20, 62, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c5 =
+                new CheckViolation(sqls[4], 1, 20, 20, 33, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c6 =
+                new CheckViolation(sqls[5], 1, 20, 20, 57, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c7 =
+                new CheckViolation(sqls[6], 1, 20, 20, 52, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c8 =
+                new CheckViolation(sqls[7], 1, 20, 20, 56, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c9 =
+                new CheckViolation(sqls[8], 1, 20, 20, 63, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c10 =
+                new CheckViolation(sqls[9], 1, 20, 20, 64, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c11 =
+                new CheckViolation(sqls[10], 1, 20, 20, 65, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c12 =
+                new CheckViolation(sqls[11], 1, 20, 20, 78, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c13 =
+                new CheckViolation(sqls[12], 1, 20, 20, 62, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c14 =
+                new CheckViolation(sqls[13], 1, 20, 20, 42, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c15 =
+                new CheckViolation(sqls[14], 1, 20, 20, 57, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15);
         Assert.assertEquals(expect, actual);
     }
 
@@ -1349,7 +1438,7 @@ public class MySQLCheckerTest {
                 + "  tid;\n"
                 + "end; $$";
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
-                SqlCheckRules.getAllDefaultRules(null, DialectType.OB_MYSQL));
+                SqlCheckRules.getAllDefaultRules(null, defaulDbVersionSupplier, DialectType.OB_MYSQL));
         Assert.assertTrue(sqlChecker.check(sql).isEmpty());
     }
 
@@ -1366,7 +1455,7 @@ public class MySQLCheckerTest {
                 + "  tid;\n"
                 + "end; $$";
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
-                SqlCheckRules.getAllDefaultRules(null, DialectType.OB_MYSQL));
+                SqlCheckRules.getAllDefaultRules(null, defaulDbVersionSupplier, DialectType.OB_MYSQL));
         List<CheckViolation> actual = sqlChecker.check(sql);
 
         SqlCheckRuleType type = SqlCheckRuleType.SYNTAX_ERROR;

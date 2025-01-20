@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
@@ -146,7 +147,8 @@ public class SqlCheckService {
         SqlCheckContext checkContext = new SqlCheckContext((long) sqls.size());
         try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource()) {
             JdbcTemplate jdbc = new JdbcTemplate(dataSource);
-            List<SqlCheckRule> checkRules = getRules(rules, config.getDialectType(), jdbc);
+            List<SqlCheckRule> checkRules = getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource),
+                    config.getDialectType(), jdbc);
             DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
             List<CheckViolation> checkViolations = new ArrayList<>();
             for (OffsetString sql : sqls) {
@@ -159,11 +161,11 @@ public class SqlCheckService {
     }
 
     public List<SqlCheckRule> getRules(List<Rule> rules, @NonNull ConnectionSession session) {
-        return getRules(rules, session.getDialectType(),
+        return getRules(rules, () -> ConnectionSessionUtil.getVersion(session), session.getDialectType(),
                 session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY));
     }
 
-    public List<SqlCheckRule> getRules(List<Rule> rules,
+    public List<SqlCheckRule> getRules(List<Rule> rules, Supplier<String> dbVersionSupplier,
             @NonNull DialectType dialectType, @NonNull JdbcOperations jdbc) {
         if (CollectionUtils.isEmpty(rules)) {
             return Collections.emptyList();
@@ -177,7 +179,7 @@ public class SqlCheckService {
             return Objects.equals(metadata.getType(), RuleType.SQL_CHECK);
         }).map(rule -> {
             try {
-                return SqlCheckRules.createByRule(candidates, dialectType, rule);
+                return SqlCheckRules.createByRule(candidates, dbVersionSupplier, dialectType, rule);
             } catch (Exception e) {
                 return null;
             }

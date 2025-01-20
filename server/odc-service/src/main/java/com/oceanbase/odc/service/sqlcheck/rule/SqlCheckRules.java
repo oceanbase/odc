@@ -34,6 +34,7 @@ import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleMetadata;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
+import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.ColumnCalculationFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.ColumnCharsetExistsFactory;
@@ -162,17 +163,21 @@ public class SqlCheckRules {
         return rules;
     }
 
-    public static List<SqlCheckRule> getAllDefaultRules(JdbcOperations jdbc, @NonNull DialectType dialectType) {
+    public static List<SqlCheckRule> getAllDefaultRules(JdbcOperations jdbc, Supplier<String> dbVersionSupplier,
+            @NonNull DialectType dialectType) {
         return SqlCheckRules.getAllFactories(dialectType, jdbc).stream()
-                .map(f -> f.generate(dialectType, null)).filter(Objects::nonNull).collect(Collectors.toList());
+                .map(f -> f.generate(SqlCheckRuleContext.create(dbVersionSupplier, dialectType, null)))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
-    public static SqlCheckRule createByRule(JdbcOperations jdbc,
+    public static SqlCheckRule createByRule(JdbcOperations jdbc, Supplier<String> dbVersionSupplier,
             @NonNull DialectType dialectType, @NonNull Rule rule) {
-        return createByRule(getAllFactories(dialectType, jdbc), dialectType, rule);
+        return createByRule(getAllFactories(dialectType, jdbc), dbVersionSupplier, dialectType, rule);
     }
 
     public static SqlCheckRule createByRule(@NonNull List<SqlCheckRuleFactory> candidates,
+            Supplier<String> dbVersionSupplier,
             @NonNull DialectType dialectType, @NonNull Rule rule) {
         RuleMetadata metadata = rule.getMetadata();
         Validate.notNull(metadata, "RuleMetadata can not be null");
@@ -197,7 +202,9 @@ public class SqlCheckRules {
             throw new UnsupportedOperationException("Not support yet, " + sqlCheckRuleType.getLocalizedName());
         }
         try {
-            SqlCheckRule target = factory.get().generate(dialectType, rule.getProperties());
+            SqlCheckRule target =
+                    factory.get()
+                            .generate(SqlCheckRuleContext.create(dbVersionSupplier, dialectType, rule.getProperties()));
             return target == null ? null : new SqlCheckRuleWrapper(target, rule.getAppliedDialectTypes());
         } catch (Exception e) {
             return null;

@@ -22,6 +22,7 @@ import java.util.Set;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
+import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLRestrictTableCollation;
@@ -37,7 +38,9 @@ public class RestrictTableCollationFactory implements SqlCheckRuleFactory {
 
     @Override
     @SuppressWarnings("all")
-    public SqlCheckRule generate(@NonNull DialectType dialectType, Map<String, Object> parameters) {
+    public SqlCheckRule generate(@NonNull SqlCheckRuleContext sqlCheckRuleContext) {
+        DialectType dialectType = sqlCheckRuleContext.getDialectType();
+        Map<String, Object> parameters = sqlCheckRuleContext.getParameters();
         String key = getParameterNameKey("allowed-collations");
         Set<String> allowCollations;
         if (parameters == null || parameters.isEmpty() || parameters.get(key) == null) {

@@ -18,10 +18,9 @@ package com.oceanbase.odc.service.sqlcheck;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.jdbc.core.JdbcOperations;
-
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
@@ -52,11 +51,8 @@ public class DefaultSqlChecker extends BaseSqlChecker {
 
     public DefaultSqlChecker(@NonNull ConnectionSession session, String delimiter) {
         this(session.getDialectType(), delimiter, SqlCheckRules.getAllDefaultRules(
-                session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY), session.getDialectType()));
-    }
-
-    public DefaultSqlChecker(JdbcOperations jdbcOperations, @NonNull DialectType dialectType, String delimiter) {
-        this(dialectType, delimiter, SqlCheckRules.getAllDefaultRules(jdbcOperations, dialectType));
+                session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY),
+                () -> ConnectionSessionUtil.getVersion(session), session.getDialectType()));
     }
 
     @Override

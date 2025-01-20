@@ -25,6 +25,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.sql.DataSource;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 
@@ -32,6 +34,8 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
@@ -237,6 +241,15 @@ public class SqlCheckUtil {
         } catch (Exception e) {
             log.warn("Failed to parse sql, sql={}, error={}", sql, e.getMessage());
             return null;
+        }
+    }
+
+    public static String getDbVersion(ConnectionConfig config, DataSource dataSource) {
+        try {
+            return ConnectionPluginUtil.getInformationExtension(config.getDialectType())
+                    .getDBVersion(dataSource.getConnection());
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
         }
     }
 

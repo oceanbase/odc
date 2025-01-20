@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -60,6 +61,7 @@ import com.oceanbase.odc.service.sqlcheck.DefaultSqlChecker;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
+import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.rule.SqlCheckRules;
 import com.oceanbase.odc.service.task.base.TaskBase;
@@ -250,7 +252,8 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
         SqlCheckContext checkContext = new SqlCheckContext((long) sqls.size());
         try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource()) {
             JdbcTemplate jdbc = new JdbcTemplate(dataSource);
-            List<SqlCheckRule> checkRules = getRules(rules, config.getDialectType(), jdbc);
+            List<SqlCheckRule> checkRules =
+                    getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource), config.getDialectType(), jdbc);
             DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
             List<CheckViolation> checkViolations = new ArrayList<>();
             for (OffsetString sql : sqls) {
@@ -262,7 +265,8 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
         }
     }
 
-    private List<SqlCheckRule> getRules(List<Rule> rules, @NonNull DialectType dialectType,
+    private List<SqlCheckRule> getRules(List<Rule> rules, Supplier<String> dbVersionSupplier,
+            @NonNull DialectType dialectType,
             @NonNull JdbcOperations jdbc) {
         if (CollectionUtils.isEmpty(rules)) {
             return Collections.emptyList();
@@ -276,7 +280,7 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
             return Objects.equals(metadata.getType(), RuleType.SQL_CHECK);
         }).map(rule -> {
             try {
-                return SqlCheckRules.createByRule(candidates, dialectType, rule);
+                return SqlCheckRules.createByRule(candidates, dbVersionSupplier, dialectType, rule);
             } catch (Exception e) {
                 return null;
             }
