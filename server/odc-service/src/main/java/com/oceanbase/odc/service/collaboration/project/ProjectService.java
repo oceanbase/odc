@@ -31,10 +31,8 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -72,14 +70,13 @@ import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleRepository;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
+import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.collaboration.project.model.Project.ProjectMember;
 import com.oceanbase.odc.service.collaboration.project.model.QueryProjectParams;
 import com.oceanbase.odc.service.collaboration.project.model.SetArchivedReq;
-import com.oceanbase.odc.service.collaboration.project.model.TicketReference;
 import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.ConnectionService;
-import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.ResourceRoleService;
@@ -88,9 +85,6 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.model.UserResourceRole;
-import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.model.ScheduleOverviewHist;
-import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -151,18 +145,13 @@ public class ProjectService {
     private ConnectionService connectionService;
 
     @Autowired
-    @Lazy
-    private ScheduleService scheduleService;
+    private ScheduleRepository scheduleRepository;
 
     @Autowired
     private HorizontalDataPermissionValidator horizontalDataPermissionValidator;
 
     @Autowired
     private ProjectPermissionValidator projectPermissionValidator;
-
-    @Autowired
-    @Lazy
-    private FlowInstanceService flowInstanceService;
 
     @Value("${odc.integration.bastion.enabled:false}")
     private boolean bastionEnabled;
@@ -231,14 +220,13 @@ public class ProjectService {
     }
 
     @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA", "DEVELOPER", "SECURITY_ADMINISTRATOR", "PARTICIPANT"},
-            actions = {"OWNER", "DBA", "DEVELOPER", "PARTICIPANT", "SECURITY_ADMINISTRATOR"},
             resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
     public Project detail(@NotNull Long id) {
         ProjectEntity entity = repository.findByIdAndOrganizationId(id, currentOrganizationId())
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", id));
         List<UserResourceRole> userResourceRoles =
-                resourceRoleService.listByResourceTypeAndResourceId(ResourceType.ODC_PROJECT, entity.getId());
+                resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, entity.getId());
         Project project = entityToModel(entity, userResourceRoles);
         project.setDbObjectLastSyncTime(getEarliestObjectSyncTime(id));
         return project;
@@ -249,7 +237,7 @@ public class ProjectService {
         ProjectEntity entity = repository.findByIdAndOrganizationId(projectId, organizationId)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", projectId));
         List<UserResourceRole> userResourceRoles =
-                resourceRoleService.listByResourceTypeAndResourceId(ResourceType.ODC_PROJECT, entity.getId());
+                resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, entity.getId());
         return userResourceRoles.stream().map(this::fromUserResourceRole).filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
@@ -265,8 +253,7 @@ public class ProjectService {
         return entity.map(projectMapper::entityToModel).orElse(null);
     }
 
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
-            indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
     public Project update(@NotNull Long id, @NotNull Project project) {
         ProjectEntity previous = repository.findByIdAndOrganizationId(id, currentOrganizationId())
@@ -283,11 +270,10 @@ public class ProjectService {
         previous.setName(project.getName());
         ProjectEntity saved = repository.save(previous);
         return entityToModel(saved,
-                resourceRoleService.listByResourceTypeAndResourceId(ResourceType.ODC_PROJECT, saved.getId()));
+                resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, saved.getId()));
     }
 
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
-            indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
     public Project setArchived(Long id, @NotNull SetArchivedReq req) throws InterruptedException {
         ProjectEntity saved = setArchived(id, currentOrganizationId(), req);
@@ -303,9 +289,10 @@ public class ProjectService {
         if (!req.getArchived()) {
             throw new BadRequestException("currently not allowed to recover projects");
         }
-        checkUnfinishedTickets(id);
+        if (scheduleRepository.getEnabledScheduleCountByProjectId(id) > 0) {
+            throw new BadRequestException("Please disable all active tickets in the project first.");
+        }
         previous.setArchived(true);
-        previous.setName(previous.getName() + "_archived_" + System.currentTimeMillis());
         ProjectEntity saved = repository.save(previous);
         List<ConnectionEntity> connectionEntities = connectionConfigRepository.findByProjectId(id).stream()
                 .peek(e -> e.setProjectId(null)).collect(Collectors.toList());
@@ -331,14 +318,9 @@ public class ProjectService {
         Page<ProjectEntity> projectEntities = innerList(params, pageable, UserResourceRole::isProjectMember);
         return projectEntities.map(project -> {
             List<UserResourceRole> members =
-                    resourceRoleService.listByResourceTypeAndResourceId(ResourceType.ODC_PROJECT, project.getId());
+                    resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, project.getId());
             return entityToModel(project, members);
         });
-    }
-
-    @SkipAuthorize("odc internal usage")
-    public List<Project> listByIds(@NotEmpty Set<Long> ids) {
-        return repository.findAllById(ids).stream().map(this::entityToModel).collect(Collectors.toList());
     }
 
     private Page<ProjectEntity> innerList(@Valid QueryProjectParams params, @NotNull Pageable pageable,
@@ -359,8 +341,7 @@ public class ProjectService {
         return repository.findAll(specs, pageable);
     }
 
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
-            indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
     public Project createProjectMembers(@NonNull Long id, @NotEmpty List<ProjectMember> members) {
         ProjectEntity project = repository.findByIdAndOrganizationId(id, currentOrganizationId())
@@ -393,8 +374,7 @@ public class ProjectService {
     }
 
 
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
-            indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteProjectMember(@NonNull Long projectId, @NonNull Long userId) {
         if (currentUserId().longValue() == userId.longValue()) {
@@ -405,51 +385,11 @@ public class ProjectService {
         return deleted;
     }
 
-    @Transactional(rollbackFor = Exception.class)
-    @SkipAuthorize("Internal usage")
-    public Boolean batchDelete(Set<Long> projectIds) {
-        projectPermissionValidator.checkProjectRole(projectIds, Collections.singletonList(ResourceRoleName.OWNER));
-        repository.findByIdIn(projectIds).stream().forEach(project -> {
-            if (project.getBuiltin() || !project.getArchived()) {
-                throw new UnsupportedException(ErrorCodes.IllegalOperation,
-                        new Object[] {"builtin or not-archived project, projectName=" + project.getName()},
-                        "Operation on builtin or not-archived project is not allowed");
-            }
-        });
-        repository.deleteAllById(projectIds);
-        // TODO: bind these resource delete logic in one place for better maintainability
-        resourceRoleService.deleteByResourceTypeAndIdIn(ResourceType.ODC_PROJECT, projectIds);
-        deleteMemberRelatedDatabasePermissions(projectIds);
-        deleteMemberRelatedTablePermissions(projectIds);
-        List<Long> relatedDatabaseIds = databaseRepository.findByProjectIdIn(projectIds).stream()
-                .map(DatabaseEntity::getId).collect(Collectors.toList());
-        if (CollectionUtils.isNotEmpty(relatedDatabaseIds)) {
-            resourceRoleService.deleteByResourceTypeAndIdIn(ResourceType.ODC_DATABASE, relatedDatabaseIds);
-        }
-        return true;
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    @SkipAuthorize("Internal usage")
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
-            indexOfIdParam = 0)
-    public TicketReference getProjectTicketReference(@NonNull Long projectId) {
-        TicketReference reference = new TicketReference();
-        reference.setUnfinishedFlowInstances(
-                flowInstanceService.listUnfinishedFlowInstances(Pageable.unpaged(), projectId).getContent());
-        reference.setUnfinishedSchedules(
-                scheduleService.listUnfinishedSchedulesByProjectId(Pageable.unpaged(), projectId).getContent().stream()
-                        .filter(schedule -> schedule.getType() != ScheduleType.PARTITION_PLAN).collect(
-                                Collectors.toList()));
-        return reference;
-    }
-
     @SkipAuthorize
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteProjectMemberSkipPermissionCheck(@NonNull Long projectId, @NonNull Long userId) {
-        Set<Long> memberIds =
-                resourceRoleService.listByResourceTypeAndResourceId(ResourceType.ODC_PROJECT, projectId).stream()
-                        .filter(Objects::nonNull).map(UserResourceRole::getUserId).collect(Collectors.toSet());
+        Set<Long> memberIds = resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, projectId).stream()
+                .filter(Objects::nonNull).map(UserResourceRole::getUserId).collect(Collectors.toSet());
         if (!memberIds.contains(userId)) {
             throw new BadRequestException("User not belongs to this project");
         }
@@ -479,8 +419,7 @@ public class ProjectService {
         });
     }
 
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, actions = {"OWNER"}, resourceType = "ODC_PROJECT",
-            indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
     public boolean updateProjectMember(@NonNull Long projectId, @NonNull Long userId,
             @NonNull List<ProjectMember> members) {
@@ -497,7 +436,7 @@ public class ProjectService {
         ProjectEntity project = repository.findByIdAndOrganizationId(projectId, organizationId)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", projectId));
         Map<Long, List<UserResourceRole>> userId2ResourceRoles =
-                resourceRoleService.listByResourceTypeAndResourceId(ResourceType.ODC_PROJECT, project.getId()).stream()
+                resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, project.getId()).stream()
                         .collect(Collectors.groupingBy(UserResourceRole::getUserId));
         if (CollectionUtils.isEmpty(userId2ResourceRoles.keySet())) {
             return false;
@@ -562,35 +501,6 @@ public class ProjectService {
         projectPermissionValidator.checkProjectRole(project.getId(), roleNames);
     }
 
-    @SkipAuthorize("inside method permission check")
-    public void checkUnfinishedTickets(@NonNull Long projectId) {
-        if (flowInstanceService.listUnfinishedFlowInstances(Pageable.unpaged(), projectId).hasContent()) {
-            throw new BadRequestException(
-                    "There exists unfinished tickets in the project, please stop them before archiving the project.");
-        }
-        List<ScheduleOverviewHist> schedules =
-                scheduleService.listUnfinishedSchedulesByProjectId(Pageable.unpaged(), projectId).getContent();
-        // no unfinished schedules
-        if (CollectionUtils.isEmpty(schedules)) {
-            return;
-        }
-        // There exists unfinished schedules(except for partition plans) in the project
-        if (schedules.stream().anyMatch(schedule -> schedule.getType() != ScheduleType.PARTITION_PLAN)) {
-            throw new BadRequestException(
-                    "There exists unfinished schedule tasks in the project, please stop them before archiving the project.");
-        }
-        // Terminate all partition plans if exists
-        schedules.stream().filter(schedule -> schedule.getType() == ScheduleType.PARTITION_PLAN)
-                .forEach(schedule -> {
-                    try {
-                        scheduleService.innerTerminate(schedule.getId());
-                    } catch (SchedulerException e) {
-                        log.warn("Failed to terminate partition plan schedule, scheduleId={}", schedule.getId());
-                        throw new RuntimeException(e);
-                    }
-                });
-    }
-
     private Project entityToModel(ProjectEntity entity, List<UserResourceRole> userResourceRoles) {
         Project project = entityToModelWithoutCurrentUser(entity, userResourceRoles);
         project.setCreator(currentInnerUser());
@@ -611,8 +521,6 @@ public class ProjectService {
         Project project = projectMapper.entityToModel(entity);
         project.setCreator(currentInnerUser());
         project.setLastModifier(currentInnerUser());
-        project.setCurrentUserResourceRoles(
-                getProjectId2ResourceRoleNames().getOrDefault(project.getId(), Collections.EMPTY_SET));
         return project;
     }
 
@@ -628,7 +536,6 @@ public class ProjectService {
         member.setName(user.getName());
         member.setAccountName(user.getAccountName());
         member.setUserEnabled(user.isEnabled());
-        member.setDerivedFromGlobalProjectRole(userResourceRole.isDerivedFromGlobalProjectRole());
         return member;
     }
 
@@ -674,24 +581,6 @@ public class ProjectService {
 
     private void deleteMemberRelatedTablePermissions(@NonNull Long userId, @NonNull Long projectId) {
         List<Long> permissionIds = userTablePermissionRepository.findByUserIdAndProjectId(userId, projectId).stream()
-                .map(UserTablePermissionEntity::getId).collect(Collectors.toList());
-        if (CollectionUtils.isNotEmpty(permissionIds)) {
-            permissionRepository.deleteByIds(permissionIds);
-            userPermissionRepository.deleteByPermissionIds(permissionIds);
-        }
-    }
-
-    private void deleteMemberRelatedDatabasePermissions(@NonNull Set<Long> projectIds) {
-        List<Long> permissionIds = userDatabasePermissionRepository.findByProjectIdIn(projectIds).stream()
-                .map(UserDatabasePermissionEntity::getId).collect(Collectors.toList());
-        if (CollectionUtils.isNotEmpty(permissionIds)) {
-            permissionRepository.deleteByIds(permissionIds);
-            userPermissionRepository.deleteByPermissionIds(permissionIds);
-        }
-    }
-
-    private void deleteMemberRelatedTablePermissions(@NonNull Set<Long> projectIds) {
-        List<Long> permissionIds = userTablePermissionRepository.findByProjectIdIn(projectIds).stream()
                 .map(UserTablePermissionEntity::getId).collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(permissionIds)) {
             permissionRepository.deleteByIds(permissionIds);

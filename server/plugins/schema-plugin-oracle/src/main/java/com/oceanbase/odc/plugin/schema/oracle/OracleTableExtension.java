@@ -24,7 +24,6 @@ import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.plugin.schema.oboracle.OBOracleTableExtension;
 import com.oceanbase.odc.plugin.schema.oracle.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTableStats;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -48,23 +47,13 @@ public class OracleTableExtension extends OBOracleTableExtension {
         table.setOwner(schemaName);
         table.setName(tableName);
         table.setColumns(schemaAccessor.listTableColumns(schemaName, tableName));
+        table.setConstraints(schemaAccessor.listTableConstraints(schemaName, tableName));
         table.setPartition(schemaAccessor.getPartition(schemaName, tableName));
-        if (!schemaAccessor.isExternalTable(schemaName, tableName)) {
-            table.setConstraints(schemaAccessor.listTableConstraints(schemaName, tableName));
-            table.setIndexes(schemaAccessor.listTableIndexes(schemaName, tableName));
-            table.setType(DBObjectType.TABLE);
-        } else {
-            table.setType(DBObjectType.EXTERNAL_TABLE);
-        }
+        table.setIndexes(schemaAccessor.listTableIndexes(schemaName, tableName));
         table.setDDL(schemaAccessor.getTableDDL(schemaName, tableName));
         table.setTableOptions(schemaAccessor.getTableOptions(schemaName, tableName));
         table.setStats(getTableStats(connection, schemaName, tableName));
         return table;
-    }
-
-    @Override
-    public boolean syncExternalTableFiles(Connection connection, String schemaName, String tableName) {
-        throw new UnsupportedOperationException("not implemented yet");
     }
 
     @Override

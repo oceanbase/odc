@@ -15,7 +15,9 @@
  */
 package com.oceanbase.tools.sqlparser.adapter.oracle;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.CharStream;
@@ -23,12 +25,10 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.misc.Interval;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
-import com.oceanbase.tools.sqlparser.oboracle.OBParser.Add_external_table_partition_actionsContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Add_range_or_list_partitionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Add_range_or_list_subpartitionContext;
-import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_column_group_actionContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_column_group_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_column_optionContext;
-import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_external_table_actionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_index_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_partition_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_table_actionContext;
@@ -43,7 +43,6 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Split_actionsContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Split_list_partitionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Split_range_partitionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParserBaseVisitor;
-import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
 import com.oceanbase.tools.sqlparser.statement.alter.table.PartitionSplitActions;
 import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
@@ -57,7 +56,6 @@ import com.oceanbase.tools.sqlparser.statement.createtable.SpecialPartitionEleme
 import com.oceanbase.tools.sqlparser.statement.createtable.SubPartitionElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
-import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
 
 import lombok.NonNull;
 
@@ -77,12 +75,8 @@ public class OracleAlterTableActionFactory extends OBParserBaseVisitor<AlterTabl
         this.parserRuleContext = alterTableActionContext;
     }
 
-    public OracleAlterTableActionFactory(@NonNull Alter_column_group_actionContext alterColumnGroupOptionContext) {
+    public OracleAlterTableActionFactory(@NonNull Alter_column_group_optionContext alterColumnGroupOptionContext) {
         this.parserRuleContext = alterColumnGroupOptionContext;
-    }
-
-    public OracleAlterTableActionFactory(@NonNull Alter_external_table_actionContext alterExternalTableActionContext) {
-        this.parserRuleContext = alterExternalTableActionContext;
     }
 
     @Override
@@ -134,20 +128,6 @@ public class OracleAlterTableActionFactory extends OBParserBaseVisitor<AlterTabl
         }
         alterTableAction.setMoveCompress(str);
         return alterTableAction;
-    }
-
-    @Override
-    public AlterTableAction visitAlter_external_table_action(Alter_external_table_actionContext ctx) {
-        AlterTableAction action = new AlterTableAction(ctx);
-        action.setExternalTableLocation(ctx.STRING_VALUE().getText());
-        if (ctx.DROP() != null && ctx.PARTITION() != null) {
-            action.setDropExternalTablePartition(true);
-        } else if (ctx.ADD() != null && ctx.PARTITION() != null) {
-            Map<String, Expression> externalTablePartition = new HashMap<>();
-            visitAddExternalTablePartitionActions(externalTablePartition, ctx.add_external_table_partition_actions());
-            action.setAddExternalTablePartition(externalTablePartition);
-        }
-        return action;
     }
 
     @Override
@@ -268,9 +248,6 @@ public class OracleAlterTableActionFactory extends OBParserBaseVisitor<AlterTabl
                         .collect(Collectors.toList());
             }
             alterTableAction.addSubpartitionElements(getRelationFactor(ctx.relation_factor()), subElts);
-        } else if (ctx.EXCHANGE() != null && ctx.PARTITION() != null) {
-            alterTableAction.setExchangePartition(ctx.relation_name(0).getText(),
-                    OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor()));
         } else if (ctx.add_range_or_list_partition() != null) {
             Add_range_or_list_partitionContext pCtx = ctx.add_range_or_list_partition();
             List<PartitionElement> elts;
@@ -352,7 +329,7 @@ public class OracleAlterTableActionFactory extends OBParserBaseVisitor<AlterTabl
     }
 
     @Override
-    public AlterTableAction visitAlter_column_group_action(Alter_column_group_actionContext ctx) {
+    public AlterTableAction visitAlter_column_group_option(Alter_column_group_optionContext ctx) {
         AlterTableAction action = new AlterTableAction(ctx);
         List<ColumnGroupElement> columnGroupElements = ctx.column_group_list().column_group_element()
                 .stream().map(c -> new OracleColumnGroupElementFactory(c).generate()).collect(Collectors.toList());
@@ -400,16 +377,6 @@ public class OracleAlterTableActionFactory extends OBParserBaseVisitor<AlterTabl
             e.setUserVariable(OracleFromReferenceFactory.getUserVariable(c.relation_factor()));
             return e;
         }).collect(Collectors.toList());
-    }
-
-    private void visitAddExternalTablePartitionActions(Map<String, Expression> externalTablePartition,
-            Add_external_table_partition_actionsContext context) {
-        if (context == null) {
-            return;
-        }
-        Expression value = new ConstExpression(context.add_external_table_partition_action().expr_const());
-        externalTablePartition.put(context.add_external_table_partition_action().column_name().getText(), value);
-        visitAddExternalTablePartitionActions(externalTablePartition, context.add_external_table_partition_actions());
     }
 
 }

@@ -31,4 +31,5 @@ public enum FileChangeType {
     R,
     // conflict
     C
+
 }

@@ -54,9 +54,6 @@ public class Insert extends BaseStatement {
     private boolean first;
     private boolean replace;
     private boolean ignore;
-    private boolean highPriority;
-    private boolean lowPriority;
-    private boolean overwrite;
     private List<SetColumn> onDuplicateKeyUpdateColumns;
     private final List<InsertTable> tableInsert;
     private final ConditionalInsert conditionalInsert;
@@ -81,9 +78,6 @@ public class Insert extends BaseStatement {
         this.ignore = target.ignore;
         this.onDuplicateKeyUpdateColumns = target.onDuplicateKeyUpdateColumns;
         this.tableInsert = target.tableInsert;
-        this.overwrite = target.overwrite;
-        this.highPriority = target.highPriority;
-        this.lowPriority = target.lowPriority;
         this.conditionalInsert = target.conditionalInsert;
     }
 
@@ -101,20 +95,12 @@ public class Insert extends BaseStatement {
         } else {
             builder.append("INSERT");
         }
-        if (this.highPriority) {
-            builder.append(" HIGH_PRIORITY");
-        } else if (this.lowPriority) {
-            builder.append(" LOW_PRIORITY");
-        }
         if (this.all) {
             builder.append(" ALL");
         } else if (this.first) {
             builder.append(" FIRST");
         } else if (this.ignore) {
             builder.append(" IGNORE");
-        }
-        if (this.overwrite) {
-            builder.append(" OVERWRITE");
         }
         if (CollectionUtils.isNotEmpty(this.tableInsert)) {
             builder.append(" ").append(this.tableInsert.stream()

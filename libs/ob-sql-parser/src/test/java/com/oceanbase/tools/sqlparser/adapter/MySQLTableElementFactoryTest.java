@@ -16,7 +16,10 @@
 package com.oceanbase.tools.sqlparser.adapter;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
@@ -80,36 +83,6 @@ public class MySQLTableElementFactoryTest {
 
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         ColumnDefinition expect = new ColumnDefinition(new ColumnReference(null, "tb", "col"), dataType);
-        Assert.assertEquals(expect, actual);
-    }
-
-    @Test
-    public void generate_serialColumnDef_generateSuccees() {
-        StatementFactory<TableElement> factory =
-                new MySQLTableElementFactory(getTableElementContext("tb.col serial"));
-        ColumnDefinition actual = (ColumnDefinition) factory.generate();
-
-        ColumnDefinition expect = new ColumnDefinition(new ColumnReference(null, "tb", "col"), null);
-        expect.setSerial(true);
-        Assert.assertEquals(expect, actual);
-    }
-
-    @Test
-    public void generate_columnDefWithForeignKeyIndexName_succeed() {
-        StatementFactory<TableElement> factory = new MySQLTableElementFactory(getTableElementContext(
-                "tb.col varchar(64) references a.b (col2, col3) match simple on delete cascade on update set default"));
-        TableElement actual = factory.generate();
-
-        DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
-        ColumnDefinition expect = new ColumnDefinition(new ColumnReference(null, "tb", "col"), dataType);
-
-        ColumnReference r1 = new ColumnReference(null, null, "col2");
-        ColumnReference r2 = new ColumnReference(null, null, "col3");
-        ForeignReference reference = new ForeignReference("a", "b", Arrays.asList(r1, r2));
-        reference.setDeleteOption(OnOption.CASCADE);
-        reference.setUpdateOption(OnOption.SET_DEFAULT);
-        reference.setMatchOption(MatchOption.SIMPLE);
-        expect.setForeignReference(reference);
         Assert.assertEquals(expect, actual);
     }
 
@@ -228,24 +201,9 @@ public class MySQLTableElementFactoryTest {
     }
 
     @Test
-    public void generate_columnDefDefaultExpr1_generateSuccees() {
-        StatementFactory<TableElement> factory =
-                new MySQLTableElementFactory(getTableElementContext("tb.col varchar(64) default (1) chunk '123'"));
-        ColumnDefinition actual = (ColumnDefinition) factory.generate();
-
-        DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
-        ColumnDefinition expect = new ColumnDefinition(new ColumnReference(null, "tb", "col"), dataType);
-        ColumnAttributes attributes = new ColumnAttributes();
-        attributes.setDefaultValue(new ConstExpression("1"));
-        attributes.setLobChunkSize("'123'");
-        expect.setColumnAttributes(attributes);
-        Assert.assertEquals(expect, actual);
-    }
-
-    @Test
     public void generate_columnDefKey_generateSuccees() {
         StatementFactory<TableElement> factory =
-                new MySQLTableElementFactory(getTableElementContext("tb.col varchar(64) key chunk 123"));
+                new MySQLTableElementFactory(getTableElementContext("tb.col varchar(64) key"));
         ColumnDefinition actual = (ColumnDefinition) factory.generate();
 
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
@@ -254,7 +212,6 @@ public class MySQLTableElementFactoryTest {
         InLineConstraint constraint = new InLineConstraint(null, null);
         constraint.setPrimaryKey(true);
         attributes.setConstraints(Collections.singletonList(constraint));
-        attributes.setLobChunkSize("123");
         expect.setColumnAttributes(attributes);
         Assert.assertEquals(expect, actual);
     }
@@ -262,8 +219,7 @@ public class MySQLTableElementFactoryTest {
     @Test
     public void generate_columnDefOrigDefaultExpr_generateSuccees() {
         StatementFactory<TableElement> factory = new MySQLTableElementFactory(
-                getTableElementContext(
-                        "tb.col varchar(64) orig_default current_timestamp(1) column_format default storage disk"));
+                getTableElementContext("tb.col varchar(64) orig_default current_timestamp(1)"));
         ColumnDefinition actual = (ColumnDefinition) factory.generate();
 
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
@@ -272,8 +228,6 @@ public class MySQLTableElementFactoryTest {
         FunctionCall expr = new FunctionCall("current_timestamp",
                 Collections.singletonList(new ExpressionParam(new ConstExpression("1"))));
         attributes.setOrigDefault(expr);
-        attributes.setColumnFormat("default");
-        attributes.setStorage("disk");
         expect.setColumnAttributes(attributes);
         Assert.assertEquals(expect, actual);
     }
@@ -693,7 +647,7 @@ public class MySQLTableElementFactoryTest {
     @Test
     public void generate_indexBtree_succeed() {
         StatementFactory<TableElement> factory = new MySQLTableElementFactory(
-                getTableElementContext("index idx_name using btree (col, col1) global with parser `aaaa`"));
+                getTableElementContext("index idx_name using btree (col, col1) global with parser 'aaaa'"));
         OutOfLineIndex actual = (OutOfLineIndex) factory.generate();
 
         SortColumn s1 = new SortColumn(new ColumnReference(null, null, "col"));
@@ -702,7 +656,7 @@ public class MySQLTableElementFactoryTest {
         IndexOptions indexOptions = new IndexOptions();
         indexOptions.setUsingBtree(true);
         indexOptions.setGlobal(true);
-        indexOptions.setWithParser("`aaaa`");
+        indexOptions.setWithParser("'aaaa'");
         expect.setIndexOptions(indexOptions);
         Assert.assertEquals(expect, actual);
     }
@@ -711,7 +665,7 @@ public class MySQLTableElementFactoryTest {
     public void generate_exprIndexBtree_succeed() {
         StatementFactory<TableElement> factory = new MySQLTableElementFactory(
                 getTableElementContext(
-                        "index idx_name using btree ((CASE a WHEN 1 THEN 11 WHEN 2 THEN 22 ELSE 33 END)) global with parser `aaaa`"));
+                        "index idx_name using btree ((CASE a WHEN 1 THEN 11 WHEN 2 THEN 22 ELSE 33 END)) global with parser 'aaaa'"));
         OutOfLineIndex actual = (OutOfLineIndex) factory.generate();
 
         List<WhenClause> whenClauses = new ArrayList<>();
@@ -725,7 +679,7 @@ public class MySQLTableElementFactoryTest {
         IndexOptions indexOptions = new IndexOptions();
         indexOptions.setUsingBtree(true);
         indexOptions.setGlobal(true);
-        indexOptions.setWithParser("`aaaa`");
+        indexOptions.setWithParser("'aaaa'");
         expect.setIndexOptions(indexOptions);
         Assert.assertEquals(expect, actual);
     }
@@ -911,7 +865,7 @@ public class MySQLTableElementFactoryTest {
     public void generate_uniqueIndexColumnAscId_succeed() {
         StatementFactory<TableElement> factory = new MySQLTableElementFactory(
                 getTableElementContext(
-                        "unique index idx_name using btree (col asc id 16, col1) global with parser `aaaa`"));
+                        "unique index idx_name using btree (col asc id 16, col1) global with parser 'aaaa'"));
         TableElement actual = factory.generate();
 
         SortColumn s1 = new SortColumn(new ColumnReference(null, null, "col"));
@@ -922,7 +876,7 @@ public class MySQLTableElementFactoryTest {
         IndexOptions indexOptions = new IndexOptions();
         indexOptions.setUsingBtree(true);
         indexOptions.setGlobal(true);
-        indexOptions.setWithParser("`aaaa`");
+        indexOptions.setWithParser("'aaaa'");
         state.setIndexOptions(indexOptions);
         OutOfLineConstraint expect = new OutOfLineConstraint(state, Arrays.asList(s1, s2));
         expect.setUniqueKey(true);
@@ -977,7 +931,7 @@ public class MySQLTableElementFactoryTest {
     @Test
     public void generate_uniqueIndexColumnAscIdNoIndexOps_succeed() {
         StatementFactory<TableElement> factory = new MySQLTableElementFactory(
-                getTableElementContext("unique index idx_name (col asc id 16, col1) global with parser `aaaa`"));
+                getTableElementContext("unique index idx_name (col asc id 16, col1) global with parser 'aaaa'"));
         TableElement actual = factory.generate();
 
         SortColumn s1 = new SortColumn(new ColumnReference(null, null, "col"));
@@ -987,7 +941,7 @@ public class MySQLTableElementFactoryTest {
         ConstraintState state = new ConstraintState();
         IndexOptions indexOptions = new IndexOptions();
         indexOptions.setGlobal(true);
-        indexOptions.setWithParser("`aaaa`");
+        indexOptions.setWithParser("'aaaa'");
         state.setIndexOptions(indexOptions);
         OutOfLineConstraint expect = new OutOfLineConstraint(state, Arrays.asList(s1, s2));
         expect.setUniqueKey(true);
@@ -1164,29 +1118,8 @@ public class MySQLTableElementFactoryTest {
         TableElement actual = factory.generate();
         OutOfLineIndex expected = new OutOfLineIndex("idx1",
                 Collections.singletonList(new SortColumn(new ColumnReference(null, null, "c2"))));
-        IndexOptions indexOptions = new IndexOptions();
-        expected.setIndexOptions(indexOptions);
+        expected.setIndexOptions(new IndexOptions());
         expected.setVector(true);
-        Map<String, String> params = new HashMap<>();
-        params.put("distance", "L2");
-        params.put("type", "hnsw");
-        indexOptions.setVectorIndexParams(params);
-        Assert.assertEquals(expected, actual);
-    }
-
-    @Test
-    public void generate_outOfLineIndexFullTextIndex_getWithParser_Succeed() {
-        StatementFactory<TableElement> factory = new MySQLTableElementFactory(
-                getTableElementContext("FULLTEXT KEY idx1 (name) WITH PARSER space"));
-        TableElement actual = factory.generate();
-
-        OutOfLineIndex expected = new OutOfLineIndex("idx1",
-                Collections.singletonList(new SortColumn(new ColumnReference(null, null, "name"))));
-        expected.setFullText(true);
-        IndexOptions indexOptions = new IndexOptions();
-        indexOptions.setWithParser("space");
-        expected.setIndexOptions(indexOptions);
-
         Assert.assertEquals(expected, actual);
     }
 

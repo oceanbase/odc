@@ -62,8 +62,7 @@ public class PLDebugTask implements Callable<PLDebugResult> {
         PLDebugResult result = null;
         JdbcOperations jdbcOperations = debuggeeSession.getJdbcOperations();
         if (anonymousBlock != null) {
-            jdbcOperations
-                    .execute(PLUtils.getSpecifiedRoute(debuggeeSession.getPlDebugODPSpecifiedRoute()) + anonymousBlock);
+            jdbcOperations.execute(anonymousBlock);
             result = new PLDebugResult();
         }
         log.info("Ending debug running, debugId={}", debugId);

@@ -74,8 +74,6 @@ public class ConnectionTesting {
     private ConnectionSSLAdaptor connectionSSLAdaptor;
     @Autowired
     private CloudMetadataClient cloudMetadataClient;
-    @Autowired
-    private FileSystemConnectionTester fileSystemConnectionTesting;
     @Value("${odc.sdk.test-connect.query-timeout-seconds:2}")
     private int queryTimeoutSeconds = 2;
 
@@ -104,9 +102,6 @@ public class ConnectionTesting {
 
     public ConnectionTestResult test(@NonNull ConnectionConfig config) {
         ConnectType type = config.getType();
-        if (type.getDialectType() == DialectType.FILE_SYSTEM) {
-            return fileSystemConnectionTesting.test(config);
-        }
         try {
             /**
              * 进行连接测试时需要关注的值有一个 {@link ConnectType}， 容易产生问题信息主要是两个：{@code username}, {@code defaultSchema} 首先分析
@@ -237,7 +232,6 @@ public class ConnectionTesting {
         config.setServiceName(req.getServiceName());
         config.setUserRole(req.getUserRole());
         config.setCatalogName(req.getCatalogName());
-        config.setRegion(req.getRegion());
 
         OBTenantEndpoint endpoint = req.getEndpoint();
         if (Objects.nonNull(endpoint) && OceanBaseAccessMode.IC_PROXY == endpoint.getAccessMode()) {

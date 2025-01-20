@@ -35,11 +35,6 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectType;
  */
 public class DBObjectRepositoryTest extends ServiceTestEnv {
 
-    private static final Long DATABASE_ID = 1L;
-    private static final DBObjectType DATASOURCE_TYPE = DBObjectType.SCHEMA;
-    private static final List<String> INSERT_ORDER_NAME_LIST = Arrays.asList("C", "B", "A");
-    private static final List<String> LEXICAL_ORDER_NAME_LIST = Arrays.asList("A", "B", "C");
-
     @Autowired
     private DBObjectRepository dbObjectRepository;
 
@@ -78,44 +73,4 @@ public class DBObjectRepositoryTest extends ServiceTestEnv {
         Assert.assertEquals(entities.size(), saved.size());
     }
 
-    @Test
-    public void findByDatabaseIdAndType_getListByDatabaseIdAndType_success() {
-        List<DBObjectEntity> entities = new ArrayList<>();
-        for (String name : INSERT_ORDER_NAME_LIST) {
-            DBObjectEntity entity = TestRandom.nextObject(DBObjectEntity.class);
-            entity.setName(name);
-            entity.setDatabaseId(DATABASE_ID);
-            entity.setType(DATASOURCE_TYPE);
-            entities.add(entity);
-        }
-        List<DBObjectEntity> savedEntities = dbObjectRepository.saveAll(entities);
-        List<DBObjectEntity> list = dbObjectRepository.findByDatabaseIdAndType(
-                DATABASE_ID, DATASOURCE_TYPE);
-        Assert.assertEquals(savedEntities.size(), list.size());
-        for (int i = 0; i < list.size(); i++) {
-            Assert.assertEquals(list.get(i).getDatabaseId(), DATABASE_ID);
-            Assert.assertEquals(list.get(i).getType(), DATASOURCE_TYPE);
-        }
-    }
-
-    @Test
-    public void findByDatabaseIdAndTypeOrderByNameAsc_getListSortedByName_success() {
-        List<DBObjectEntity> entities = new ArrayList<>();
-        for (String name : INSERT_ORDER_NAME_LIST) {
-            DBObjectEntity entity = TestRandom.nextObject(DBObjectEntity.class);
-            entity.setName(name);
-            entity.setDatabaseId(DATABASE_ID);
-            entity.setType(DATASOURCE_TYPE);
-            entities.add(entity);
-        }
-        List<DBObjectEntity> savedEntities = dbObjectRepository.saveAll(entities);
-        List<DBObjectEntity> list = dbObjectRepository.findByDatabaseIdAndTypeOrderByNameAsc(
-                DATABASE_ID, DATASOURCE_TYPE);
-        Assert.assertEquals(savedEntities.size(), list.size());
-        for (int i = 0; i < list.size(); i++) {
-            Assert.assertEquals(list.get(i).getDatabaseId(), DATABASE_ID);
-            Assert.assertEquals(list.get(i).getType(), DATASOURCE_TYPE);
-            Assert.assertEquals(list.get(i).getName(), LEXICAL_ORDER_NAME_LIST.get(i));
-        }
-    }
 }

@@ -43,10 +43,10 @@ import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.rollbackplan.model.RollbackProperties;
 import com.oceanbase.odc.service.task.TaskService;
-import com.oceanbase.odc.service.task.base.rollback.RollbackPlanTask;
-import com.oceanbase.odc.service.task.base.rollback.RollbackPlanTaskParameters;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.runtime.RollbackPlanTask;
+import com.oceanbase.odc.service.task.runtime.RollbackPlanTaskParameters;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
@@ -94,8 +94,7 @@ public class RollbackPlanRuntimeFlowableTaskCopied extends BaseODCFlowTaskDelega
             if (Objects.isNull(jobEntity) || jobEntity.getStatus() != JobStatus.DONE) {
                 throw new ServiceTaskError(new RuntimeException("Generate rollback plan task failed"));
             }
-            RollbackPlanTaskResult result =
-                    JsonUtils.fromJson(JobUtils.retrieveJobResultStr(jobEntity), RollbackPlanTaskResult.class);
+            RollbackPlanTaskResult result = JsonUtils.fromJson(jobEntity.getResultJson(), RollbackPlanTaskResult.class);
             DatabaseChangeResult databaseChangeResult = new DatabaseChangeResult();
             databaseChangeResult.setRollbackPlanResult(result);
             taskEntity.setResultJson(JsonUtils.toJson(databaseChangeResult));

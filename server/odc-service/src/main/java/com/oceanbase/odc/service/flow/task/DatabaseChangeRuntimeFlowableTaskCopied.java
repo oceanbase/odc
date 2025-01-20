@@ -52,12 +52,12 @@ import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.odc.service.task.TaskService;
-import com.oceanbase.odc.service.task.base.databasechange.DatabaseChangeTask;
-import com.oceanbase.odc.service.task.base.databasechange.DatabaseChangeTaskParameters;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.runtime.DatabaseChangeTask;
+import com.oceanbase.odc.service.task.runtime.DatabaseChangeTaskParameters;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
@@ -148,7 +148,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
                     TimeUnit.MILLISECONDS);
 
             JobEntity jobEntity = taskFrameworkService.find(this.jobId);
-            result = JsonUtils.fromJson(JobUtils.retrieveJobResultStr(jobEntity), DatabaseChangeResult.class);
+            result = JsonUtils.fromJson(jobEntity.getResultJson(), DatabaseChangeResult.class);
             result.setRollbackPlanResult(rollbackPlanTaskResult);
             if (jobEntity.getStatus() == JobStatus.DONE) {
                 isSuccessful = true;

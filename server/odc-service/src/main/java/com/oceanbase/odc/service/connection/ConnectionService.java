@@ -105,7 +105,6 @@ import com.oceanbase.odc.service.common.response.PaginatedData;
 import com.oceanbase.odc.service.connection.ConnectionStatusManager.CheckState;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.DatabaseSyncManager;
-import com.oceanbase.odc.service.connection.event.UpsertDatasourceEvent;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
@@ -222,9 +221,6 @@ public class ConnectionService {
     @Autowired
     private TransactionTemplate txTemplate;
 
-    @Autowired
-    private ConnectionEventPublisher connectionEventPublisher;
-
     private final ConnectionMapper mapper = ConnectionMapper.INSTANCE;
 
     public static final String DEFAULT_MIN_PRIVILEGE = "read";
@@ -253,7 +249,6 @@ public class ConnectionService {
             }
         });
         databaseSyncManager.submitSyncDataSourceAndDBSchemaTask(saved);
-        connectionEventPublisher.publishEvent(new UpsertDatasourceEvent(saved));
         return saved;
     }
 
@@ -398,11 +393,8 @@ public class ConnectionService {
 
     @SkipAuthorize("odc internal usage")
     public List<ConnectionConfig> listByOrganizationId(@NonNull Long organizationId) {
-        List<ConnectionConfig> connectionConfigs = entitiesToModels(
-                repository.findByOrganizationIdOrderByNameAsc(organizationId), organizationId, true,
+        return entitiesToModels(repository.findByOrganizationIdOrderByNameAsc(organizationId), organizationId, true,
                 true);
-        fullFillAttributes(connectionConfigs);
-        return connectionConfigs;
     }
 
     @SkipAuthorize("odc internal usage")
@@ -425,7 +417,6 @@ public class ConnectionService {
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, DEVELOPER, SECURITY_ADMINISTRATOR"},
-            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"},
             resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public PaginatedData<ConnectionConfig> listByProjectId(@NotNull Long projectId, @NotNull Boolean basic) {
         List<ConnectionConfig> connections;
@@ -613,7 +604,6 @@ public class ConnectionService {
         return updateConnectionConfig(id, connection, true);
     }
 
-    @SkipAuthorize("odc internal usage")
     public ConnectionConfig updateWithoutPermissionCheck(@NotNull Long id,
             @NotNull @Valid ConnectionConfig connection) {
         return updateConnectionConfig(id, connection, false);
@@ -693,7 +683,6 @@ public class ConnectionService {
             }
         });
         databaseSyncManager.submitSyncDataSourceAndDBSchemaTask(config);
-        connectionEventPublisher.publishEvent(new UpsertDatasourceEvent(config));
         return config;
     }
 

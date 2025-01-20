@@ -21,7 +21,6 @@ import java.util.List;
 import org.pf4j.ExtensionPoint;
 
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 
 /**
@@ -33,7 +32,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTable;
  */
 public interface TableExtensionPoint extends ExtensionPoint {
 
-    List<DBObjectIdentity> list(Connection connection, String schemaName, DBObjectType tableType);
+    List<DBObjectIdentity> list(Connection connection, String schemaName);
 
     List<String> showNamesLike(Connection connection, String schemaName, String tableNameLike);
 
@@ -44,6 +43,4 @@ public interface TableExtensionPoint extends ExtensionPoint {
     String generateCreateDDL(Connection connection, DBTable table);
 
     String generateUpdateDDL(Connection connection, DBTable oldTable, DBTable newTable);
-
-    boolean syncExternalTableFiles(Connection connection, String schemaName, String tableName);
 }

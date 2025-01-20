@@ -407,11 +407,6 @@ The setup for starting OdcServer is shown below.
 
 ![image.png](../en-US/images/idea-run-configuration-start-odc-server-2.png)
 
-The setup for environment variables is shown below.
-
-![image.png](../en-US/images/idea-run-configuration-start-odc-server-3.png)
-
-
 # 4. Frontend-backend integration
 
 ## 4.1 Front-end and back-end integration based on a static resource server <a id='4.1'></a>

@@ -18,8 +18,6 @@ package com.oceanbase.odc.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,11 +26,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.saml2.provider.service.metadata.OpenSamlMetadataResolver;
-import org.springframework.security.saml2.provider.service.registration.RelyingPartyRegistrationRepository;
-import org.springframework.security.saml2.provider.service.web.DefaultRelyingPartyRegistrationResolver;
-import org.springframework.security.saml2.provider.service.web.RelyingPartyRegistrationResolver;
-import org.springframework.security.saml2.provider.service.web.Saml2MetadataFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.context.SecurityContextRepository;
@@ -57,9 +50,6 @@ import com.oceanbase.odc.service.iam.auth.ldap.ODCLdapAuthenticationProvider;
 import com.oceanbase.odc.service.iam.auth.ldap.ODCLdapAuthenticator;
 import com.oceanbase.odc.service.iam.auth.local.LocalDaoAuthenticationProvider;
 import com.oceanbase.odc.service.iam.auth.oauth2.OAuth2SecurityConfigureHelper;
-import com.oceanbase.odc.service.iam.auth.saml.CustomSamlProvider;
-import com.oceanbase.odc.service.iam.auth.saml.DefaultSamlUserService;
-import com.oceanbase.odc.service.iam.auth.saml.SamlSecurityConfigureHelper;
 import com.oceanbase.odc.service.iam.util.FailedLoginAttemptLimiter;
 import com.oceanbase.odc.service.integration.ldap.LdapConfigRegistrationManager;
 
@@ -128,14 +118,6 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Autowired
     private LdapConfigRegistrationManager ldapConfigRegistrationManager;
 
-    @Autowired
-    private RelyingPartyRegistrationRepository registrations;
-
-    @Autowired
-    private DefaultSamlUserService defaultSamlUserService;
-
-    @Autowired
-    private SamlSecurityConfigureHelper samlSecurityConfigureHelper;
 
     private BastionAuthenticationProvider bastionAuthenticationProvider() {
         return new BastionAuthenticationProvider(bastionUserDetailService);
@@ -145,7 +127,6 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     public void configure(AuthenticationManagerBuilder auth) {
         auth.authenticationProvider(localDaoAuthenticationProvider)
                 .authenticationProvider(bastionAuthenticationProvider())
-                .authenticationProvider(new CustomSamlProvider(defaultSamlUserService))
                 .authenticationProvider(
                         new ODCLdapAuthenticationProvider(new ODCLdapAuthenticator(ldapConfigRegistrationManager),
                                 ldapUserDetailsContextMapper));
@@ -158,28 +139,11 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .and().ignoring().antMatchers(commonSecurityProperties.getAuthWhitelist());
     }
 
-    @Bean
-    RelyingPartyRegistrationResolver relyingPartyRegistrationResolver(
-            RelyingPartyRegistrationRepository registrations) {
-        return new DefaultRelyingPartyRegistrationResolver(registrations);
-    }
-
-    @Bean
-    FilterRegistrationBean<Saml2MetadataFilter> metadata(RelyingPartyRegistrationResolver registrations) {
-        Saml2MetadataFilter metadata = new Saml2MetadataFilter(registrations, new OpenSamlMetadataResolver());
-        FilterRegistrationBean<Saml2MetadataFilter> filter = new FilterRegistrationBean<>(metadata);
-        filter.setOrder(-101);
-        return filter;
-    }
-
-
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         corsConfigureHelper.configure(http);
         usernamePasswordConfigureHelper.configure(http, authenticationManager());
         oauth2SecurityConfigureHelper.configure(http);
-        samlSecurityConfigureHelper.configure(http, authenticationManager());
-
         ldapSecurityConfigureHelper.configure(http, authenticationManager());
 
         SecurityContextRepository securityContextRepository = securityContextRepository();

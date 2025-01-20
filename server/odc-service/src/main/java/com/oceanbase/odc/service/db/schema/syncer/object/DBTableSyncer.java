@@ -59,8 +59,7 @@ public class DBTableSyncer extends AbstractDBObjectSyncer<TableExtensionPoint> {
     @Override
     protected Set<String> getLatestObjectNames(@NonNull TableExtensionPoint extensionPoint,
             @NonNull Connection connection, @NonNull Database database) {
-        return extensionPoint.list(connection, database.getName(), DBObjectType.TABLE).stream()
-                .map(DBObjectIdentity::getName)
+        return extensionPoint.list(connection, database.getName()).stream().map(DBObjectIdentity::getName)
                 .collect(Collectors.toSet());
     }
 

@@ -15,10 +15,6 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 /**
  * @Author：tinker
  * @Date: 2022/11/16 15:36
@@ -40,9 +36,6 @@ public enum ScheduleStatus {
     COMPLETED,
     EXECUTION_FAILED,
 
-    DELETED;
+    DELETED
 
-    public static List<ScheduleStatus> listUnfinishedStatus() {
-        return Collections.unmodifiableList(Arrays.asList(CREATING, APPROVING, ENABLED));
-    }
 }

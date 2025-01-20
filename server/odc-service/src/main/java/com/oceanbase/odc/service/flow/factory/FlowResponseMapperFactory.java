@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -40,7 +41,11 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.Sets;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
+import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.connection.ConnectionSpecs;
@@ -61,18 +66,17 @@ import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.metadb.iam.UserRoleEntity;
 import com.oceanbase.odc.metadb.iam.UserRoleRepository;
+import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
+import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
 import com.oceanbase.odc.metadb.integration.IntegrationEntity;
 import com.oceanbase.odc.metadb.regulation.risklevel.RiskLevelRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.metadb.task.TaskSpecs;
-import com.oceanbase.odc.service.collaboration.project.ProjectService;
-import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
-import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
 import com.oceanbase.odc.service.flow.ApprovalPermissionService;
 import com.oceanbase.odc.service.flow.instance.FlowInstance;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
@@ -82,17 +86,13 @@ import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp.FlowNodeI
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
-import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
-import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.iam.model.UserResourceRole;
 import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.integration.client.ApprovalClient;
 import com.oceanbase.odc.service.integration.model.ApprovalProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
-import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
 import com.oceanbase.odc.service.regulation.risklevel.RiskLevelMapper;
 
 import lombok.NonNull;
@@ -136,14 +136,13 @@ public class FlowResponseMapperFactory {
     @Autowired
     private FlowInstanceRepository flowInstanceRepository;
     @Autowired
-    private ResourceRoleService resourceRoleService;
+    private UserResourceRoleRepository userResourceRoleRepository;
     @Autowired
     private RiskLevelRepository riskLevelRepository;
     @Autowired
     private AuthenticationFacade authenticationFacade;
     @Autowired
-    private ProjectService projectService;
-
+    private ProjectRepository projectRepository;
     private final ConnectionMapper connectionMapper = ConnectionMapper.INSTANCE;
 
     private final RiskLevelMapper riskLevelMapper = RiskLevelMapper.INSTANCE;
@@ -228,9 +227,9 @@ public class FlowResponseMapperFactory {
                             && candidateResourceRoleIdentifiers.isEmpty()) {
                         return Collections.emptyList();
                     } else if (!candidateResourceRoleIdentifiers.isEmpty()) {
-                        Set<Long> resourceRoleUserIds =
-                                resourceRoleService.listByResourceIdentifierIn(candidateResourceRoleIdentifiers)
-                                        .stream().map(UserResourceRole::getUserId).collect(Collectors.toSet());
+                        Set<Long> resourceRoleUserIds = userResourceRoleRepository
+                                .findByResourceIdsAndResourceRoleIdsIn(candidateResourceRoleIdentifiers)
+                                .stream().map(UserResourceRoleEntity::getUserId).collect(Collectors.toSet());
                         return CollectionUtils.isEmpty(resourceRoleUserIds) ? Collections.emptyList()
                                 : userRepository.findByUserIdsAndEnabled(resourceRoleUserIds, true);
                     } else if (candidateUserIds.isEmpty()) {
@@ -268,8 +267,7 @@ public class FlowResponseMapperFactory {
                     IntegrationConfig config =
                             integrationService.detailWithoutPermissionCheck(externalApproval.getApprovalId());
                     ApprovalProperties properties = ApprovalProperties.from(config);
-                    if (Objects.isNull(properties.getAdvanced())
-                            || StringUtils.isEmpty(properties.getAdvanced().getHyperlinkExpression())) {
+                    if (StringUtils.isEmpty(properties.getAdvanced().getHyperlinkExpression())) {
                         return null;
                     }
                     TemplateVariables variables = new TemplateVariables();
@@ -330,22 +328,43 @@ public class FlowResponseMapperFactory {
         Set<Long> databaseIds = taskId2TaskEntity.values().stream()
                 .map(TaskEntity::getDatabaseId)
                 .filter(Objects::nonNull).collect(Collectors.toSet());
+        Set<Long> sourceDatabaseIdsInComparisonTask = new HashSet<>();
+        Set<Long> targetDatabaseIdsInComparisonTask = new HashSet<>();
 
-        databaseIds.addAll(collectMultiDatabaseChangeDatabaseIds(taskId2TaskEntity));
-        databaseIds.addAll(collectDBStructureComparisonDatabaseIds(taskId2TaskEntity));
-        Set<Long> projectIds = new HashSet<>();
-        Map<Long, Project> id2Project = new HashMap<>();
+        taskId2TaskEntity.values().stream()
+                .filter(task -> task.getTaskType().equals(TaskType.STRUCTURE_COMPARISON))
+                .forEach(task -> {
+                    DBStructureComparisonParameter parameter = JsonUtils.fromJson(
+                            task.getParametersJson(), DBStructureComparisonParameter.class);
+                    sourceDatabaseIdsInComparisonTask.add(parameter.getSourceDatabaseId());
+                    targetDatabaseIdsInComparisonTask.add(parameter.getTargetDatabaseId());
+                });
+        databaseIds.addAll(targetDatabaseIdsInComparisonTask);
 
         if (CollectionUtils.isNotEmpty(databaseIds)) {
             id2Database = databaseService.listDatabasesByIds(databaseIds).stream()
                     .collect(Collectors.toMap(Database::getId, database -> database));
-            projectIds.addAll(id2Database.values().stream().map(db -> db.getProject().getId())
-                    .filter(Objects::nonNull).collect(Collectors.toSet()));
-        }
-        projectIds.addAll(collectApplyProjectIds(taskId2TaskEntity));
-        if (CollectionUtils.isNotEmpty(projectIds)) {
-            id2Project = projectService.listByIds(projectIds).stream()
-                    .collect(Collectors.toMap(Project::getId, project -> project, (a, b) -> a));
+
+            // set project name for structure comparison task
+            Set<Long> projectIds = sourceDatabaseIdsInComparisonTask.stream()
+                    .map(id2Database::get)
+                    .filter(Objects::nonNull)
+                    .map(database -> database.getProject().getId())
+                    .collect(Collectors.toSet());
+            Map<Long, ProjectEntity> id2ProjectEntity = projectRepository.findByIdIn(projectIds).stream()
+                    .collect(Collectors.toMap(ProjectEntity::getId, Function.identity()));
+
+            for (Long id : sourceDatabaseIdsInComparisonTask) {
+                Database database = id2Database.get(id);
+                if (Objects.nonNull(database) && Objects.nonNull(database.getProject())) {
+                    Long projectId = database.getProject().getId();
+                    if (Objects.nonNull(projectId)) {
+                        ProjectEntity projectEntity = Optional.ofNullable(id2ProjectEntity.get(projectId)).orElseThrow(
+                                () -> new NotFoundException(ResourceType.ODC_PROJECT, "projectId", projectId));
+                        database.getProject().setName(projectEntity.getName());
+                    }
+                }
+            }
         }
         /**
          * find the ConnectionConfig associated with each Database
@@ -398,9 +417,7 @@ public class FlowResponseMapperFactory {
                 .getRiskLevelByRiskLevelId(
                         id -> riskLevelRepository.findById(id).map(riskLevelMapper::entityToModel).orElse(null))
                 .getCandidatesByFlowInstanceId(candidatesByFlowInstanceIds::get)
-                .getDatabaseById(id2Database::get)
-                .getProjectById(id2Project::get)
-                .build();
+                .getDatabaseById(id2Database::get).build();
     }
 
     public Map<Long, List<RoleEntity>> getUserId2Roles(@NonNull Collection<Long> userIds, boolean skipAuth) {
@@ -456,44 +473,4 @@ public class FlowResponseMapperFactory {
         return connectionRepository.findAll(specification);
     }
 
-    private Set<Long> collectDBStructureComparisonDatabaseIds(Map<Long, TaskEntity> taskId2TaskEntity) {
-        Set<Long> targetDatabaseIdsInComparisonTask = new HashSet<>();
-        taskId2TaskEntity.values().stream()
-                .filter(task -> task.getTaskType().equals(TaskType.STRUCTURE_COMPARISON))
-                .forEach(task -> {
-                    DBStructureComparisonParameter parameter = JsonUtils.fromJson(
-                            task.getParametersJson(), DBStructureComparisonParameter.class);
-                    targetDatabaseIdsInComparisonTask.add(parameter.getTargetDatabaseId());
-                });
-        return targetDatabaseIdsInComparisonTask;
-    }
-
-    private Set<Long> collectApplyProjectIds(Map<Long, TaskEntity> taskId2TaskEntity) {
-        Set<Long> applyProjectIds = taskId2TaskEntity.values().stream()
-                .filter(task -> task.getTaskType() == TaskType.APPLY_PROJECT_PERMISSION)
-                .map(task -> {
-                    ApplyProjectParameter parameter =
-                            JsonUtils.fromJson(task.getParametersJson(), ApplyProjectParameter.class);
-                    if (Objects.nonNull(parameter) && Objects.nonNull(parameter.getProject())) {
-                        return parameter.getProject().getId();
-                    }
-                    return null;
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-        return applyProjectIds;
-    }
-
-    private Set<Long> collectMultiDatabaseChangeDatabaseIds(Map<Long, TaskEntity> taskId2TaskEntity) {
-        Set<Long> databaseIds = new HashSet<>();
-        taskId2TaskEntity.values().stream()
-                .filter(task -> task.getTaskType().equals(TaskType.MULTIPLE_ASYNC))
-                .forEach(task -> {
-                    MultipleDatabaseChangeParameters parameter = JsonUtils.fromJson(
-                            task.getParametersJson(), MultipleDatabaseChangeParameters.class);
-                    databaseIds.addAll(parameter.getDatabases().stream().map(DatabaseChangeDatabase::getId)
-                            .collect(Collectors.toSet()));
-                });
-        return databaseIds;
-    }
 }

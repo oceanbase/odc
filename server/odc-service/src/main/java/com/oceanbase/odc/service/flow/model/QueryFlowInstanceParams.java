@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.flow.model;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
@@ -50,5 +49,5 @@ public class QueryFlowInstanceParams {
     private Boolean containsAll;
     private Long parentInstanceId;
 
-    private Set<Long> projectIds;
+    private Long projectId;
 }

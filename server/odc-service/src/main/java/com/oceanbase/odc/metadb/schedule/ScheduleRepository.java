@@ -57,7 +57,7 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
             + "where id=:id", nativeQuery = true)
     int updateJobParametersById(@Param("id") Long id, @Param("jobParametersJson") String jobParametersJson);
 
-    @Query(value = "select count(1) from schedule_schedule where project_id=:projectId and status in ('ENABLED', 'CREATING', 'APPROVING', 'PAUSE')",
+    @Query(value = "select count(1) from schedule_schedule where project_id=:projectId and status = 'ENABLED'",
             nativeQuery = true)
     int getEnabledScheduleCountByProjectId(@Param("projectId") Long projectId);
 

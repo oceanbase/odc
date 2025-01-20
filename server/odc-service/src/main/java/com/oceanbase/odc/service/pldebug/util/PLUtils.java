@@ -18,9 +18,6 @@ package com.oceanbase.odc.service.pldebug.util;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.pldebug.model.PLDebugODPSpecifiedRoute;
-import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
-import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
 /**
  * @author yaobin
@@ -37,18 +34,5 @@ public abstract class PLUtils {
     public static boolean isSys(ConnectionConfig connectionConfig) {
 
         return "SYS".equalsIgnoreCase(connectionConfig.getUsername());
-    }
-
-    public static String getSpecifiedRoute(PLDebugODPSpecifiedRoute pLDebugODPSpecifiedRoute) {
-        SqlBuilder sqlBuilder = new OracleSqlBuilder();
-        if (pLDebugODPSpecifiedRoute != null && pLDebugODPSpecifiedRoute.getObserverHost() != null
-                && pLDebugODPSpecifiedRoute.getObserverPort() != null) {
-            sqlBuilder.append("/* TARGET_DB_SERVER = '");
-            sqlBuilder.append(pLDebugODPSpecifiedRoute.getObserverHost());
-            sqlBuilder.append(":");
-            sqlBuilder.append(pLDebugODPSpecifiedRoute.getObserverPort());
-            sqlBuilder.append("' */");
-        }
-        return sqlBuilder.toString();
     }
 }

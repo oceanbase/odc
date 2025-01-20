@@ -16,15 +16,17 @@
 package com.oceanbase.odc.service.iam.auth;
 
 import java.security.Principal;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.oceanbase.odc.core.authority.auth.SecurityContext;
 import com.oceanbase.odc.core.authority.permission.Permission;
+import com.oceanbase.odc.core.authority.permission.ResourceRoleBasedPermission;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
+import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
 import com.oceanbase.odc.service.iam.ResourceRoleBasedPermissionExtractor;
-import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.model.User;
 
 /**
@@ -33,30 +35,46 @@ import com.oceanbase.odc.service.iam.model.User;
  * @Description: []
  */
 public class ResourceRoleAuthorizer extends BaseAuthorizer {
-    protected final ResourceRoleService resourceRoleService;
+    protected final UserResourceRoleRepository repository;
     protected final ResourceRoleBasedPermissionExtractor permissionMapper;
 
-    public ResourceRoleAuthorizer(ResourceRoleService resourceRoleService,
+    public ResourceRoleAuthorizer(UserResourceRoleRepository repository,
             ResourceRoleBasedPermissionExtractor permissionMapper) {
-        this.resourceRoleService = resourceRoleService;
+        this.repository = repository;
         this.permissionMapper = permissionMapper;
     }
 
+
     @Override
-    protected List<Permission> listPermittedPermissions(Principal principal) {
+    public boolean isPermitted(Principal principal, Collection<Permission> permissions, SecurityContext context) {
         User odcUser = (User) principal;
         if (Objects.isNull(odcUser.getId())) {
-            return Collections.emptyList();
+            return false;
         }
+
         /**
          * find all user-related resource role, and implies with permissions respectively
          */
         List<UserResourceRoleEntity> resourceRoles =
-                resourceRoleService.listByUserId(odcUser.getId()).stream()
-                        .filter(Objects::nonNull).map(ResourceRoleService::toEntity).collect(Collectors.toList());
+                repository.findByUserId(odcUser.getId()).stream()
+                        .filter(Objects::nonNull).collect(Collectors.toList());
         if (resourceRoles.isEmpty()) {
-            return Collections.emptyList();
+            return false;
         }
-        return permissionMapper.getResourcePermissions(resourceRoles);
+        Collection<ResourceRoleBasedPermission> permissionCollection =
+                permissionMapper.getResourcePermissions(resourceRoles);
+        for (Permission permission : permissions) {
+            boolean accessDenied = true;
+            for (ResourceRoleBasedPermission resourceRoleBasedPermission : permissionCollection) {
+                if (resourceRoleBasedPermission.implies(permission)) {
+                    accessDenied = false;
+                    break;
+                }
+            }
+            if (accessDenied) {
+                return false;
+            }
+        }
+        return true;
     }
 }

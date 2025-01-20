@@ -25,7 +25,6 @@ import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 
 /**
@@ -48,7 +47,7 @@ public class DBTableServiceTest extends ServiceTestEnv {
 
         ConnectionSession session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
 
-        DBTable table = dbTableService.getTable(session, "abc", "abc", DBObjectType.TABLE);
+        DBTable table = dbTableService.getTable(session, "abc", "abc");
     }
 
     @Test
@@ -58,6 +57,6 @@ public class DBTableServiceTest extends ServiceTestEnv {
 
         ConnectionSession session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_ORACLE);
 
-        DBTable table = dbTableService.getTable(session, "abc", "abc", DBObjectType.TABLE);
+        DBTable table = dbTableService.getTable(session, "abc", "abc");
     }
 }

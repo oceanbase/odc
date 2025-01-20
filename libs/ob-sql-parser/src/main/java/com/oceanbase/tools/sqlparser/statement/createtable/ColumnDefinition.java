@@ -43,12 +43,7 @@ public class ColumnDefinition extends BaseStatement implements TableElement {
     private ColumnAttributes columnAttributes;
     private Boolean visible;
     private Location location;
-    /**
-     * if this field is true, means `BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE`
-     */
-    private boolean serial;
     private GenerateOption generateOption;
-    private ForeignReference foreignReference;
     private final DataType dataType;
     private final ColumnReference columnReference;
 
@@ -69,8 +64,6 @@ public class ColumnDefinition extends BaseStatement implements TableElement {
         StringBuilder builder = new StringBuilder(this.columnReference.toString());
         if (this.dataType != null) {
             builder.append(" ").append(this.dataType.toString());
-        } else if (this.serial) {
-            builder.append(" SERIAL");
         }
         if (this.visible != null) {
             if (this.visible) {
@@ -84,9 +77,6 @@ public class ColumnDefinition extends BaseStatement implements TableElement {
         }
         if (this.columnAttributes != null) {
             builder.append(" ").append(this.columnAttributes);
-        }
-        if (this.foreignReference != null) {
-            builder.append(" ").append(this.foreignReference);
         }
         if (this.location != null) {
             builder.append(" ").append(this.location);

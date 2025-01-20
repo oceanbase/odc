@@ -9,7 +9,7 @@
     <packaging>pom</packaging>
     <name>OceanBase Developer Center</name>
     <url>https://github.com/oceanbase/odc</url>
-    <version>4.3.3-SNAPSHOT</version>
+    <version>4.3.2-SNAPSHOT</version>
     <modules>
         <module>server/3rd-party/Libinjection</module>
         <module>server/odc-test</module>
@@ -93,7 +93,7 @@
         <alipay.sdk.version>4.20.19.ALL</alipay.sdk.version>
         <bucket4j-core.version>4.10.0</bucket4j-core.version>
         <springfox-swagger-ui.version>2.10.0</springfox-swagger-ui.version>
-        <db-browser.version>1.2.2</db-browser.version>
+        <db-browser.version>1.2.0</db-browser.version>
         <ob-sql-parser.version>1.4.0</ob-sql-parser.version>
         <pf4j.version>3.10.0</pf4j.version>
         <bcpkix-jdk15on.version>1.64</bcpkix-jdk15on.version>
@@ -113,13 +113,13 @@
         <aliyun.ram-auth-client.version>1.2.19</aliyun.ram-auth-client.version>
         <jettison.version>1.5.4</jettison.version>
         <!-- ob-loader-dumper involved -->
-        <hadoop-common.version>3.3.6</hadoop-common.version>
+        <hadoop-common.version>3.3.4</hadoop-common.version>
         <netty.version>4.1.94.Final</netty.version>
         <obkv-table-client.version>1.2.1</obkv-table-client.version>
         <mina.version>2.1.6</mina.version>
 
         <!-- data-lifecycle-manager version -->
-        <data-lifecycle-manager.version>1.2.0</data-lifecycle-manager.version>
+        <data-lifecycle-manager.version>1.1.6.bp4</data-lifecycle-manager.version>
 
         <!-- plugin version -->
         <formatter-maven-plugin.version>2.11.0</formatter-maven-plugin.version>
@@ -150,9 +150,6 @@
         <jwt.version>3.9.0</jwt.version>
         <okhttp.version>4.11.0</okhttp.version>
         <jgit.version>5.13.3.202401111512-r</jgit.version>
-        <bouncycastle.jdk18.version>1.76</bouncycastle.jdk18.version>
-        <bouncycastle.jdk15.version>1.70</bouncycastle.jdk15.version>
-        <commons-codec.version>1.15</commons-codec.version>
         <registry-prometheus.version>1.9.5</registry-prometheus.version>
         <actuator.version>2.7.12</actuator.version>
     </properties>
@@ -167,10 +164,6 @@
                     <exclusion>
                         <groupId>org.slf4j</groupId>
                         <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.amazonaws</groupId>
-                        <artifactId>aws-java-sdk-bundle</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -199,11 +192,6 @@
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy-all</artifactId>
                 <version>${groovy-all.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-codec</groupId>
-                <artifactId>commons-codec</artifactId>
-                <version>${commons-codec.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.micrometer</groupId>
@@ -471,12 +459,6 @@
                 <artifactId>spring-security-oauth2-client</artifactId>
                 <version>${spring-security.version}</version>
             </dependency>
-
-            <dependency>
-                <groupId>org.springframework.security</groupId>
-                <artifactId>spring-security-saml2-service-provider</artifactId>
-                <version>${spring-security.version}</version>
-            </dependency>
             <dependency>
                 <groupId>org.springframework.security</groupId>
                 <artifactId>spring-security-crypto</artifactId>
@@ -500,7 +482,7 @@
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcpkix-jdk15on</artifactId>
-                <version>${bouncycastle.jdk15.version}</version>
+                <version>${bcpkix-jdk15on.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.integration</groupId>
@@ -518,30 +500,9 @@
                 <version>${spring-cloud-starter-bootstrap.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk18on</artifactId>
-                <version>${bouncycastle.jdk18.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk18on</artifactId>
-                <version>${bouncycastle.jdk18.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcutil-jdk18on</artifactId>
-                <version>${bouncycastle.jdk18.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-config-server</artifactId>
                 <version>${spring-cloud-config-server.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.eclipse.jgit</groupId>
-                        <artifactId>org.eclipse.jgit.ssh.apache</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
@@ -1017,7 +978,9 @@
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk15on</artifactId>
-                <version>${bouncycastle.jdk15.version}</version>
+                <!-- original version = 1.62 -->
+                <!-- upgrade to avoid vulnerability issues, version >= 1.67 -->
+                <version>1.70</version>
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>

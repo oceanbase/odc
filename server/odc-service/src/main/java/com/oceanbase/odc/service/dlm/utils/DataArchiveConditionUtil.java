@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.dlm.utils;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -29,7 +30,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.dlm.model.OffsetConfig;
 import com.oceanbase.odc.service.dlm.model.Operator;
 
@@ -82,18 +82,21 @@ public class DataArchiveConditionUtil {
         if (StringUtils.isNotEmpty(config.getPattern())) {
             String[] parts = config.getPattern().split("\\|");
             String offsetString = parts[1].substring(1);
-            long offsetValue = parseValue(offsetString);
+            ChronoUnit unit = parseUnit(offsetString.substring(offsetString.length() - 1));
+            long offsetSeconds = parseValue(offsetString) * unit.getDuration().getSeconds();
             if (parts[1].startsWith("-")) {
-                offsetValue = -offsetValue;
+                offsetSeconds = -offsetSeconds;
             }
-            localDateTime = calculateDateTime(baseDate, offsetValue, offsetString.substring(offsetString.length() - 1));
+            localDateTime = baseDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
+                    .plusSeconds(offsetSeconds);
             return localDateTime.format(DateTimeFormatter.ofPattern(parts[0]));
         } else {
-            long offsetValue = config.getValue();
+            long offsetSeconds = config.getValue() * parseUnit(config.getUnit()).getDuration().getSeconds();
             if (config.getOperator() == Operator.MINUS) {
-                offsetValue = -offsetValue;
+                offsetSeconds = -offsetSeconds;
             }
-            localDateTime = calculateDateTime(baseDate, offsetValue, config.getUnit());
+            localDateTime = baseDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
+                    .plusSeconds(offsetSeconds);
             return localDateTime.format(DateTimeFormatter.ofPattern(config.getDateFormatPattern()));
         }
 
@@ -103,18 +106,24 @@ public class DataArchiveConditionUtil {
         return Integer.parseInt(offsetString.substring(0, offsetString.length() - 1));
     }
 
-    private static LocalDateTime calculateDateTime(Date baseDate, long offsetValue, String unit) {
+    private static ChronoUnit parseUnit(String unit) {
         switch (unit) {
             case "y":
-                return baseDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime().plusYears(offsetValue);
+                return ChronoUnit.YEARS;
             case "M":
-                return baseDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime().plusMonths(offsetValue);
+                return ChronoUnit.MONTHS;
             case "d":
-                return baseDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime().plusDays(offsetValue);
+                return ChronoUnit.DAYS;
+            case "h":
+                return ChronoUnit.HOURS;
+            case "m":
+                return ChronoUnit.MINUTES;
+            case "s":
+                return ChronoUnit.SECONDS;
             case "w":
-                return baseDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime().plusWeeks(offsetValue);
+                return ChronoUnit.WEEKS;
             default:
-                throw new UnsupportedException("Unsupported unit: " + unit);
+                throw new IllegalArgumentException("Unknown unit: " + unit);
         }
     }
 }

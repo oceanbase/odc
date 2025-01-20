@@ -32,7 +32,6 @@ import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.model.DBClientInfo;
 import com.oceanbase.tools.dbbrowser.util.VersionUtils;
 
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -48,17 +47,7 @@ public class OBOracleSessionExtension implements SessionExtensionPoint {
 
     @Override
     public void killQuery(Connection connection, String connectionId) {
-        JdbcOperationsUtil.getJdbcOperations(connection).execute(getKillQuerySql(connectionId));
-    }
-
-    @Override
-    public String getKillQuerySql(@NonNull String connectionId) {
-        return "KILL QUERY " + connectionId;
-    }
-
-    @Override
-    public String getKillSessionSql(@NonNull String connectionId) {
-        return "KILL " + connectionId;
+        JdbcOperationsUtil.getJdbcOperations(connection).execute("KILL QUERY " + connectionId);
     }
 
     @Override

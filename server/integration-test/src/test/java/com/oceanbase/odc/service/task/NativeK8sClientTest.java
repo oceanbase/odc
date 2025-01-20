@@ -26,13 +26,12 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import com.oceanbase.odc.service.task.caller.K8sJobClient;
+import com.oceanbase.odc.service.task.caller.K8sJobResponse;
+import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
+import com.oceanbase.odc.service.task.caller.PodConfig;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.exception.JobException;
-import com.oceanbase.odc.service.task.resource.K8sPodResource;
-import com.oceanbase.odc.service.task.resource.K8sResourceContext;
-import com.oceanbase.odc.service.task.resource.PodConfig;
-import com.oceanbase.odc.service.task.resource.client.K8sJobClient;
-import com.oceanbase.odc.service.task.resource.client.NativeK8sJobClient;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.odc.test.database.TestProperties;
@@ -64,12 +63,10 @@ public class NativeK8sClientTest {
         String exceptedJobName = JobUtils.generateExecutorName(jobIdentity);
         List<String> cmd = Arrays.asList("perl", "-Mbignum=bpi", "-wle", "print bpi(2000)");
         PodConfig podParam = new PodConfig();
-        K8sResourceContext context =
-                new K8sResourceContext(podParam, exceptedJobName, imageName, "group", "type", podParam);
-        K8sPodResource generateJobOfName = k8sClient.create(context);
+        String generateJobOfName = k8sClient.create("default", exceptedJobName, imageName, cmd, podParam);
         Assert.assertEquals(exceptedJobName, generateJobOfName);
 
-        Optional<K8sPodResource> queryJobName = k8sClient.get("default", exceptedJobName);
+        Optional<K8sJobResponse> queryJobName = k8sClient.get("default", exceptedJobName);
         Assert.assertTrue(queryJobName.isPresent());
         Assert.assertEquals(exceptedJobName, queryJobName.get());
 

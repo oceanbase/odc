@@ -35,7 +35,6 @@ import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.MySQLSchemaExportJob
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.MySQLSqlScriptImportJob;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.DataXTransferJob;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobConfiguration;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
@@ -59,7 +58,7 @@ public class MySQLTransferJobFactory extends BaseTransferJobFactory {
     @Override
     protected List<DataTransferObject> queryTransferObjects(Connection connection, boolean transferDDL) {
         List<DataTransferObject> objects = new ArrayList<>();
-        new MySQLTableExtension().list(connection, transferConfig.getSchemaName(), DBObjectType.TABLE)
+        new MySQLTableExtension().list(connection, transferConfig.getSchemaName())
                 .forEach(table -> objects.add(new DataTransferObject(ObjectType.TABLE, table.getName())));
         if (transferDDL) {
             new MySQLViewExtension().list(connection, transferConfig.getSchemaName())

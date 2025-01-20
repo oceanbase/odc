@@ -39,8 +39,6 @@ import com.oceanbase.odc.service.sqlcheck.factory.ColumnCalculationFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.ColumnCharsetExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.ColumnCollationExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.ColumnNameInBlackListFactory;
-import com.oceanbase.odc.service.sqlcheck.factory.CreateTableAsExistsFactory;
-import com.oceanbase.odc.service.sqlcheck.factory.CreateTableLikeExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.ForeignConstraintExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.LeftFuzzyMatchFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.MissingRequiredColumnsFactory;
@@ -157,8 +155,6 @@ public class SqlCheckRules {
         rules.add(new TruncateTableExistsFactory());
         rules.add(new SqlAffectedRowsFactory(jdbc));
         rules.add(new Unable2JudgeAffectedRowsFactory(jdbc));
-        rules.add(new CreateTableLikeExistsFactory());
-        rules.add(new CreateTableAsExistsFactory());
         return rules;
     }
 

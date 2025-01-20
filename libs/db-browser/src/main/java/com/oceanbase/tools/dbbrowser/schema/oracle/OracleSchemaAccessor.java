@@ -248,26 +248,6 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public List<String> showExternalTablesLike(String schemaName, String tableNameLike) {
-        throw new UnsupportedOperationException("Not support yet");
-    }
-
-    @Override
-    public List<DBObjectIdentity> listExternalTables(String schemaName, String tableNameLike) {
-        throw new UnsupportedOperationException("Not support yet");
-    }
-
-    @Override
-    public boolean isExternalTable(String schemaName, String tableName) {
-        return false;
-    }
-
-    @Override
-    public boolean syncExternalTableFiles(String schemaName, String tableName) {
-        throw new UnsupportedOperationException("Not supported yet");
-    }
-
-    @Override
     public List<DBObjectIdentity> listViews(String schemaName) {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("select OWNER as schema_name, 'VIEW' as type, view_name as name from ");
@@ -645,16 +625,6 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Map<String, List<DBTableColumn>> listBasicExternalTableColumns(String schemaName) {
-        throw new UnsupportedOperationException("not support yet");
-    }
-
-    @Override
-    public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String externalTableName) {
-        throw new UnsupportedOperationException("not support yet");
-    }
-
-    @Override
     public Map<String, List<DBTableColumn>> listBasicColumnsInfo(String schemaName) {
         String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_COLUMNS_INFO);
         List<DBTableColumn> tableColumns =
@@ -869,7 +839,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             tableColumn.setVirtual("YES".equalsIgnoreCase(rs.getString(OracleConstants.COL_VIRTUAL_COLUMN)));
             tableColumn.setDefaultValue("NULL".equals(defaultValue) ? null : defaultValue);
             if (tableColumn.getVirtual()) {
-                tableColumn.setGenExpression(defaultValue);
+                tableColumn.setGenExpression(rs.getString(OracleConstants.COL_DATA_DEFAULT));
             }
             return tableColumn;
         };
@@ -1865,4 +1835,5 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             throw new UnsupportedOperationException("Not supported Synonym type");
         }
     }
+
 }

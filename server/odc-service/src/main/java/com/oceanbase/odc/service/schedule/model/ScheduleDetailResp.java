@@ -19,7 +19,6 @@ import java.util.Date;
 import java.util.List;
 
 import com.oceanbase.odc.common.i18n.Internationalizable;
-import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 
@@ -62,7 +61,5 @@ public class ScheduleDetailResp {
     private ScheduleTaskParameters parameters;
 
     private TriggerConfig triggerConfig;
-
-    private Project project;
 
 }

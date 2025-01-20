@@ -63,9 +63,4 @@ public class ODPShardingOBMySQLTableExtension extends OBMySQLTableExtension {
                 .setType(DialectType.ODP_SHARDING_OB_MYSQL.getDBBrowserDialectTypeName()).create();
     }
 
-    @Override
-    public boolean syncExternalTableFiles(Connection connection, String schemaName, String tableName) {
-        throw new UnsupportedOperationException("not implemented yet");
-    }
-
 }

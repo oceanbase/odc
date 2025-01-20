@@ -47,26 +47,10 @@ import lombok.NonNull;
 public class OBMySQLTableExtension implements TableExtensionPoint {
 
     @Override
-    public List<DBObjectIdentity> list(@NonNull Connection connection, @NonNull String schemaName,
-            @NonNull DBObjectType tableType) {
-        List<String> nameList;
-        switch (tableType) {
-            case TABLE:
-                nameList = getSchemaAccessor(connection).showTables(schemaName);
-                return generateDBObjectIdentityByTableType(schemaName, nameList, DBObjectType.TABLE);
-            case EXTERNAL_TABLE:
-                nameList = getSchemaAccessor(connection).showExternalTables(schemaName);
-                return generateDBObjectIdentityByTableType(schemaName, nameList, DBObjectType.EXTERNAL_TABLE);
-            default:
-                throw new IllegalArgumentException("Unsupported table type: " + tableType);
-        }
-    }
-
-    private List<DBObjectIdentity> generateDBObjectIdentityByTableType(String schemaName, List<String> nameList,
-            DBObjectType tableType) {
-        return nameList.stream().map(item -> {
+    public List<DBObjectIdentity> list(@NonNull Connection connection, @NonNull String schemaName) {
+        return getSchemaAccessor(connection).showTables(schemaName).stream().map(item -> {
             DBObjectIdentity identity = new DBObjectIdentity();
-            identity.setType(tableType);
+            identity.setType(DBObjectType.TABLE);
             identity.setSchemaName(schemaName);
             identity.setName(item);
             return identity;
@@ -90,14 +74,9 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
         table.setOwner(schemaName);
         table.setName(tableName);
         table.setColumns(schemaAccessor.listTableColumns(schemaName, tableName));
-        if (!schemaAccessor.isExternalTable(schemaName, tableName)) {
-            table.setConstraints(schemaAccessor.listTableConstraints(schemaName, tableName));
-            table.setIndexes(schemaAccessor.listTableIndexes(schemaName, tableName));
-            table.setType(DBObjectType.TABLE);
-        } else {
-            table.setType(DBObjectType.EXTERNAL_TABLE);
-        }
+        table.setConstraints(schemaAccessor.listTableConstraints(schemaName, tableName));
         table.setPartition(parser.getPartition());
+        table.setIndexes(schemaAccessor.listTableIndexes(schemaName, tableName));
         table.setDDL(ddl);
         table.setTableOptions(schemaAccessor.getTableOptions(schemaName, tableName));
         table.setStats(getTableStats(connection, schemaName, tableName));
@@ -136,13 +115,6 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
     public String generateUpdateDDL(@NonNull Connection connection, @NonNull DBTable oldTable,
             @NonNull DBTable newTable) {
         return getTableEditor(connection).generateUpdateObjectDDL(oldTable, newTable);
-    }
-
-    @Override
-    public boolean syncExternalTableFiles(Connection connection, String schemaName, String tableName) {
-        DBSchemaAccessor schemaAccessor = getSchemaAccessor(connection);
-        schemaAccessor.syncExternalTableFiles(schemaName, tableName);
-        return true;
     }
 
     protected DBTableEditor getTableEditor(Connection connection) {

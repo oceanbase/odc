@@ -42,17 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 public class OracleSessionExtension extends OBOracleSessionExtension {
     @Override
     public void killQuery(Connection connection, String connectionId) {
-        JdbcOperationsUtil.getJdbcOperations(connection).execute(getKillQuerySql(connectionId));
-    }
-
-    @Override
-    public String getKillQuerySql(@NonNull String connectionId) {
-        return this.getKillSessionSql(connectionId);
-    }
-
-    @Override
-    public String getKillSessionSql(@NonNull String connectionId) {
-        return "ALTER SYSTEM KILL SESSION '" + connectionId + "'" + " IMMEDIATE";
+        JdbcOperationsUtil.getJdbcOperations(connection).execute("ALTER SYSTEM KILL SESSION '" + connectionId + "'");
     }
 
     @Override
@@ -123,4 +113,6 @@ public class OracleSessionExtension extends OBOracleSessionExtension {
             return false;
         }
     }
+
+
 }

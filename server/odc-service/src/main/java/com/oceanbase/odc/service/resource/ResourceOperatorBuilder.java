@@ -19,7 +19,7 @@ import lombok.NonNull;
 
 /**
  * operator builder to build operator by location adn type
- *
+ * 
  * @author longpeng.zlp
  * @date 2024/9/2 17:15
  */
@@ -34,7 +34,7 @@ public interface ResourceOperatorBuilder<RC extends ResourceContext, R extends R
 
     /**
      * if this operator builder matched with given type
-     *
+     * 
      * @param type \ * @return
      */
     boolean matches(@NonNull String type);

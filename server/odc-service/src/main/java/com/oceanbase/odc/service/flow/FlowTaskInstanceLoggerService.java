@@ -68,15 +68,11 @@ public class FlowTaskInstanceLoggerService {
     @Autowired
     private ScheduleLogProperties loggerProperty;
 
-    @Autowired
-    private FlowPermissionHelper flowPermissionHelper;
-
     @SneakyThrows
     public String getLogContent(OdcTaskLogLevel level, Long flowInstanceId) {
         try {
             Optional<TaskEntity> taskEntityOptional =
-                    flowTaskInstanceService.getLogDownloadableTaskEntity(flowInstanceId,
-                            flowPermissionHelper.withProjectMemberCheck());
+                    flowTaskInstanceService.getLogDownloadableTaskEntity(flowInstanceId, false);
             return getLogContent(taskEntityOptional, level, flowInstanceId);
         } catch (Exception e) {
             log.warn("Task log file not found, flowInstanceId={}", flowInstanceId, e);
@@ -88,7 +84,7 @@ public class FlowTaskInstanceLoggerService {
     public String getLogContentWithoutPermission(OdcTaskLogLevel level, Long flowInstanceId) {
         try {
             Optional<TaskEntity> taskEntityOptional =
-                    flowTaskInstanceService.getLogDownloadableTaskEntity(flowInstanceId, null);
+                    flowTaskInstanceService.getLogDownloadableTaskEntity(flowInstanceId, true);
             return getLogContent(taskEntityOptional, level, flowInstanceId);
         } catch (Exception e) {
             log.warn("get log failed, task log file not found, flowInstanceId={}", flowInstanceId);
@@ -133,8 +129,7 @@ public class FlowTaskInstanceLoggerService {
     @SneakyThrows
     private InputStream downloadLog(Long flowInstanceId) {
         Optional<TaskEntity> taskEntityOptional =
-                flowTaskInstanceService.getLogDownloadableTaskEntity(flowInstanceId,
-                        flowPermissionHelper.withProjectMemberCheck());
+                flowTaskInstanceService.getLogDownloadableTaskEntity(flowInstanceId, false);
         TaskEntity taskEntity = taskEntityOptional
                 .orElseThrow(() -> new NotFoundException(ErrorCodes.NotFound, new Object[] {flowInstanceId},
                         ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", flowInstanceId})));

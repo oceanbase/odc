@@ -85,8 +85,7 @@ public class SensitiveRuleService {
     private static final SensitiveRuleMapper ruleMapper = SensitiveRuleMapper.INSTANCE;
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, actions = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT",
-            indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public Boolean exists(@NotNull Long projectId, @NotBlank String name) {
         SensitiveRuleEntity entity = new SensitiveRuleEntity();
         entity.setName(name);
@@ -96,8 +95,7 @@ public class SensitiveRuleService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"},
-            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
             indexOfIdParam = 0)
     public SensitiveRule create(@NotNull Long projectId, @NotNull @Valid SensitiveRule rule) {
         Long organizationId = authenticationFacade.currentOrganizationId();
@@ -117,8 +115,7 @@ public class SensitiveRuleService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"},
-            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
             indexOfIdParam = 0)
     public SensitiveRule detail(@NotNull Long projectId, @NotNull Long id) {
         SensitiveRuleEntity entity = nullSafeGet(id);
@@ -133,8 +130,7 @@ public class SensitiveRuleService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"},
-            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
             indexOfIdParam = 0)
     public SensitiveRule update(@NotNull Long projectId, @NotNull Long id, @NotNull @Valid SensitiveRule rule) {
         SensitiveRuleEntity entity = nullSafeGet(id);
@@ -166,8 +162,7 @@ public class SensitiveRuleService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"},
-            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
             indexOfIdParam = 0)
     public SensitiveRule delete(@NotNull Long projectId, @NotNull Long id) {
         SensitiveRuleEntity entity = nullSafeGet(id);
@@ -184,8 +179,7 @@ public class SensitiveRuleService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"},
-            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
             indexOfIdParam = 0)
     public Page<SensitiveRule> list(@NotNull Long projectId, @NotNull @Valid QuerySensitiveRuleParams params,
             Pageable pageable) {
@@ -201,8 +195,7 @@ public class SensitiveRuleService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"},
-            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
             indexOfIdParam = 0)
     public SensitiveRule setEnabled(@NotNull Long projectId, @NotNull Long id, @NotNull Boolean enabled) {
         SensitiveRuleEntity entity = nullSafeGet(id);

@@ -30,7 +30,6 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
@@ -94,7 +93,7 @@ public class DBObjectNameAccessor implements AutoCloseable {
 
     public Set<String> getTableNames() {
         return queryNames(conn -> SchemaPluginUtil.getTableExtension(dialectType)
-                .list(conn, schema, DBObjectType.TABLE)).stream()
+                .list(conn, schema)).stream()
                         .map(DBObjectIdentity::getName)
                         .filter(name -> !StringUtils.endsWithIgnoreCase(name, OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
                         .collect(Collectors.toSet());

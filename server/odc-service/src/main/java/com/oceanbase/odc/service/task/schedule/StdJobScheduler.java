@@ -49,13 +49,11 @@ import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskMonitorMode;
-import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.DefaultJobCallerListener;
 import com.oceanbase.odc.service.task.schedule.daemon.CheckRunningJob;
 import com.oceanbase.odc.service.task.schedule.daemon.DestroyExecutorJob;
-import com.oceanbase.odc.service.task.schedule.daemon.DestroyResourceJob;
 import com.oceanbase.odc.service.task.schedule.daemon.DoCancelingJob;
 import com.oceanbase.odc.service.task.schedule.daemon.PullTaskResultJob;
 import com.oceanbase.odc.service.task.schedule.daemon.StartPreparingJob;
@@ -203,7 +201,6 @@ public class StdJobScheduler implements JobScheduler {
         initStartPreparingJob();
         initDoCancelingJob();
         initDestroyExecutorJob();
-        initDestroyResource();
     }
 
     private void initCheckRunningJob() {
@@ -243,15 +240,6 @@ public class StdJobScheduler implements JobScheduler {
         initCronJob(key,
                 configuration.getTaskFrameworkProperties().getDestroyExecutorJobCronExpression(),
                 DestroyExecutorJob.class);
-    }
-
-    private void initDestroyResource() {
-        if (configuration.getTaskFrameworkProperties().getRunMode() == TaskRunMode.K8S) {
-            String key = "destroyResourceJob";
-            initCronJob(key,
-                    configuration.getTaskFrameworkProperties().getDestroyExecutorJobCronExpression(),
-                    DestroyResourceJob.class);
-        }
     }
 
     private void initCronJob(String key, String cronExpression, Class<? extends Job> jobClass) {

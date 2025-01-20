@@ -91,7 +91,7 @@ public class NoIndexNameExists implements SqlCheckRule {
     @Override
     public List<DialectType> getSupportsDialectTypes() {
         return Arrays.asList(DialectType.MYSQL, DialectType.OB_MYSQL, DialectType.OB_ORACLE,
-                DialectType.ODP_SHARDING_OB_MYSQL, DialectType.ORACLE);
+                DialectType.ODP_SHARDING_OB_MYSQL);
     }
 
     private List<Statement> builds(Stream<ColumnDefinition> stream) {

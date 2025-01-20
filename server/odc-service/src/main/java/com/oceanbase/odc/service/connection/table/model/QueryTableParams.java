@@ -15,11 +15,7 @@
  */
 package com.oceanbase.odc.service.connection.table.model;
 
-import java.util.List;
-
 import javax.validation.constraints.NotNull;
-
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.Builder;
 import lombok.Data;
@@ -36,11 +32,5 @@ public class QueryTableParams {
     private Long databaseId;
     @NotNull
     private Boolean includePermittedAction;
-    /**
-     * table belonging to type in this collection needs to be fetched. if types is empty, return an
-     * empty collection.
-     */
-    @NotNull
-    private List<DBObjectType> types;
 
 }

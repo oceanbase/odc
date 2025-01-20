@@ -30,7 +30,6 @@ import com.oceanbase.odc.plugin.schema.oboracle.parser.OBOracleGetDBTableByParse
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
@@ -67,21 +66,16 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
         table.setOwner(schemaName);
         table.setName(tableName);
         table.setColumns(columns);
-        if (!accessor.isExternalTable(schemaName, tableName)) {
-            /**
-             * If the constraint name cannot be obtained through ddl of the table, then the constraint
-             * information will still be obtained through DBSchemaAccessor
-             */
-            List<DBTableConstraint> constraints = parser.listConstraints();
-            table.setConstraints(constraints.stream().anyMatch(c -> Objects.isNull(c.getName()))
-                    ? accessor.listTableConstraints(schemaName, tableName)
-                    : constraints);
-            table.setIndexes(parser.listIndexes());
-            table.setType(DBObjectType.TABLE);
-        } else {
-            table.setType(DBObjectType.EXTERNAL_TABLE);
-        }
+        /**
+         * If the constraint name cannot be obtained through ddl of the table, then the constraint
+         * information will still be obtained through DBSchemaAccessor
+         */
+        List<DBTableConstraint> constraints = parser.listConstraints();
+        table.setConstraints(constraints.stream().anyMatch(c -> Objects.isNull(c.getName()))
+                ? accessor.listTableConstraints(schemaName, tableName)
+                : constraints);
         table.setPartition(parser.getPartition());
+        table.setIndexes(parser.listIndexes());
         DBTableOptions tableOptions = accessor.getTableOptions(schemaName, tableName);
         table.setTableOptions(tableOptions);
         table.setDDL(getTableDDL(connection, schemaName, tableName, parser, columns, tableOptions));

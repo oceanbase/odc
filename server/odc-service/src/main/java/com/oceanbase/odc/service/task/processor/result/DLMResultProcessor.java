@@ -25,7 +25,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.dlm.DLMService;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
-import com.oceanbase.odc.service.task.executor.TaskResult;
+import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.processor.matcher.DLMProcessorMatcher;
 
 import lombok.extern.slf4j.Slf4j;
@@ -48,7 +48,7 @@ public class DLMResultProcessor extends DLMProcessorMatcher implements ResultPro
 
     @Override
     public void process(TaskResult result) {
-        log.info("Start refresh result,jobIdentity={}", result.getJobIdentity());
+        log.info("Start refresh result,result={}", result.getResultJson());
         try {
             List<DlmTableUnit> dlmTableUnits = JsonUtils.fromJson(result.getResultJson(),
                     new TypeReference<List<DlmTableUnit>>() {});

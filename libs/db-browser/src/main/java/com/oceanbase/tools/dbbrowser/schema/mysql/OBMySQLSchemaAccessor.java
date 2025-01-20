@@ -25,7 +25,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
@@ -42,7 +41,6 @@ import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMappers;
-import com.oceanbase.tools.dbbrowser.schema.constant.Statements;
 import com.oceanbase.tools.dbbrowser.schema.constant.StatementsFiles;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
@@ -54,14 +52,14 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 适用 OB 版本：[4.3.2, ~)
+ * 适用 OB 版本：[4.0.0, ~)
  *
  * @author jingtian
  */
 @Slf4j
 public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
-    protected static final Set<String> ESCAPE_SCHEMA_SET = new HashSet<>(4);
+    protected static final Set<String> ESCAPE_SCHEMA_SET = new HashSet<>(3);
 
     static {
         ESCAPE_SCHEMA_SET.add("PUBLIC");
@@ -78,7 +76,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
     public OBMySQLSchemaAccessor(JdbcOperations jdbcOperations) {
         super(jdbcOperations);
-        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBMYSQL_432x);
+        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBMYSQL_40X);
     }
 
     @Override
@@ -289,21 +287,16 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             fillWarning(indexList, DBObjectType.INDEX, "table ddl is blank, can not set index range by parse ddl");
             return;
         }
-        try {
-            ParseSqlResult result = SqlParser.parseMysql(ddl);
-            if (CollectionUtils.isEmpty(result.getIndexes())) {
-                fillWarning(indexList, DBObjectType.INDEX, "parse index DDL failed");
-            } else {
-                indexList.forEach(index -> result.getIndexes().forEach(dbIndex -> {
-                    if (StringUtils.equals(index.getName(), dbIndex.getName())) {
-                        index.setGlobal("GLOBAL".equalsIgnoreCase(dbIndex.getRange().name()));
-                        index.setColumnGroups(dbIndex.getColumnGroups());
-                    }
-                }));
-            }
-        } catch (Exception e) {
-            fillWarning(indexList, DBObjectType.INDEX, "failed to set index info by parse ddl");
-            log.warn("failed to set index info by parse ddl:{}", ddl, e);
+        ParseSqlResult result = SqlParser.parseMysql(ddl);
+        if (CollectionUtils.isEmpty(result.getIndexes())) {
+            fillWarning(indexList, DBObjectType.INDEX, "parse index DDL failed");
+        } else {
+            indexList.forEach(index -> result.getIndexes().forEach(dbIndex -> {
+                if (StringUtils.equals(index.getName(), dbIndex.getName())) {
+                    index.setGlobal("GLOBAL".equalsIgnoreCase(dbIndex.getRange().name()));
+                    index.setColumnGroups(dbIndex.getColumnGroups());
+                }
+            }));
         }
     }
 
@@ -366,90 +359,6 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             returnVal.put(tableName, table);
         }
         return returnVal;
-    }
-
-    @Override
-    public List<String> showExternalTables(String schemaName) {
-        return showExternalTablesLike(schemaName, null);
-    }
-
-
-    @Override
-    public List<String> showExternalTablesLike(String schemaName, String tableNameLike) {
-        MySQLSqlBuilder sb = new MySQLSqlBuilder();
-        sb.append("SELECT table_name FROM information_schema.tables WHERE TABLE_TYPE = 'EXTERNAL TABLE'");
-        if (StringUtils.isNotBlank(schemaName)) {
-            sb.append(" AND table_schema=");
-            sb.value(schemaName);
-        }
-        if (StringUtils.isNotBlank(tableNameLike)) {
-            sb.append(" AND table_name LIKE ");
-            sb.value(tableNameLike);
-        }
-        sb.append(" ORDER BY table_name");
-        return jdbcOperations.queryForList(sb.toString(), String.class);
-    }
-
-    @Override
-    public List<DBObjectIdentity> listExternalTables(String schemaName, String tableNameLike) {
-        MySQLSqlBuilder sb = new MySQLSqlBuilder();
-        sb.append("select table_schema as schema_name, 'EXTERNAL_TABLE' as type, table_name as name ");
-        sb.append("from information_schema.tables where table_type = 'EXTERNAL TABLE'");
-        if (StringUtils.isNotBlank(schemaName)) {
-            sb.append(" AND table_schema=");
-            sb.value(schemaName);
-        }
-        if (StringUtils.isNotBlank(tableNameLike)) {
-            sb.append(" AND table_name LIKE ");
-            sb.value(tableNameLike);
-        }
-        sb.append(" ORDER BY schema_name, table_name");
-        return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
-    }
-
-    @Override
-    public boolean isExternalTable(String schemaName, String tableName) {
-        MySQLSqlBuilder sb = new MySQLSqlBuilder();
-        sb.append("SELECT table_type FROM information_schema.tables");
-        if (StringUtils.isNotBlank(schemaName)) {
-            sb.append(" Where table_schema=");
-            sb.value(schemaName);
-        }
-        if (StringUtils.isNotBlank(tableName)) {
-            sb.append(" AND table_name = ");
-            sb.value(tableName);
-        }
-        String tableType = jdbcOperations.queryForObject(sb.toString(), String.class);
-        if (tableType == null) {
-            throw new IllegalArgumentException("table name: " + tableName + " is not exist");
-        }
-        if (StringUtils.equalsIgnoreCase(tableType, "EXTERNAL TABLE")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    @Override
-    public boolean syncExternalTableFiles(String schemaName, String tableName) {
-        MySQLSqlBuilder sb = new MySQLSqlBuilder();
-        sb.append("ALTER EXTERNAL TABLE ").identifier(schemaName, tableName).append(" REFRESH");
-        jdbcOperations.execute(sb.toString());
-        return true;
-    }
-
-    @Override
-    public Map<String, List<DBTableColumn>> listBasicExternalTableColumns(String schemaName) {
-        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_EXTERNAL_TABLE_COLUMNS);
-        List<DBTableColumn> tableColumns = jdbcOperations.query(sql, new Object[] {schemaName, schemaName},
-                listBasicTableColumnRowMapper());
-        return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
-    }
-
-    @Override
-    public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String externalTableName) {
-        String sql = sqlMapper.getSql(Statements.LIST_BASIC_EXTERNAL_TABLE_COLUMNS);
-        return jdbcOperations.query(sql, new Object[] {schemaName, externalTableName}, listBasicTableColumnRowMapper());
     }
 
     @Override

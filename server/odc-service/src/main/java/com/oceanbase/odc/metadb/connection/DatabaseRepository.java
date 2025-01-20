@@ -42,7 +42,7 @@ public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
 
     List<DatabaseEntity> findByProjectId(Long projectId);
 
-    List<DatabaseEntity> findByProjectIdIn(Collection<Long> projectIds);
+    List<DatabaseEntity> findByProjectIdIn(List<Long> projectIds);
 
     List<DatabaseEntity> findByProjectIdAndExisted(Long projectId, Boolean existed);
 
@@ -74,10 +74,9 @@ public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
     @Modifying
     @Transactional
     @Query(value = "update connect_database t set t.object_sync_status = :#{#status.name()} "
-            + "where t.object_sync_status = :#{#originalStatus.name()} "
-            + "and (t.object_last_sync_time < :syncTime or t.object_last_sync_time is null)", nativeQuery = true)
-    int setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeIsNullOrBefore(
-            @Param("status") DBObjectSyncStatus status,
+            + "where t.object_sync_status = :#{#originalStatus.name()} and t.object_last_sync_time < :syncTime",
+            nativeQuery = true)
+    int setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeBefore(@Param("status") DBObjectSyncStatus status,
             @Param("originalStatus") DBObjectSyncStatus originalStatus, @Param("syncTime") Date syncTime);
 
     @Modifying

@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.sqlcheck.rule;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -40,7 +40,7 @@ public class OracleColumnCalculation extends BaseColumnCalculation {
 
     @Override
     public List<DialectType> getSupportsDialectTypes() {
-        return Arrays.asList(DialectType.OB_ORACLE, DialectType.ORACLE);
+        return Collections.singletonList(DialectType.OB_ORACLE);
     }
 
 }

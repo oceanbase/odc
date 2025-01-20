@@ -21,19 +21,14 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 import com.oceanbase.odc.common.event.AbstractEvent;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.core.datasource.event.ConnectionResetEvent;
@@ -71,42 +66,15 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     protected volatile Connection connection;
     private final List<ConnectionInitializer> initializerList = new LinkedList<>();
     private volatile Lock lock;
-    private final boolean keepAlive;
-    private long keepAliveIntervalMillis = 5 * 60 * 1000;
-    @Getter
-    @Setter
-    private String keepAliveSql = "SELECT 1 FROM DUAL";
-    @Getter
-    private final int maxFailedKeepAliveAttempts = 5;
-    private AtomicInteger failedKeepAliveAttempts = new AtomicInteger(0);
-    private ScheduledExecutorService keepAliveScheduler;
     @Setter
     private long timeOutMillis = 10 * 1000;
 
     public SingleConnectionDataSource() {
-        this(false, false);
+        this(false);
     }
 
-    public SingleConnectionDataSource(boolean autoReconnect, boolean keepAlive) {
+    public SingleConnectionDataSource(boolean autoReconnect) {
         this.autoReconnect = autoReconnect;
-        this.keepAlive = keepAlive;
-        initKeepAliveScheduler();
-    }
-
-    public SingleConnectionDataSource(boolean autoReconnect, boolean keepAlive, long keepAliveIntervalMillis) {
-        this.autoReconnect = autoReconnect;
-        this.keepAlive = keepAlive;
-        this.keepAliveIntervalMillis = keepAliveIntervalMillis;
-        initKeepAliveScheduler();
-    }
-
-    public SingleConnectionDataSource(boolean autoReconnect, boolean keepAlive, long keepAliveIntervalMillis,
-            String keepAliveSql) {
-        this.autoReconnect = autoReconnect;
-        this.keepAlive = keepAlive;
-        this.keepAliveIntervalMillis = keepAliveIntervalMillis;
-        this.keepAliveSql = keepAliveSql;
-        initKeepAliveScheduler();
     }
 
     @Override
@@ -154,10 +122,9 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
      */
     public synchronized void resetConnection() throws SQLException {
         log.info("The connection will be reset soon");
-        closeConnection();
+        close();
         this.connection = null;
         this.lock = null;
-        this.failedKeepAliveAttempts.set(0);
         try (Connection conn = innerCreateConnection()) {
             onConnectionReset(conn);
         }
@@ -169,25 +136,19 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
 
     @Override
     public void close() {
-        shutdownKeepAliveScheduler();
-        closeConnection();
-    }
-
-    protected void prepareConnection(Connection con) throws SQLException {
-        Boolean autoCommit = getAutoCommit();
-        if (autoCommit != null && con.getAutoCommit() != autoCommit) {
-            con.setAutoCommit(autoCommit);
-        }
-    }
-
-
-    private void closeConnection() {
         if (!Objects.isNull(this.connection)) {
             try {
                 this.connection.close();
             } catch (Throwable throwable) {
                 log.error("Failed to close the connection", throwable);
             }
+        }
+    }
+
+    protected void prepareConnection(Connection con) throws SQLException {
+        Boolean autoCommit = getAutoCommit();
+        if (autoCommit != null && con.getAutoCommit() != autoCommit) {
+            con.setAutoCommit(autoCommit);
         }
     }
 
@@ -271,41 +232,6 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
         } catch (Throwable e) {
             publishEvent(new GetConnectionFailedEvent(Optional.ofNullable(connection)));
             throw new SQLException(e);
-        }
-    }
-
-
-    private void initKeepAliveScheduler() {
-        if (!keepAlive || Objects.nonNull(keepAliveScheduler)) {
-            return;
-        }
-        failedKeepAliveAttempts.set(0);
-        keepAliveScheduler = Executors.newScheduledThreadPool(1);
-        keepAliveScheduler.scheduleWithFixedDelay(() -> {
-            if (failedKeepAliveAttempts.get() > maxFailedKeepAliveAttempts) {
-                return;
-            }
-            try (Connection conn = getConnection()) {
-                try (Statement statement = conn.createStatement()) {
-                    statement.execute(keepAliveSql);
-                    failedKeepAliveAttempts.set(0);
-                    log.debug("Keep connection alive success");
-                }
-            } catch (Exception e) {
-                log.warn("Failed to keep connection alive", e);
-                failedKeepAliveAttempts.incrementAndGet();
-            }
-        }, this.keepAliveIntervalMillis, this.keepAliveIntervalMillis, TimeUnit.MILLISECONDS);
-    }
-
-
-    private void shutdownKeepAliveScheduler() {
-        try {
-            if (Objects.nonNull(keepAliveScheduler) && !keepAliveScheduler.isTerminated()) {
-                ExecutorUtils.gracefulShutdown(keepAliveScheduler, "connection-keep-alive-executor", 5L);
-            }
-        } catch (Exception ex) {
-            log.warn("Failed to shutdown keep alive scheduler", ex);
         }
     }
 

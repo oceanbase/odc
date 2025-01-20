@@ -25,7 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
@@ -53,8 +52,6 @@ import lombok.extern.slf4j.Slf4j;
 public class ScheduleChangePreprocessor implements InitializingBean {
     @Autowired
     private DatabaseService databaseService;
-    @Autowired
-    private ConnectionService connectionService;
     @Autowired
     private ScheduleService scheduleService;
     @Autowired
@@ -97,7 +94,7 @@ public class ScheduleChangePreprocessor implements InitializingBean {
     }
 
     private void adaptScheduleChangeParams(ScheduleChangeParams req) {
-        Database srcDb = databaseService.detailSkipPermissionCheckForRead(getTargetDatabaseId(req));
+        Database srcDb = databaseService.detail(getTargetDatabaseId(req));
         req.setProjectId(srcDb.getProject().getId());
         req.setProjectName(srcDb.getProject().getName());
         req.setConnectionId(srcDb.getDataSource().getId());

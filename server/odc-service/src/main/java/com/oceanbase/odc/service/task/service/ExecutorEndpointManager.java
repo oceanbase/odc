@@ -26,15 +26,14 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
-import com.oceanbase.odc.service.resource.ResourceID;
-import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
+import com.oceanbase.odc.service.task.caller.K8sJobClient;
+import com.oceanbase.odc.service.task.caller.K8sJobClientSelector;
+import com.oceanbase.odc.service.task.caller.K8sJobResponse;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
-import com.oceanbase.odc.service.task.resource.K8sPodResource;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 
@@ -46,9 +45,9 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize("odc internal usage")
 public class ExecutorEndpointManager {
     @Autowired
-    private TaskFrameworkService taskFrameworkService;
+    private K8sJobClientSelector k8sJobClientSelector;
     @Autowired
-    private ResourceManager resourceManager;
+    private TaskFrameworkService taskFrameworkService;
 
     private ExecutorHostAdapter hostAdapter = null;
 
@@ -73,6 +72,7 @@ public class ExecutorEndpointManager {
         // here TaskRunMode.K8S == je.getRunMode()
         JobContext jobContext = new DefaultJobContextBuilder().build(je);
         ExecutorIdentifier executorIdentifier = ExecutorIdentifierParser.parser(je.getExecutorIdentifier());
+        K8sJobClient k8sJobClient = k8sJobClientSelector.select(jobContext);
         Map<String, String> jobProperties = jobContext.getJobProperties();
         int executorListenPort = JobPropertiesUtils.getExecutorListenPort(jobProperties);
         if (executorListenPort <= 0) {
@@ -80,11 +80,10 @@ public class ExecutorEndpointManager {
                     + ", executorListenPort=" + executorListenPort);
         }
         try {
-            ResourceID resourceID = ResourceIDUtil.getResourceID(executorIdentifier, je);
-            Optional<K8sPodResource> resourceOptional =
-                    resourceManager.query(resourceID);
-            if (resourceOptional.isPresent()) {
-                K8sPodResource response = resourceOptional.get();
+            Optional<K8sJobResponse> responseOptional = k8sJobClient.get(executorIdentifier.getNamespace(),
+                    executorIdentifier.getExecutorName());
+            if (responseOptional.isPresent()) {
+                K8sJobResponse response = responseOptional.get();
                 String podIpAddress = response.getPodIpAddress();
                 if (StringUtils.isNotBlank(podIpAddress)) {
                     String adaptedHost = adaptHost(podIpAddress, jobProperties);
@@ -93,7 +92,7 @@ public class ExecutorEndpointManager {
                     return executorEndpoint;
                 } else {
                     throw new RuntimeException(
-                            "Failed to get executor endpoint, pod status=" + response.getResourceState());
+                            "Failed to get executor endpoint, pod status=" + response.getResourceStatus());
                 }
             } else {
                 throw new RuntimeException("Failed to get executor endpoint, pod not exists");
