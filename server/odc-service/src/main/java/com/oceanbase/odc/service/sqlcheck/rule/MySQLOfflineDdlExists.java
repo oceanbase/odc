@@ -165,7 +165,7 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
 
     protected List<CheckViolation> changeColumnDataType(String dbVersion, Statement statement, CreateTable target,
             AlterTableAction action) {
-        boolean isOb4x = VersionUtils.isGreaterThan(dbVersion, "4.0.0");
+        boolean isOb4x = StringUtils.isNotEmpty(dbVersion) && VersionUtils.isGreaterThan(dbVersion, "4.0.0");
         return changeColumn(action, changed -> {
             ColumnDefinition origin = extractColumnDefFrom(target, changed.getColumnReference());
             // only ob 4.x check online feature
