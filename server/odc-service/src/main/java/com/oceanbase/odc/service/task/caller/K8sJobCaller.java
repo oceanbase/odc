@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.caller;
 
 import java.util.Optional;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceManager;
@@ -52,14 +53,17 @@ public class K8sJobCaller extends BaseJobCaller {
     }
 
     @Override
-    public ExecutorIdentifier doStart(JobContext context) throws JobException {
+    public ExecutorInfo doStart(JobContext context) throws JobException {
         try {
             ResourceLocation resourceLocation = buildResourceLocation(context);
             ResourceWithID<K8sPodResource> resource =
                     resourceManager.create(resourceLocation, buildK8sResourceContext(context, resourceLocation));
-            String arn = resource.getResource().resourceID().getIdentifier();
-            return DefaultExecutorIdentifier.builder().namespace(resource.getResource().getNamespace())
-                    .executorName(arn).build();
+            K8sPodResource k8sPodResource = resource.getResource();
+            String arn = k8sPodResource.resourceID().getIdentifier();
+
+            return new ExecutorInfo(k8sPodResource.resourceID(),
+                    DefaultExecutorIdentifier.builder().namespace(resource.getResource().getNamespace())
+                            .executorName(arn).build());
         } catch (Throwable e) {
             throw new JobException("doStart failed for " + context, e);
         }
@@ -73,9 +77,12 @@ public class K8sJobCaller extends BaseJobCaller {
     }
 
     protected ResourceLocation buildResourceLocation(JobContext context) {
+        String defaultRegion = StringUtils.isEmpty(defaultPodConfig.getRegion()) ? ResourceIDUtil.DEFAULT_PROP_VALUE
+                : defaultPodConfig.getRegion();
         // TODO(tianke): confirm is this correct?
         String region = ResourceIDUtil.checkAndGetJobProperties(context.getJobProperties(),
-                ResourceIDUtil.REGION_PROP_NAME, ResourceIDUtil.DEFAULT_PROP_VALUE);
+                ResourceIDUtil.REGION_PROP_NAME, defaultRegion);
+        // TODO(tianke): cloud provider info should be given before job start
         String group = ResourceIDUtil.checkAndGetJobProperties(context.getJobProperties(),
                 ResourceIDUtil.GROUP_PROP_NAME, ResourceIDUtil.DEFAULT_PROP_VALUE);
         return new ResourceLocation(region, group);

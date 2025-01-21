@@ -20,8 +20,9 @@ import java.util.Optional;
 
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.resource.ResourceState;
-import com.oceanbase.odc.service.task.caller.DefaultExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
+import com.oceanbase.odc.service.task.caller.ExecutorInfo;
 import com.oceanbase.odc.service.task.caller.JobCallerBuilder;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.ProcessJobCaller;
@@ -52,7 +53,8 @@ public class LocalMockK8sJobClient implements K8sJobClientSelector {
             JobContext jobContext = getJobContext(k8sResourceContext.getExtraData());
             ProcessJobCaller jobCaller = (ProcessJobCaller) JobCallerBuilder.buildProcessCaller(jobContext,
                     JobCallerBuilder.buildK8sEnv(jobContext));
-            DefaultExecutorIdentifier executorIdentifier = (DefaultExecutorIdentifier) jobCaller.doStart(jobContext);
+            ExecutorInfo executorInfo = jobCaller.doStart(jobContext);
+            ExecutorIdentifier executorIdentifier = executorInfo.getExecutorIdentifier();
             return new K8sPodResource(k8sResourceContext.getRegion(), k8sResourceContext.getGroup(),
                     k8sResourceContext.type(),
                     executorIdentifier.getNamespace(),

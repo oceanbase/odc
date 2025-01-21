@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.task.resource;
 import java.io.IOException;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.util.StringUtils;
@@ -43,19 +42,23 @@ import lombok.extern.slf4j.Slf4j;
  * @author longpeng.zlp
  * @date 2024/9/2 17:33
  */
-@Component
 @Slf4j
+@Component
 public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K8sResourceContext, K8sPodResource> {
     public static final String CLOUD_K8S_POD_TYPE = "cloudK8sPod";
     protected K8sJobClientSelector k8sJobClientSelector;
     protected K8sProperties k8sProperties;
     protected ResourceRepository resourceRepository;
+    protected String operatorType;
 
-    public DefaultResourceOperatorBuilder(@Autowired TaskFrameworkProperties taskFrameworkProperties,
-            @Autowired ResourceRepository resourceRepository) throws IOException {
+    public DefaultResourceOperatorBuilder(TaskFrameworkProperties taskFrameworkProperties,
+            ResourceRepository resourceRepository) throws IOException {
         this.k8sProperties = taskFrameworkProperties.getK8sProperties();
         this.resourceRepository = resourceRepository;
         this.k8sJobClientSelector = buildK8sJobSelector(taskFrameworkProperties);
+        this.operatorType = CLOUD_K8S_POD_TYPE;
+        log.info("default operator started with operatorType = {}, k8sProperties = {}", operatorType,
+                k8sJobClientSelector);
     }
 
     /**
@@ -138,12 +141,12 @@ public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K
     }
 
     /**
-     * cloud K8s pod match this builder
+     * builder matcher
      *
      * @return
      */
     @Override
     public boolean matches(String type) {
-        return StringUtils.equalsIgnoreCase(type, CLOUD_K8S_POD_TYPE);
+        return StringUtils.equalsIgnoreCase(type, operatorType);
     }
 }

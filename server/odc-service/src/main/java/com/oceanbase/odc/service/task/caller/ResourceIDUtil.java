@@ -17,9 +17,12 @@ package com.oceanbase.odc.service.task.caller;
 
 import java.util.Map;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceLocation;
+import com.oceanbase.odc.service.task.config.K8sProperties;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.resource.DefaultResourceOperatorBuilder;
 
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +37,8 @@ import lombok.extern.slf4j.Slf4j;
 public class ResourceIDUtil {
     public static final String REGION_PROP_NAME = "regionName";
     public static final String GROUP_PROP_NAME = "cloudProvider";
+    public static final String RESOURCE_TYPE_PROP_NAME = "resourceType";
+    public static final String RESOURCE_NAMESPACE_PROP_NAME = "resourceNamespace";
     public static final String DEFAULT_PROP_VALUE = "local";
 
     /**
@@ -69,22 +74,36 @@ public class ResourceIDUtil {
      * @return
      */
     public static ResourceID getResourceID(ExecutorIdentifier executorIdentifier,
-            Map<String, String> jobProperties) {
+            Map<String, String> jobProperties, String namespace) {
         String region = checkAndGetJobProperties(jobProperties, REGION_PROP_NAME, DEFAULT_PROP_VALUE);
         String group = checkAndGetJobProperties(jobProperties, GROUP_PROP_NAME, DEFAULT_PROP_VALUE);
-        return new ResourceID(new ResourceLocation(region, group), DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE,
-                executorIdentifier.getNamespace(),
+        String type = checkAndGetJobProperties(jobProperties, RESOURCE_TYPE_PROP_NAME,
+                DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE);
+        // if namespace has saved, that new logic, use saved namespace that should equals to
+        // podConfig.namespace
+        String savedNamespace = checkAndGetJobProperties(jobProperties, RESOURCE_NAMESPACE_PROP_NAME, namespace);
+        return new ResourceID(new ResourceLocation(region, group), type,
+                savedNamespace,
                 executorIdentifier.getExecutorName());
     }
 
     /**
      * get resource id by jobEntity and executor identifier
-     * 
+     *
      * @param executorIdentifier
      * @param jobEntity
      * @return
      */
-    public static ResourceID getResourceID(ExecutorIdentifier executorIdentifier, JobEntity jobEntity) {
-        return getResourceID(executorIdentifier, jobEntity.getJobProperties());
+    public static ResourceID getResourceID(ExecutorIdentifier executorIdentifier, JobEntity jobEntity,
+            TaskFrameworkProperties taskFrameworkProperties) {
+        K8sProperties k8sProperties = taskFrameworkProperties.getK8sProperties();
+        String namespace = null;
+        if (null != k8sProperties) {
+            namespace = k8sProperties.getNamespace();
+        }
+        if (StringUtils.isEmpty(namespace)) {
+            namespace = executorIdentifier.getNamespace();
+        }
+        return getResourceID(executorIdentifier, jobEntity.getJobProperties(), namespace);
     }
 }
