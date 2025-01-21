@@ -145,15 +145,10 @@ public class R4237DefaultRuleApplyingMigrate implements JdbcMigratable {
                 userDefinedRulesets.stream().map(RulesetEntity::getId).collect(Collectors.toSet());
 
         Map<Long, List<RuleApplyingEntity>> rulesetId2RuleApplyings = ruleApplyingRepository.findAll().stream()
+                .filter(r -> userDefinedRulesetIds.contains(r.getRulesetId()))
                 .collect(Collectors.groupingBy(RuleApplyingEntity::getRulesetId));
         for (Entry<Long, List<RuleApplyingEntity>> entry : rulesetId2RuleApplyings.entrySet()) {
-            if (!userDefinedRulesetIds.contains(entry.getKey())) {
-                throw new UnexpectedException(
-                        "rulesetId2RuleApplyings contains rulesetId not in userDefinedRulesets, rulesetId="
-                                + entry.getKey());
-            }
             Verify.notEmpty(entry.getValue(), "rulesetId2RuleApplyings");
-
             Map<Long, RuleApplyingEntity> ruleApplyings = entry.getValue().stream().collect(
                     Collectors.toMap(RuleApplyingEntity::getRuleMetadataId, e -> e));
             List<RuleApplyingEntity> toAdd = new ArrayList<>();
