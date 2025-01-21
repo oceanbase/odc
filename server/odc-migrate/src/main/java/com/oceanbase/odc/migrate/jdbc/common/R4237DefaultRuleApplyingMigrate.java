@@ -80,6 +80,8 @@ public class R4237DefaultRuleApplyingMigrate implements JdbcMigratable {
                 ruleMetadataRepository.findAll().stream().collect(Collectors.toMap(MetadataEntity::getName, e -> e));
         List<InnerDefaultRuleApplying> expected =
                 YamlUtils.fromYaml(MIGRATE_CONFIG_FILE, new TypeReference<List<InnerDefaultRuleApplying>>() {});
+        Verify.notEmpty(expected, "expectedDefaultRuleApplyings");
+
         Map<String, List<DefaultRuleApplyingEntity>> actualRulesetName2RuleApplyings = defaultRuleApplyingRepository
                 .findAll().stream().collect(Collectors.groupingBy(DefaultRuleApplyingEntity::getRulesetName));
 
