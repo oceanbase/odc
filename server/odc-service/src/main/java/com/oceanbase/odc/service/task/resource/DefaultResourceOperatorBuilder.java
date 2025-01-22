@@ -18,8 +18,6 @@ package com.oceanbase.odc.service.task.resource;
 import java.io.IOException;
 import java.util.Optional;
 
-import org.springframework.stereotype.Component;
-
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.metadb.resource.ResourceRepository;
@@ -43,7 +41,6 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2024/9/2 17:33
  */
 @Slf4j
-@Component
 public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K8sResourceContext, K8sPodResource> {
     public static final String CLOUD_K8S_POD_TYPE = "cloudK8sPod";
     protected K8sJobClientSelector k8sJobClientSelector;
@@ -57,8 +54,6 @@ public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K
         this.resourceRepository = resourceRepository;
         this.k8sJobClientSelector = buildK8sJobSelector(taskFrameworkProperties);
         this.operatorType = CLOUD_K8S_POD_TYPE;
-        log.info("default operator started with operatorType = {}, k8sProperties = {}", operatorType,
-                k8sJobClientSelector);
     }
 
     /**
