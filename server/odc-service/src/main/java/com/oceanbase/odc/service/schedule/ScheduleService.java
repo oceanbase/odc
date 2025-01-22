@@ -95,6 +95,7 @@ import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
@@ -394,8 +395,9 @@ public class ScheduleService {
             log.info("Create change log success,changLog={}", changeLog);
             req.setScheduleChangeLogId(changeLog.getId());
             Long approvalFlowInstanceId;
-            if (organizationService.get(targetSchedule.getId()).isPresent()
-                    && organizationService.get(targetSchedule.getId()).get().getType() == OrganizationType.INDIVIDUAL) {
+            Optional<Organization> organization = organizationService.get(targetSchedule.getOrganizationId());
+            if (organization.isPresent()
+                    && organization.get().getType() == OrganizationType.INDIVIDUAL) {
                 approvalFlowInstanceId = null;
             } else {
                 approvalFlowInstanceId = approvalFlowService.create(req);
