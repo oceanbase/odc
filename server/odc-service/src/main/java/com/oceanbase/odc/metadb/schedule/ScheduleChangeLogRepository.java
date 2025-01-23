@@ -22,6 +22,7 @@ import javax.transaction.Transactional;
 
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeStatus;
@@ -39,11 +40,19 @@ public interface ScheduleChangeLogRepository extends OdcJpaRepository<ScheduleCh
 
     Optional<ScheduleChangeLogEntity> findByFlowInstanceId(Long flowInstanceId);
 
+    @Query(value = "select * from schedule_changelog  where schedule_id=:scheduleId order by id desc limit 1",
+            nativeQuery = true)
+    Optional<ScheduleChangeLogEntity> findLatestChangelogByScheduleId(@Param("scheduleId") Long scheduleId);
 
     @Transactional
     @Modifying
     @Query("update ScheduleChangeLogEntity e set e.status = ?2 where e.id = ?1")
     int updateStatusById(Long id, ScheduleChangeStatus status);
+
+    @Transactional
+    @Modifying
+    @Query("update ScheduleChangeLogEntity e set e.status = ?2 where e.id = ?1 and e.status = ?3")
+    int updateStatusByIdAndStatus(Long id, ScheduleChangeStatus status, ScheduleChangeStatus oldStatus);
 
     @Transactional
     @Modifying

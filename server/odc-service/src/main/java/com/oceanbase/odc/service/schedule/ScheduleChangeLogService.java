@@ -15,8 +15,10 @@
  */
 package com.oceanbase.odc.service.schedule;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,8 +29,11 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.parser.Feature;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
+import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleChangeLogEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleChangeLogRepository;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeLog;
@@ -46,6 +51,8 @@ import com.oceanbase.odc.service.schedule.model.ScheduleChangeStatus;
 public class ScheduleChangeLogService {
     @Autowired
     private ScheduleChangeLogRepository scheduleChangeLogRepository;
+    @Autowired
+    private FlowInstanceRepository flowInstanceRepository;
 
     private static final ScheduleChangeLogMapper mapper = ScheduleChangeLogMapper.INSTANCE;
 
@@ -77,6 +84,13 @@ public class ScheduleChangeLogService {
                         ResourceType.ODC_SCHEDULE_CHANGELOG, "flowInstanceId", flowInstanceId));
     }
 
+    public ScheduleChangeLog findLatestChangelogByScheduleId(Long scheduleId) {
+        Optional<ScheduleChangeLogEntity> latestChangelogByScheduleId =
+                scheduleChangeLogRepository.findLatestChangelogByScheduleId(scheduleId);
+        return latestChangelogByScheduleId.map(mapper::entityToModel).orElse(null);
+    }
+
+
     public List<ScheduleChangeLog> listByScheduleId(Long scheduleId) {
         return scheduleChangeLogRepository.findByScheduleId(scheduleId).stream().map(mapper::entityToModel).collect(
                 Collectors.toList());
@@ -86,13 +100,31 @@ public class ScheduleChangeLogService {
         scheduleChangeLogRepository.updateStatusById(id, status);
     }
 
+    public void updateStatusByIdAndStatus(Long id, ScheduleChangeStatus status, ScheduleChangeStatus oldStatus) {
+        scheduleChangeLogRepository.updateStatusByIdAndStatus(id, status, oldStatus);
+    }
+
     public void updateFlowInstanceIdById(Long id, Long flowInstanceId) {
         scheduleChangeLogRepository.updateFlowInstanceIdById(id, flowInstanceId);
     }
 
     public boolean hasApprovingChangeLog(Long scheduleId) {
-        return listByScheduleId(scheduleId).stream().map(ScheduleChangeLog::getStatus)
-                .anyMatch(ScheduleChangeStatus.APPROVING::equals);
+        ScheduleChangeLog latestChangelog = findLatestChangelogByScheduleId(scheduleId);
+        if (latestChangelog == null || latestChangelog.getFlowInstanceId() == null
+                || latestChangelog.getStatus() != ScheduleChangeStatus.APPROVING) {
+            return false;
+        }
+        List<FlowInstanceEntity> flows = flowInstanceRepository.findByIdIn(
+                Collections.singleton(latestChangelog.getFlowInstanceId()));
+        if (!flows.isEmpty() && flows.get(0).getStatus().isFinished()
+                && flows.get(0).getStatus() != FlowStatus.COMPLETED) {
+            // Update the status of the latest change log if the flow is incomplete, for example, due to
+            // approval expiry.
+            updateStatusByIdAndStatus(latestChangelog.getId(), ScheduleChangeStatus.SUCCESS,
+                    ScheduleChangeStatus.APPROVING);
+            return false;
+        }
+        return true;
     }
 
 

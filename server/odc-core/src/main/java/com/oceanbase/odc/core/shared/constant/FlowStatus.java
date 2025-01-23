@@ -97,4 +97,8 @@ public enum FlowStatus {
         return Collections.unmodifiableList(
                 Arrays.asList(CREATED, APPROVING, WAIT_FOR_EXECUTION, WAIT_FOR_CONFIRM, EXECUTING, ROLLBACKING));
     }
+
+    public boolean isFinished() {
+        return !listUnfinishedStatus().contains(this);
+    }
 }

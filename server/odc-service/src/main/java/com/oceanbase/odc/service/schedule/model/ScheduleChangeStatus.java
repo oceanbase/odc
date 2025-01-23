@@ -22,10 +22,8 @@ package com.oceanbase.odc.service.schedule.model;
  */
 public enum ScheduleChangeStatus {
 
-    PREPARING,
     APPROVING,
-    CHANGING,
     SUCCESS,
-    FAILED
+    FAILED;
 
 }

@@ -65,11 +65,23 @@ public class ScheduleChangeLogRepositoryTest extends ServiceTestEnv {
         delete(entity);
     }
 
+    @Test
+    public void findLatestChangelogByScheduleId() {
+        ScheduleChangeLogEntity entity1 = create();
+        ScheduleChangeLogEntity entity2 = create();
+        Optional<ScheduleChangeLogEntity> optional =
+                repository.findLatestChangelogByScheduleId(entity2.getScheduleId());
+        Assert.isTrue(optional.isPresent());
+        Assert.equals(entity2.getScheduleId(), optional.get().getScheduleId());
+        delete(entity1);
+        delete(entity2);
+    }
+
     private ScheduleChangeLogEntity create() {
         ScheduleChangeLogEntity entity = new ScheduleChangeLogEntity();
         entity.setType(OperationType.CREATE);
         entity.setScheduleId(1L);
-        entity.setStatus(ScheduleChangeStatus.PREPARING);
+        entity.setStatus(ScheduleChangeStatus.APPROVING);
         entity.setFlowInstanceId(33L);
         return repository.save(entity);
     }
