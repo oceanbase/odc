@@ -191,7 +191,7 @@ public class ConnectionTesting {
                 return new ConnectionTestResult(result, null);
             }
             if (Objects.nonNull(type) && type.isODPSharding()) {
-                return new ConnectionTestResult(result, type);
+                return new ConnectionTestResult(result, null);
             }
             ConnectType connectType = ConnectTypeUtil.getConnectType(
                     connectionExtensionPoint.generateJdbcUrl(jdbcUrlProperties),
