@@ -23,7 +23,9 @@ import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.flow.task.BaseODCFlowTaskDelegate;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.schedule.ScheduleChangeLogService;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeStatus;
 import com.oceanbase.odc.service.task.TaskService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +41,8 @@ public class AlterScheduleTask extends BaseODCFlowTaskDelegate<AlterScheduleResu
     @Autowired
     private ScheduleService scheduleService;
     @Autowired
+    private ScheduleChangeLogService scheduleChangeLogService;
+    @Autowired
     private AuthenticationFacade authenticationFacade;
     private volatile boolean isSuccessful = false;
     private volatile boolean isFailure = false;
@@ -53,7 +57,13 @@ public class AlterScheduleTask extends BaseODCFlowTaskDelegate<AlterScheduleResu
         try {
             AlterScheduleParameters parameters = FlowTaskUtil.getAlterScheduleTaskParameters(execution);
             taskService.start(taskId);
-            scheduleService.executeChangeSchedule(parameters.getScheduleChangeParams());
+            try {
+                scheduleService.executeChangeSchedule(parameters.getScheduleChangeParams());
+            } catch (Exception e) {
+                log.warn("Alter schedule failed,taskId={}", taskId, e);
+                scheduleChangeLogService.updateStatusById(parameters.getScheduleChangeParams().getScheduleChangeLogId(),
+                        ScheduleChangeStatus.FAILED);
+            }
             taskService.succeed(taskId, taskResult);
             isSuccessful = true;
             log.info("Alter schedule succeed,taskId={}", taskId);
