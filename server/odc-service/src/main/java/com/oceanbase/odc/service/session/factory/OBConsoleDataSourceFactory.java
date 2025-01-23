@@ -164,6 +164,9 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
             if (StringUtils.isNotBlank(proxyHost) && Objects.nonNull(proxyPort)) {
                 jdbcUrlParams.put("socksProxyHost", proxyHost);
                 jdbcUrlParams.put("socksProxyPort", proxyPort + "");
+                jdbcUrlParams.put("oracle.net.socksProxyHost", proxyHost);
+                jdbcUrlParams.put("oracle.net.socksProxyPort", proxyPort + "");
+                jdbcUrlParams.put("oracle.jdbc.javaNio", "false");
             }
         }
         SSLConfig sslConfig = connectionConfig.getSslConfig();
@@ -197,6 +200,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         // prevent local DNS resolution when using a proxy service
         if (jdbcUrlParams.containsKey("socksProxyHost")) {
             jdbcUrlParams.put("socksProxyRemoteDns", "true");
+            jdbcUrlParams.put("oracle.net.socksRemoteDNS", "true");
         }
         return jdbcUrlParams;
     }

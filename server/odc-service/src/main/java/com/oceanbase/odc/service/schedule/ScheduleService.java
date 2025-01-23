@@ -42,6 +42,7 @@ import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cglib.beans.BeanMap;
 import org.springframework.context.annotation.Lazy;
@@ -97,7 +98,7 @@ import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
-import com.oceanbase.odc.service.quartz.QuartzJobService;
+import com.oceanbase.odc.service.quartz.QuartzJobServiceProxy;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
@@ -163,7 +164,8 @@ public class ScheduleService {
     @Autowired
     private AuthenticationFacade authenticationFacade;
     @Autowired
-    private QuartzJobService quartzJobService;
+    @Qualifier("quartzJobServiceProxy")
+    private QuartzJobServiceProxy quartzJobService;
 
     @Autowired
     private ObjectStorageFacade objectStorageFacade;
@@ -335,6 +337,12 @@ public class ScheduleService {
                         && !hasExecutingTask(targetSchedule.getId()), ErrorCodes.DeleteNotAllowed, null,
                         "Delete schedule is not allowed.");
             }
+            if (req.getOperationType() == OperationType.DELETE) {
+                if (hasExecutingTask(targetSchedule.getId())) {
+                    throw new IllegalStateException(
+                            "Delete schedule is not allowed, there are running tasks in this schedule");
+                }
+            }
         }
 
         ScheduleChangeLog scheduleChangelog;
@@ -483,7 +491,7 @@ public class ScheduleService {
         quartzJobReq.setJobName(targetSchedule.getId().toString());
         quartzJobReq.setJobGroup(targetSchedule.getType().name());
         quartzJobReq.setTriggerConfig(targetSchedule.getTriggerConfig());
-        quartzJobService.changeQuartzJob(quartzJobReq);
+        quartzJobService.changeJob(quartzJobReq);
 
         scheduleChangeLogService.updateStatusById(req.getScheduleChangeLogId(), ScheduleChangeStatus.SUCCESS);
         log.info("Change schedule success,scheduleId={},operationType={},changelogId={}", targetSchedule.getId(),
