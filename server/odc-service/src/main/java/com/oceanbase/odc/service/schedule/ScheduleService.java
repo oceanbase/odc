@@ -494,6 +494,7 @@ public class ScheduleService {
             log.warn("Change schedule failed,scheduleId={},operationType={},changelogId={}", req.getScheduleId(),
                     req.getOperationType(), req.getScheduleChangeLogId(), e);
             scheduleChangeLogService.updateStatusById(req.getScheduleChangeLogId(), ScheduleChangeStatus.FAILED);
+            throw e;
         }
 
     }
