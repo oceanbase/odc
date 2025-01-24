@@ -28,7 +28,7 @@ import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.ProcessJobCaller;
 import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
 import com.oceanbase.odc.service.task.exception.JobException;
-import com.oceanbase.odc.service.task.resource.DefaultResourceOperatorBuilder;
+import com.oceanbase.odc.service.task.resource.AbstractK8sResourceOperatorBuilder;
 import com.oceanbase.odc.service.task.resource.K8sPodResource;
 import com.oceanbase.odc.service.task.resource.K8sResourceContext;
 import com.oceanbase.odc.service.task.resource.client.K8sJobClient;
@@ -79,7 +79,7 @@ public class LocalMockK8sJobClient implements K8sJobClientSelector {
         @Override
         public Optional<K8sPodResource> get(String namespace, String arn) throws JobException {
             K8sPodResource ret = new K8sPodResource(ResourceIDUtil.REGION_PROP_NAME,
-                    ResourceIDUtil.GROUP_PROP_NAME, DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE,
+                    ResourceIDUtil.GROUP_PROP_NAME, AbstractK8sResourceOperatorBuilder.CLOUD_K8S_POD_TYPE,
                     namespace, arn, ResourceState.AVAILABLE,
                     "127.0.0.1", new Date(System.currentTimeMillis()));
             return Optional.of(ret);

@@ -23,7 +23,7 @@ import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
-import com.oceanbase.odc.service.task.resource.DefaultResourceOperatorBuilder;
+import com.oceanbase.odc.service.task.resource.AbstractK8sResourceOperatorBuilder;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -78,7 +78,7 @@ public class ResourceIDUtil {
         String region = checkAndGetJobProperties(jobProperties, REGION_PROP_NAME, DEFAULT_PROP_VALUE);
         String group = checkAndGetJobProperties(jobProperties, GROUP_PROP_NAME, DEFAULT_PROP_VALUE);
         String type = checkAndGetJobProperties(jobProperties, RESOURCE_TYPE_PROP_NAME,
-                DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE);
+                AbstractK8sResourceOperatorBuilder.CLOUD_K8S_POD_TYPE);
         // if namespace has saved, that new logic, use saved namespace that should equals to
         // podConfig.namespace
         String savedNamespace = checkAndGetJobProperties(jobProperties, RESOURCE_NAMESPACE_PROP_NAME, namespace);

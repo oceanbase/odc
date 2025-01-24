@@ -38,7 +38,7 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfiguration
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.jasypt.DefaultJasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
-import com.oceanbase.odc.service.task.resource.DefaultResourceOperatorBuilder;
+import com.oceanbase.odc.service.task.resource.DefaultNativeK8sOperatorBuilder;
 import com.oceanbase.odc.service.task.schedule.DefaultJobCredentialProvider;
 import com.oceanbase.odc.service.task.schedule.JobCredentialProvider;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
@@ -107,10 +107,10 @@ public class TaskFrameworkConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "odc.task-framework.enable-k8s-local-debug-mode", havingValue = "true")
-    public DefaultResourceOperatorBuilder localDebugK8sOperatorBuilder(
+    public DefaultNativeK8sOperatorBuilder localDebugK8sOperatorBuilder(
             @Autowired TaskFrameworkProperties taskFrameworkProperties,
             @Autowired ResourceRepository resourceRepository) throws IOException {
-        return new DefaultResourceOperatorBuilder(taskFrameworkProperties, resourceRepository);
+        return new DefaultNativeK8sOperatorBuilder(taskFrameworkProperties, resourceRepository);
     }
 
     @Bean
