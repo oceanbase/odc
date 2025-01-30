@@ -20,8 +20,10 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -53,8 +55,8 @@ class ThreadPoolTaskExecutor implements TaskExecutor {
     private final ExecutorService executor;
 
     private ThreadPoolTaskExecutor() {
-        this.executor = Executors.newFixedThreadPool(2,
-                new TraceDecoratorThreadFactory(new TaskThreadFactory("Task-Executor")));
+        this.executor = new ThreadPoolExecutor(2, 2, 1000, TimeUnit.SECONDS, new LinkedBlockingQueue<>(16),
+                new TraceDecoratorThreadFactory(new TaskThreadFactory("Task-Executor")), new CallerRunsPolicy());
     }
 
     public static TaskExecutor getInstance() {
@@ -82,6 +84,8 @@ class ThreadPoolTaskExecutor implements TaskExecutor {
             } catch (Exception e) {
                 log.error("Task start failed, jobIdentity={}.", jobIdentity.getId(), e);
                 taskContainer.onException(e);
+            } finally {
+                taskContainer.closeTaskContainer();
             }
         });
         taskRuntimeInfo.setFuture(future);
@@ -110,7 +114,7 @@ class ThreadPoolTaskExecutor implements TaskExecutor {
     public boolean cancel(JobIdentity ji) {
         TaskRuntimeInfo runtimeInfo = getTaskRuntimeInfo(ji);
         TaskContainer<?> task = runtimeInfo.getTaskContainer();
-        Future<Boolean> stopFuture = executor.submit(task::stop);
+        Future<Boolean> stopFuture = executor.submit(task::stopTask);
         boolean result = false;
         try {
             // wait 10 seconds for stop task accomplished

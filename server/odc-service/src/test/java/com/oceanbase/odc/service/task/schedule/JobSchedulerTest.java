@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.task;
+package com.oceanbase.odc.service.task.schedule;
 
 import org.junit.Test;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
@@ -25,15 +25,14 @@ import org.quartz.impl.StdSchedulerFactory;
 
 import com.oceanbase.odc.common.event.LocalEventPublisher;
 import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
+import com.oceanbase.odc.service.monitor.MeterManager;
 import com.oceanbase.odc.service.task.base.databasechange.DatabaseChangeTask;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.config.DefaultJobConfiguration;
 import com.oceanbase.odc.service.task.config.DefaultTaskFrameworkProperties;
 import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
 import com.oceanbase.odc.service.task.exception.JobException;
-import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
-import com.oceanbase.odc.service.task.schedule.JobScheduler;
-import com.oceanbase.odc.service.task.schedule.StdJobScheduler;
 import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.provider.JobImageNameProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
@@ -58,6 +57,7 @@ public class JobSchedulerTest {
         jc.setHostUrlProvider(Mockito.mock(HostUrlProvider.class));
         jc.setEventPublisher(new LocalEventPublisher());
         jc.setJobImageNameProvider(Mockito.mock(JobImageNameProvider.class));
+        jc.setTaskSupervisorScheduler(Mockito.mock(Scheduler.class));
         TaskFrameworkService taskFrameworkService = Mockito.mock(TaskFrameworkService.class);
         jc.setTaskFrameworkService(taskFrameworkService);
         jc.setTransactionManager(Mockito.mock(TransactionManager.class));
@@ -76,9 +76,12 @@ public class JobSchedulerTest {
         JobDispatcher jobDispatcher = Mockito.mock(JobDispatcher.class);
         Mockito.doNothing().when(jobDispatcher).start(Mockito.mock(JobContext.class));
         jc.setJobDispatcher(jobDispatcher);
-
-        JobScheduler js = new StdJobScheduler(jc);
-        Long id = js.scheduleJobNow(jd);
-        Assert.notNull(id);
+        try (MockedStatic<SpringContextUtil> mockPaymentService = Mockito.mockStatic(SpringContextUtil.class)) {
+            mockPaymentService.when(() -> SpringContextUtil.getBean(MeterManager.class)).thenReturn(Mockito.mock(
+                    MeterManager.class));
+            JobScheduler js = new StdJobScheduler(jc);
+            Long id = js.scheduleJobNow(jd);
+            Assert.notNull(id);
+        }
     }
 }

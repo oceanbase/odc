@@ -32,7 +32,6 @@ import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
-import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
@@ -48,7 +47,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * find heartbeat timeout running job, and set to retrying or failed
- * 
+ *
  * @author yaobin
  * @date 2024-01-04
  * @since 4.2.4
@@ -62,7 +61,6 @@ public class CheckRunningJob implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         configuration = JobConfigurationHolder.getJobConfiguration();
-        JobConfigurationValidator.validComponent();
         TaskFrameworkProperties taskFrameworkProperties = getConfiguration().getTaskFrameworkProperties();
         int heartTimeoutSeconds = taskFrameworkProperties.getJobHeartTimeoutSeconds();
         // find heartbeat timeout job
@@ -99,50 +97,33 @@ public class CheckRunningJob implements Job {
         }
     }
 
+
     private void tryFinishJob(TaskFrameworkService taskFrameworkService, JobEntity jobEntity) {
         boolean isNeedRetry = checkJobIfRetryNecessary(jobEntity);
-        if (isNeedRetry) {
-            log.info("Need to restart job, try to set status to RETRYING, jobId={}, oldStatus={}.",
-                    jobEntity.getId(), jobEntity.getStatus());
-            int rows;
-            if (TaskRunMode.K8S == jobEntity.getRunMode()) {
-                rows = taskFrameworkService.updateExecutorEndpoint(jobEntity.getId(), null);
-                log.info("Clear executor endpoint why retry task, jobId={}, rows={}", jobEntity.getId(), rows);
-            }
-            rows = taskFrameworkService
-                    .updateStatusDescriptionByIdOldStatus(jobEntity.getId(), JobStatus.RUNNING,
-                            JobStatus.RETRYING, "Heart timeout and retrying job");
-            if (rows > 0) {
-                log.info("Set job status to RETRYING, jobId={}, oldStatus={}.", jobEntity.getId(),
-                        jobEntity.getStatus());
-            } else {
-                throw new TaskRuntimeException("Set job status to RETRYING failed, jobId=" + jobEntity.getId());
-            }
 
+        log.info("No need to restart job, try to set status to FAILED, jobId={},oldStatus={}.",
+                jobEntity.getId(), jobEntity.getStatus());
+        TaskFrameworkProperties taskFrameworkProperties = getConfiguration().getTaskFrameworkProperties();
+        int rows = taskFrameworkService
+                .updateStatusToFailedWhenHeartTimeout(jobEntity.getId(),
+                        taskFrameworkProperties.getJobHeartTimeoutSeconds(),
+                        "Heart timeout and set job to status FAILED.");
+        if (rows > 0) {
+            log.info("Set job status to FAILED accomplished, jobId={}, oldStatus={}.", jobEntity.getId(),
+                    jobEntity.getStatus());
+            Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                    .item(AlarmUtils.ORGANIZATION_NAME, Optional.ofNullable(jobEntity.getOrganizationId()).map(
+                            Object::toString).orElse(StrUtil.EMPTY))
+                    .item(AlarmUtils.TASK_JOB_ID_NAME, String.valueOf(jobEntity.getId()))
+                    .item(AlarmUtils.MESSAGE_NAME,
+                            MessageFormat.format("Job running failed due to heart timeout, jobId={0}",
+                                    jobEntity.getId()))
+                    .build();
+            AlarmUtils.alarm(AlarmEventNames.TASK_HEARTBEAT_TIMEOUT, eventMessage);
         } else {
-            log.info("No need to restart job, try to set status to FAILED, jobId={},oldStatus={}.",
-                    jobEntity.getId(), jobEntity.getStatus());
-            TaskFrameworkProperties taskFrameworkProperties = getConfiguration().getTaskFrameworkProperties();
-            int rows = taskFrameworkService
-                    .updateStatusToFailedWhenHeartTimeout(jobEntity.getId(),
-                            taskFrameworkProperties.getJobHeartTimeoutSeconds(),
-                            "Heart timeout and set job to status FAILED.");
-            if (rows > 0) {
-                log.info("Set job status to FAILED accomplished, jobId={}, oldStatus={}.", jobEntity.getId(),
-                        jobEntity.getStatus());
-                Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
-                        .item(AlarmUtils.ORGANIZATION_NAME, Optional.ofNullable(jobEntity.getOrganizationId()).map(
-                                Object::toString).orElse(StrUtil.EMPTY))
-                        .item(AlarmUtils.TASK_JOB_ID_NAME, String.valueOf(jobEntity.getId()))
-                        .item(AlarmUtils.MESSAGE_NAME,
-                                MessageFormat.format("Job running failed due to heart timeout, jobId={0}",
-                                        jobEntity.getId()))
-                        .build();
-                AlarmUtils.alarm(AlarmEventNames.TASK_HEARTBEAT_TIMEOUT, eventMessage);
-            } else {
-                throw new TaskRuntimeException("Set job status to FAILED failed, jobId=" + jobEntity.getId());
-            }
+            throw new TaskRuntimeException("Set job status to FAILED failed, jobId=" + jobEntity.getId());
         }
+
         if (!getConfiguration().getJobDispatcher().canBeFinish(JobIdentity.of(jobEntity.getId()))) {
             log.info("Cannot destroy executor, jobId={}.", jobEntity.getId());
             throw new TaskRuntimeException("Cannot destroy executor, jobId={}" + jobEntity.getId());

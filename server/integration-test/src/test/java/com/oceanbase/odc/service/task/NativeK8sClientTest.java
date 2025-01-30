@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -61,7 +62,7 @@ public class NativeK8sClientTest {
         JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId);
 
         String imageName = "perl:5.34.0";
-        String exceptedJobName = JobUtils.generateExecutorName(jobIdentity);
+        String exceptedJobName = JobUtils.generateExecutorName(jobIdentity, new Date(System.currentTimeMillis()));
         List<String> cmd = Arrays.asList("perl", "-Mbignum=bpi", "-wle", "print bpi(2000)");
         PodConfig podParam = new PodConfig();
         K8sResourceContext context =

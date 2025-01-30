@@ -118,6 +118,9 @@ public abstract class AbstractDlmJob implements OdcJob {
         if (provider != null && StringUtils.isNotEmpty(region)) {
             JobPropertiesUtils.setCloudProvider(jobProperties, provider);
             JobPropertiesUtils.setRegionName(jobProperties, region);
+        } else {
+            JobPropertiesUtils.setDefaultCloudProvider(jobProperties);
+            JobPropertiesUtils.setDefaultRegionName(jobProperties);
         }
         SingleJobProperties singleJobProperties = new SingleJobProperties();
         singleJobProperties.setEnableRetryAfterHeartTimeout(true);

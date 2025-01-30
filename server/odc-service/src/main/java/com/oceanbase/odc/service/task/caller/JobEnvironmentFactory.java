@@ -23,11 +23,11 @@ import java.util.function.Supplier;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
+import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
-import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.ExecutorMetadbCredential;
 import com.oceanbase.odc.service.task.schedule.JobCredentialProvider;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -41,14 +41,18 @@ public class JobEnvironmentFactory {
 
     private final Map<String, String> environments = new HashMap<>();
 
-    public Map<String, String> build(JobContext context, TaskRunMode runMode) {
+    public Map<String, String> build(JobContext context, TaskRunMode runMode, String logPath) {
+        return build(context, runMode, JobConfigurationHolder.getJobConfiguration(), logPath);
+    }
+
+    public Map<String, String> build(JobContext context, TaskRunMode runMode, JobConfiguration configuration,
+            String logPath) {
         putEnv(JobEnvKeyConstants.ODC_BOOT_MODE, () -> JobConstants.ODC_BOOT_MODE_EXECUTOR);
         putEnv(JobEnvKeyConstants.ODC_TASK_RUN_MODE, runMode::name);
         if (runMode.isK8s()) {
             putEnv(JobEnvKeyConstants.ODC_JOB_CONTEXT, () -> JobUtils.toJson(context));
         }
-        JobCredentialProvider jobCredentialProvider = JobConfigurationHolder.getJobConfiguration()
-                .getJobCredentialProvider();
+        JobCredentialProvider jobCredentialProvider = configuration.getJobCredentialProvider();
 
         ObjectStorageConfiguration cloudObjectStorageCredential = jobCredentialProvider
                 .getCloudObjectStorageCredential(context);
@@ -66,12 +70,13 @@ public class JobEnvironmentFactory {
             putEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD, executorMetadbCredential::getPassword);
         }
 
-        putEnv(JobEnvKeyConstants.ODC_LOG_DIRECTORY, LogUtils::getBaseLogPath);
+        putEnv(JobEnvKeyConstants.ODC_LOG_DIRECTORY, () -> logPath);
 
         long userId = TraceContextHolder.getUserId() != null ? TraceContextHolder.getUserId() : -1;
         putEnv(JobEnvKeyConstants.ODC_EXECUTOR_USER_ID, () -> userId + "");
         return environments;
     }
+
 
     private void putEnv(String envName, Supplier<String> envSupplier) {
         String envValue;

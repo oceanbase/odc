@@ -79,16 +79,19 @@ class TaskMonitor {
 
     public void monitor() {
         log.info("monitor starting, jobId={}", getJobId());
-
         this.startTimeMilliSeconds = System.currentTimeMillis();
+        initReportScheduler();
+        initHeartbeatScheduler();
+    }
 
+    private void initReportScheduler() {
         ThreadFactory threadFactory =
                 new TraceDecoratorThreadFactory(new TaskThreadFactory(("Task-Monitor-Job-" + getJobId())));
         this.reportScheduledExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
         reportScheduledExecutor.scheduleAtFixedRate(() -> {
             if (isTimeout() && !getTaskContainer().getStatus().isTerminated()) {
                 log.info("Task timeout, try stop, jobId={}", getJobId());
-                getTaskContainer().stop();
+                getTaskContainer().stopTask();
             }
             try {
                 if (JobUtils.getExecutorPort().isPresent()) {
@@ -101,22 +104,28 @@ class TaskMonitor {
                 JobConstants.REPORT_TASK_INFO_INTERVAL_SECONDS,
                 TimeUnit.SECONDS);
         log.info("Task monitor init success");
+    }
 
-        heartScheduledExecutor = Executors.newSingleThreadScheduledExecutor(
-                new TaskThreadFactory(("Task-Heart-Job-" + getJobId())));
+    private void initHeartbeatScheduler() {
+        if (JobUtils.getExecutorPort().isPresent() && JobUtils.isReportEnabled()) {
+            heartScheduledExecutor = Executors.newSingleThreadScheduledExecutor(
+                    new TaskThreadFactory(("Task-Heart-Job-" + getJobId())));
 
-        heartScheduledExecutor.scheduleAtFixedRate(() -> {
-            try {
-                if (JobUtils.getExecutorPort().isPresent() && JobUtils.isReportEnabled()) {
-                    getReporter().report(JobServerUrls.TASK_HEARTBEAT, buildHeartRequest());
+            heartScheduledExecutor.scheduleAtFixedRate(() -> {
+                try {
+                    if (JobUtils.getExecutorPort().isPresent() && JobUtils.isReportEnabled()) {
+                        getReporter().report(JobServerUrls.TASK_HEARTBEAT, buildHeartRequest());
+                    }
+                } catch (Throwable e) {
+                    log.warn("Update heart info failed, id: {}", getJobId(), e);
                 }
-            } catch (Throwable e) {
-                log.warn("Update heart info failed, id: {}", getJobId(), e);
-            }
-        }, JobConstants.REPORT_TASK_HEART_DELAY_SECONDS,
-                JobConstants.REPORT_TASK_HEART_INTERVAL_SECONDS,
-                TimeUnit.SECONDS);
-        log.info("Task heart init success");
+            }, JobConstants.REPORT_TASK_HEART_DELAY_SECONDS,
+                    JobConstants.REPORT_TASK_HEART_INTERVAL_SECONDS,
+                    TimeUnit.SECONDS);
+            log.info("Task heart init success");
+        } else {
+            log.info("heart beat not needed, cause report not needed");
+        }
     }
 
     public void finalWork() {
@@ -174,7 +183,6 @@ class TaskMonitor {
 
     @VisibleForTesting
     protected void doFinal() {
-
         TaskResult finalResult = DefaultTaskResultBuilder.build(getTaskContainer());
         // Report final result
         log.info("Task id: {}, finished with status: {}, start to report final result", getJobId(),

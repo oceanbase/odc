@@ -96,8 +96,29 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
     private String destroyExecutorJobCronExpression;
 
     private String pullTaskResultJobCronExpression;
+
+    private String processMainClassName;
     /**
      * local k8s debug mode, use process builder mock k8s
      */
     private boolean enableK8sLocalDebugMode;
+
+    /**
+     * if enable task supervisor agent, current only in process mode, this flag can enabled, k8s mode
+     * will ignore this mode
+     */
+    private boolean enableTaskSupervisorAgent;
+
+    // resource allocate will expired after resourceAllocateTimeOutSeconds
+    private int resourceAllocateTimeOutSeconds = 600;
+
+    // config for max job count running in one region
+    private int maxAllowRunningJobs = 8;
+
+    // negative means not given, this value should not be changed, cause a new port means a new agent
+    // server
+    private int taskSupervisorAgentListenPort = -1;
+
+    // keep supervisor endpoint alive for a period if there is no task running on it or release it
+    private int supervisorEndpointKeepAliveSeconds = 300;
 }

@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.task.resource.client;
 
 import static com.oceanbase.odc.service.task.constants.JobConstants.FIELD_SELECTOR_METADATA_NAME;
-import static com.oceanbase.odc.service.task.constants.JobConstants.RESTART_POLICY_NEVER;
 import static com.oceanbase.odc.service.task.constants.JobConstants.TEMPLATE_API_VERSION;
 import static com.oceanbase.odc.service.task.constants.JobConstants.TEMPLATE_KIND_POD;
 
@@ -140,14 +139,27 @@ public class NativeK8sJobClient implements K8sJobClient {
             // return pod status
             return new K8sPodResource(null, null, null, namespace, createdJob.getMetadata().getName(),
                     k8sPodPhaseToResourceState(createdJob.getStatus().getPhase()),
-                    createdJob.getStatus().getPodIP(), new Date(System.currentTimeMillis() / 1000));
+                    createdJob.getStatus().getPodIP(), String.valueOf(k8sProperties.getExecutorListenPort()),
+                    new Date(System.currentTimeMillis() / 1000));
         } catch (ApiException e) {
+            Optional<K8sPodResource> existedPod = null;
+            if (isPodAlreadyExists(e)) {
+                existedPod = get(namespace, name);
+            }
+            // return existed pod
+            if (null != existedPod && existedPod.isPresent()) {
+                return existedPod.get();
+            }
             if (e.getResponseBody() != null) {
                 throw new JobException(e.getResponseBody(), e);
             } else {
                 throw new JobException("Create job occur error:", e);
             }
         }
+    }
+
+    protected boolean isPodAlreadyExists(ApiException e) {
+        return StringUtils.containsIgnoreCase(e.getResponseBody(), "already exists");
     }
 
     @Override
@@ -169,6 +181,7 @@ public class NativeK8sJobClient implements K8sJobClient {
         V1Pod v1Pod = v1PodOptional.get();
         K8sPodResource resource = new K8sPodResource(k8sProperties.getRegion(), k8sProperties.getGroup(), null,
                 namespace, arn, k8sPodPhaseToResourceState(v1Pod.getStatus().getPhase()), v1Pod.getStatus().getPodIP(),
+                String.valueOf(k8sProperties.getExecutorListenPort()),
                 new Date(System.currentTimeMillis() / 1000));
         return Optional.of(resource);
     }
@@ -206,7 +219,7 @@ public class NativeK8sJobClient implements K8sJobClient {
 
         V1PodSpec v1PodSpec = new V1PodSpec()
                 .containers(Collections.singletonList(container))
-                .restartPolicy(RESTART_POLICY_NEVER);
+                .restartPolicy("Always");
 
         return new V1Pod()
                 .apiVersion(getVersion()).kind(getKind())

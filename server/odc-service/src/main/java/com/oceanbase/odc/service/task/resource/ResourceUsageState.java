@@ -13,27 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.agent.runtime;
+package com.oceanbase.odc.service.task.resource;
 
-import java.util.concurrent.CountDownLatch;
-
-import lombok.extern.slf4j.Slf4j;
+import com.oceanbase.odc.common.util.StringUtils;
 
 /**
- * @author yaobin
- * @date 2023-12-13
- * @since 4.2.4
+ * state for resource usage, only update by resource user
+ * 
+ * @author longpeng.zlp
+ * @date 2024/12/4 17:57
  */
-@Slf4j
-class ExitHelper {
+public enum ResourceUsageState {
+    PREPARING,
+    USING,
+    FINISHED;
 
-    private static final CountDownLatch LATCH = new CountDownLatch(1);
+    public static ResourceUsageState fromString(String usageState) {
+        return ResourceUsageState.valueOf(StringUtils.upperCase(StringUtils.trim(usageState)));
+    }
 
-    public static void await() {
-        try {
-            LATCH.await();
-        } catch (InterruptedException e) {
-            log.warn("Await thread be interrupted and exit:", e);
-        }
+    public boolean equal(String usageState) {
+        return StringUtils.equalsIgnoreCase(name(), StringUtils.trim(usageState));
     }
 }

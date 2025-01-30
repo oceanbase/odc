@@ -21,9 +21,11 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.executor.HeartbeatRequest;
@@ -72,7 +74,7 @@ public interface TaskFrameworkService {
      */
     long countRunningJobs(TaskRunMode runMode);
 
-    int startSuccess(Long id, String executorIdentifier);
+    int startSuccess(Long id, String executorIdentifier, JobContext jobContext);
 
     int beforeStart(Long id);
 
@@ -93,4 +95,22 @@ public interface TaskFrameworkService {
     Map<String, String> getJobAttributes(Long jobId);
 
     boolean isJobFinished(Long id);
+
+    void propagateTaskResult(String jobType, TaskResult taskResult);
+
+    void saveOrUpdateLogMetadata(TaskResult taskResult, Long jobId, JobStatus currentStatus);
+
+    int updateTaskResult(TaskResult taskResult, JobEntity currentJob, JobStatus expectedStatus);
+
+    void publishEvent(TaskResult result, JobEntity jobEntity, JobStatus expectedJobStatus);
+
+    ThreadPoolTaskExecutor getTaskResultPullerExecutor();
+
+    boolean updateHeartbeatWithExpectStatus(Long id, JobStatus expectStatus);
+
+    Page<JobEntity> findNeedStoppedJobs(int page, int size);
+
+    Page<JobEntity> findNeedPullResultJobs(int page, int size);
+
+    int updateStatusByIdOldStatus(Long id, JobStatus oldStatus, JobStatus newStatus);
 }

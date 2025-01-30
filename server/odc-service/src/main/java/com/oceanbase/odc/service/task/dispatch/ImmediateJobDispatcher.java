@@ -29,13 +29,13 @@ import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobEnvironmentFactory;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
-import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.resource.PodConfig;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -89,7 +89,6 @@ public class ImmediateJobDispatcher implements JobDispatcher {
     }
 
     private JobCaller getJobCaller(JobIdentity ji, JobContext context) {
-        JobConfigurationValidator.validComponent();
         TaskFrameworkService taskFrameworkService =
                 JobConfigurationHolder.getJobConfiguration().getTaskFrameworkService();
         JobConfiguration config = JobConfigurationHolder.getJobConfiguration();
@@ -106,10 +105,10 @@ public class ImmediateJobDispatcher implements JobDispatcher {
             if (StringUtils.isNotBlank(regionName)) {
                 podConfig.setRegion(regionName);
             }
-            return JobCallerBuilder.buildK8sJobCaller(podConfig, context, resourceManager);
+            return JobCallerBuilder.buildK8sJobCaller(podConfig, context, resourceManager, je.getCreateTime());
         } else {
             return JobCallerBuilder.buildProcessCaller(context,
-                    new JobEnvironmentFactory().build(context, TaskRunMode.PROCESS));
+                    new JobEnvironmentFactory().build(context, TaskRunMode.PROCESS, LogUtils.getBaseLogPath()));
         }
     }
 

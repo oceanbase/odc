@@ -54,6 +54,7 @@ public class SpecificationUtil {
         };
     }
 
+
     public static <T> Specification<T> columnBefore(@NonNull String columnName, Date time) {
         return (root, query, builder) -> {
             if (Objects.isNull(time)) {
@@ -69,6 +70,16 @@ public class SpecificationUtil {
                 return builder.conjunction();
             }
             return builder.greaterThan(root.get(columnName), time);
+        };
+    }
+
+    public static <T, K extends Comparable<K>> Specification<T> columnLessThanOrEqualTo(@NonNull String columnName,
+            K number) {
+        return (root, query, builder) -> {
+            if (Objects.isNull(number)) {
+                return builder.conjunction();
+            }
+            return builder.lessThanOrEqualTo(root.get(columnName), number);
         };
     }
 

@@ -51,6 +51,9 @@ final class TaskContainer<RESULT> implements ExceptionListener {
     // only save latest exception if any
     // it will be cleaned if been fetched
     protected AtomicReference<Throwable> latestException = new AtomicReference<>();
+    // check if fina work has done
+    protected AtomicBoolean finalWorkDone = new AtomicBoolean(false);
+
 
     public TaskContainer(JobContext jobContext, CloudObjectStorageService cloudObjectStorageService,
             TaskReporter taskReporter, // assignable for test
@@ -99,11 +102,11 @@ final class TaskContainer<RESULT> implements ExceptionListener {
             updateStatus(TaskStatus.FAILED);
             onException(e);
         } finally {
-            close();
+            closeTask();
         }
     }
 
-    public boolean stop() {
+    public boolean stopTask() {
         try {
             if (getStatus().isTerminated()) {
                 log.warn("Task is already finished and cannot be canceled, id={}, status={}.", getJobId(), getStatus());
@@ -117,11 +120,11 @@ final class TaskContainer<RESULT> implements ExceptionListener {
             log.warn("Stop task failed, id={}", getJobId(), e);
             return false;
         } finally {
-            close();
+            closeTask();
         }
     }
 
-    public boolean modify(Map<String, String> jobParameters) {
+    public boolean modifyTask(Map<String, String> jobParameters) {
         if (Objects.isNull(jobParameters) || jobParameters.isEmpty()) {
             log.warn("Job parameter cannot be null, id={}", getJobId());
             return false;
@@ -135,7 +138,7 @@ final class TaskContainer<RESULT> implements ExceptionListener {
     }
 
 
-    private void close() {
+    private void closeTask() {
         if (closed.compareAndSet(false, true)) {
             try {
                 task.close();
@@ -143,7 +146,18 @@ final class TaskContainer<RESULT> implements ExceptionListener {
                 // do nothing
             }
             log.info("Task completed, id={}, status={}.", getJobId(), getStatus());
+        }
+    }
+
+    public synchronized void closeTaskContainer() {
+        if (!finalWorkDone.compareAndSet(false, true)) {
+            log.info("final work has done");
+            return;
+        }
+        try {
             taskMonitor.finalWork();
+        } catch (Throwable e) {
+            log.info("do final work failed", e);
         }
     }
 
@@ -153,8 +167,14 @@ final class TaskContainer<RESULT> implements ExceptionListener {
 
 
     private void updateStatus(TaskStatus status) {
-        log.info("Update task status, id={}, status={}.", getJobId(), status);
-        this.status = status;
+        TaskStatus prevStatus = this.status;
+        if (!this.status.isTerminated()) {
+            this.status = status;
+            log.info("Update task status, id={}, from prev = {} to  status={}.", getJobId(), prevStatus, status);
+        } else {
+            log.info("Status has terminated, , id={}, status={}. ignore transfer tp status = {}", getJobId(),
+                    prevStatus, status);
+        }
     }
 
     protected Map<String, String> getJobParameters() {

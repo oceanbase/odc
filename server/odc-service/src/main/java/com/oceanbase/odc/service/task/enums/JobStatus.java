@@ -24,10 +24,13 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
  */
 public enum JobStatus {
     PREPARING,
+    // preparing for resource, but not running, that's for rate limiter design
+    PREPARING_RESR,
+    TIMEOUT,
     RUNNING,
     FAILED,
-    RETRYING,
     CANCELING,
+    DO_CANCELING,
     CANCELED,
     DONE;
 
@@ -36,15 +39,11 @@ public enum JobStatus {
     }
 
     public boolean isExecuting() {
-        return JobStatus.PREPARING == this || JobStatus.RUNNING == this || JobStatus.RETRYING == this
-                || JobStatus.CANCELING == this;
+        return !isTerminated();
     }
 
     public TaskStatus convertTaskStatus() {
 
-        if (RETRYING == this) {
-            return TaskStatus.RUNNING;
-        }
         if (CANCELING == this) {
             return TaskStatus.CANCELED;
         }

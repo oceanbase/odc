@@ -21,13 +21,13 @@ import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
-import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.enums.JobCallerAction;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.listener.JobCallerEvent;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
+import com.oceanbase.odc.service.task.util.TaskSupervisorUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,9 +38,9 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public abstract class BaseJobCaller implements JobCaller {
+
     @Override
     public void start(JobContext context) throws JobException {
-        JobConfigurationValidator.validComponent();
         JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         ExecutorIdentifier executorIdentifier = null;
@@ -51,7 +51,7 @@ public abstract class BaseJobCaller implements JobCaller {
         }
         try {
             executorIdentifier = doStart(context);
-            rows = taskFrameworkService.startSuccess(ji.getId(), executorIdentifier.toString());
+            rows = taskFrameworkService.startSuccess(ji.getId(), executorIdentifier.toString(), context);
             if (rows > 0) {
                 afterStartSucceed(executorIdentifier, ji);
             } else {
@@ -60,6 +60,7 @@ public abstract class BaseJobCaller implements JobCaller {
             }
 
         } catch (Exception ex) {
+            log.info("start job failed, cause={}", ex.getMessage());
             afterStartFailed(ji, executorIdentifier, ex);
         }
     }
@@ -85,7 +86,6 @@ public abstract class BaseJobCaller implements JobCaller {
 
     @Override
     public void stop(JobIdentity ji) throws JobException {
-        JobConfigurationValidator.validComponent();
         JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         TaskExecutorClient taskExecutorClient = jobConfiguration.getTaskExecutorClient();
@@ -118,7 +118,6 @@ public abstract class BaseJobCaller implements JobCaller {
 
     @Override
     public void modify(JobIdentity ji, String jobParametersJson) throws JobException {
-        JobConfigurationValidator.validComponent();
         JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         TaskExecutorClient taskExecutorClient = jobConfiguration.getTaskExecutorClient();
@@ -128,7 +127,6 @@ public abstract class BaseJobCaller implements JobCaller {
 
     @Override
     public void finish(JobIdentity ji) throws JobException {
-        JobConfigurationValidator.validComponent();
         JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         JobEntity jobEntity = taskFrameworkService.find(ji.getId());
@@ -144,6 +142,9 @@ public abstract class BaseJobCaller implements JobCaller {
         ResourceID resourceID = ResourceIDUtil.getResourceID(identifier, jobEntity);
         log.info("Preparing destroy,jobId={}, executorIdentifier={}.", ji.getId(), executorIdentifier);
         doFinish(ji, identifier, resourceID);
+        if (TaskSupervisorUtil.isTaskSupervisorEnabled(jobConfiguration.getTaskFrameworkProperties())) {
+            jobConfiguration.getSupervisorAgentAllocator().deallocateSupervisorEndpoint(jobEntity.getId());
+        }
     }
 
 
@@ -193,8 +194,6 @@ public abstract class BaseJobCaller implements JobCaller {
     }
 
     protected abstract ExecutorIdentifier doStart(JobContext context) throws JobException;
-
-    protected abstract void doStop(JobIdentity ji) throws JobException;
 
     protected abstract boolean isExecutorExist(ExecutorIdentifier identifier, ResourceID resourceID)
             throws JobException;

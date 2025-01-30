@@ -34,7 +34,6 @@ import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
-import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.exception.JobException;
@@ -62,7 +61,6 @@ public class StartPreparingJob implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         configuration = JobConfigurationHolder.getJobConfiguration();
-        JobConfigurationValidator.validComponent();
 
         if (!configuration.getTaskFrameworkEnabledProperties().isEnabled()) {
             configuration.getTaskFrameworkDisabledHandler().handleJobToFailed();
@@ -76,7 +74,7 @@ public class StartPreparingJob implements Job {
         // scan preparing job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
         Page<JobEntity> jobs = taskFrameworkService.find(
-                Lists.newArrayList(JobStatus.PREPARING, JobStatus.RETRYING), 0,
+                Lists.newArrayList(JobStatus.PREPARING), 0,
                 taskFrameworkProperties.getSingleFetchPreparingJobRows());
 
         for (JobEntity a : jobs) {
@@ -100,7 +98,7 @@ public class StartPreparingJob implements Job {
     private void startJob(TaskFrameworkService taskFrameworkService, JobEntity jobEntity) {
         getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
             JobEntity lockedEntity = taskFrameworkService.findWithPessimisticLock(jobEntity.getId());
-            if (lockedEntity.getStatus() == JobStatus.PREPARING || lockedEntity.getStatus() == JobStatus.RETRYING) {
+            if (lockedEntity.getStatus() == JobStatus.PREPARING) {
 
                 // todo user id should be not null when submit job
                 if (jobEntity.getCreatorId() != null) {
@@ -117,7 +115,7 @@ public class StartPreparingJob implements Job {
                     Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
                             .item(AlarmUtils.ORGANIZATION_NAME, Optional.ofNullable(jobEntity.getOrganizationId()).map(
                                     Object::toString).orElse(StrUtil.EMPTY))
-                            .item(AlarmUtils.TASK_JOB_ID_NAME, jobEntity.getId().toString())
+                            .item(AlarmUtils.TASK_JOB_ID_NAME, String.valueOf(jobEntity.getId()))
                             .item(AlarmUtils.MESSAGE_NAME,
                                     MessageFormat.format("Start job failed, jobId={0}, message={1}",
                                             lockedEntity.getId(),
