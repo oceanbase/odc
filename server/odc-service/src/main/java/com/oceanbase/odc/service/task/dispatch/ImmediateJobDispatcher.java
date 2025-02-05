@@ -36,6 +36,8 @@ import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.resource.AbstractK8sResourceOperatorBuilder;
+import com.oceanbase.odc.service.task.resource.DefaultNativeK8sOperatorBuilder;
 import com.oceanbase.odc.service.task.resource.PodConfig;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -106,7 +108,13 @@ public class ImmediateJobDispatcher implements JobDispatcher {
             if (StringUtils.isNotBlank(regionName)) {
                 podConfig.setRegion(regionName);
             }
-            return JobCallerBuilder.buildK8sJobCaller(podConfig, context, resourceManager);
+            String resourceType = AbstractK8sResourceOperatorBuilder.CLOUD_K8S_POD_TYPE;
+            // TODO(tianke): this is ugly code, resourceType should be dispatched before job started
+            // task frame work should know where job should be dispatched to
+            if (config.getTaskFrameworkProperties().isEnableK8sLocalDebugMode()) {
+                resourceType = DefaultNativeK8sOperatorBuilder.NATIVE_K8S_POD_TYPE;
+            }
+            return JobCallerBuilder.buildK8sJobCaller(podConfig, context, resourceManager, resourceType);
         } else {
             return JobCallerBuilder.buildProcessCaller(context,
                     new JobEnvironmentFactory().build(context, TaskRunMode.PROCESS));
