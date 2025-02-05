@@ -30,7 +30,7 @@ jobs:
       - name: Setup JDK 8
         uses: actions/setup-java@v4
         with:
-          java-version: "8"
+          java-version: "8.0.432"
           distribution: "temurin"
           cache: maven
       - name: Check code format
@@ -47,7 +47,7 @@ jobs:
       - name: Setup JDK 8
         uses: actions/setup-java@v4
         with:
-          java-version: "8"
+          java-version: "8.0.432"
           distribution: "temurin"
           cache: maven
       - name: Install ob-sql-parser
