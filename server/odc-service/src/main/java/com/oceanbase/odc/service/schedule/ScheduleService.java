@@ -153,80 +153,58 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize
 public class ScheduleService {
 
+    private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
     @Value("${odc.task.trigger.minimum-interval:600}")
     private int minInterval;
     @Autowired
     private ScheduleRepository scheduleRepository;
-
     @Autowired
     private ScheduleTaskRepository scheduleTaskRepository;
     @Autowired
     private AuthenticationFacade authenticationFacade;
     @Autowired
     private QuartzJobService quartzJobService;
-
     @Autowired
     private ObjectStorageFacade objectStorageFacade;
-
     @Autowired
     private FlowInstanceRepository flowInstanceRepository;
-
     @Autowired
     private ScheduleTaskService scheduleTaskService;
-
     @Autowired
     private ScheduleResponseMapperFactory scheduleResponseMapperFactory;
-
     @Autowired
     @Lazy
     private ProjectService projectService;
-
     @Autowired
     private ProjectPermissionValidator projectPermissionValidator;
-
     @Autowired
     private ApprovalFlowConfigSelector approvalFlowConfigSelector;
-
     @Autowired
     private DatabaseService databaseService;
-
     @Autowired
     private EnvironmentRepository environmentRepository;
-
     @Autowired
     private ScheduleChangeLogService scheduleChangeLogService;
-
     @Autowired
     private OrganizationService organizationService;
-
     @Autowired
     private ScheduleChangePreprocessor preprocessor;
-
     @Autowired
     private LatestTaskMappingRepository latestTaskMappingRepository;
-
     @Autowired
     private ConnectionService connectionService;
-
     @Autowired
     private DlmLimiterService dlmLimiterService;
-
     @Autowired
     private UserService userService;
-
     @Autowired
     private ScheduledTaskLoggerService scheduledTaskLoggerService;
-
     @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
-
     @Autowired
     private ApprovalFlowClient approvalFlowService;
-
     @Autowired
     private ScheduleDescriptionGenerator descriptionGenerator;
-
-    private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
 
     @Transactional(rollbackFor = Exception.class)
     public List<FlowInstanceDetailResp> dispatchCreateSchedule(CreateFlowInstanceReq createReq) {
