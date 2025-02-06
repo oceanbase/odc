@@ -96,7 +96,7 @@ public class NlsFormatInterceptorTest {
         NlsFormatInterceptor interceptor = new NlsFormatInterceptor();
         String expect = "DD-MON-RR";
         SqlExecuteResult r = getResponse("-- comment\nset nls_date_format='" + expect + "';",
-            SqlExecuteStatus.SUCCESS);
+                SqlExecuteStatus.SUCCESS);
         interceptor.afterCompletion(r, session, getContext());
         Assert.assertEquals(expect, ConnectionSessionUtil.getNlsDateFormat(session));
     }

@@ -195,7 +195,7 @@ public class NlsFormatInterceptor extends BaseTimeConsumingInterceptor {
                             .generate();
                 }
                 name = ctx.sys_var_and_val().obj_access_ref_normal().getText();
-            } else if (ctx.set_expr_or_default() != null ) {
+            } else if (ctx.set_expr_or_default() != null) {
                 if (ctx.set_expr_or_default().bit_expr() != null) {
                     value = new OracleExpressionFactory(ctx.set_expr_or_default().bit_expr()).generate();
                 }
