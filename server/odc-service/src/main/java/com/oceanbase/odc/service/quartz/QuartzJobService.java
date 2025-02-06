@@ -21,17 +21,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.core.shared.exception.UnexpectedException;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.service.quartz.executor.QuartzJob;
-import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
-import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
-import com.oceanbase.odc.service.schedule.model.ChangeQuartJobParam;
-import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
-import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
-import com.oceanbase.odc.service.schedule.model.TriggerConfig;
-
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author jingtian

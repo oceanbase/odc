@@ -492,7 +492,7 @@ public class ScheduleService {
                 quartzJobReq.setJobName(targetSchedule.getId().toString());
                 quartzJobReq.setJobGroup(targetSchedule.getType().name());
                 quartzJobReq.setTriggerConfig(targetSchedule.getTriggerConfig());
-                quartzJobService.changeQuartzJob(quartzJobReq);
+                quartzJobService.changeJob(quartzJobReq);
                 return true;
             } catch (Exception e) {
                 log.warn("Change schedule failed,scheduleId={},operationType={},changelogId={}", targetSchedule.getId(),
