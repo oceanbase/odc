@@ -13,33 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.loaddata.model;
+package com.oceanbase.odc.service.connection.model;
 
-import java.io.Serializable;
-
-import com.oceanbase.odc.service.cloud.model.CloudProvider;
+import com.fasterxml.jackson.annotation.JsonAlias;
 
 import lombok.Data;
-import lombok.ToString;
 
 /**
- * This is used for OceanBase instance in OBCloud.
- *
- * @author xien.sxe
- * @date 2024/3/4
- * @since 1.0.0
+ * @author: liuyizhuo.lyz
+ * @date: 2024/12/18
  */
 @Data
-@ToString(exclude = "password")
-public class DataBaseInstanceCredential implements Serializable {
+public class OBDatabase {
 
-    private static final long serialVersionUID = -6045851446132148119L;
+    @JsonAlias("Database")
+    private String name;
 
+    @JsonAlias("Privileges")
+    private String privileges;
+
+    @JsonAlias("UserName")
     private String username;
 
-    private String password;
+    @JsonAlias("Role")
+    private String role;
 
-    private String region;
-
-    private CloudProvider provider;
 }
