@@ -81,7 +81,7 @@ public abstract class AbstractDlmJob extends AbstractOdcJob {
     }
 
     public Long publishJob(DLMJobReq params, Long timeoutMillis, Long srcDatabaseId) {
-        return submitToTaskFramework(JsonUtils.toJson(params), TaskDescription.DLM.getType(), timeoutMillis,
+        return submitToTaskFramework(JsonUtils.toJson(params), TaskDescription.DLM.name(), timeoutMillis,
                 srcDatabaseId);
     }
 
