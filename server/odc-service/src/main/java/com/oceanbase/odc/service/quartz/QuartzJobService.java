@@ -47,12 +47,14 @@ import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @Author：tinker
  * @Date: 2022/11/14 18:28
  * @Descripition:
  */
-
+@Slf4j
 @Service
 @SkipAuthorize("odc internal usage")
 public class QuartzJobService {
@@ -102,7 +104,9 @@ public class QuartzJobService {
                     throw new UnsupportedException();
             }
         } catch (Exception e) {
-            throw new UnexpectedException("");
+            log.warn("Failed to change quartz job,jobName={},jobGroup={},operationType={}", req.getJobName(),
+                    req.getJobGroup(), req.getOperationType(), e);
+            throw new UnexpectedException("Failed to change quartz job.");
         }
     }
 

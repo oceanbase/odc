@@ -35,11 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.SetUtils;
@@ -48,6 +44,8 @@ import org.springframework.stereotype.Service;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
+import com.oceanbase.odc.common.util.HostUtils;
+import com.oceanbase.odc.common.util.HostUtils.ServerAddress;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -82,16 +80,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DefaultDBSessionManage implements DBSessionManageFacade {
 
-    private static final String SERVER_REGEX = ".*(?<ip>([0-9]{1,3}.){1,3}([0-9]{1,3})):"
-            + "(?<port>[0-9]{1,5}).*";
-    private static final Pattern SERVER_PATTERN = Pattern.compile(SERVER_REGEX);
     private static final ConnectionMapper CONNECTION_MAPPER = ConnectionMapper.INSTANCE;
     private static final String GLOBAL_CLIENT_SESSION_OB_PROXY_VERSION_NUMBER = "4.2.3";
     private static final String GLOBAL_CLIENT_SESSION_OB_VERSION_NUMBER = "4.2.5";
     private static final String ORACLE_MODEL_KILL_SESSION_WITH_BLOCK_OB_VERSION_NUMBER = "4.2.1.0";
-    private static final byte GLOBAL_CLIENT_SESSION_PROXY_ID_MIN = 0;
-    private static final short GLOBAL_CLIENT_SESSION_PROXY_ID_MAX = 8191;
-    private static final byte GLOBAL_CLIENT_SESSION_ID_VERSION = 2;
 
     @Autowired
     private DBSessionService dbSessionService;
@@ -147,10 +139,20 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         Verify.notNull(conn, "ConnectionConfig");
         SessionExtensionPoint sessionExtension =
                 ConnectionPluginUtil.getSessionExtension(conn.getDialectType());
-        Map<String, String> connectionId2KillSql = sessionExtension.getKillQuerySqls(SetUtils.hashSet(connectionId));
-        List<KillResult> results = doKill(session, connectionId2KillSql);
-        Verify.singleton(results, "killResults");
-        return results.get(0).isKilled();
+        DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(conn);
+        ConnectionSession copiedSession = null;
+        try {
+            copiedSession = factory.generateSession();
+            Map<String, String> connectionId2KillSql = sessionExtension.getKillQuerySqls(
+                    SetUtils.hashSet(connectionId));
+            List<KillResult> results = doKill(copiedSession, connectionId2KillSql);
+            Verify.singleton(results, "killResults");
+            return results.get(0).isKilled();
+        } finally {
+            if (copiedSession != null) {
+                copiedSession.expire();
+            }
+        }
     }
 
     @Override
@@ -176,11 +178,22 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
                 // do nothing
             }
         }
-
-        List<OdcDBSession> checkedList = getSessionList(connectionSession, filter);
-        if (CollectionUtils.isNotEmpty(checkedList)) {
-            throw new IllegalStateException("kill session failed, has session reserved");
+        long startTimeMs = System.currentTimeMillis();
+        long endTimeMs = startTimeMs + 2000L;
+        while (System.currentTimeMillis() < endTimeMs) {
+            List<OdcDBSession> checkedList = getSessionList(connectionSession, filter);
+            if (CollectionUtils.isEmpty(getSessionList(connectionSession, filter))) {
+                log.info("All sessions killed, elapsed time: {}ms", System.currentTimeMillis() - startTimeMs);
+                return;
+            }
+            log.info("Has sessions reserved:{}", checkedList);
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                log.warn("Thread sleep interrupted", e);
+            }
         }
+        throw new IllegalStateException("kill session failed, has session reserved");
     }
 
     private List<KillResult> doKill(ConnectionSession session, Map<String, String> connectionId2KillSqls) {
@@ -204,6 +217,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
                 .collect(Collectors.toList());
     }
 
+    // Will reuse the ConnectionSession to get the session list
     private List<OdcDBSession> getSessionList(ConnectionSession connectionSession, Predicate<OdcDBSession> filter) {
         return DBStatsAccessors.create(connectionSession)
                 .listAllSessions()
@@ -237,7 +251,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         Map<String, ServerAddress> sessionId2SvrAddr =
                 getSessionList(connectionSession, s -> s.getSvrIp() != null)
                         .stream().collect(Collectors.toMap(OdcDBSession::getSessionId,
-                                s -> extractServerAddress(MoreObjects.firstNonNull(s.getSvrIp(), ""))));
+                                s -> HostUtils.extractServerAddress(MoreObjects.firstNonNull(s.getSvrIp(), ""))));
         Map<String, String> sqlId2SessionId = sqlTupleSessionIds.stream().collect(
                 Collectors.toMap(s -> s.getSqlTuple().getSqlId(), SqlTupleSessionId::getSessionId));
 
@@ -424,28 +438,6 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         }
     }
 
-    // extract text(query from the dictionary) to server address(ip, port)
-    // the text is expected be like 0.0.0.0:8888
-    @NotNull
-    private ServerAddress extractServerAddress(String text) {
-        String trimmed = StringUtils.trim(text);
-        if (StringUtils.isBlank(trimmed)) {
-            log.info("unable to extract server address, text is empty");
-            throw new IllegalStateException("Empty server address!");
-        }
-        Matcher matcher = SERVER_PATTERN.matcher(trimmed);
-        if (!matcher.matches()) {
-            log.info("unable to extract server address, does not match pattern");
-            throw new IllegalStateException("Invalid server address!");
-        }
-        String ipAddress = matcher.group("ip");
-        String port = matcher.group("port");
-        if (StringUtils.isEmpty(ipAddress) || StringUtils.isEmpty(port)) {
-            log.info("unable to extract server address, ipAddress={}, port={}", ipAddress, port);
-            throw new IllegalStateException("Invalid server address!");
-        }
-        return new ServerAddress(ipAddress, port);
-    }
 
     private CompletableFuture<Void> doKillAllSessions(List<OdcDBSession> list, ConnectionSession connectionSession,
             Executor executor) {
@@ -454,7 +446,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
                     .forEach(sessionList -> {
                         SessionExtensionPoint sessionExtension =
                                 ConnectionPluginUtil.getSessionExtension(connectionSession.getDialectType());
-                        Map<String, String> connectionId2KillSql = sessionExtension.getKillQuerySqls(
+                        Map<String, String> connectionId2KillSql = sessionExtension.getKillSessionSqls(
                                 sessionList.stream().map(OdcDBSession::getSessionId).collect(Collectors.toSet()));
                         doKill(connectionSession, connectionId2KillSql);
                     });
@@ -474,17 +466,6 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             log.warn("Kill all sessions occur error", e);
             throw new IllegalStateException("Kill all sessions occur error", e);
-        }
-    }
-
-    @Data
-    static class ServerAddress {
-        String ipAddress;
-        String port;
-
-        public ServerAddress(String ipAddress, String port) {
-            this.ipAddress = ipAddress;
-            this.port = port;
         }
     }
 

@@ -45,8 +45,9 @@ public class OBMySQLStatsAccessorTest extends BaseTestEnv {
     @Test
     public void listAllSessions() {
         DBStatsAccessor accessor = new OBMySQLStatsAccessor(new JdbcTemplate(getOBMySQLDataSource()));
-        List<DBSession> session = accessor.listAllSessions();
-        Assert.assertTrue(session.size() > 0);
+        List<DBSession> sessions = accessor.listAllSessions();
+        Assert.assertTrue(sessions.size() > 0);
+        sessions.stream().forEach(s -> Assert.assertNotNull(s.getSvrIp()));
     }
 
 }
