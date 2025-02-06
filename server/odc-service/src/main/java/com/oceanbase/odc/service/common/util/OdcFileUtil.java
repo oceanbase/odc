@@ -181,13 +181,13 @@ public class OdcFileUtil {
         return absolutePath;
     }
 
+    public static void setAbsolutePath(String absolutePath) {
+        OdcFileUtil.absolutePath = absolutePath;
+    }
+
     public static String getStaticPath() {
         createDirIfNotExists();
         return absolutePath + "/" + staticDir + fileDir;
-    }
-
-    public static void setAbsolutePath(String absolutePath) {
-        OdcFileUtil.absolutePath = absolutePath;
     }
 
     /**
@@ -276,5 +276,20 @@ public class OdcFileUtil {
             });
             out.flush();
         }
+    }
+
+    public static boolean createFileWithDirectories(File file) {
+        File parentDirectory = file.getParentFile();
+        if (parentDirectory != null && !parentDirectory.exists()) {
+            parentDirectory.mkdirs();
+        }
+        if (!file.exists()) {
+            try {
+                return file.createNewFile();
+            } catch (IOException e) {
+                return false;
+            }
+        }
+        return true;
     }
 }

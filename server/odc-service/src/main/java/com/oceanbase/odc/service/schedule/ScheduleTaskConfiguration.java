@@ -19,6 +19,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.oceanbase.odc.service.archiver.model.ArchiveProperties;
 import com.oceanbase.odc.service.schedule.alarm.DefaultScheduleAlarmClient;
 import com.oceanbase.odc.service.schedule.alarm.ScheduleAlarmClient;
 import com.oceanbase.odc.service.schedule.flowtask.ApprovalFlowClient;
@@ -60,5 +61,13 @@ public class ScheduleTaskConfiguration {
     @ConditionalOnMissingBean(ScheduleDescriptionGenerator.class)
     public ScheduleDescriptionGenerator scheduleDescriptionGenerator() {
         return new DefaultScheduleDescriptionGenerator();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ScheduleArchiveFacade.class)
+    public ScheduleArchiveFacade defaultScheduleArchiveFacade() {
+        return archiveProperties -> {
+            // do nothing
+        };
     }
 }
