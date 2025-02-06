@@ -91,6 +91,17 @@ public class NlsFormatInterceptorTest {
     }
 
     @Test
+    public void afterCompletion_commentWithSetVar_withoutScope_setSucceed() throws Exception {
+        ConnectionSession session = getConnectionSession(ConnectType.OB_ORACLE);
+        NlsFormatInterceptor interceptor = new NlsFormatInterceptor();
+        String expect = "DD-MON-RR";
+        SqlExecuteResult r = getResponse("-- comment\nset nls_date_format='" + expect + "';",
+            SqlExecuteStatus.SUCCESS);
+        interceptor.afterCompletion(r, session, getContext());
+        Assert.assertEquals(expect, ConnectionSessionUtil.getNlsDateFormat(session));
+    }
+
+    @Test
     public void afterCompletion_multiCommentsWithSetVar_setSucceed() throws Exception {
         ConnectionSession session = getConnectionSession(ConnectType.OB_ORACLE);
         NlsFormatInterceptor interceptor = new NlsFormatInterceptor();

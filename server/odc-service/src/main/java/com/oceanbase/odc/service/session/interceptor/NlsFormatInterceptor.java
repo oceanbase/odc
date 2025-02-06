@@ -187,15 +187,28 @@ public class NlsFormatInterceptor extends BaseTimeConsumingInterceptor {
 
         @Override
         public VariableAssign visitVar_and_val(Var_and_valContext ctx) {
-            if (ctx.scope_or_scope_alias() == null) {
+            Expression value = null;
+            String name;
+            if (ctx.sys_var_and_val() != null) {
+                if (ctx.sys_var_and_val().set_expr_or_default().bit_expr() != null) {
+                    value = new OracleExpressionFactory(ctx.sys_var_and_val().set_expr_or_default().bit_expr())
+                            .generate();
+                }
+                name = ctx.sys_var_and_val().obj_access_ref_normal().getText();
+            } else if (ctx.set_expr_or_default() != null ) {
+                if (ctx.set_expr_or_default().bit_expr() != null) {
+                    value = new OracleExpressionFactory(ctx.set_expr_or_default().bit_expr()).generate();
+                }
+                name = ctx.column_name().getText();
+            } else {
                 return null;
             }
-            Expression value = null;
-            if (ctx.set_expr_or_default().bit_expr() != null) {
-                value = new OracleExpressionFactory(ctx.set_expr_or_default().bit_expr()).generate();
-            }
-            VariableAssign assign = new VariableAssign(ctx.column_name().getText(), value);
+            VariableAssign assign = new VariableAssign(name, value);
             Scope_or_scope_aliasContext scope = ctx.scope_or_scope_alias();
+            if (scope == null) {
+                assign.setSession(true);
+                return assign;
+            }
             if (scope.GLOBAL() != null || scope.GLOBAL_ALIAS() != null) {
                 assign.setGlobal(true);
             } else if (scope.SESSION() != null || scope.SESSION_ALIAS() != null) {
