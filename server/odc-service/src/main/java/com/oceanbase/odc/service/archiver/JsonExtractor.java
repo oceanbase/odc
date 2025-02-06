@@ -16,20 +16,16 @@
 package com.oceanbase.odc.service.archiver;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 
 import javax.annotation.Nullable;
-import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.security.EncryptAlgorithm;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,53 +35,35 @@ public class JsonExtractor implements Extractor {
     public <D> ArchivedData<D> extractFullData(ArchivedFile archivedFile, TypeReference<ArchivedData<D>> typeReference)
             throws Exception {
         try (InputStream inputStream = archivedFile.getProvider().getInputStream()) {
-            String decryptedString = decryptAESStream(inputStream, archivedFile.getSecret());
+            String decryptedString = decrypt(inputStream, archivedFile.getSecret());
             return JsonUtils.fromJson(decryptedString, typeReference);
         }
     }
 
-    private String decryptAESStream(InputStream inputStream, @Nullable String key) throws Exception {
+    private String decrypt(InputStream inputStream, @Nullable String key) throws Exception {
+        String json = convertInputStreamToString(inputStream);
         if (key == null) {
-            return convertInputStreamToString(inputStream);
+            return json;
         }
-        SecretKey secretKey = getKey(key.getBytes(StandardCharsets.UTF_8));
-        Cipher cipher = Cipher.getInstance("AES");
-        cipher.init(Cipher.DECRYPT_MODE, secretKey);
-        try (CipherInputStream cipherInputStream = new CipherInputStream(inputStream, cipher);
-                ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = cipherInputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
-            }
-
-            return new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
-        }
+        return EncryptAlgorithm.AES.decrypt(json, key, StandardCharsets.UTF_8.name());
     }
 
-    private String convertInputStreamToString(InputStream inputStream) throws Exception {
+
+    private String convertInputStreamToString(InputStream inputStream) throws IOException {
         if (inputStream == null) {
             return "";
         }
 
         StringBuilder stringBuilder = new StringBuilder();
-        String line;
+        char[] buffer = new char[1024];
+        int bytesRead;
+
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-            while ((line = reader.readLine()) != null) {
-                stringBuilder.append(line).append(System.lineSeparator());
+            while ((bytesRead = reader.read(buffer, 0, buffer.length)) != -1) {
+                stringBuilder.append(buffer, 0, bytesRead);
             }
         }
 
         return stringBuilder.toString();
     }
-
-    private SecretKey getKey(byte[] keyBytes) throws Exception {
-        SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
-        random.setSeed(keyBytes);
-        KeyGenerator generator = KeyGenerator.getInstance("AES");
-        generator.init(256, random);
-        return generator.generateKey();
-    }
-
-
 }

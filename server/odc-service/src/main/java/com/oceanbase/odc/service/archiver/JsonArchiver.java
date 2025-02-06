@@ -19,7 +19,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.Properties;
 
 import javax.annotation.Nullable;
@@ -48,11 +48,8 @@ public class JsonArchiver implements Archiver {
      * @return
      * @throws Exception
      */
-    public ArchivedFile archiveFullDataToLocal(Object data, @Nullable Properties metaData, @Nullable String encryptKey)
+    public ArchivedFile archiveFullDataToLocal(Object data, Properties metaData, @Nullable String encryptKey)
             throws Exception {
-        if (metaData == null) {
-            metaData = new Properties();
-        }
         addDefaultMetaData(metaData);
 
         ArchivedData<Object> archivedData = new ArchivedData<>();
@@ -68,7 +65,7 @@ public class JsonArchiver implements Archiver {
     }
 
     @Override
-    public ArchivedFile archiveFullDataToCloudObject(Object data, @Nullable Properties metaData, String encryptKey)
+    public ArchivedFile archiveFullDataToCloudObject(Object data, Properties metaData, String encryptKey)
             throws Exception {
         Verify.verifyNotNull(cloudObjectStorageService, "cloudObjectStorageService");
         Verify.verify(cloudObjectStorageService.supported(), "Not supported cloud object storage service");
@@ -79,7 +76,7 @@ public class JsonArchiver implements Archiver {
         return archivedFile;
     }
 
-    public ArchivedFile archiveFullDataToLocal(Object data, @Nullable Properties metaData)
+    public ArchivedFile archiveFullDataToLocal(Object data, Properties metaData)
             throws Exception {
         return archiveFullDataToLocal(data, metaData, null);
     }
@@ -124,7 +121,7 @@ public class JsonArchiver implements Archiver {
                 log.warn("Failed to load build properties", e);
             }
         }
-        metaData.putIfAbsent(ArchiveConstants.CREATE_TIME, LocalDateTime.now());
+        metaData.putIfAbsent(ArchiveConstants.CREATE_TIME, new Date());
     }
 
 }
