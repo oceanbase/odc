@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.archiver;
 
-package com.oceanbase.odc.service.tripartite;
+public final class ArchiveConstants {
 
-public class ConfigDump {
+
+    public static final String ODC_VERSION = "odcVersion";
+    public static final String CREATE_TIME = "createTime";
+
+    /**
+     * filePath, include filename and filetype
+     */
+    public static final String FILE_NAME = "fileName";
+    public static final String FILE_PATH = "filePath";
+
+    public static final String FILE_TXT_SUFFER = ".txt";
 }

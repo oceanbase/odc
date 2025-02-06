@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,30 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.archiver;
 
-package com.oceanbase.odc.service.tripartite;
+import com.fasterxml.jackson.core.type.TypeReference;
 
-import java.time.LocalDateTime;
+public interface Extractor {
 
-import lombok.Value;
-
-@Value
-public class ExportConfigHeader {
-
-    /**
-     * ODC_Version
-     */
-    String odcVersion;
-
-    String gitBranch;
-
-    String gitCommitId;
-
-    /**
-     * 配置创建时间
-     */
-    LocalDateTime createTime;
-
-    String type;
-
+    <D> ArchivedData<D> extractFullData(ArchivedFile archivedFile, TypeReference<ArchivedData<D>> typeReference)
+            throws Exception;
 }
