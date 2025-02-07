@@ -104,7 +104,7 @@ public class ConnectionTesting {
 
     public ConnectionTestResult test(@NonNull ConnectionConfig config) {
         ConnectType type = config.getType();
-        if (type != null && type.isFileSystem()) {
+        if (type.isFileSystem()) {
             return fileSystemConnectionTesting.test(config);
         }
         try {
