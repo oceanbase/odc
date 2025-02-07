@@ -57,6 +57,10 @@ public enum ConnectType {
         return this == ODP_SHARDING_OB_MYSQL || this == ODP_SHARDING_OB_ORACLE;
     }
 
+    public boolean isFileSystem() {
+        return this == COS || this == OBS || this == OSS || this == S3A;
+    }
+
     public boolean isDefaultSchemaRequired() {
         return isODPSharding();
     }

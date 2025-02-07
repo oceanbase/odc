@@ -20,10 +20,12 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.connection.model.CloudConnectionConfig;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.OBDatabaseUser;
 import com.oceanbase.odc.service.connection.model.OBInstanceType;
 import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
+import com.oceanbase.odc.service.connection.model.TestConnectionReq;
 
 @Component
 public class DefaultConnectionAdapter implements ConnectionAdapter {
@@ -36,6 +38,13 @@ public class DefaultConnectionAdapter implements ConnectionAdapter {
      */
     public <T extends CloudConnectionConfig> T adaptConfig(T connectionConfig) {
         PreConditions.notNull(connectionConfig, "connectionConfig");
+        if (connectionConfig instanceof ConnectionConfig
+                && ((ConnectionConfig) connectionConfig).getType().isFileSystem()) {
+            return connectionConfig;
+        } else if (connectionConfig instanceof TestConnectionReq
+                && ((TestConnectionReq) connectionConfig).getType().isFileSystem()) {
+            return connectionConfig;
+        }
         OBTenantEndpoint endpoint = new OBTenantEndpoint();
         endpoint.setAccessMode(cloudMetadataClient.oceanbaseAccessMode());
         String clusterName = connectionConfig.getClusterName();
