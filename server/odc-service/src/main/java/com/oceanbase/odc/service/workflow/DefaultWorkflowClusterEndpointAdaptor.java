@@ -13,33 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.loaddata.model;
+package com.oceanbase.odc.service.workflow;
 
-import java.io.Serializable;
+import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.service.cloud.model.CloudProvider;
-
-import lombok.Data;
-import lombok.ToString;
+import com.oceanbase.odc.service.resource.ResourceLocation;
 
 /**
- * This is used for OceanBase instance in OBCloud.
- *
- * @author xien.sxe
- * @date 2024/3/4
- * @since 1.0.0
+ * @author: liuyizhuo.lyz
+ * @date: 2024/11/27
  */
-@Data
-@ToString(exclude = "password")
-public class DataBaseInstanceCredential implements Serializable {
-
-    private static final long serialVersionUID = -6045851446132148119L;
-
-    private String username;
-
-    private String password;
-
-    private String region;
-
-    private CloudProvider provider;
+@Component
+public class DefaultWorkflowClusterEndpointAdaptor implements WorkflowClusterEndpointAdaptor {
+    @Override
+    public String adapt(String host, ResourceLocation resourceLocation) {
+        return host;
+    }
 }
