@@ -18,9 +18,6 @@ package com.oceanbase.odc.service.task.resource;
 import java.io.IOException;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.metadb.resource.ResourceRepository;
@@ -29,11 +26,7 @@ import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceOperatorBuilder;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
-import com.oceanbase.odc.service.task.dummy.LocalMockK8sJobClient;
-import com.oceanbase.odc.service.task.resource.client.DefaultK8sJobClientSelector;
 import com.oceanbase.odc.service.task.resource.client.K8sJobClientSelector;
-import com.oceanbase.odc.service.task.resource.client.NativeK8sJobClient;
-import com.oceanbase.odc.service.task.resource.client.NullK8sJobClientSelector;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,46 +36,31 @@ import lombok.extern.slf4j.Slf4j;
  * @author longpeng.zlp
  * @date 2024/9/2 17:33
  */
-@Component
 @Slf4j
-public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K8sResourceContext, K8sPodResource> {
+public abstract class AbstractK8sResourceOperatorBuilder
+        implements ResourceOperatorBuilder<K8sResourceContext, K8sPodResource> {
     public static final String CLOUD_K8S_POD_TYPE = "cloudK8sPod";
     protected K8sJobClientSelector k8sJobClientSelector;
     protected K8sProperties k8sProperties;
     protected ResourceRepository resourceRepository;
+    protected String operatorType;
 
-    public DefaultResourceOperatorBuilder(@Autowired TaskFrameworkProperties taskFrameworkProperties,
-            @Autowired ResourceRepository resourceRepository) throws IOException {
+    public AbstractK8sResourceOperatorBuilder(TaskFrameworkProperties taskFrameworkProperties,
+            ResourceRepository resourceRepository, String typeName) throws IOException {
         this.k8sProperties = taskFrameworkProperties.getK8sProperties();
         this.resourceRepository = resourceRepository;
         this.k8sJobClientSelector = buildK8sJobSelector(taskFrameworkProperties);
+        this.operatorType = typeName;
     }
 
     /**
-     * build k8s job selector
+     * create k8s client selector
+     * 
+     * @param taskFrameworkProperties
+     * @return
      */
-    protected K8sJobClientSelector buildK8sJobSelector(
-            TaskFrameworkProperties taskFrameworkProperties) throws IOException {
-        K8sProperties k8sProperties = taskFrameworkProperties.getK8sProperties();
-        K8sJobClientSelector k8sJobClientSelector;
-        if (taskFrameworkProperties.isEnableK8sLocalDebugMode()) {
-            // k8s use in local debug mode
-            log.info("local debug k8s cluster enabled.");
-            k8sJobClientSelector = new LocalMockK8sJobClient();
-        } else if (StringUtils.isBlank(k8sProperties.getKubeUrl())) {
-            log.info("local task k8s cluster is not enabled.");
-            k8sJobClientSelector = new NullK8sJobClientSelector();
-        } else {
-            // normal mode
-            log.info("build k8sJobClientSelector, kubeUrl={}, namespace={}",
-                    k8sProperties.getKubeUrl(), k8sProperties.getNamespace());
-            NativeK8sJobClient nativeK8sJobClient = new NativeK8sJobClient(k8sProperties);
-            k8sJobClientSelector = new DefaultK8sJobClientSelector(nativeK8sJobClient);
-        }
-        return k8sJobClientSelector;
-    }
-
-
+    protected abstract K8sJobClientSelector buildK8sJobSelector(TaskFrameworkProperties taskFrameworkProperties)
+            throws IOException;
 
     @Override
     public K8sResourceOperator build(ResourceLocation resourceLocation) {
@@ -138,12 +116,12 @@ public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K
     }
 
     /**
-     * cloud K8s pod match this builder
+     * builder matcher
      *
      * @return
      */
     @Override
     public boolean matches(String type) {
-        return StringUtils.equalsIgnoreCase(type, CLOUD_K8S_POD_TYPE);
+        return StringUtils.equalsIgnoreCase(type, operatorType);
     }
 }

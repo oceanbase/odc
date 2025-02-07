@@ -47,7 +47,7 @@ public class K8sConfigMapStatusDfa extends AbstractDfa<ResourceState, K8sConfigM
                 .from(ResourceState.AVAILABLE)
                 .matchesK8sResource(getNullMatchers()).to(ResourceState.UNKNOWN).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sConfigMap>()
-                .from(ResourceState.CREATING)
+                .from(ResourceState.CREATING, ResourceState.UNKNOWN)
                 .matchesK8sResource(getNonNullMatchers()).to(ResourceState.AVAILABLE).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sConfigMap>()
                 .from(ResourceState.AVAILABLE)
@@ -75,7 +75,7 @@ public class K8sConfigMapStatusDfa extends AbstractDfa<ResourceState, K8sConfigM
 
     @Override
     protected void onStateTransfer(ResourceState currentState, ResourceState nextState, K8sConfigMap k8sConfigMap) {
-        log.info("The state has been changed, currentState={}, nextState={}", currentState, nextState);
+        log.debug("The state has been changed, currentState={}, nextState={}", currentState, nextState);
     }
 
 }

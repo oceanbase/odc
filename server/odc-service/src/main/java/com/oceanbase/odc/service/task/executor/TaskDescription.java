@@ -24,7 +24,7 @@ import lombok.Getter;
  * @date 2024/10/10 10:37
  */
 public enum TaskDescription {
-    DLM("DML", "data lifecycle management task"),
+    DLM("DLM", "data lifecycle management task"),
 
     LOAD_DATA("LOAD_DATA", "load data task"),
 

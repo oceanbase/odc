@@ -373,7 +373,7 @@ public class MySQLNoLessThan5700SchemaAccessorTest extends BaseTestEnv {
                 DataType.of("col24", "time", 0, 0L, 0, null),
                 DataType.of("col25", "date", 0, null, 0, null),
                 DataType.of("col26", "datetime", 0, 0L, 0, null),
-                DataType.of("col27", "year", 0, 0L, 0, null)));
+                DataType.of("col27", "year", 4, 4L, 0, null)));
     }
 
     @Data

@@ -69,6 +69,11 @@ public class LocalObjectStorageClient implements ObjectStorageClient {
     }
 
     @Override
+    public void copyObject(String fromObjectName, String toObjectName) throws IOException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
     public byte[] readContent(String objectName) throws IOException {
         ObjectBlockIterator blockIterator = blockOperator.getBlockIterator(objectName);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

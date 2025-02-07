@@ -17,6 +17,7 @@ package com.oceanbase.odc.config;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -190,8 +191,9 @@ public class HookConfiguration {
         Set<RiskDetectRule> referencedRiskDetectRules =
                 riskDetectService.listAllByOrganizationId(organizationId)
                         .stream()
-                        .filter(rule -> rule.getRootNode().find(ConditionExpression.ENVIRONMENT_ID.name(), id)
-                                || rule.getRootNode().find(ConditionExpression.ENVIRONMENT_NAME.name(), name))
+                        .filter(rule -> Objects.nonNull(rule.getRootNode())
+                                && (rule.getRootNode().find(ConditionExpression.ENVIRONMENT_ID.name(), id)
+                                        || rule.getRootNode().find(ConditionExpression.ENVIRONMENT_NAME.name(), name)))
                         .collect(Collectors.toSet());
 
         if (!referencedRiskDetectRules.isEmpty()) {

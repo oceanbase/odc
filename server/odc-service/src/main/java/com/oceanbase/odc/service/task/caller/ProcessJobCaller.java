@@ -31,6 +31,7 @@ import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.response.OdcResult;
 import com.oceanbase.odc.service.resource.ResourceID;
+import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.enums.JobStatus;
@@ -48,6 +49,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class ProcessJobCaller extends BaseJobCaller {
+    private static final ResourceLocation LOCAL_RESOURCE_LOCATION =
+            new ResourceLocation(SystemUtils.getLocalIpAddress(), ResourceIDUtil.DEFAULT_PROP_VALUE);
 
     private final ProcessConfig processConfig;
 
@@ -56,7 +59,7 @@ public class ProcessJobCaller extends BaseJobCaller {
     }
 
     @Override
-    public ExecutorIdentifier doStart(JobContext context) throws JobException {
+    public ExecutorInfo doStart(JobContext context) throws JobException {
 
         String executorName = JobUtils.generateExecutorName(context.getJobIdentity());
         ProcessBuilder pb = new ExecutorProcessBuilderFactory().getProcessBuilder(
@@ -91,10 +94,11 @@ public class ProcessJobCaller extends BaseJobCaller {
         String portString = Optional.ofNullable(jobConfiguration.getHostProperties().getPort())
                 .orElse(DefaultExecutorIdentifier.DEFAULT_PORT + "");
         // set process id as namespace
-        return DefaultExecutorIdentifier.builder().host(SystemUtils.getLocalIpAddress())
-                .port(Integer.parseInt(portString))
-                .namespace(pid + "")
-                .executorName(executorName).build();
+        return new ExecutorInfo(new ResourceID(LOCAL_RESOURCE_LOCATION, "process", "processnamespace", executorName),
+                DefaultExecutorIdentifier.builder().host(SystemUtils.getLocalIpAddress())
+                        .port(Integer.parseInt(portString))
+                        .namespace(pid + "")
+                        .executorName(executorName).build());
     }
 
     @Override

@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.event.AbstractEvent;
 import com.oceanbase.odc.common.event.LocalEventPublisher;
-import com.oceanbase.odc.service.connection.listener.UpdateDatasourceListener;
+import com.oceanbase.odc.service.connection.listener.UpsertFileSystemListener;
 
 import lombok.NonNull;
 
@@ -38,11 +38,11 @@ public class ConnectionEventPublisher {
     private LocalEventPublisher localEventPublisher;
 
     @Autowired
-    private UpdateDatasourceListener updateDatasourceListener;
+    private UpsertFileSystemListener upsertFileSystemListener;
 
     @PostConstruct
     public void init() {
-        localEventPublisher.addEventListener(updateDatasourceListener);
+        localEventPublisher.addEventListener(upsertFileSystemListener);
     }
 
     public <T extends AbstractEvent> void publishEvent(@NonNull T event) {

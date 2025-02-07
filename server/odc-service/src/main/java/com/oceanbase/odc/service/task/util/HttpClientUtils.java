@@ -59,6 +59,10 @@ public class HttpClientUtils {
         HttpClientUtils.httpClient = httpClient;
     }
 
+    public static OkHttpClient getHttpClient() {
+        return httpClient;
+    }
+
     public static <T> T request(String method, String uri, TypeReference<T> responseTypeRef) throws IOException {
         return request(method, uri, null, null, null, responseTypeRef);
     }

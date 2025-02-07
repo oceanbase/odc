@@ -65,8 +65,11 @@ import com.oceanbase.odc.metadb.task.JobAttributeEntity;
 import com.oceanbase.odc.metadb.task.JobAttributeRepository;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.JobRepository;
+import com.oceanbase.odc.service.resource.ResourceID;
+import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.resource.ResourceState;
+import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobAttributeEntityColumn;
 import com.oceanbase.odc.service.task.constants.JobEntityColumn;
@@ -78,7 +81,7 @@ import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.listener.DefaultJobProcessUpdateEvent;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.processor.result.ResultProcessor;
-import com.oceanbase.odc.service.task.resource.DefaultResourceOperatorBuilder;
+import com.oceanbase.odc.service.task.resource.AbstractK8sResourceOperatorBuilder;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.state.JobStatusFsm;
@@ -186,7 +189,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         Specification<ResourceEntity> condition = Specification.where(specification)
                 .and(SpecificationUtil.columnEqual(ResourceEntity.STATUS, ResourceState.ABANDONED))
                 .and(SpecificationUtil.columnEqual(ResourceEntity.TYPE,
-                        DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE));
+                        AbstractK8sResourceOperatorBuilder.CLOUD_K8S_POD_TYPE));
         return resourceRepository.findAll(condition, PageRequest.of(page, size));
     }
 
@@ -289,9 +292,25 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
-    public int startSuccess(Long id, String executorIdentifier) {
+    public int startSuccess(Long id, ResourceID resourceID, String executorIdentifier) {
         JobEntity jobEntity = find(id);
+        Map<String, String> jobProperties = jobEntity.getJobProperties();
+        String regionName = jobProperties.get(ResourceIDUtil.REGION_PROP_NAME);
+        ResourceLocation resourceLocation = resourceID.getResourceLocation();
+        // resource location depends on what resource operator returned
+        if (!StringUtils.equals(regionName, resourceLocation.getRegion())) {
+            log.info("correct resource region from {} to {}", regionName, resourceLocation.getRegion());
+            jobProperties.put(ResourceIDUtil.REGION_PROP_NAME, resourceLocation.getRegion());
+        }
+        String cloudProviderName = jobProperties.get(ResourceIDUtil.GROUP_PROP_NAME);
+        if (!StringUtils.equals(cloudProviderName, resourceLocation.getGroup())) {
+            log.info("correct resource cloud provider from {} to {}", cloudProviderName, resourceLocation.getGroup());
+            jobProperties.put(ResourceIDUtil.GROUP_PROP_NAME, resourceLocation.getGroup());
+        }
+        jobProperties.put(ResourceIDUtil.RESOURCE_TYPE_PROP_NAME, resourceID.getType());
+        jobProperties.put(ResourceIDUtil.RESOURCE_NAMESPACE_PROP_NAME, resourceID.getNamespace());
         jobEntity.setExecutorIdentifier(executorIdentifier);
+        jobEntity.setJobProperties(jobProperties);
         return jobRepository.updateJobExecutorIdentifierById(jobEntity);
     }
 

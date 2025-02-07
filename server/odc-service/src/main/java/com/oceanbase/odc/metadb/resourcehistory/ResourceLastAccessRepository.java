@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.resourcehistory;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -44,6 +45,12 @@ public interface ResourceLastAccessRepository extends OdcJpaRepository<ResourceL
             @NonNull Long organizationId, @NonNull Long projectId,
             @NonNull Long userId, @NonNull String resourceType,
             @NonNull Pageable pageable);
+
+    @Transactional
+    int deleteByOrganizationIdAndProjectIdAndResourceTypeAndResourceIdIn(
+            @NonNull Long organizationId, @NonNull Long projectId,
+            @NonNull String resourceType,
+            @NonNull Collection<Long> resourceIds);
 
     @Transactional
     default int batchUpsert(List<ResourceLastAccessEntity> entities) {

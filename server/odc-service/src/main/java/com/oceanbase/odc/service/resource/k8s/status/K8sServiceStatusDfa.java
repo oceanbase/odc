@@ -44,7 +44,7 @@ public class K8sServiceStatusDfa extends AbstractDfa<ResourceState, K8sService> 
                 .from(ResourceState.CREATING)
                 .matchesK8sResource(getNullMatchers()).to(ResourceState.CREATING).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sService>()
-                .from(ResourceState.AVAILABLE)
+                .from(ResourceState.AVAILABLE, ResourceState.UNKNOWN)
                 .matchesK8sResource(getNullMatchers()).to(ResourceState.UNKNOWN).build());
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sService>()
                 .from(ResourceState.CREATING)
@@ -58,6 +58,9 @@ public class K8sServiceStatusDfa extends AbstractDfa<ResourceState, K8sService> 
         transfers.addAll(new K8sResourceStatusTransferBuilder<K8sService>()
                 .from(ResourceState.DESTROYING)
                 .matchesK8sResource(getNonNullMatchers()).to(ResourceState.DESTROYING).build());
+        transfers.addAll(new K8sResourceStatusTransferBuilder<K8sService>()
+                .from(ResourceState.UNKNOWN)
+                .matchesK8sResource(getNonNullMatchers()).to(ResourceState.AVAILABLE).build());
         return new K8sServiceStatusDfa(transfers);
     }
 
@@ -75,7 +78,7 @@ public class K8sServiceStatusDfa extends AbstractDfa<ResourceState, K8sService> 
 
     @Override
     protected void onStateTransfer(ResourceState currentState, ResourceState nextState, K8sService k8sService) {
-        log.info("The state has been changed, currentState={}, nextState={}", currentState, nextState);
+        log.debug("The state has been changed, currentState={}, nextState={}", currentState, nextState);
     }
 
 }

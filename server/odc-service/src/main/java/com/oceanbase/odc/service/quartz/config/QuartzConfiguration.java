@@ -50,6 +50,8 @@ public class QuartzConfiguration {
     private Long maxConcurrentTaskCount;
 
     private final String defaultSchedulerName = "ODC-SCHEDULER";
+    private final String commonSchedulerName = "ODC-COMMON-SCHEDULER";
+    private final String applicationContextKeyName = "applicationContext";
 
     @Bean("defaultSchedulerFactoryBean")
     public SchedulerFactoryBean schedulerFactoryBean(DataSource dataSource) {
@@ -70,5 +72,23 @@ public class QuartzConfiguration {
         scheduler.getListenerManager().addJobListener(odcJobListener);
         scheduler.getListenerManager().addTriggerListener(odcTriggerListener);
         return scheduler;
+    }
+
+    @Bean("commonSchedulerFactoryBean")
+    public SchedulerFactoryBean commonSchedulerFactoryBean(DataSource dataSource) throws Exception {
+        SchedulerFactoryBean factory = new SchedulerFactoryBean();
+        factory.setDataSource(dataSource);
+        factory.setSchedulerName(commonSchedulerName);
+        factory.setApplicationContextSchedulerContextKey(applicationContextKeyName);
+        Properties properties = new Properties();
+        properties.put("org.quartz.threadPool.threadCount", maxConcurrentTaskCount.toString());
+        factory.setQuartzProperties(properties);
+        return factory;
+    }
+
+    @Bean("commonScheduler")
+    public Scheduler commonScheduler(
+            @Autowired @Qualifier("commonSchedulerFactoryBean") SchedulerFactoryBean schedulerFactoryBean) {
+        return schedulerFactoryBean.getScheduler();
     }
 }

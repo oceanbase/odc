@@ -47,7 +47,6 @@ public class LoadDataParameters implements ScheduleTaskParameters {
     /**
      * 数据库实例凭证，包含访问数据库实例所需的认证信息。
      */
-    @NotNull(message = "\"credential\" cannot be null")
     private DataBaseInstanceCredential credential;
 
     private Long datasourceId;
@@ -87,4 +86,6 @@ public class LoadDataParameters implements ScheduleTaskParameters {
      */
     private transient ObjectStorageConfiguration privateObjectStorageConfig;
     private transient ConnectionConfig connectionConfig;
+    private String creator;
+    private String dssDatasourceName;
 }

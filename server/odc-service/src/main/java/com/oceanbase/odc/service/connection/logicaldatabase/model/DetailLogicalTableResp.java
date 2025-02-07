@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.connection.logicaldatabase.model;
 
-import java.util.Date;
 import java.util.List;
 
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.DataNode;

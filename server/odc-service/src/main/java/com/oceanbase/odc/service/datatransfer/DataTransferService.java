@@ -340,7 +340,7 @@ public class DataTransferService {
                     Record csvHeader = iter.next();
                     for (int i = 0; i < csvHeader.size(); i++) {
                         CsvColumnMapping csvMapping = new CsvColumnMapping();
-                        csvMapping.setSrcColumnName(csvHeader.get(i));
+                        csvMapping.setSrcColumnName(csvHeader.getString(i));
                         csvMapping.setSrcColumnPosition(i);
                         mappingList.add(csvMapping);
                     }
@@ -350,7 +350,7 @@ public class DataTransferService {
                     int size = Math.min(mappingList.size(), firstLine.size());
                     for (int i = 0; i < size; i++) {
                         CsvColumnMapping csvMapping = mappingList.get(i);
-                        csvMapping.setFirstLineValue(truncateValue(firstLine.get(i)));
+                        csvMapping.setFirstLineValue(truncateValue(firstLine.getString(i)));
                     }
                 }
             } else {
@@ -360,7 +360,7 @@ public class DataTransferService {
                         CsvColumnMapping csvMapping = new CsvColumnMapping();
                         csvMapping.setSrcColumnPosition(i);
                         csvMapping.setSrcColumnName("column" + (i + 1));
-                        csvMapping.setFirstLineValue(truncateValue(line.get(i)));
+                        csvMapping.setFirstLineValue(truncateValue(line.getString(i)));
                         mappingList.add(csvMapping);
                     }
                 }

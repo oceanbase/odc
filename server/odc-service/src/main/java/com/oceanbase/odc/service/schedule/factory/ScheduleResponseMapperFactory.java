@@ -134,7 +134,9 @@ public class ScheduleResponseMapperFactory {
         scheduleDetailResp.setCreateTime(schedule.getCreateTime());
         scheduleDetailResp.setUpdateTime(schedule.getUpdateTime());
         scheduleDetailResp.setProjectId(schedule.getProjectId());
-        scheduleDetailResp.setProject(projectService.detail(schedule.getProjectId()));
+        if (Objects.nonNull(schedule.getProjectId())) {
+            scheduleDetailResp.setProject(projectService.detail(schedule.getProjectId()));
+        }
         scheduleDetailResp.setDescription(schedule.getDescription());
 
         scheduleDetailResp.setNextFireTimes(
@@ -263,7 +265,9 @@ public class ScheduleResponseMapperFactory {
         resp.setStatus(schedule.getStatus());
 
         resp.setProjectId(schedule.getProjectId());
-        resp.setProject(projectService.detail(schedule.getProjectId()));
+        if (Objects.nonNull(schedule.getProjectId())) {
+            resp.setProject(projectService.detail(schedule.getProjectId()));
+        }
         resp.setJobParameters(schedule.getParameters());
         resp.setTriggerConfig(schedule.getTriggerConfig());
         resp.setNextFireTimes(QuartzCronExpressionUtils.getNextFiveFireTimes(schedule.getTriggerConfig()));
@@ -370,7 +374,7 @@ public class ScheduleResponseMapperFactory {
     }
 
 
-    private Map<Long, ScheduleOverviewAttributes> generateAttributes(Collection<ScheduleEntity> schedules) {
+    public Map<Long, ScheduleOverviewAttributes> generateAttributes(Collection<ScheduleEntity> schedules) {
         Map<ScheduleType, List<ScheduleEntity>> type2Entity = schedules.stream().collect(
                 Collectors.groupingBy(ScheduleEntity::getType));
         Map<Long, ScheduleOverviewAttributes> id2Attributes = new HashMap<>();
@@ -448,9 +452,8 @@ public class ScheduleResponseMapperFactory {
         Set<Long> connectionIds =
                 databases.stream().filter(e -> e.getDataSource() != null && e.getDataSource().getId() != null)
                         .map(e -> e.getDataSource().getId()).collect(Collectors.toSet());
-        Map<Long, ConnectionConfig> id2Connection =
-                dataSourceService.internalListSkipUserCheck(connectionIds, false, false)
-                        .stream().collect(Collectors.toMap(ConnectionConfig::getId, o -> o));
+        Map<Long, ConnectionConfig> id2Connection = dataSourceService.innerListByIdsWithAttribute(connectionIds)
+                .stream().collect(Collectors.toMap(ConnectionConfig::getId, o -> o));
         databases.forEach(database -> {
             if (id2Connection.containsKey(database.getDataSource().getId())) {
                 database.setDataSource(id2Connection.get(database.getDataSource().getId()));

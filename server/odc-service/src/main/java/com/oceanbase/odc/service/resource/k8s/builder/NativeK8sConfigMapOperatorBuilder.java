@@ -62,7 +62,7 @@ public class NativeK8sConfigMapOperatorBuilder extends BaseNativeK8sResourceOper
             K8sConfigMapStatusDfa dfa = K8sConfigMapStatusDfa.buildInstance();
             nextState = dfa.next(runtimeResource.orElse(null), e.getStatus());
         } catch (Exception exception) {
-            log.warn("Failed to get next configmap's status, id={}", e.getId(), exception);
+            log.warn("Failed to get next configmap's status, id={}, errMsg={}", e.getId(), exception.getMessage());
         }
         K8sConfigMap k8sConfigMap = new K8sConfigMap(new ResourceLocation(e), nextState);
         V1ObjectMeta meta = new V1ObjectMeta();

@@ -22,6 +22,7 @@ import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 
 /**
  * @author longpeng.zlp
@@ -29,11 +30,12 @@ import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
  */
 public class ResourceManagerUtil {
     public static void markResourceReleased(JobEntity jobEntity, String executorIdentifierStr,
-            ResourceManager resourceManager) {
+            ResourceManager resourceManager, TaskFrameworkProperties taskFrameworkProperties) {
         // mark resource as released to let resource collector collect resource
         if (StringUtils.isNotEmpty(executorIdentifierStr)) {
             ExecutorIdentifier executorIdentifier = ExecutorIdentifierParser.parser(executorIdentifierStr);
-            ResourceID resourceID = ResourceIDUtil.getResourceID(executorIdentifier, jobEntity);
+            ResourceID resourceID =
+                    ResourceIDUtil.getResourceID(executorIdentifier, jobEntity, taskFrameworkProperties);
             resourceManager.release(resourceID);
         }
     }

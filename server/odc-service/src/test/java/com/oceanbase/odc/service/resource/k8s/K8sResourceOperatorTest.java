@@ -26,7 +26,7 @@ import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.task.exception.JobException;
-import com.oceanbase.odc.service.task.resource.DefaultResourceOperatorBuilder;
+import com.oceanbase.odc.service.task.resource.AbstractK8sResourceOperatorBuilder;
 import com.oceanbase.odc.service.task.resource.K8sPodResource;
 import com.oceanbase.odc.service.task.resource.K8sResourceContext;
 import com.oceanbase.odc.service.task.resource.K8sResourceOperator;
@@ -45,7 +45,7 @@ public class K8sResourceOperatorTest {
     private final String resourceName = "myResource";
     private final String regionName = "region";
     private final String groupName = "group";
-    private final String defaultType = DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE;
+    private final String defaultType = AbstractK8sResourceOperatorBuilder.CLOUD_K8S_POD_TYPE;
     private K8sResourceOperatorContext context;
     private MockK8sJobClient mockK8sJobClient;
     private MockK8sJobSelector mockK8sJobSelector;
@@ -155,7 +155,7 @@ public class K8sResourceOperatorTest {
 
         private K8sPodResource buildByK8sContext(K8sResourceContext k8sResourceContext) {
             return new K8sPodResource(k8sResourceContext.region(), k8sResourceContext.getGroup(),
-                    DefaultResourceOperatorBuilder.CLOUD_K8S_POD_TYPE,
+                    AbstractK8sResourceOperatorBuilder.CLOUD_K8S_POD_TYPE,
                     k8sResourceContext.resourceNamespace(), k8sResourceContext.getResourceName(),
                     ResourceState.CREATING,
                     "localhost:8080", new Date(1024));

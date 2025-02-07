@@ -91,11 +91,10 @@ public class ResourceManager {
         R resource = resourceOperator.create(resourceContext);
         // if save resource to db failed, rollback it
         ResourceEntity savedEntity;
+        ResourceLocation createdLocation = resource.resourceID().getResourceLocation();
         try {
             savedEntity = operatorBuilder.toResourceEntity(resource);
             savedEntity.setStatus(ResourceState.CREATING);
-            savedEntity.setRegion(resourceLocation.getRegion());
-            savedEntity.setGroupName(resourceLocation.getGroup());
             savedEntity = this.resourceRepository.save(savedEntity);
         } catch (Exception e) {
             log.info("Save resource failed, resourceID={}", resource.resourceID(), e);

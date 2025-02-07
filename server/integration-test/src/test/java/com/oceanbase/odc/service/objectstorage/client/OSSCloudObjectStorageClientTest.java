@@ -16,13 +16,15 @@
 package com.oceanbase.odc.service.objectstorage.client;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.hc.client5.http.classic.methods.HttpPut;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
@@ -61,7 +63,7 @@ public class OSSCloudObjectStorageClientTest {
             CloudObjectStorageConstants.TEMP_DIR + "/download/temp";
     public static final String TEST_FILE_CN_ZH_PATH = "src/test/resources/data/中文名称.txt";
     private File tempFile;
-    private String objectName;
+    private final List<String> objectNames = new ArrayList<>();
 
     @Before
     public void setUp() {
@@ -76,14 +78,17 @@ public class OSSCloudObjectStorageClientTest {
     @After
     public void clear() {
         OdcFileUtil.deleteFiles(new File(CloudObjectStorageConstants.TEMP_DIR));
-        ossObjectStorageClient.deleteObjects(Collections.singletonList(objectName));
+        if (CollectionUtils.isNotEmpty(objectNames)) {
+            ossObjectStorageClient.deleteObjects(objectNames);
+        }
     }
 
 
     @Test
     public void uploadFile() throws IOException {
-        objectName = CloudObjectStorageUtil.generateObjectName(null, UUID.randomUUID().toString(),
+        String objectName = CloudObjectStorageUtil.generateObjectName(null, UUID.randomUUID().toString(),
                 CloudObjectStorageConstants.ODC_SERVER_PREFIX, "fileName");
+        objectNames.add(objectName);
         ossObjectStorageClient.putObject(objectName, new File(TEST_FILE_PATH), new ObjectTagging());
         tempFile = createFileWithParent(TEST_DOWNLOAD_FILE);
         ossObjectStorageClient.downloadToFile(objectName, tempFile);
@@ -93,8 +98,9 @@ public class OSSCloudObjectStorageClientTest {
 
     @Test
     public void generateDownloadUrl() throws IOException {
-        objectName = CloudObjectStorageUtil.generateObjectName(null, UUID.randomUUID().toString(),
+        String objectName = CloudObjectStorageUtil.generateObjectName(null, UUID.randomUUID().toString(),
                 CloudObjectStorageConstants.ODC_SERVER_PREFIX, "fileName");
+        objectNames.add(objectName);
         ossObjectStorageClient.putObject(objectName, new File(TEST_FILE_PATH), new ObjectTagging());
         String customFileName = "customFileName";
         String downloadUrl = ossObjectStorageClient.generateDownloadUrl(objectName, 1000L, customFileName).toString();
@@ -106,9 +112,10 @@ public class OSSCloudObjectStorageClientTest {
 
     @Test
     public void generateUploadUrl() throws IOException {
-        objectName = CloudObjectStorageUtil.generateObjectName(null, UUID.randomUUID().toString(),
+        String objectName = CloudObjectStorageUtil.generateObjectName(null, UUID.randomUUID().toString(),
                 CloudObjectStorageConstants.ODC_SERVER_PREFIX, "fileName");
-        String uploadUrl = ossObjectStorageClient.generateUploadUrl(this.objectName).toString();
+        objectNames.add(objectName);
+        String uploadUrl = ossObjectStorageClient.generateUploadUrl(objectName).toString();
         uploadByPreSignedUrl(uploadUrl, new File(TEST_FILE_PATH));
         tempFile = createFileWithParent(TEST_DOWNLOAD_FILE);
         ossObjectStorageClient.downloadToFile(objectName, tempFile);
@@ -118,11 +125,35 @@ public class OSSCloudObjectStorageClientTest {
 
     @Test
     public void readContent() throws IOException {
-        objectName = CloudObjectStorageUtil.generateObjectName(null, UUID.randomUUID().toString(),
+        String objectName = CloudObjectStorageUtil.generateObjectName(null, UUID.randomUUID().toString(),
                 CloudObjectStorageConstants.ODC_SERVER_PREFIX, "fileName");
+        objectNames.add(objectName);
         ossObjectStorageClient.putObject(objectName, new File(TEST_FILE_PATH), new ObjectTagging());
         String contentValue = new String(ossObjectStorageClient.readContent(objectName), StandardCharsets.UTF_8);
         Assert.assertEquals("test0001", contentValue);
+    }
+
+    @Test
+    public void copyObject() throws IOException {
+        String objectName = CloudObjectStorageUtil.generateObjectName(null, UUID.randomUUID().toString(),
+                CloudObjectStorageConstants.ODC_SERVER_PREFIX, "fileName");
+        objectNames.add(objectName);
+        ossObjectStorageClient.putObject(objectName, new File(TEST_FILE_PATH), new ObjectTagging());
+        String copyObjectName = CloudObjectStorageUtil.generateObjectName(null, UUID.randomUUID().toString(),
+                CloudObjectStorageConstants.ODC_SERVER_PREFIX, "fileName");
+        objectNames.add(copyObjectName);
+        ossObjectStorageClient.copyObject(objectName, copyObjectName);
+        String contentValue = new String(ossObjectStorageClient.readContent(copyObjectName), StandardCharsets.UTF_8);
+        Assert.assertEquals("test0001", contentValue);
+    }
+
+    @Test(expected = FileNotFoundException.class)
+    public void copyObject_NotFound() throws IOException {
+        String objectName = CloudObjectStorageUtil.generateObjectName(null, UUID.randomUUID().toString(),
+                CloudObjectStorageConstants.ODC_SERVER_PREFIX, "fileName");
+        String copyObjectName = CloudObjectStorageUtil.generateObjectName(null, UUID.randomUUID().toString(),
+                CloudObjectStorageConstants.ODC_SERVER_PREFIX, "fileName");
+        ossObjectStorageClient.copyObject(objectName, copyObjectName);
     }
 
     private void downloadFromUrlToFile(URL url, File file) throws IOException {

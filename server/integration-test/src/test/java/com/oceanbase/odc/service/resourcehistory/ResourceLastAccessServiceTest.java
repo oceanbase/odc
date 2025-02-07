@@ -20,6 +20,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.After;
@@ -103,6 +104,19 @@ public class ResourceLastAccessServiceTest {
                         new Date(browseMills + 1000));
         ResourceLastAccessEntity findEntity2 = resourceLastAccessRepository.findById(entity2.getId()).get();
         assertTimeEqualsInSeconds(browseMills + 1000, findEntity2.getLastAccessTime());
+    }
+
+    @Test
+    public void batchDeleteResourceIds() {
+        List<Long> resourceIds = Arrays.asList(1L, 2L, 3L);
+
+        for (Long resourceId : resourceIds) {
+            resourceLastAccessService.add(organizationId, projectId, userId, resourceType, resourceId,
+                    new Date(browseMills));
+        }
+        int count =
+                resourceLastAccessService.batchDeleteResourceIds(organizationId, projectId, resourceType, resourceIds);
+        assertEquals(resourceIds.size(), count);
     }
 
     @Test

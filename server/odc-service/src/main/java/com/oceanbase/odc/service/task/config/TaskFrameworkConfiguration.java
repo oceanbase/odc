@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.config;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -23,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -30,11 +32,13 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
 import com.oceanbase.odc.common.event.EventPublisher;
+import com.oceanbase.odc.metadb.resource.ResourceRepository;
 import com.oceanbase.odc.service.common.ConditionOnServer;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.jasypt.DefaultJasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
+import com.oceanbase.odc.service.task.resource.DefaultNativeK8sOperatorBuilder;
 import com.oceanbase.odc.service.task.schedule.DefaultJobCredentialProvider;
 import com.oceanbase.odc.service.task.schedule.JobCredentialProvider;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
@@ -99,6 +103,14 @@ public class TaskFrameworkConfiguration {
         properties.setEnabled(enabled);
         log.info("Task-framework isEnabled={}.", properties.isEnabled());
         return properties;
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "odc.task-framework.enable-k8s-local-debug-mode", havingValue = "true")
+    public DefaultNativeK8sOperatorBuilder localDebugK8sOperatorBuilder(
+            @Autowired TaskFrameworkProperties taskFrameworkProperties,
+            @Autowired ResourceRepository resourceRepository) throws IOException {
+        return new DefaultNativeK8sOperatorBuilder(taskFrameworkProperties, resourceRepository);
     }
 
     @Bean

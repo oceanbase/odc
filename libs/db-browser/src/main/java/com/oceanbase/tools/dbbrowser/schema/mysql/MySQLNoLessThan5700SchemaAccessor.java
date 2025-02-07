@@ -121,6 +121,7 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
         SPECIAL_TYPE_NAMES.add("bigint");
         SPECIAL_TYPE_NAMES.add("float");
         SPECIAL_TYPE_NAMES.add("double");
+        SPECIAL_TYPE_NAMES.add("year");
     }
 
     public MySQLNoLessThan5700SchemaAccessor(@NonNull JdbcOperations jdbcOperations) {
@@ -608,6 +609,9 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
         if (SPECIAL_TYPE_NAMES.contains(Objects.isNull(typeName) ? null : typeName.toLowerCase())) {
             String precisionAndScale = DBSchemaAccessorUtil.parsePrecisionAndScale(column.getFullTypeName());
             if (StringUtils.isBlank(precisionAndScale)) {
+                if ("year".equalsIgnoreCase(typeName)) {
+                    column.setPrecision(4L);
+                }
                 return;
             }
             DBColumnTypeDisplay display = DBColumnTypeDisplay.fromName(typeName);

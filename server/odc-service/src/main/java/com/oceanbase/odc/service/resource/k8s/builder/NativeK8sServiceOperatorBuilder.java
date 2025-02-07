@@ -66,7 +66,7 @@ public class NativeK8sServiceOperatorBuilder extends BaseNativeK8sResourceOperat
             K8sServiceStatusDfa dfa = K8sServiceStatusDfa.buildInstance();
             nextState = dfa.next(runtimeResource.orElse(null), e.getStatus());
         } catch (Exception exception) {
-            log.warn("Failed to get next service's status, id={}", e.getId(), exception);
+            log.warn("Failed to get next service's status, id={}, errMsg={}", e.getId(), exception.getMessage());
         }
         K8sService k8sService = new K8sService(new ResourceLocation(e), nextState);
         V1ObjectMeta meta = new V1ObjectMeta();

@@ -170,6 +170,7 @@ public class IntegrationServiceTest extends MockedAuthorityTestEnv {
         details = integrationService.detail(created.getId());
         Assert.assertEquals("test_detail", details.getName());
         Assert.assertEquals(IntegrationType.SQL_INTERCEPTOR, details.getType());
+        Assert.assertNotNull(details.getEncryption().getSecret());
     }
 
     @Test

@@ -43,6 +43,8 @@ public interface ObjectStorageClient {
 
     void putObject(@NotBlank String objectName, @NotNull File file, ObjectTagging objectTagging) throws IOException;
 
+    void copyObject(String fromObjectName, String toObjectName) throws IOException;
+
     byte[] readContent(@NotBlank String objectName) throws IOException;
 
     void downloadToFile(@NotBlank String objectName, @NotNull File targetFile) throws IOException;

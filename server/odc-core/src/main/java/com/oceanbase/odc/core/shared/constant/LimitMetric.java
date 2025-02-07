@@ -49,7 +49,9 @@ public enum LimitMetric implements Translatable {
     WORKSHEET_COUNT_IN_PROJECT,
     WORKSPACE_COUNT_IN_PROJECT,
     DLM_ROW_LIMIT,
-    DLM_DATA_SIZE_LIMIT;
+    DLM_DATA_SIZE_LIMIT,
+    DASHBOARD_COUNT_IN_WORKSPACE,
+    CHART_COUNT_IN_DASHBOARD;
 
     @Override
     public String code() {

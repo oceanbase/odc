@@ -74,7 +74,8 @@ public class NativeK8sDeploymentOperatorBuilder extends BaseNativeK8sResourceOpe
             if (runtimeResource.isPresent() && CollectionUtils.isNotEmpty(runtimeResource.get().getK8sPodList())) {
                 k8sPodCount = runtimeResource.get().getK8sPodList().size();
             }
-            log.warn("Failed to get next deployment's status, id={}, k8sPodCount={}", e.getId(), k8sPodCount, ex);
+            log.warn("Failed to get next deployment's status, id={}, k8sPodCount={}, errMsg={}",
+                    e.getId(), k8sPodCount, ex.getMessage());
         }
         K8sDeployment k8sDeployment = new K8sDeployment(new ResourceLocation(e), nextState, null);
         V1ObjectMeta meta = new V1ObjectMeta();
