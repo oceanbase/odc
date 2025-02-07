@@ -104,7 +104,7 @@ public class ConnectionTesting {
 
     public ConnectionTestResult test(@NonNull ConnectionConfig config) {
         ConnectType type = config.getType();
-        if (type.getDialectType() == DialectType.FILE_SYSTEM) {
+        if (type.isFileSystem()) {
             return fileSystemConnectionTesting.test(config);
         }
         try {
