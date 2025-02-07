@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -57,6 +56,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
+import com.oceanbase.odc.service.flow.FlowPermissionHelper;
 import com.oceanbase.odc.service.flow.factory.FlowFactory;
 import com.oceanbase.odc.service.flow.instance.FlowInstance;
 import com.oceanbase.odc.service.flow.task.model.OnlineSchemaChangeTaskResult;
@@ -121,6 +121,8 @@ public class OscService {
     private ActionScheduler actionScheduler;
     @Autowired
     private OnlineSchemaChangeProperties onlineSchemaChangeProperties;
+    @Autowired
+    private FlowPermissionHelper flowPermissionHelper;
 
 
     @SkipAuthorize("internal authenticated")
@@ -294,16 +296,10 @@ public class OscService {
         FlowInstance flowInstance = optional.orElseThrow(
                 () -> new NotFoundException(ResourceType.ODC_FLOW_INSTANCE, "id", flowInstanceId));
         try {
-            permissionValidator.checkCurrentOrganization(flowInstance);
+            flowPermissionHelper.withExecutableCheck().accept(flowInstance);
         } finally {
             flowInstance.dealloc();
         }
-
-        // check user permission, only creator can swap table manual
-        PreConditions.validHasPermission(
-                Objects.equals(authenticationFacade.currentUserId(), optional.get().getCreatorId()),
-                ErrorCodes.AccessDenied,
-                "no permission swap table.");
     }
 
     private boolean getLockUserIsRequired(Long connectionId) {
