@@ -671,13 +671,13 @@ public class UserService {
         }).collect(Collectors.toList());
 
         Specification<UserEntity> spec = Specification.where(UserSpecs.enabledEqual(params.getEnabled()))
-                .and(UserSpecs.namesLike(params.getNames()).or(UserSpecs.accountNamesLike(params.getAccountNames())));
+                .and(UserSpecs.namesLike(params.getNames())
+                        .or(UserSpecs.accountNamesLike(params.getAccountNames())));
 
         List<Long> userIdsInOrg = userOrganizationRepository.findByOrganizationId(
                 authenticationFacade.currentOrganizationId()).stream().map(UserOrganizationEntity::getUserId).collect(
                         Collectors.toList());
         if (!findAllUsers) {
-            queryUserIds.addAll(userIdsInOrg);
             spec = spec.and(UserSpecs.userIdIn(queryUserIds));
         } else {
             spec = spec.and(UserSpecs.userIdIn(userIdsInOrg));
