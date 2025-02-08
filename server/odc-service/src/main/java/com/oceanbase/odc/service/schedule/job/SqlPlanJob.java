@@ -103,6 +103,7 @@ public class SqlPlanJob implements OdcJob {
         flowInstanceReq.setTaskType(TaskType.ASYNC);
         flowInstanceReq.setParentFlowInstanceId(Long.parseLong(context.getJobDetail().getKey().getName()));
         flowInstanceReq.setDatabaseId(scheduleEntity.getDatabaseId());
+        flowInstanceReq.setDescription(scheduleEntity.getDescription());
 
         FlowInstanceService flowInstanceService = SpringContextUtil.getBean(FlowInstanceService.class);
         List<FlowInstanceDetailResp> flowInstance = flowInstanceService.createWithoutApprovalNode(
