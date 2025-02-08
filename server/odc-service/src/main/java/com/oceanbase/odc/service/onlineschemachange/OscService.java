@@ -60,8 +60,6 @@ import com.oceanbase.odc.service.flow.FlowPermissionHelper;
 import com.oceanbase.odc.service.flow.factory.FlowFactory;
 import com.oceanbase.odc.service.flow.instance.FlowInstance;
 import com.oceanbase.odc.service.flow.task.model.OnlineSchemaChangeTaskResult;
-import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
-import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
@@ -99,10 +97,6 @@ public class OscService {
     private ScheduleTaskRepository scheduleTaskRepository;
     @Autowired
     private ScheduleRepository scheduleRepository;
-    @Autowired
-    private AuthenticationFacade authenticationFacade;
-    @Autowired
-    private HorizontalDataPermissionValidator permissionValidator;
     @Autowired
     private FlowFactory flowFactory;
     @Autowired
