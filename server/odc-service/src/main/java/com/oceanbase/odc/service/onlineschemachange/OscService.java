@@ -204,6 +204,10 @@ public class OscService {
         OnlineSchemaChangeParameters parameters = JsonUtils.fromJson(
                 scheduleEntity.getJobParametersJson(), OnlineSchemaChangeParameters.class);
         RateLimiterConfig rateLimiter = parameters.getRateLimitConfig();
+        // avoid npe if parameters not set this config
+        if (null == rateLimiter) {
+            rateLimiter = new RateLimiterConfig();
+        }
         rateLimiter.setDataSizeLimit(req.getRateLimitConfig().getDataSizeLimit());
         rateLimiter.setRowLimit(req.getRateLimitConfig().getRowLimit());
         parameters.setRateLimitConfig(rateLimiter);
