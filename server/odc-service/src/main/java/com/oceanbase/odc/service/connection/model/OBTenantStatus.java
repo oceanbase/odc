@@ -20,6 +20,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.oceanbase.odc.common.util.StringUtils;
 
 /**
  * The status of the OB tenant, which comes from the TenantStatus enumeration value of OBCloud OCP.
@@ -44,7 +45,7 @@ public enum OBTenantStatus {
 
     @JsonCreator
     public static OBTenantStatus fromValue(String name) {
-        if (NOT_CONNECTABLE_VALUES.contains(name)) {
+        if (NOT_CONNECTABLE_VALUES.contains(StringUtils.upperCase(name))) {
             return NOT_CONNECTABLE;
         } else {
             return ONLINE;
