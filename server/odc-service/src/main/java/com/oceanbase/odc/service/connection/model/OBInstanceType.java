@@ -15,7 +15,9 @@
  */
 package com.oceanbase.odc.service.connection.model;
 
-import com.alibaba.druid.util.StringUtils;
+import java.util.HashMap;
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.oceanbase.odc.common.i18n.Translatable;
@@ -50,6 +52,7 @@ public enum OBInstanceType implements Translatable {
 
     @Getter
     private final String[] values;
+    private static final Map<String, OBInstanceType> VALUE_TO_INSTANCE_TYPE_MAP = buildValueToInstanceTypeMap();
 
     @JsonValue
     public String getName() {
@@ -62,15 +65,26 @@ public enum OBInstanceType implements Translatable {
 
     @JsonCreator
     public static OBInstanceType fromValue(String value) {
-        for (OBInstanceType instanceType : OBInstanceType.values()) {
-            for (String type : instanceType.values) {
-                if (StringUtils.equalsIgnoreCase(type, value)) {
-                    return instanceType;
-                }
-            }
+        OBInstanceType obInstanceType = VALUE_TO_INSTANCE_TYPE_MAP.get(value);
+        if (obInstanceType != null) {
+            return obInstanceType;
         }
         log.warn("Unknown OBInstanceType: {}", value);
         return UNKNOWN;
+    }
+
+    public static Map<String, OBInstanceType> getValueToInstanceTypeMap() {
+        return VALUE_TO_INSTANCE_TYPE_MAP;
+    }
+
+    private static Map<String, OBInstanceType> buildValueToInstanceTypeMap() {
+        Map<String, OBInstanceType> map = new HashMap<>();
+        for (OBInstanceType instanceType : OBInstanceType.values()) {
+            for (String typeValue : instanceType.getValues()) {
+                map.put(typeValue, instanceType);
+            }
+        }
+        return map;
     }
 
     @Override
