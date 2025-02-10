@@ -25,7 +25,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.common.validate.Name;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
-import com.oceanbase.odc.core.shared.OrganizationIsolated;
+import com.oceanbase.odc.core.shared.ResourceBindToSingleOrganization;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.metadb.integration.IntegrationEntity;
 
@@ -38,7 +38,7 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @NoArgsConstructor
-public class IntegrationConfig implements SecurityResource, OrganizationIsolated {
+public class IntegrationConfig implements SecurityResource, ResourceBindToSingleOrganization {
 
     @JsonProperty(access = Access.READ_ONLY)
     private Long id;

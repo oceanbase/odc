@@ -30,6 +30,8 @@ public interface CloudConnectionConfig {
 
     OBInstanceRoleType getInstanceRoleType();
 
+    Long getOrganizationId();
+
     void setClusterName(String clusterName);
 
     void setTenantName(String tenantName);

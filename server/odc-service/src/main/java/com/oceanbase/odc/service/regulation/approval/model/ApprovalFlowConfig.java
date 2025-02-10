@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.common.i18n.Internationalizable;
 import com.oceanbase.odc.common.validate.Name;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
-import com.oceanbase.odc.core.shared.OrganizationIsolated;
+import com.oceanbase.odc.core.shared.ResourceBindToSingleOrganization;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 
 import lombok.Data;
@@ -38,7 +38,7 @@ import lombok.Data;
  * @Description: []
  */
 @Data
-public class ApprovalFlowConfig implements SecurityResource, OrganizationIsolated {
+public class ApprovalFlowConfig implements SecurityResource, ResourceBindToSingleOrganization {
     @JsonProperty(access = Access.READ_ONLY)
     private Long id;
 

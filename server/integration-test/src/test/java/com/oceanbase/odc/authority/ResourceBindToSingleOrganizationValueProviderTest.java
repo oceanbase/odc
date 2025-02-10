@@ -38,7 +38,7 @@ import com.oceanbase.odc.service.regulation.approval.model.ApprovalFlowConfig;
  * @date 2021-08-04 14:31
  * @since ODC-release_3.2.0
  */
-public class OrganizationIsolatedValueProviderTest {
+public class ResourceBindToSingleOrganizationValueProviderTest {
 
     @Test
     public void testListReturnValueOrganizationIsolated_success() {

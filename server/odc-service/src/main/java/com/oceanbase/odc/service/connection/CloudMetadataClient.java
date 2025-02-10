@@ -65,6 +65,11 @@ public interface CloudMetadataClient {
     List<OBInstance> listInstances();
 
     /**
+     * List all oceanbase instances under an organization
+     */
+    List<OBInstance> listInstances(Long organizationId);
+
+    /**
      * 获取集群下租户列表
      */
     List<OBTenant> listTenants(@NotBlank String instanceId);
