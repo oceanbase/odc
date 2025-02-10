@@ -18,6 +18,7 @@ package com.oceanbase.odc.config;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -40,17 +41,17 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 public class ScheduleConfiguration {
 
-    private final int CORE_NUMBER = SystemUtils.availableProcessors();
-
-    private final long REFRESH_CONFIG_RATE_MILLIS = 3 * 60 * 1000L;
-
     private static final int SHORT_VALIDATE_INTERVAL_MS = 10 * 1000;
-
+    private final int CORE_NUMBER = SystemUtils.availableProcessors();
+    private final long REFRESH_CONFIG_RATE_MILLIS = 3 * 60 * 1000L;
     @Autowired
     private SystemConfigService systemConfigService;
 
     @Autowired
     private DBSchemaSyncProperties dbSchemaSyncProperties;
+
+    @Value("${odc.flow.executor.flow-task.pool-size-times:10}")
+    private Integer flowTaskExecutorPoolSizeTimes;
 
     @Bean(name = "connectionStatusCheckExecutor")
     public ThreadPoolTaskExecutor connectionStatusCheckExecutor() {
@@ -121,8 +122,8 @@ public class ScheduleConfiguration {
     @Bean(name = "flowTaskExecutor")
     public ThreadPoolTaskExecutor flowTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(CORE_NUMBER * 2);
-        executor.setMaxPoolSize(CORE_NUMBER * 10);
+        executor.setCorePoolSize(CORE_NUMBER * flowTaskExecutorPoolSizeTimes);
+        executor.setMaxPoolSize(CORE_NUMBER * flowTaskExecutorPoolSizeTimes);
         executor.setThreadNamePrefix("flow-task-executor-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(5);
