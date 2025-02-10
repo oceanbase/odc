@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import org.quartz.JobExecutionContext;
 
 import com.alibaba.fastjson.JSON;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
@@ -112,6 +114,23 @@ public class SqlPlanJob implements OdcJob {
             log.warn("Create sql plan subtask failed.");
         } else {
             log.info("Create sql plan subtask success,flowInstanceId={}", flowInstance.get(0).getId());
+            // wait for the subtask to finish
+            while (!scheduleEntity.getAllowConcurrent()) {
+                Map<Long, FlowStatus> status = flowInstanceService.getStatus(
+                        Collections.singleton(flowInstance.get(0).getId()));
+                // if the subtask is not in the unfinished status, break the loop
+                if (!status.containsKey(flowInstance.get(0).getId())
+                        || !FlowStatus.listUnfinishedStatus().contains(status.get(flowInstance.get(0).getId()))) {
+                    break;
+                }
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    log.warn("Wait for the subtask to finish failed", e);
+                    break;
+                }
+            }
+            log.info("Sql plan subtask finished,flowInstanceId={}", flowInstance.get(0).getId());
         }
 
     }
