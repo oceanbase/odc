@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.task.processor.terminate;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.dlm.DLMService;
+import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.job.DLMJobReq;
 import com.oceanbase.odc.service.schedule.model.ScheduleTask;
@@ -49,6 +51,14 @@ public class DLMTerminateProcessor extends DLMProcessorMatcher implements Termin
     protected ScheduleTaskService scheduleTaskService;
 
     public TaskStatus correctTaskStatus(ScheduleTask scheduleTask, TaskStatus currentStatus) {
+        // correct sub task status
+        List<DlmTableUnit> dlmTableUnits = dlmService.findByScheduleTaskId(scheduleTask.getId());
+        dlmTableUnits.forEach(dlmTableUnit -> {
+            if (!dlmTableUnit.getStatus().isTerminated()) {
+                dlmTableUnit.setStatus(TaskStatus.CANCELED);
+            }
+        });
+        dlmService.createOrUpdateDlmTableUnits(dlmTableUnits);
         return dlmService.getFinalTaskStatus(scheduleTask.getId());
     }
 
