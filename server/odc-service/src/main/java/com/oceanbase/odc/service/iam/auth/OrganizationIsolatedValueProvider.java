@@ -27,8 +27,8 @@ import com.oceanbase.odc.core.authority.auth.PermissionStrategy;
 import com.oceanbase.odc.core.authority.auth.ReturnValueProvider;
 import com.oceanbase.odc.core.authority.auth.SecurityContext;
 import com.oceanbase.odc.core.authority.exception.AccessDeniedException;
-import com.oceanbase.odc.core.shared.ResourceBindToMultiOrganizations;
-import com.oceanbase.odc.core.shared.ResourceBindToSingleOrganization;
+import com.oceanbase.odc.core.shared.MultiOrganizationResource;
+import com.oceanbase.odc.core.shared.SingleOrganizationResource;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -69,14 +69,14 @@ public class OrganizationIsolatedValueProvider extends DefaultReturnValueProvide
 
     private void checkOrganizationIsolated(Object returnValue) {
         long expected = authenticationFacade.currentOrganizationId();
-        if (returnValue instanceof ResourceBindToSingleOrganization) {
-            long actual = ((ResourceBindToSingleOrganization) returnValue).organizationId().longValue();
+        if (returnValue instanceof SingleOrganizationResource) {
+            long actual = ((SingleOrganizationResource) returnValue).organizationId().longValue();
             if (expected != actual) {
                 log.warn("organizationId not matched, expected={}, actual={}", expected, actual);
                 throw new AccessDeniedException();
             }
-        } else if (returnValue instanceof ResourceBindToMultiOrganizations) {
-            Set<Long> organizationIds = ((ResourceBindToMultiOrganizations) returnValue).organizationIds();
+        } else if (returnValue instanceof MultiOrganizationResource) {
+            Set<Long> organizationIds = ((MultiOrganizationResource) returnValue).organizationIds();
             if (!organizationIds.contains(expected)) {
                 log.warn("organizationId not matched, expected={}, actual={}", expected, organizationIds);
                 throw new AccessDeniedException();

@@ -27,7 +27,7 @@ import com.oceanbase.odc.common.graph.GraphVertex;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
 import com.oceanbase.odc.core.flow.model.FlowableElement;
 import com.oceanbase.odc.core.flow.model.FlowableElementType;
-import com.oceanbase.odc.core.shared.ResourceBindToSingleOrganization;
+import com.oceanbase.odc.core.shared.SingleOrganizationResource;
 import com.oceanbase.odc.metadb.flow.NodeInstanceEntity;
 import com.oceanbase.odc.metadb.flow.NodeInstanceEntityRepository;
 import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
@@ -52,7 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Getter
 public abstract class BaseFlowNodeInstance extends GraphVertex implements SecurityResource,
-        ResourceBindToSingleOrganization {
+        SingleOrganizationResource {
     @Setter
     private volatile FlowNodeStatus status;
     @Setter

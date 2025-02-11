@@ -34,8 +34,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.common.json.SensitiveInput;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
+import com.oceanbase.odc.core.shared.MultiOrganizationResource;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.ResourceBindToMultiOrganizations;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.UserType;
@@ -51,7 +51,7 @@ import lombok.ToString;
 
 @Data
 @ToString(exclude = {"password"})
-public class User implements Principal, UserDetails, SecurityResource, ResourceBindToMultiOrganizations, OidcUser {
+public class User implements Principal, UserDetails, SecurityResource, MultiOrganizationResource, OidcUser {
 
     private static final long serialVersionUID = -7525670432276629968L;
 

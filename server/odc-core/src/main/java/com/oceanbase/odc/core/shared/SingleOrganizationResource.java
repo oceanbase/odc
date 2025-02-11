@@ -15,8 +15,10 @@
  */
 package com.oceanbase.odc.core.shared;
 
-import java.util.Set;
+/**
+ * Organization resource bind to single organization.
+ */
+public interface SingleOrganizationResource extends OrganizationResource {
+    Long organizationId();
 
-public interface ResourceBindToMultiOrganizations extends OrganizationResource {
-    Set<Long> organizationIds();
 }

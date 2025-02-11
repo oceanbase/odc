@@ -23,10 +23,10 @@ import org.apache.commons.lang.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.core.shared.MultiOrganizationResource;
 import com.oceanbase.odc.core.shared.OrganizationResource;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.ResourceBindToMultiOrganizations;
-import com.oceanbase.odc.core.shared.ResourceBindToSingleOrganization;
+import com.oceanbase.odc.core.shared.SingleOrganizationResource;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -46,13 +46,13 @@ public class HorizontalDataPermissionValidator {
                 "Resources can not be null for HorizontalDataPermissionValidator#checkCurrentOrganization");
         Long currentOrganizationId = authenticationFacade.currentOrganizationId();
         for (T item : objects) {
-            if (item instanceof ResourceBindToSingleOrganization) {
-                Long organizationId = ((ResourceBindToSingleOrganization) item).organizationId();
+            if (item instanceof SingleOrganizationResource) {
+                Long organizationId = ((SingleOrganizationResource) item).organizationId();
                 Verify.notNull(organizationId, "organizationId");
                 PreConditions.validExists(ResourceType.valueOf(item.resourceType()), "id", item.id(),
                         () -> currentOrganizationId.equals(organizationId));
-            } else if (item instanceof ResourceBindToMultiOrganizations) {
-                Set<Long> organizationIds = ((ResourceBindToMultiOrganizations) item).organizationIds();
+            } else if (item instanceof MultiOrganizationResource) {
+                Set<Long> organizationIds = ((MultiOrganizationResource) item).organizationIds();
                 PreConditions.validExists(ResourceType.valueOf(item.resourceType()), "id", item.id(),
                         () -> organizationIds.contains(currentOrganizationId));
             } else {

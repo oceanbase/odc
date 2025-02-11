@@ -31,7 +31,7 @@ import com.oceanbase.odc.common.validate.Name;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
 import com.oceanbase.odc.core.datamasking.algorithm.Hash.HashType;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.ResourceBindToSingleOrganization;
+import com.oceanbase.odc.core.shared.SingleOrganizationResource;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.common.model.InnerUser;
@@ -44,7 +44,7 @@ import lombok.Data;
  * @date 2023/5/10 10:56
  */
 @Data
-public class MaskingAlgorithm implements SecurityResource, ResourceBindToSingleOrganization {
+public class MaskingAlgorithm implements SecurityResource, SingleOrganizationResource {
 
     @JsonProperty(access = Access.READ_ONLY)
     private Long id;
