@@ -185,7 +185,7 @@ jobs:
         if: ${{ github.event.inputs.pull_flink_image == 'true'}}
         run: |
           echo "Start pull flink image"
-          docker pull kindest/node:v1.31.09
+          docker pull kindest/node:v1.31.0
           docker save -o kindest.tar.gz kindest/node:v1.31.0
           echo "Pull flink image success"
       - name: Upload flink
