@@ -91,7 +91,7 @@ public class DLMJobStore implements IJobStore {
                     taskGenerator.setTaskCount(resultSet.getInt("task_count"));
                     taskGenerator
                             .setPrimaryKeySavePoint(PrimaryKey.valuesOf(resultSet.getString("primary_key_save_point")));
-                    taskGenerator.setProcessedDataSize(resultSet.getLong("processed_row_count"));
+                    taskGenerator.setProcessedRowCount(resultSet.getLong("processed_row_count"));
                     taskGenerator.setProcessedDataSize(resultSet.getLong("processed_data_size"));
                     taskGenerator.setPartitionSavePoint(resultSet.getString("partition_save_point"));
                     Map<String, BoundPrimaryKey> partName2MaxKey = JsonUtils.fromJson(
