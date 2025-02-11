@@ -33,6 +33,7 @@ import com.oceanbase.tools.migrator.common.dto.JobStatistic;
 import com.oceanbase.tools.migrator.common.dto.TaskGenerator;
 import com.oceanbase.tools.migrator.common.element.PrimaryKey;
 import com.oceanbase.tools.migrator.core.handler.genarator.GeneratorStatus;
+import com.oceanbase.tools.migrator.core.meta.BoundPrimaryKey;
 import com.oceanbase.tools.migrator.core.meta.TaskMeta;
 import com.oceanbase.tools.migrator.core.store.IJobStore;
 
@@ -93,19 +94,19 @@ public class DLMJobStore implements IJobStore {
                     taskGenerator.setProcessedDataSize(resultSet.getLong("processed_row_count"));
                     taskGenerator.setProcessedDataSize(resultSet.getLong("processed_data_size"));
                     taskGenerator.setPartitionSavePoint(resultSet.getString("partition_save_point"));
-                    Map<String, String> partName2MaxKey = JsonUtils.fromJson(
+                    Map<String, BoundPrimaryKey> partName2MaxKey = JsonUtils.fromJson(
                             resultSet.getString("partition_max_key"),
-                            new TypeReference<Map<String, String>>() {});
-                    if (partName2MaxKey != null) {
+                            new TypeReference<Map<String, BoundPrimaryKey>>() {});
+                    if (partName2MaxKey != null && !partName2MaxKey.isEmpty()) {
                         taskGenerator.setPartName2MaxKey(partName2MaxKey);
                     }
-                    Map<String, String> partName2MinKey = JsonUtils.fromJson(
+                    Map<String, BoundPrimaryKey> partName2MinKey = JsonUtils.fromJson(
                             resultSet.getString("partition_min_key"),
-                            new TypeReference<Map<String, String>>() {});
-                    if (partName2MinKey != null) {
+                            new TypeReference<Map<String, BoundPrimaryKey>>() {});
+                    if (partName2MinKey != null && !partName2MinKey.isEmpty()) {
                         taskGenerator.setPartName2MinKey(partName2MinKey);
                     }
-                    log.info("Load task generator success.jobId={}", jobId);
+                    log.info("Load task generator success,generator={}", taskGenerator);
                     return taskGenerator;
                 }
             }
@@ -117,9 +118,9 @@ public class DLMJobStore implements IJobStore {
     @Override
     public void storeTaskGenerator(TaskGenerator taskGenerator) throws SQLException {
         taskGenerator.getPartName2MaxKey()
-                .forEach((k, v) -> dlmTableUnit.getStatistic().getPartName2MaxKey().put(k, v));
+                .forEach((k, v) -> dlmTableUnit.getStatistic().getPartName2MaxKey().put(k, v.getSqlString()));
         taskGenerator.getPartName2MinKey()
-                .forEach((k, v) -> dlmTableUnit.getStatistic().getPartName2MinKey().put(k, v));
+                .forEach((k, v) -> dlmTableUnit.getStatistic().getPartName2MinKey().put(k, v.getSqlString()));
         if (enableBreakpointRecovery) {
             StringBuilder sb = new StringBuilder();
             sb.append("INSERT INTO dlm_task_generator ");
