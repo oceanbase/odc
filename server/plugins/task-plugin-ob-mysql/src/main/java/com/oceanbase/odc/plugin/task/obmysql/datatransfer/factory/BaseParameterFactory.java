@@ -151,8 +151,7 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
 
         if (StringUtils.isNotBlank(transferConfig.getConnectionInfo().getProxyHost())
                 && Objects.nonNull(transferConfig.getConnectionInfo().getProxyPort())) {
-            sessionConfig.setJdbcOption("socksProxyHost",
-                    String.valueOf(transferConfig.getConnectionInfo().getProxyHost()));
+            sessionConfig.setJdbcOption("socksProxyHost", transferConfig.getConnectionInfo().getProxyHost());
             sessionConfig.setJdbcOption("socksProxyPort",
                     String.valueOf(transferConfig.getConnectionInfo().getProxyPort()));
         }
