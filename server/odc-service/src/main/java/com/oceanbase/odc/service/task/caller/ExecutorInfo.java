@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,5 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.caller;
 
-alter table `integration_integration` modify column `secret` mediumtext DEFAULT null;
+import com.oceanbase.odc.service.resource.ResourceID;
+
+import lombok.Data;
+
+/**
+ * @author longpeng.zlp
+ * @date 2025/1/21 18:06
+ */
+@Data
+public class ExecutorInfo {
+    private final ResourceID resourceID;
+    private final ExecutorIdentifier executorIdentifier;
+}

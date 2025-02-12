@@ -43,11 +43,7 @@ public class K8sResourceOperator implements ResourceOperator<K8sResourceContext,
     @Override
     public K8sPodResource create(K8sResourceContext k8sResourceContext) throws JobException {
         Preconditions.checkArgument(null != k8sResourceContext.region());
-        K8sPodResource ret = selectClient(k8sResourceContext.getRegion()).create(k8sResourceContext);
-        ret.setRegion(k8sResourceContext.getRegion());
-        ret.setGroup(k8sResourceContext.resourceGroup());
-        ret.setType(k8sResourceContext.getType());
-        return ret;
+        return selectClient(k8sResourceContext.getRegion()).create(k8sResourceContext);
     }
 
     @Override

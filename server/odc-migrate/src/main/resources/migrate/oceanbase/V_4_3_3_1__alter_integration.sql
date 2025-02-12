@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2025 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,31 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
 
-import java.util.HashMap;
-import java.util.Map;
 
-import lombok.Data;
+ALTER TABLE `integration_integration` CHANGE COLUMN `secret` `secret_old` VARCHAR(512);
+ALTER TABLE `integration_integration` ADD COLUMN `secret` MEDIUMTEXT;
+update `integration_integration` set `secret` = `secret_old`;
 
-/**
- * @Author：tinker
- * @Date: 2024/5/9 09:39
- * @Descripition:
- */
-@Data
-public class DlmTableUnitStatistic {
 
-    private Long processedRowCount = 0L;
 
-    private Long readRowCount = 0L;
 
-    private Long processedRowsPerSecond = 0L;
-
-    private Long readRowsPerSecond = 0L;
-
-    private Map<String, String> partName2MinKey = new HashMap<>();
-
-    private Map<String, String> partName2MaxKey = new HashMap<>();
-
-}

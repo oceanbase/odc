@@ -13,31 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
+package com.oceanbase.odc.service.schedule.submitter;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import lombok.Data;
+import com.oceanbase.odc.service.cloud.model.CloudProvider;
 
 /**
  * @Author：tinker
- * @Date: 2024/5/9 09:39
+ * @Date: 2025/2/5 15:07
  * @Descripition:
  */
-@Data
-public class DlmTableUnitStatistic {
+public interface JobSubmitter {
 
-    private Long processedRowCount = 0L;
-
-    private Long readRowCount = 0L;
-
-    private Long processedRowsPerSecond = 0L;
-
-    private Long readRowsPerSecond = 0L;
-
-    private Map<String, String> partName2MinKey = new HashMap<>();
-
-    private Map<String, String> partName2MaxKey = new HashMap<>();
+    Long submit(String parametersJson, String type, Long timeoutMillis, CloudProvider provider, String region);
 
 }
