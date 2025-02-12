@@ -15,12 +15,11 @@
  */
 package com.oceanbase.odc.core.shared;
 
-public interface OrganizationIsolated {
+import java.util.Set;
 
-    String resourceType();
-
-    Long organizationId();
-
-    Long id();
-
+/**
+ * Organization resource bind to multi organizations.
+ */
+public interface MultiOrganizationResource extends OrganizationResource {
+    Set<Long> organizationIds();
 }
