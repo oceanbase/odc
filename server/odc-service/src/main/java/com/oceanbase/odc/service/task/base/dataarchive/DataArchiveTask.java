@@ -231,10 +231,7 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
     }
 
     public void updateLimiter(Map<String, String> jobParameters) {
-        if (job == null || job.getJobMeta() == null) {
-            return;
-        }
-        JobMeta jobMeta = job.getJobMeta();
+        JobMeta jobMeta = job != null && job.getJobMeta() != null ? job.getJobMeta() : null;
         try {
             RateLimitConfiguration params;
             if (jobParameters.containsKey(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG)) {
@@ -248,13 +245,25 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
                 params = dlmJobReq.getRateLimit();
             }
             if (params.getDataSizeLimit() != null) {
-                jobMeta.getSourceLimiterConfig().setDataSizeLimit(params.getDataSizeLimit());
-                jobMeta.getTargetLimiterConfig().setDataSizeLimit(params.getDataSizeLimit());
+                if (jobMeta != null) {
+                    jobMeta.getSourceLimiterConfig().setDataSizeLimit(params.getDataSizeLimit());
+                    jobMeta.getTargetLimiterConfig().setDataSizeLimit(params.getDataSizeLimit());
+                }
+                toDoList.forEach(t -> {
+                    t.getSourceLimitConfig().setDataSizeLimit(params.getDataSizeLimit());
+                    t.getTargetLimitConfig().setDataSizeLimit(params.getDataSizeLimit());
+                });
                 log.info("Update rate limit success,dataSizeLimit={}", params.getDataSizeLimit());
             }
             if (params.getRowLimit() != null) {
-                jobMeta.getSourceLimiterConfig().setRowLimit(params.getRowLimit());
-                jobMeta.getTargetLimiterConfig().setRowLimit(params.getRowLimit());
+                if (jobMeta != null) {
+                    jobMeta.getSourceLimiterConfig().setRowLimit(params.getRowLimit());
+                    jobMeta.getTargetLimiterConfig().setRowLimit(params.getRowLimit());
+                }
+                toDoList.forEach(t -> {
+                    t.getSourceLimitConfig().setRowLimit(params.getRowLimit());
+                    t.getTargetLimitConfig().setRowLimit(params.getRowLimit());
+                });
                 log.info("Update rate limit success,rowLimit={}", params.getRowLimit());
             }
         } catch (Exception e) {
