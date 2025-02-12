@@ -106,7 +106,9 @@ public class K8sPodResource implements Resource {
                     "expect k8s endpoint constructed by k8s::region::namespace::arn::ip::port, but current is "
                             + k8sEndPoint);
         }
-        return Pair.of(infos[4], infos[5]);
+        String host = "null".equalsIgnoreCase(infos[4]) ? null : infos[4];
+        String port = "null".equalsIgnoreCase(infos[5]) ? null : infos[5];
+        return Pair.of(host, port);
     }
 
     public ResourceState resourceState() {

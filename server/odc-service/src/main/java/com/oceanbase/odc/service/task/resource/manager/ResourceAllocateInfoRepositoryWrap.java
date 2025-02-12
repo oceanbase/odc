@@ -48,19 +48,22 @@ public class ResourceAllocateInfoRepositoryWrap {
      * @param supervisorEndpoint
      * @param taskID
      */
-    protected void allocateForJob(SupervisorEndpoint supervisorEndpoint, Long resourceId, Long taskID) {
-        repository.updateEndpointByTaskId(JsonUtils.toJson(supervisorEndpoint), resourceId, taskID);
+    protected void allocateForJob(SupervisorEndpoint supervisorEndpoint, Long supervisorEndpointId, Long taskID) {
+        repository.updateEndpointByTaskId(JsonUtils.toJson(supervisorEndpoint), supervisorEndpointId, taskID,
+                "AVAILABLE");
     }
 
     /**
      * pre allocate unavailable resource
      * 
      * @param supervisorEndpoint
-     * @param resourceId
+     * @param supervisorEndpointId
      * @param taskID
      */
-    protected void prepareResourceForJob(SupervisorEndpoint supervisorEndpoint, Long resourceId, Long taskID) {
-        repository.updateResourceIdByTaskId(JsonUtils.toJson(supervisorEndpoint), resourceId, taskID);
+    protected void prepareResourceForJob(SupervisorEndpoint supervisorEndpoint, Long supervisorEndpointId,
+            Long taskID) {
+        repository.updateEndpointByTaskId(JsonUtils.toJson(supervisorEndpoint), supervisorEndpointId, taskID,
+                "CREATING_RESOURCE");
     }
 
     /**

@@ -127,7 +127,9 @@ public class DefaultResourceOperatorBuilder implements ResourceOperatorBuilder<K
 
     @Override
     public K8sPodResource toResource(ResourceEntity resourceEntity, Optional<K8sPodResource> runtimeResource) {
-        Pair<String, String> ipAndPort = K8sPodResource.parseIPAndPort(resourceEntity.getEndpoint());
+        Pair<String, String> ipAndPort = runtimeResource
+                .map(r -> Pair.of(r.getPodIpAddress(), r.getServicePort()))
+                .orElse(K8sPodResource.parseIPAndPort(resourceEntity.getEndpoint()));
         return new K8sPodResource(
                 resourceEntity.getRegion(),
                 resourceEntity.getGroupName(),

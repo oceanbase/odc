@@ -26,7 +26,6 @@ import java.util.function.Supplier;
 
 import org.apache.commons.collections4.CollectionUtils;
 
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
@@ -34,18 +33,19 @@ import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.metadb.task.ResourceAllocateInfoEntity;
 import com.oceanbase.odc.metadb.task.SupervisorEndpointEntity;
 import com.oceanbase.odc.metadb.task.SupervisorEndpointRepository;
+import com.oceanbase.odc.service.resource.Resource;
 import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.resource.ResourceWithID;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.resource.Constants;
 import com.oceanbase.odc.service.task.resource.K8sPodResource;
 import com.oceanbase.odc.service.task.resource.K8sResourceContext;
 import com.oceanbase.odc.service.task.resource.manager.ResourceManageStrategy;
 import com.oceanbase.odc.service.task.resource.manager.SupervisorEndpointRepositoryWrap;
 import com.oceanbase.odc.service.task.supervisor.SupervisorEndpointState;
-import com.oceanbase.odc.service.task.supervisor.endpoint.SupervisorEndpoint;
 
 import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -102,6 +102,9 @@ public class K8SResourceManageStrategy implements ResourceManageStrategy {
         try {
             K8sPodResource podResource = k8sPodResource.getResource();
             podResource.setServicePort(String.valueOf(supervisorListenPort));
+            if (StringUtils.isEmpty(podResource.getPodIpAddress())) {
+                podResource.setPodIpAddress(Constants.RESOURCE_NULL_HOST);
+            }
             // create with load 1 to let resource not released
             return supervisorEndpointRepositoryWrap.save(podResource, k8sPodResource.getId(), 0);
         } catch (Throwable e) {
@@ -118,21 +121,19 @@ public class K8SResourceManageStrategy implements ResourceManageStrategy {
      * @param resourceAllocateInfoEntity
      * @return resource endpoint if ready, else null
      */
-    public SupervisorEndpointEntity detectIfResourceIsReady(ResourceAllocateInfoEntity resourceAllocateInfoEntity) {
+    public SupervisorEndpointEntity detectIfEndpointIsAvailable(ResourceAllocateInfoEntity resourceAllocateInfoEntity) {
         if (!StringUtils.containsIgnoreCase(resourceAllocateInfoEntity.getResourceApplierName(), "K8S")) {
             return null;
         }
-        long resourceId = resourceAllocateInfoEntity.getResourceId();;
-        SupervisorEndpoint endpoint =
-                JsonUtils.fromJson(resourceAllocateInfoEntity.getEndpoint(), SupervisorEndpoint.class);
-        if (null == resourceAllocateInfoEntity.getResourceId() || null == resourceAllocateInfoEntity.getEndpoint()) {
+        Long supervisorEndpointId = resourceAllocateInfoEntity.getSupervisorEndpointId();
+        if (null == supervisorEndpointId) {
             throw new RuntimeException(
-                    "for k8s mode resource allocate mode, endpoint or resource id  should not be null, entity = "
+                    "for k8s mode resource allocate mode, endpoint id should not be null, entity = "
                             + resourceAllocateInfoEntity);
         }
 
         SupervisorEndpointEntity entity =
-                supervisorEndpointRepositoryWrap.getSupervisorEndpointState(endpoint, resourceId);
+                supervisorEndpointRepositoryWrap.findById(resourceAllocateInfoEntity.getSupervisorEndpointId());
         SupervisorEndpointState state = SupervisorEndpointState.fromString(entity.getStatus());
         if (state == SupervisorEndpointState.AVAILABLE) {
             return entity;
@@ -140,6 +141,23 @@ public class K8SResourceManageStrategy implements ResourceManageStrategy {
             throw new RuntimeException("allocate resource failed, entity = " + entity);
         } else {
             return null;
+        }
+    }
+
+    @Override
+    public void refreshSupervisorEndpoint(SupervisorEndpointEntity endpoint) {
+        try {
+            ResourceWithID<Resource> resourceWithID = resourceManager.query(endpoint.getResourceID())
+                    .orElseThrow(() -> new RuntimeException("resource not found, id = " + endpoint.getResourceID()));
+            K8sPodResource podResource = (K8sPodResource) resourceWithID.getResource();
+            if (podResource.getPodIpAddress() != null) {
+                endpoint.setHost(podResource.getPodIpAddress());
+                supervisorEndpointRepositoryWrap.updateEndpointHost(endpoint);
+                log.info("refresh pod ip address success, id = {}, host =z {}", endpoint.getResourceID(),
+                        podResource.getPodIpAddress());
+            }
+        } catch (Exception e) {
+            log.warn("get pod ip address failed, resource id={}", endpoint.getResourceID(), e);
         }
     }
 

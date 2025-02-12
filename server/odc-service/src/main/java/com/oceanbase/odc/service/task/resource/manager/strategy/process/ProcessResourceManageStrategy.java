@@ -50,9 +50,12 @@ public class ProcessResourceManageStrategy implements ResourceManageStrategy {
      * @param resourceAllocateInfoEntity
      * @return resource endpoint if ready, else null
      */
-    public SupervisorEndpointEntity detectIfResourceIsReady(ResourceAllocateInfoEntity resourceAllocateInfoEntity) {
+    public SupervisorEndpointEntity detectIfEndpointIsAvailable(ResourceAllocateInfoEntity resourceAllocateInfoEntity) {
         return null;
     }
+
+    @Override
+    public void refreshSupervisorEndpoint(SupervisorEndpointEntity endpoint) {}
 
     @Override
     public boolean isEndpointHaveEnoughResource(SupervisorEndpointEntity supervisorEndpoint,

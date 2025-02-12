@@ -60,17 +60,16 @@ public class ResourceDeAllocator {
         try {
             SupervisorEndpoint supervisorEndpoint =
                     JsonUtils.fromJson(deAllocateInfoEntity.getEndpoint(), SupervisorEndpoint.class);
-            if (null == deAllocateInfoEntity.getResourceId() || null == supervisorEndpoint) {
+            if (null == deAllocateInfoEntity.getSupervisorEndpointId()) {
                 log.warn("invalid state, resource id or endpoint should not be null, entity = {}",
                         deAllocateInfoEntity);
                 return;
             } else {
                 // de allocate success
-                log.info("release resource for taskID = {}, endpoint = {}, resourceId = {}",
+                log.info("release resource for taskID = {}, endpoint = {}, endpointId = {}",
                         deAllocateInfoEntity.getTaskId(), deAllocateInfoEntity.getEndpoint(),
-                        deAllocateInfoEntity.getResourceId());
-                supervisorEndpointRepositoryWrap.releaseLoad(supervisorEndpoint,
-                        deAllocateInfoEntity.getResourceId());
+                        deAllocateInfoEntity.getSupervisorEndpointId());
+                supervisorEndpointRepositoryWrap.releaseLoad(deAllocateInfoEntity.getSupervisorEndpointId());
             }
             resourceAllocateInfoRepositoryWrap.finishedAllocateForId(deAllocateInfoEntity.getTaskId());
         } catch (Throwable e) {

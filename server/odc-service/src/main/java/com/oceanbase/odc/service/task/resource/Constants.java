@@ -13,29 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resource;
-
-import com.oceanbase.odc.metadb.resource.ResourceEntity;
-
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.ToString;
+package com.oceanbase.odc.service.task.resource;
 
 /**
- * @author longpeng.zlp
- * @date 2024/9/5 14:29
+ * @author: liuyizhuo.lyz
+ * @date: 2025/2/7
  */
-@AllArgsConstructor
-@Getter
-@ToString
-public class ResourceWithID<T extends Resource> {
-    /**
-     * unique seq equals to {@link ResourceEntity#getId()}
-     */
-    private final Long id;
+public class Constants {
 
-    /**
-     * resource to return
-     */
-    private final T resource;
+    public static final String RESOURCE_NULL_HOST = "RESOURCE_CREATING";
+
 }

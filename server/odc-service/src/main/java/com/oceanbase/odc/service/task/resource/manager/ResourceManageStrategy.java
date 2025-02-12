@@ -43,8 +43,10 @@ public interface ResourceManageStrategy {
      * @param resourceAllocateInfoEntity
      * @return resource endpoint if ready, else null
      */
-    SupervisorEndpointEntity detectIfResourceIsReady(
+    SupervisorEndpointEntity detectIfEndpointIsAvailable(
             ResourceAllocateInfoEntity resourceAllocateInfoEntity);
+
+    void refreshSupervisorEndpoint(SupervisorEndpointEntity endpoint);
 
     /**
      * if supervisorEndpoint have enough resource for allocate request

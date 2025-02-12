@@ -73,8 +73,8 @@ public class ResourceAllocateInfoEntity {
     /**
      * resource id associate to supervisor endpoint resource id
      */
-    @Column(name = "resource_id")
-    private Long resourceId;
+    @Column(name = "supervisor_endpoint_id")
+    private Long supervisorEndpointId;
 
     /**
      * resource region to find

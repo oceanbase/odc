@@ -23,6 +23,7 @@ import com.oceanbase.odc.metadb.task.ResourceAllocateInfoRepository;
 import com.oceanbase.odc.metadb.task.SupervisorEndpointEntity;
 import com.oceanbase.odc.metadb.task.SupervisorEndpointRepository;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+import com.oceanbase.odc.service.task.resource.Constants;
 import com.oceanbase.odc.service.task.service.TransactionManager;
 import com.oceanbase.odc.service.task.supervisor.endpoint.SupervisorEndpoint;
 import com.oceanbase.odc.service.task.supervisor.protocol.TaskNetClient;
@@ -94,6 +95,14 @@ public class TaskResourceManager {
 
     protected void detectIfResourceIsReady(SupervisorEndpointEntity entity) {
         SupervisorEndpoint endpoint = entity.getEndpoint();
+        if (endpoint.getHost() == null || Constants.RESOURCE_NULL_HOST.equals(endpoint.getHost())) {
+            resourceManageStrategy.refreshSupervisorEndpoint(entity);
+            endpoint = entity.getEndpoint();
+            if (endpoint.getHost() == null || Constants.RESOURCE_NULL_HOST.equals(endpoint.getHost())) {
+                log.info("supervisor not alive yet, endpoint = {}", entity);
+                return;
+            }
+        }
         if (remoteTaskSupervisorProxy.isSupervisorAlive(endpoint)) {
             // ready set status to AVAILABLE
             supervisorEndpointRepositoryWrap.onlineSupervisorEndpoint(entity);
