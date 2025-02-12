@@ -1,6 +1,6 @@
 # OceanBase Developer Center (ODC) CHANGELOG
 
-## 4.3.2 (2024-09-??)
+## 4.3.2 (2024-09-27)
 
 ### 功能变化
 

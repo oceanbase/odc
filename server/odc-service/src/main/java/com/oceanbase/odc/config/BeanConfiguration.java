@@ -205,6 +205,11 @@ public class BeanConfiguration {
         public void deleteDatabaseUsers(String instanceId, String tenantId, List<String> users) {
             throw new UnsupportedException("CloudMetadata not supported");
         }
+
+        @Override
+        public com.oceanbase.odc.service.config.model.Configuration getConfiguration(String projectId, String key) {
+            throw new UnsupportedException("CloudMetadata not supported");
+        }
     }
 
     /**

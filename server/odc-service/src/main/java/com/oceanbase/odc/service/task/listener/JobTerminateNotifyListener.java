@@ -15,18 +15,19 @@
  */
 package com.oceanbase.odc.service.task.listener;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.dlm.DLMService;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
-import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
+import com.oceanbase.odc.service.task.processor.terminate.TerminateProcessor;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -50,9 +51,7 @@ public class JobTerminateNotifyListener extends AbstractEventListener<JobTermina
     @Autowired
     private ScheduleTaskService scheduleTaskService;
     @Autowired
-    private ScheduleService scheduleService;
-    @Autowired
-    private DLMService dlmService;
+    private List<TerminateProcessor> terminateProcessors;
 
     @Override
     public void onEvent(JobTerminateEvent event) {
@@ -63,10 +62,8 @@ public class JobTerminateNotifyListener extends AbstractEventListener<JobTermina
             JobEntity jobEntity = taskFrameworkService.find(event.getJi().getId());
             scheduleTaskService.findByJobId(jobEntity.getId())
                     .ifPresent(task -> {
-                        TaskStatus status =
-                                "DLM".equalsIgnoreCase(jobEntity.getJobType())
-                                        ? dlmService.getFinalTaskStatus(task.getId())
-                                        : jobEntity.getStatus().convertTaskStatus();
+                        TaskStatus status = TerminateProcessor.correctTaskStatus(terminateProcessors,
+                                jobEntity.getJobType(), task, jobEntity.getStatus().convertTaskStatus());
                         broker.enqueueEvent(status == TaskStatus.DONE ? eventBuilder.ofSucceededTask(task)
                                 : eventBuilder.ofFailedTask(task));
                     });

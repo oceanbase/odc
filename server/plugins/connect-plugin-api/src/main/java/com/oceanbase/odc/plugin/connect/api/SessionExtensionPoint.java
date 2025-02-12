@@ -21,6 +21,7 @@ import java.sql.SQLException;
 import org.pf4j.ExtensionPoint;
 
 import com.oceanbase.odc.core.sql.execute.SessionOperations;
+import com.oceanbase.odc.plugin.connect.model.DBClientInfo;
 
 /**
  * @author yaobin
@@ -36,4 +37,7 @@ public interface SessionExtensionPoint extends ExtensionPoint, SessionOperations
     String getVariable(Connection connection, String variableName);
 
     String getAlterVariableStatement(String variableScope, String variableName, String variableValue);
+
+    boolean setClientInfo(Connection connection, DBClientInfo clientInfo);
+
 }

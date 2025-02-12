@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cglib.beans.BeanMap;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -49,7 +50,7 @@ import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
 import com.oceanbase.odc.service.dlm.DLMService;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
-import com.oceanbase.odc.service.quartz.QuartzJobService;
+import com.oceanbase.odc.service.quartz.QuartzJobServiceProxy;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.factory.ScheduleResponseMapperFactory;
 import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
@@ -87,7 +88,8 @@ public class ScheduleTaskService {
     private ScheduleTaskRepository scheduleTaskRepository;
 
     @Autowired
-    private QuartzJobService quartzJobService;
+    @Qualifier("quartzJobServiceProxy")
+    private QuartzJobServiceProxy quartzJobService;
 
     @Autowired
     private DLMService dlmService;
@@ -285,6 +287,11 @@ public class ScheduleTaskService {
 
     public List<ScheduleTaskEntity> listTaskByJobNameAndStatus(String jobName, List<TaskStatus> statuses) {
         return scheduleTaskRepository.findByJobNameAndStatusIn(jobName, statuses);
+    }
+
+    public ScheduleTask nullSafeGetByJobId(Long jobId) {
+        return findByJobId(jobId)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE_TASK, "jobId", jobId));
     }
 
     public Optional<ScheduleTask> findByJobId(Long jobId) {

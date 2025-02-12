@@ -62,6 +62,7 @@ public class OrganizationAuthenticationInterceptor implements HandlerInterceptor
             "/api/v2/flow/flowInstances/*/tasks/download",
             "/api/v2/flow/flowInstances/*/tasks/log/download",
             "/api/v2/flow/flowInstances/*/tasks/rollbackPlan/download",
+            "/api/v2/schedule/schedules/*/tasks/*/log/download",
             "/api/v2/aliyun/generic/**",
             "/api/v2/objectstorage/**",
             "/api/v2/connect/sessions/*/sqls/*/download",

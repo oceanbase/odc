@@ -18,8 +18,6 @@ package com.oceanbase.odc.core.alarm;
 
 public final class AlarmEventNames {
 
-    private AlarmEventNames() {}
-
     /**
      * alarm
      */
@@ -27,17 +25,15 @@ public final class AlarmEventNames {
     public static final String REST_API_CALL_FAILED = "REST_API_CALL_FAILED";
     public static final String STATEFUL_ROUTE_NOT_HEALTHY = "STATEFUL_ROUTE_NOT_HEALTHY";
     public static final String SERVER_RESTART = "SERVER_RESTART";
-
+    public static final String TOO_MANY_REGISTERED_METER = "TOO_MANY_REGISTERED_METER";
     /**
      * warn
      */
     public static final String UNKNOWN_API_EXCEPTION = "UNKNOWN_API_EXCEPTION";
-
     /**
      * info
      */
     public static final String IS_HEALTHY = "IS_HEALTHY";
-
     /**
      * Druid alarm
      */
@@ -49,16 +45,13 @@ public final class AlarmEventNames {
     public static final String DRUID_MONITOR_ERROR = "DRUID_MONITOR_ERROR";
     public static final String DRUID_WAIT_THREAD_COUNT_MORE_THAN_0 = "DRUID_WAIT_THREAD_COUNT_MORE_THAN_0";
     public static final String DRUID_ACTIVE_COUNT_MORE_THAN_80_PERCENT = "DRUID_ACTIVE_COUNT_MORE_THAN_80_PERCENT";
-
     public static final String API_TOO_LONG_RT_TIME = "API_TOO_LONG_RT_TIME";
-
     /**
      * SCHEDULING
      */
 
     public static final String SCHEDULING_FAILED = "SCHEDULING_FAILED";
     public static final String SCHEDULING_IGNORE = "SCHEDULING_IGNORE";
-
     /**
      * TASK
      */
@@ -68,4 +61,5 @@ public final class AlarmEventNames {
     public static final String TASK_EXECUTION_FAILED = "TASK_EXECUTION_FAILED";
     public static final String TASK_EXECUTOR_DESTROY_FAILED = "TASK_EXECUTOR_DESTROY_FAILED";
 
+    private AlarmEventNames() {}
 }

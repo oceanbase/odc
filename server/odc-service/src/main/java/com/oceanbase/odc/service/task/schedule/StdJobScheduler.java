@@ -19,6 +19,7 @@ package com.oceanbase.odc.service.task.schedule;
 import java.text.MessageFormat;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.quartz.CronTrigger;
@@ -39,6 +40,7 @@ import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.service.monitor.task.job.JobMonitorListener;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
@@ -58,6 +60,7 @@ import com.oceanbase.odc.service.task.schedule.daemon.StartPreparingJob;
 import com.oceanbase.odc.service.task.service.JobRunnable;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -80,6 +83,8 @@ public class StdJobScheduler implements JobScheduler {
         JobConfigurationHolder.setJobConfiguration(configuration);
 
         getEventPublisher().addEventListener(new DefaultJobCallerListener(this));
+        getEventPublisher().addEventListener(new JobMonitorListener());
+
         initDaemonJob();
         log.info("Start StdJobScheduler succeed.");
     }
@@ -170,8 +175,15 @@ public class StdJobScheduler implements JobScheduler {
             configuration.getJobDispatcher().stop(JobIdentity.of(jobEntity.getId()));
         } catch (JobException e) {
             log.warn("Stop job occur error: ", e);
-            AlarmUtils.alarm(AlarmEventNames.TASK_CANCELED_FAILED,
-                    MessageFormat.format("Cancel job failed, jobId={0}", jobEntity.getId()));
+            Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                    .item(AlarmUtils.ORGANIZATION_NAME, Optional.ofNullable(jobEntity.getOrganizationId()).map(
+                            Object::toString).orElse(StrUtil.EMPTY))
+                    .item(AlarmUtils.TASK_JOB_ID_NAME, jobId.toString())
+                    .item(AlarmUtils.MESSAGE_NAME,
+                            MessageFormat.format("Cancel job failed, jobId={0}, message={1}", jobEntity.getId(),
+                                    e.getMessage()))
+                    .build();
+            AlarmUtils.alarm(AlarmEventNames.TASK_CANCELED_FAILED, eventMessage);
             throw new TaskRuntimeException(e);
         }
         int count = configuration.getTaskFrameworkService().updateJobToCanceling(jobId, jobEntity.getStatus());

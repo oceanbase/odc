@@ -410,8 +410,8 @@ public class ConnectionService {
     }
 
     @SkipAuthorize("odc internal usage")
-    public List<ConnectionConfig> listByOrganizationIdIn(@NonNull Collection<Long> organizationIds) {
-        return repository.findByOrganizationIdIn(organizationIds).stream()
+    public List<ConnectionConfig> listSyncableDataSourcesByOrganizationIdIn(@NonNull Collection<Long> organizationIds) {
+        return repository.findSyncableConnectionsByOrganizationIdIn(organizationIds).stream()
                 .map(mapper::entityToModel).collect(Collectors.toList());
     }
 
@@ -554,6 +554,11 @@ public class ConnectionService {
                 .collect(Collectors.toList());
     }
 
+    @SkipAuthorize("internal usage")
+    public List<ConnectionConfig> listSyncableDataSources() {
+        return repository.findSyncableConnections().stream().map(mapper::entityToModel).collect(Collectors.toList());
+    }
+
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("permission check inside")
     public PageAndStats<ConnectionConfig> list(@Valid QueryConnectionParams params, @NotNull Pageable pageable) {
@@ -666,6 +671,11 @@ public class ConnectionService {
                         throw new UnexpectedException("Failed to update database project id", e);
                     }
                 }
+                // if ConnectionConfig's environmentId changed, update databases' environmentId either.
+                if (Objects.nonNull(saved.getEnvironmentId()) && Objects.nonNull(updated.getEnvironmentId())
+                        && saved.getEnvironmentId().compareTo(updated.getEnvironmentId()) != 0) {
+                    databaseService.updateEnvironmentIdByConnectionId(updated.getEnvironmentId(), updated.getId());
+                }
                 return updated;
             } catch (Exception ex) {
                 status.setRollbackOnly();
@@ -749,6 +759,12 @@ public class ConnectionService {
             return Collections.emptyList();
         }
         return repository.findByIdIn(ids).stream().map(mapper::entityToModel).collect(Collectors.toList());
+    }
+
+    public List<ConnectionConfig> innerListByIdsWithAttribute(Collection<Long> ids) {
+        List<ConnectionConfig> connectionConfigs = innerListByIds(ids);
+        fullFillAttributes(connectionConfigs);
+        return connectionConfigs;
     }
 
     @SkipAuthorize("internal usage")

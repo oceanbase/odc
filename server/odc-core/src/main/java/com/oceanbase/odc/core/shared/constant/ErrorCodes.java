@@ -257,6 +257,7 @@ public enum ErrorCodes implements ErrorCode {
     ObFullLinkTraceNotSupported,
     ObFullLinkTraceNotEnabled,
     ObQueryProfileNotSupported,
+    CopilotAnalyzeExecutionPlanFailed,
 
     ObPreCheckDdlFailed,
     ObCopySchemaFailed,
@@ -307,7 +308,10 @@ public enum ErrorCodes implements ErrorCode {
      * version conflict
      */
     WorksheetEditVersionConflict,
-
+    /**
+     * general version conflict error
+     */
+    EditVersionConflict,
     /**
      * workspace
      */

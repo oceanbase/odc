@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.connection.database;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -27,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
@@ -56,6 +56,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.common.event.LocalEventPublisher;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.permission.Permission;
 import com.oceanbase.odc.core.authority.util.Authenticated;
@@ -71,6 +72,7 @@ import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseSpecs;
@@ -90,6 +92,7 @@ import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.collaboration.project.model.QueryProjectParams;
 import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.connection.ConnectionSyncHistoryService;
 import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
@@ -100,6 +103,8 @@ import com.oceanbase.odc.service.connection.database.model.ModifyDatabaseOwnerRe
 import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.model.ConnectionSyncErrorReason;
+import com.oceanbase.odc.service.connection.model.ConnectionSyncResult;
 import com.oceanbase.odc.service.db.DBSchemaService;
 import com.oceanbase.odc.service.db.schema.DBSchemaSyncTaskManager;
 import com.oceanbase.odc.service.db.schema.GlobalSearchProperties;
@@ -111,8 +116,10 @@ import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.model.UserResourceRole;
+import com.oceanbase.odc.service.monitor.datasource.GetConnectionFailedEventListener;
 import com.oceanbase.odc.service.onlineschemachange.ddl.DBUser;
 import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessor;
 import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessorFactory;
@@ -214,6 +221,9 @@ public class DatabaseService {
     @Autowired
     private GlobalSearchProperties globalSearchProperties;
 
+    @Autowired
+    private ConnectionSyncHistoryService connectionSyncHistoryService;
+
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public Database detail(@NonNull Long id) {
@@ -234,6 +244,12 @@ public class DatabaseService {
     @SkipAuthorize("internal usage")
     public Database detailSkipPermissionCheck(@NonNull Long id) {
         return entityToModel(databaseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
+    }
+
+    @SkipAuthorize("internal usage")
+    public Database detailSkipPermissionCheckForRead(@NonNull Long id) {
+        return entityToModelForRead(databaseRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
     }
 
@@ -482,16 +498,17 @@ public class DatabaseService {
         return true;
     }
 
-    @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public Boolean syncDataSourceSchemas(@NonNull Long dataSourceId) throws InterruptedException {
         Boolean res = internalSyncDataSourceSchemas(dataSourceId);
-        try {
-            refreshExpiredPendingDBObjectStatus();
-            dbSchemaSyncTaskManager
-                    .submitTaskByDataSource(connectionService.getBasicWithoutPermissionCheck(dataSourceId));
-        } catch (Exception e) {
-            log.warn("Failed to submit sync database schema task for datasource id={}", dataSourceId, e);
+        if (res) {
+            try {
+                refreshExpiredPendingDBObjectStatus();
+                dbSchemaSyncTaskManager
+                        .submitTaskByDataSource(connectionService.getBasicWithoutPermissionCheck(dataSourceId));
+            } catch (Exception e) {
+                log.warn("Failed to submit sync database schema task for datasource id={}", dataSourceId, e);
+            }
         }
         return res;
     }
@@ -503,30 +520,40 @@ public class DatabaseService {
             throw new ConflictException(ErrorCodes.ResourceSynchronizing,
                     new Object[] {ResourceType.ODC_DATABASE.getLocalizedMessage()}, "Can not acquire jdbc lock");
         }
+        ConnectionConfig connection;
+        Optional<Organization> organizationOpt = Optional.empty();
         try {
-            ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
+            connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
             horizontalDataPermissionValidator.checkCurrentOrganization(connection);
-            organizationService.get(connection.getOrganizationId()).ifPresent(organization -> {
-                if (organization.getType() == OrganizationType.INDIVIDUAL) {
-                    syncIndividualDataSources(connection);
-                } else {
-                    syncTeamDataSources(connection);
-                }
-            });
+            organizationOpt = organizationService.get(connection.getOrganizationId());
+            Organization organization =
+                    organizationOpt.orElseThrow(() -> new UnexpectedException("Organization not found"));
+            if (organization.getType() == OrganizationType.INDIVIDUAL) {
+                syncIndividualDataSources(connection);
+            } else {
+                syncTeamDataSources(connection);
+            }
+            connectionSyncHistoryService.upsert(connection.getId(), ConnectionSyncResult.SUCCESS,
+                    connection.getOrganizationId(), null, null);
             return true;
         } catch (Exception ex) {
-            log.warn("Sync database failed, dataSourceId={}, errorMessage={}", dataSourceId, ex.getLocalizedMessage());
+            handleSyncException(ex, dataSourceId, organizationOpt);
             return false;
         } finally {
             lock.unlock();
         }
     }
 
-    private void syncTeamDataSources(ConnectionConfig connection) {
+    public int updateEnvironmentIdByConnectionId(@NotNull Long environmentId, @NotNull Long connectionId) {
+        return databaseRepository.setEnvironmentIdByConnectionId(environmentId, connectionId);
+    }
+
+    private void syncTeamDataSources(ConnectionConfig connection)
+            throws ExecutionException, InterruptedException, TimeoutException {
         Long currentProjectId = connection.getProjectId();
         boolean blockExcludeSchemas = dbSchemaSyncProperties.isBlockExclusionsWhenSyncDbToProject();
         List<String> excludeSchemas = dbSchemaSyncProperties.getExcludeSchemas(connection.getDialectType());
-        DataSource teamDataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
+        DataSource teamDataSource = getDataSourceFactory(connection).getDataSource();
         ExecutorService executorService = Executors.newFixedThreadPool(1);
         Future<List<DatabaseEntity>> future = executorService.submit(() -> {
             try (Connection conn = teamDataSource.getConnection()) {
@@ -548,6 +575,7 @@ public class DatabaseService {
                     if (blockExcludeSchemas && excludeSchemas.contains(database.getName())) {
                         entity.setProjectId(null);
                     }
+                    entity.setLastSyncTime(new Date(System.currentTimeMillis()));
                     return entity;
                 }).collect(Collectors.toList());
             }
@@ -580,25 +608,27 @@ public class DatabaseService {
                             database.getTableCount(),
                             database.getExisted(),
                             database.getObjectSyncStatus().name(),
-                            database.getConnectType().name()
+                            database.getConnectType().name(),
+                            database.getLastSyncTime()
                     }).collect(Collectors.toList());
 
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
             if (CollectionUtils.isNotEmpty(toAdd)) {
                 jdbcTemplate.batchUpdate(
-                        "insert into connect_database(database_id, organization_id, name, project_id, connection_id, environment_id, sync_status, charset_name, collation_name, table_count, is_existed, object_sync_status, connect_type) values(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        "insert into connect_database(database_id, organization_id, name, project_id, connection_id, environment_id, sync_status, charset_name, collation_name, table_count, is_existed, object_sync_status, connect_type, last_sync_time) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                         toAdd);
             }
             List<Object[]> toDelete = existedDatabasesInDb.stream()
                     .filter(database -> !latestDatabaseNames.contains(database.getName()))
                     .map(database -> new Object[] {getProjectId(database, currentProjectId, excludeSchemas),
-                            database.getId()})
+                            new Date(System.currentTimeMillis()), database.getId()})
                     .collect(Collectors.toList());
             /**
              * just set existed to false if the database has been dropped instead of deleting it directly
              */
             if (!CollectionUtils.isEmpty(toDelete)) {
-                String deleteSql = "update connect_database set is_existed = 0, project_id=? where id = ?";
+                String deleteSql =
+                        "update connect_database set is_existed = 0, project_id=?, last_sync_time=? where id = ?";
                 jdbcTemplate.batchUpdate(deleteSql, toDelete);
             }
             List<Object[]> toUpdate = existedDatabasesInDb.stream()
@@ -606,22 +636,17 @@ public class DatabaseService {
                     .map(database -> {
                         DatabaseEntity latest = latestDatabaseName2Database.get(database.getName()).get(0);
                         return new Object[] {latest.getTableCount(), latest.getCollationName(), latest.getCharsetName(),
-                                getProjectId(database, currentProjectId, excludeSchemas), database.getId()};
+                                getProjectId(database, currentProjectId, excludeSchemas), latest.getLastSyncTime(),
+                                database.getId()};
                     })
                     .collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(toUpdate)) {
                 String update =
-                        "update connect_database set table_count=?, collation_name=?, charset_name=?, project_id=? where id = ?";
+                        "update connect_database set table_count=?, collation_name=?, charset_name=?, project_id=?, last_sync_time=? where id = ?";
                 jdbcTemplate.batchUpdate(update, toUpdate);
             }
-        } catch (ExecutionException | InterruptedException | TimeoutException e) {
-            log.warn("Failed to obtain the connection, errorMessage={}", e.getMessage());
-            Throwable rootCause = e.getCause();
-            if (rootCause instanceof SQLException) {
-                deleteDatabaseIfClusterNotExists((SQLException) rootCause,
-                        connection.getId(), "update connect_database set is_existed = 0 where connection_id=?");
-                throw new IllegalStateException(rootCause);
-            }
+            connectionSyncHistoryService.upsert(connection.getId(), ConnectionSyncResult.SUCCESS,
+                    connection.getOrganizationId(), null, null);
         } finally {
             try {
                 executorService.shutdownNow();
@@ -638,6 +663,14 @@ public class DatabaseService {
         }
     }
 
+    private OBConsoleDataSourceFactory getDataSourceFactory(ConnectionConfig connection) {
+        OBConsoleDataSourceFactory obConsoleDataSourceFactory = new OBConsoleDataSourceFactory(connection, true, false);
+        LocalEventPublisher localEventPublisher = new LocalEventPublisher();
+        localEventPublisher.addEventListener(new GetConnectionFailedEventListener());
+        obConsoleDataSourceFactory.setEventPublisher(localEventPublisher);
+        return obConsoleDataSourceFactory;
+    }
+
     private Long getProjectId(DatabaseEntity database, Long currentProjectId, List<String> blockedDatabaseNames) {
         Long projectId;
         if (currentProjectId != null) {
@@ -652,8 +685,9 @@ public class DatabaseService {
         return projectId;
     }
 
-    private void syncIndividualDataSources(ConnectionConfig connection) {
-        DataSource individualDataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
+    private void syncIndividualDataSources(ConnectionConfig connection)
+            throws ExecutionException, InterruptedException, TimeoutException {
+        DataSource individualDataSource = getDataSourceFactory(connection).getDataSource();
         ExecutorService executorService = Executors.newFixedThreadPool(1);
         Future<Set<String>> future = executorService.submit(() -> {
             try (Connection conn = individualDataSource.getConnection()) {
@@ -678,14 +712,15 @@ public class DatabaseService {
                             connection.getEnvironmentId(),
                             DatabaseSyncStatus.SUCCEEDED.name(),
                             DBObjectSyncStatus.INITIALIZED.name(),
-                            connection.getType().name()
+                            connection.getType().name(),
+                            new Date(System.currentTimeMillis())
                     })
                     .collect(Collectors.toList());
 
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
             if (CollectionUtils.isNotEmpty(toAdd)) {
                 jdbcTemplate.batchUpdate(
-                        "insert into connect_database(database_id, organization_id, name, connection_id, environment_id, sync_status, object_sync_status, connect_type) values(?,?,?,?,?,?,?,?)",
+                        "insert into connect_database(database_id, organization_id, name, connection_id, environment_id, sync_status, object_sync_status, connect_type, last_sync_time) values(?,?,?,?,?,?,?,?,?)",
                         toAdd);
             }
 
@@ -697,14 +732,8 @@ public class DatabaseService {
             if (!CollectionUtils.isEmpty(toDelete)) {
                 jdbcTemplate.batchUpdate("delete from connect_database where id = ?", toDelete);
             }
-        } catch (ExecutionException | InterruptedException | TimeoutException e) {
-            log.warn("Failed to obtain the connection, errorMessage={}", e.getMessage());
-            Throwable rootCause = e.getCause();
-            if (rootCause instanceof SQLException) {
-                deleteDatabaseIfClusterNotExists((SQLException) rootCause,
-                        connection.getId(), "delete from connect_database where connection_id=?");
-                throw new IllegalStateException(rootCause);
-            }
+            connectionSyncHistoryService.upsert(connection.getId(), ConnectionSyncResult.SUCCESS,
+                    connection.getOrganizationId(), null, null);
         } finally {
             try {
                 executorService.shutdownNow();
@@ -952,6 +981,24 @@ public class DatabaseService {
         });
     }
 
+    private Database entityToModelForRead(DatabaseEntity entity, boolean includesPermittedAction) {
+        Database model = databaseMapper.entityToModel(entity);
+        if (Objects.nonNull(entity.getProjectId())) {
+            model.setProject(projectService.detail(entity.getProjectId()));
+        }
+        // for logical database, the connection id may be null
+        if (entity.getConnectionId() != null) {
+            model.setDataSource(connectionService.getBasicWithoutPermissionCheck(entity.getConnectionId()));
+        }
+        model.setEnvironment(environmentService.detailSkipPermissionCheck(entity.getEnvironmentId()));
+        if (includesPermittedAction) {
+            model.setAuthorizedPermissionTypes(
+                    permissionHelper.getDBPermissions(Collections.singleton(entity.getId())).get(entity.getId()));
+        }
+        return model;
+    }
+
+
     private Database entityToModel(DatabaseEntity entity, boolean includesPermittedAction) {
         Database model = databaseMapper.entityToModel(entity);
         if (Objects.nonNull(entity.getProjectId())) {
@@ -1014,19 +1061,44 @@ public class DatabaseService {
         return userResourceRoles;
     }
 
-
-    private void deleteDatabaseIfClusterNotExists(SQLException e, Long connectionId, String deleteSql) {
-        if (StringUtils.containsIgnoreCase(e.getMessage(), "cluster not exist")) {
-            log.info(
-                    "Cluster not exist, set existed to false for all databases in this data source, data source id = {}",
-                    connectionId);
-            JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-            try {
-                jdbcTemplate.update(deleteSql, new Object[] {connectionId});
-            } catch (Exception ex) {
-                log.warn("Failed to delete databases when cluster not exist, errorMessage={}",
-                        ex.getLocalizedMessage());
-            }
+    private void handleSyncException(@NonNull Exception ex, @NonNull Long dataSourceId,
+            @NonNull Optional<Organization> organizationOpt) {
+        String errorMessage = ex.getMessage();
+        log.warn("Sync database failed, dataSourceId={}, errorMessage={}", dataSourceId, errorMessage);
+        if (!organizationOpt.isPresent()) {
+            return;
         }
+        Organization organization = organizationOpt.get();
+        ConnectionSyncErrorReason failedReason = ConnectionSyncErrorReason.UNKNOWN;
+        if (StringUtils.containsIgnoreCase(errorMessage, "cluster not exist")) {
+            failedReason = ConnectionSyncErrorReason.CLUSTER_NOT_EXISTS;
+            deleteDatabaseIfInstanceNotExists(dataSourceId, organization.getType());
+        } else if (StringUtils.containsIgnoreCase(errorMessage, "No tenants found") || StringUtils
+                .containsIgnoreCase(errorMessage, "tenant expected 1 but was")) {
+            failedReason = ConnectionSyncErrorReason.TENANT_NOT_EXISTS;
+            deleteDatabaseIfInstanceNotExists(dataSourceId, organization.getType());
+        }
+        connectionSyncHistoryService.upsert(dataSourceId, ConnectionSyncResult.FAILURE, organization.getId(),
+                failedReason, errorMessage);
+    }
+
+    private void deleteDatabaseIfInstanceNotExists(Long connectionId, OrganizationType organizationType) {
+        log.info(
+                "Cluster or tenant not exist, set existed to false for all databases in this data source, data source id = {}",
+                connectionId);
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String deleteSql;
+        if (organizationType == OrganizationType.INDIVIDUAL) {
+            deleteSql = "delete from connect_database where connection_id=?";
+        } else {
+            deleteSql = "update connect_database set is_existed = 0 where connection_id=?";
+        }
+        try {
+            jdbcTemplate.update(deleteSql, connectionId);
+        } catch (Exception ex) {
+            log.warn("Failed to delete databases when cluster not exist, errorMessage={}",
+                    ex.getLocalizedMessage());
+        }
+
     }
 }

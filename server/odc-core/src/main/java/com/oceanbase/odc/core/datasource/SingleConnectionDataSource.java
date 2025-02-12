@@ -24,11 +24,15 @@ import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import com.oceanbase.odc.common.event.AbstractEvent;
 import com.oceanbase.odc.common.event.EventPublisher;
+import com.oceanbase.odc.core.datasource.event.ConnectionResetEvent;
+import com.oceanbase.odc.core.datasource.event.GetConnectionFailedEvent;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
@@ -200,11 +204,15 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
     }
 
     private void onConnectionReset(Connection connection) {
+        publishEvent(new ConnectionResetEvent(connection));
+    }
+
+    private void publishEvent(AbstractEvent event) {
         if (eventPublisher == null) {
             return;
         }
         try {
-            this.eventPublisher.publishEvent(new ConnectionResetEvent(connection));
+            this.eventPublisher.publishEvent(event);
         } catch (Exception e) {
             log.warn("Failed to publish event", e);
         }
@@ -222,6 +230,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
             log.info("Established shared JDBC Connection, lock={}", this.lock.hashCode());
             return getConnectionProxy(this.connection, this.lock);
         } catch (Throwable e) {
+            publishEvent(new GetConnectionFailedEvent(Optional.ofNullable(connection)));
             throw new SQLException(e);
         }
     }

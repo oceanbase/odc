@@ -108,4 +108,24 @@ public interface ConnectionConfigRepository
     @Modifying
     int deleteByIds(@Param("ids") Set<Long> ids);
 
+    @Query(value = "SELECT cc.* FROM connect_connection cc " +
+            "LEFT JOIN connect_connection_sync_history csh ON cc.id = csh.connection_id " +
+            "WHERE cc.visible_scope = 'ORGANIZATION' AND ("
+            + " csh.last_sync_result = 'SUCCESS'"
+            + " OR csh.last_sync_error_reason IS NULL"
+            + " OR csh.last_sync_error_reason != 'CLUSTER_NOT_EXISTS')",
+            nativeQuery = true)
+    List<ConnectionEntity> findSyncableConnections();
+
+    @Query(value = "SELECT cc.* FROM connect_connection cc " +
+            "LEFT JOIN connect_connection_sync_history csh ON cc.id = csh.connection_id " +
+            "WHERE cc.organization_id IN (:organizationIds) AND cc.visible_scope = 'ORGANIZATION' AND ("
+            + " csh.last_sync_result = 'SUCCESS'"
+            + " OR csh.last_sync_error_reason IS NULL"
+            + " OR csh.last_sync_error_reason != 'CLUSTER_NOT_EXISTS')",
+            nativeQuery = true)
+    List<ConnectionEntity> findSyncableConnectionsByOrganizationIdIn(
+            @Param("organizationIds") Collection<Long> organizationIds);
+
+
 }

@@ -101,13 +101,15 @@ public class DBSchemaSyncScheduler {
         Map<OrganizationType, List<OrganizationEntity>> orgMap = organizationRepository.findAll().stream()
                 .collect(Collectors.groupingBy(OrganizationEntity::getType));
         if (CollectionUtils.isNotEmpty(orgMap.get(OrganizationType.TEAM))) {
-            dataSources.addAll(connectionService.listByOrganizationIdIn(orgMap.get(OrganizationType.TEAM).stream()
-                    .map(OrganizationEntity::getId).collect(Collectors.toList())));
+            dataSources.addAll(connectionService
+                    .listSyncableDataSourcesByOrganizationIdIn(orgMap.get(OrganizationType.TEAM).stream()
+                            .map(OrganizationEntity::getId).collect(Collectors.toList())));
         }
         if (CollectionUtils.isNotEmpty(orgMap.get(OrganizationType.INDIVIDUAL))) {
             List<ConnectionConfig> individualDataSources =
-                    connectionService.listByOrganizationIdIn(orgMap.get(OrganizationType.INDIVIDUAL).stream()
-                            .map(OrganizationEntity::getId).collect(Collectors.toList()));
+                    connectionService
+                            .listSyncableDataSourcesByOrganizationIdIn(orgMap.get(OrganizationType.INDIVIDUAL).stream()
+                                    .map(OrganizationEntity::getId).collect(Collectors.toList()));
             for (ConnectionConfig ds : individualDataSources) {
                 Map<String, Configuration> userConfigs =
                         userConfigService.getUserConfigurationsFromCache(ds.getCreatorId());

@@ -60,6 +60,8 @@ server:
       max: 500
       min-spare: 18
     keep-alive-timeout: 70000
+    mbeanregistry:
+      enabled: true
 swagger:
   enabled: false
 
@@ -67,3 +69,14 @@ jasypt:
   encryptor:
     password: ${ODC_PROPERTY_ENCRYPTION_PASSWORD}
     algorithm: PBEWithHmacSHA512AndAES_128
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "business,application"
+  endpoint:
+    prometheus:
+      enabled: true
+  server:
+    port: 8089

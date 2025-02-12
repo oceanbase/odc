@@ -15,8 +15,11 @@
  */
 package com.oceanbase.odc.plugin.connect.mysql;
 
+import java.sql.Connection;
+
 import org.pf4j.Extension;
 
+import com.oceanbase.odc.plugin.connect.model.DBClientInfo;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLSessionExtension;
 
 import lombok.extern.slf4j.Slf4j;
@@ -29,4 +32,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Extension
 public class MySQLSessionExtension extends OBMySQLSessionExtension {
+    @Override
+    public boolean setClientInfo(Connection connection, DBClientInfo clientInfo) {
+        return false;
+    }
+
 }
