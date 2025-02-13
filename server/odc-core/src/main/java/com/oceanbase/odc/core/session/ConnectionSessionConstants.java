@@ -75,6 +75,11 @@ public class ConnectionSessionConstants {
      */
     public static final String OB_VERSION = "OB_VERSION";
     /**
+     * The odp version needs to be stored in the database session in the form of attributes, this is the
+     * key
+     */
+    public static final String ODP_VERSION = "ODP_VERSION";
+    /**
      * The connection account type current database session needs to be stored in the database session
      * in the form of attributes, this is the key
      */
@@ -114,6 +119,8 @@ public class ConnectionSessionConstants {
     public static final String BACKEND_DS_KEY = "BACKEND-DATASOURCE";
     public static final String CONNECTION_RESET_KEY = "CONSOLE_SESSION_RESET";
     public static final String CONNECTION_KILLQUERY_KEY = "CONNECTION_KILLQUERY_KEY";
+    public static final String CONNECTION_CLIENTINFO_KEY = "CONNECTION_CLIENTINFO_KEY";
+
 
     /**
      * Column meta info accessor stored in connectionSession

@@ -35,6 +35,10 @@ public enum ConnectType {
     // reserved for future version
     ODP_SHARDING_OB_ORACLE(DialectType.OB_ORACLE),
     ORACLE(DialectType.ORACLE),
+    OSS(DialectType.FILE_SYSTEM),
+    OBS(DialectType.FILE_SYSTEM),
+    COS(DialectType.FILE_SYSTEM),
+    S3A(DialectType.FILE_SYSTEM),
     UNKNOWN(DialectType.UNKNOWN),
 
     ;
@@ -51,6 +55,10 @@ public enum ConnectType {
 
     public boolean isODPSharding() {
         return this == ODP_SHARDING_OB_MYSQL || this == ODP_SHARDING_OB_ORACLE;
+    }
+
+    public boolean isFileSystem() {
+        return this == COS || this == OBS || this == OSS || this == S3A;
     }
 
     public boolean isDefaultSchemaRequired() {

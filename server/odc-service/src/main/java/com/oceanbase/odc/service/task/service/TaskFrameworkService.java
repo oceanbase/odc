@@ -22,11 +22,13 @@ import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 
+import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
-import com.oceanbase.odc.service.task.executor.server.HeartbeatRequest;
-import com.oceanbase.odc.service.task.executor.task.TaskResult;
+import com.oceanbase.odc.service.task.executor.HeartbeatRequest;
+import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 
 /**
@@ -42,7 +44,7 @@ public interface TaskFrameworkService {
 
     void refreshResult(Long id);
 
-    boolean refreshLogMeta(Long id);
+    boolean refreshLogMetaForCancelJob(Long id);
 
     void handleHeart(HeartbeatRequest heart);
 
@@ -51,6 +53,8 @@ public interface TaskFrameworkService {
     Page<JobEntity> findCancelingJob(int page, int size);
 
     Page<JobEntity> findTerminalJob(int page, int size);
+
+    Page<ResourceEntity> findAbandonedResource(int page, int size);
 
     JobEntity findWithPessimisticLock(Long id);
 
@@ -69,7 +73,7 @@ public interface TaskFrameworkService {
      */
     long countRunningJobs(TaskRunMode runMode);
 
-    int startSuccess(Long id, String executorIdentifier);
+    int startSuccess(Long id, ResourceID resourceID, String executorIdentifier);
 
     int beforeStart(Long id);
 

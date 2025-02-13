@@ -20,14 +20,16 @@ import java.util.function.Predicate;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.model.OdcDBSession;
+import com.oceanbase.odc.service.db.session.KillResult;
 import com.oceanbase.odc.service.db.session.KillSessionOrQueryReq;
-import com.oceanbase.odc.service.db.session.KillSessionResult;
 
 public interface DBSessionManageFacade {
 
-    List<KillSessionResult> killSessionOrQuery(KillSessionOrQueryReq request);
+    List<KillResult> killSessionOrQuery(KillSessionOrQueryReq request);
 
-    boolean killCurrentQuery(ConnectionSession session);
+    boolean supportKillConsoleQuery(ConnectionSession session);
+
+    boolean killConsoleQuery(ConnectionSession session);
 
     void killAllSessions(ConnectionSession connectionSession,
             Predicate<OdcDBSession> filter, Integer lockTableTimeOutSeconds);

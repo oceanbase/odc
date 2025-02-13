@@ -36,7 +36,7 @@ public class LockTableInterceptor implements RenameTableInterceptor {
 
     public LockTableInterceptor(ConnectionSession connSession) {
         this.connSession = connSession;
-        this.jdbcOperations = connSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
+        this.jdbcOperations = connSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
     }
 
     @Override

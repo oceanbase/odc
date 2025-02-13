@@ -21,8 +21,8 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.ServiceTestEnv;
+import com.oceanbase.odc.service.task.base.databasechange.DatabaseChangeTask;
 import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.runtime.DatabaseChangeTask;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
 
 /**
@@ -39,6 +39,8 @@ public class JobRepositoryTest extends ServiceTestEnv {
     public void test_saveJob() {
         JobEntity je = createJobEntity();
         Assert.assertNotNull(je);
+        jobRepository.delete(je);
+        Assert.assertFalse(jobRepository.existsById(je.getId()));
     }
 
     @Test
@@ -53,6 +55,8 @@ public class JobRepositoryTest extends ServiceTestEnv {
         jse.setFinishedTime(JobDateUtils.getCurrentDate());
         int rows = jobRepository.updateReportResult(jse, currentJob.getId(), currentJob.getStatus());
         Assert.assertTrue(rows > 0);
+        jobRepository.deleteById(currentJob.getId());
+        Assert.assertFalse(jobRepository.existsById(currentJob.getId()));
     }
 
     @Test

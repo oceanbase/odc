@@ -45,10 +45,9 @@ import com.oceanbase.odc.metadb.iam.PermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserPermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserRepository;
-import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
-import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
 import com.oceanbase.odc.service.flow.task.BaseODCFlowTaskDelegate;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
+import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter.ApplyTable;
@@ -87,7 +86,7 @@ public class ApplyTableFlowableTask extends BaseODCFlowTaskDelegate<ApplyTableRe
     private DatabaseRepository databaseRepository;
 
     @Autowired
-    private UserResourceRoleRepository userResourceRoleRepository;
+    private ResourceRoleService resourceRoleService;
 
     @Autowired
     private DBObjectRepository dbObjectRepository;
@@ -259,8 +258,8 @@ public class ApplyTableFlowableTask extends BaseODCFlowTaskDelegate<ApplyTableRe
                     log.warn("User not found, id={}", this.creatorId);
                     return new NotFoundException(ResourceType.ODC_USER, "id", this.creatorId);
                 });
-        Set<Long> projectMemberIds = userResourceRoleRepository.findByResourceId(projectId).stream()
-                .map(UserResourceRoleEntity::getUserId).collect(Collectors.toSet());
+        Set<Long> projectMemberIds =
+                resourceRoleService.listUserIdsByResourceTypeAndResourceId(ResourceType.ODC_PROJECT, projectId);
         if (!projectMemberIds.contains(this.creatorId)) {
             log.warn("User not member of project, userId={}, projectId={}", this.creatorId, projectId);
             throw new IllegalStateException("User not member of project");

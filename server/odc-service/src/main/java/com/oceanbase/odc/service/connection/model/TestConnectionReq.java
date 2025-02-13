@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.connection.model;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -46,6 +47,9 @@ import lombok.ToString;
 @Data
 @ToString(exclude = {"password"})
 public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionConfig {
+
+    private static final String REGION = "region";
+
     /**
      * Connection ID，用于编辑连接页面未传密码参数时从已保存的连接信息中获取对应密码字段
      */
@@ -155,6 +159,21 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
             return this.type.getDialectType();
         }
         return this.dialectType;
+    }
+
+    public void setRegion(String region) {
+        if (this.attributes == null) {
+            attributes = new HashMap<>();
+        }
+        attributes.put(REGION, region);
+    }
+
+    public String getRegion() {
+        if (this.attributes == null) {
+            return null;
+        }
+        Object o = attributes.get(REGION);
+        return o == null ? null : o.toString();
     }
 
     public static TestConnectionReq fromConnection(ConnectionConfig connection,

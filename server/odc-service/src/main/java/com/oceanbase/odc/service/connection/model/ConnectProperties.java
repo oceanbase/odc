@@ -25,8 +25,6 @@ import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 
 import com.google.common.collect.Sets;
-import com.oceanbase.odc.core.authority.permission.ConnectionPermission;
-import com.oceanbase.odc.core.authority.permission.PrivateConnectionPermission;
 
 import lombok.Data;
 
@@ -77,17 +75,7 @@ public class ConnectProperties {
         if (temp) {
             return getTempConnectionOperations();
         }
-        if (CollectionUtils.isEmpty(permittedActions)
-                || permittedActions.contains(ConnectionPermission.CONNECTION_READWRITE)
-                || permittedActions.contains(PrivateConnectionPermission.CONNECTION_USE)) {
-            return getPersistentConnectionOperations();
-        }
-        if (permittedActions.contains(ConnectionPermission.CONNECTION_READONLY)) {
-            Set<String> operations = new HashSet<>(getPersistentConnectionOperations());
-            operations.remove(DELETE_OPERATION);
-            return operations;
-        }
-        return NONE_OPERATIONS;
+        return getPersistentConnectionOperations();
     }
 
     private Set<String> getTempConnectionOperations() {

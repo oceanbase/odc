@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -84,6 +85,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 import com.oceanbase.odc.service.connection.model.CreateSessionResp;
 import com.oceanbase.odc.service.connection.model.DBSessionResp;
+import com.oceanbase.odc.service.connection.model.DBSessionResp.DBSessionRespDelegate;
 import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.db.DBCharsetService;
 import com.oceanbase.odc.service.db.session.DBSessionService;
@@ -92,12 +94,14 @@ import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.lab.model.LabProperties;
+import com.oceanbase.odc.service.monitor.session.ConnectionSessionMonitorListener;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
 import com.oceanbase.odc.service.session.factory.LogicalConnectionSessionFactory;
 import com.oceanbase.odc.service.session.factory.StateHostGenerator;
+import com.oceanbase.tools.dbbrowser.model.DBSession;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -157,6 +161,8 @@ public class ConnectSessionService {
     private LogicalDatabaseService logicalDatabaseService;
     @Autowired
     private StateHostGenerator stateHostGenerator;
+    @Autowired
+    private DBSessionManageFacade dbSessionManageFacade;
     private final Map<String, Lock> sessionId2Lock = new ConcurrentHashMap<>();
 
     @PostConstruct
@@ -168,6 +174,7 @@ public class ConnectSessionService {
                 new DefaultTaskManager("connection-session-management"), repository);
         this.connectionSessionManager.addListener(new SessionLimitListener(limitService));
         this.connectionSessionManager.addListener(new SessionLockRemoveListener(this.sessionId2Lock));
+        this.connectionSessionManager.addListener(new ConnectionSessionMonitorListener());
         this.connectionSessionManager.enableAsyncRefreshSessionManager();
         this.connectionSessionManager.addSessionValidator(
                 new SessionValidatorPredicate(sessionProperties.getTimeoutMins(), TimeUnit.MINUTES));
@@ -295,8 +302,13 @@ public class ConnectSessionService {
 
     public ConnectionSession createPhysicalConnectionSession(@NotNull ConnectionConfig connection,
             @NotNull CreateSessionReq req) {
+        return createPhysicalConnectionSession(connection, req, 1);
+    }
+
+    public ConnectionSession createPhysicalConnectionSession(@NotNull ConnectionConfig connection,
+            @NotNull CreateSessionReq req, int maxConcurrentTaskCount) {
         SqlExecuteTaskManagerFactory factory =
-                new SqlExecuteTaskManagerFactory(this.monitorTaskManager, "console", 1);
+                new SqlExecuteTaskManagerFactory(this.monitorTaskManager, "console", maxConcurrentTaskCount);
         // TODO: query from use config service
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(
                 connection, getAutoCommit(connection), factory);
@@ -342,6 +354,21 @@ public class ConnectSessionService {
     }
 
     public ConnectionSession nullSafeGet(@NotNull String sessionId, boolean autoCreate) {
+        return nullSafeGet(sessionId, autoCreate, null);
+    }
+
+    /**
+     * get a ConnectionSession of sessionId. If not exist and autoCreate is true, create a new session.
+     * If createConnectionSessionSupplier is not null, use it to create a new session; otherwise, create
+     * a new session by default.
+     * 
+     * @param sessionId session id for {@link ConnectionSession}
+     * @param autoCreate whether to auto create a new session if not exist
+     * @param createConnectionSessionSupplier a supplier to create a new session
+     * @return {@link ConnectionSession} of sessionId
+     */
+    public ConnectionSession nullSafeGet(@NotNull String sessionId, boolean autoCreate,
+            Supplier<ConnectionSession> createConnectionSessionSupplier) {
         ConnectionSession session = connectionSessionManager.getSession(sessionId);
         if (session == null) {
             CreateSessionReq req = new DefaultConnectSessionIdGenerator().getKeyFromId(sessionId);
@@ -360,10 +387,15 @@ public class ConnectSessionService {
             try {
                 session = connectionSessionManager.getSession(sessionId);
                 if (session != null) {
+                    connectionSessionManager.cancelExpire(session);
                     return session;
                 }
-                session = create(req);
-                ConnectionSessionUtil.setConsoleSessionResetFlag(session, true);
+                if (createConnectionSessionSupplier != null) {
+                    session = createConnectionSessionSupplier.get();
+                } else {
+                    session = create(req);
+                    ConnectionSessionUtil.setConsoleSessionResetFlag(session, true);
+                }
                 return session;
             } finally {
                 lock.unlock();
@@ -414,9 +446,15 @@ public class ConnectSessionService {
 
     public DBSessionResp currentDBSession(@NotNull String sessionId) {
         ConnectionSession connectionSession = nullSafeGet(SidUtils.getSessionId(sessionId), true);
+        DBSession dbSession = dbSessionService.currentSession(connectionSession);
+        DBSessionRespDelegate dbSessionRespDelegate = DBSessionRespDelegate.of(dbSession);
+        if (dbSessionRespDelegate != null) {
+            dbSessionRespDelegate
+                    .setKillCurrentQuerySupported(dbSessionManageFacade.supportKillConsoleQuery(connectionSession));
+        }
         return DBSessionResp.builder()
                 .settings(settingsService.getSessionSettings(connectionSession))
-                .session(dbSessionService.currentSession(connectionSession))
+                .session(dbSessionRespDelegate)
                 .build();
     }
 
@@ -535,6 +573,10 @@ public class ConnectSessionService {
     private boolean isOBCloudEnvironment() {
         return cloudMetadataClient.supportsCloudMetadata()
                 && Boolean.FALSE.equals(cloudMetadataClient.supportsCloudParentUid());
+    }
+
+    public Integer getActiveSession() {
+        return this.connectionSessionManager.getActiveSessionCount();
     }
 
 }

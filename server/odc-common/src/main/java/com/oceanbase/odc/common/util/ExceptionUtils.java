@@ -35,6 +35,11 @@ public class ExceptionUtils extends org.apache.commons.lang3.exception.Exception
         return getTraceWithMaxDepth(rootCauseStackTrace, ROOT_CAUSE_DEPTH);
     }
 
+    public static String getRootCauseReason(final Throwable throwable, final int depth) {
+        String[] rootCauseStackTrace = getRootCauseStackTrace(throwable);
+        return getTraceWithMaxDepth(rootCauseStackTrace, depth);
+    }
+
     private static String getTraceWithMaxDepth(String[] stackTrace, int maxDepth) {
         StringBuilder rootReason = new StringBuilder();
         if (ArrayUtils.isNotEmpty(stackTrace)) {

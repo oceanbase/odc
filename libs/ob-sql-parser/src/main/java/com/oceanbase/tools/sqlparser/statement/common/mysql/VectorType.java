@@ -37,6 +37,7 @@ import lombok.Setter;
 @Setter
 @EqualsAndHashCode(callSuper = false)
 public class VectorType extends BaseStatement implements DataType {
+
     private final String typeName;
     private final Integer dimension;
 
@@ -64,8 +65,7 @@ public class VectorType extends BaseStatement implements DataType {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder(getName());
-        builder.append("(").append(dimension).append(")");
-        return builder.toString();
+        return getName() + "(" + this.dimension + ")";
     }
+
 }

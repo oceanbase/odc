@@ -21,6 +21,8 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface ProjectRepository extends JpaRepository<ProjectEntity, Long>, JpaSpecificationExecutor<ProjectEntity> {
     Optional<ProjectEntity> findByIdAndOrganizationId(Long id, Long organizationId);
@@ -34,4 +36,8 @@ public interface ProjectRepository extends JpaRepository<ProjectEntity, Long>, J
     Optional<ProjectEntity> findByUniqueIdentifier(String uniqueIdentifier);
 
     List<ProjectEntity> findByUniqueIdentifierIn(Collection<String> uniqueIdentifiers);
+
+    @Query(value = "select p.id from collaboration_project p where p.organization_id = :organizationId",
+            nativeQuery = true)
+    List<Long> findIdsByOrganizationId(@Param("organizationId") Long organizationId);
 }

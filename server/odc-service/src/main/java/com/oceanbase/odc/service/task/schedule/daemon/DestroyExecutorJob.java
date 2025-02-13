@@ -16,6 +16,8 @@
 package com.oceanbase.odc.service.task.schedule.daemon;
 
 import java.text.MessageFormat;
+import java.util.Map;
+import java.util.Optional;
 
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
@@ -36,6 +38,7 @@ import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -71,19 +74,25 @@ public class DestroyExecutorJob implements Job {
     private void destroyExecutor(TaskFrameworkService taskFrameworkService, JobEntity jobEntity) {
         getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
             JobEntity lockedEntity = taskFrameworkService.findWithPessimisticLock(jobEntity.getId());
-
             if (lockedEntity.getStatus().isTerminated() && lockedEntity.getExecutorIdentifier() != null) {
                 log.info("Job prepare destroy executor, jobId={},status={}.", lockedEntity.getId(),
                         lockedEntity.getStatus());
                 try {
-                    getConfiguration().getJobDispatcher().destroy(JobIdentity.of(lockedEntity.getId()));
+                    getConfiguration().getJobDispatcher().finish(JobIdentity.of(lockedEntity.getId()));
                 } catch (JobException e) {
                     log.warn("Destroy executor occur error, jobId={}: ", lockedEntity.getId(), e);
                     if (e.getMessage() != null &&
                             !e.getMessage().startsWith(JobConstants.ODC_EXECUTOR_CANNOT_BE_DESTROYED)) {
-                        AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTOR_DESTROY_FAILED,
-                                MessageFormat.format("Job executor destroy failed, jobId={0}, message={1}",
-                                        lockedEntity.getId(), e.getMessage()));
+                        Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                                .item(AlarmUtils.ORGANIZATION_NAME,
+                                        Optional.ofNullable(jobEntity.getOrganizationId()).map(
+                                                Object::toString).orElse(StrUtil.EMPTY))
+                                .item(AlarmUtils.TASK_JOB_ID_NAME, String.valueOf(jobEntity.getId()))
+                                .item(AlarmUtils.MESSAGE_NAME,
+                                        MessageFormat.format("Job executor destroy failed, jobId={0}, message={1}",
+                                                lockedEntity.getId(), e.getMessage()))
+                                .build();
+                        AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTOR_DESTROY_FAILED, eventMessage);
                     }
                     throw new TaskRuntimeException(e);
                 }

@@ -81,7 +81,7 @@ public class ResourceRoleServiceTest extends MockedAuthorityTestEnv {
                 .thenReturn(Optional.of(getResourceRoleEntity().get(0)));
         Mockito.when(authenticationFacade.currentOrganizationId()).thenReturn(1L);
         resourceRoleService.saveAll(Arrays.asList(getProjectOwner()));
-        int actual = resourceRoleService.listByResourceTypeAndId(ResourceType.ODC_PROJECT, 1L).size();
+        int actual = resourceRoleService.listByResourceTypeAndResourceId(ResourceType.ODC_PROJECT, 1L).size();
         Assert.assertEquals(1, actual);
     }
 

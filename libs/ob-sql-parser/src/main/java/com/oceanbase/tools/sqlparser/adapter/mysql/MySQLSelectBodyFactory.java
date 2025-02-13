@@ -231,12 +231,13 @@ public class MySQLSelectBodyFactory
     public SelectBody visitSimple_select_with_order_and_limit(Simple_select_with_order_and_limitContext ctx) {
         SelectBody select = new SelectBody(ctx, visit(ctx.simple_select()));
         if (ctx.order_by() != null) {
-            StatementFactory<OrderBy> factory = new MySQLOrderByFactory(ctx.order_by());
-            select.setOrderBy(factory.generate());
+            select.setOrderBy(new MySQLOrderByFactory(ctx.order_by()).generate());
+        }
+        if (ctx.opt_approx() != null) {
+            select.setApproximate(true);
         }
         if (ctx.limit_clause() != null) {
-            StatementFactory<Limit> factory = new MySQLLimitFactory(ctx.limit_clause());
-            select.setLimit(factory.generate());
+            select.setLimit(new MySQLLimitFactory(ctx.limit_clause()).generate());
         }
         return select;
     }

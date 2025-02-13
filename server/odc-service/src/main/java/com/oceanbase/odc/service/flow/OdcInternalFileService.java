@@ -59,7 +59,6 @@ public class OdcInternalFileService {
     private LocalFileManager localFileManager;
     @Autowired
     private FlowTaskInstanceService flowTaskInstanceService;
-    private static final Integer HTTP_REQUEST_TIME_OUT = 10000;
 
     public List<BinaryDataResult> downloadImportFile(@NonNull Long taskId, @NonNull String targetFileName,
             @NonNull String checkCode) throws IOException {
@@ -82,8 +81,8 @@ public class OdcInternalFileService {
         return flowTaskInstanceService.internalDownload(taskEntity, targetFileName);
     }
 
-    public void getExternalImportFiles(TaskEntity taskEntity, ExecutorInfo creatorInfo, List<String> importFileNames)
-            throws Exception {
+    public void getExternalImportFiles(TaskEntity taskEntity, ExecutorInfo creatorInfo, List<String> importFileNames,
+            int requestTimeoutMillis) throws Exception {
         String checkString = String.valueOf(taskEntity.getId())
                 + taskEntity.getCreatorId()
                 + taskEntity.getCreateTime()
@@ -98,9 +97,9 @@ public class OdcInternalFileService {
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             HttpGet httpGet = new HttpGet();
             RequestConfig config = RequestConfig.custom()
-                    .setConnectTimeout(HTTP_REQUEST_TIME_OUT)
-                    .setConnectionRequestTimeout(HTTP_REQUEST_TIME_OUT)
-                    .setSocketTimeout(HTTP_REQUEST_TIME_OUT)
+                    .setConnectTimeout(requestTimeoutMillis)
+                    .setConnectionRequestTimeout(requestTimeoutMillis)
+                    .setSocketTimeout(requestTimeoutMillis)
                     .build();
             httpGet.setConfig(config);
             for (String fileName : importFileNames) {

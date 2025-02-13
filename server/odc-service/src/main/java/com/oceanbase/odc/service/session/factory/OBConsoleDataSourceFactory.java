@@ -77,6 +77,8 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     private String serviceName;
     protected UserRole userRole;
     private String catalogName;
+    private boolean autoReConnect;
+    private boolean keepAlive;
     private Map<String, String> parameters;
     protected final ConnectionConfig connectionConfig;
     private final Boolean autoCommit;
@@ -86,11 +88,16 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     protected final ConnectionExtensionPoint connectionExtensionPoint;
 
     public OBConsoleDataSourceFactory(@NonNull ConnectionConfig connectionConfig, Boolean autoCommit) {
-        this(connectionConfig, autoCommit, true);
+        this(connectionConfig, autoCommit, true, true, false);
     }
 
     public OBConsoleDataSourceFactory(@NonNull ConnectionConfig connectionConfig,
-            Boolean autoCommit, boolean initConnection) {
+            Boolean autoCommit, boolean initConnection, boolean keepAlive) {
+        this(connectionConfig, autoCommit, initConnection, true, keepAlive);
+    }
+
+    public OBConsoleDataSourceFactory(@NonNull ConnectionConfig connectionConfig,
+            Boolean autoCommit, boolean initConnection, boolean autoReConnect, boolean keepAlive) {
         this.autoCommit = autoCommit;
         this.connectionConfig = connectionConfig;
         this.initConnection = initConnection;
@@ -104,6 +111,8 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         this.userRole = connectionConfig.getUserRole();
         this.catalogName = connectionConfig.getCatalogName();
         this.parameters = getJdbcParams(connectionConfig);
+        this.autoReConnect = autoReConnect;
+        this.keepAlive = keepAlive;
         this.connectionExtensionPoint = ConnectionPluginUtil.getConnectionExtension(connectionConfig.getDialectType());
     }
 
@@ -155,6 +164,9 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
             if (StringUtils.isNotBlank(proxyHost) && Objects.nonNull(proxyPort)) {
                 jdbcUrlParams.put("socksProxyHost", proxyHost);
                 jdbcUrlParams.put("socksProxyPort", proxyPort + "");
+                jdbcUrlParams.put("oracle.net.socksProxyHost", proxyHost);
+                jdbcUrlParams.put("oracle.net.socksProxyPort", proxyPort + "");
+                jdbcUrlParams.put("oracle.jdbc.javaNio", "false");
             }
         }
         SSLConfig sslConfig = connectionConfig.getSslConfig();
@@ -188,6 +200,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         // prevent local DNS resolution when using a proxy service
         if (jdbcUrlParams.containsKey("socksProxyHost")) {
             jdbcUrlParams.put("socksProxyRemoteDns", "true");
+            jdbcUrlParams.put("oracle.net.socksRemoteDNS", "true");
         }
         return jdbcUrlParams;
     }
@@ -195,7 +208,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     @Override
     public DataSource getDataSource() {
         String jdbcUrl = getJdbcUrl();
-        SingleConnectionDataSource dataSource = new SingleConnectionDataSource(true);
+        SingleConnectionDataSource dataSource = new SingleConnectionDataSource(autoReConnect, keepAlive);
         dataSource.setEventPublisher(eventPublisher);
         dataSource.setUrl(jdbcUrl);
         dataSource.setUsername(username);

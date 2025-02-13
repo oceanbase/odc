@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.onlineschemachange.oscfms;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
@@ -26,14 +25,11 @@ import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
-import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.validate.ValidatorUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
-import com.oceanbase.odc.core.shared.constant.ErrorCode;
-import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
@@ -41,7 +37,9 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.flow.BeanInjectedClassDelegate;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
+import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeFlowableTask;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.fsm.ActionFsm;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
@@ -93,14 +91,6 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
     @Value("${osc-task-expired-after-seconds:432000}")
     protected long oscTaskExpiredAfterSeconds;
 
-    // terminates code
-    protected final List<ErrorCode> terminalErrorCodes =
-            Lists.newArrayList(ErrorCodes.BadArgument, ErrorCodes.BadRequest,
-                    ErrorCodes.OmsConnectivityTestFailed, ErrorCodes.Unexpected,
-                    ErrorCodes.OmsPreCheckFailed, ErrorCodes.OmsDataCheckInconsistent,
-                    ErrorCodes.OmsParamError, ErrorCodes.OmsBindTargetNotFound,
-                    ErrorCodes.OmsProjectExecutingFailed);
-
     // register state change action
     @PostConstruct
     public abstract void init();
@@ -122,33 +112,91 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
     public void schedule(Long schedulerID, Long schedulerTaskID) {
         OscActionContext oscActionContext = getOSCContext(schedulerID, schedulerTaskID);
         String state = resolveState(oscActionContext);
-        // CLEAN_RESOURCE should always schedule
-        if (!StringUtils.equals(OscStates.CLEAN_RESOURCE.getState(), state) &&
-                (isTaskExpired(oscActionContext) || isFlowInstanceFailed(state, oscActionContext))) {
-            // transfer from current state to clean resources
-            transferTaskStatesWithStates(state, OscStates.CLEAN_RESOURCE.getState(), null,
-                    oscActionContext.getScheduleTask(), TaskStatus.CANCELED);
+        // try process task may in expired or canceled or abnormal state
+        // state should not in CLEAN_RESOURCE state
+        if (!StringUtils.equals(OscStates.CLEAN_RESOURCE.getState(), state)
+                && tryHandleInvalidTask(state, oscActionContext)) {
             return;
         }
         // do schedule
         schedule(oscActionContext);
+        // if schedule failed, transfer to abnormal state
+        syncFlowInstanceState(oscActionContext);
     }
 
-    public boolean isFlowInstanceFailed(String state, OscActionContext oscActionContext) {
-        // only check in monitor data task state
-        if (!StringUtils.equals(state, OscStates.MONITOR_DATA_TASK.getState())) {
-            return false;
+    /**
+     * process task with expired or canceled or abnormal
+     * 
+     * @param state current state
+     * @param oscActionContext osc context
+     * @return true if task in expired or canceled state
+     */
+    protected boolean tryHandleInvalidTask(String state, OscActionContext oscActionContext) {
+        // task has expired
+        // translate state to clean resource
+        // NOTICE: expired should been checked first
+        if (isTaskExpired(oscActionContext)) {
+            transferTaskStatesWithStates(state, OscStates.CLEAN_RESOURCE.getState(), null,
+                    oscActionContext.getScheduleTask(), TaskStatus.FAILED);
+            return true;
         }
+        // task has been canceled
+        // translate state to clean resource
+        if (isTaskCanceled(oscActionContext)) {
+            transferTaskStatesWithStates(state, OscStates.CLEAN_RESOURCE.getState(), null,
+                    oscActionContext.getScheduleTask(), TaskStatus.CANCELED);
+            return true;
+        }
+        // handle flow status with failed or canceled
+        FlowStatus flowStatus = getFlowInstanceStatus(oscActionContext);
+        if (isFlowStatusInvalid(flowStatus)) {
+            transferTaskStatesWithStates(state, OscStates.CLEAN_RESOURCE.getState(), null,
+                    oscActionContext.getScheduleTask(), TaskStatus.CANCELED);
+            log.info("OSC: flow task has failed, transfer state to clean resources, flow task id={}, status={}",
+                    oscActionContext.getParameter().getFlowInstanceId(), flowStatus);
+            return true;
+        }
+        // abnormal task do nothing
+        return isTaskAbnormal(oscActionContext);
+    }
+
+    /**
+     * sync task status with flow instance
+     */
+    public void syncFlowInstanceState(OscActionContext context) {
+        try {
+            OnlineSchemaChangeFlowableTask schemaChangeFlowableTask =
+                    BeanInjectedClassDelegate
+                            .instantiateDelegateWithoutPostConstructInvoke(OnlineSchemaChangeFlowableTask.class);
+            OnlineSchemaChangeParameters parameters = context.getParameter();
+            schemaChangeFlowableTask.tryCompleteTask(
+                    parameters.getFlowInstanceId(), parameters.getFlowTaskID(),
+                    context.getSchedule().getId());
+        } catch (Throwable e) {
+            log.warn("meet unhandled exception: cancel scheduler", e);
+            actionScheduler.cancelScheduler(context.getSchedule().getId());
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * flow state in failed or canceled or abnormal
+     * 
+     * @param oscActionContext
+     * @return
+     */
+    public FlowStatus getFlowInstanceStatus(OscActionContext oscActionContext) {
         Long flowInstanceID = oscActionContext.getParameter().getFlowInstanceId();
         Map<Long, FlowStatus> statusMap = flowInstanceService.getStatus(Collections.singleton(flowInstanceID));
-        FlowStatus taskStatus = statusMap.get(flowInstanceID);
-        // not found or failed
-        boolean ret = (null == taskStatus || taskStatus == FlowStatus.EXECUTION_FAILED);
-        if (ret) {
-            log.info("OSC: flow task has failed, transfer state to clean resources, flow task id {}, status {}",
-                    flowInstanceID, taskStatus);
+        return statusMap.get(flowInstanceID);
+    }
+
+    // not found or failed
+    private boolean isFlowStatusInvalid(FlowStatus flowStatus) {
+        if (null == flowStatus) {
+            return true;
         }
-        return ret;
+        return flowStatus == FlowStatus.EXECUTION_FAILED || flowStatus == FlowStatus.CANCELLED;
     }
 
     /**
@@ -162,6 +210,8 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
         ScheduleTaskEntity scheduleTaskEntity = scheduleTaskService.nullSafeGetById(schedulerTaskID);
         OnlineSchemaChangeScheduleTaskParameters parameters = JsonUtils.fromJson(scheduleTaskEntity.getParametersJson(),
                 OnlineSchemaChangeScheduleTaskParameters.class);
+        OnlineSchemaChangeParameters onlineSchemaChangeParameters =
+                parseOnlineSchemaChangeParameters(scheduleEntity.getJobParametersJson());
         String currentState = parameters.getState();
         // first yield, jump to create table state to decrease wait time
         if (StringUtils.equals(currentState, OscStates.YIELD_CONTEXT.getState())) {
@@ -171,19 +221,8 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
             // recover current state
             scheduleTaskRepository.updateStatusById(schedulerTaskID, TaskStatus.RUNNING);
         }
-        actionScheduler.submitFMSScheduler(scheduleEntity, schedulerTaskID);
-    }
-
-    public void cancel(Long schedulerID, Long schedulerTaskID) {
-        ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(schedulerID);
-        ScheduleTaskEntity scheduleTaskEntity = scheduleTaskService.nullSafeGetById(schedulerTaskID);
-        OnlineSchemaChangeScheduleTaskParameters parameters = JsonUtils.fromJson(scheduleTaskEntity.getParametersJson(),
-                OnlineSchemaChangeScheduleTaskParameters.class);
-        String currentState = parameters.getState();
-        transferTaskStatesWithStates(null, OscStates.CLEAN_RESOURCE.getState(),
-                "CANCEL", scheduleTaskEntity, TaskStatus.CANCELED);
-        // try submit scheduler in case task may in failed state
-        actionScheduler.submitFMSScheduler(scheduleEntity, schedulerTaskID);
+        actionScheduler.submitFMSScheduler(scheduleEntity, schedulerTaskID,
+                onlineSchemaChangeParameters.getFlowTaskID());
     }
 
     /**
@@ -194,32 +233,37 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
      */
     protected boolean isTaskExpired(OscActionContext context) {
         ScheduleTaskEntity scheduleTask = context.getScheduleTask();
-        OnlineSchemaChangeScheduleTaskParameters parameters =
-                parseOnlineSchemaChangeScheduleTaskParameters(scheduleTask.getParametersJson());
         // check task is expired
         Long scheduleId = context.getSchedule().getId();
         Long scheduleTaskId = scheduleTask.getId();
         Duration between = Duration.between(scheduleTask.getCreateTime().toInstant(), Instant.now());
-        log.info("Schedule id {} to check schedule task status with schedule task id {}", scheduleId, scheduleTaskId);
+        log.debug("Schedule id={} to check schedule task status with schedule task id={}", scheduleId, scheduleTaskId);
 
         if (between.toMillis() / 1000 > oscTaskExpiredAfterSeconds) {
             // schedule to clean resource
             // has canceled
-            log.info("Schedule task id {} is  expired after {} seconds, so cancel the scheduleTaskId ",
+            log.info("Schedule task id={} is  expired after {} seconds, so cancel the scheduleTaskId ",
                     scheduleTaskId, oscTaskExpiredAfterSeconds);
             return true;
+        } else {
+            return false;
         }
-        // task has been canceled, clean resources must has been done
-        if (scheduleTask.getStatus() == TaskStatus.CANCELED) {
-            return true;
-        }
-        return false;
+    }
+
+    public boolean isTaskAbnormal(OscActionContext context) {
+        ScheduleTaskEntity scheduleTask = context.getScheduleTask();
+        return TaskStatus.ABNORMAL == scheduleTask.getStatus();
+    }
+
+    public boolean isTaskCanceled(OscActionContext context) {
+        ScheduleTaskEntity scheduleTask = context.getScheduleTask();
+        return TaskStatus.CANCELED == scheduleTask.getStatus();
     }
 
     @Override
     public void onActionComplete(String currentState, String nextState, String extraInfo, OscActionContext context) {
         if (StringUtils.equals(nextState, OscStates.COMPLETE.getState())) {
-            log.info("OCS: complete state reached, delete scheduler, prev state {}, schedule id {}", currentState,
+            log.info("OCS: complete state reached, delete scheduler, prev state={}, schedule id={}", currentState,
                     context.getSchedule().getId());
             actionScheduler.cancelScheduler(context.getSchedule().getId());
         }
@@ -269,20 +313,18 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
         }
         scheduleTaskEntity.setParametersJson(JsonUtils.toJson(parameters));
         scheduleTaskEntity.setStatus(taskStatus);
-        if (TaskStatus.DONE == taskStatus || TaskStatus.FAILED == taskStatus || TaskStatus.CANCELED == taskStatus) {
+        if (TaskStatus.DONE == taskStatus || TaskStatus.CANCELED == taskStatus) {
             scheduleTaskEntity.setProgressPercentage(100.0);
         }
-        log.info("Successfully update schedule task id {} set status {}", scheduleTaskEntity.getId(), taskStatus);
+        log.info("Successfully update schedule task id={} set status={}", scheduleTaskEntity.getId(), taskStatus);
         scheduleTaskRepository.update(scheduleTaskEntity);
-
     }
 
     @Override
     public void handleException(OscActionContext context, Throwable e) {
         // we hope in resume mode continue, not drop oms project
         // not do state transfer
-        actionScheduler.cancelScheduler(context.getSchedule().getId());
-        scheduleTaskRepository.updateStatusById(context.getScheduleTask().getId(), TaskStatus.FAILED);
+        scheduleTaskRepository.updateStatusById(context.getScheduleTask().getId(), TaskStatus.ABNORMAL);
     }
 
     protected OscActionContext getOSCContext(Long scheduleId, Long scheduleTaskId) {
@@ -369,10 +411,10 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
         public ConnectionSession createConnectionSession() {
             ConnectionConfig connectionConfig = connectionConfig();
             ConnectionSession connectionSession =
-                    new DefaultConnectSessionFactory(connectionConfig).generateSession();
+                    new DefaultConnectSessionFactory(connectionConfig, null, null, false, false).generateSession();
             ConnectionSessionUtil.setCurrentSchema(connectionSession,
                     dbName);
-            return new DefaultConnectSessionFactory(connectionConfig).generateSession();
+            return connectionSession;
         }
     }
 }

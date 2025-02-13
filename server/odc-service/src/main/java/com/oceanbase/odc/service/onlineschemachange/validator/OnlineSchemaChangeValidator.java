@@ -47,6 +47,7 @@ import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameDescriptor;
 import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameDescriptorFactory;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlType;
+import com.oceanbase.odc.service.onlineschemachange.rename.LockTableSupportDecider;
 import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
@@ -110,10 +111,17 @@ public class OnlineSchemaChangeValidator {
                         validateSchema(alter.getSchema(), database, connectionConfig.getDialectType());
                     }
                 }
+                OscFactoryWrapper oscFactoryWrapper = OscFactoryWrapperGenerator.generate(session.getDialectType());
+                TableNameDescriptorFactory tableNameDescriptorFactory =
+                        oscFactoryWrapper.getTableNameDescriptorFactory();
+                TableNameDescriptor tableNameDescriptor = tableNameDescriptorFactory.getTableNameDescriptor(tableName);
 
                 validateTableNameLength(tableName, connectionConfig.getDialectType());
                 validateOriginTableExists(database, tableName, session);
-                validateOldTableNotExists(database, tableName, session);
+                // valid check ghost table and renamed table not exists
+                validateTableNotExists(database, tableNameDescriptor.getNewTableNameUnWrapped(), session);
+                validateTableNotExists(database, tableNameDescriptor.getRenamedTableNameUnWrapped(), session);
+                // valid constraints
                 validateForeignKeyTable(database, tableName, session);
                 validateTableConstraints(database, tableName, session);
             }
@@ -175,14 +183,11 @@ public class OnlineSchemaChangeValidator {
                 () -> CollectionUtils.isNotEmpty(tables));
     }
 
-    private void validateOldTableNotExists(String database, String tableName, ConnectionSession session) {
+    private void validateTableNotExists(String database, String tableName, ConnectionSession session) {
         DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
-        OscFactoryWrapper oscFactoryWrapper = OscFactoryWrapperGenerator.generate(session.getDialectType());
-        TableNameDescriptorFactory tableNameDescriptorFactory = oscFactoryWrapper.getTableNameDescriptorFactory();
-        TableNameDescriptor tableNameDescriptor = tableNameDescriptorFactory.getTableNameDescriptor(tableName);
-        List<String> tables = accessor.showTablesLike(database, tableNameDescriptor.getRenamedTableNameUnWrapped());
+        List<String> tables = accessor.showTablesLike(database, DdlUtils.getUnwrappedName(tableName));
         PreConditions.validNoDuplicated(ResourceType.OB_TABLE, "tableName",
-                tableNameDescriptor.getRenamedTableName(), () -> CollectionUtils.isNotEmpty(tables));
+                tableName, () -> CollectionUtils.isNotEmpty(tables));
     }
 
     private void validateForeignKeyTable(String database, String tableName, ConnectionSession session) {
@@ -245,7 +250,8 @@ public class OnlineSchemaChangeValidator {
     }
 
     private void validateLockUser(DialectType dialectType, String obVersion, List<String> lockUsers) {
-        if (OscDBUserUtil.isLockUserRequired(dialectType, () -> obVersion) && CollectionUtils.isEmpty(lockUsers)) {
+        if (OscDBUserUtil.isLockUserRequired(dialectType, () -> obVersion,
+                () -> LockTableSupportDecider.DEFAULT_LOCK_TABLE_DECIDER) && CollectionUtils.isEmpty(lockUsers)) {
             throw new BadRequestException(ErrorCodes.OscLockUserRequired, new Object[] {lockUsers},
                     "Current db version should lock user required, but parameters do not contains user to lock.");
         }

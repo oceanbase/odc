@@ -93,3 +93,8 @@ create table `update_options`(
   `c1` INT(11) NOT NULL,
   `c2` INT(11) NOT NULL
 ) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = 'comment1';
+
+CREATE TABLE `bit_column_default_value` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'auto increment id',
+  `bit_data_1` BIT(1) NOT NULL DEFAULT b'0'
+);

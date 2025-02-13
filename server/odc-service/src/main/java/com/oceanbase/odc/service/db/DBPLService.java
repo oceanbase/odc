@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -52,6 +51,7 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
+import com.oceanbase.odc.core.sql.execute.mapper.DefaultJdbcRowMapper;
 import com.oceanbase.odc.core.sql.execute.task.DefaultSqlExecuteTaskManager;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
@@ -78,6 +78,7 @@ import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.odc.service.session.SessionProperties;
+import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.parser.PLParser;
@@ -106,6 +107,9 @@ public class DBPLService {
     private DatabaseRepository databaseRepository;
     @Autowired
     private DBResourcePermissionHelper permissionHelper;
+
+    @Autowired
+    private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
 
     private static final Integer DEFAULT_MAX_CONCURRENT_BATCH_COMPILE_TASK_COUNT = 10;
     private final DefaultSqlExecuteTaskManager taskManager;
@@ -181,7 +185,7 @@ public class DBPLService {
         if (StringUtils.isBlank(databaseName)) {
             // it means batch compile refers to current database
             handle = taskManager.submit(taskCallable);
-            taskId = UUID.randomUUID().toString();
+            taskId = statefulUuidStateIdGenerator.generateStateId("BatchCompile");
         } else {
             throw new UnsupportedException("Batch compile PL in another database is not supported yet");
         }
@@ -284,7 +288,8 @@ public class DBPLService {
         if (dialectType.isOracle()) {
             callback = new OBOracleCallFunctionBlockCallBack(req, -1);
         } else if (dialectType.isMysql()) {
-            callback = new OBMysqlCallFunctionCallBack(req, -1);
+            DefaultJdbcRowMapper defaultJdbcRowMapper = new DefaultJdbcRowMapper(session);
+            callback = new OBMysqlCallFunctionCallBack(req, -1, defaultJdbcRowMapper);
         } else {
             throw new IllegalArgumentException("Illegal dialect type, " + dialectType);
         }
@@ -389,8 +394,9 @@ public class DBPLService {
     private Long getDatabaseIdByConnectionSession(@NonNull ConnectionSession session) {
         ConnectionConfig connConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
         String schemaName = ConnectionSessionUtil.getCurrentSchema(session);
-        DatabaseEntity databaseEntity = databaseRepository.findByConnectionIdAndName(connConfig.getId(), schemaName)
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "name", schemaName));
+        DatabaseEntity databaseEntity =
+                databaseRepository.findByConnectionIdAndNameAndExisted(connConfig.getId(), schemaName, true)
+                        .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "name", schemaName));
         return databaseEntity.getId();
     }
 

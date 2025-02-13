@@ -17,7 +17,9 @@ package com.oceanbase.odc.service.feature;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.stereotype.Service;
@@ -45,9 +47,14 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize("inside connect session")
 public class VersionDiffConfigService {
     private static final String SUPPORT_PREFIX = "support";
+    private static final String MAX_SUPPORT_KILL_OB_VERSION =
+            "odc.session.kill-query-or-session.max-supported-ob-version";
     private static final String SUPPORT_PROCEDURE = "support_procedure";
     private static final String SUPPORT_FUNCTION = "support_function";
+    private static final String SUPPORT_KILL_SESSION = "support_kill_session";
+    private static final String SUPPORT_KILL_QUERY = "support_kill_query";
     private static final String SUPPORT_PL_DEBUG = "support_pl_debug";
+    private static final String SUPPORT_EXTERNAL_TABLE = "support_external_table";
     private static final String COLUMN_DATA_TYPE = "column_data_type";
     private static final String ARM_OB_PREFIX = "aarch64";
     private static final String ARM_OB_SUPPORT_PL_DEBUG_MIN_VERSION = "3.2.3";
@@ -127,12 +134,44 @@ public class VersionDiffConfigService {
                         obSupport.setSupport(false);
                     }
                 }
+
+                // killSession that is greater than the specified version is currently not supported
+                // Only effect OB mode dialect
+                if (connectionSession.getDialectType().isOceanbase() &&
+                        (SUPPORT_KILL_SESSION.equalsIgnoreCase(configKey)
+                                || SUPPORT_KILL_QUERY.equalsIgnoreCase(configKey))) {
+                    Optional<Configuration> nonSupport = systemConfigs.stream().filter(
+                            c -> c.getKey().equalsIgnoreCase(MAX_SUPPORT_KILL_OB_VERSION)).findFirst();
+                    if (nonSupport.isPresent()) {
+                        String maxSupportVersion = nonSupport.get().getValue();
+                        // maxSupportVersion takes effect only greater than 0
+                        if (VersionUtils.isGreaterThan0(maxSupportVersion)
+                                && VersionUtils.isGreaterThanOrEqualsTo(currentVersion, maxSupportVersion)) {
+                            obSupport.setSupport(false);
+                        }
+                    }
+                }
+
                 if (SUPPORT_PL_DEBUG.equalsIgnoreCase(configKey) && !isPLDebugSupport(connectionSession)) {
                     obSupport.setSupport(false);
                 }
             }
         }
         return obSupportList;
+    }
+
+    public boolean isExternalTableSupported(@NonNull DialectType dialectType, @NonNull String versionNumber) {
+        VersionDiffConfig config = new VersionDiffConfig();
+        config.setDbMode(dialectType.name());
+        config.setConfigKey(SUPPORT_EXTERNAL_TABLE);
+        List<VersionDiffConfig> list = versionDiffConfigDAO.query(config);
+        String minVersion = CollectionUtils.isNotEmpty(list) ? list.get(0).getMinVersion() : null;
+        if ((dialectType == DialectType.OB_MYSQL || dialectType == DialectType.OB_ORACLE)
+                && minVersion != null
+                && VersionUtils.isGreaterThanOrEqualsTo(versionNumber, minVersion)) {
+            return true;
+        }
+        return false;
     }
 
     private boolean isHourFormat(ConnectionSession connectionSession) {

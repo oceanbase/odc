@@ -47,15 +47,17 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ConnectionInfoUtil {
 
-    public static void initConsoleConnectionId(@NonNull ConnectionSession connectionSession) {
+    public static boolean initConsoleConnectionId(@NonNull ConnectionSession connectionSession) {
         try {
             getSyncJdbcExecutor(connectionSession).execute((StatementCallback<Void>) stmt -> {
                 initConnectionId(stmt, connectionSession);
                 return null;
             });
             log.debug("Init connection id completed.");
+            return true;
         } catch (Exception e) {
             log.warn("Failed to get database session ID, session={}", connectionSession, e);
+            return false;
         }
     }
 
@@ -89,6 +91,19 @@ public class ConnectionInfoUtil {
         }
         connectionSession.setAttribute(ConnectionSessionConstants.OB_VERSION, version);
         log.debug("Init DB version completed.");
+    }
+
+    public static void initOdpVersionIfExists(@NonNull ConnectionSession connectionSession) {
+        DialectType dialectType = connectionSession.getDialectType();
+        if (dialectType != null && dialectType.isOceanbase()) {
+            String odpVersion = getSyncJdbcExecutor(connectionSession).execute(OBUtils::getODPVersion);
+            if (odpVersion == null) {
+                log.debug("OB Proxy does not exist or failed to obtain OB Proxy version.");
+                return;
+            }
+            connectionSession.setAttribute(ConnectionSessionConstants.ODP_VERSION, odpVersion);
+            log.debug("Init OB Proxy version completed.");
+        }
     }
 
     public static void killQuery(@NonNull String connectionId,

@@ -19,8 +19,10 @@ package com.oceanbase.odc.migrate.jdbc.common;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
@@ -38,7 +40,11 @@ import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.regulation.ruleset.DefaultRuleApplyingEntity;
 import com.oceanbase.odc.metadb.regulation.ruleset.DefaultRuleApplyingRepository;
 import com.oceanbase.odc.metadb.regulation.ruleset.MetadataEntity;
+import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingEntity;
+import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingRepository;
 import com.oceanbase.odc.metadb.regulation.ruleset.RuleMetadataRepository;
+import com.oceanbase.odc.metadb.regulation.ruleset.RulesetEntity;
+import com.oceanbase.odc.metadb.regulation.ruleset.RulesetRepository;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 
 import lombok.AllArgsConstructor;
@@ -61,6 +67,11 @@ public class R4237DefaultRuleApplyingMigrate implements JdbcMigratable {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void migrate(DataSource dataSource) {
+        migrateBuiltInRules();
+        migrateUserDefinedRules();
+    }
+
+    private void migrateBuiltInRules() {
         DefaultRuleApplyingRepository defaultRuleApplyingRepository =
                 SpringContextUtil.getBean(DefaultRuleApplyingRepository.class);
         RuleMetadataRepository ruleMetadataRepository = SpringContextUtil.getBean(RuleMetadataRepository.class);
@@ -73,18 +84,18 @@ public class R4237DefaultRuleApplyingMigrate implements JdbcMigratable {
 
         Map<String, List<DefaultRuleApplyingEntity>> actualRulesetName2RuleApplyings = defaultRuleApplyingRepository
                 .findAll().stream().collect(Collectors.groupingBy(DefaultRuleApplyingEntity::getRulesetName));
-        List<DefaultRuleApplyingEntity> toAdd = new ArrayList<>();
+
+        List<DefaultRuleApplyingEntity> changeList = new ArrayList<>();
         for (InnerDefaultRuleApplying expectedApplying : expected) {
             String rulesetName = expectedApplying.getRulesetName();
             MetadataEntity metadataEntity = metadataName2Metadata.get(expectedApplying.getRuleName());
             if (Objects.isNull(metadataEntity)) {
                 throw new UnexpectedException("rule metadata not found, ruleName: " + expectedApplying.getRuleName());
             }
-
             List<DefaultRuleApplyingEntity> actualRuleApplyings =
                     actualRulesetName2RuleApplyings.get(rulesetName);
             if (CollectionUtils.isEmpty(actualRuleApplyings)) {
-                toAdd.add(generateNewEntity(expectedApplying, rulesetName, metadataEntity.getId()));
+                changeList.add(generateNewEntity(expectedApplying, rulesetName, metadataEntity.getId()));
             } else {
                 Optional<DefaultRuleApplyingEntity> existed = actualRuleApplyings.stream()
                         .filter(r -> Objects.equals(metadataEntity.getId(), r.getRuleMetadataId())).findFirst();
@@ -95,17 +106,70 @@ public class R4237DefaultRuleApplyingMigrate implements JdbcMigratable {
                         actualRuleApplying.setLevel(expectedApplying.getLevel());
                         actualRuleApplying.setAppliedDialectTypes(expectedApplying.getAppliedDialectTypes());
                         actualRuleApplying.setPropertiesJson(expectedApplying.getPropertiesJson());
-                        toAdd.add(actualRuleApplying);
+                        changeList.add(actualRuleApplying);
                     }
                 } else {
-                    toAdd.add(generateNewEntity(expectedApplying, rulesetName, metadataEntity.getId()));
+                    changeList.add(generateNewEntity(expectedApplying, rulesetName, metadataEntity.getId()));
                 }
             }
         }
-        if (CollectionUtils.isNotEmpty(toAdd)) {
-            log.info("default rule applying changed, start saving, size={}", toAdd.size());
-            defaultRuleApplyingRepository.saveAll(toAdd);
-            log.info("saving changed default rule applying succeed, size={}", toAdd.size());
+        if (CollectionUtils.isNotEmpty(changeList)) {
+            log.info("Start saving changed applyings, size={}", changeList.size());
+            defaultRuleApplyingRepository.saveAll(changeList);
+            log.info("Saving changed default rule applyings succeed, size={}", changeList.size());
+        }
+    }
+
+    /**
+     * For migrating the customized environment's SQL rules:<br>
+     * 1. All the customized rules will be disabled by default.<br>
+     * 2. All the customized rules' default value will follow the value of the built-in default
+     * environment.<br>
+     */
+    private void migrateUserDefinedRules() {
+        DefaultRuleApplyingRepository defaultRuleApplyingRepository =
+                SpringContextUtil.getBean(DefaultRuleApplyingRepository.class);
+        List<DefaultRuleApplyingEntity> expectedRuleApplyings =
+                defaultRuleApplyingRepository
+                        .findAll().stream().filter(e -> e.getRulesetName().endsWith("default-default-ruleset.name}"))
+                        .collect(Collectors.toList());
+
+        RulesetRepository rulesetRepository = SpringContextUtil.getBean(RulesetRepository.class);
+        List<RulesetEntity> userDefinedRulesets = rulesetRepository.findByBuiltin(false);
+        if (CollectionUtils.isEmpty(userDefinedRulesets)) {
+            log.info("There does not exists user defined rulesets, skip migrating user defined rulesets");
+            return;
+        }
+        RuleApplyingRepository ruleApplyingRepository = SpringContextUtil.getBean(RuleApplyingRepository.class);
+        Set<Long> userDefinedRulesetIds =
+                userDefinedRulesets.stream().map(RulesetEntity::getId).collect(Collectors.toSet());
+
+        Map<Long, List<RuleApplyingEntity>> rulesetId2RuleApplyings = ruleApplyingRepository.findAll().stream()
+                .filter(r -> userDefinedRulesetIds.contains(r.getRulesetId()))
+                .collect(Collectors.groupingBy(RuleApplyingEntity::getRulesetId));
+        for (Entry<Long, List<RuleApplyingEntity>> entry : rulesetId2RuleApplyings.entrySet()) {
+            Verify.notEmpty(entry.getValue(), "rulesetId2RuleApplyings");
+            Map<Long, RuleApplyingEntity> ruleApplyings = entry.getValue().stream().collect(
+                    Collectors.toMap(RuleApplyingEntity::getRuleMetadataId, e -> e));
+            List<RuleApplyingEntity> toAdd = new ArrayList<>();
+            expectedRuleApplyings.stream().forEach(e -> {
+                if (!ruleApplyings.containsKey(e.getRuleMetadataId())) {
+                    RuleApplyingEntity ruleApplyingEntity = new RuleApplyingEntity();
+                    ruleApplyingEntity.setAppliedDialectTypes(e.getAppliedDialectTypes());
+                    ruleApplyingEntity.setEnabled(false);
+                    ruleApplyingEntity.setLevel(e.getLevel());
+                    ruleApplyingEntity.setPropertiesJson(e.getPropertiesJson());
+                    ruleApplyingEntity.setRuleMetadataId(e.getRuleMetadataId());
+                    ruleApplyingEntity.setRulesetId(entry.getKey());
+                    ruleApplyingEntity.setOrganizationId(entry.getValue().get(0).getOrganizationId());
+                    toAdd.add(ruleApplyingEntity);
+                }
+            });
+            log.info("Start saving new added user defined rule applyings, rulesetId={}, size={}", entry.getKey(),
+                    toAdd.size());
+            ruleApplyingRepository.saveAll(toAdd);
+            log.info("Saving new added user defined rule applyings success, rulesetId={}, size={}", entry.getKey(),
+                    toAdd.size());
         }
     }
 

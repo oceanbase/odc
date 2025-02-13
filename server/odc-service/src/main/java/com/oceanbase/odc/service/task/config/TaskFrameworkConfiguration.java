@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -31,16 +32,13 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
 import com.oceanbase.odc.common.event.EventPublisher;
-import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.metadb.resource.ResourceRepository;
 import com.oceanbase.odc.service.common.ConditionOnServer;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
-import com.oceanbase.odc.service.task.caller.DefaultK8sJobClientSelector;
-import com.oceanbase.odc.service.task.caller.K8sJobClientSelector;
-import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
-import com.oceanbase.odc.service.task.caller.NullK8sJobClientSelector;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.jasypt.DefaultJasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
+import com.oceanbase.odc.service.task.resource.DefaultNativeK8sOperatorBuilder;
 import com.oceanbase.odc.service.task.schedule.DefaultJobCredentialProvider;
 import com.oceanbase.odc.service.task.schedule.JobCredentialProvider;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
@@ -67,22 +65,6 @@ public class TaskFrameworkConfiguration {
     @ConditionalOnMissingBean(JobCredentialProvider.class)
     public JobCredentialProvider jobCredentialProvider(CloudEnvConfigurations cloudEnvConfigurations) {
         return new DefaultJobCredentialProvider(cloudEnvConfigurations);
-    }
-
-    @Lazy
-    @Bean
-    @ConditionalOnMissingBean(K8sJobClientSelector.class)
-    public K8sJobClientSelector k8sJobClientSelector(@Autowired TaskFrameworkProperties taskFrameworkProperties)
-            throws IOException {
-        K8sProperties k8sProperties = taskFrameworkProperties.getK8sProperties();
-        if (StringUtils.isBlank(k8sProperties.getKubeUrl())) {
-            log.info("local task k8s cluster is not enabled.");
-            return new NullK8sJobClientSelector();
-        }
-        log.info("build k8sJobClientSelector, kubeUrl={}, namespace={}",
-                k8sProperties.getKubeUrl(), k8sProperties.getNamespace());
-        NativeK8sJobClient nativeK8sJobClient = new NativeK8sJobClient(k8sProperties);
-        return new DefaultK8sJobClientSelector(nativeK8sJobClient);
     }
 
     @Bean
@@ -121,6 +103,14 @@ public class TaskFrameworkConfiguration {
         properties.setEnabled(enabled);
         log.info("Task-framework isEnabled={}.", properties.isEnabled());
         return properties;
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "odc.task-framework.enable-k8s-local-debug-mode", havingValue = "true")
+    public DefaultNativeK8sOperatorBuilder localDebugK8sOperatorBuilder(
+            @Autowired TaskFrameworkProperties taskFrameworkProperties,
+            @Autowired ResourceRepository resourceRepository) throws IOException {
+        return new DefaultNativeK8sOperatorBuilder(taskFrameworkProperties, resourceRepository);
     }
 
     @Bean
@@ -167,5 +157,4 @@ public class TaskFrameworkConfiguration {
             }
         };
     }
-
 }

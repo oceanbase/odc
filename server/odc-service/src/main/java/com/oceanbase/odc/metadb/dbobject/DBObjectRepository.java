@@ -43,7 +43,7 @@ public interface DBObjectRepository extends OdcJpaRepository<DBObjectEntity, Lon
 
     List<DBObjectEntity> findByDatabaseIdAndTypeIn(Long databaseId, Collection<DBObjectType> types);
 
-    List<DBObjectEntity> findByDatabaseIdInAndType(Collection<Long> databaseIds, DBObjectType type);
+    List<DBObjectEntity> findByDatabaseIdInAndTypeIn(Collection<Long> databaseIds, Collection<DBObjectType> types);
 
     /**
      * list physical tables that not belongs to any logical tables in a physical database

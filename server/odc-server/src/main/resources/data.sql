@@ -713,6 +713,7 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.datatransfer.use-server-prep-stmts', 'true', '导入导出是否开启 ps 协议，默认为开启' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.datatransfer.cursor-fetch-size', '20', '导出时游标的 fetch size，默认为 20，最大值为 1000' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.datatransfer.internal-download-import-file-timeout-millis', '300', 'The HTTP timeout for downloading imported files from other nodes. 5 minutes by default' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.data-security.masking.enabled', 'true', '是否开启数据脱敏，默认为开启' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.partition-plan.schedule-cron', '0 0 * * * ?', '默认调度周期：每天 0 点' ) ON DUPLICATE KEY UPDATE `id` = `id`;
@@ -845,3 +846,23 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
  '1440', 'The longest time ODC can cache repository copies') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.integration.git.repository-max-cached-size',
  '1000', 'The maximum number of repository copies cached in ODC') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+ --
+ -- v4.3.3
+ --
+ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('server.servlet.session.cookie.secure',
+  'false', 'Enable secure cookie or not, default value false') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.features.logicaldatabase.enabled', 'true',
+'Whether to enable the logical database feature, default is true, indicating enabled.') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
+VALUES ('odc.session.kill-query-or-session.max-supported-ob-version', '4.2.5', 'odc', 'default', 'master',
+        'Max OBVersion kill session or kill query supported, only take effect when value greater than 0')
+ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES('odc.task.dlm.session-limiting.enabled', 'true',
+'Explosion-proof current limiting switch of mysql/oracle' )
+ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES('odc.task.dlm.session-limiting-ratio', '25',
+'The ratio of oracle/mysql active sessions to the maximum number of connections allowed' )
+ON DUPLICATE KEY UPDATE `id` = `id`;

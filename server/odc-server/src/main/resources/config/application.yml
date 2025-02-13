@@ -53,6 +53,10 @@ server:
   servlet:
     session:
       timeout: 8h
+      cookie:
+        name: JSESSIONID
+        http-only: true
+        secure: true
     encoding:
       charset: UTF-8
   tomcat:
@@ -60,6 +64,8 @@ server:
       max: 500
       min-spare: 18
     keep-alive-timeout: 70000
+    mbeanregistry:
+      enabled: true
 swagger:
   enabled: false
 
@@ -67,3 +73,18 @@ jasypt:
   encryptor:
     password: ${ODC_PROPERTY_ENCRYPTION_PASSWORD}
     algorithm: PBEWithHmacSHA512AndAES_128
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "business,application"
+    enabled-by-default: ${odc.system.monitor.actuator.enabled:false}
+  metrics:
+    export:
+      prometheus:
+        enabled: ${odc.system.monitor.actuator.enabled:false}
+
+  endpoint:
+    prometheus:
+      enabled: ${odc.system.monitor.actuator.enabled:false}

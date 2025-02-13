@@ -16,11 +16,9 @@
 package com.oceanbase.odc.service.dlm;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
-import com.oceanbase.tools.migrator.core.IJobStore;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -35,9 +33,6 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @Configuration
 public class DLMConfiguration {
-
-    @Value("${odc.task.dlm.thread-pool-size:15}")
-    private int dlmThreadPoolSize;
 
     @Value("${odc.task.dlm.single-task-read-write-ratio:0.5}")
     private double readWriteRatio;
@@ -54,9 +49,10 @@ public class DLMConfiguration {
     @Value("${odc.task.dlm.default-scan-batch-size:10000}")
     private int defaultScanBatchSize;
 
-    @Bean
-    public DLMJobFactory dlmJobFactory(IJobStore jobStore) {
-        return new DLMJobFactory(jobStore);
-    }
+    @Value("${odc.task.dlm.session-limiting.enabled:true}")
+    private boolean sessionLimitingEnabled;
+
+    @Value("${odc.task.dlm.session-limiting-ratio:25}")
+    private int sessionLimitingRatio;
 
 }

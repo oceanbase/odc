@@ -52,6 +52,7 @@ import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -70,6 +71,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
 import com.oceanbase.odc.service.flow.tool.TestFlowRuntimeTaskImpl;
 import com.oceanbase.odc.service.flow.util.FlowInstanceUtil;
+import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.test.tool.TestRandom;
 
@@ -115,6 +117,8 @@ public class FlowResponseMapperFactoryTest extends ServiceTestEnv {
     private GateWayInstanceRepository gateWayInstanceRepository;
     @MockBean
     private DatabaseService databaseService;
+    @MockBean
+    private UserService userService;
     @Autowired
     private UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository;
     private final AtomicLong counter = new AtomicLong(0L);
@@ -148,6 +152,7 @@ public class FlowResponseMapperFactoryTest extends ServiceTestEnv {
                         id -> Collections.singletonList(TestRandom.nextObject(Date.class)))
                 .getCandidatesByFlowInstanceId(
                         id -> Collections.singleton(TestRandom.nextObject(UserEntity.class)))
+                .getProjectById(id -> TestRandom.nextObject(Project.class))
                 .build();
         FlowInstanceDetailResp detailResp = mapper.map(instanceEntity);
 
@@ -162,6 +167,9 @@ public class FlowResponseMapperFactoryTest extends ServiceTestEnv {
         List<Long> flowInstanceIds = Collections.singletonList(flowInstance.getId());
         when(databaseService.listDatabasesByConnectionIds(Mockito.anyCollection()))
                 .thenReturn(Collections.singletonList(getDatabase()));
+        UserEntity userEntity = new UserEntity();
+        userEntity.setEnabled(true);
+        when(userService.nullSafeGet(1L)).thenReturn(userEntity);
         FlowInstanceMapper mapper = responseFactory.generateMapperByInstanceIds(flowInstanceIds);
         FlowNodeInstanceMapper nodeMapper = responseFactory.generateNodeMapperByInstanceIds(flowInstanceIds);
         FlowInstanceDetailResp resp = mapper.map(flowInstance, nodeMapper);

@@ -30,10 +30,12 @@ import com.oceanbase.tools.dbbrowser.schema.mysql.MySQLNoLessThan5700SchemaAcces
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween220And225XSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween2260And2276SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween2277And3XSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween400And432SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLNoGreaterThan1479SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.ODPOBMySQLSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.oracle.OBOracleBetween4000And4100SchemaAccessor;
+import com.oceanbase.tools.dbbrowser.schema.oracle.OBOracleBetween410And432SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.oracle.OBOracleLessThan2270SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.oracle.OBOracleLessThan400SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.oracle.OBOracleSchemaAccessor;
@@ -72,9 +74,12 @@ public class DBSchemaAccessorFactory extends AbstractDBBrowserFactory<DBSchemaAc
     @Override
     public DBSchemaAccessor buildForOBMySQL() {
         Validate.notNull(this.dbVersion, "DBVersion can not be null");
-        if (VersionUtils.isGreaterThanOrEqualsTo(this.dbVersion, "4.0.0")) {
-            // OB version >= 4.0.0
+        if (VersionUtils.isGreaterThanOrEqualsTo(this.dbVersion, "4.3.2")) {
+            // OB version >= 4.3.2
             return new OBMySQLSchemaAccessor(getJdbcOperations());
+        } else if (VersionUtils.isGreaterThan(this.dbVersion, "4.0.0")) {
+            // OB version between [4.0.0, 4.3.2)
+            return new OBMySQLBetween400And432SchemaAccessor(getJdbcOperations());
         } else if (VersionUtils.isGreaterThan(this.dbVersion, "2.2.76")) {
             // OB version between [2.2.77, 4.0.0)
             return new OBMySQLBetween2277And3XSchemaAccessor(getJdbcOperations());
@@ -105,9 +110,12 @@ public class DBSchemaAccessorFactory extends AbstractDBBrowserFactory<DBSchemaAc
     @Override
     public DBSchemaAccessor buildForOBOracle() {
         Validate.notNull(this.dbVersion, "DBVersion can not be null");
-        if (VersionUtils.isGreaterThanOrEqualsTo(this.dbVersion, "4.1.0")) {
-            // OB version >= 4.1.0
+        if (VersionUtils.isGreaterThanOrEqualsTo(this.dbVersion, "4.3.2")) {
+            // OB version >= 4.3.2
             return new OBOracleSchemaAccessor(getJdbcOperations(), new ALLDataDictTableNames());
+        } else if (VersionUtils.isGreaterThanOrEqualsTo(this.dbVersion, "4.1.0")) {
+            // OB version between [4.1.0, 4.3.2)
+            return new OBOracleBetween410And432SchemaAccessor(getJdbcOperations(), new ALLDataDictTableNames());
         } else if (VersionUtils.isGreaterThanOrEqualsTo(this.dbVersion, "4.0.0")) {
             // OB version between [4.0.0, 4.1.0)
             return new OBOracleBetween4000And4100SchemaAccessor(getJdbcOperations(), new ALLDataDictTableNames());

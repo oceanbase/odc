@@ -16,6 +16,7 @@
 package com.oceanbase.odc.server.web.controller.v2;
 
 import java.util.List;
+import java.util.Set;
 
 import javax.validation.Valid;
 
@@ -35,6 +36,7 @@ import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.collaboration.project.model.Project.ProjectMember;
 import com.oceanbase.odc.service.collaboration.project.model.QueryProjectParams;
 import com.oceanbase.odc.service.collaboration.project.model.SetArchivedReq;
+import com.oceanbase.odc.service.collaboration.project.model.TicketReference;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
@@ -129,6 +131,18 @@ public class ProjectController {
     public SuccessResponse<Project> setArchived(@PathVariable Long id,
             @RequestBody @Valid SetArchivedReq setArchivedReq) throws InterruptedException {
         return Responses.success(projectService.setArchived(id, setArchivedReq));
+    }
+
+    @ApiOperation(value = "batchDeleteProject", notes = "Delete projects")
+    @RequestMapping(value = "/projects/batchDelete", method = RequestMethod.POST)
+    public SuccessResponse<Boolean> batchDelete(@RequestBody Set<Long> ids) throws InterruptedException {
+        return Responses.success(projectService.batchDelete(ids));
+    }
+
+    @ApiOperation(value = "listUnfinishedTickets", notes = "List unfinished ticket references of a project")
+    @RequestMapping(value = "/projects/{id:[\\d]+}/unfinishedTickets", method = RequestMethod.GET)
+    public SuccessResponse<TicketReference> listUnfinishedTickets(@PathVariable Long id) {
+        return Responses.success(projectService.getProjectTicketReference(id));
     }
 
 }

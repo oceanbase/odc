@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -91,14 +92,23 @@ public class DLMTableStructureSynchronizer {
                     Collections.singletonList(srcTableName)).get(srcTableName);
             DBTable tgtTable = tgtAccessor.getTables(tgtConfig.getDefaultSchema(),
                     Collections.singletonList(tgtTableName)).get(tgtTableName);
+            if (tgtConfig.getType().getDialectType().isMysql()) {
+                if (srcTable != null) {
+                    StringUtils.quoteColumnDefaultValuesForMySQL(srcTable);
+                }
+                if (tgtTable != null) {
+                    StringUtils.quoteColumnDefaultValuesForMySQL(tgtTable);
+                }
+            }
             DBTableStructureComparator comparator = new DBTableStructureComparator(tgtTableEditor,
                     tgtConfig.getType().getDialectType(), srcConfig.getDefaultSchema(), tgtConfig.getDefaultSchema());
             List<String> changeSqlScript = new LinkedList<>();
+            targetType.remove(DBObjectType.TABLE);
             if (tgtTable == null) {
                 srcTable.setSchemaName(tgtConfig.getDefaultSchema());
                 srcTable.setName(tgtTableName);
                 changeSqlScript.add(tgtTableEditor.generateCreateObjectDDL(srcTable));
-            } else {
+            } else if (!targetType.isEmpty()) {
                 DBObjectComparisonResult result = comparator.compare(srcTable, tgtTable);
                 if (result.getComparisonResult() == ComparisonResult.INCONSISTENT) {
                     changeSqlScript = result.getSubDBObjectComparisonResult().stream()
@@ -128,11 +138,10 @@ public class DLMTableStructureSynchronizer {
 
     public static boolean isSupportedSyncTableStructure(DialectType srcType, String srcVersion, DialectType tgtType,
             String tgtVersion) {
-        // only supports MySQL or OBMySQL
-        if (!srcType.isMysql() || !tgtType.isMysql()) {
+        if (srcType != tgtType) {
             return false;
         }
-        if (srcType != tgtType) {
+        if (!srcType.isOceanbase() && !srcType.isMysql()) {
             return false;
         }
         // unsupported MySQL versions below 5.7.0

@@ -44,9 +44,6 @@ import com.oceanbase.odc.service.flow.util.DescriptionGenerator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
-import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
-import com.oceanbase.odc.service.schedule.model.JobType;
-import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 
@@ -73,8 +70,6 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
     private ProjectService projectService;
     @Value("${odc.task.trigger.minimum-interval:600}")
     private Long triggerMinimumIntervalSeconds;
-
-    private final Map<JobType, Preprocessor> scheduleTaskPreprocessors = new HashMap<>();
 
     private final Map<TaskType, Preprocessor> flowTaskPreprocessors = new HashMap<>();
 
@@ -147,14 +142,6 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
             validateTriggerConfig(parameters.getCreationTrigger());
             if (parameters.getDroppingTrigger() != null) {
                 validateTriggerConfig(parameters.getDroppingTrigger());
-            }
-            return;
-        }
-        if (req.getParameters() instanceof AlterScheduleParameters) {
-            AlterScheduleParameters parameters = (AlterScheduleParameters) req.getParameters();
-            if (parameters.getOperationType() == OperationType.CREATE
-                    || parameters.getOperationType() == OperationType.UPDATE) {
-                validateTriggerConfig(parameters.getTriggerConfig());
             }
         }
     }

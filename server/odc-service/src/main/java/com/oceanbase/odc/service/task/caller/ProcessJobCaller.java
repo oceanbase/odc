@@ -18,15 +18,20 @@ package com.oceanbase.odc.service.task.caller;
 
 import static com.oceanbase.odc.service.task.constants.JobConstants.ODC_EXECUTOR_CANNOT_BE_DESTROYED;
 
+import java.io.File;
 import java.io.IOException;
+import java.lang.ProcessBuilder.Redirect;
 import java.text.MessageFormat;
 import java.util.Objects;
 import java.util.Optional;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.response.OdcResult;
+import com.oceanbase.odc.service.resource.ResourceID;
+import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.enums.JobStatus;
@@ -44,6 +49,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class ProcessJobCaller extends BaseJobCaller {
+    private static final ResourceLocation LOCAL_RESOURCE_LOCATION =
+            new ResourceLocation(SystemUtils.getLocalIpAddress(), ResourceIDUtil.DEFAULT_PROP_VALUE);
 
     private final ProcessConfig processConfig;
 
@@ -52,11 +59,15 @@ public class ProcessJobCaller extends BaseJobCaller {
     }
 
     @Override
-    protected ExecutorIdentifier doStart(JobContext context) throws JobException {
+    public ExecutorInfo doStart(JobContext context) throws JobException {
 
         String executorName = JobUtils.generateExecutorName(context.getJobIdentity());
         ProcessBuilder pb = new ExecutorProcessBuilderFactory().getProcessBuilder(
                 processConfig, context.getJobIdentity().getId(), executorName);
+        log.info("start task with processConfig={}, env={}", JobUtils.toJson(processConfig),
+                JsonUtils.toJson(pb.environment()));
+        pb.redirectErrorStream(true);
+        pb.redirectOutput(Redirect.appendTo(new File("process-call.log")));
         Process process;
         try {
             process = pb.start();
@@ -83,24 +94,26 @@ public class ProcessJobCaller extends BaseJobCaller {
         String portString = Optional.ofNullable(jobConfiguration.getHostProperties().getPort())
                 .orElse(DefaultExecutorIdentifier.DEFAULT_PORT + "");
         // set process id as namespace
-        return DefaultExecutorIdentifier.builder().host(SystemUtils.getLocalIpAddress())
-                .port(Integer.parseInt(portString))
-                .namespace(pid + "")
-                .executorName(executorName).build();
+        return new ExecutorInfo(new ResourceID(LOCAL_RESOURCE_LOCATION, "process", "processnamespace", executorName),
+                DefaultExecutorIdentifier.builder().host(SystemUtils.getLocalIpAddress())
+                        .port(Integer.parseInt(portString))
+                        .namespace(pid + "")
+                        .executorName(executorName).build());
     }
 
     @Override
     protected void doStop(JobIdentity ji) throws JobException {}
 
     @Override
-    protected void doDestroy(JobIdentity ji, ExecutorIdentifier ei) throws JobException {
-        if (isExecutorExist(ei)) {
+    protected void doFinish(JobIdentity ji, ExecutorIdentifier ei, ResourceID resourceID)
+            throws JobException {
+        if (isExecutorExist(ei, resourceID)) {
             long pid = Long.parseLong(ei.getNamespace());
             log.info("Found process, try kill it, pid={}.", pid);
             // first update destroy time, second destroy executor.
             // if executor failed update will be rollback, ensure distributed transaction atomicity.
             updateExecutorDestroyed(ji);
-            destroyInternal(ei);
+            doDestroyInternal(ei);
             return;
         }
 
@@ -132,9 +145,8 @@ public class ProcessJobCaller extends BaseJobCaller {
                 + " may not on this machine, jodId={0}, identifier={1}", ji.getId(), ei);
     }
 
-    @Override
-    public boolean canBeDestroy(JobIdentity ji, ExecutorIdentifier ei) {
-        if (isExecutorExist(ei)) {
+    public boolean canBeFinish(JobIdentity ji, ExecutorIdentifier ei, ResourceID resourceID) {
+        if (isExecutorExist(ei, resourceID)) {
             log.info("Executor be found, jobId={}, identifier={}", ji.getId(), ei);
             return true;
         }
@@ -152,7 +164,6 @@ public class ProcessJobCaller extends BaseJobCaller {
         return false;
     }
 
-    @Override
     protected void doDestroyInternal(ExecutorIdentifier identifier) throws JobException {
         long pid = Long.parseLong(identifier.getNamespace());
         boolean result = SystemUtils.killProcessByPid(pid);
@@ -165,7 +176,7 @@ public class ProcessJobCaller extends BaseJobCaller {
     }
 
     @Override
-    protected boolean isExecutorExist(ExecutorIdentifier identifier) {
+    protected boolean isExecutorExist(ExecutorIdentifier identifier, ResourceID resourceID) {
         long pid = Long.parseLong(identifier.getNamespace());
         boolean result = SystemUtils.isProcessRunning(pid,
                 JobUtils.generateExecutorSelectorOnProcess(identifier.getExecutorName()));

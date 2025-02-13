@@ -15,7 +15,14 @@
  */
 package com.oceanbase.tools.dbbrowser.stats.mysql;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.jdbc.core.JdbcOperations;
+
+import com.oceanbase.tools.dbbrowser.model.DBSession;
+import com.oceanbase.tools.dbbrowser.util.StringUtils;
 
 import lombok.NonNull;
 
@@ -28,8 +35,25 @@ import lombok.NonNull;
  */
 public class OBMySQLStatsAccessor extends MySQLNoLessThan5700StatsAccessor {
 
+    private static final String LIST_SESSIONS_BY_SHOW_PROCESSLIST = "SHOW FULL PROCESSLIST";
+
     public OBMySQLStatsAccessor(@NonNull JdbcOperations jdbcOperations) {
         super(jdbcOperations);
+    }
+
+    @Override
+    public List<DBSession> listAllSessions() {
+        List<DBSession> sessions = super.listAllSessions();
+        Map<String, String> sessionId2SvrIp = new HashMap<>();
+        jdbcOperations.query(LIST_SESSIONS_BY_SHOW_PROCESSLIST, rs -> {
+            if (rs.getMetaData().getColumnCount() == 11) {
+                String id = rs.getString("Id");
+                String svrIp = StringUtils.join(rs.getString("Ip"), ":", rs.getString("Port"));
+                sessionId2SvrIp.put(id, svrIp);
+            }
+        });
+        sessions.forEach(session -> session.setSvrIp(sessionId2SvrIp.get(session.getId())));
+        return sessions;
     }
 
 }
