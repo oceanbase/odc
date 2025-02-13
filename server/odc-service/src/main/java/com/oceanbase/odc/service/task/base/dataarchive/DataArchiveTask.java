@@ -85,8 +85,9 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
     public boolean start() throws Exception {
         while (!isToStop && currentIndex < toDoList.size()) {
             DlmTableUnit dlmTableUnit = toDoList.get(currentIndex);
-            if (dlmTableUnit.getStatus() == TaskStatus.DONE) {
-                log.info("The table had been completed,tableName={}", dlmTableUnit.getTableName());
+            if (dlmTableUnit.getStatus() != TaskStatus.PREPARING) {
+                log.info("The table had been processed,tableName={},status={}", dlmTableUnit.getTableName(),
+                        dlmTableUnit.getStatus());
                 currentIndex++;
                 continue;
             }
@@ -102,11 +103,14 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             }
             log.info("Init {} job succeed,dlmTableUnitId={}", dlmTableUnit.getType(), dlmTableUnit.getDlmTableUnitId());
             try {
-                dlmTableUnit.setStatus(TaskStatus.RUNNING);
-                dlmTableUnit.setStartTime(new Date());
-                job.run();
-                log.info("{} job finished,dlmTableUnitId={}", dlmTableUnit.getType(), dlmTableUnit.getDlmTableUnitId());
-                dlmTableUnit.setStatus(TaskStatus.DONE);
+                if (!isToStop && dlmTableUnit.getStatus() == TaskStatus.PREPARING) {
+                    dlmTableUnit.setStatus(TaskStatus.RUNNING);
+                    dlmTableUnit.setStartTime(new Date());
+                    job.run();
+                    log.info("{} job finished,dlmTableUnitId={}", dlmTableUnit.getType(),
+                            dlmTableUnit.getDlmTableUnitId());
+                    dlmTableUnit.setStatus(TaskStatus.DONE);
+                }
             } catch (Throwable e) {
                 dlmTableUnit.setStatus(isToStop ? TaskStatus.CANCELED : TaskStatus.FAILED);
                 context.getExceptionListener().onException(e);
@@ -198,14 +202,17 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
         if (job != null) {
             try {
                 job.stop();
-                toDoList.forEach(t -> {
-                    if (!t.getStatus().isTerminated()) {
-                        t.setStatus(TaskStatus.CANCELED);
-                    }
-                });
             } catch (Exception e) {
                 log.warn("Update dlm table unit status failed,DlmTableUnitId={}", job.getJobMeta().getJobId());
             }
+        }
+        if (toDoList != null) {
+            toDoList.forEach(t -> {
+                if (!t.getStatus().isTerminated()) {
+                    t.setStatus(TaskStatus.CANCELED);
+                }
+            });
+            log.info("Stop all table success.");
         }
     }
 
@@ -224,10 +231,7 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
     }
 
     public void updateLimiter(Map<String, String> jobParameters) {
-        if (job == null || job.getJobMeta() == null) {
-            return;
-        }
-        JobMeta jobMeta = job.getJobMeta();
+        JobMeta jobMeta = job != null && job.getJobMeta() != null ? job.getJobMeta() : null;
         try {
             RateLimitConfiguration params;
             if (jobParameters.containsKey(JobParametersKeyConstants.DLM_RATE_LIMIT_CONFIG)) {
@@ -241,13 +245,25 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
                 params = dlmJobReq.getRateLimit();
             }
             if (params.getDataSizeLimit() != null) {
-                jobMeta.getSourceLimiterConfig().setDataSizeLimit(params.getDataSizeLimit());
-                jobMeta.getTargetLimiterConfig().setDataSizeLimit(params.getDataSizeLimit());
+                if (jobMeta != null) {
+                    jobMeta.getSourceLimiterConfig().setDataSizeLimit(params.getDataSizeLimit());
+                    jobMeta.getTargetLimiterConfig().setDataSizeLimit(params.getDataSizeLimit());
+                }
+                toDoList.forEach(t -> {
+                    t.getSourceLimitConfig().setDataSizeLimit(params.getDataSizeLimit());
+                    t.getTargetLimitConfig().setDataSizeLimit(params.getDataSizeLimit());
+                });
                 log.info("Update rate limit success,dataSizeLimit={}", params.getDataSizeLimit());
             }
             if (params.getRowLimit() != null) {
-                jobMeta.getSourceLimiterConfig().setRowLimit(params.getRowLimit());
-                jobMeta.getTargetLimiterConfig().setRowLimit(params.getRowLimit());
+                if (jobMeta != null) {
+                    jobMeta.getSourceLimiterConfig().setRowLimit(params.getRowLimit());
+                    jobMeta.getTargetLimiterConfig().setRowLimit(params.getRowLimit());
+                }
+                toDoList.forEach(t -> {
+                    t.getSourceLimitConfig().setRowLimit(params.getRowLimit());
+                    t.getTargetLimitConfig().setRowLimit(params.getRowLimit());
+                });
                 log.info("Update rate limit success,rowLimit={}", params.getRowLimit());
             }
         } catch (Exception e) {
