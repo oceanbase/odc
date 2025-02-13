@@ -39,6 +39,19 @@ If this is a PR that fixes a bug, this section describes how the bug was fixed.
 If it's a new feature, this section briefly describes how to implement the new feature.
 etc.
 -->
+#### Changelog:
+
+<!--
+Please provide a changelog for the PR content in both English and Chinese only if this PR introduces a new feature.
+If this PR is fixing an issue introduced in the current iteration, you do not need to fill this section.
+
+For example, 
+- EN: Add feature X to improve Y.
+- CN: 添加功能 X 以改进 Y。
+-->
+
+- EN:
+- CN:
 
 #### Additional documentation e.g., usage docs, etc.:
 
