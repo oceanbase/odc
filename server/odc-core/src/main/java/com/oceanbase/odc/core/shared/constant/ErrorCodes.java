@@ -170,6 +170,10 @@ public enum ErrorCodes implements ErrorCode {
     // Schedule
     AlterScheduleExists,
     InvalidCronExpression,
+    ScheduleIntervalTooShort,
+    UpdateNotAllowed,
+    PauseNotAllowed,
+    DeleteNotAllowed,
 
     // Partition plan
     PartitionPlanNoDropPreviewSqlGenerated,
@@ -257,6 +261,7 @@ public enum ErrorCodes implements ErrorCode {
     ObFullLinkTraceNotSupported,
     ObFullLinkTraceNotEnabled,
     ObQueryProfileNotSupported,
+    CopilotAnalyzeExecutionPlanFailed,
 
     ObPreCheckDdlFailed,
     ObCopySchemaFailed,
@@ -307,12 +312,21 @@ public enum ErrorCodes implements ErrorCode {
      * version conflict
      */
     WorksheetEditVersionConflict,
-
+    /**
+     * general version conflict error
+     */
+    EditVersionConflict,
     /**
      * workspace
      */
     WorkspaceDatabaseUserTypeMustBeAdmin,
-    ;
+    /**
+     * oss
+     */
+    BucketNotExist,
+    InvalidAccessKeyId,
+    SignatureDoesNotMatch,
+    UnsupportedSyncTableStructure;
 
     @Override
     public String code() {

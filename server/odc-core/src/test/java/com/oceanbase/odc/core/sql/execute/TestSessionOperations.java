@@ -50,4 +50,13 @@ public class TestSessionOperations implements SessionOperations {
         }
     }
 
+    @Override
+    public String getKillQuerySql(@NonNull String connectionId) {
+        return "KILL QUERY " + connectionId;
+    }
+
+    @Override
+    public String getKillSessionSql(@NonNull String connectionId) {
+        return "KILL " + connectionId;
+    }
 }

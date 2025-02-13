@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -70,23 +71,24 @@ public class TooLongCharLength implements SqlCheckRule {
     @Override
     public List<DialectType> getSupportsDialectTypes() {
         return Arrays.asList(DialectType.OB_ORACLE, DialectType.OB_MYSQL, DialectType.MYSQL,
-                DialectType.ODP_SHARDING_OB_MYSQL);
+                DialectType.ODP_SHARDING_OB_MYSQL, DialectType.ORACLE);
     }
 
     private List<CheckViolation> builds(String sql, Stream<ColumnDefinition> stream) {
-        return stream.map(ColumnDefinition::getDataType).filter(d -> {
-            if (!StringUtils.startsWithIgnoreCase(d.getName(), "char")
-                    && !StringUtils.startsWithIgnoreCase(d.getName(), "character")
-                    && !StringUtils.startsWithIgnoreCase(d.getName(), "nchar")) {
-                return false;
-            }
-            CharacterType type = (CharacterType) d;
-            return type.getLength().compareTo(new BigDecimal(maxCharLength)) > 0;
-        }).map(d -> {
-            CharacterType type = (CharacterType) d;
-            return SqlCheckUtil.buildViolation(sql, d, getType(),
-                    new Object[] {maxCharLength, type.getLength().toString()});
-        }).collect(Collectors.toList());
+        return stream.filter(d -> Objects.nonNull(d) && Objects.nonNull(d.getDataType()))
+                .map(ColumnDefinition::getDataType).filter(d -> {
+                    if (!StringUtils.startsWithIgnoreCase(d.getName(), "char")
+                            && !StringUtils.startsWithIgnoreCase(d.getName(), "character")
+                            && !StringUtils.startsWithIgnoreCase(d.getName(), "nchar")) {
+                        return false;
+                    }
+                    CharacterType type = (CharacterType) d;
+                    return type.getLength().compareTo(new BigDecimal(maxCharLength)) > 0;
+                }).map(d -> {
+                    CharacterType type = (CharacterType) d;
+                    return SqlCheckUtil.buildViolation(sql, d, getType(),
+                            new Object[] {maxCharLength, type.getLength().toString()});
+                }).collect(Collectors.toList());
     }
 
 }

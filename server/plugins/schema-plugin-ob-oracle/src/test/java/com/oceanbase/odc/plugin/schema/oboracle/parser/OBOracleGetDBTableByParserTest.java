@@ -69,33 +69,396 @@ public class OBOracleGetDBTableByParserTest {
     }
 
     @Test
-    public void getPartition_Hash_Success() {
+    public void getPartition_Hash_SingleKey_Success() {
         OBOracleGetDBTableByParser table =
-                new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "HASH_PART_BY_PARSER");
+                new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "HASH_PART_SINGLE_KEY_BY_PARSER");
         DBTablePartition partition = table.getPartition();
         Assert.assertEquals(6L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
         Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertNull(partition.getSubpartition());
+        Assert.assertNull(partition.getSubpartitionTemplated());
     }
 
     @Test
-    public void getPartition_list_Success() {
+    public void getPartition_Hash_MultipleKey_Success() {
         OBOracleGetDBTableByParser table =
-                new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "LIST_PART_BY_PARSER");
+                new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "HASH_PART_MULTIPLE_KEY_BY_PARSER");
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(10L, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
+        Assert.assertEquals(2, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("COL2", partition.getPartitionOption().getColumnNames().get(1));
+        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertNull(partition.getSubpartition());
+        Assert.assertNull(partition.getSubpartitionTemplated());
+    }
+
+    @Test
+    public void getPartition_List_SingleKey_Success() {
+        OBOracleGetDBTableByParser table =
+                new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "LIST_PART_SINGLE_KEY_BY_PARSER");
         DBTablePartition partition = table.getPartition();
         Assert.assertEquals(4L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.LIST, partition.getPartitionOption().getType());
         Assert.assertEquals("LOG_VALUE", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("P01", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(3, partition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("'A'", partition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertNull(partition.getSubpartition());
+        Assert.assertNull(partition.getSubpartitionTemplated());
     }
 
     @Test
-    public void getPartition_range_Success() {
+    public void getPartition_List_MultipleKey_Success() {
         OBOracleGetDBTableByParser table =
-                new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "RANGE_PART_BY_PARSER");
+                new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "LIST_PART_MULTIPLE_KEY_BY_PARSER");
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(3L, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.LIST, partition.getPartitionOption().getType());
+        Assert.assertEquals(2, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL2", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("COL2", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, partition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals(2, partition.getPartitionDefinitions().get(0).getValuesList().get(0).size());
+        Assert.assertEquals("1", partition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("1", partition.getPartitionDefinitions().get(0).getValuesList().get(0).get(1));
+        Assert.assertNull(partition.getSubpartition());
+        Assert.assertNull(partition.getSubpartitionTemplated());
+    }
+
+    @Test
+    public void getPartition_Range_SingleKey_Success() {
+        OBOracleGetDBTableByParser table =
+                new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "RANGE_PART_SINGLE_KEY_BY_PARSER");
         DBTablePartition partition = table.getPartition();
         Assert.assertEquals(4L, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
         Assert.assertEquals("LOG_DATE", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("M202001", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(1, partition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("TO_DATE(' 2020-02-01 00:00:00', 'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN')",
+                partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertNull(partition.getSubpartition());
+        Assert.assertNull(partition.getSubpartitionTemplated());
+    }
+
+    @Test
+    public void getPartition_Range_MultipleKey_Success() {
+        OBOracleGetDBTableByParser table =
+                new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "RANGE_PART_MULTIPLE_KEY_BY_PARSER");
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(4L, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
+        Assert.assertEquals(2, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("COL2", partition.getPartitionOption().getColumnNames().get(1));
+        Assert.assertEquals("M202001", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, partition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("1", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("1", partition.getPartitionDefinitions().get(0).getMaxValues().get(1));
+        Assert.assertNull(partition.getSubpartition());
+        Assert.assertNull(partition.getSubpartitionTemplated());
+    }
+
+    @Test
+    public void getSubPartition_TemplateSingleRangeMultipleRange_Success() {
+        OBOracleGetDBTableByParser table =
+                new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "T_SINGLE_RANGE_MULTIPLE_RANGE");
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(1, partition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertTrue(partition.getSubpartitionTemplated());
+        Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("COL3", subpartition.getPartitionOption().getColumnNames().get(1));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("P0SMP0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(1));
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubPartition_TemplateSingleRangeSingleRange_Success() {
+        OBOracleGetDBTableByParser table =
+                new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "T_SINGLE_RANGE_SINGLE_RANGE");
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(1, partition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertTrue(partition.getSubpartitionTemplated());
+        Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("P0SMP0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubPartition_TemplateSingleHashMultipleList_Success() {
+        OBOracleGetDBTableByParser table =
+                new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "T_SINGLE_HASH_MULTIPLE_LIST");
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(5, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertTrue(partition.getSubpartitionTemplated());
+        Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("COL3", subpartition.getPartitionOption().getColumnNames().get(1));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("P0SSP0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("100", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("100", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(1));
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubPartition_TemplateSingleHashSingleList_Success() {
+        OBOracleGetDBTableByParser table =
+                new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "T_SINGLE_HASH_SINGLE_LIST");
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(5, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertTrue(partition.getSubpartitionTemplated());
+        Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("P0SSP0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("100", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubPartition_TemplateSingleHashMultipleHash_Success() {
+        OBOracleGetDBTableByParser table =
+                new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "T_SINGLE_HASH_MULTIPLE_HASH");
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(5, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertTrue(partition.getSubpartitionTemplated());
+        Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("COL3", subpartition.getPartitionOption().getColumnNames().get(1));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("P0SP0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubPartition_TemplateSingleHashSingleHash_Success() {
+        OBOracleGetDBTableByParser table =
+                new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "T_SINGLE_HASH_SINGLE_HASH");
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(5, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertTrue(partition.getSubpartitionTemplated());
+        Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("P0SP0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubPartition_SingleRangeMultipleRange_Success() {
+        OBOracleGetDBTableByParser table =
+                new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "SINGLE_RANGE_MULTIPLE_RANGE");
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(1, partition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertFalse(partition.getSubpartitionTemplated());
+        Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("COL3", subpartition.getPartitionOption().getColumnNames().get(1));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(1));
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubPartition_SingleRangeSingleRange_Success() {
+        OBOracleGetDBTableByParser table =
+                new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "SINGLE_RANGE_SINGLE_RANGE");
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(1, partition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertFalse(partition.getSubpartitionTemplated());
+        Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubPartition_SingleHashMultipleList_Success() {
+        OBOracleGetDBTableByParser table =
+                new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "SINGLE_HASH_MULTIPLE_LIST");
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertFalse(partition.getSubpartitionTemplated());
+        Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("COL3", subpartition.getPartitionOption().getColumnNames().get(1));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(1));
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubPartition_SingleHashSingleList_Success() {
+        OBOracleGetDBTableByParser table =
+                new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "SINGLE_HASH_SINGLE_LIST");
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertFalse(partition.getSubpartitionTemplated());
+        Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubPartition_SingleListMultipleHash_Success() {
+        OBOracleGetDBTableByParser table =
+                new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "SINGLE_LIST_SINGLE_HASH");
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.LIST, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertFalse(partition.getSubpartitionTemplated());
+        Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getSubPartition_SingleListSingleHash_Success() {
+        OBOracleGetDBTableByParser table =
+                new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "SINGLE_LIST_SINGLE_HASH");
+        DBTablePartition partition = table.getPartition();
+        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.LIST, partition.getPartitionOption().getType());
+        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+        DBTablePartition subpartition = partition.getSubpartition();
+        Assert.assertFalse(partition.getSubpartitionTemplated());
+        Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("P0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
     }
 
     @Test

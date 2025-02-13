@@ -57,6 +57,9 @@ public class OracleCreateIndexFactory extends OBParserBaseVisitor<CreateIndex>
         CreateIndex index = new CreateIndex(ctx,
                 OracleFromReferenceFactory.getRelationFactor(ctx.normal_relation_factor()),
                 OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor()), columns);
+        if (ctx.INDEXTYPE() != null && ctx.MDSYS() != null && ctx.SPATIAL_INDEX() != null) {
+            index.setMdSysDotSpatialIndex(true);
+        }
         if (ctx.opt_index_options() != null) {
             IndexOptions options = new OracleIndexOptionsFactory(ctx.opt_index_options()).generate();
             Index_using_algorithmContext context = ctx.index_using_algorithm();

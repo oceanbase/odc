@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.common.util;
 
+import java.util.Optional;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -398,4 +400,31 @@ public class StringUtilsTest {
         Assert.assertTrue(StringUtils.startsWithIgnoreSpaceAndNewLines(target, prefix, true, 2));
     }
 
+    @Test
+    public void escapeRegex_null_isNotPresent() {
+        Assert.assertFalse(StringUtils.escapeRegex(null).isPresent());
+    }
+
+    @Test
+    public void escapeRegex_stringContainsRegularChar_escapeSuccess() {
+        String regex = ".*+?^$[](){}|\\";
+        String expect = "\\.\\*\\+\\?\\^\\$\\[\\]\\(\\)\\{\\}\\|\\\\";
+        Optional<String> escapedRegex = StringUtils.escapeRegex(regex);
+        Assert.assertTrue(escapedRegex.isPresent());
+        Assert.assertEquals(expect, escapedRegex.get());
+    }
+
+    @Test
+    public void replaceFirst_replaceOriginalNameContainingRegularCharsInPlEdit_success() {
+        String pl =
+                "create function `FuN_test@111--#%&*()_+` (`p1` int(12)) returns int(11) begin declare v1 int; set v1 = p1 + 1; return v1; end;";
+        String originalName = "FuN_test@111--#%&*()_+";
+        String replaceName = "replace_name";
+        String expect =
+                "create function `replace_name` (`p1` int(12)) returns int(11) begin declare v1 int; set v1 = p1 + 1; return v1; end;";
+        Optional<String> escapedRegex = StringUtils.escapeRegex(originalName);
+        String actual = pl.replaceFirst(escapedRegex.get(), replaceName);
+        Assert.assertEquals(expect, actual);
+
+    }
 }

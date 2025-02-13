@@ -387,6 +387,8 @@ public class OracleTableElementFactory extends OBParserBaseVisitor<TableElement>
             attributes.setOrigDefault(visitNowOrSignedLiteral(ctx.now_or_signed_literal()));
         } else if (ctx.ID() != null) {
             attributes.setId(Integer.valueOf(ctx.INTNUM().getText()));
+        } else if (ctx.SRID() != null) {
+            attributes.setSrid(Integer.valueOf(ctx.INTNUM().getText()));
         } else if (ctx.SKIP_INDEX() != null) {
             List<String> skipIndexTypes = new ArrayList<>();
             if (ctx.opt_skip_index_type_list() != null) {
@@ -459,6 +461,8 @@ public class OracleTableElementFactory extends OBParserBaseVisitor<TableElement>
             attributes.setId(Integer.valueOf(ctx.INTNUM().getText()));
         } else if (ctx.COMMENT() != null) {
             attributes.setComment(ctx.STRING_VALUE().getText());
+        } else if (ctx.SRID() != null) {
+            attributes.setSrid(Integer.valueOf(ctx.INTNUM().getText()));
         } else {
             String name = null;
             if (ctx.constraint_and_name() != null) {

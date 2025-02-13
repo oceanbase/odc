@@ -15,8 +15,14 @@
  */
 package com.oceanbase.odc.service.collaboration;
 
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.doNothing;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -36,6 +42,7 @@ import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
@@ -49,12 +56,14 @@ import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.collaboration.project.model.Project.ProjectMember;
 import com.oceanbase.odc.service.collaboration.project.model.QueryProjectParams;
 import com.oceanbase.odc.service.collaboration.project.model.SetArchivedReq;
+import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.UserOrganizationService;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.model.UserResourceRole;
+import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.test.tool.TestRandom;
 
 /**
@@ -89,6 +98,12 @@ public class ProjectServiceTest extends ServiceTestEnv {
     @MockBean
     private ResourceRoleRepository resourceRoleRepository;
 
+    @MockBean
+    private ProjectPermissionValidator projectPermissionValidator;
+
+    @MockBean
+    private ScheduleService scheduleService;
+
     @Before
     public void setUp() {
         Mockito.when(userService.nullSafeGet(Mockito.anyLong())).thenReturn(getUserEntity());
@@ -119,7 +134,8 @@ public class ProjectServiceTest extends ServiceTestEnv {
     public void testGetProject_Success() {
         Project saved = projectService.create(getProject());
         Mockito.when(
-                resourceRoleService.listByResourceTypeAndId(Mockito.eq(ResourceType.ODC_PROJECT), Mockito.anyLong()))
+                resourceRoleService.listByResourceTypeAndResourceId(Mockito.eq(ResourceType.ODC_PROJECT),
+                        Mockito.anyLong()))
                 .thenReturn(listUserResourceRole(saved.getId()));
         Project actual = projectService.detail(saved.getId());
         Assert.assertNotNull(actual);
@@ -130,7 +146,8 @@ public class ProjectServiceTest extends ServiceTestEnv {
         Date syncTime = new Date();
         Project saved = projectService.create(getProject());
         Mockito.when(
-                resourceRoleService.listByResourceTypeAndId(Mockito.eq(ResourceType.ODC_PROJECT), Mockito.anyLong()))
+                resourceRoleService.listByResourceTypeAndResourceId(Mockito.eq(ResourceType.ODC_PROJECT),
+                        Mockito.anyLong()))
                 .thenReturn(listUserResourceRole(saved.getId()));
         createDatabase(saved.getId(), null);
         createDatabase(saved.getId(), syncTime);
@@ -143,7 +160,8 @@ public class ProjectServiceTest extends ServiceTestEnv {
         Date syncTime = new Date();
         Project saved = projectService.create(getProject());
         Mockito.when(
-                resourceRoleService.listByResourceTypeAndId(Mockito.eq(ResourceType.ODC_PROJECT), Mockito.anyLong()))
+                resourceRoleService.listByResourceTypeAndResourceId(Mockito.eq(ResourceType.ODC_PROJECT),
+                        Mockito.anyLong()))
                 .thenReturn(listUserResourceRole(saved.getId()));
         createDatabase(saved.getId(), syncTime);
         createDatabase(saved.getId(), DateUtils.addDays(syncTime, 1));
@@ -164,8 +182,11 @@ public class ProjectServiceTest extends ServiceTestEnv {
     public void testArchiveProject_Archived() throws InterruptedException {
         Project saved = projectService.create(getProject());
         Mockito.when(resourceRoleService.saveAll(Mockito.any())).thenReturn(listUserResourceRole(saved.getId()));
+        doNothing().when(projectPermissionValidator).checkProjectRole(anyCollection(), anyList());
         SetArchivedReq req = new SetArchivedReq();
         req.setArchived(true);
+        Mockito.when(scheduleService.listUnfinishedSchedulesByProjectId(Pageable.unpaged(), saved.getId()))
+                .thenReturn(Page.empty());
         Project archived = projectService.setArchived(saved.getId(), req);
         Assert.assertTrue(archived.getArchived());
     }
@@ -177,6 +198,27 @@ public class ProjectServiceTest extends ServiceTestEnv {
         SetArchivedReq req = new SetArchivedReq();
         req.setArchived(false);
         projectService.setArchived(saved.getId(), req);
+    }
+
+    @Test
+    public void testDeleteProject_ArchivedProject_Success() throws InterruptedException {
+        Project saved = projectService.create(getProject());
+        Mockito.when(resourceRoleService.saveAll(Mockito.any())).thenReturn(listUserResourceRole(saved.getId()));
+        doNothing().when(projectPermissionValidator).checkProjectRole(anyCollection(), anyList());
+        SetArchivedReq req = new SetArchivedReq();
+        req.setArchived(true);
+        Mockito.when(scheduleService.listUnfinishedSchedulesByProjectId(Pageable.unpaged(), saved.getId()))
+                .thenReturn(Page.empty());
+        projectService.setArchived(saved.getId(), req);
+        Assert.assertTrue(projectService.batchDelete(new HashSet<>(Arrays.asList(saved.getId()))));
+    }
+
+    @Test(expected = UnsupportedException.class)
+    public void testDeleteProject_NotArchivedProject_Fail() {
+        Project saved = projectService.create(getProject());
+        Mockito.when(resourceRoleService.saveAll(Mockito.any())).thenReturn(listUserResourceRole(saved.getId()));
+        doNothing().when(projectPermissionValidator).checkProjectRole(anyCollection(), anyList());
+        projectService.batchDelete(new HashSet<>(Arrays.asList(saved.getId())));
     }
 
     @Test

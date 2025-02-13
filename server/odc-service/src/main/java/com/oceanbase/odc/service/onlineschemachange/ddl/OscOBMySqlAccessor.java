@@ -42,7 +42,7 @@ public class OscOBMySqlAccessor implements OscDBAccessor {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         // mysql.users in oceanbase do not provide account locked status.
         // so we query locked info from ocenbase.__all_user
-        sb.append("SELECT distinct user_name, is_locked, host FROM oceanbase.__all_user");
+        sb.append("SELECT user_name, is_locked, host FROM oceanbase.__all_user");
         if (CollectionUtils.isNotEmpty(usernames)) {
             sb.append(" WHERE user_name IN (");
             sb.values(usernames);

@@ -308,6 +308,20 @@ public class OBUtils {
         }
     }
 
+    public static String getODPVersion(Connection connection) {
+        try (Statement statement = connection.createStatement()) {
+            try (ResultSet resultSet = statement.executeQuery("select proxy_version()")) {
+                if (resultSet.next()) {
+                    return resultSet.getString("proxy_version()");
+                } else {
+                    return null;
+                }
+            }
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private static String buildSqlAudit(ConnectType connectType, String version) {
         StringBuilder str = new StringBuilder();
         if (connectType.getDialectType().isOracle()) {

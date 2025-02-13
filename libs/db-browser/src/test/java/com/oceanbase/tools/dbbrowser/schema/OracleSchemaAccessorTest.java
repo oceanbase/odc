@@ -138,6 +138,16 @@ public class OracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listTableColumns_TestCreateExtendedStats_Success() {
+        String sql = "SELECT DBMS_STATS.CREATE_EXTENDED_STATS('" + getOracleSchema()
+                + "', 'TEST_EXTENDED_STATS_COL', '(X, Y)') FROM DUAL";
+        jdbcTemplate.execute(sql);
+        List<DBTableColumn> columns =
+                accessor.listTableColumns(getOracleSchema(), "TEST_EXTENDED_STATS_COL");
+        Assert.assertEquals(3, columns.size());
+    }
+
+    @Test
     public void listTableConstraint_TestPrimaryKey_Success() {
         List<DBTableConstraint> constraintListList =
                 accessor.listTableConstraints(getOracleSchema(), "TEST_FK_PARENT");

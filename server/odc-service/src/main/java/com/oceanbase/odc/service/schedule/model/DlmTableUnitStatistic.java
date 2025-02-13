@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import lombok.Data;
 
 /**
@@ -32,5 +35,13 @@ public class DlmTableUnitStatistic {
     private Long processedRowsPerSecond = 0L;
 
     private Long readRowsPerSecond = 0L;
+
+    private String globalMinKey;
+
+    private String globalMaxKey;
+
+    private Map<String, String> partName2MinKey = new HashMap<>();
+
+    private Map<String, String> partName2MaxKey = new HashMap<>();
 
 }

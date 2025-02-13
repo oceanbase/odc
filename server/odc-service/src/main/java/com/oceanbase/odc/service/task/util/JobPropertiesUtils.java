@@ -21,6 +21,7 @@ import java.util.Map;
 import com.oceanbase.odc.common.util.MapUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
+import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
 import com.oceanbase.odc.service.task.enums.TaskMonitorMode;
 
 import lombok.NonNull;
@@ -40,20 +41,20 @@ public class JobPropertiesUtils {
 
     public static void setCloudProvider(@NonNull Map<String, String> jobProperties,
             @NonNull CloudProvider cloudProvider) {
-        jobProperties.put("cloudProvider", cloudProvider.toString());
+        jobProperties.put(ResourceIDUtil.GROUP_PROP_NAME, cloudProvider.toString());
     }
 
     public static CloudProvider getCloudProvider(@NonNull Map<String, String> jobProperties) {
-        String cloudProvider = jobProperties.get("cloudProvider");
-        return StringUtils.isBlank(cloudProvider) ? CloudProvider.NONE : CloudProvider.valueOf(cloudProvider);
+        String cloudProvider = jobProperties.get(ResourceIDUtil.GROUP_PROP_NAME);
+        return StringUtils.isBlank(cloudProvider) ? CloudProvider.NONE : CloudProvider.fromValue(cloudProvider);
     }
 
     public static void setRegionName(@NonNull Map<String, String> jobProperties, @NonNull String regionName) {
-        jobProperties.put("regionName", regionName);
+        jobProperties.put(ResourceIDUtil.REGION_PROP_NAME, regionName);
     }
 
     public static String getRegionName(@NonNull Map<String, String> jobProperties) {
-        return jobProperties.get("regionName");
+        return jobProperties.get(ResourceIDUtil.REGION_PROP_NAME);
     }
 
     public static void setMonitorMode(@NonNull Map<String, String> jobProperties,

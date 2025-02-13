@@ -68,7 +68,6 @@ import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.ParameterContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Procedure_bodyContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Procedure_nameContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Procedure_specContext;
-import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Rollback_statementContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Type_declarationContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser.Variable_declarationContext;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParserBaseListener;
@@ -418,6 +417,28 @@ public class OracleModeParserListener extends PlSqlParserBaseListener implements
         doRecord(SqlType.ROLLBACK, DBObjectType.OTHERS, null);
     }
 
+    @Override
+    public void enterComment_on_column(PlSqlParser.Comment_on_columnContext ctx) {
+        doRecord(SqlType.COMMENT_ON, DBObjectType.COLUMN, null);
+    }
+
+    @Override
+    public void enterComment_on_table(PlSqlParser.Comment_on_tableContext ctx) {
+        doRecord(SqlType.COMMENT_ON, DBObjectType.TABLE, null);
+    }
+
+    @Override
+    public void enterComment_on_materialized(PlSqlParser.Comment_on_materializedContext ctx) {
+        doRecord(SqlType.COMMENT_ON, DBObjectType.OTHERS, null);
+    }
+
+    @Override
+    public void enterProcedure_call(PlSqlParser.Procedure_callContext ctx) {
+        if (ctx.CALL() != null) {
+            doRecord(SqlType.CALL, DBObjectType.PROCEDURE, null);
+        }
+    }
+
     private void doRecord(SqlType sqlType, DBObjectType dbObjectType, String rawPlName) {
         if (Objects.nonNull(sqlType) && Objects.isNull(this.sqlType)) {
             this.sqlType = sqlType;
@@ -428,6 +449,18 @@ public class OracleModeParserListener extends PlSqlParserBaseListener implements
         }
         if (Objects.nonNull(rawPlName) && Objects.isNull(this.plName)) {
             this.plName = this.handleObjectName(rawPlName);
+        }
+    }
+
+    @Override
+    public void enterAlter_session(PlSqlParser.Alter_sessionContext ctx) {
+        doRecord(SqlType.ALTER_SESSION, DBObjectType.OTHERS, null);
+    }
+
+    @Override
+    public void enterScope_or_scope_alias(PlSqlParser.Scope_or_scope_aliasContext ctx) {
+        if (ctx.SESSION() != null) {
+            doRecord(SqlType.SET_SESSION, DBObjectType.OTHERS, null);
         }
     }
 

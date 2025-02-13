@@ -17,6 +17,7 @@ package com.oceanbase.odc.metadb.iam;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -50,5 +51,9 @@ public interface UserTablePermissionRepository extends ReadOnlyRepository<UserTa
             + "and v.project_id = :projectId", nativeQuery = true)
     List<UserTablePermissionEntity> findByUserIdAndProjectId(@Param("userId") Long userId,
             @Param("projectId") Long projectId);
+
+    @Query(value = "select v.* from list_user_table_permission_view v where v.project_id in (:projectIds)",
+            nativeQuery = true)
+    List<UserTablePermissionEntity> findByProjectIdIn(@Param("projectIds") Set<Long> projectIds);
 
 }

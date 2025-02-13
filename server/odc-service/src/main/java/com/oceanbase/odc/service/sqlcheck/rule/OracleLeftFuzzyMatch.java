@@ -16,7 +16,7 @@
 package com.oceanbase.odc.service.sqlcheck.rule;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
@@ -51,7 +51,7 @@ public class OracleLeftFuzzyMatch extends BaseLeftFuzzyMatch {
 
     @Override
     public List<DialectType> getSupportsDialectTypes() {
-        return Collections.singletonList(DialectType.OB_ORACLE);
+        return Arrays.asList(DialectType.OB_ORACLE, DialectType.ORACLE);
     }
 
 }

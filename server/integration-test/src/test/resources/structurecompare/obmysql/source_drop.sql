@@ -12,5 +12,6 @@ drop table if exists `converse_to_partition_table`;
 drop table if exists `converse_to_non_partition_table`;
 drop table if exists `modify_partition_type`;
 drop table if exists `update_options`;
+drop table if exists `bit_column_default_value`;
 
 

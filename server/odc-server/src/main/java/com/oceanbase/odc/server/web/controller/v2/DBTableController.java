@@ -40,9 +40,12 @@ import com.oceanbase.odc.service.partitionplan.model.PartitionPlanDBTable;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.state.model.StateName;
 import com.oceanbase.odc.service.state.model.StatefulRoute;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBSchema;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
+
+import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("api/v2/connect/sessions")
@@ -69,16 +72,18 @@ public class DBTableController {
         }
     }
 
+    @ApiOperation(value = "getTable", notes = "get table")
     @GetMapping(value = {"/{sessionId}/databases/{databaseName}/tables/{tableName}",
             "/{sessionId}/currentDatabase/tables/{tableName}"})
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<DBTable> getTable(@PathVariable String sessionId,
             @PathVariable(required = false) String databaseName,
-            @PathVariable String tableName) {
+            @PathVariable String tableName,
+            @RequestParam(required = false, name = "type", defaultValue = "TABLE") DBObjectType type) {
         Base64.Decoder decoder = Base64.getDecoder();
         tableName = new String(decoder.decode(tableName));
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
-        return Responses.success(tableService.getTable(session, databaseName, tableName));
+        return Responses.success(tableService.getTable(session, databaseName, tableName, type));
     }
 
     @PostMapping(value = {"/{sessionId}/databases/{databaseName}/tables/generateCreateTableDDL",
@@ -120,4 +125,15 @@ public class DBTableController {
         return Responses.list(this.partitionPlanService.getPartitionKeyDataTypes(sessionId, databaseId, tableName));
     }
 
+    @ApiOperation(value = "syncExternalTableFiles", notes = "sync external table files")
+    @PostMapping(value = "/{sessionId}/databases/{databaseName}/externalTables/"
+            + "{externalTableName}/syncExternalTableFiles")
+    public SuccessResponse<Boolean> syncExternalTableFiles(@PathVariable String sessionId,
+            @PathVariable(required = false) String databaseName,
+            @PathVariable(required = true, name = "externalTableName") String externalTableName) {
+        Base64.Decoder decoder = Base64.getDecoder();
+        externalTableName = new String(decoder.decode(externalTableName));
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        return Responses.success(tableService.syncExternalTableFiles(session, databaseName, externalTableName));
+    }
 }

@@ -39,6 +39,7 @@ import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
@@ -61,7 +62,7 @@ public class AbstractDlmPreprocessor implements Preprocessor {
         return Objects.requireNonNull(sourceSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<List<DBObjectIdentity>>) con -> SchemaPluginUtil.getTableExtension(
                         sourceSession.getDialectType())
-                        .list(con, schemaName)))
+                        .list(con, schemaName, DBObjectType.TABLE)))
                 .stream().map(o -> {
                     DataArchiveTableConfig config = new DataArchiveTableConfig();
                     config.setTableName(o.getName());
@@ -180,7 +181,7 @@ public class AbstractDlmPreprocessor implements Preprocessor {
                             targetDs.getRegion()));
         }
         if (sourceDs.getDialectType().isMysql()) {
-            if (!targetDs.getDialectType().isMysql()) {
+            if (!targetDs.getDialectType().isMysql() && targetDs.getDialectType() != DialectType.FILE_SYSTEM) {
                 throw new UnsupportedException(
                         String.format("Unsupported data link from %s to %s.", sourceDs.getDialectType(),
                                 targetDs.getDialectType()));

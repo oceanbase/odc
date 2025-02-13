@@ -128,6 +128,17 @@ public class CloudObjectStorageClient implements ObjectStorageClient {
     }
 
     @Override
+    public void copyObject(String fromObjectName, String toObjectName) throws IOException {
+        verifySupported();
+        boolean exist = internalEndpointCloudObjectStorage.doesObjectExist(getBucketName(), fromObjectName);
+        if (!exist) {
+            throw new FileNotFoundException("File dose not exist, object name " + fromObjectName);
+        }
+        this.internalEndpointCloudObjectStorage.copyObject(getBucketName(), fromObjectName, toObjectName);
+        log.info("Copy file success, fromObjectName={}, toObjectName={}", fromObjectName, toObjectName);
+    }
+
+    @Override
     public byte[] readContent(String objectName) throws IOException {
         verifySupported();
         boolean exist = internalEndpointCloudObjectStorage.doesObjectExist(getBucketName(), objectName);
@@ -302,13 +313,13 @@ public class CloudObjectStorageClient implements ObjectStorageClient {
      * 也就是杭州的client只允许操作杭州的bucket，不允许跨域操作
      */
     private void validateBucket() {
-        if (objectStorageConfiguration.getCloudProvider() != CloudProvider.ALIBABA_CLOUD) {
-            return;
-        }
         String bucketName = getBucketName();
         boolean isExist = publicEndpointCloudObjectStorage.doesBucketExist(bucketName);
         Verify.verify(isExist, String.format("object storage bucket '%s' not exists", bucketName));
 
+        if (objectStorageConfiguration.getCloudProvider() != CloudProvider.ALIBABA_CLOUD) {
+            return;
+        }
         String region = objectStorageConfiguration.getRegion();
         if (StringUtils.isNotEmpty(region)) {
             String location = publicEndpointCloudObjectStorage.getBucketLocation(bucketName);

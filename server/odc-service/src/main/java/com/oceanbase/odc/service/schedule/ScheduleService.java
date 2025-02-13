@@ -42,15 +42,20 @@ import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cglib.beans.BeanMap;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.CollectionUtils;
 
+import com.alibaba.fastjson.JSONObject;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
@@ -92,9 +97,10 @@ import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
-import com.oceanbase.odc.service.quartz.QuartzJobService;
+import com.oceanbase.odc.service.quartz.QuartzJobServiceProxy;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
@@ -149,6 +155,9 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @SkipAuthorize
 public class ScheduleService {
+
+    @Value("${odc.task.trigger.minimum-interval:600}")
+    private int minInterval;
     @Autowired
     private ScheduleRepository scheduleRepository;
 
@@ -157,7 +166,8 @@ public class ScheduleService {
     @Autowired
     private AuthenticationFacade authenticationFacade;
     @Autowired
-    private QuartzJobService quartzJobService;
+    @Qualifier("quartzJobServiceProxy")
+    private QuartzJobServiceProxy quartzJobService;
 
     @Autowired
     private ObjectStorageFacade objectStorageFacade;
@@ -172,6 +182,7 @@ public class ScheduleService {
     private ScheduleResponseMapperFactory scheduleResponseMapperFactory;
 
     @Autowired
+    @Lazy
     private ProjectService projectService;
 
     @Autowired
@@ -218,9 +229,12 @@ public class ScheduleService {
 
     @Autowired
     private ScheduleDescriptionGenerator descriptionGenerator;
+    @Autowired
+    private TransactionTemplate txTemplate;
 
     private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
 
+    @Transactional(rollbackFor = Exception.class)
     public List<FlowInstanceDetailResp> dispatchCreateSchedule(CreateFlowInstanceReq createReq) {
         AlterScheduleParameters parameters = (AlterScheduleParameters) createReq.getParameters();
         // adapt history parameters
@@ -233,6 +247,7 @@ public class ScheduleService {
         ScheduleChangeParams scheduleChangeParams;
         switch (parameters.getOperationType()) {
             case CREATE: {
+                validateTriggerConfig(parameters.getTriggerConfig());
                 CreateScheduleReq createScheduleReq = new CreateScheduleReq();
                 createScheduleReq.setParameters(parameters.getScheduleTaskParameters());
                 createScheduleReq.setTriggerConfig(parameters.getTriggerConfig());
@@ -270,7 +285,6 @@ public class ScheduleService {
         // create or load target schedule
         if (req.getOperationType() == OperationType.CREATE) {
             PreConditions.notNull(req.getCreateScheduleReq(), "req.createScheduleReq");
-            validateTriggerConfig(req.getCreateScheduleReq().getTriggerConfig());
             ScheduleEntity entity = new ScheduleEntity();
 
             entity.setName(req.getCreateScheduleReq().getName());
@@ -314,19 +328,18 @@ public class ScheduleService {
             targetSchedule = nullSafeGetByIdWithCheckPermission(req.getScheduleId(), true);
             if (req.getOperationType() == OperationType.UPDATE) {
                 validateTriggerConfig(req.getUpdateScheduleReq().getTriggerConfig());
+                PreConditions.validRequestState(targetSchedule.getStatus() == ScheduleStatus.PAUSE,
+                        ErrorCodes.UpdateNotAllowed, null, "Update schedule is not allowed.");
             }
-            if (req.getOperationType() == OperationType.UPDATE
-                    && (targetSchedule.getStatus() != ScheduleStatus.PAUSE
-                            || hasExecutingTask(targetSchedule.getId()))) {
-                log.warn("Update schedule is not allowed,status={}", targetSchedule.getStatus());
-                throw new IllegalStateException("Update schedule is not allowed.");
+            if (req.getOperationType() == OperationType.PAUSE) {
+                PreConditions.validRequestState(!hasExecutingTask(targetSchedule.getId()), ErrorCodes.PauseNotAllowed,
+                        null, "Pause schedule is not allowed.");
             }
-            if (req.getOperationType() == OperationType.DELETE
-                    && targetSchedule.getStatus() != ScheduleStatus.TERMINATED
-                    && targetSchedule.getStatus() != ScheduleStatus.COMPLETED) {
-                log.warn("Delete schedule is not allowed,status={}", targetSchedule.getStatus());
-                throw new IllegalStateException(
-                        "Delete schedule is not allowed, only can delete terminated schedule or finished schedule.");
+            if (req.getOperationType() == OperationType.DELETE) {
+                PreConditions.validRequestState((targetSchedule.getStatus() == ScheduleStatus.TERMINATED
+                        || targetSchedule.getStatus() == ScheduleStatus.COMPLETED)
+                        && !hasExecutingTask(targetSchedule.getId()), ErrorCodes.DeleteNotAllowed, null,
+                        "Delete schedule is not allowed.");
             }
         }
 
@@ -363,16 +376,37 @@ public class ScheduleService {
                         "Concurrent change schedule request is not allowed");
             }
 
+            String pre = null;
+            String curr = null;
+            if (req.getOperationType() == OperationType.UPDATE) {
+                JSONObject preJsonObject = new JSONObject();
+                preJsonObject.put("triggerConfig", targetSchedule.getTriggerConfig());
+                preJsonObject.put("parameters", targetSchedule.getParameters());
+                pre = preJsonObject.toJSONString();
+                JSONObject currJsonOBject = new JSONObject();
+                currJsonOBject.put("triggerConfig", req.getUpdateScheduleReq().getTriggerConfig());
+                currJsonOBject.put("parameters", req.getUpdateScheduleReq().getParameters());
+                curr = currJsonOBject.toJSONString();
+            } else if (req.getOperationType() == OperationType.CREATE) {
+                JSONObject currJsonOBject = new JSONObject();
+                currJsonOBject.put("triggerConfig", req.getCreateScheduleReq().getTriggerConfig());
+                currJsonOBject.put("parameters", req.getCreateScheduleReq().getParameters());
+                curr = currJsonOBject.toJSONString();
+            }
+
             ScheduleChangeLog changeLog = scheduleChangeLogService.createChangeLog(
-                    ScheduleChangeLog.build(targetSchedule.getId(), req.getOperationType(),
-                            JsonUtils.toJson(targetSchedule.getParameters()),
-                            req.getOperationType() == OperationType.UPDATE
-                                    ? JsonUtils.toJson(req.getUpdateScheduleReq().getParameters())
-                                    : null,
+                    ScheduleChangeLog.build(targetSchedule.getId(), req.getOperationType(), pre, curr,
                             ScheduleChangeStatus.APPROVING));
             log.info("Create change log success,changLog={}", changeLog);
             req.setScheduleChangeLogId(changeLog.getId());
-            Long approvalFlowInstanceId = approvalFlowService.create(req);
+            Long approvalFlowInstanceId;
+            Optional<Organization> organization = organizationService.get(targetSchedule.getOrganizationId());
+            if (organization.isPresent()
+                    && organization.get().getType() == OrganizationType.INDIVIDUAL) {
+                approvalFlowInstanceId = null;
+            } else {
+                approvalFlowInstanceId = approvalFlowService.create(req);
+            }
             if (approvalFlowInstanceId != null) {
                 changeLog.setFlowInstanceId(approvalFlowInstanceId);
                 scheduleChangeLogService.updateFlowInstanceIdById(changeLog.getId(), approvalFlowInstanceId);
@@ -397,72 +431,82 @@ public class ScheduleService {
                 throw new IllegalArgumentException("Invalid cron expression");
             }
             long intervalMills = nextFiveFireTimes.get(1).getTime() - nextFiveFireTimes.get(0).getTime();
-            if (intervalMills / 1000 < 10 * 60) {
-                throw new IllegalArgumentException(
-                        "The interval between weeks is too short. The minimum interval is 10 minutes.");
-            }
+            PreConditions.validArgumentState(intervalMills / 1000 > minInterval, ErrorCodes.ScheduleIntervalTooShort,
+                    new Object[] {minInterval}, null);
         }
     }
 
-    @Transactional(rollbackFor = Exception.class)
     public void executeChangeSchedule(ScheduleChangeParams req) {
-        Schedule targetSchedule = nullSafeGetModelById(req.getScheduleId());
-        // start to change schedule
-        switch (req.getOperationType()) {
-            case CREATE:
-            case RESUME: {
-                scheduleRepository.updateStatusById(targetSchedule.getId(), ScheduleStatus.ENABLED);
-                break;
-            }
-            case UPDATE: {
-                ScheduleEntity entity = nullSafeGetById(req.getScheduleId());
-                entity.setJobParametersJson(JsonUtils.toJson(req.getUpdateScheduleReq().getParameters()));
-                entity.setTriggerConfigJson(JsonUtils.toJson(req.getUpdateScheduleReq().getTriggerConfig()));
-                entity.setDescription(req.getUpdateScheduleReq().getDescription());
-                entity.setStatus(ScheduleStatus.ENABLED);
-                PreConditions.notNull(req.getUpdateScheduleReq(), "req.updateScheduleReq");
-                if (req.getUpdateScheduleReq().getParameters() instanceof DataArchiveParameters) {
-                    DataArchiveParameters parameters = (DataArchiveParameters) req.getUpdateScheduleReq()
-                            .getParameters();
-                    parameters.getRateLimit().setOrderId(req.getScheduleId());
-                    dlmLimiterService.updateByOrderId(req.getScheduleId(), parameters.getRateLimit());
-                }
-                if (req.getUpdateScheduleReq().getParameters() instanceof DataDeleteParameters) {
-                    DataDeleteParameters parameters = (DataDeleteParameters) req.getUpdateScheduleReq()
-                            .getParameters();
-                    parameters.getRateLimit().setOrderId(req.getScheduleId());
-                    dlmLimiterService.updateByOrderId(req.getScheduleId(), parameters.getRateLimit());
-                }
-                targetSchedule = scheduleMapper.entityToModel(scheduleRepository.save(entity));
-                break;
-            }
-            case PAUSE: {
-                scheduleRepository.updateStatusById(targetSchedule.getId(), ScheduleStatus.PAUSE);
-                break;
-            }
-            case TERMINATE: {
-                scheduleRepository.updateStatusById(targetSchedule.getId(), ScheduleStatus.TERMINATED);
-                break;
-            }
-            case DELETE: {
-                scheduleRepository.updateStatusById(targetSchedule.getId(), ScheduleStatus.DELETED);
-                break;
-            }
-            default:
-                throw new UnsupportedException();
-        }
-
         // start change quartzJob
-        ChangeQuartJobParam quartzJobReq = new ChangeQuartJobParam();
-        quartzJobReq.setOperationType(req.getOperationType());
-        quartzJobReq.setJobName(targetSchedule.getId().toString());
-        quartzJobReq.setJobGroup(targetSchedule.getType().name());
-        quartzJobReq.setTriggerConfig(targetSchedule.getTriggerConfig());
-        quartzJobService.changeQuartzJob(quartzJobReq);
+        boolean isSuccess = Boolean.TRUE.equals(txTemplate.execute(status -> {
+            Schedule targetSchedule = nullSafeGetModelById(req.getScheduleId());
+            try {
+                // start to change schedule
+                switch (req.getOperationType()) {
+                    case CREATE:
+                    case RESUME: {
+                        scheduleRepository.updateStatusById(targetSchedule.getId(), ScheduleStatus.ENABLED);
+                        break;
+                    }
+                    case UPDATE: {
+                        ScheduleEntity entity = nullSafeGetById(req.getScheduleId());
+                        entity.setJobParametersJson(JsonUtils.toJson(req.getUpdateScheduleReq().getParameters()));
+                        entity.setTriggerConfigJson(JsonUtils.toJson(req.getUpdateScheduleReq().getTriggerConfig()));
+                        entity.setDescription(req.getUpdateScheduleReq().getDescription());
+                        entity.setStatus(ScheduleStatus.ENABLED);
+                        PreConditions.notNull(req.getUpdateScheduleReq(), "req.updateScheduleReq");
+                        if (req.getUpdateScheduleReq().getParameters() instanceof DataArchiveParameters) {
+                            DataArchiveParameters parameters = (DataArchiveParameters) req.getUpdateScheduleReq()
+                                    .getParameters();
+                            parameters.getRateLimit().setOrderId(req.getScheduleId());
+                            dlmLimiterService.updateByOrderId(req.getScheduleId(), parameters.getRateLimit());
+                        }
+                        if (req.getUpdateScheduleReq().getParameters() instanceof DataDeleteParameters) {
+                            DataDeleteParameters parameters = (DataDeleteParameters) req.getUpdateScheduleReq()
+                                    .getParameters();
+                            parameters.getRateLimit().setOrderId(req.getScheduleId());
+                            dlmLimiterService.updateByOrderId(req.getScheduleId(), parameters.getRateLimit());
+                        }
+                        targetSchedule = scheduleMapper.entityToModel(scheduleRepository.save(entity));
+                        break;
+                    }
+                    case PAUSE: {
+                        scheduleRepository.updateStatusById(targetSchedule.getId(), ScheduleStatus.PAUSE);
+                        break;
+                    }
+                    case TERMINATE: {
+                        scheduleRepository.updateStatusById(targetSchedule.getId(), ScheduleStatus.TERMINATED);
+                        break;
+                    }
+                    case DELETE: {
+                        scheduleRepository.updateStatusById(targetSchedule.getId(), ScheduleStatus.DELETED);
+                        break;
+                    }
+                    default:
+                        throw new UnsupportedException();
+                }
 
-        scheduleChangeLogService.updateStatusById(req.getScheduleChangeLogId(), ScheduleChangeStatus.SUCCESS);
-        log.info("Change schedule success,scheduleId={},operationType={},changelogId={}", targetSchedule.getId(),
-                req.getOperationType(), req.getScheduleChangeLogId());
+                // start change quartzJob
+                ChangeQuartJobParam quartzJobReq = new ChangeQuartJobParam();
+                quartzJobReq.setOperationType(req.getOperationType());
+                quartzJobReq.setJobName(targetSchedule.getId().toString());
+                quartzJobReq.setJobGroup(targetSchedule.getType().name());
+                quartzJobReq.setTriggerConfig(targetSchedule.getTriggerConfig());
+                quartzJobService.changeJob(quartzJobReq);
+                return true;
+            } catch (Exception e) {
+                log.warn("Change schedule failed,scheduleId={},operationType={},changelogId={}", targetSchedule.getId(),
+                        req.getOperationType(), req.getScheduleChangeLogId(), e);
+                status.setRollbackOnly();
+                return false;
+            }
+        }));
+
+        scheduleChangeLogService.updateStatusById(req.getScheduleChangeLogId(),
+                isSuccess ? ScheduleChangeStatus.SUCCESS : ScheduleChangeStatus.FAILED);
+        log.info("Change schedule completed,scheduleId={},operationType={},changelogId={},status={}",
+                req.getScheduleId(),
+                req.getOperationType(), req.getScheduleChangeLogId(), isSuccess ? "SUCCESS" : "FAILED");
 
     }
 
@@ -695,9 +739,8 @@ public class ScheduleService {
         if (status == ScheduleStatus.PAUSE) {
             return;
         }
-        int runningTask = scheduleTaskService.listTaskByJobNameAndStatus(scheduleId.toString(),
-                TaskStatus.getProcessingStatus()).size();
-        if (runningTask > 0) {
+        Optional<ScheduleTask> latestTask = getLatestTask(scheduleId);
+        if (latestTask.isPresent() && latestTask.get().getStatus().isProcessing()) {
             status = ScheduleStatus.ENABLED;
         } else {
             try {
@@ -784,13 +827,15 @@ public class ScheduleService {
                     params.getCreator()).stream().map(User::getId).collect(Collectors.toSet()));
         }
         if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
-            Set<Long> projectIds = params.getProjectId() == null
-                    ? projectService.getMemberProjectIds(authenticationFacade.currentUserId())
-                    : Collections.singleton(params.getProjectId());
-            if (projectIds.isEmpty()) {
+            Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
+            if (CollectionUtils.isEmpty(joinedProjectIds)) {
                 return Page.empty();
             }
-            params.setProjectIds(projectIds);
+            if (CollectionUtils.isEmpty(params.getProjectIds())) {
+                params.setProjectIds(joinedProjectIds);
+            } else {
+                params.getProjectIds().retainAll(joinedProjectIds);
+            }
         }
         params.setOrganizationId(authenticationFacade.currentOrganizationId());
         Page<ScheduleEntity> returnValue = scheduleRepository.find(pageable, params);
@@ -798,6 +843,16 @@ public class ScheduleService {
                 scheduleResponseMapperFactory.generateHistoryScheduleList(returnValue.getContent());
         return returnValue.isEmpty() ? Page.empty()
                 : returnValue.map(o -> scheduleId2Overview.get(o.getId()));
+    }
+
+    public Page<ScheduleOverviewHist> listUnfinishedSchedulesByProjectId(@NonNull Pageable pageable,
+            @NonNull Long projectId) {
+        return list(pageable, QueryScheduleParams.builder().projectIds(Collections.singleton(projectId))
+                .statuses(ScheduleStatus.listUnfinishedStatus()).build());
+    }
+
+    public int getEnabledScheduleCountByProjectId(@NonNull Long projectId) {
+        return scheduleRepository.getEnabledScheduleCountByProjectId(projectId);
     }
 
     public Page<ScheduleOverview> listScheduleOverview(@NotNull Pageable pageable,

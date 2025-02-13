@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.sqlcheck.rule;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -43,7 +43,7 @@ public class OracleTooManyAlterStatement extends BaseTooManyAlterStatement {
 
     @Override
     public List<DialectType> getSupportsDialectTypes() {
-        return Collections.singletonList(DialectType.OB_ORACLE);
+        return Arrays.asList(DialectType.OB_ORACLE, DialectType.ORACLE);
     }
 
 }

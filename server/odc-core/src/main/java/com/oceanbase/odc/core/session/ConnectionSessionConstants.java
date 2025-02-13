@@ -75,6 +75,11 @@ public class ConnectionSessionConstants {
      */
     public static final String OB_VERSION = "OB_VERSION";
     /**
+     * The odp version needs to be stored in the database session in the form of attributes, this is the
+     * key
+     */
+    public static final String ODP_VERSION = "ODP_VERSION";
+    /**
      * The connection account type current database session needs to be stored in the database session
      * in the form of attributes, this is the key
      */

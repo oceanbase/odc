@@ -51,11 +51,14 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Dot_notation_fun_sysConte
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Dot_notation_pathContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Dot_notation_path_obj_access_refContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Entry_opContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Environment_id_functionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Evalname_exprContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.ExprContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Extract_functionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Func_access_refContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Func_paramContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Func_param_with_assignContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Hierarchical_functionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.In_exprContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Insert_child_xmlContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Is_json_constrainContext;
@@ -87,6 +90,7 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Json_value_on_error_respo
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Json_value_on_optContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Json_value_on_responseContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Nstring_length_iContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Numeric_functionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Obj_access_refContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Obj_access_ref_normalContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Opt_js_value_returning_typeContext;
@@ -103,9 +107,12 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.PredicateContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Regular_entry_objContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Relation_nameContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Scalars_optContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Sdo_relate_exprContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Signed_literalContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Simple_exprContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Single_row_functionContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Spatial_cellid_exprContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Spatial_mbr_exprContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Special_func_exprContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.String_length_iContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Table_element_access_listContext;
@@ -150,14 +157,14 @@ import com.oceanbase.tools.sqlparser.statement.expression.ExpressionParam;
 import com.oceanbase.tools.sqlparser.statement.expression.FullTextSearch;
 import com.oceanbase.tools.sqlparser.statement.expression.FunctionCall;
 import com.oceanbase.tools.sqlparser.statement.expression.FunctionParam;
-import com.oceanbase.tools.sqlparser.statement.expression.JsonConstraint;
-import com.oceanbase.tools.sqlparser.statement.expression.JsonConstraint.ScalarsMode;
-import com.oceanbase.tools.sqlparser.statement.expression.JsonConstraint.StrictMode;
-import com.oceanbase.tools.sqlparser.statement.expression.JsonConstraint.UniqueMode;
-import com.oceanbase.tools.sqlparser.statement.expression.JsonConstraint.WrapperMode;
 import com.oceanbase.tools.sqlparser.statement.expression.JsonKeyValue;
 import com.oceanbase.tools.sqlparser.statement.expression.JsonOnOption;
 import com.oceanbase.tools.sqlparser.statement.expression.JsonOnOption.OnMismatch;
+import com.oceanbase.tools.sqlparser.statement.expression.JsonOption;
+import com.oceanbase.tools.sqlparser.statement.expression.JsonOption.ScalarsMode;
+import com.oceanbase.tools.sqlparser.statement.expression.JsonOption.StrictMode;
+import com.oceanbase.tools.sqlparser.statement.expression.JsonOption.UniqueMode;
+import com.oceanbase.tools.sqlparser.statement.expression.JsonOption.WrapperMode;
 import com.oceanbase.tools.sqlparser.statement.expression.NullExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ParamWithAssign;
 import com.oceanbase.tools.sqlparser.statement.expression.RelationReference;
@@ -666,7 +673,7 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
 
     @Override
     public Expression visitIs_json_constrain(Is_json_constrainContext ctx) {
-        JsonConstraint constraint = new JsonConstraint(ctx);
+        JsonOption constraint = new JsonOption(ctx);
         if (ctx.strict_opt() != null) {
             constraint.setStrictMode(ctx.strict_opt().LAX() != null ? StrictMode.LAX : StrictMode.STRICT);
         }
@@ -699,42 +706,49 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
         FunctionCall fCall = new FunctionCall(ctx, "json_object", params);
         if (ctx.opt_json_object_content().opt_json_object_clause() != null) {
             Opt_json_object_clauseContext oCtx = ctx.opt_json_object_content().opt_json_object_clause();
+            JsonOption jsonOpt = null;
+            if (oCtx.STRICT() != null || oCtx.json_obj_unique_key() != null) {
+                jsonOpt = getJsonOption(oCtx.STRICT(), oCtx.json_obj_unique_key());
+            }
             if (oCtx.js_on_null() != null) {
+                if (jsonOpt == null) {
+                    jsonOpt = new JsonOption(oCtx.js_on_null());
+                }
                 JsonOnOption onOption = new JsonOnOption(oCtx.js_on_null());
                 if (oCtx.js_on_null().ABSENT() != null) {
                     onOption.setOnNull(new ConstExpression(oCtx.js_on_null().ABSENT()));
                 } else {
                     onOption.setOnNull(new NullExpression(oCtx.js_on_null().NULLX(0)));
                 }
-                fCall.addOption(onOption);
+                jsonOpt.setOnOption(onOption);
             }
             if (oCtx.json_obj_returning_type() != null) {
                 fCall.addOption(new OracleDataTypeFactory(
                         oCtx.json_obj_returning_type().js_return_type()).generate());
             }
-            if (oCtx.STRICT() != null || oCtx.json_obj_unique_key() != null) {
-                fCall.addOption(getJsonConstraint(oCtx.STRICT(), oCtx.json_obj_unique_key()));
+            if (jsonOpt != null) {
+                fCall.addOption(jsonOpt);
             }
         } else if (ctx.opt_json_object_content().STRICT() != null) {
-            fCall.addOption(getJsonConstraint(ctx.opt_json_object_content().STRICT(),
+            fCall.addOption(getJsonOption(ctx.opt_json_object_content().STRICT(),
                     ctx.opt_json_object_content().json_obj_unique_key()));
         } else {
-            fCall.addOption(getJsonConstraint(null, ctx.opt_json_object_content().json_obj_unique_key()));
+            fCall.addOption(getJsonOption(null, ctx.opt_json_object_content().json_obj_unique_key()));
         }
         return fCall;
     }
 
-    private JsonConstraint getJsonConstraint(TerminalNode strict, Json_obj_unique_keyContext ctx) {
-        JsonConstraint jc;
+    private JsonOption getJsonOption(TerminalNode strict, Json_obj_unique_keyContext ctx) {
+        JsonOption jc;
         if (strict != null && ctx != null) {
-            jc = new JsonConstraint(strict, ctx);
+            jc = new JsonOption(strict, ctx);
             jc.setStrictMode(StrictMode.STRICT);
             jc.setUniqueMode(UniqueMode.WITH_UNIQUE_KEYS);
         } else if (strict != null) {
-            jc = new JsonConstraint(strict);
+            jc = new JsonOption(strict);
             jc.setStrictMode(StrictMode.STRICT);
         } else {
-            jc = new JsonConstraint(ctx);
+            jc = new JsonOption(ctx);
             jc.setUniqueMode(UniqueMode.WITH_UNIQUE_KEYS);
         }
         return jc;
@@ -781,23 +795,28 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
         if (ctx.js_query_return_type() != null) {
             fCall.addOption(new OracleDataTypeFactory(ctx.js_query_return_type()).generate());
         }
-        if (ctx.TRUNCATE() != null) {
-            fCall.addOption(new ConstExpression(ctx.TRUNCATE()));
+        if (ctx.json_query_opt() != null) {
+            JsonOption jsonOpt = new JsonOption(ctx.json_query_opt());
+            fCall.addOption(jsonOpt);
+            if (ctx.json_query_opt().TRUNCATE() != null) {
+                jsonOpt.setTruncate(true);
+            }
+            if (ctx.json_query_opt().PRETTY() != null) {
+                jsonOpt.setPretty(true);
+            }
+            if (ctx.json_query_opt().ASCII() != null) {
+                jsonOpt.setAscii(true);
+            }
+            setScalarsMode(jsonOpt, ctx.json_query_opt().scalars_opt());
+            setWrapperMode(jsonOpt, ctx.json_query_opt().wrapper_opts());
+            if (ctx.json_query_opt().ASIS() != null) {
+                jsonOpt.setAsis(true);
+            }
+            jsonOpt.setOnOption(getJsonOnOption(ctx.json_query_opt().json_query_on_opt()));
+            if (ctx.json_query_opt().MULTIVALUE() != null) {
+                jsonOpt.setMultiValue(true);
+            }
         }
-        if (ctx.PRETTY() != null) {
-            fCall.addOption(new ConstExpression(ctx.PRETTY()));
-        }
-        if (ctx.ASCII() != null) {
-            fCall.addOption(new ConstExpression(ctx.ASCII()));
-        }
-        if (ctx.scalars_opt() != null || ctx.wrapper_opts() != null) {
-            JsonConstraint constraint = new JsonConstraint(
-                    ctx.scalars_opt() == null ? ctx.wrapper_opts() : ctx.scalars_opt());
-            setScalarsMode(constraint, ctx.scalars_opt());
-            setWrapperMode(constraint, ctx.wrapper_opts());
-            fCall.addOption(constraint);
-        }
-        fCall.addOption(getJsonOnOption(ctx.json_query_on_opt()));
         return fCall;
     }
 
@@ -809,24 +828,27 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
         if (ctx.js_mp_return_clause() != null) {
             fCall.addOption(new OracleDataTypeFactory(ctx.js_mp_return_clause().js_return_type()).generate());
         }
-        Opt_json_mergepatchContext oCtx = ctx.opt_json_mergepatch();
+        JsonOption jsonOpt = new JsonOption(ctx.json_mergepatch_opt());
+        fCall.addOption(jsonOpt);
+        Opt_json_mergepatchContext oCtx = ctx.json_mergepatch_opt().opt_json_mergepatch();
         if (oCtx.TRUNCATE() != null) {
-            fCall.addOption(new ConstExpression(oCtx.TRUNCATE()));
+            jsonOpt.setTruncate(true);
         }
         if (oCtx.PRETTY() != null) {
-            fCall.addOption(new ConstExpression(oCtx.PRETTY()));
+            jsonOpt.setPretty(true);
         }
         if (oCtx.ASCII() != null) {
-            fCall.addOption(new ConstExpression(oCtx.ASCII()));
+            jsonOpt.setAscii(true);
         }
-        if (ctx.json_mergepatch_on_error() != null) {
-            JsonOnOption jsonOnOption = new JsonOnOption(ctx.json_mergepatch_on_error());
-            if (ctx.json_mergepatch_on_error().NULLX() != null) {
-                jsonOnOption.setOnError(new NullExpression(ctx.json_mergepatch_on_error().NULLX()));
+        if (ctx.json_mergepatch_opt().json_mergepatch_on_error() != null) {
+            OBParser.Json_mergepatch_on_errorContext jCtx = ctx.json_mergepatch_opt().json_mergepatch_on_error();
+            JsonOnOption jsonOnOption = new JsonOnOption(jCtx);
+            if (jCtx.NULLX() != null) {
+                jsonOnOption.setOnError(new NullExpression(jCtx.NULLX()));
             } else {
-                jsonOnOption.setOnError(new ConstExpression(ctx.json_mergepatch_on_error().ERROR_P(0)));
+                jsonOnOption.setOnError(new ConstExpression(jCtx.ERROR_P(0)));
             }
-            fCall.addOption(jsonOnOption);
+            jsonOpt.setOnOption(jsonOnOption);
         }
         return fCall;
     }
@@ -846,22 +868,28 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
             return p;
         }).collect(Collectors.toList());
         FunctionCall fCall = new FunctionCall(ctx, "json_array", params);
+        JsonOption jsonOpt = null;
         if (jCtx.json_array_on_null() != null) {
+            jsonOpt = new JsonOption(jCtx.json_array_on_null());
             JsonOnOption jsonOnOption = new JsonOnOption(jCtx.json_array_on_null());
             if (jCtx.json_array_on_null().ABSENT() != null) {
                 jsonOnOption.setOnNull(new ConstExpression(jCtx.json_array_on_null().ABSENT()));
             } else {
                 jsonOnOption.setOnNull(new NullExpression(jCtx.json_array_on_null().NULLX(0)));
             }
-            fCall.addOption(jsonOnOption);
+            jsonOpt.setOnOption(jsonOnOption);
         }
         if (jCtx.js_array_return_clause() != null) {
             fCall.addOption(new OracleDataTypeFactory(jCtx.js_array_return_clause().js_return_type()).generate());
         }
         if (jCtx.STRICT() != null) {
-            JsonConstraint jsonConstraint = new JsonConstraint(jCtx.STRICT());
-            jsonConstraint.setStrictMode(StrictMode.STRICT);
-            fCall.addOption(jsonConstraint);
+            if (jsonOpt == null) {
+                jsonOpt = new JsonOption(jCtx.STRICT());
+            }
+            jsonOpt.setStrictMode(StrictMode.STRICT);
+        }
+        if (jsonOpt != null) {
+            fCall.addOption(jsonOpt);
         }
         return fCall;
     }
@@ -878,13 +906,17 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
         if (dataType != null) {
             fCall.addOption(dataType);
         }
-        if (ctx.TRUNCATE() != null) {
-            fCall.addOption(new ConstExpression(ctx.TRUNCATE()));
+        if (ctx.json_value_opt() != null) {
+            JsonOption jsonOpt = new JsonOption(ctx.json_value_opt());
+            fCall.addOption(jsonOpt);
+            if (ctx.json_value_opt().TRUNCATE() != null) {
+                jsonOpt.setTruncate(true);
+            }
+            if (ctx.json_value_opt().ASCII() != null) {
+                jsonOpt.setAscii(true);
+            }
+            jsonOpt.setOnOption(getJsonOnOption(ctx.json_value_opt().json_value_on_opt()));
         }
-        if (ctx.ASCII() != null) {
-            fCall.addOption(new ConstExpression(ctx.ASCII()));
-        }
-        fCall.addOption(getJsonOnOption(ctx.json_value_on_opt()));
         return fCall;
     }
 
@@ -912,7 +944,7 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
             params.add(new ExpressionParam(new ConstExpression(ctx.literal())));
         }
         FunctionCall fCall = new FunctionCall(ctx, ctx.JSON_TABLE().getText(), params);
-        fCall.addOption(getJsonOnOption(ctx.opt_json_table_on_error_on_empty()));
+        fCall.addOption(getJsonOption(ctx.opt_json_table_on_error_on_empty()));
         ctx.json_table_columns_def_opt().json_table_columns_def().json_table_column_def()
                 .forEach(c -> fCall.addOption(visitJsonTableColumnDef(c)));
         return fCall;
@@ -927,7 +959,7 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
         }
         FunctionCall fCall = new FunctionCall(ctx, ctx.getChild(0).getText(), params);
         if (ctx.json_equal_option() != null) {
-            fCall.addOption(getJsonOnOption(ctx.json_equal_option()));
+            fCall.addOption(getJsonOption(ctx.json_equal_option()));
         }
         return fCall;
     }
@@ -1230,7 +1262,7 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
         }
         setJsonExistOpt(fCall, ctx.opt_json_exist());
         if (ctx.json_equal_option() != null) {
-            fCall.addOption(getJsonOnOption(ctx.json_equal_option()));
+            fCall.addOption(getJsonOption(ctx.json_equal_option()));
         }
         return fCall;
     }
@@ -1280,85 +1312,112 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
     }
 
     @Override
-    public Expression visitSingle_row_function(Single_row_functionContext ctx) {
+    public Expression visitNumeric_function(Numeric_functionContext ctx) {
+        return new FunctionCall(ctx, ctx.MOD().getText(), ctx.bit_expr().stream()
+                .map(e -> new ExpressionParam(visit(e))).collect(Collectors.toList()));
+    }
+
+    @Override
+    public Expression visitCharacter_function(Character_functionContext ctx) {
         String funcName = null;
         List<Statement> functionOpts = new ArrayList<>();
         List<FunctionParam> params = new ArrayList<>();
-        if (ctx.numeric_function() != null) {
-            funcName = ctx.numeric_function().MOD().getText();
-            params.addAll(ctx.numeric_function().bit_expr().stream()
-                    .map(e -> new ExpressionParam(visit(e))).collect(Collectors.toList()));
-        } else if (ctx.character_function() != null) {
-            Character_functionContext characterFunc = ctx.character_function();
-            if (characterFunc.TRANSLATE() != null) {
-                funcName = characterFunc.TRANSLATE().getText();
-            } else if (characterFunc.TRIM() != null) {
-                funcName = characterFunc.TRIM().getText();
-            } else if (characterFunc.ASCII() != null) {
-                funcName = characterFunc.ASCII().getText();
-            }
-            if (characterFunc.parameterized_trim() != null) {
-                Parameterized_trimContext trim = characterFunc.parameterized_trim();
-                FunctionParam param = new ExpressionParam(visit(trim.bit_expr(0)));
-                if (trim.bit_expr(1) != null) {
-                    param.addOption(visit(trim.bit_expr(1)));
-                }
-                params.add(param);
-                for (int i = 0; i < trim.getChildCount(); i++) {
-                    ParseTree p = trim.getChild(i);
-                    if (p instanceof TerminalNode) {
-                        functionOpts.add(new ConstExpression((TerminalNode) p));
-                    } else {
-                        break;
-                    }
-                }
-            } else {
-                params.addAll(characterFunc.bit_expr().stream().map(e -> new ExpressionParam(visit(e)))
-                        .collect(Collectors.toList()));
-                if (params.size() > 0) {
-                    params.get(params.size() - 1).addOption(new ConstExpression(characterFunc.translate_charset()));
-                }
-            }
-        } else if (ctx.extract_function() != null) {
-            funcName = ctx.extract_function().EXTRACT().getText();
-            FunctionParam p = new ExpressionParam(new ConstExpression(ctx.extract_function().date_unit_for_extract()));
-            p.addOption(visit(ctx.extract_function().bit_expr()));
-            params.add(p);
-        } else if (ctx.conversion_function() != null) {
-            Conversion_functionContext fCtx = ctx.conversion_function();
-            if (fCtx.CAST() != null) {
-                funcName = fCtx.CAST().getText();
-                FunctionParam functionParam = new ExpressionParam(visit(fCtx.bit_expr()));
-                functionParam.addOption(new OracleDataTypeFactory(fCtx.cast_data_type()).generate());
-                params.add(functionParam);
-            } else {
-                funcName = fCtx.TREAT().getText();
-                FunctionParam functionParam = new ExpressionParam(visit(fCtx.bit_expr()));
-                functionParam.addOption(new OracleDataTypeFactory(fCtx.treat_data_type()).generate());
-                params.add(functionParam);
-            }
-        } else if (ctx.hierarchical_function() != null) {
-            funcName = ctx.hierarchical_function().SYS_CONNECT_BY_PATH().getText();
-            params.addAll(ctx.hierarchical_function().bit_expr().stream().map(e -> new ExpressionParam(visit(e)))
-                    .collect(Collectors.toList()));
-        } else if (ctx.environment_id_function() != null) {
-            funcName = ctx.environment_id_function().getText();
-        } else if (ctx.xml_function() != null) {
-            Expression fCall = visit(ctx.xml_function());
-            if (ctx.obj_access_ref_normal() != null) {
-                fCall.reference(visit(ctx.obj_access_ref_normal()), ReferenceOperator.DOT);
-            } else if (ctx.table_element_access_list() != null) {
-                visitTableElementAccessList(fCall, ctx.table_element_access_list());
-            }
-            return fCall;
-        } else if (ctx.json_function() != null) {
-            return visit(ctx.json_function());
+        if (ctx.TRANSLATE() != null) {
+            funcName = ctx.TRANSLATE().getText();
+        } else if (ctx.TRIM() != null) {
+            funcName = ctx.TRIM().getText();
+        } else if (ctx.ASCII() != null) {
+            funcName = ctx.ASCII().getText();
         }
         if (funcName == null) {
             throw new IllegalStateException("Missing function name");
         }
+        if (ctx.parameterized_trim() != null) {
+            Parameterized_trimContext trim = ctx.parameterized_trim();
+            FunctionParam param = new ExpressionParam(visit(trim.bit_expr(0)));
+            if (trim.bit_expr(1) != null) {
+                param.addOption(visit(trim.bit_expr(1)));
+            }
+            params.add(param);
+            for (int i = 0; i < trim.getChildCount(); i++) {
+                ParseTree p = trim.getChild(i);
+                if (p instanceof TerminalNode) {
+                    functionOpts.add(new ConstExpression((TerminalNode) p));
+                } else {
+                    break;
+                }
+            }
+        } else {
+            params.addAll(ctx.bit_expr().stream().map(e -> new ExpressionParam(visit(e)))
+                    .collect(Collectors.toList()));
+            if (params.size() > 0) {
+                params.get(params.size() - 1).addOption(new ConstExpression(ctx.translate_charset()));
+            }
+        }
         FunctionCall fCall = new FunctionCall(ctx, funcName, params);
         functionOpts.forEach(fCall::addOption);
+        return fCall;
+    }
+
+    @Override
+    public Expression visitExtract_function(Extract_functionContext ctx) {
+        FunctionParam p = new ExpressionParam(new ConstExpression(ctx.date_unit_for_extract()));
+        p.addOption(visit(ctx.bit_expr()));
+        return new FunctionCall(ctx, ctx.EXTRACT().getText(), Collections.singletonList(p));
+    }
+
+    @Override
+    public Expression visitConversion_function(Conversion_functionContext ctx) {
+        if (ctx.CAST() != null) {
+            FunctionParam functionParam = new ExpressionParam(visit(ctx.bit_expr()));
+            functionParam.addOption(new OracleDataTypeFactory(ctx.cast_data_type()).generate());
+            return new FunctionCall(ctx, ctx.CAST().getText(), Collections.singletonList(functionParam));
+        }
+        FunctionParam functionParam = new ExpressionParam(visit(ctx.bit_expr()));
+        functionParam.addOption(new OracleDataTypeFactory(ctx.treat_data_type()).generate());
+        return new FunctionCall(ctx, ctx.TREAT().getText(), Collections.singletonList(functionParam));
+    }
+
+    @Override
+    public Expression visitHierarchical_function(Hierarchical_functionContext ctx) {
+        return new FunctionCall(ctx, ctx.SYS_CONNECT_BY_PATH().getText(), ctx.bit_expr()
+                .stream().map(e -> new ExpressionParam(visit(e))).collect(Collectors.toList()));
+    }
+
+    @Override
+    public Expression visitEnvironment_id_function(Environment_id_functionContext ctx) {
+        return new FunctionCall(ctx, ctx.getText(), Collections.emptyList());
+    }
+
+    @Override
+    public Expression visitSpatial_cellid_expr(Spatial_cellid_exprContext ctx) {
+        return new FunctionCall(ctx, ctx.SPATIAL_CELLID().getText(),
+                Collections.singletonList(new ExpressionParam(visit(ctx.bit_expr()))));
+    }
+
+    @Override
+    public Expression visitSpatial_mbr_expr(Spatial_mbr_exprContext ctx) {
+        return new FunctionCall(ctx, ctx.SPATIAL_MBR().getText(),
+                Collections.singletonList(new ExpressionParam(visit(ctx.bit_expr()))));
+    }
+
+    @Override
+    public Expression visitSdo_relate_expr(Sdo_relate_exprContext ctx) {
+        return new FunctionCall(ctx, ctx.SDO_RELATE().getText(), ctx.bit_expr()
+                .stream().map(e -> new ExpressionParam(visit(e))).collect(Collectors.toList()));
+    }
+
+    @Override
+    public Expression visitSingle_row_function(Single_row_functionContext ctx) {
+        if (ctx.xml_function() == null) {
+            return visitChildren(ctx);
+        }
+        Expression fCall = visit(ctx.xml_function());
+        if (ctx.obj_access_ref_normal() != null) {
+            fCall.reference(visit(ctx.obj_access_ref_normal()), ReferenceOperator.DOT);
+        } else if (ctx.table_element_access_list() != null) {
+            visitTableElementAccessList(fCall, ctx.table_element_access_list());
+        }
         return fCall;
     }
 
@@ -1452,6 +1511,9 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
             funcName = ctx.VALUES() == null ? ctx.DEFAULT().getText() : ctx.VALUES().getText();
             StatementFactory<ColumnReference> factory = new OracleColumnRefFactory(ctx.column_definition_ref());
             params.add(new ExpressionParam(factory.generate()));
+        } else if (ctx.LAST_REFRESH_SCN() != null) {
+            funcName = ctx.LAST_REFRESH_SCN().getText();
+            params.add(new ExpressionParam(new ConstExpression(ctx.INTNUM())));
         } else {
             funcName = ctx.getChild(0).getText();
             params.add(new ExpressionParam(visit(ctx.bit_expr(0))));
@@ -1676,14 +1738,14 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
         return new GeneralDataType(ctx, ctx.RAW().getText(), null);
     }
 
-    private void setScalarsMode(JsonConstraint c, Scalars_optContext ctx) {
+    private void setScalarsMode(JsonOption c, Scalars_optContext ctx) {
         if (ctx == null) {
             return;
         }
         c.setScalarsMode(ctx.ALLOW() != null ? ScalarsMode.ALLOW_SCALARS : ScalarsMode.DISALLOW_SCALARS);
     }
 
-    private void setWrapperMode(JsonConstraint c, Wrapper_optsContext ctx) {
+    private void setWrapperMode(JsonOption c, Wrapper_optsContext ctx) {
         if (ctx == null) {
             return;
         }
@@ -1812,28 +1874,32 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
         return jsonOnOption;
     }
 
-    private JsonOnOption getJsonOnOption(Opt_json_table_on_error_on_emptyContext ctx) {
+    private JsonOption getJsonOption(Opt_json_table_on_error_on_emptyContext ctx) {
         if (ctx == null) {
             return null;
         }
+        JsonOption jsonOpt = new JsonOption(ctx);
         JsonOnOption jsonOnOption = new JsonOnOption(ctx);
+        jsonOpt.setOnOption(jsonOnOption);
         if (ctx.json_table_on_error() != null) {
             jsonOnOption.setOnError(visit(ctx.json_table_on_error().json_table_on_response()));
         }
         if (ctx.json_table_on_empty() != null) {
             jsonOnOption.setOnEmpty(visit(ctx.json_table_on_empty().json_table_on_response()));
         }
-        return jsonOnOption;
+        return jsonOpt;
     }
 
-    private JsonOnOption getJsonOnOption(Json_equal_optionContext ctx) {
+    private JsonOption getJsonOption(Json_equal_optionContext ctx) {
+        JsonOption jsonOpt = new JsonOption(ctx);
         JsonOnOption jsonOnOption = new JsonOnOption(ctx);
+        jsonOpt.setOnOption(jsonOnOption);
         if (ctx.BOOL_VALUE() != null) {
             jsonOnOption.setOnError(new BoolValue(ctx.BOOL_VALUE()));
         } else {
             jsonOnOption.setOnError(new ConstExpression(ctx.ERROR_P(0)));
         }
-        return jsonOnOption;
+        return jsonOpt;
     }
 
     private FunctionParam visitJsonTableColumnDef(Json_table_column_defContext ctx) {
@@ -1860,12 +1926,28 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
         FunctionParam param = new ExpressionParam(new ColumnReference(
                 ctx.column_name(), null, null, ctx.column_name().getText()));
         param.addOption(new OracleDataTypeFactory(ctx.opt_jt_value_type()).generate());
+        JsonOption jsonOpt = null;
         if (ctx.TRUNCATE() != null) {
-            param.addOption(new ConstExpression(ctx.TRUNCATE()));
+            jsonOpt = new JsonOption(ctx.TRUNCATE());
+            jsonOpt.setTruncate(true);
         }
         param.addOption(new ConstExpression(ctx.EXISTS()));
         param.addOption(visit(ctx.json_table_column_def_path()));
-        param.addOption(getJsonOnOption(ctx.opt_json_exists_on_error_on_empty()));
+        if (ctx.ASIS() != null) {
+            if (jsonOpt == null) {
+                jsonOpt = new JsonOption(ctx.ASIS());
+            }
+            jsonOpt.setAsis(true);
+        }
+        if (ctx.opt_json_exists_on_error_on_empty() != null) {
+            if (jsonOpt == null) {
+                jsonOpt = new JsonOption(ctx.opt_json_exists_on_error_on_empty());
+            }
+            jsonOpt.setOnOption(getJsonOnOption(ctx.opt_json_exists_on_error_on_empty()));
+        }
+        if (jsonOpt != null) {
+            param.addOption(jsonOpt);
+        }
         return param;
     }
 
@@ -1880,24 +1962,40 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
         } else if (ctx.JSON() != null) {
             param.addOption(new GeneralDataType(ctx.JSON(), ctx.JSON().getText(), null));
         }
+        JsonOption jsonOpt = null;
         if (ctx.TRUNCATE() != null) {
-            param.addOption(new ConstExpression(ctx.TRUNCATE()));
+            jsonOpt = new JsonOption(ctx.TRUNCATE());
+            jsonOpt.setTruncate(true);
         }
         if (ctx.scalars_opt() != null || ctx.wrapper_opts() != null) {
-            JsonConstraint jsonConstraint;
-            if (ctx.scalars_opt() != null && ctx.wrapper_opts() != null) {
-                jsonConstraint = new JsonConstraint(ctx.scalars_opt(), ctx.wrapper_opts());
-            } else if (ctx.wrapper_opts() != null) {
-                jsonConstraint = new JsonConstraint(ctx.wrapper_opts());
-            } else {
-                jsonConstraint = new JsonConstraint(ctx.scalars_opt());
+            if (jsonOpt == null) {
+                if (ctx.scalars_opt() != null && ctx.wrapper_opts() != null) {
+                    jsonOpt = new JsonOption(ctx.scalars_opt(), ctx.wrapper_opts());
+                } else if (ctx.wrapper_opts() != null) {
+                    jsonOpt = new JsonOption(ctx.wrapper_opts());
+                } else {
+                    jsonOpt = new JsonOption(ctx.scalars_opt());
+                }
             }
-            setScalarsMode(jsonConstraint, ctx.scalars_opt());
-            setWrapperMode(jsonConstraint, ctx.wrapper_opts());
-            param.addOption(jsonConstraint);
+            setScalarsMode(jsonOpt, ctx.scalars_opt());
+            setWrapperMode(jsonOpt, ctx.wrapper_opts());
         }
         param.addOption(visit(ctx.json_table_column_def_path()));
-        param.addOption(getJsonOnOption(ctx.json_query_on_opt()));
+        if (ctx.ASIS() != null) {
+            if (jsonOpt == null) {
+                jsonOpt = new JsonOption(ctx.ASIS());
+            }
+            jsonOpt.setAsis(true);
+        }
+        if (ctx.json_query_on_opt() != null) {
+            if (jsonOpt == null) {
+                jsonOpt = new JsonOption(ctx.json_query_on_opt());
+            }
+            jsonOpt.setOnOption(getJsonOnOption(ctx.json_query_on_opt()));
+        }
+        if (jsonOpt != null) {
+            param.addOption(jsonOpt);
+        }
         return param;
     }
 
@@ -1905,11 +2003,27 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
         FunctionParam param = new ExpressionParam(new ColumnReference(
                 ctx.column_name(), null, null, ctx.column_name().getText()));
         param.addOption(new OracleDataTypeFactory(ctx.opt_jt_value_type()).generate());
+        JsonOption jsonOpt = null;
         if (ctx.TRUNCATE() != null) {
-            param.addOption(new ConstExpression(ctx.TRUNCATE()));
+            jsonOpt = new JsonOption(ctx.TRUNCATE());
+            jsonOpt.setTruncate(true);
         }
         param.addOption(visit(ctx.json_table_column_def_path()));
-        param.addOption(getJsonOnOption(ctx.json_value_on_opt()));
+        if (ctx.ASIS() != null) {
+            if (jsonOpt == null) {
+                jsonOpt = new JsonOption(ctx.ASIS());
+            }
+            jsonOpt.setAsis(true);
+        }
+        if (ctx.json_value_on_opt() != null) {
+            if (jsonOpt == null) {
+                jsonOpt = new JsonOption(ctx.json_value_on_opt());
+            }
+            jsonOpt.setOnOption(getJsonOnOption(ctx.json_value_on_opt()));
+        }
+        if (jsonOpt != null) {
+            param.addOption(jsonOpt);
+        }
         return param;
     }
 
@@ -1930,7 +2044,11 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
                     .map(c -> new ExpressionParam(visit(c.bit_expr()), c.sql_var_name().getText()))
                     .forEach(functionCall::addOption);
         }
-        functionCall.addOption(getJsonOnOption(ctx.opt_json_exists_on_error_on_empty()));
+        if (ctx.opt_json_exists_on_error_on_empty() != null) {
+            JsonOption jsonOpt = new JsonOption(ctx.opt_json_exists_on_error_on_empty());
+            functionCall.addOption(jsonOpt);
+            jsonOpt.setOnOption(getJsonOnOption(ctx.opt_json_exists_on_error_on_empty()));
+        }
     }
 
     private void setFunctionOptions(FunctionCall functionCall, Aggregate_functionContext ctx) {
@@ -1947,7 +2065,16 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
         if (ctx.WITHIN() == null && ctx.DENSE_RANK() == null && ctx.order_by() != null) {
             functionCall.addOption(new OracleOrderByFactory(ctx.order_by()).generate());
         }
-        functionCall.addOption(getJsonOnOption(ctx.js_agg_on_null()));
+        JsonOption jsonOpt = null;
+        if (ctx.STRICT() != null || ctx.json_obj_unique_key() != null) {
+            jsonOpt = getJsonOption(ctx.STRICT(), ctx.json_obj_unique_key());
+        }
+        if (ctx.js_agg_on_null() != null) {
+            if (jsonOpt == null) {
+                jsonOpt = new JsonOption(ctx.js_agg_on_null());
+            }
+            jsonOpt.setOnOption(getJsonOnOption(ctx.js_agg_on_null()));
+        }
         if (ctx.js_agg_returning_type_opt() != null) {
             Js_agg_returning_type_optContext jCtx = ctx.js_agg_returning_type_opt();
             if (jCtx.js_return_type() != null) {
@@ -1956,8 +2083,8 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
                 functionCall.addOption(new OracleDataTypeFactory(jCtx.js_agg_returning_type()).generate());
             }
         }
-        if (ctx.STRICT() != null || ctx.json_obj_unique_key() != null) {
-            functionCall.addOption(getJsonConstraint(ctx.STRICT(), ctx.json_obj_unique_key()));
+        if (jsonOpt != null) {
+            functionCall.addOption(jsonOpt);
         }
     }
 

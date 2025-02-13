@@ -20,6 +20,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.antlr.v4.runtime.tree.TerminalNode;
+
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Condition_insert_clauseContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Conditional_insert_clauseContext;
@@ -130,15 +132,16 @@ public class OracleInsertFactory extends OBParserBaseVisitor<Insert> implements 
     public Insert visitSingle_table_insert(Single_table_insertContext ctx) {
         InsertTable insertTable;
         Insert_table_clauseContext iCtx = ctx.insert_table_clause();
+        TerminalNode beginNode = ctx.INTO() == null ? ctx.OVERWRITE() : ctx.INTO();
         if (iCtx.dml_table_name() != null) {
             Dml_table_nameContext dCtx = iCtx.dml_table_name();
-            insertTable = new InsertTable(ctx.INTO(), ctx.values_clause(), OracleFromReferenceFactory
+            insertTable = new InsertTable(beginNode, ctx.values_clause(), OracleFromReferenceFactory
                     .getRelationFactor(dCtx.relation_factor()));
             if (dCtx.use_partition() != null) {
                 insertTable.setPartitionUsage(new OraclePartitionUsageFactory(dCtx.use_partition()).generate());
             }
         } else if (iCtx.select_with_parens() != null) {
-            insertTable = new InsertTable(ctx.INTO(), ctx.values_clause(),
+            insertTable = new InsertTable(beginNode, ctx.values_clause(),
                     new OracleSelectBodyFactory(iCtx.select_with_parens()).generate());
         } else {
             OracleSelectBodyFactory factory = new OracleSelectBodyFactory(iCtx.subquery());
@@ -153,7 +156,7 @@ public class OracleInsertFactory extends OBParserBaseVisitor<Insert> implements 
             if (oCtx.with_check_option() != null) {
                 select.getLastSelectBody().setWithCheckOption(true);
             }
-            insertTable = new InsertTable(ctx.INTO(), ctx.values_clause(), select);
+            insertTable = new InsertTable(beginNode, ctx.values_clause(), select);
         }
         if (iCtx.relation_name() != null) {
             insertTable.setAlias(iCtx.relation_name().getText());
@@ -191,6 +194,9 @@ public class OracleInsertFactory extends OBParserBaseVisitor<Insert> implements 
             if (rCtx.log_error_clause() != null) {
                 insert.setLogErrors(new OracleLogErrorsFactory(rCtx.log_error_clause()).generate());
             }
+        }
+        if (ctx.OVERWRITE() != null) {
+            insert.setOverwrite(true);
         }
         return insert;
     }

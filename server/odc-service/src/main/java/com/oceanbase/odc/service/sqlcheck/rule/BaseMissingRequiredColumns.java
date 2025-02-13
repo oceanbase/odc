@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.sqlcheck.rule;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -56,7 +57,11 @@ public abstract class BaseMissingRequiredColumns implements SqlCheckRule {
         if (!(statement instanceof CreateTable)) {
             return Collections.emptyList();
         }
-        List<String> columns = ((CreateTable) statement).getColumnDefinitions().stream()
+        CreateTable createTable = (CreateTable) statement;
+        if (Objects.nonNull(createTable.getLikeTable()) || Objects.nonNull(createTable.getAs())) {
+            return Collections.emptyList();
+        }
+        List<String> columns = createTable.getColumnDefinitions().stream()
                 .map(d -> unquoteIdentifier(d.getColumnReference().getColumn())).collect(Collectors.toList());
         Set<String> tmp = new HashSet<>(requiredColumns);
         tmp.removeIf(s -> columns.contains(unquoteIdentifier(s)));

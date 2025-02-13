@@ -46,9 +46,11 @@ public class RoleEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "name", nullable = false)
     private String name;
 
     @Enumerated(value = EnumType.STRING)
+    @Column(name = "type", nullable = false)
     private RoleType type;
 
     @Column(name = "is_enabled", nullable = false)
