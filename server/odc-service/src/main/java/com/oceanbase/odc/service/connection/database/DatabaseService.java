@@ -45,7 +45,6 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -59,6 +58,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.common.event.LocalEventPublisher;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.permission.Permission;
 import com.oceanbase.odc.core.authority.util.Authenticated;
@@ -136,7 +136,6 @@ import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.base.precheck.PreCheckTaskParameters.AuthorizedDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -344,14 +343,16 @@ public class DatabaseService {
         }
 
         Set<Long> orDataSourceIds = new HashSet<>();
-        if (StrUtil.isNotBlank(params.getClusterId()) || StrUtil.isNotBlank(params.getTenantId())
-                || StrUtil.isNotBlank(params.getDataSourceName())) {
+        if (StringUtils.isNotBlank(params.getClusterName()) || StringUtils.isNotBlank(params.getTenantName())
+                || StringUtils.isNotBlank(params.getDataSourceName())) {
             QueryConnectionParams queryConnectionParams = QueryConnectionParams.builder()
                     .clusterNames(
-                            StrUtil.isNotBlank(params.getClusterId()) ? Collections.singletonList(params.getClusterId())
+                            StrUtil.isNotBlank(params.getClusterName())
+                                    ? Collections.singletonList(params.getClusterName())
                                     : null)
                     .tenantNames(
-                            StrUtil.isNotBlank(params.getTenantId()) ? Collections.singletonList(params.getTenantId())
+                            StrUtil.isNotBlank(params.getTenantName())
+                                    ? Collections.singletonList(params.getTenantName())
                                     : null)
                     .name(params.getDataSourceName())
                     .build();
@@ -361,7 +362,7 @@ public class DatabaseService {
         if (Objects.nonNull(params.getDataSourceId())) {
             specs = specs.and(DatabaseSpecs.connectionIdEquals(params.getDataSourceId()));
         }
-        if (CollUtil.isNotEmpty(orDataSourceIds)) {
+        if (CollectionUtils.isNotEmpty(orDataSourceIds)) {
             specs = specs.or(DatabaseSpecs.connectionIdIn(orDataSourceIds));
         }
         Page<DatabaseEntity> entities = databaseRepository.findAll(specs, pageable);

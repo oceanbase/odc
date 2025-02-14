@@ -52,9 +52,9 @@ public class QueryDatabaseParams {
 
     private Boolean includesPermittedAction;
 
-    private String clusterId;
+    private String clusterName;
 
-    private String tenantId;
+    private String tenantName;
 
     private String dataSourceName;
 }
