@@ -82,7 +82,8 @@ public class ApprovalStatusNotifyListener extends EmptyExecutionListener {
                 List<UserResourceRole> userResourceRoles =
                         resourceRoleService.listByResourceIdentifierIn(
                                 approvals.stream().map(FlowInstanceApprovalViewEntity::getResourceRoleIdentifier)
-                                        .collect(Collectors.toSet()), taskEntity.getOrganizationId());
+                                        .collect(Collectors.toSet()),
+                                taskEntity.getOrganizationId());
                 approverIds = CollectionUtils.isEmpty(userResourceRoles) ? null
                         : userResourceRoles.stream().map(UserResourceRole::getUserId).collect(Collectors.toSet());
             }
