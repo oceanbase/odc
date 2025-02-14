@@ -60,28 +60,25 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ResourceRoleService {
 
-    private final ResourceRoleMapper resourceRoleMapper = ResourceRoleMapper.INSTANCE;
     @Autowired
     private ResourceRoleRepository resourceRoleRepository;
+
     @Autowired
     private UserResourceRoleRepository userResourceRoleRepository;
+
     @Autowired
     private PermissionService permissionService;
+
     @Autowired
     private GlobalResourceRoleService globalResourceRoleService;
+
     @Autowired
     private ProjectRepository projectRepository;
+
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
-    @SkipAuthorize("internal usage")
-    public static UserResourceRoleEntity toEntity(UserResourceRole model) {
-        UserResourceRoleEntity entity = new UserResourceRoleEntity();
-        entity.setResourceId(model.getResourceId());
-        entity.setUserId(model.getUserId());
-        entity.setResourceRoleId(model.getResourceRoleId());
-        return entity;
-    }
+    private final ResourceRoleMapper resourceRoleMapper = ResourceRoleMapper.INSTANCE;
 
     @SkipAuthorize("internal usage")
     @Transactional(rollbackFor = Exception.class)
@@ -325,21 +322,16 @@ public class ResourceRoleService {
 
     @SkipAuthorize("internal usage")
     public List<UserResourceRole> listByResourceIdentifierIn(Set<String> resourceIdentifiers) {
-        return listByResourceIdentifierIn(resourceIdentifiers, authenticationFacade.currentOrganizationId());
-    }
-
-    @SkipAuthorize("internal usage")
-    public List<UserResourceRole> listByResourceIdentifierIn(Set<String> resourceIdentifiers, Long organizationId) {
         List<UserResourceRole> userResourceRoles =
                 fromEntities(userResourceRoleRepository.findByResourceIdsAndResourceRoleIdsIn(resourceIdentifiers));
         List<UserGlobalResourceRole> globalUserResourceRoles = globalResourceRoleService
-                .findGlobalResourceRoleUsersByOrganizationIdAndRoleIn(organizationId,
+                .findGlobalResourceRoleUsersByOrganizationIdAndRoleIn(authenticationFacade.currentOrganizationId(),
                         filterResourceRoleNames(ResourceType.ODC_PROJECT, resourceIdentifiers));
         if (CollectionUtils.isEmpty(globalUserResourceRoles)) {
             return userResourceRoles;
         }
         Map<ResourceRoleName, Long> resourceRoleName2Id = getProjectResourceRoleName2Id();
-        projectRepository.findAllByOrganizationId(organizationId).stream()
+        projectRepository.findAllByOrganizationId(authenticationFacade.currentOrganizationId()).stream()
                 .forEach(p -> globalUserResourceRoles.stream()
                         .map(i -> new UserResourceRole(i.getUserId(), p.getId(), ResourceType.ODC_PROJECT,
                                 i.getResourceRole(), resourceRoleName2Id.get(i.getResourceRole()), true))
@@ -396,6 +388,15 @@ public class ResourceRoleService {
         model.setUserId(entity.getUserId());
         model.setResourceRoleId(resourceRole.getId());
         return model;
+    }
+
+    @SkipAuthorize("internal usage")
+    public static UserResourceRoleEntity toEntity(UserResourceRole model) {
+        UserResourceRoleEntity entity = new UserResourceRoleEntity();
+        entity.setResourceId(model.getResourceId());
+        entity.setUserId(model.getUserId());
+        entity.setResourceRoleId(model.getResourceRoleId());
+        return entity;
     }
 
 }
