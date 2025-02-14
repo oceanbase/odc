@@ -32,6 +32,7 @@ import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.resource.K8sPodResource;
@@ -45,6 +46,8 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @SkipAuthorize("odc internal usage")
 public class ExecutorEndpointManager {
+    @Autowired
+    private TaskFrameworkProperties taskFrameworkProperties;
     @Autowired
     private TaskFrameworkService taskFrameworkService;
     @Autowired
@@ -80,7 +83,7 @@ public class ExecutorEndpointManager {
                     + ", executorListenPort=" + executorListenPort);
         }
         try {
-            ResourceID resourceID = ResourceIDUtil.getResourceID(executorIdentifier, je);
+            ResourceID resourceID = ResourceIDUtil.getResourceID(executorIdentifier, je, taskFrameworkProperties);
             Optional<K8sPodResource> resourceOptional =
                     resourceManager.query(resourceID);
             if (resourceOptional.isPresent()) {

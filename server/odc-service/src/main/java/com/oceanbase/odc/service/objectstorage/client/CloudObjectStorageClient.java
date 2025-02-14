@@ -128,6 +128,17 @@ public class CloudObjectStorageClient implements ObjectStorageClient {
     }
 
     @Override
+    public void copyObject(String fromObjectName, String toObjectName) throws IOException {
+        verifySupported();
+        boolean exist = internalEndpointCloudObjectStorage.doesObjectExist(getBucketName(), fromObjectName);
+        if (!exist) {
+            throw new FileNotFoundException("File dose not exist, object name " + fromObjectName);
+        }
+        this.internalEndpointCloudObjectStorage.copyObject(getBucketName(), fromObjectName, toObjectName);
+        log.info("Copy file success, fromObjectName={}, toObjectName={}", fromObjectName, toObjectName);
+    }
+
+    @Override
     public byte[] readContent(String objectName) throws IOException {
         verifySupported();
         boolean exist = internalEndpointCloudObjectStorage.doesObjectExist(getBucketName(), objectName);

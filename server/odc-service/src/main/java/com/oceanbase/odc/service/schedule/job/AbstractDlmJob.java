@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -23,9 +22,7 @@ import org.quartz.JobExecutionContext;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
-import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -37,14 +34,9 @@ import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.task.base.dataarchive.DataArchiveTask;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.executor.task.TaskDescription;
-import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
-import com.oceanbase.odc.service.task.schedule.JobScheduler;
-import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
-import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 
 import lombok.extern.slf4j.Slf4j;
@@ -55,7 +47,7 @@ import lombok.extern.slf4j.Slf4j;
  * @Descripition:
  */
 @Slf4j
-public abstract class AbstractDlmJob implements OdcJob {
+public abstract class AbstractDlmJob extends AbstractOdcJob {
 
     public final ScheduleTaskRepository scheduleTaskRepository;
     public final DatabaseService databaseService;
@@ -63,7 +55,6 @@ public abstract class AbstractDlmJob implements OdcJob {
     public final DlmLimiterService limiterService;
     public final DLMService dlmService;
 
-    public JobScheduler jobScheduler = null;
     public final TaskFrameworkService taskFrameworkService;
 
     public final DLMConfiguration dlmConfiguration;
@@ -75,7 +66,6 @@ public abstract class AbstractDlmJob implements OdcJob {
         scheduleService = SpringContextUtil.getBean(ScheduleService.class);
         limiterService = SpringContextUtil.getBean(DlmLimiterService.class);
         taskFrameworkService = SpringContextUtil.getBean(TaskFrameworkService.class);
-        jobScheduler = SpringContextUtil.getBean(JobScheduler.class);
         dlmService = SpringContextUtil.getBean(DLMService.class);
         dlmConfiguration = SpringContextUtil.getBean(DLMConfiguration.class);
     }
@@ -90,46 +80,9 @@ public abstract class AbstractDlmJob implements OdcJob {
         return dataSourceInfo;
     }
 
-    public Map<String, Object> getDatasourceAttributesByDatabaseId(Long databaseId) {
-        return databaseService.findDataSourceForTaskById(databaseId).getAttributes();
-    }
-
     public Long publishJob(DLMJobReq params, Long timeoutMillis, Long srcDatabaseId) {
-        Map<String, Object> attributes = getDatasourceAttributesByDatabaseId(srcDatabaseId);
-
-        if (attributes != null && !attributes.isEmpty() && attributes.containsKey("cloudProvider")
-                && attributes.containsKey("region")) {
-            return publishJob(params, timeoutMillis,
-                    CloudProvider.fromValue(attributes.get("cloudProvider").toString()),
-                    attributes.get("region").toString());
-        } else {
-            return publishJob(params, timeoutMillis, null, null);
-        }
-    }
-
-    public Long publishJob(DLMJobReq parameters, Long timeoutMillis, CloudProvider provider, String region) {
-        Map<String, String> jobData = new HashMap<>();
-        jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON,
-                JsonUtils.toJson(parameters));
-        if (timeoutMillis != null) {
-            jobData.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, timeoutMillis.toString());
-        }
-        Map<String, String> jobProperties = new HashMap<>();
-        if (provider != null && StringUtils.isNotEmpty(region)) {
-            JobPropertiesUtils.setCloudProvider(jobProperties, provider);
-            JobPropertiesUtils.setRegionName(jobProperties, region);
-        }
-        SingleJobProperties singleJobProperties = new SingleJobProperties();
-        singleJobProperties.setEnableRetryAfterHeartTimeout(true);
-        singleJobProperties.setMaxRetryTimesAfterHeartTimeout(1);
-        jobProperties.putAll(singleJobProperties.toJobProperties());
-
-        DefaultJobDefinition jobDefinition = DefaultJobDefinition.builder().jobClass(DataArchiveTask.class)
-                .jobType(TaskDescription.DLM.getType())
-                .jobParameters(jobData)
-                .jobProperties(jobProperties)
-                .build();
-        return jobScheduler.scheduleJobNow(jobDefinition);
+        return submitToTaskFramework(JsonUtils.toJson(params), TaskDescription.DLM.name(), timeoutMillis,
+                srcDatabaseId);
     }
 
     public DLMJobReq getDLMJobReq(Long jobId) {
@@ -146,8 +99,6 @@ public abstract class AbstractDlmJob implements OdcJob {
                     && tableName2Unit.get(o.getTableName()).getStatistic() != null) {
                 o.setPartName2MinKey(tableName2Unit.get(o.getTableName()).getStatistic().getPartName2MinKey());
                 o.setPartName2MaxKey(tableName2Unit.get(o.getTableName()).getStatistic().getPartName2MaxKey());
-                o.setMinKey(tableName2Unit.get(o.getTableName()).getStatistic().getGlobalMinKey());
-                o.setMaxKey(tableName2Unit.get(o.getTableName()).getStatistic().getGlobalMaxKey());
             }
         });
 

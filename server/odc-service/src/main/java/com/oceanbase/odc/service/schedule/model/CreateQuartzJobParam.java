@@ -15,9 +15,11 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
+import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 
+import com.oceanbase.odc.service.quartz.executor.QuartzJob;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 
 import lombok.Data;
@@ -41,5 +43,6 @@ public class CreateQuartzJobParam {
 
     // To store task parameters.
     private JobDataMap jobDataMap = new JobDataMap();
+    private Class<? extends Job> jobClass = QuartzJob.class;
 
 }

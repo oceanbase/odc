@@ -119,7 +119,7 @@
         <mina.version>2.1.6</mina.version>
 
         <!-- data-lifecycle-manager version -->
-        <data-lifecycle-manager.version>1.2.0</data-lifecycle-manager.version>
+        <data-lifecycle-manager.version>1.2.1</data-lifecycle-manager.version>
 
         <!-- plugin version -->
         <formatter-maven-plugin.version>2.11.0</formatter-maven-plugin.version>
@@ -1594,7 +1594,7 @@ limitations under the License.
                 </property>
             </activation>
             <properties>
-                <ob-loader-dumper.version>4.2.8.2-RELEASE</ob-loader-dumper.version>
+                <ob-loader-dumper.version>4.3.1.1-RELEASE</ob-loader-dumper.version>
             </properties>
         </profile>
     </profiles>
