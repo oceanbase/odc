@@ -69,6 +69,8 @@ public class DataBaseController {
     @RequestMapping(value = "/databases", method = RequestMethod.GET)
     public PaginatedResponse<Database> listDatabases(
             @RequestParam(required = false, name = "name") String name,
+            @RequestParam(required = false, name = "tenant") String tenantId,
+            @RequestParam(required = false, name = "cluster") String clusterId,
             @RequestParam(required = false, name = "type") List<DatabaseType> types,
             @RequestParam(required = false, name = "existed") Boolean existed,
             @RequestParam(required = false, name = "dataSourceName") String dataSourceName,
@@ -90,6 +92,9 @@ public class DataBaseController {
                 .existed(existed)
                 .environmentId(environmentId)
                 .schemaName(name)
+                .tenantId(tenantId)
+                .clusterId(clusterId)
+                .dataSourceName(dataSourceName)
                 .containsUnassigned(containsUnassigned)
                 .includesPermittedAction(includesPermittedAction)
                 .projectId(projectId).build();

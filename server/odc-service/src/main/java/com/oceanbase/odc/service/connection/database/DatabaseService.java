@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -106,6 +107,7 @@ import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionSyncErrorReason;
 import com.oceanbase.odc.service.connection.model.ConnectionSyncResult;
+import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
 import com.oceanbase.odc.service.db.DBSchemaService;
 import com.oceanbase.odc.service.db.schema.DBSchemaSyncTaskManager;
 import com.oceanbase.odc.service.db.schema.GlobalSearchProperties;
@@ -134,6 +136,8 @@ import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.base.precheck.PreCheckTaskParameters.AuthorizedDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -339,8 +343,26 @@ public class DatabaseService {
             specs = specs.and(DatabaseSpecs.projectIdEquals(params.getProjectId()));
         }
 
+        Set<Long> orDataSourceIds = new HashSet<>();
+        if (StrUtil.isNotBlank(params.getClusterId()) || StrUtil.isNotBlank(params.getTenantId())
+                || StrUtil.isNotBlank(params.getDataSourceName())) {
+            QueryConnectionParams queryConnectionParams = QueryConnectionParams.builder()
+                    .clusterNames(
+                            StrUtil.isNotBlank(params.getClusterId()) ? Collections.singletonList(params.getClusterId())
+                                    : null)
+                    .tenantNames(
+                            StrUtil.isNotBlank(params.getTenantId()) ? Collections.singletonList(params.getTenantId())
+                                    : null)
+                    .name(params.getDataSourceName())
+                    .build();
+            orDataSourceIds = connectionService.list(queryConnectionParams, Pageable.unpaged()).getPage().stream().map(
+                    ConnectionConfig::getId).collect(Collectors.toSet());
+        }
         if (Objects.nonNull(params.getDataSourceId())) {
             specs = specs.and(DatabaseSpecs.connectionIdEquals(params.getDataSourceId()));
+        }
+        if (CollUtil.isNotEmpty(orDataSourceIds)) {
+            specs = specs.or(DatabaseSpecs.connectionIdIn(orDataSourceIds));
         }
         Page<DatabaseEntity> entities = databaseRepository.findAll(specs, pageable);
         return entitiesToModels(entities,

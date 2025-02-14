@@ -51,4 +51,10 @@ public class QueryDatabaseParams {
     private Boolean containsUnassigned;
 
     private Boolean includesPermittedAction;
+
+    private String clusterId;
+
+    private String tenantId;
+
+    private String dataSourceName;
 }
