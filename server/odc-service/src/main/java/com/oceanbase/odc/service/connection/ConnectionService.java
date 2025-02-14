@@ -851,6 +851,24 @@ public class ConnectionService {
         return innerList(params, Pageable.unpaged()).toList();
     }
 
+    public Set<Long> innerGetIdsIfAnyOfNameTenantCluster(String dataSourceName, String tenantName,
+            String clusterName) {
+        if (StringUtils.isBlank(dataSourceName) && StringUtils.isBlank(tenantName)
+                && StringUtils.isBlank(clusterName)) {
+            return Collections.emptySet();
+        }
+        Specification<ConnectionEntity> spec;
+        if (StringUtils.isNotBlank(dataSourceName)) {
+            spec = Specification.where(ConnectionSpecs.nameLike(dataSourceName));
+        } else if (StringUtils.isNotBlank(tenantName)) {
+            spec = Specification.where(ConnectionSpecs.tenantNameLike(tenantName));
+        } else {
+            spec = Specification.where(ConnectionSpecs.clusterNameLike(clusterName));
+        }
+        return this.repository.findAll(spec, Pageable.unpaged()).stream().map(ConnectionEntity::getId)
+                .collect(Collectors.toSet());
+    }
+
     private Page<ConnectionConfig> innerList(@NotNull QueryConnectionParams params, @NotNull Pageable pageable) {
         Specification<ConnectionEntity> spec = Specification
                 .where(ConnectionSpecs.organizationIdEqual(authenticationFacade.currentOrganizationId()));
