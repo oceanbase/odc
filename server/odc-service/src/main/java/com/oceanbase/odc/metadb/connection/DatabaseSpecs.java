@@ -57,8 +57,7 @@ public class DatabaseSpecs {
 
     public static Specification<DatabaseEntity> connectionIdIn(Collection<Long> connectionIds) {
         Set<Long> finalConnectionIds = connectionIds.stream().filter(Objects::nonNull).collect(Collectors.toSet());
-        return (root, query, builder) -> CollectionUtils.isEmpty(connectionIds) ? builder.conjunction()
-                : root.get("connectionId").in(finalConnectionIds);
+        return SpecificationUtil.columnIn("connectionId", finalConnectionIds);
     }
 
     public static Specification<DatabaseEntity> organizationIdEquals(Long organizationId) {
