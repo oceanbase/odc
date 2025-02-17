@@ -44,10 +44,6 @@ public class DataArchiveTableConfig {
 
     List<JoinTableConfig> joinTableConfigs;
 
-    private String minKey;
-
-    private String maxKey;
-
     private Map<String, String> partName2MinKey = new HashMap<>();
 
     private Map<String, String> partName2MaxKey = new HashMap<>();
