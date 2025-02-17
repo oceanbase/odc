@@ -851,6 +851,15 @@ public class ConnectionService {
         return innerList(params, Pageable.unpaged()).toList();
     }
 
+    public Set<Long> innerGetIdsByNameAndTenantAndCluster(String dataSourceName, String tenantName,
+            String clusterName) {
+        Specification<ConnectionEntity> spec = Specification.where(ConnectionSpecs.nameLike(dataSourceName))
+                .and(ConnectionSpecs.tenantNameLike(tenantName))
+                .and(ConnectionSpecs.clusterNameLike(clusterName));
+        return this.repository.findAll(spec, Pageable.unpaged()).stream().map(ConnectionEntity::getId)
+                .collect(Collectors.toSet());
+    }
+
     private Page<ConnectionConfig> innerList(@NotNull QueryConnectionParams params, @NotNull Pageable pageable) {
         Specification<ConnectionEntity> spec = Specification
                 .where(ConnectionSpecs.organizationIdEqual(authenticationFacade.currentOrganizationId()));
