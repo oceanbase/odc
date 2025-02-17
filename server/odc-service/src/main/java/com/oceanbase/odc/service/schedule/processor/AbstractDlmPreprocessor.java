@@ -157,6 +157,13 @@ public class AbstractDlmPreprocessor implements Preprocessor {
             }
             SqlBuilder sqlBuilder = dbType.isMysql() ? new MySQLSqlBuilder() : new OracleSqlBuilder();
             sqlBuilder.append("SELECT 1 FROM ").identifier(database.getName(), table.getTableName());
+            if (!table.getJoinTableConfigs().isEmpty()) {
+                table.getJoinTableConfigs().forEach(unionTableConfig -> {
+                    sqlBuilder.append(" INNER JOIN  ").identifier(unionTableConfig.getTableName());
+                    sqlBuilder.append(" ON ");
+                    sqlBuilder.append(unionTableConfig.getJoinCondition());
+                });
+            }
             if (StringUtils.isNotEmpty(table.getConditionExpression())) {
                 sqlBuilder.append(" WHERE ")
                         .append(DataArchiveConditionUtil.parseCondition(table.getConditionExpression(),

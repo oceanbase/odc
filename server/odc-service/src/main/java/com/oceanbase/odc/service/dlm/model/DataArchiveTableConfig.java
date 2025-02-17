@@ -42,6 +42,8 @@ public class DataArchiveTableConfig {
     // the sql condition such as "gmt_create < '2023-01-01'"
     private String conditionExpression;
 
+    List<JoinTableConfig> joinTableConfigs;
+
     private String minKey;
 
     private String maxKey;

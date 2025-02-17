@@ -15,35 +15,19 @@
  */
 package com.oceanbase.odc.service.dlm.model;
 
-import javax.validation.constraints.NotNull;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonProperty.Access;
-import com.oceanbase.odc.service.connection.database.model.Database;
-
 import lombok.Data;
 
 /**
  * @Author：tinker
- * @Date: 2023/7/13 17:21
+ * @Date: 2025/2/14 15:59
  * @Descripition:
  */
+
 @Data
-public class DataDeleteParameters extends DLMBaseParameters {
+public class JoinTableConfig {
 
-    @NotNull
-    private Long databaseId;
+    private String tableName;
 
-    private Long targetDatabaseId;
-    // inner init
-    @JsonProperty(access = Access.READ_ONLY)
-    private Database database;
-    // inner init
-    @JsonProperty(access = Access.READ_ONLY)
-    private Database targetDatabase;
-
-    private Boolean deleteByUniqueKey = true;
-
-    private Boolean needCheckBeforeDelete = false;
+    private String joinCondition;
 
 }

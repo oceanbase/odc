@@ -15,35 +15,42 @@
  */
 package com.oceanbase.odc.service.dlm.model;
 
-import javax.validation.constraints.NotNull;
+import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonProperty.Access;
-import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
+import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
 
 import lombok.Data;
 
 /**
  * @Author：tinker
- * @Date: 2023/7/13 17:21
+ * @Date: 2025/2/17 10:30
  * @Descripition:
  */
+
 @Data
-public class DataDeleteParameters extends DLMBaseParameters {
+public class DLMBaseParameters implements ScheduleTaskParameters {
 
-    @NotNull
-    private Long databaseId;
+    private List<OffsetConfig> variables;
 
-    private Long targetDatabaseId;
-    // inner init
-    @JsonProperty(access = Access.READ_ONLY)
-    private Database database;
-    // inner init
-    @JsonProperty(access = Access.READ_ONLY)
-    private Database targetDatabase;
+    private List<DataArchiveTableConfig> tables;
 
-    private Boolean deleteByUniqueKey = true;
+    private boolean needPrintSqlTrace = false;
 
-    private Boolean needCheckBeforeDelete = false;
+    private int readThreadCount;
+
+    private int writeThreadCount;
+
+    private int queryTimeout;
+
+    private int scanBatchSize;
+
+    private Long timeoutMillis;
+
+    private RateLimitConfiguration rateLimit;
+
+    private ShardingStrategy shardingStrategy;
+
+    private boolean fullDatabase = false;
 
 }

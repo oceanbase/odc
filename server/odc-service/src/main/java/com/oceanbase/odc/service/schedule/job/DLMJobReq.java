@@ -23,6 +23,7 @@ import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
+import com.oceanbase.tools.migrator.common.configure.DirtyRowAction;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 import com.oceanbase.tools.migrator.common.enums.MigrationInsertAction;
 import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
@@ -53,6 +54,8 @@ public class DLMJobReq {
     private DataSourceInfo targetDs;
 
     private boolean deleteAfterMigration;
+
+    private DirtyRowAction dirtyRowAction;
 
     private MigrationInsertAction migrationInsertAction;
 
