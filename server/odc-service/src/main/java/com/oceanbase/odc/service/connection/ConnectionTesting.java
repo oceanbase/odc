@@ -85,8 +85,10 @@ public class ConnectionTesting {
 
         PreConditions.validArgumentState(Objects.nonNull(req.getPassword()),
                 ErrorCodes.ConnectionPasswordMissed, null, "password required for connection without password saved");
-        cloudMetadataClient.checkPermission(OBTenant.of(req.getClusterName(),
-                req.getTenantName()), req.getInstanceType(), false, CloudPermissionAction.READONLY);
+        if (!req.getType().isFileSystem()) {
+            cloudMetadataClient.checkPermission(OBTenant.of(req.getClusterName(),
+                    req.getTenantName()), req.getInstanceType(), false, CloudPermissionAction.READONLY);
+        }
         connectionSSLAdaptor.adapt(req);
 
         PreConditions.validNotSqlInjection(req.getUsername(), "username");
@@ -104,7 +106,7 @@ public class ConnectionTesting {
 
     public ConnectionTestResult test(@NonNull ConnectionConfig config) {
         ConnectType type = config.getType();
-        if (type.getDialectType() == DialectType.FILE_SYSTEM) {
+        if (type.isFileSystem()) {
             return fileSystemConnectionTesting.test(config);
         }
         try {
@@ -188,6 +190,9 @@ public class ConnectionTesting {
                 if (result.getErrorCode() == ErrorCodes.ConnectionInitScriptFailed) {
                     return ConnectionTestResult.initScriptFailed(result.getArgs());
                 }
+                return new ConnectionTestResult(result, null);
+            }
+            if (Objects.nonNull(type) && type.isODPSharding()) {
                 return new ConnectionTestResult(result, null);
             }
             ConnectType connectType = ConnectTypeUtil.getConnectType(

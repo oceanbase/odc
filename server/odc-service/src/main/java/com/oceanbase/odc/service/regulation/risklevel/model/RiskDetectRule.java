@@ -46,8 +46,6 @@ public class RiskDetectRule {
     /**
      * rule root node
      */
-    @NotNull
-    @Valid
     private BaseTreeNode rootNode;
 
     @NotNull

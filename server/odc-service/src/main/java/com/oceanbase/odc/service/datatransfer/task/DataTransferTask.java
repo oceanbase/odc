@@ -364,7 +364,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         exportOutput.toFolder(destDir);
         LOGGER.info("Extract file to working dir, from={}, dest={}", from.getAbsolutePath(),
                 destDir.getAbsolutePath());
-        return exportOutput;
+        return new ExportOutput(destDir);
     }
 
     private void copyExportedFiles(DataTransferTaskResult result, String exportPath) {
