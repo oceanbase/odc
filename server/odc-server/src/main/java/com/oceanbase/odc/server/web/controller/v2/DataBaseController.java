@@ -69,8 +69,8 @@ public class DataBaseController {
     @RequestMapping(value = "/databases", method = RequestMethod.GET)
     public PaginatedResponse<Database> listDatabases(
             @RequestParam(required = false, name = "name") String name,
-            @RequestParam(required = false, name = "tenant") String tenantName,
-            @RequestParam(required = false, name = "cluster") String clusterName,
+            @RequestParam(required = false, name = "tenantId") String tenantName,
+            @RequestParam(required = false, name = "clusterId") String clusterName,
             @RequestParam(required = false, name = "type") List<DatabaseType> types,
             @RequestParam(required = false, name = "existed") Boolean existed,
             @RequestParam(required = false, name = "dataSourceName") String dataSourceName,
