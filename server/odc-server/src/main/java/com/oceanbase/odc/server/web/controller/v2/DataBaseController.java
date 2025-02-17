@@ -17,6 +17,8 @@ package com.oceanbase.odc.server.web.controller.v2;
 
 import java.util.List;
 
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
@@ -124,5 +126,11 @@ public class DataBaseController {
     public SuccessResponse<Boolean> modifyDatabasesOwners(@PathVariable Long projectId,
             @RequestBody ModifyDatabaseOwnerReq req) {
         return Responses.success(databaseService.modifyDatabasesOwners(projectId, req));
+    }
+
+    @ApiOperation(value = "updateDatabaseRemark", notes = "add databases remark")
+    @RequestMapping(value = "/databases/remark", method = RequestMethod.PUT)
+    public SuccessResponse<Boolean> modifyDatabaseRemark(@Valid @RequestBody TransferDatabasesReq req) {
+        return Responses.success(databaseService.modifyDatabaseRemark(req.getDatabaseIds().get(0), req.getDatabaseRemark()));
     }
 }

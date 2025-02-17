@@ -115,4 +115,8 @@ public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
     int setEnvironmentIdByConnectionId(@Param("environmentId") Long environmentId,
             @Param("connectionId") Long connectionId);
 
+    @Modifying
+    @Transactional
+    @Query(value = "update connect_database t set t.database_remark = :remark where t.id = :id", nativeQuery = true)
+    int setDatabaseRemarkById(@Param("id") Long databaseId, @Param("remark") String databaseRemark);
 }

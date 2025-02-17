@@ -42,6 +42,7 @@ import javax.sql.DataSource;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -262,6 +263,19 @@ public class DatabaseService {
     public Database getBasicSkipPermissionCheck(Long id) {
         return databaseMapper.entityToModel(databaseRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)));
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public List<Database> listBasicSkipPermissionCheckByIds(Collection<Long> ids) {
+        if (ids == null) {
+            return Collections.emptyList();
+        }
+        Set<Long> finalDatabaseIds = ids.stream().filter(Objects::nonNull).collect(Collectors.toSet());
+        List<DatabaseEntity> dbs = databaseRepository.findByIdIn(finalDatabaseIds);
+        if (finalDatabaseIds.size() != dbs.size()) {
+            throw new NotFoundException(ResourceType.ODC_DATABASE, "ids", finalDatabaseIds);
+        }
+        return dbs.stream().map(databaseMapper::entityToModel).collect(Collectors.toList());
     }
 
     @SkipAuthorize("odc internal usage")
@@ -895,6 +909,25 @@ public class DatabaseService {
                 this.databaseRepository.setObjectSyncStatusByObjectSyncStatusAndObjectLastSyncTimeIsNullOrBefore(
                         DBObjectSyncStatus.INITIALIZED, DBObjectSyncStatus.PENDING, syncDate);
         log.info("Refresh outdated pending objects status, syncDate={}, affectRows={}", syncDate, affectRows);
+    }
+
+    @SkipAuthorize("internal authorized")
+    @Transactional(rollbackFor = Exception.class)
+    public boolean modifyDatabaseRemark(@NotNull Long databaseId, @NotNull @Size(min = 1,max = 100) String remark) {
+        DatabaseEntity db = databaseRepository.findById(databaseId).orElseThrow(
+            () -> new NotFoundException(ErrorCodes.NotFound, new Object[] {"Database", "ID", databaseId},
+                "Database: " + databaseId + " does not exist"));
+        PreConditions.notNull(db.getProjectId(), "Project", "No projects have been added to the database");
+        try {
+            projectPermissionValidator.checkProjectRole(db.getProjectId(),
+                Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA));
+        }catch (Exception e) {
+            log.warn("Failed to update database remark due to user does not have permission to complete this operation，databaseId={}",databaseId, e);
+            return false;
+        }
+        db.setDatabaseRemark(remark);
+        databaseRepository.setDatabaseRemarkById(databaseId, remark);
+        return true;
     }
 
     private void checkPermission(Long projectId, Long dataSourceId) {
