@@ -43,6 +43,7 @@ public abstract class BaseJobCaller implements JobCaller {
         JobConfigurationValidator.validComponent();
         JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
+        ExecutorInfo executorInfo = null;
         ExecutorIdentifier executorIdentifier = null;
         JobIdentity ji = context.getJobIdentity();
         int rows = taskFrameworkService.beforeStart(ji.getId());
@@ -50,8 +51,10 @@ public abstract class BaseJobCaller implements JobCaller {
             throw new JobException("Start job failed, jobId={0}", ji.getId());
         }
         try {
-            executorIdentifier = doStart(context);
-            rows = taskFrameworkService.startSuccess(ji.getId(), executorIdentifier.toString());
+            executorInfo = doStart(context);
+            executorIdentifier = executorInfo.getExecutorIdentifier();;
+            rows = taskFrameworkService.startSuccess(ji.getId(), executorInfo.getResourceID(),
+                    executorIdentifier.toString());
             if (rows > 0) {
                 afterStartSucceed(executorIdentifier, ji);
             } else {
@@ -93,7 +96,8 @@ public abstract class BaseJobCaller implements JobCaller {
         JobEntity jobEntity = taskFrameworkService.find(ji.getId());
         String executorEndpoint = jobEntity.getExecutorEndpoint();
         ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier());
-        ResourceID resourceID = ResourceIDUtil.getResourceID(identifier, jobEntity);
+        ResourceID resourceID = ResourceIDUtil.getResourceID(identifier, jobEntity,
+                jobConfiguration.getTaskFrameworkProperties());
         try {
             if (executorEndpoint != null
                     && isExecutorExist(identifier, resourceID)) {
@@ -141,7 +145,8 @@ public abstract class BaseJobCaller implements JobCaller {
             return;
         }
         ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(executorIdentifier);
-        ResourceID resourceID = ResourceIDUtil.getResourceID(identifier, jobEntity);
+        ResourceID resourceID =
+                ResourceIDUtil.getResourceID(identifier, jobEntity, jobConfiguration.getTaskFrameworkProperties());
         log.info("Preparing destroy,jobId={}, executorIdentifier={}.", ji.getId(), executorIdentifier);
         doFinish(ji, identifier, resourceID);
     }
@@ -157,7 +162,8 @@ public abstract class BaseJobCaller implements JobCaller {
             return true;
         }
         ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(executorIdentifier);
-        ResourceID resourceID = ResourceIDUtil.getResourceID(identifier, jobEntity);
+        ResourceID resourceID = ResourceIDUtil.getResourceID(identifier, jobEntity,
+                jobConfiguration.getTaskFrameworkProperties());
         return canBeFinish(ji, identifier, resourceID);
     }
 
@@ -192,7 +198,7 @@ public abstract class BaseJobCaller implements JobCaller {
         }
     }
 
-    protected abstract ExecutorIdentifier doStart(JobContext context) throws JobException;
+    protected abstract ExecutorInfo doStart(JobContext context) throws JobException;
 
     protected abstract void doStop(JobIdentity ji) throws JobException;
 

@@ -15,6 +15,10 @@
  */
 package com.oceanbase.odc.service.connection.model;
 
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonAlias;
+
 import lombok.Data;
 
 /**
@@ -25,12 +29,22 @@ public class OBDatabaseUser {
     /**
      * 数据库用户名
      */
+    @JsonAlias("UserName")
     private String userName;
 
     /**
      * 数据库用户类型
      */
+    @JsonAlias("UserType")
     private OBDatabaseUserType userType;
 
+    @JsonAlias("Password")
     private String password;
+
+    @JsonAlias("Databases")
+    private List<OBDatabase> databases;
+
+    @JsonAlias("UserStatus")
+    private String userStatus;
+
 }

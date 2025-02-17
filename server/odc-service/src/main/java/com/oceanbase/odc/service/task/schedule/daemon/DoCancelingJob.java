@@ -27,7 +27,6 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -74,12 +73,6 @@ public class DoCancelingJob implements Job {
                             lockedEntity.getId(), lockedEntity.getStatus());
                     return;
                 }
-                // mark resource as released
-                if (TaskRunMode.K8S == lockedEntity.getRunMode()) {
-                    ResourceManagerUtil.markResourceReleased(lockedEntity, lockedEntity.getExecutorIdentifier(),
-                            getConfiguration().getResourceManager());
-                    log.info("DoCancelingJob release resource for job = {}", jobEntity);
-                }
                 // For transaction atomic, first update to CANCELED, then stop remote job in executor,
                 // if stop remote failed, transaction will be rollback
                 int rows = getConfiguration().getTaskFrameworkService()
@@ -98,9 +91,6 @@ public class DoCancelingJob implements Job {
                 // MessageFormat.format("Cancel job failed, jobId={0}", lockedEntity.getId()));
                 // throw new TaskRuntimeException(e);
                 // }
-                // set status to destroyed
-                // TODO(lx): do finish action before release resource
-                taskFrameworkService.updateExecutorToDestroyed(jobEntity.getId());
                 log.info("Job be cancelled successfully, jobId={}, oldStatus={}.", lockedEntity.getId(),
                         lockedEntity.getStatus());
                 getConfiguration().getEventPublisher().publishEvent(
