@@ -31,6 +31,7 @@ import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 
 import com.oceanbase.odc.core.migrate.MigrateConfiguration;
 import com.oceanbase.odc.core.migrate.resource.model.ResourceConfig;
+import com.oceanbase.odc.service.common.ConditionOnServer;
 import com.oceanbase.odc.service.common.migrate.DefaultValueEncoderFactory;
 import com.oceanbase.odc.service.common.migrate.DefaultValueGeneratorFactory;
 import com.oceanbase.odc.service.common.migrate.ResourceConstants;
@@ -38,6 +39,7 @@ import com.oceanbase.odc.service.common.migrate.ResourceConstants;
 @Configuration
 @DependsOn({"vectordbLockConfiguration"})
 @ConditionalOnProperty(prefix = "odc.datasource.vectordb", name = {"url", "driver-class-name", "username", "password"})
+@ConditionOnServer
 public class VectorDBMigrate extends AbstractMigrate {
 
     @Autowired

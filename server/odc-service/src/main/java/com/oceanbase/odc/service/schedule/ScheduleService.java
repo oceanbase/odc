@@ -42,6 +42,7 @@ import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cglib.beans.BeanMap;
 import org.springframework.context.annotation.Lazy;
@@ -99,7 +100,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
-import com.oceanbase.odc.service.quartz.QuartzJobService;
+import com.oceanbase.odc.service.quartz.QuartzJobServiceProxy;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
@@ -165,7 +166,8 @@ public class ScheduleService {
     @Autowired
     private AuthenticationFacade authenticationFacade;
     @Autowired
-    private QuartzJobService quartzJobService;
+    @Qualifier("quartzJobServiceProxy")
+    private QuartzJobServiceProxy quartzJobService;
 
     @Autowired
     private ObjectStorageFacade objectStorageFacade;
@@ -490,7 +492,7 @@ public class ScheduleService {
                 quartzJobReq.setJobName(targetSchedule.getId().toString());
                 quartzJobReq.setJobGroup(targetSchedule.getType().name());
                 quartzJobReq.setTriggerConfig(targetSchedule.getTriggerConfig());
-                quartzJobService.changeQuartzJob(quartzJobReq);
+                quartzJobService.changeJob(quartzJobReq);
                 return true;
             } catch (Exception e) {
                 log.warn("Change schedule failed,scheduleId={},operationType={},changelogId={}", targetSchedule.getId(),

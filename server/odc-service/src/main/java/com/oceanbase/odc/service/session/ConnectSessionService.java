@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -301,8 +302,13 @@ public class ConnectSessionService {
 
     public ConnectionSession createPhysicalConnectionSession(@NotNull ConnectionConfig connection,
             @NotNull CreateSessionReq req) {
+        return createPhysicalConnectionSession(connection, req, 1);
+    }
+
+    public ConnectionSession createPhysicalConnectionSession(@NotNull ConnectionConfig connection,
+            @NotNull CreateSessionReq req, int maxConcurrentTaskCount) {
         SqlExecuteTaskManagerFactory factory =
-                new SqlExecuteTaskManagerFactory(this.monitorTaskManager, "console", 1);
+                new SqlExecuteTaskManagerFactory(this.monitorTaskManager, "console", maxConcurrentTaskCount);
         // TODO: query from use config service
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(
                 connection, getAutoCommit(connection), factory);
@@ -348,6 +354,21 @@ public class ConnectSessionService {
     }
 
     public ConnectionSession nullSafeGet(@NotNull String sessionId, boolean autoCreate) {
+        return nullSafeGet(sessionId, autoCreate, null);
+    }
+
+    /**
+     * get a ConnectionSession of sessionId. If not exist and autoCreate is true, create a new session.
+     * If createConnectionSessionSupplier is not null, use it to create a new session; otherwise, create
+     * a new session by default.
+     * 
+     * @param sessionId session id for {@link ConnectionSession}
+     * @param autoCreate whether to auto create a new session if not exist
+     * @param createConnectionSessionSupplier a supplier to create a new session
+     * @return {@link ConnectionSession} of sessionId
+     */
+    public ConnectionSession nullSafeGet(@NotNull String sessionId, boolean autoCreate,
+            Supplier<ConnectionSession> createConnectionSessionSupplier) {
         ConnectionSession session = connectionSessionManager.getSession(sessionId);
         if (session == null) {
             CreateSessionReq req = new DefaultConnectSessionIdGenerator().getKeyFromId(sessionId);
@@ -366,10 +387,15 @@ public class ConnectSessionService {
             try {
                 session = connectionSessionManager.getSession(sessionId);
                 if (session != null) {
+                    connectionSessionManager.cancelExpire(session);
                     return session;
                 }
-                session = create(req);
-                ConnectionSessionUtil.setConsoleSessionResetFlag(session, true);
+                if (createConnectionSessionSupplier != null) {
+                    session = createConnectionSessionSupplier.get();
+                } else {
+                    session = create(req);
+                    ConnectionSessionUtil.setConsoleSessionResetFlag(session, true);
+                }
                 return session;
             } finally {
                 lock.unlock();
