@@ -127,7 +127,9 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             return;
         }
         if (tableUnit.getParameters().isCreateTempTableInSource()) {
-
+            DLMTableStructureSynchronizer.createTempTable(tableUnit.getSourceDatasourceInfo(), tableUnit.getTableName(),
+                    tableUnit.getParameters().getTempTableName());
+            return;
         }
         try {
             DLMTableStructureSynchronizer.sync(tableUnit.getSourceDatasourceInfo(), tableUnit.getTargetDatasourceInfo(),
@@ -174,7 +176,8 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             limiterConfig.setRowLimit(req.getRateLimit().getRowLimit());
             dlmTableUnit.setSourceLimitConfig(limiterConfig);
             dlmTableUnit.setTargetLimitConfig(limiterConfig);
-            if (req.isDeleteAfterMigration() && req.getTargetDs().getType().isFileSystem()) {
+            if (req.isDeleteAfterMigration()
+                    && (req.getTargetDs().getType().isFileSystem() || req.getSourceDs().getType().isFileSystem())) {
                 // save data to temporary table
                 if (req.getJobType() == JobType.MIGRATE) {
                     jobParameter.setCreateTempTableInSource(true);
