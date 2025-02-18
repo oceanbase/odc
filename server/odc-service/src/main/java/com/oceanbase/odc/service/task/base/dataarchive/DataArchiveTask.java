@@ -186,11 +186,11 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
                 // check data by temporary table
                 if (req.getJobType() == JobType.DELETE) {
                     dlmTableUnit.setTargetDatasourceInfo(req.getSourceDs());
-                    jobParameter.setTargetTableName("temp_" + table.getTargetTableName());
+                    dlmTableUnit.setTargetTableName("temp_" + table.getTargetTableName());
                 }
                 if (req.getJobType() == JobType.ROLLBACK) {
                     dlmTableUnit.setSourceDatasourceInfo(req.getTargetDs());
-                    jobParameter.setSourceTableName("temp_" + table.getTableName());
+                    dlmTableUnit.setTableName("temp_" + table.getTableName());
                 }
             }
             dlmTableUnits.add(dlmTableUnit);
