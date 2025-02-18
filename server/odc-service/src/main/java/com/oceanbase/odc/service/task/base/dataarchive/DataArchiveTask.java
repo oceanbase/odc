@@ -126,6 +126,9 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
         if (tableUnit.getType() != JobType.MIGRATE) {
             return;
         }
+        if (tableUnit.getParameters().isCreateTempTableInSource()) {
+
+        }
         try {
             DLMTableStructureSynchronizer.sync(tableUnit.getSourceDatasourceInfo(), tableUnit.getTargetDatasourceInfo(),
                     tableUnit.getTableName(), tableUnit.getTargetTableName(),
@@ -182,7 +185,10 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
                     dlmTableUnit.setTargetDatasourceInfo(req.getSourceDs());
                     jobParameter.setTargetTableName("temp_" + table.getTargetTableName());
                 }
-
+                if (req.getJobType() == JobType.ROLLBACK) {
+                    dlmTableUnit.setSourceDatasourceInfo(req.getTargetDs());
+                    jobParameter.setSourceTableName("temp_" + table.getTableName());
+                }
             }
             dlmTableUnits.add(dlmTableUnit);
         });
