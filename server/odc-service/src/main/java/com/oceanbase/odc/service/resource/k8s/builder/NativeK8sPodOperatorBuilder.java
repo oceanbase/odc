@@ -61,7 +61,7 @@ public class NativeK8sPodOperatorBuilder extends BaseNativeK8sResourceOperatorBu
             K8sPodStatusDfa dfa = K8sPodStatusDfa.buildInstance();
             nextState = dfa.next(runtimeResource.orElse(null), e.getStatus());
         } catch (Exception exception) {
-            log.warn("Failed to get next pod's status, id={}", e.getId(), exception);
+            log.warn("Failed to get next pod's status, id={}, errMsg={}", e.getId(), exception.getMessage());
         }
         K8sPod k8sPod = new K8sPod(new ResourceLocation(e), nextState);
         V1ObjectMeta meta = new V1ObjectMeta();
