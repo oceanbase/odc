@@ -152,11 +152,8 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             jobParameter.setShardingStrategy(req.getShardingStrategy());
             jobParameter.setPartName2MinKey(table.getPartName2MinKey());
             jobParameter.setPartName2MaxKey(table.getPartName2MaxKey());
-            if(req.isDeleteAfterMigration() && req.getTargetDs().getType().isFileSystem()){
-                jobParameter.setCreateTempTableInSource(true);
-                jobParameter.setTempTableName("temp_"+table.getTargetTableName());
-            }
-            jobParameter.setCreateTempTableInSource(req.isDeleteAfterMigration() && req.getTargetDs().getType().isFileSystem());
+            jobParameter.setCreateTempTableInSource(
+                    req.isDeleteAfterMigration() && req.getTargetDs().getType().isFileSystem());
             dlmTableUnit.setParameters(jobParameter);
             dlmTableUnit.setDlmTableUnitId(DlmJobIdUtil.generateHistoryJobId(req.getJobName(), req.getJobType().name(),
                     req.getScheduleTaskId(), dlmTableUnits.size()));
@@ -174,6 +171,19 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             limiterConfig.setRowLimit(req.getRateLimit().getRowLimit());
             dlmTableUnit.setSourceLimitConfig(limiterConfig);
             dlmTableUnit.setTargetLimitConfig(limiterConfig);
+            if (req.isDeleteAfterMigration() && req.getTargetDs().getType().isFileSystem()) {
+                // save data to temporary table
+                if (req.getJobType() == JobType.MIGRATE) {
+                    jobParameter.setCreateTempTableInSource(true);
+                    jobParameter.setTempTableName("temp_" + table.getTargetTableName());
+                }
+                // check data by temporary table
+                if (req.getJobType() == JobType.DELETE) {
+                    dlmTableUnit.setTargetDatasourceInfo(req.getSourceDs());
+                    jobParameter.setTargetTableName("temp_" + table.getTargetTableName());
+                }
+
+            }
             dlmTableUnits.add(dlmTableUnit);
         });
         toDoList = new LinkedList<>(dlmTableUnits);

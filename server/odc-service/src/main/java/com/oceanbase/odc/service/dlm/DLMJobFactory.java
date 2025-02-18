@@ -42,6 +42,8 @@ public class DLMJobFactory extends JobFactory {
         jobParameter.setPrintSqlTrace(false);
         jobParameter.setSourceTableName(tableUnit.getTableName());
         jobParameter.setTargetTableName(tableUnit.getTargetTableName());
+        jobParameter.setSourceDs(tableUnit.getSourceDatasourceInfo());
+        jobParameter.setTargetDs(tableUnit.getTargetDatasourceInfo());
         jobParameter.getSourceDs().setConnectionCount(2 * (jobParameter.getReaderTaskCount()
                 + jobParameter.getWriterTaskCount()));
         jobParameter.getTargetDs().setConnectionCount(2 * (jobParameter.getReaderTaskCount()
