@@ -57,6 +57,8 @@ public class DataArchiveParameters extends DLMBaseParameters {
 
     private DirtyRowAction dirtyRowAction = DirtyRowAction.RAISE_ERROR;
 
+    private Long maxAllowedDirtyRowCount;
+
     private boolean fullDatabase = false;
 
 }
