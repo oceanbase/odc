@@ -24,7 +24,6 @@ import org.springframework.data.domain.Page;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
-import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
@@ -46,8 +45,6 @@ public class PullTaskResultJob implements Job {
         JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
         this.taskFrameworkProperties = configuration.getTaskFrameworkProperties();
         this.taskFrameworkService = configuration.getTaskFrameworkService();
-
-        JobConfigurationValidator.validComponent();
 
         int singlePullResultJobRows = taskFrameworkProperties.getSinglePullResultJobRows();
         Page<JobEntity> runningJobs = taskFrameworkService.findRunningJobs(0, singlePullResultJobRows);

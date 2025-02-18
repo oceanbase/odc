@@ -277,6 +277,9 @@
                                             <location>${project.basedir}/../../script/start-job.sh</location>
                                         </source>
                                         <source>
+                                            <location>${project.basedir}/../../script/start-supervisor.sh</location>
+                                        </source>
+                                        <source>
                                             <location>${project.basedir}/../../script/kill-odc.sh</location>
                                         </source>
                                         <source>
@@ -415,6 +418,9 @@
                                         </source>
                                         <source>
                                             <location>${project.basedir}/../../script/start-job.sh</location>
+                                        </source>
+                                        <source>
+                                            <location>${project.basedir}/../../script/start-supervisor.sh</location>
                                         </source>
                                         <source>
                                             <location>${project.basedir}/../../script/kill-odc.sh</location>

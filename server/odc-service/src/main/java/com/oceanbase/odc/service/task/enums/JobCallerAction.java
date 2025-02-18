@@ -27,5 +27,7 @@ public enum JobCallerAction {
 
     STOP,
 
+    MODIFY,
+
     DESTROY
 }
