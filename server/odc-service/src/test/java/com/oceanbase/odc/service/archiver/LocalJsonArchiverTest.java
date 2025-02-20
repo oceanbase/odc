@@ -23,6 +23,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -30,7 +31,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.oceanbase.odc.common.security.PasswordUtils;
-import com.oceanbase.odc.common.util.FileZipper;
 import com.oceanbase.odc.service.archiver.impl.JsonExtractor;
 import com.oceanbase.odc.service.archiver.impl.LocalJsonArchiver;
 import com.oceanbase.odc.service.archiver.model.ArchiveConstants;
@@ -85,7 +85,7 @@ public class LocalJsonArchiverTest {
             Assert.assertEquals(rowDataReader.readRow(TestEncryptable.class), new TestEncryptable("3", "3"));
             Assert.assertNull(rowDataReader.readRow(TestEncryptable.class));
         }
-        FileZipper.deleteFiles(build.toFile());
+        FileUtils.deleteQuietly(build.toFile());
     }
 
     @Test
@@ -110,7 +110,7 @@ public class LocalJsonArchiverTest {
             Assert.assertEquals(rowDataReader.readRow(TestEncryptable.class), new TestEncryptable("3", "3"));
             Assert.assertNull(rowDataReader.readRow(TestEncryptable.class));
         }
-        FileZipper.deleteFiles(build.toFile());
+        FileUtils.deleteQuietly(build.toFile());
     }
 
     @Test
@@ -133,7 +133,7 @@ public class LocalJsonArchiverTest {
         try (Extractor<JsonNode> extractor = JsonExtractor.buildJsonExtractor(build, ".");) {
             Assert.assertTrue(extractor.checkSignature());
         }
-        FileZipper.deleteFiles(build.toFile());
+        FileUtils.deleteQuietly(build.toFile());
 
     }
 
@@ -165,9 +165,8 @@ public class LocalJsonArchiverTest {
             Assert.assertTrue(file.exists());
             Assert.assertTrue(extractor.checkSignature());
         }
-        FileZipper.deleteFiles(build.toFile());
-        FileZipper.deleteFiles(new File("./test2.zip"));
-
+        FileUtils.deleteQuietly(build.toFile());
+        FileUtils.deleteQuietly(new File("./test2.zip"));
 
     }
 
@@ -194,7 +193,7 @@ public class LocalJsonArchiverTest {
         try (Extractor<JsonNode> extractor = JsonExtractor.buildJsonExtractor(archivedFile, ".");) {
             Assert.assertFalse(extractor.checkSignature());
         }
-        FileZipper.deleteFiles(build.toFile());
+        FileUtils.deleteQuietly(build.toFile());
     }
 
     @Test
@@ -216,7 +215,7 @@ public class LocalJsonArchiverTest {
         try (JsonExtractor extractor = JsonExtractor.buildJsonExtractor(build, ".")) {
             Assert.assertTrue(extractor.checkSignature());
         }
-        FileZipper.deleteFiles(build.toFile());
+        FileUtils.deleteQuietly(build.toFile());
 
 
     }
