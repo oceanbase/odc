@@ -69,11 +69,15 @@ import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.resource.ResourceState;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
+import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobAttributeEntityColumn;
 import com.oceanbase.odc.service.task.constants.JobEntityColumn;
 import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.enums.TaskMonitorMode;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.executor.HeartbeatRequest;
@@ -88,9 +92,11 @@ import com.oceanbase.odc.service.task.state.JobStatusFsm;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
 import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
+import com.oceanbase.odc.service.task.util.TaskResultWrap;
 
 import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.core.util.StrUtil;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -123,6 +129,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Qualifier(value = "taskResultPublisherExecutor")
     private ThreadPoolTaskExecutor taskResultPublisherExecutor;
 
+    @Getter
     @Autowired
     @Qualifier(value = "taskResultPullerExecutor")
     private ThreadPoolTaskExecutor taskResultPullerExecutor;
@@ -133,13 +140,14 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Autowired
     private EntityManager entityManager;
     @Autowired
-    private TaskExecutorClient taskExecutorClient;
-    @Autowired
     private ExecutorEndpointManager executorEndpointManager;
     // default impl
     private JobStatusFsm jobStatusFsm = new JobStatusFsm();
     @Autowired
     private List<ResultProcessor> resultProcessors;
+
+    private TaskExecutorClient taskExecutorClient = new TaskExecutorClient();
+
 
     @Override
     public JobEntity find(Long id) {
@@ -168,6 +176,24 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     public Page<JobEntity> findCancelingJob(int page, int size) {
         Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
                 .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.CANCELING))
+                .and(getExecutorSpec());
+        return page(condition, page, size);
+    }
+
+    @Override
+    public Page<JobEntity> findNeedStoppedJobs(int page, int size) {
+        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
+                .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS,
+                        Lists.newArrayList(JobStatus.CANCELING, JobStatus.TIMEOUT)))
+                .and(getExecutorSpec());
+        return page(condition, page, size);
+    }
+
+    @Override
+    public Page<JobEntity> findNeedPullResultJobs(int page, int size) {
+        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
+                .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS,
+                        Lists.newArrayList(JobStatus.DO_CANCELING, JobStatus.RUNNING)))
                 .and(getExecutorSpec());
         return page(condition, page, size);
     }
@@ -205,7 +231,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     public Page<JobEntity> findIncompleteJobs(int page, int size) {
         Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
                 .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS,
-                        Lists.newArrayList(JobStatus.PREPARING, JobStatus.RETRYING, JobStatus.RUNNING)));
+                        Lists.newArrayList(JobStatus.PREPARING, JobStatus.RUNNING)));
         return page(condition, page, size);
     }
 
@@ -235,7 +261,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 cb.greaterThan(root.get(JobEntityColumn.CREATE_TIME),
                         JobDateUtils.getCurrentDateSubtractDays(RECENT_DAY)),
                 cb.equal(root.get(JobEntityColumn.RUN_MODE), runMode),
-                root.get(JobEntityColumn.STATUS).in(JobStatus.PREPARING, JobStatus.RETRYING).not(),
+                root.get(JobEntityColumn.STATUS).in(JobStatus.PREPARING).not(),
                 cb.isNull(root.get(JobEntityColumn.EXECUTOR_DESTROYED_TIME)),
                 executorPredicate(root, cb));
         return entityManager.createQuery(query).getSingleResult();
@@ -292,26 +318,48 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
-    public int startSuccess(Long id, ResourceID resourceID, String executorIdentifier) {
+    public int startSuccess(Long id, ResourceID resourceID, String executorIdentifier, JobContext jobContext) {
         JobEntity jobEntity = find(id);
         Map<String, String> jobProperties = jobEntity.getJobProperties();
-        String regionName = jobProperties.get(ResourceIDUtil.REGION_PROP_NAME);
-        ResourceLocation resourceLocation = resourceID.getResourceLocation();
-        // resource location depends on what resource operator returned
-        if (!StringUtils.equals(regionName, resourceLocation.getRegion())) {
-            log.info("correct resource region from {} to {}", regionName, resourceLocation.getRegion());
-            jobProperties.put(ResourceIDUtil.REGION_PROP_NAME, resourceLocation.getRegion());
+        // resource id null will not correct jobProperties
+        if (null != resourceID) {
+            ResourceLocation resourceLocation = resourceID.getResourceLocation();
+            // resource location depends on what resource operator returned
+            String regionName = jobProperties.get(ResourceIDUtil.REGION_PROP_NAME);
+            if (!StringUtils.equals(regionName, resourceLocation.getRegion())) {
+                log.info("correct resource region from {} to {}", regionName, resourceLocation.getRegion());
+                jobProperties.put(ResourceIDUtil.REGION_PROP_NAME, resourceLocation.getRegion());
+            }
+            String cloudProviderName = jobProperties.get(ResourceIDUtil.GROUP_PROP_NAME);
+            if (!StringUtils.equals(cloudProviderName, resourceLocation.getGroup())) {
+                log.info("correct resource cloud provider from {} to {}", cloudProviderName,
+                        resourceLocation.getGroup());
+                jobProperties.put(ResourceIDUtil.GROUP_PROP_NAME, resourceLocation.getGroup());
+            }
+            jobProperties.put(ResourceIDUtil.RESOURCE_TYPE_PROP_NAME, resourceID.getType());
+            jobProperties.put(ResourceIDUtil.RESOURCE_NAMESPACE_PROP_NAME, resourceID.getNamespace());
         }
-        String cloudProviderName = jobProperties.get(ResourceIDUtil.GROUP_PROP_NAME);
-        if (!StringUtils.equals(cloudProviderName, resourceLocation.getGroup())) {
-            log.info("correct resource cloud provider from {} to {}", cloudProviderName, resourceLocation.getGroup());
-            jobProperties.put(ResourceIDUtil.GROUP_PROP_NAME, resourceLocation.getGroup());
-        }
-        jobProperties.put(ResourceIDUtil.RESOURCE_TYPE_PROP_NAME, resourceID.getType());
-        jobProperties.put(ResourceIDUtil.RESOURCE_NAMESPACE_PROP_NAME, resourceID.getNamespace());
         jobEntity.setExecutorIdentifier(executorIdentifier);
+        TaskMonitorMode monitorMode = JobPropertiesUtils.getMonitorMode(jobContext.getJobProperties());
         jobEntity.setJobProperties(jobProperties);
-        return jobRepository.updateJobExecutorIdentifierById(jobEntity);
+        if (monitorMode == TaskMonitorMode.PUSH) {
+            return jobRepository.updateJobExecutorIdentifierById(jobEntity);
+        } else {
+            // that's pull mode, update executor endpoint as well
+            ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(executorIdentifier);
+            String host = identifier.getHost();
+            if (!StringUtils.startsWith(host, "http")) {
+                host = "http://" + host;
+            }
+            String port = String.valueOf(identifier.getPort());
+            return jobRepository.updateExecutorEndpointAndExecutorIdentifierById(jobEntity.getId(), host + ":" + port,
+                    executorIdentifier);
+        }
+    }
+
+    @Override
+    public int startSuccess(Long id, String executorIdentifier, JobContext jobContext) {
+        return startSuccess(id, null, executorIdentifier, jobContext);
     }
 
     @Override
@@ -350,12 +398,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Job identity is not exists by id {}", taskResult.getJobIdentity().getId());
             return;
         }
-        // that's may be a dangerous operation if task report too frequent
-        saveOrUpdateLogMetadata(taskResult, je.getId(), je.getStatus());
-        if (je.getStatus().isTerminated() || je.getStatus() == JobStatus.CANCELING) {
-            log.warn("Job is finished, ignore result, jobId={}, currentStatus={}", je.getId(), je.getStatus());
-            return;
-        }
+        // always try to update endpoint if running in PUSH mode
         if (!StringUtils.equals(je.getExecutorEndpoint(), taskResult.getExecutorEndpoint())) {
             log.info("Update executor endpoint, jobId={}, old={}, new={}", je.getId(), je.getExecutorEndpoint(),
                     taskResult.getExecutorEndpoint());
@@ -364,9 +407,19 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 log.warn("Update executor endpoint failed, jobId={}", je.getId());
             }
         }
-        handleTaskResultInner(je, taskResult);
+        // compatible with old odc version
+        if (!taskFrameworkProperties.isEnableTaskSupervisorAgent()) {
+            // that's may be a dangerous operation if task report too frequent
+            saveOrUpdateLogMetadata(taskResult, je.getId(), je.getStatus());
+            if (je.getStatus().isTerminated() || je.getStatus() == JobStatus.CANCELING) {
+                log.warn("Job is finished, ignore result, jobId={}, currentStatus={}", je.getId(), je.getStatus());
+                return;
+            }
+            handleTaskResultInner(je, taskResult);
+        }
     }
 
+    // this old ODC logic
     private void doRefreshResult(Long id) throws JobException {
         JobEntity je = find(id);
         // CANCELING is also a state within the running phase
@@ -376,7 +429,11 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         }
 
         String executorEndpoint = executorEndpointManager.getExecutorEndpoint(je);
-        TaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
+        TaskResultWrap resultWrap = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
+        TaskResult result = resultWrap.getTaskResult();
+        if (null == result) {
+            return;
+        }
         if (result.getStatus() == TaskStatus.PREPARING) {
             log.info("Job is preparing, ignore refresh, jobId={}, currentStatus={}", id, result.getStatus());
             return;
@@ -393,7 +450,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             return;
         }
         log.info("Progress changed, will update result, jobId={}, currentProgress={}", id, result.getProgress());
-        handleTaskResult(je.getJobType(), result);
+        propagateTaskResult(je.getJobType(), result);
         saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
 
         if (result.getStatus().isTerminated() && MapUtils.isEmpty(result.getLogMetadata())) {
@@ -411,6 +468,22 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Update task result failed, the job may finished or deleted already, jobId={}", jobEntity.getId());
             return;
         }
+        publishEvent(result, jobEntity, expectedJobStatus);
+    }
+
+    @Override
+    public void refreshResult(Long id) {
+        taskResultPullerExecutor.execute(() -> {
+            try {
+                doRefreshResult(id);
+            } catch (Exception e) {
+                log.warn("Refresh job result failed, jobId={}, causeReason={}",
+                        id, ExceptionUtils.getRootCauseReason(e));
+            }
+        });
+    }
+
+    public void publishEvent(TaskResult result, JobEntity jobEntity, JobStatus expectedJobStatus) {
         taskResultPublisherExecutor
                 .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(result)));
 
@@ -436,18 +509,13 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         }
     }
 
-    @Override
-    public void refreshResult(Long id) {
-        taskResultPullerExecutor.execute(() -> {
-            try {
-                doRefreshResult(id);
-            } catch (Exception e) {
-                log.warn("Refresh job result failed, jobId={}, causeReason={}",
-                        id, ExceptionUtils.getRootCauseReason(e));
-            }
-        });
-    }
 
+    /**
+     * refresh log meta when job is canceled
+     *
+     * @param id
+     * @return
+     */
     @Override
     public boolean refreshLogMetaForCancelJob(Long id) {
         JobEntity je = find(id);
@@ -459,8 +527,11 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         }
         try {
             String executorEndpoint = executorEndpointManager.getExecutorEndpoint(je);
-            TaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
-
+            TaskResultWrap resultWap = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
+            TaskResult result = resultWap.getTaskResult();
+            if (result == null) {
+                return false;
+            }
             if (je.getRunMode().isK8s() && MapUtils.isEmpty(result.getLogMetadata())) {
                 log.info("Refresh log failed due to log have not uploaded,  jobId={}, currentStatus={}", je.getId(),
                         je.getStatus());
@@ -470,7 +541,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             // TODO(tianke): move this logic to event listener
             jobRepository.updateResultJson(JsonUtils.toJson(result), result.getJobIdentity().getId());
             saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
-            handleTaskResult(je.getJobType(), result);
+            propagateTaskResult(je.getJobType(), result);
             return true;
         } catch (Exception exception) {
             log.warn("Refresh log meta failed,errorMsg={}", exception.getMessage());
@@ -479,14 +550,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     private boolean updateHeartbeatTime(Long id) {
-        int rows = jobRepository.updateHeartbeatTime(id, JobStatus.RUNNING);
-        if (rows > 0) {
-            log.info("Update lastHeartbeatTime success, jobId={}", id);
-            return true;
-        } else {
-            log.warn("Update lastHeartbeatTime failed, jobId={}", id);
-            return false;
-        }
+        return updateHeartbeatWithExpectStatus(id, JobStatus.RUNNING);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -517,9 +581,9 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         return jobRepository.updateExecutorEndpoint(id, executorEndpoint, currentJob.getStatus());
     }
 
-    private int updateTaskResult(TaskResult taskResult, JobEntity currentJob, JobStatus expectedStatus) {
+    public int updateTaskResult(TaskResult taskResult, JobEntity currentJob, JobStatus expectedStatus) {
         JobEntity jse = new JobEntity();
-        handleTaskResult(currentJob.getJobType(), taskResult);
+        propagateTaskResult(currentJob.getJobType(), taskResult);
         jse.setResultJson(JsonUtils.toJson(taskResult));
         jse.setStatus(expectedStatus);
         jse.setProgressPercentage(taskResult.getProgress());
@@ -530,7 +594,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         return jobRepository.updateReportResult(jse, currentJob.getId(), currentJob.getStatus());
     }
 
-    private void saveOrUpdateLogMetadata(TaskResult taskResult, Long jobId, JobStatus currentStatus) {
+    public void saveOrUpdateLogMetadata(TaskResult taskResult, Long jobId, JobStatus currentStatus) {
         if (taskResult.getLogMetadata() != null) {
             log.info("Save or update log metadata, jobId={}, currentStatus={}, taskResult={}",
                     jobId, currentStatus, JsonUtils.toJson(taskResult));
@@ -572,6 +636,20 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         update.set(JobEntityColumn.FINISHED_TIME, JobDateUtils.getCurrentDate());
         update.set(JobEntityColumn.DESCRIPTION, description);
 
+        update.where(cb.equal(e.get(JobEntityColumn.ID), id),
+                cb.equal(e.get(JobEntityColumn.STATUS), oldStatus));
+
+        return entityManager.createQuery(update).executeUpdate();
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public int updateStatusByIdOldStatus(Long id, JobStatus oldStatus, JobStatus newStatus) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+
+        CriteriaUpdate<JobEntity> update = cb.createCriteriaUpdate(JobEntity.class);
+        Root<JobEntity> e = update.from(JobEntity.class);
+        update.set(JobEntityColumn.STATUS, newStatus);
         update.where(cb.equal(e.get(JobEntityColumn.ID), id),
                 cb.equal(e.get(JobEntityColumn.STATUS), oldStatus));
 
@@ -662,6 +740,19 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         return ret;
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateHeartbeatWithExpectStatus(Long id, JobStatus expectStatus) {
+        int rows = jobRepository.updateHeartbeatTime(id, expectStatus);
+        if (rows > 0) {
+            log.info("Update lastHeartbeatTime success, jobId={}", id);
+            return true;
+        } else {
+            log.warn("Update lastHeartbeatTime failed, jobId={}", id);
+            return false;
+        }
+    }
+
     @Transactional(rollbackFor = Exception.class)
     @Override
     public int updateExecutorToDestroyed(Long id) {
@@ -694,7 +785,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 JobAttributeEntity::getAttributeValue));
     }
 
-    private void handleTaskResult(String jobType, TaskResult taskResult) {
+    public void propagateTaskResult(String jobType, TaskResult taskResult) {
         for (ResultProcessor processor : resultProcessors) {
             if (processor.interested(jobType)) {
                 processor.process(taskResult);

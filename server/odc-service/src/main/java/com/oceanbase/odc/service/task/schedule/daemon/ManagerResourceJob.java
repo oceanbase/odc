@@ -31,9 +31,9 @@ import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
-import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobConstants;
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
@@ -46,18 +46,24 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @DisallowConcurrentExecution
-public class DestroyResourceJob implements Job {
+public class ManagerResourceJob implements Job {
 
     private JobConfiguration configuration;
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         configuration = JobConfigurationHolder.getJobConfiguration();
-        JobConfigurationValidator.validComponent();
-
         // scan terminate job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
+        processRealResource(taskFrameworkProperties, taskFrameworkService);
+    }
+
+    private void processRealResource(TaskFrameworkProperties taskFrameworkProperties,
+            TaskFrameworkService taskFrameworkService) {
+        if (!(taskFrameworkProperties.getRunMode() == TaskRunMode.K8S)) {
+            return;
+        }
         Page<ResourceEntity> resources = taskFrameworkService.findAbandonedResource(0,
                 taskFrameworkProperties.getSingleFetchDestroyExecutorJobRows());
         resources.forEach(a -> {

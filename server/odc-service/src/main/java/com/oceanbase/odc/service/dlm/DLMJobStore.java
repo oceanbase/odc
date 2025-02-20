@@ -69,9 +69,11 @@ public class DLMJobStore implements IJobStore {
             return;
         }
         try {
-            dataSource.close();
+            if (null != dataSource) {
+                dataSource.close();
+            }
         } catch (Exception e) {
-            log.warn("Close meta datasource failed,errorMsg={}", e.getMessage());
+            log.warn("Close meta datasource failed,errorMsg={}", e);
         }
     }
 

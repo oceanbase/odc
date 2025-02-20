@@ -29,13 +29,13 @@ import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobEnvironmentFactory;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
-import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.resource.AbstractK8sResourceOperatorBuilder;
 import com.oceanbase.odc.service.task.resource.DefaultNativeK8sOperatorBuilder;
 import com.oceanbase.odc.service.task.resource.PodConfig;
@@ -91,7 +91,6 @@ public class ImmediateJobDispatcher implements JobDispatcher {
     }
 
     private JobCaller getJobCaller(JobIdentity ji, JobContext context) {
-        JobConfigurationValidator.validComponent();
         TaskFrameworkService taskFrameworkService =
                 JobConfigurationHolder.getJobConfiguration().getTaskFrameworkService();
         JobConfiguration config = JobConfigurationHolder.getJobConfiguration();
@@ -114,10 +113,11 @@ public class ImmediateJobDispatcher implements JobDispatcher {
             if (config.getTaskFrameworkProperties().isEnableK8sLocalDebugMode()) {
                 resourceType = DefaultNativeK8sOperatorBuilder.NATIVE_K8S_POD_TYPE;
             }
-            return JobCallerBuilder.buildK8sJobCaller(podConfig, context, resourceManager, resourceType);
+            return JobCallerBuilder.buildK8sJobCaller(podConfig, context, resourceManager, resourceType,
+                    je.getCreateTime());
         } else {
             return JobCallerBuilder.buildProcessCaller(context,
-                    new JobEnvironmentFactory().build(context, TaskRunMode.PROCESS));
+                    new JobEnvironmentFactory().build(context, TaskRunMode.PROCESS, LogUtils.getBaseLogPath()));
         }
     }
 

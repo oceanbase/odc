@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.nio.file.Paths;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,6 +50,7 @@ import com.oceanbase.odc.service.task.caller.ProcessConfig;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
@@ -85,7 +87,8 @@ public class ProcessModeTest extends BaseJobTest {
         processConfig.setEnvironments(getEnvironments());
         processConfig.setJvmXmxMB(512);
         processConfig.setJvmXmsMB(256);
-        String executorName = JobUtils.generateExecutorName(JobIdentity.of(exceptedTaskId));
+        String executorName =
+                JobUtils.generateExecutorName(JobIdentity.of(exceptedTaskId), new Date(System.currentTimeMillis()));
         ProcessBuilder pb = new ExecutorProcessBuilderFactory()
                 .getProcessBuilder(processConfig, exceptedTaskId, executorName);
         Process process = null;
@@ -113,7 +116,8 @@ public class ProcessModeTest extends BaseJobTest {
         JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId);
         JobDefinition jd = buildJobDefinition();
         JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
-        Map<String, String> envMap = new JobEnvironmentFactory().build(jc, TaskRunMode.PROCESS);
+        Map<String, String> envMap =
+                new JobEnvironmentFactory().build(jc, TaskRunMode.PROCESS, LogUtils.getBaseLogPath());
         JobUtils.encryptEnvironments(envMap);
 
         environments.putAll(envMap);

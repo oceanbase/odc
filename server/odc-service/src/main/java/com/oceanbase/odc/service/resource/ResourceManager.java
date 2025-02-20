@@ -24,14 +24,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import javax.transaction.Transactional;
-
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
@@ -39,6 +39,7 @@ import com.oceanbase.odc.metadb.resource.ResourceRepository;
 import com.oceanbase.odc.metadb.resource.ResourceSpecs;
 import com.oceanbase.odc.service.resource.k8s.model.QueryResourceParams;
 
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -52,6 +53,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class ResourceManager {
 
+    @Getter
     @Autowired
     private ResourceRepository resourceRepository;
     private final List<ResourceOperatorBuilder<?, ?>> resourceOperatorBuilders = new ArrayList<>();
@@ -80,7 +82,7 @@ public class ResourceManager {
      * @return
      */
     @SuppressWarnings("all")
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @SkipAuthorize("odc internal usage")
     public <RC extends ResourceContext, R extends Resource> ResourceWithID<R> create(
             @NonNull ResourceLocation resourceLocation, @NonNull RC resourceContext) throws Exception {
@@ -228,7 +230,7 @@ public class ResourceManager {
      * @return
      * @throws Exception
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @SkipAuthorize("odc internal usage")
     public String destroy(@NonNull ResourceID resourceID) throws Exception {
         Optional<ResourceEntity> optional = this.resourceRepository.findByResourceID(resourceID);
@@ -241,7 +243,7 @@ public class ResourceManager {
         return doDestroy(resourceID);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @SkipAuthorize("odc internal usage")
     public String destroy(@NonNull Long id) throws Exception {
         Optional<ResourceEntity> optional = this.resourceRepository.findById(id);

@@ -42,7 +42,8 @@ public class DefaultNativeK8sOperatorBuilder extends AbstractK8sResourceOperator
 
     public DefaultNativeK8sOperatorBuilder(TaskFrameworkProperties taskFrameworkProperties,
             ResourceRepository resourceRepository) throws IOException {
-        super(taskFrameworkProperties, resourceRepository, NATIVE_K8S_POD_TYPE);
+        super(taskFrameworkProperties, resourceRepository,
+                taskFrameworkProperties.isEnableK8sLocalDebugMode() ? CLOUD_K8S_POD_TYPE : NATIVE_K8S_POD_TYPE);
     }
 
     /**

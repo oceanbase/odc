@@ -19,6 +19,7 @@ import com.oceanbase.odc.metadb.resource.ResourceEntity;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.ToString;
 
 /**
  * @author longpeng.zlp
@@ -26,6 +27,7 @@ import lombok.Getter;
  */
 @AllArgsConstructor
 @Getter
+@ToString
 public class ResourceWithID<T extends Resource> {
     /**
      * unique seq equals to {@link ResourceEntity#getId()}

@@ -166,6 +166,9 @@ public class SqlPlanJob implements OdcJob {
             JobPropertiesUtils.setCloudProvider(jobProperties,
                     CloudProvider.fromValue(attributes.get("cloudProvider").toString()));
             JobPropertiesUtils.setRegionName(jobProperties, attributes.get("region").toString());
+        } else {
+            JobPropertiesUtils.setDefaultCloudProvider(jobProperties);
+            JobPropertiesUtils.setDefaultRegionName(jobProperties);
         }
         DefaultJobDefinition jd = DefaultJobDefinition.builder().jobClass(SqlPlanTask.class)
                 .jobType("SQL_PLAN")

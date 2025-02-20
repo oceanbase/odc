@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- log4j 自身的日志级别设置为 WARN，日志配置文件监视刷新的检查间隔设置为 30秒 -->
+<Configuration status="WARN" monitorInterval="30" shutdownHook="disable">
+
+    <!-- log4j2 配置参数 -->
+    <Properties>
+        <!-- ODC 日志目录可以通过 -Dodc.log.directory 指定系统变量（Java system properties），
+             缺省为 odc 工作路径下的 log 目录，
+             Linux 下更符合惯例的日志目录其实是 /var/log/odc
+        -->
+        <Property name="LOG_DIRECTORY">${sys:odc.log.directory}/supervisor</Property>
+
+        <!-- 日志格式配置，注意 %class, %line 成本较高，可能会导致日志性能下降大约 80%，当日志数据规模较大时需优化。
+             如果每个类的 log 对象都基于当前类生成，%logger 可作为 %class 的替代。
+        -->
+        <Property name="LOG_PATTERN">
+            [%date{yyyy-MM-dd HH:mm:ss.SSS}][%thread][%level][%class][%line]: %message%n
+        </Property>
+    </Properties>
+
+    <Appenders>
+
+        <!-- 控制台输出 -->
+        <Console name="ConsoleAppender" target="SYSTEM_OUT">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+        </Console>
+
+        <!-- ODC日志配置 -->
+        <RollingFile name="SupervisorFileAppender" fileName="${LOG_DIRECTORY}/supervisor.log"
+                     filePattern="${LOG_DIRECTORY}/supervisor-%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <OnStartupTriggeringPolicy minSize="104857600"/>
+                <TimeBasedTriggeringPolicy interval="24" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="100MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="20">
+                <Delete basePath="${LOG_DIRECTORY}" maxDepth="2">
+                    <IfFileName glob="*.log*"/>
+                    <IfLastModified age="14d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+
+    </Appenders>
+    <Loggers>
+        <Logger name="com.oceanbase.odc" level="INFO" additivity="false">
+            <AppenderRef ref="SupervisorFileAppender"/>
+        </Logger>
+        <!-- 其它程序日志输出，输出级别 INFO -->
+        <Root level="INFO">
+            <AppenderRef ref="SupervisorFileAppender"/>
+        </Root>
+    </Loggers>
+</Configuration>

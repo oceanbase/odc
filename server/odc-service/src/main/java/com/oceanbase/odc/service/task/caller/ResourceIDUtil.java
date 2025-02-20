@@ -40,10 +40,14 @@ public class ResourceIDUtil {
     public static final String RESOURCE_TYPE_PROP_NAME = "resourceType";
     public static final String RESOURCE_NAMESPACE_PROP_NAME = "resourceNamespace";
     public static final String DEFAULT_PROP_VALUE = "local";
+    public static final String PROCESS_REGION_NAME = DEFAULT_PROP_VALUE;
+    public static final String PROCESS_GROUP_NAME = "process";
+    public static final ResourceLocation PROCESS_RESOURCE_LOCATION =
+            new ResourceLocation(PROCESS_REGION_NAME, PROCESS_GROUP_NAME);
 
     /**
      * get with log is missing
-     * 
+     *
      * @param jobParameters
      * @param propName
      * @param defaultValue
@@ -85,6 +89,12 @@ public class ResourceIDUtil {
         return new ResourceID(new ResourceLocation(region, group), type,
                 savedNamespace,
                 executorIdentifier.getExecutorName());
+    }
+
+    public static ResourceLocation getResourceLocation(Map<String, String> jobProperties) {
+        String region = checkAndGetJobProperties(jobProperties, REGION_PROP_NAME, DEFAULT_PROP_VALUE);
+        String group = checkAndGetJobProperties(jobProperties, GROUP_PROP_NAME, DEFAULT_PROP_VALUE);
+        return new ResourceLocation(region, group);
     }
 
     /**

@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.config;
 
+import com.oceanbase.odc.core.shared.PreConditions;
+
 /**
  * @author yaobin
  * @date 2023-11-21
@@ -30,6 +32,9 @@ public class JobConfigurationHolder {
     }
 
     public static void setJobConfiguration(JobConfiguration config) {
+        PreConditions.notNull(config, "jobConfiguration");
+        PreConditions.notNull(config.getTaskFrameworkService(), "taskFrameworkService");
+        PreConditions.notNull(config.getTaskFrameworkProperties(), "taskFrameworkProperties");
         configuration = config;
     }
 }

@@ -72,6 +72,36 @@ public interface TaskFrameworkProperties {
 
     String getDestroyExecutorJobCronExpression();
 
+
+    // v2 cron expression
+    String getStartPreparingJobV2CronExpression();
+
+    String getPullTaskResultJobV2CronExpression();
+
+    String getDoStopJobCronV2Expression();
+
+    String getDoFinishJobV2CronExpression();
+
+    String getManageResourceJobV2CronExpression();
+
+
+    /**
+     * main class to boot process, default is null, to upgrade from process caller to supervisor
+     * 
+     * @return
+     */
+    String getProcessMainClassName();
+
     boolean isEnableK8sLocalDebugMode();
+
+    boolean isEnableTaskSupervisorAgent();
+
+    int getResourceAllocateTimeOutSeconds();
+
+    int getMaxAllowRunningJobs();
+
+    int getTaskSupervisorAgentListenPort();
+
+    int getSupervisorEndpointKeepAliveSeconds();
 
 }
