@@ -21,6 +21,7 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.oceanbase.odc.common.i18n.Translatable;
+import com.oceanbase.odc.common.util.StringUtils;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -65,7 +66,7 @@ public enum OBInstanceType implements Translatable {
 
     @JsonCreator
     public static OBInstanceType fromValue(String value) {
-        OBInstanceType obInstanceType = VALUE_TO_INSTANCE_TYPE_MAP.get(value);
+        OBInstanceType obInstanceType = VALUE_TO_INSTANCE_TYPE_MAP.get(StringUtils.lowerCase(value));
         if (obInstanceType != null) {
             return obInstanceType;
         }
@@ -81,7 +82,7 @@ public enum OBInstanceType implements Translatable {
         Map<String, OBInstanceType> map = new HashMap<>();
         for (OBInstanceType instanceType : OBInstanceType.values()) {
             for (String typeValue : instanceType.getValues()) {
-                map.put(typeValue, instanceType);
+                map.put(StringUtils.lowerCase(typeValue), instanceType);
             }
         }
         return map;
