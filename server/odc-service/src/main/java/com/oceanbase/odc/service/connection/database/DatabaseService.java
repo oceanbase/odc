@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -339,12 +338,8 @@ public class DatabaseService {
             specs = specs.and(DatabaseSpecs.projectIdEquals(params.getProjectId()));
         }
 
-        Set<Long> orDataSourceIds = new HashSet<>();
-        if (StringUtils.isNotBlank(params.getClusterName()) || StringUtils.isNotBlank(params.getTenantName())
-                || StringUtils.isNotBlank(params.getDataSourceName())) {
-            orDataSourceIds = connectionService.innerGetIdsByNameAndTenantAndCluster(params.getDataSourceName(),
-                    params.getTenantName(), params.getClusterName());
-        }
+        Set<Long> orDataSourceIds = connectionService.innerGetIdsIfAnyOfNameTenantCluster(params.getDataSourceName(),
+                params.getTenantName(), params.getClusterName());
         if (Objects.nonNull(params.getDataSourceId())) {
             specs = specs.and(DatabaseSpecs.connectionIdEquals(params.getDataSourceId()));
         }
