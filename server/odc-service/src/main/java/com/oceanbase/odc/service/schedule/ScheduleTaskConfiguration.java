@@ -61,4 +61,12 @@ public class ScheduleTaskConfiguration {
     public ScheduleDescriptionGenerator scheduleDescriptionGenerator() {
         return new DefaultScheduleDescriptionGenerator();
     }
+
+    @Bean
+    @ConditionalOnMissingBean(ScheduleArchiveFacade.class)
+    public ScheduleArchiveFacade defaultScheduleArchiveFacade() {
+        return archiveProperties -> {
+            // do nothing
+        };
+    }
 }

@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.schedule;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -42,6 +43,8 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
     @Query(value = "select * from schedule_schedule where connection_id in (:connectionIds) and status = 'ENABLED'",
             nativeQuery = true)
     List<ScheduleEntity> getEnabledScheduleByConnectionIds(@Param("connectionIds") Set<Long> connectionIds);
+
+    List<ScheduleEntity> findByIdIn(Collection<Long> ids);
 
     @Transactional
     @Modifying
