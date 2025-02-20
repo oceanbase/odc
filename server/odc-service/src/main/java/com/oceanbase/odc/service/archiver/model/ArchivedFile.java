@@ -18,10 +18,8 @@ package com.oceanbase.odc.service.archiver.model;
 import java.io.File;
 
 import javax.annotation.Nullable;
-import javax.persistence.Transient;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.oceanbase.odc.common.json.SensitiveOutput;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.archiver.streamprovider.ArchivedDataStreamProvider;
 import com.oceanbase.odc.service.archiver.streamprovider.FileStreamProvider;
@@ -56,7 +54,6 @@ public class ArchivedFile {
      * AES secret， null means decrypt data
      */
     @Exclude
-    @SensitiveOutput
     private String secret;
 
     private boolean checkConfigJsonSignature;

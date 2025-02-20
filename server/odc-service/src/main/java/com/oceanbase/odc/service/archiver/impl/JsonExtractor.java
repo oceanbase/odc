@@ -60,9 +60,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JsonExtractor implements Extractor<JsonNode> {
 
-    String tempFilePath;
+    private String tempFilePath;
     @Getter
-    ArchivedFile archivedFile;
+    private ArchivedFile archivedFile;
 
     private JsonExtractor() {}
 
