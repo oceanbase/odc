@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.commons.io.FileUtils;
+
 import lombok.SneakyThrows;
 
 public final class FileZipper {
@@ -48,21 +50,7 @@ public final class FileZipper {
         }
 
         for (File file : files) {
-            deleteFiles(file);
+            FileUtils.deleteQuietly(file);
         }
-    }
-
-    public static boolean deleteFiles(File file) {
-        if (!file.exists()) {
-            return false;
-        }
-
-        if (file.isDirectory()) {
-            File[] files = file.listFiles();
-            for (File f : files) {
-                deleteFiles(f);
-            }
-        }
-        return file.delete();
     }
 }
