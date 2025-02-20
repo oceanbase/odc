@@ -68,5 +68,12 @@ public class DBObjectIndexController {
         return Responses.success(dbSchemaIndexService.syncDatabaseObjects(req));
     }
 
+    @ApiOperation(value = "syncCurrentUserDatabaseObjectsWithProject",
+            notes = "Sync all database objects under the project that the current user is joining")
+    @RequestMapping(value = "/syncAllWithProject", method = RequestMethod.POST)
+    public SuccessResponse<Boolean> syncCurrentUserDatabaseObjectsWithProject() {
+        return Responses.success(dbSchemaIndexService.syncCurrentUserDatabaseObjectsWithProject());
+    }
+
 
 }
