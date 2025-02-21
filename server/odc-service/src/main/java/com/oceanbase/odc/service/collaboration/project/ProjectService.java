@@ -249,7 +249,8 @@ public class ProjectService {
         ProjectEntity entity = repository.findByIdAndOrganizationId(projectId, organizationId)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", projectId));
         List<UserResourceRole> userResourceRoles =
-                resourceRoleService.listByResourceTypeAndResourceId(ResourceType.ODC_PROJECT, entity.getId());
+                resourceRoleService.listByResourceTypeAndResourceId(ResourceType.ODC_PROJECT, entity.getId(),
+                        organizationId);
         return userResourceRoles.stream().map(this::fromUserResourceRole).filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
