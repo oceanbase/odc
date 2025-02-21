@@ -75,6 +75,7 @@ public class ArchivedFile {
     public static ArchivedFile fromFile(File file, @Nullable String secret) {
         ArchivedFile archivedFile = new ArchivedFile();
         archivedFile.setFileType(LOCAL_FILE);
+        archivedFile.setFileName(file.getName());
         archivedFile.setCheckConfigJsonSignature(secret != null);
         archivedFile.setUri(file.getPath());
         ArchivedDataStreamProvider provider = new FileStreamProvider(file);
