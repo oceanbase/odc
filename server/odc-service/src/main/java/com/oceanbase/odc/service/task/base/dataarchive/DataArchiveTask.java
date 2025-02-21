@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.dlm.DLMJobFactory;
 import com.oceanbase.odc.service.dlm.DLMJobStore;
@@ -176,21 +177,22 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             limiterConfig.setRowLimit(req.getRateLimit().getRowLimit());
             dlmTableUnit.setSourceLimitConfig(limiterConfig);
             dlmTableUnit.setTargetLimitConfig(limiterConfig);
-            if (req.isDeleteAfterMigration()
-                    && (req.getTargetDs().getType().isFileSystem() || req.getSourceDs().getType().isFileSystem())) {
+            if (StringUtils.isNotEmpty(table.getTempTableName())) {
                 // save data to temporary table
-                if (req.getJobType() == JobType.MIGRATE) {
+                if (req.getJobType() == JobType.MIGRATE && req.getTargetDs().getType().isFileSystem()) {
                     jobParameter.setCreateTempTableInSource(true);
-                    jobParameter.setTempTableName("temp_" + table.getTargetTableName());
+                    jobParameter.setTempTableName(table.getTempTableName());
                 }
                 // check data by temporary table
-                if (req.getJobType() == JobType.DELETE) {
+                if (req.getJobType() == JobType.DELETE && req.getTargetDs().getType().isFileSystem()) {
                     dlmTableUnit.setTargetDatasourceInfo(req.getSourceDs());
-                    dlmTableUnit.setTargetTableName("temp_" + table.getTargetTableName());
+                    dlmTableUnit.setTargetTableName(table.getTempTableName());
+                    jobParameter.setTempTableName(table.getTempTableName());
+                    jobParameter.setDeleteTempTableAfterDelete(req.isDeleteTemporaryTable());
                 }
-                if (req.getJobType() == JobType.ROLLBACK) {
+                if (req.getJobType() == JobType.ROLLBACK && req.getSourceDs().getType().isFileSystem()) {
                     dlmTableUnit.setSourceDatasourceInfo(req.getTargetDs());
-                    dlmTableUnit.setTableName("temp_" + table.getTableName());
+                    dlmTableUnit.setTableName(table.getTempTableName());
                 }
             }
             dlmTableUnits.add(dlmTableUnit);

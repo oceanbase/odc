@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
+import java.util.UUID;
+
 import org.quartz.JobExecutionContext;
 
 import com.oceanbase.odc.common.json.JsonUtils;
@@ -49,6 +51,8 @@ public class DataArchiveJob extends AbstractDlmJob {
         parameters.setJobType(JobType.MIGRATE);
         parameters.setTables(dataArchiveParameters.getTables());
         parameters.setFireTime(context.getFireTime());
+        parameters.setSourceDs(getDataSourceInfo(dataArchiveParameters.getSourceDatabaseId()));
+        parameters.setTargetDs(getDataSourceInfo(dataArchiveParameters.getTargetDataBaseId()));
         for (DataArchiveTableConfig tableConfig : parameters.getTables()) {
             tableConfig.setConditionExpression(StringUtils.isNotEmpty(tableConfig.getConditionExpression())
                     ? DataArchiveConditionUtil.parseCondition(tableConfig.getConditionExpression(),
@@ -58,6 +62,10 @@ public class DataArchiveJob extends AbstractDlmJob {
             tableConfig.setTargetTableName(DataArchiveConditionUtil.parseCondition(tableConfig.getTargetTableName(),
                     dataArchiveParameters.getVariables(),
                     context.getFireTime()));
+            if (parameters.getTargetDs().getType().isFileSystem()) {
+                tableConfig.setTempTableName(
+                        "temp_" + tableConfig.getTargetTableName() + UUID.randomUUID().toString().toLowerCase());
+            }
         }
         parameters.setDeleteAfterMigration(dataArchiveParameters.isDeleteAfterMigration());
         parameters.setMigrationInsertAction(dataArchiveParameters.getMigrationInsertAction());
@@ -68,8 +76,6 @@ public class DataArchiveJob extends AbstractDlmJob {
         parameters.setReadThreadCount(dataArchiveParameters.getReadThreadCount());
         parameters.setShardingStrategy(dataArchiveParameters.getShardingStrategy());
         parameters.setScanBatchSize(dataArchiveParameters.getScanBatchSize());
-        parameters.setSourceDs(getDataSourceInfo(dataArchiveParameters.getSourceDatabaseId()));
-        parameters.setTargetDs(getDataSourceInfo(dataArchiveParameters.getTargetDataBaseId()));
         parameters.getSourceDs().setQueryTimeout(dataArchiveParameters.getQueryTimeout());
         parameters.getTargetDs().setQueryTimeout(dataArchiveParameters.getQueryTimeout());
         parameters.setSyncTableStructure(dataArchiveParameters.getSyncTableStructure());
