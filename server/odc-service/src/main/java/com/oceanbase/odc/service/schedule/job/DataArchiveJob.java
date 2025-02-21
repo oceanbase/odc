@@ -79,6 +79,7 @@ public class DataArchiveJob extends AbstractDlmJob {
                             "temp_" + tableConfig.getTargetTableName() + UUID.randomUUID().toString().toLowerCase());
                 }
             }
+            parameters.setDeleteTemporaryTable(parameters.isDeleteTemporaryTable());
             parameters.setDeleteAfterMigration(dataArchiveParameters.isDeleteAfterMigration());
             parameters.setMigrationInsertAction(dataArchiveParameters.getMigrationInsertAction());
             parameters.setNeedPrintSqlTrace(dataArchiveParameters.isNeedPrintSqlTrace());
