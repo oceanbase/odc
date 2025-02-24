@@ -199,7 +199,7 @@ public class DBSchemaIndexService {
         return resp;
     }
 
-    public Boolean syncCurrentUserDatabaseObjectsWithProject() {
+    public Boolean syncCurrentUserVisibleDatabases() {
         this.databaseService.refreshExpiredPendingDBObjectStatus();
         long userId = authenticationFacade.currentUserId();
         Set<Long> joinedProjectIds = projectService.getMemberProjectIds(userId);

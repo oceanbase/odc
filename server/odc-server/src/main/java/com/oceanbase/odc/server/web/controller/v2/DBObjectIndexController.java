@@ -68,11 +68,11 @@ public class DBObjectIndexController {
         return Responses.success(dbSchemaIndexService.syncDatabaseObjects(req));
     }
 
-    @ApiOperation(value = "syncCurrentUserDatabaseObjectsWithProject",
-            notes = "Sync all database objects under the project that the current user is joining")
-    @RequestMapping(value = "/syncAllWithProject", method = RequestMethod.POST)
-    public SuccessResponse<Boolean> syncCurrentUserDatabaseObjectsWithProject() {
-        return Responses.success(dbSchemaIndexService.syncCurrentUserDatabaseObjectsWithProject());
+    @ApiOperation(value = "syncCurrentUserVisibleDatabases",
+            notes = "Sync all databases visible to the current user")
+    @RequestMapping(value = "/sync/currentUser", method = RequestMethod.POST)
+    public SuccessResponse<Boolean> syncCurrentUserVisibleDatabases() {
+        return Responses.success(dbSchemaIndexService.syncCurrentUserVisibleDatabases());
     }
 
 
