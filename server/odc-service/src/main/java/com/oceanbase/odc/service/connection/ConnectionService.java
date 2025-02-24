@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.persistence.EntityManager;
 import javax.validation.Valid;
@@ -853,8 +854,9 @@ public class ConnectionService {
 
     public Set<Long> innerGetIdsIfAnyOfNameTenantCluster(String dataSourceName, String tenantName,
             String clusterName) {
-        if (StringUtils.isBlank(dataSourceName) && StringUtils.isBlank(tenantName)
-                && StringUtils.isBlank(clusterName)) {
+        long conditionCount = Stream.of(dataSourceName, tenantName, clusterName).filter(StringUtils::isNotBlank)
+                .count();
+        if (conditionCount == 0L || conditionCount >= 2L) {
             return Collections.emptySet();
         }
         Specification<ConnectionEntity> spec;
