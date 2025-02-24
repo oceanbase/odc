@@ -179,7 +179,8 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             dlmTableUnit.setTargetLimitConfig(limiterConfig);
             if (StringUtils.isNotEmpty(table.getTempTableName())) {
                 // save data to temporary table
-                if (req.getJobType() == JobType.MIGRATE && req.getTargetDs().getType().isFileSystem()) {
+                if (req.getJobType() == JobType.MIGRATE && req.isDeleteAfterMigration()
+                        && req.getTargetDs().getType().isFileSystem()) {
                     jobParameter.setCreateTempTableInSource(true);
                     jobParameter.setTempTableName(table.getTempTableName());
                 }
