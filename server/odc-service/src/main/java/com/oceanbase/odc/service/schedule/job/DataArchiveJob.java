@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.schedule.job;
 
 import java.util.Map;
-import java.util.UUID;
 
 import org.quartz.JobExecutionContext;
 
@@ -76,7 +75,7 @@ public class DataArchiveJob extends AbstractDlmJob {
                         context.getFireTime()));
                 if (parameters.getTargetDs().getType().isFileSystem()) {
                     tableConfig.setTempTableName(
-                            "temp_" + tableConfig.getTargetTableName() + UUID.randomUUID().toString().toLowerCase());
+                            tableConfig.getTargetTableName() + "_bak" + "_" + taskEntity.getId());
                 }
             }
             parameters.setDeleteTemporaryTable(dataArchiveParameters.isDeleteTemporaryTable());
