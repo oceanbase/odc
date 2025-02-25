@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.schedule.archiverist.model;
 
+import java.util.UUID;
+
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
@@ -26,6 +28,8 @@ import lombok.Data;
 
 @Data
 public class BaseScheduleRowData implements Encryptable {
+
+    private String rowId = UUID.randomUUID().toString();
 
     @NotBlank
     private String name;

@@ -62,7 +62,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import lombok.SneakyThrows;
 
 @Service
-public class ScheduleTaskArchiver {
+public class ScheduleTaskExporter {
 
     @Autowired
     ScheduleService scheduleService;
@@ -152,10 +152,10 @@ public class ScheduleTaskArchiver {
         ScheduleType type = scheduleEntity.getType();
         switch (type) {
             case DATA_DELETE:
-                archiveDataDelete(appender, scheduleEntity);
+                exportDataDelete(appender, scheduleEntity);
                 break;
             case DATA_ARCHIVE:
-                archiveDataArchive(appender, scheduleEntity);
+                exportDataArchive(appender, scheduleEntity);
                 break;
             default:
                 throw new IllegalArgumentException();
@@ -163,7 +163,7 @@ public class ScheduleTaskArchiver {
     }
 
     @SneakyThrows
-    public void archiveDataDelete(ExportRowDataAppender appender, ScheduleEntity scheduleEntity) {
+    public void exportDataDelete(ExportRowDataAppender appender, ScheduleEntity scheduleEntity) {
         DataDeleteParameters parameters = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
                 DataDeleteParameters.class);
         DataDeleteScheduleRowData dataDeleteRowData =
@@ -174,7 +174,7 @@ public class ScheduleTaskArchiver {
     }
 
     @SneakyThrows
-    public void archiveDataArchive(ExportRowDataAppender appender, ScheduleEntity scheduleEntity) {
+    public void exportDataArchive(ExportRowDataAppender appender, ScheduleEntity scheduleEntity) {
         DataArchiveParameters parameters = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
                 DataArchiveParameters.class);
         DataArchiveScheduleRowData dataDeleteRowData =
