@@ -75,7 +75,7 @@ public class DataArchiveJob extends AbstractDlmJob {
                         context.getFireTime()));
                 if (parameters.getTargetDs().getType().isFileSystem()) {
                     tableConfig.setTempTableName(
-                            tableConfig.getTargetTableName() + "_bak" + "_" + taskEntity.getId());
+                            "bak_odc_" + taskEntity.getId() + "_" + tableConfig.getTargetTableName());
                 }
             }
             parameters.setDeleteTemporaryTable(dataArchiveParameters.isDeleteTemporaryTable());
