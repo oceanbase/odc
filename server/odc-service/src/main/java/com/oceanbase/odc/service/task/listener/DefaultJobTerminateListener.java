@@ -33,6 +33,7 @@ import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.alarm.ScheduleAlarmUtils;
 import com.oceanbase.odc.service.schedule.model.ScheduleTask;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.processor.terminate.TerminateProcessor;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
@@ -76,7 +77,7 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
                 ScheduleAlarmUtils.fail(scheduleTask.getId());
                 alarmFailed(jobEntity, event.getErrorMessage());
             }
-            if (taskStatus == TaskStatus.CANCELED) {
+            if (event.getStatus() == JobStatus.EXECUTION_TIMEOUT) {
                 ScheduleAlarmUtils.timeout(scheduleTask.getId());
             }
             // invoke task related processor

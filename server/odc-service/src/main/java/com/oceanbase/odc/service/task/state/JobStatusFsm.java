@@ -50,6 +50,8 @@ public class JobStatusFsm {
             // task done will drive job status to done
             case DONE:
                 return JobStatus.DONE;
+            case EXECUTION_TIMEOUT:
+                return JobStatus.EXECUTION_TIMEOUT;
             default:
                 throw new IllegalStateException("status " + taskStatus + " not handled");
         }
