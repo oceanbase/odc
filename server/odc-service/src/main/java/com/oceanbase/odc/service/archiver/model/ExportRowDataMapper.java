@@ -29,9 +29,9 @@ import com.oceanbase.odc.service.schedule.archiverist.model.DataDeleteScheduleRo
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 
 @Mapper
-public interface ArchiveRowDataMapper {
+public interface ExportRowDataMapper {
 
-    ArchiveRowDataMapper INSTANCE = Mappers.getMapper(ArchiveRowDataMapper.class);
+    ExportRowDataMapper INSTANCE = Mappers.getMapper(ExportRowDataMapper.class);
 
     @Mapping(source = "database", target = "database")
     @Mapping(source = "targetDatabase", target = "targetDatabase")

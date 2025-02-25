@@ -19,7 +19,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 
-public class FileStreamProvider implements ArchivedDataStreamProvider {
+public class FileStreamProvider implements ExportedDataStreamProvider {
 
     private final File file;
 

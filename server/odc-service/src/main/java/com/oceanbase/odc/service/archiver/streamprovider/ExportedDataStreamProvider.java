@@ -13,25 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.archiver;
+package com.oceanbase.odc.service.archiver.streamprovider;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import java.io.InputStream;
 
-import com.oceanbase.odc.service.archiver.impl.LocalJsonArchiver;
-
-import lombok.Data;
-
-@Configuration
-@Data
-public class ArchiveConfiguration {
-
-    @Value("${odc.server.archive.default-path:.}")
-    private String defaultArchivePath;
-
-    @Bean
-    public Archiver localArchiver() {
-        return new LocalJsonArchiver();
-    }
+public interface ExportedDataStreamProvider {
+    InputStream getInputStream() throws Exception;
 }

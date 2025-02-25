@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.archiver.impl;
 
-import static com.oceanbase.odc.service.archiver.model.ArchiveConstants.HMAC_ALGORITHM;
+import static com.oceanbase.odc.service.archiver.model.ExportConstants.HMAC_ALGORITHM;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -46,11 +46,11 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.security.EncryptAlgorithm;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.archiver.Extractor;
-import com.oceanbase.odc.service.archiver.model.ArchiveProperties;
-import com.oceanbase.odc.service.archiver.model.ArchiveRowDataReader;
-import com.oceanbase.odc.service.archiver.model.ArchivedData;
-import com.oceanbase.odc.service.archiver.model.ArchivedFile;
 import com.oceanbase.odc.service.archiver.model.Encryptable;
+import com.oceanbase.odc.service.archiver.model.ExportProperties;
+import com.oceanbase.odc.service.archiver.model.ExportRowDataReader;
+import com.oceanbase.odc.service.archiver.model.ExportedData;
+import com.oceanbase.odc.service.archiver.model.ExportedFile;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 
 import lombok.Getter;
@@ -62,12 +62,12 @@ public class JsonExtractor implements Extractor<JsonNode> {
 
     private String tempFilePath;
     @Getter
-    private ArchivedFile archivedFile;
+    private ExportedFile exportedFile;
 
     private JsonExtractor() {}
 
     @SneakyThrows
-    public static JsonExtractor buildJsonExtractor(ArchivedFile archivedFile, String tempPath) {
+    public static JsonExtractor buildJsonExtractor(ExportedFile exportedFile, String tempPath) {
         JsonExtractor jsonExtractor = new JsonExtractor();
         // Create a random directory within the specified destination path
         Path randomDir = Files.createTempDirectory(new File(tempPath).toPath(), "unzipped-");
@@ -79,7 +79,7 @@ public class JsonExtractor implements Extractor<JsonNode> {
 
         // Write the InputStream to the temporary zip file
         try (FileOutputStream fos = new FileOutputStream(tempZipFile);
-                InputStream inputStream = archivedFile.getProvider().getInputStream()) {
+                InputStream inputStream = exportedFile.getProvider().getInputStream()) {
             byte[] buffer = new byte[1024];
             int len;
             while ((len = inputStream.read(buffer)) != -1) {
@@ -106,7 +106,7 @@ public class JsonExtractor implements Extractor<JsonNode> {
         log.info("Files extracted to: {}", randomDir.toAbsolutePath());
         File file = MoreObjects.firstNonNull(getConfigTxt(jsonExtractor.tempFilePath),
                 getConfigJson(jsonExtractor.tempFilePath));
-        jsonExtractor.archivedFile = ArchivedFile.fromFile(file, archivedFile.getSecret());
+        jsonExtractor.exportedFile = ExportedFile.fromFile(file, exportedFile.getSecret());
         return jsonExtractor;
     }
 
@@ -131,7 +131,7 @@ public class JsonExtractor implements Extractor<JsonNode> {
 
     @Override
     public boolean checkSignature() {
-        if (archivedFile.getSecret() == null || !archivedFile.isCheckConfigJsonSignature()) {
+        if (exportedFile.getSecret() == null || !exportedFile.isCheckConfigJsonSignature()) {
             return true;
         }
         JsonFactory jsonFactory = new JsonFactory();
@@ -142,7 +142,7 @@ public class JsonExtractor implements Extractor<JsonNode> {
             JsonParser jsonParser = jsonFactory.createParser(inputStream);
 
             Mac mac = Mac.getInstance(HMAC_ALGORITHM);
-            SecretKeySpec secretKeySpec = new SecretKeySpec(archivedFile.getSecret().getBytes(), HMAC_ALGORITHM);
+            SecretKeySpec secretKeySpec = new SecretKeySpec(exportedFile.getSecret().getBytes(), HMAC_ALGORITHM);
             mac.init(secretKeySpec);
 
             // Start reading the JSON structure
@@ -152,7 +152,7 @@ public class JsonExtractor implements Extractor<JsonNode> {
             }
 
             String signature = null;
-            ArchiveProperties metadata = null;
+            ExportProperties metadata = null;
 
             while (jsonParser.nextToken() != JsonToken.END_OBJECT) {
                 String fieldName = jsonParser.getCurrentName();
@@ -163,7 +163,7 @@ public class JsonExtractor implements Extractor<JsonNode> {
                         signature = jsonParser.getValueAsString();
                         break;
                     case "metadata":
-                        metadata = objectMapper.readValue(jsonParser, ArchiveProperties.class);
+                        metadata = objectMapper.readValue(jsonParser, ExportProperties.class);
                         mac.update(
                                 ("metadata" + objectMapper.writeValueAsString(metadata))
                                         .getBytes(StandardCharsets.UTF_8));
@@ -191,7 +191,7 @@ public class JsonExtractor implements Extractor<JsonNode> {
 
             // Verify signature
             if (!computedSignature.equals(signature)) {
-                log.info("Invalid signature,  archivedFile={},computedSignature={},signature={}", archivedFile,
+                log.info("Invalid signature,  archivedFile={},computedSignature={},signature={}", exportedFile,
                         computedSignature, signature);
                 return false;
             }
@@ -208,15 +208,15 @@ public class JsonExtractor implements Extractor<JsonNode> {
         OdcFileUtil.deleteFiles(new File(tempFilePath));
     }
 
-    public <D> ArchivedData<D> extractFullData(TypeReference<ArchivedData<D>> typeReference)
+    public <D> ExportedData<D> extractFullData(TypeReference<ExportedData<D>> typeReference)
             throws Exception {
-        try (InputStream inputStream = archivedFile.getProvider().getInputStream()) {
-            String decryptedString = decrypt(inputStream, archivedFile.getSecret());
+        try (InputStream inputStream = exportedFile.getProvider().getInputStream()) {
+            String decryptedString = decrypt(inputStream, exportedFile.getSecret());
             return JsonUtils.fromJson(decryptedString, typeReference);
         }
     }
 
-    public ArchiveRowDataReader<JsonNode> getRowDataReader() throws Exception {
+    public ExportRowDataReader<JsonNode> getRowDataReader() throws Exception {
         JsonFactory jsonFactory = new JsonFactory();
         ObjectMapper objectMapper = new ObjectMapper(jsonFactory);
         File configJson = getConfigJson(this.tempFilePath);
@@ -239,7 +239,7 @@ public class JsonExtractor implements Extractor<JsonNode> {
                 throw new IllegalStateException("Expected metadata to be an Object");
             }
 
-            ArchiveProperties metadata = objectMapper.readValue(jsonParser, ArchiveProperties.class);
+            ExportProperties metadata = objectMapper.readValue(jsonParser, ExportProperties.class);
 
             jsonParser.nextToken(); // Move to next field after metadata
             if (!"data".equals(jsonParser.getCurrentName())) {
@@ -250,7 +250,7 @@ public class JsonExtractor implements Extractor<JsonNode> {
             if (jsonToken != JsonToken.START_ARRAY) {
                 throw new IllegalStateException("Expected data to be an Array");
             }
-            return new JsonRowDataReader(metadata, jsonParser, objectMapper, archivedFile.getSecret(), tempFilePath);
+            return new JsonRowDataReader(metadata, jsonParser, objectMapper, exportedFile.getSecret(), tempFilePath);
         }
     }
 
@@ -280,16 +280,16 @@ public class JsonExtractor implements Extractor<JsonNode> {
         return stringBuilder.toString();
     }
 
-    public static class JsonRowDataReader implements ArchiveRowDataReader<JsonNode> {
+    public static class JsonRowDataReader implements ExportRowDataReader<JsonNode> {
 
-        private final ArchiveProperties metadata;
+        private final ExportProperties metadata;
         private final JsonParser jsonParser;
         private final ObjectMapper objectMapper;
         private final String encryptKey;
         private final String tempFilePath;
         private Integer rowCount = 0;
 
-        public JsonRowDataReader(ArchiveProperties metadata, JsonParser jsonParser, ObjectMapper objectMapper,
+        public JsonRowDataReader(ExportProperties metadata, JsonParser jsonParser, ObjectMapper objectMapper,
                 String encryptKey, String tempFilePath) {
             this.metadata = metadata;
             this.jsonParser = jsonParser;
@@ -299,7 +299,7 @@ public class JsonExtractor implements Extractor<JsonNode> {
         }
 
         @Override
-        public ArchiveProperties getMetaData() {
+        public ExportProperties getMetaData() {
             return metadata;
         }
 

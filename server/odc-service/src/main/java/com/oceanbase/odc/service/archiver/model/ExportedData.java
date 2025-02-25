@@ -15,21 +15,13 @@
  */
 package com.oceanbase.odc.service.archiver.model;
 
-public final class ArchiveConstants {
+import lombok.Data;
 
-    public static final String HMAC_ALGORITHM = "HmacSHA256";
+@Data
+public class ExportedData<T> {
 
-    public static final String ODC_VERSION = "odcVersion";
-    public static final String CREATE_TIME = "createTime";
-    public static final String ARCHIVE_TYPE = "archiveType";
+    ExportProperties metadata;
 
-    public static final String SCHEDULE_ARCHIVE_TYPE = "scheduleArchive";
+    T data;
 
-    /**
-     * filePath, include filename and filetype
-     */
-    public static final String FILE_NAME = "fileName";
-    public static final String FILE_PATH = "filePath";
-
-    public static final String FILE_ZIP_SUFFER = ".zip";
 }

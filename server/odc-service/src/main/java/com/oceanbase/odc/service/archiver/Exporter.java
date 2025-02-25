@@ -17,19 +17,19 @@ package com.oceanbase.odc.service.archiver;
 
 import java.io.IOException;
 
-import com.oceanbase.odc.service.archiver.model.ArchiveProperties;
-import com.oceanbase.odc.service.archiver.model.ArchiveRowDataAppender;
-import com.oceanbase.odc.service.archiver.model.ArchivedFile;
+import com.oceanbase.odc.service.archiver.model.ExportProperties;
+import com.oceanbase.odc.service.archiver.model.ExportRowDataAppender;
+import com.oceanbase.odc.service.archiver.model.ExportedFile;
 
-public interface Archiver {
+public interface Exporter {
 
-    ArchivedFile archiveFullData(Object data, ArchiveProperties metaData, String encryptKey) throws Exception;
+    ExportedFile archiveFullData(Object data, ExportProperties metaData, String encryptKey) throws Exception;
 
-    ArchivedFile archiveFullData(Object data, ArchiveProperties metaData) throws Exception;
+    ExportedFile archiveFullData(Object data, ExportProperties metaData) throws Exception;
 
-    ArchiveRowDataAppender buildRowDataAppender(ArchiveProperties metaData,
+    ExportRowDataAppender buildRowDataAppender(ExportProperties metaData,
             String encryptKey) throws IOException;
 
-    ArchiveRowDataAppender buildRowDataAppender(ArchiveProperties metaData)
+    ExportRowDataAppender buildRowDataAppender(ExportProperties metaData)
             throws IOException;
 }

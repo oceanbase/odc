@@ -15,10 +15,10 @@
  */
 package com.oceanbase.odc.service.schedule;
 
-import com.oceanbase.odc.service.archiver.model.ArchiveProperties;
+import com.oceanbase.odc.service.archiver.model.ExportProperties;
 
 public interface ScheduleArchiveFacade {
 
-    void adapt(ArchiveProperties archiveProperties);
+    void adapt(ExportProperties exportProperties);
 
 }

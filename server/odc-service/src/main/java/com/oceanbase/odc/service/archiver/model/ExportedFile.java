@@ -21,7 +21,7 @@ import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.service.archiver.streamprovider.ArchivedDataStreamProvider;
+import com.oceanbase.odc.service.archiver.streamprovider.ExportedDataStreamProvider;
 import com.oceanbase.odc.service.archiver.streamprovider.FileStreamProvider;
 import com.oceanbase.odc.service.archiver.streamprovider.RemoteUriStreamProvider;
 
@@ -33,7 +33,7 @@ import lombok.ToString.Exclude;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ArchivedFile {
+public class ExportedFile {
 
     public static final String LOCAL_FILE = "local";
     public static final String REMOTE_FILE = "remote";
@@ -59,29 +59,29 @@ public class ArchivedFile {
     private boolean checkConfigJsonSignature;
 
     @JsonIgnore
-    private transient ArchivedDataStreamProvider provider;
+    private transient ExportedDataStreamProvider provider;
 
-    public static ArchivedFile fromRemoteUrl(String remoteUrl, @Nullable String secret) {
-        ArchivedFile archivedFile = new ArchivedFile();
-        archivedFile.setUri(remoteUrl);
-        archivedFile.setCheckConfigJsonSignature(secret != null);
-        archivedFile.setFileType(REMOTE_FILE);
-        ArchivedDataStreamProvider provider = new RemoteUriStreamProvider(remoteUrl);
-        archivedFile.setProvider(provider);
-        archivedFile.setSecret(secret);
-        return archivedFile;
+    public static ExportedFile fromRemoteUrl(String remoteUrl, @Nullable String secret) {
+        ExportedFile exportedFile = new ExportedFile();
+        exportedFile.setUri(remoteUrl);
+        exportedFile.setCheckConfigJsonSignature(secret != null);
+        exportedFile.setFileType(REMOTE_FILE);
+        ExportedDataStreamProvider provider = new RemoteUriStreamProvider(remoteUrl);
+        exportedFile.setProvider(provider);
+        exportedFile.setSecret(secret);
+        return exportedFile;
     }
 
-    public static ArchivedFile fromFile(File file, @Nullable String secret) {
-        ArchivedFile archivedFile = new ArchivedFile();
-        archivedFile.setFileType(LOCAL_FILE);
-        archivedFile.setFileName(file.getName());
-        archivedFile.setCheckConfigJsonSignature(secret != null);
-        archivedFile.setUri(file.getPath());
-        ArchivedDataStreamProvider provider = new FileStreamProvider(file);
-        archivedFile.setProvider(provider);
-        archivedFile.setSecret(secret);
-        return archivedFile;
+    public static ExportedFile fromFile(File file, @Nullable String secret) {
+        ExportedFile exportedFile = new ExportedFile();
+        exportedFile.setFileType(LOCAL_FILE);
+        exportedFile.setFileName(file.getName());
+        exportedFile.setCheckConfigJsonSignature(secret != null);
+        exportedFile.setUri(file.getPath());
+        ExportedDataStreamProvider provider = new FileStreamProvider(file);
+        exportedFile.setProvider(provider);
+        exportedFile.setSecret(secret);
+        return exportedFile;
     }
 
     public File toFile() {

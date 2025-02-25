@@ -16,19 +16,18 @@
 package com.oceanbase.odc.service.archiver.model;
 
 import java.io.Closeable;
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 
-public interface ArchiveRowDataReader<R> extends Closeable {
+public interface ExportRowDataAppender extends Closeable {
 
-    ArchiveProperties getMetaData();
+    ExportProperties getMetaData();
 
-    <D extends Encryptable> D readRow(Class<D> rowDataClass) throws IOException;
+    void append(Encryptable encryptable) throws IOException;
 
-    R readRow() throws IOException;
+    void addAdditionFile(String fileName, InputStream inputStream) throws IOException;
 
-    File getFile(String fileName);
+    ExportedFile build() throws Exception;
 
-    Integer getRowNumber();
 
 }

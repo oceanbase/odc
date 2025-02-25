@@ -29,18 +29,18 @@ import javax.annotation.Nullable;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 
-public class ArchivedZipFileFactory {
+public class ExportedZipFileFactory {
 
     private final File configFile;
 
     private final Map<String, InputStream> additionFiles;
 
-    public ArchivedZipFileFactory(File configFile, Map<String, InputStream> additionFiles) {
+    public ExportedZipFileFactory(File configFile, Map<String, InputStream> additionFiles) {
         this.configFile = configFile;
         this.additionFiles = additionFiles;
     }
 
-    public ArchivedFile build(String outputZipFileName, @Nullable String secret) throws IOException {
+    public ExportedFile build(String outputZipFileName, @Nullable String secret) throws IOException {
         Verify.notNull(configFile, "configFile");
         try (FileOutputStream fos = new FileOutputStream(outputZipFileName);
                 ZipOutputStream zos = new ZipOutputStream(fos)) {
@@ -54,7 +54,7 @@ public class ArchivedZipFileFactory {
                 }
             }
         }
-        return ArchivedFile.fromFile(new File(outputZipFileName), secret);
+        return ExportedFile.fromFile(new File(outputZipFileName), secret);
     }
 
     private void addFileToZip(String fileName, InputStream inputStream, ZipOutputStream zos) throws IOException {

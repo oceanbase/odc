@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.archiver.impl;
 
-import static com.oceanbase.odc.service.archiver.model.ArchiveConstants.HMAC_ALGORITHM;
+import static com.oceanbase.odc.service.archiver.model.ExportConstants.HMAC_ALGORITHM;
 import static com.oceanbase.odc.service.common.util.OdcFileUtil.createFileWithDirectories;
 
 import java.io.File;
@@ -37,52 +37,52 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.security.EncryptAlgorithm;
-import com.oceanbase.odc.service.archiver.Archiver;
-import com.oceanbase.odc.service.archiver.model.ArchiveProperties;
-import com.oceanbase.odc.service.archiver.model.ArchiveRowDataAppender;
-import com.oceanbase.odc.service.archiver.model.ArchivedData;
-import com.oceanbase.odc.service.archiver.model.ArchivedFile;
-import com.oceanbase.odc.service.archiver.model.ArchivedZipFileFactory;
+import com.oceanbase.odc.service.archiver.Exporter;
 import com.oceanbase.odc.service.archiver.model.Encryptable;
+import com.oceanbase.odc.service.archiver.model.ExportProperties;
+import com.oceanbase.odc.service.archiver.model.ExportRowDataAppender;
+import com.oceanbase.odc.service.archiver.model.ExportedData;
+import com.oceanbase.odc.service.archiver.model.ExportedFile;
+import com.oceanbase.odc.service.archiver.model.ExportedZipFileFactory;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class LocalJsonArchiver implements Archiver {
+public class LocalJsonExporter implements Exporter {
 
     @Override
-    public ArchivedFile archiveFullData(Object data, ArchiveProperties metaData, String encryptKey)
+    public ExportedFile archiveFullData(Object data, ExportProperties metaData, String encryptKey)
             throws Exception {
 
-        ArchivedData<Object> archivedData = new ArchivedData<>();
-        archivedData.setMetadata(metaData);
-        archivedData.setData(data);
-        String json = JsonUtils.toJson(archivedData);
+        ExportedData<Object> exportedData = new ExportedData<>();
+        exportedData.setMetadata(metaData);
+        exportedData.setData(data);
+        String json = JsonUtils.toJson(exportedData);
         String fileName = metaData.acquireConfigJsonFileUrl();
         if (encryptKey != null) {
             json = EncryptAlgorithm.AES.encrypt(json, encryptKey, StandardCharsets.UTF_8.name());
             fileName = metaData.acquireConfigTxtFileUrl();
         }
         File configFile = writeToFile(fileName, json);
-        ArchivedFile archivedFile = new ArchivedZipFileFactory(configFile, null)
+        ExportedFile exportedFile = new ExportedZipFileFactory(configFile, null)
                 .build(metaData.acquireZipFileUrl(), encryptKey);
-        archivedFile.setCheckConfigJsonSignature(false);
-        return archivedFile;
+        exportedFile.setCheckConfigJsonSignature(false);
+        return exportedFile;
     }
 
     @Override
-    public ArchivedFile archiveFullData(Object data, ArchiveProperties metaData) throws Exception {
+    public ExportedFile archiveFullData(Object data, ExportProperties metaData) throws Exception {
         return archiveFullData(data, metaData, null);
     }
 
     @Override
-    public ArchiveRowDataAppender buildRowDataAppender(ArchiveProperties metaData)
+    public ExportRowDataAppender buildRowDataAppender(ExportProperties metaData)
             throws IOException {
         return buildRowDataAppender(metaData, null);
     }
 
     @Override
-    public ArchiveRowDataAppender buildRowDataAppender(ArchiveProperties metaData,
+    public ExportRowDataAppender buildRowDataAppender(ExportProperties metaData,
             String encryptKey)
             throws IOException {
         JsonFactory jsonFactory = new JsonFactory();
@@ -108,11 +108,11 @@ public class LocalJsonArchiver implements Archiver {
         return new File(fileName);
     }
 
-    public static class JsonArchiverRowDataAppender implements ArchiveRowDataAppender {
+    public static class JsonArchiverRowDataAppender implements ExportRowDataAppender {
 
         private final JsonGenerator jsonGenerator;
         private final ObjectMapper objectMapper;
-        private final ArchiveProperties metaData;
+        private final ExportProperties metaData;
         @Nullable
         private final String encryptKey;
         private final Map<String, InputStream> additionFiles = new HashMap<>();
@@ -121,7 +121,7 @@ public class LocalJsonArchiver implements Archiver {
         private Mac mac;
 
         public JsonArchiverRowDataAppender(ObjectMapper objectMapper, JsonGenerator jsonGenerator,
-                ArchiveProperties metaData, @Nullable String encryptKey) {
+                ExportProperties metaData, @Nullable String encryptKey) {
             this.objectMapper = objectMapper;
             this.jsonGenerator = jsonGenerator;
             this.metaData = metaData;
@@ -141,7 +141,7 @@ public class LocalJsonArchiver implements Archiver {
         }
 
         @Override
-        public ArchiveProperties getMetaData() {
+        public ExportProperties getMetaData() {
             return metaData;
         }
 
@@ -162,7 +162,7 @@ public class LocalJsonArchiver implements Archiver {
         }
 
         @Override
-        public ArchivedFile build() throws IOException {
+        public ExportedFile build() throws IOException {
             jsonGenerator.writeEndArray();
             if (mac != null) {
                 jsonGenerator.writeFieldName("signature");
@@ -172,7 +172,7 @@ public class LocalJsonArchiver implements Archiver {
             jsonGenerator.writeEndObject();
             jsonGenerator.close();
             String fileUrl = metaData.acquireConfigJsonFileUrl();
-            return new ArchivedZipFileFactory(new File(fileUrl), this.additionFiles).build(metaData.acquireZipFileUrl(),
+            return new ExportedZipFileFactory(new File(fileUrl), this.additionFiles).build(metaData.acquireZipFileUrl(),
                     encryptKey);
         }
 

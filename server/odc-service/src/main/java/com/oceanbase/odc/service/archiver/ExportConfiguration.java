@@ -13,21 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.archiver.model;
+package com.oceanbase.odc.service.archiver;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-public interface ArchiveRowDataAppender extends Closeable {
+import com.oceanbase.odc.service.archiver.impl.LocalJsonExporter;
 
-    ArchiveProperties getMetaData();
+import lombok.Data;
 
-    void append(Encryptable encryptable) throws IOException;
+@Configuration
+@Data
+public class ExportConfiguration {
 
-    void addAdditionFile(String fileName, InputStream inputStream) throws IOException;
+    @Value("${odc.server.archive.default-path:.}")
+    private String defaultArchivePath;
 
-    ArchivedFile build() throws Exception;
-
-
+    @Bean
+    public Exporter localJsonExporter() {
+        return new LocalJsonExporter();
+    }
 }

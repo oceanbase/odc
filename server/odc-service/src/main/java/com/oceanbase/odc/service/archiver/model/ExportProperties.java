@@ -15,12 +15,12 @@
  */
 package com.oceanbase.odc.service.archiver.model;
 
-import static com.oceanbase.odc.service.archiver.model.ArchiveConstants.ARCHIVE_TYPE;
-import static com.oceanbase.odc.service.archiver.model.ArchiveConstants.CREATE_TIME;
-import static com.oceanbase.odc.service.archiver.model.ArchiveConstants.FILE_NAME;
-import static com.oceanbase.odc.service.archiver.model.ArchiveConstants.FILE_PATH;
-import static com.oceanbase.odc.service.archiver.model.ArchiveConstants.FILE_ZIP_SUFFER;
-import static com.oceanbase.odc.service.archiver.model.ArchiveConstants.ODC_VERSION;
+import static com.oceanbase.odc.service.archiver.model.ExportConstants.ARCHIVE_TYPE;
+import static com.oceanbase.odc.service.archiver.model.ExportConstants.CREATE_TIME;
+import static com.oceanbase.odc.service.archiver.model.ExportConstants.FILE_NAME;
+import static com.oceanbase.odc.service.archiver.model.ExportConstants.FILE_PATH;
+import static com.oceanbase.odc.service.archiver.model.ExportConstants.FILE_ZIP_SUFFER;
+import static com.oceanbase.odc.service.archiver.model.ExportConstants.ODC_VERSION;
 
 import java.io.File;
 import java.util.Date;
@@ -41,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
  * Ensure that the keys are in the same order before and after serialization, so use linkedHashMap
  */
 @Slf4j
-public class ArchiveProperties extends LinkedHashMap<String, Object> {
+public class ExportProperties extends LinkedHashMap<String, Object> {
 
     /**
      * runtime Properties，no need to add a metaData field
@@ -92,19 +92,19 @@ public class ArchiveProperties extends LinkedHashMap<String, Object> {
             try {
                 BuildProperties buildProperties = SpringContextUtil.getBean(BuildProperties.class);
                 String version = buildProperties.getVersion();
-                this.put(ArchiveConstants.ODC_VERSION, version);
+                this.put(ExportConstants.ODC_VERSION, version);
             } catch (Exception e) {
                 log.warn("Failed to load build properties", e);
             }
         }
-        putIfAbsent(ArchiveConstants.CREATE_TIME, new Date());
+        putIfAbsent(ExportConstants.CREATE_TIME, new Date());
         addDefaultTransientProperties(defaultArchivePath);
 
     }
 
     public void addDefaultTransientProperties(String defaultArchivePath) {
         // FilePath does not need to be persisted
-        transientProperties.putIfAbsent(ArchiveConstants.FILE_PATH,
+        transientProperties.putIfAbsent(ExportConstants.FILE_PATH,
                 defaultArchivePath + File.separator + UUID.randomUUID());
     }
 

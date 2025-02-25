@@ -15,9 +15,9 @@
  */
 package com.oceanbase.odc.service.schedule.archiverist;
 
-import static com.oceanbase.odc.service.archiver.model.ArchiveConstants.ARCHIVE_TYPE;
-import static com.oceanbase.odc.service.archiver.model.ArchiveConstants.FILE_NAME;
-import static com.oceanbase.odc.service.archiver.model.ArchiveConstants.SCHEDULE_ARCHIVE_TYPE;
+import static com.oceanbase.odc.service.archiver.model.ExportConstants.ARCHIVE_TYPE;
+import static com.oceanbase.odc.service.archiver.model.ExportConstants.FILE_NAME;
+import static com.oceanbase.odc.service.archiver.model.ExportConstants.SCHEDULE_ARCHIVE_TYPE;
 import static com.oceanbase.odc.service.common.util.OdcFileUtil.createFileWithDirectories;
 
 import java.io.File;
@@ -38,12 +38,12 @@ import com.oceanbase.odc.common.security.PasswordUtils;
 import com.oceanbase.odc.common.util.FileZipper;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
-import com.oceanbase.odc.service.archiver.ArchiveConfiguration;
-import com.oceanbase.odc.service.archiver.Archiver;
-import com.oceanbase.odc.service.archiver.model.ArchiveProperties;
-import com.oceanbase.odc.service.archiver.model.ArchiveRowDataAppender;
-import com.oceanbase.odc.service.archiver.model.ArchiveRowDataMapper;
-import com.oceanbase.odc.service.archiver.model.ArchivedFile;
+import com.oceanbase.odc.service.archiver.ExportConfiguration;
+import com.oceanbase.odc.service.archiver.Exporter;
+import com.oceanbase.odc.service.archiver.model.ExportProperties;
+import com.oceanbase.odc.service.archiver.model.ExportRowDataAppender;
+import com.oceanbase.odc.service.archiver.model.ExportRowDataMapper;
+import com.oceanbase.odc.service.archiver.model.ExportedFile;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -80,67 +80,67 @@ public class ScheduleTaskArchiver {
     ScheduleArchiveFacade scheduleArchiveFacade;
 
     @Autowired
-    Archiver archiver;
+    Exporter exporter;
 
     @Autowired
-    ArchiveConfiguration archiveConfiguration;
+    ExportConfiguration exportConfiguration;
 
     @Autowired
     AuthenticationFacade authenticationFacade;
 
-    public ArchivedFile archive(Collection<Long> scheduleIds) {
+    public ExportedFile export(Collection<Long> scheduleIds) {
         String encryptKey = new BCryptPasswordEncoder().encode(PasswordUtils.random());
-        ArchiveProperties archiveProperties = generateArchiveProperties();
-        List<ArchivedFile> archivedFiles = new ArrayList<>();
+        ExportProperties exportProperties = generateArchiveProperties();
+        List<ExportedFile> exportedFiles = new ArrayList<>();
 
         Map<ScheduleType, List<ScheduleEntity>> type2ScheduleMap =
                 scheduleRepository.findByIdIn(scheduleIds).stream().collect(
                         Collectors.groupingBy(ScheduleEntity::getType));
 
         for (Map.Entry<ScheduleType, List<ScheduleEntity>> entry : type2ScheduleMap.entrySet()) {
-            ArchiveProperties deepClone = generateTypeProperties(entry, archiveProperties);
-            try (ArchiveRowDataAppender archiveRowDataAppender = archiver.buildRowDataAppender(deepClone, encryptKey)) {
-                entry.getValue().forEach(s -> archive(archiveRowDataAppender, s));
-                ArchivedFile build = archiveRowDataAppender.build();
-                archivedFiles.add(build);
+            ExportProperties properties = generateTypeProperties(entry, exportProperties);
+            try (ExportRowDataAppender exportRowDataAppender = exporter.buildRowDataAppender(properties, encryptKey)) {
+                entry.getValue().forEach(s -> export(exportRowDataAppender, s));
+                ExportedFile build = exportRowDataAppender.build();
+                exportedFiles.add(build);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
 
-        if (archivedFiles.size() == 1) {
-            return archivedFiles.get(0);
+        if (exportedFiles.size() == 1) {
+            return exportedFiles.get(0);
         }
-        return mergeToZip(archiveProperties, archivedFiles, encryptKey);
+        return mergeToZip(exportProperties, exportedFiles, encryptKey);
     }
 
-    private ArchiveProperties generateTypeProperties(Entry<ScheduleType, List<ScheduleEntity>> entry,
-            ArchiveProperties archiveProperties) {
+    private ExportProperties generateTypeProperties(Entry<ScheduleType, List<ScheduleEntity>> entry,
+            ExportProperties exportProperties) {
         // Ensure all archive file in same path
-        ArchiveProperties deepClone = JsonUtils.fromJson(JsonUtils.toJson(archiveProperties),
-                ArchiveProperties.class);
+        ExportProperties deepClone = JsonUtils.fromJson(JsonUtils.toJson(exportProperties),
+                ExportProperties.class);
         deepClone.put(FILE_NAME, entry.getKey().name());
-        deepClone.addDefaultTransientProperties(archiveConfiguration.getDefaultArchivePath());
-        archiveProperties.put("taskType", entry.getKey());
+        deepClone.addDefaultTransientProperties(exportConfiguration.getDefaultArchivePath());
+        exportProperties.put("taskType", entry.getKey());
         return deepClone;
     }
 
-    private ArchiveProperties generateArchiveProperties() {
-        ArchiveProperties archiveProperties = new ArchiveProperties();
-        archiveProperties.put(ARCHIVE_TYPE, SCHEDULE_ARCHIVE_TYPE);
-        archiveProperties.addDefaultMetaData(archiveConfiguration.getDefaultArchivePath());
-        scheduleArchiveFacade.adapt(archiveProperties);
-        return archiveProperties;
+    private ExportProperties generateArchiveProperties() {
+        ExportProperties exportProperties = new ExportProperties();
+        exportProperties.put(ARCHIVE_TYPE, SCHEDULE_ARCHIVE_TYPE);
+        exportProperties.addDefaultMetaData(exportConfiguration.getDefaultArchivePath());
+        scheduleArchiveFacade.adapt(exportProperties);
+        return exportProperties;
     }
 
-    public ArchivedFile mergeToZip(ArchiveProperties archiveProperties, List<ArchivedFile> files, String encryptKey) {
-        String filePath = archiveProperties.acquireFilePath();
+    public ExportedFile mergeToZip(ExportProperties exportProperties, List<ExportedFile> files, String encryptKey) {
+        String filePath = exportProperties.acquireFilePath();
         String outputFileName = filePath + File.separator + buildMergedZipName();
         File outputFile = new File(outputFileName);
         createFileWithDirectories(outputFile);
-        List<File> fs = files.stream().map(ArchivedFile::toFile).collect(Collectors.toList());
+        List<File> fs = files.stream().map(ExportedFile::toFile).collect(Collectors.toList());
         FileZipper.mergeToZipFile(fs, outputFile);
-        return ArchivedFile.fromFile(outputFile, encryptKey);
+        return ExportedFile.fromFile(outputFile, encryptKey);
     }
 
 
@@ -148,7 +148,7 @@ public class ScheduleTaskArchiver {
         return authenticationFacade.currentUserAccountName() + "_" + LocalDate.now() + ".zip";
     }
 
-    public void archive(ArchiveRowDataAppender appender, ScheduleEntity scheduleEntity) {
+    public void export(ExportRowDataAppender appender, ScheduleEntity scheduleEntity) {
         ScheduleType type = scheduleEntity.getType();
         switch (type) {
             case DATA_DELETE:
@@ -163,22 +163,22 @@ public class ScheduleTaskArchiver {
     }
 
     @SneakyThrows
-    public void archiveDataDelete(ArchiveRowDataAppender appender, ScheduleEntity scheduleEntity) {
+    public void archiveDataDelete(ExportRowDataAppender appender, ScheduleEntity scheduleEntity) {
         DataDeleteParameters parameters = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
                 DataDeleteParameters.class);
         DataDeleteScheduleRowData dataDeleteRowData =
-                ArchiveRowDataMapper.INSTANCE.toDataDeleteRowData(scheduleEntity, parameters,
+                ExportRowDataMapper.INSTANCE.toDataDeleteRowData(scheduleEntity, parameters,
                         getArchiveDatabase(parameters.getDatabaseId()),
                         getArchiveDatabase(parameters.getTargetDatabaseId()));
         appender.append(dataDeleteRowData);
     }
 
     @SneakyThrows
-    public void archiveDataArchive(ArchiveRowDataAppender appender, ScheduleEntity scheduleEntity) {
+    public void archiveDataArchive(ExportRowDataAppender appender, ScheduleEntity scheduleEntity) {
         DataArchiveParameters parameters = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
                 DataArchiveParameters.class);
         DataArchiveScheduleRowData dataDeleteRowData =
-                ArchiveRowDataMapper.INSTANCE.toDataArchiveRowData(scheduleEntity, parameters,
+                ExportRowDataMapper.INSTANCE.toDataArchiveRowData(scheduleEntity, parameters,
                         getArchiveDatabase(parameters.getSourceDatabaseId()),
                         getArchiveDatabase(parameters.getTargetDataBaseId()));
         appender.append(dataDeleteRowData);

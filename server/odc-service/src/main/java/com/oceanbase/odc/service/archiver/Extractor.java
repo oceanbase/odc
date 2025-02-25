@@ -18,18 +18,18 @@ package com.oceanbase.odc.service.archiver;
 import java.io.Closeable;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.oceanbase.odc.service.archiver.model.ArchiveRowDataReader;
-import com.oceanbase.odc.service.archiver.model.ArchivedData;
-import com.oceanbase.odc.service.archiver.model.ArchivedFile;
+import com.oceanbase.odc.service.archiver.model.ExportRowDataReader;
+import com.oceanbase.odc.service.archiver.model.ExportedData;
+import com.oceanbase.odc.service.archiver.model.ExportedFile;
 
 public interface Extractor<R> extends Closeable {
 
     boolean checkSignature();
 
-    ArchivedFile getArchivedFile();
+    ExportedFile getExportedFile();
 
-    <D> ArchivedData<D> extractFullData(TypeReference<ArchivedData<D>> typeReference)
+    <D> ExportedData<D> extractFullData(TypeReference<ExportedData<D>> typeReference)
             throws Exception;
 
-    ArchiveRowDataReader<R> getRowDataReader() throws Exception;
+    ExportRowDataReader<R> getRowDataReader() throws Exception;
 }
