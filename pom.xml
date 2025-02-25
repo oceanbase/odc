@@ -113,7 +113,7 @@
         <aliyun.ram-auth-client.version>1.2.19</aliyun.ram-auth-client.version>
         <jettison.version>1.5.4</jettison.version>
         <!-- ob-loader-dumper involved -->
-        <hadoop-common.version>3.3.6</hadoop-common.version>
+        <hadoop-common.version>3.3.4</hadoop-common.version>
         <netty.version>4.1.94.Final</netty.version>
         <obkv-table-client.version>1.2.1</obkv-table-client.version>
         <mina.version>2.1.6</mina.version>
@@ -1594,7 +1594,7 @@ limitations under the License.
                 </property>
             </activation>
             <properties>
-                <ob-loader-dumper.version>4.3.1.1-RELEASE</ob-loader-dumper.version>
+                <ob-loader-dumper.version>4.2.8.2-RELEASE</ob-loader-dumper.version>
             </properties>
         </profile>
     </profiles>
