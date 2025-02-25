@@ -135,7 +135,8 @@ public class OdcInfoService {
     public OdcInfo info() {
         OdcInfo odcInfo = ObjectUtil.deepCopy(this.staticOdcInfo, OdcInfo.class);
         String[] profiles = SpringContextUtil.getProfiles();
-        odcInfo.setVersion(infoAdapter.getBuildVersion());
+        // TODO 定位前端版本，pr 时删除
+        odcInfo.setVersion("202501bp1-20250212");
         odcInfo.setBuildTime(infoAdapter.getBuildTime());
         odcInfo.setProfiles(profiles);
         odcInfo.setPasswordLoginEnabled(this.infoAdapter.isPasswordLoginEnabled());
