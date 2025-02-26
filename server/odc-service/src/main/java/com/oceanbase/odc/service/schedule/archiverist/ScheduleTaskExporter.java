@@ -51,7 +51,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.schedule.ScheduleArchiveFacade;
+import com.oceanbase.odc.service.schedule.ScheduleExportFacade;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.archiverist.model.ArchiveDataSource;
 import com.oceanbase.odc.service.schedule.archiverist.model.ArchiveDatabase;
@@ -77,7 +77,7 @@ public class ScheduleTaskExporter {
     DatabaseService databaseService;
 
     @Autowired
-    ScheduleArchiveFacade scheduleArchiveFacade;
+    ScheduleExportFacade scheduleExportFacade;
 
     @Autowired
     Exporter exporter;
@@ -129,7 +129,7 @@ public class ScheduleTaskExporter {
         ExportProperties exportProperties = new ExportProperties();
         exportProperties.put(ARCHIVE_TYPE, SCHEDULE_ARCHIVE_TYPE);
         exportProperties.addDefaultMetaData(exportConfiguration.getDefaultArchivePath());
-        scheduleArchiveFacade.adapt(exportProperties);
+        scheduleExportFacade.adapt(exportProperties);
         return exportProperties;
     }
 

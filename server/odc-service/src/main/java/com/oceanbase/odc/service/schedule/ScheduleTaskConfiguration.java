@@ -63,8 +63,8 @@ public class ScheduleTaskConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(ScheduleArchiveFacade.class)
-    public ScheduleArchiveFacade defaultScheduleArchiveFacade() {
+    @ConditionalOnMissingBean(ScheduleExportFacade.class)
+    public ScheduleExportFacade defaultScheduleArchiveFacade() {
         return archiveProperties -> {
             // do nothing
         };
