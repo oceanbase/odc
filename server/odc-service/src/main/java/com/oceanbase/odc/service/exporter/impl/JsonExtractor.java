@@ -45,13 +45,13 @@ import com.google.common.base.MoreObjects;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.security.EncryptAlgorithm;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.exporter.Extractor;
 import com.oceanbase.odc.service.exporter.model.Encryptable;
 import com.oceanbase.odc.service.exporter.model.ExportProperties;
 import com.oceanbase.odc.service.exporter.model.ExportRowDataReader;
 import com.oceanbase.odc.service.exporter.model.ExportedData;
 import com.oceanbase.odc.service.exporter.model.ExportedFile;
-import com.oceanbase.odc.service.common.util.OdcFileUtil;
 
 import lombok.Getter;
 import lombok.SneakyThrows;

@@ -15,8 +15,8 @@
  */
 package com.oceanbase.odc.service.exporter.impl;
 
-import static com.oceanbase.odc.service.exporter.model.ExportConstants.HMAC_ALGORITHM;
 import static com.oceanbase.odc.service.common.util.OdcFileUtil.createFileWithDirectories;
+import static com.oceanbase.odc.service.exporter.model.ExportConstants.HMAC_ALGORITHM;
 
 import java.io.File;
 import java.io.FileWriter;
