@@ -77,7 +77,7 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
                 ScheduleAlarmUtils.fail(scheduleTask.getId());
                 alarmFailed(jobEntity, event.getErrorMessage());
             }
-            if (event.getStatus() == JobStatus.EXECUTION_TIMEOUT) {
+            if (event.getStatus() == JobStatus.EXEC_TIMEOUT) {
                 ScheduleAlarmUtils.timeout(scheduleTask.getId());
             }
             // invoke task related processor

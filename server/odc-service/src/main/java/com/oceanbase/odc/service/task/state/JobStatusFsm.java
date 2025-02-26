@@ -51,7 +51,7 @@ public class JobStatusFsm {
             case DONE:
                 return JobStatus.DONE;
             case EXECUTION_TIMEOUT:
-                return JobStatus.EXECUTION_TIMEOUT;
+                return JobStatus.EXEC_TIMEOUT;
             default:
                 throw new IllegalStateException("status " + taskStatus + " not handled");
         }

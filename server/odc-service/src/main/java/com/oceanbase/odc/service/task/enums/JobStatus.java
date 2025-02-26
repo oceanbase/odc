@@ -29,12 +29,12 @@ public enum JobStatus {
     RETRYING,
     CANCELING,
     CANCELED,
-    EXECUTION_TIMEOUT,
+    EXEC_TIMEOUT,
     DONE;
 
     public boolean isTerminated() {
         return JobStatus.CANCELED == this || JobStatus.FAILED == this || JobStatus.DONE == this
-                || JobStatus.EXECUTION_TIMEOUT == this;
+                || JobStatus.EXEC_TIMEOUT == this;
     }
 
     public boolean isExecuting() {

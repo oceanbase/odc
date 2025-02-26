@@ -177,7 +177,7 @@ public class OdcJobListener implements JobListener {
                     if (taskOptional.isPresent() && taskOptional.get().getStatus() == TaskStatus.CANCELED
                             && taskOptional.get().getJobId() != null) {
                         Optional<JobEntity> jobEntity = jobRepository.findByIdNative(taskOptional.get().getJobId());
-                        if (jobEntity.isPresent() && jobEntity.get().getStatus() == JobStatus.EXECUTION_TIMEOUT) {
+                        if (jobEntity.isPresent() && jobEntity.get().getStatus() == JobStatus.EXEC_TIMEOUT) {
                             log.info("Recovery timeout task,taskId={}", latestTaskId);
                             return latestTaskId;
                         }
