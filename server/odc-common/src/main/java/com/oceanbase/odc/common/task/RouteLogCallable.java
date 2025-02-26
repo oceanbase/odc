@@ -15,39 +15,39 @@
  */
 package com.oceanbase.odc.common.task;
 
+import java.util.concurrent.Callable;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.slf4j.MDC;
 
-/**
- * 
- */
-public abstract class RouteLogRunnable implements Runnable {
-    protected static Logger log = LogManager.getLogger(RouteLogRunnable.class);
+public abstract class RouteLogCallable<T> implements Callable<T> {
+
+    protected static Logger log = LogManager.getLogger(RouteLogCallable.class);
     private final String workSpace;
     private final String taskId;
     private final String fileName;
 
-    public RouteLogRunnable(String workSpace, String taskId, String fileName) {
+    public RouteLogCallable(String workSpace, String taskId, String fileName) {
         this.workSpace = workSpace;
         this.taskId = taskId;
         this.fileName = fileName;
     }
 
-    public abstract void doRun();
-
+    public abstract T doCall();
 
     @Override
-    public void run() {
+    public T call() throws Exception {
         MDC.put("taskId", taskId);
         MDC.put("workSpace", workSpace);
         MDC.put("fileName", fileName);
         try {
-            doRun();
+            return doCall();
         } finally {
             MDC.remove("taskId");
             MDC.remove("workSpace");
             MDC.remove("fileName");
         }
     }
+
 }
