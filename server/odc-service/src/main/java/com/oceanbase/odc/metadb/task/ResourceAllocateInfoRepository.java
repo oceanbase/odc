@@ -36,8 +36,8 @@ public interface ResourceAllocateInfoRepository extends JpaRepository<ResourceAl
         JpaSpecificationExecutor<ResourceAllocateInfoEntity> {
 
     @Transactional
-    @Query(value = "update resource_allocate_info set "
-            + " resource_allocate_state = :stateToSet, endpoint = :endpointToSet, "
+    @Query(value = "update task_resource_allocate_info set "
+            + " resource_allocate_state = :stateToSet, supervisor_endpoint = :endpointToSet, "
             + " supervisor_endpoint_id = :endpointIdToSet where task_id=:idToFind", nativeQuery = true)
     @Modifying
     int updateEndpointByTaskId(@Param("endpointToSet") String endpoint,
@@ -45,23 +45,23 @@ public interface ResourceAllocateInfoRepository extends JpaRepository<ResourceAl
             @Param("stateToSet") String state);
 
     @Transactional
-    @Query(value = "update resource_allocate_info set "
+    @Query(value = "update task_resource_allocate_info set "
             + " resource_allocate_state=:stateToSet"
             + " where task_id=:idToFind", nativeQuery = true)
     @Modifying
     int updateResourceAllocateStateByTaskId(@Param("stateToSet") String state, @Param("idToFind") Long id);
 
     @Transactional
-    @Query(value = "update resource_allocate_info set "
+    @Query(value = "update task_resource_allocate_info set "
             + " resource_usage_state=:stateToSet"
             + " where task_id =:idToFind", nativeQuery = true)
     @Modifying
     int updateResourceUsageStateByTaskId(@Param("stateToSet") String state, @Param("idToFind") Long id);
 
 
-    @Query(value = "SELECT * FROM resource_allocate_info WHERE task_id = ?1", nativeQuery = true)
+    @Query(value = "SELECT * FROM task_resource_allocate_info WHERE task_id = ?1", nativeQuery = true)
     Optional<ResourceAllocateInfoEntity> findByTaskIdNative(Long id);
 
-    @Query(value = "SELECT * FROM resource_allocate_info WHERE id = ?1", nativeQuery = true)
+    @Query(value = "SELECT * FROM task_resource_allocate_info WHERE id = ?1", nativeQuery = true)
     Optional<ResourceAllocateInfoEntity> findByIdNative(Long id);
 }

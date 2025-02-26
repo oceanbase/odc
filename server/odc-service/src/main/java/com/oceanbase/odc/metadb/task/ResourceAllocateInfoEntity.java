@@ -35,7 +35,7 @@ import lombok.Data;
  */
 @Data
 @Entity
-@Table(name = "resource_allocate_info")
+@Table(name = "task_resource_allocate_info")
 public class ResourceAllocateInfoEntity {
 
     /**
@@ -67,8 +67,8 @@ public class ResourceAllocateInfoEntity {
     /**
      * supervisor endpoint, in format host:port
      */
-    @Column(name = "endpoint")
-    private String endpoint;
+    @Column(name = "supervisor_endpoint")
+    private String supervisorEndpoint;
 
     /**
      * resource id associate to supervisor endpoint resource id

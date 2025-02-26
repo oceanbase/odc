@@ -146,7 +146,7 @@ public class ResourceAllocator {
         } else {
             // wait resource ready
             log.debug("resource not ready with endpoint id = {}, endpoint = {} for job id = {}, wait resource ready",
-                    allocateInfoEntity.getSupervisorEndpointId(), allocateInfoEntity.getEndpoint(),
+                    allocateInfoEntity.getSupervisorEndpointId(), allocateInfoEntity.getSupervisorEndpoint(),
                     allocateInfoEntity.getTaskId());
         }
     }

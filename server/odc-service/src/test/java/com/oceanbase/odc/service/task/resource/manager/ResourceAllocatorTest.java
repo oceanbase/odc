@@ -69,7 +69,7 @@ public class ResourceAllocatorTest {
         supervisorEndpointEntity.setPort(9999);
         resourceAllocateInfoEntity = new ResourceAllocateInfoEntity();
         resourceAllocateInfoEntity.setSupervisorEndpointId(1024L);
-        resourceAllocateInfoEntity.setEndpoint(JsonUtils.toJson(supervisorEndpointEntity.getEndpoint()));
+        resourceAllocateInfoEntity.setSupervisorEndpoint(JsonUtils.toJson(supervisorEndpointEntity.getEndpoint()));
         Mockito.when(remoteTaskSupervisorProxy.isSupervisorAlive(ArgumentMatchers.any())).thenReturn(true);
         Mockito.when(
                 resourceManageStrategy.isEndpointHaveEnoughResource(ArgumentMatchers.any(), ArgumentMatchers.any()))

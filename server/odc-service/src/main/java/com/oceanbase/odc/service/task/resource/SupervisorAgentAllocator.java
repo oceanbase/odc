@@ -51,7 +51,7 @@ public class SupervisorAgentAllocator {
         created.setResourceUsageState(ResourceUsageState.PREPARING.name());
         created.setResourceRegion(resourceLocation.getRegion());
         created.setResourceGroup(resourceLocation.getGroup());
-        created.setEndpoint(null);
+        created.setSupervisorEndpoint(null);
         created.setTaskId(jobContext.getJobIdentity().getId());
         created.setResourceApplierName(applierName);
         resourceAllocateInfoRepository.save(created);
@@ -81,8 +81,8 @@ public class SupervisorAgentAllocator {
                         "allocate resource invalid state with finished for jobContext = " + jobContext + ")");
             case AVAILABLE:
                 log.info("allocate resource succeed for jobContext = {}, allocate endpoint = {}", jobContext,
-                        entity.getEndpoint());
-                SupervisorEndpoint ret = JsonUtils.fromJson(entity.getEndpoint(), SupervisorEndpoint.class);
+                        entity.getSupervisorEndpoint());
+                SupervisorEndpoint ret = JsonUtils.fromJson(entity.getSupervisorEndpoint(), SupervisorEndpoint.class);
                 updateUsageState(jobContext.getJobIdentity().getId(), ResourceUsageState.USING);
                 return Optional.of(ret);
             case PREPARING:

@@ -1,7 +1,7 @@
 --
 -- Add supervisor_endpoint table to maintain supervisor agent info, this table will bind to resource_resource
 --
-CREATE TABLE `supervisor_endpoint` (
+CREATE TABLE `task_supervisor_endpoint` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT,
     `host` varchar(256)  NOT NULL COMMENT 'host of supervisor',
     `port` int(11)  NOT NULL COMMENT 'port of supervisor',
@@ -13,6 +13,6 @@ CREATE TABLE `supervisor_endpoint` (
     `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
     `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     PRIMARY KEY (`id`),
-    UNIQUE KEY host_and_port (`host`, `port`, `resource_id`),
-    KEY `resource_location` (`status`, `resource_region`, `resource_group`)
+    UNIQUE KEY `uk_task_supervisor_endpoint_host_port_resource_id` (`host`, `port`, `resource_id`),
+    KEY `idx_task_supervisor_endpoint_status_resource_location_group` (`status`, `resource_region`, `resource_group`)
 );

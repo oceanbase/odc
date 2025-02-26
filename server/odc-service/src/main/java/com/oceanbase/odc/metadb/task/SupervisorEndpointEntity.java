@@ -39,7 +39,7 @@ import lombok.Data;
  */
 @Data
 @Entity
-@Table(name = "supervisor_endpoint")
+@Table(name = "task_supervisor_endpoint")
 public class SupervisorEndpointEntity {
 
     /**

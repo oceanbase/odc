@@ -100,7 +100,7 @@ public class DoFinishJobV2Test extends DaemonV2TestBase {
     @Test
     public void testDestroyTaskByAgentNotStart() throws JobException {
         jobEntity.setExecutorIdentifier(null);
-        resourceAllocateInfoEntity.setEndpoint(JsonUtils.toJson(supervisorEndpoint));
+        resourceAllocateInfoEntity.setSupervisorEndpoint(JsonUtils.toJson(supervisorEndpoint));
         doFinishJobV2.destroyTaskByAgent(configuration, resourceAllocateInfoEntity, jobEntity);
         Mockito.verify(taskSupervisorJobCaller, Mockito.never()).destroyTask(ArgumentMatchers.any(),
                 ArgumentMatchers.any(), ArgumentMatchers.any());
@@ -108,7 +108,7 @@ public class DoFinishJobV2Test extends DaemonV2TestBase {
 
     @Test
     public void testDestroyTaskByAgent() throws JobException {
-        resourceAllocateInfoEntity.setEndpoint(JsonUtils.toJson(supervisorEndpoint));
+        resourceAllocateInfoEntity.setSupervisorEndpoint(JsonUtils.toJson(supervisorEndpoint));
         Mockito.when(taskSupervisorJobCaller.destroyTask(ArgumentMatchers.any(), ArgumentMatchers.any(),
                 ArgumentMatchers.any())).thenReturn(new TaskCallerResult(true, null));
         doFinishJobV2.destroyTaskByAgent(configuration, resourceAllocateInfoEntity, jobEntity);

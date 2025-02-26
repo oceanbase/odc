@@ -152,14 +152,15 @@ public class DoFinishJobV2 implements Job {
     @VisibleForTesting
     protected void destroyTaskByAgent(JobConfiguration configuration, ResourceAllocateInfoEntity entity,
             JobEntity jobEntity) throws JobException {
-        SupervisorEndpoint supervisorEndpoint = JsonUtils.fromJson(entity.getEndpoint(), SupervisorEndpoint.class);
+        SupervisorEndpoint supervisorEndpoint =
+                JsonUtils.fromJson(entity.getSupervisorEndpoint(), SupervisorEndpoint.class);
         if (null == supervisorEndpoint) {
             if (ResourceAllocateState.FAILED.equal(entity.getResourceAllocateState())) {
                 log.info("failed supervisor state for job id = {}, endpoint str = {}", jobEntity.getId(),
-                        entity.getEndpoint());
+                        entity.getSupervisorEndpoint());
             } else {
                 log.info("invalid supervisor state for job id = {}, endpoint str = {}", jobEntity.getId(),
-                        entity.getEndpoint());
+                        entity.getSupervisorEndpoint());
             }
             return;
         }

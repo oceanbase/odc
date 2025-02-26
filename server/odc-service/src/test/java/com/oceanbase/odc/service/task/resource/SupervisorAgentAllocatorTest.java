@@ -66,7 +66,7 @@ public class SupervisorAgentAllocatorTest {
         supervisorAgentAllocator.submitAllocateSupervisorEndpointRequest(applierName, jobContext, resourceLocation);
         ArgumentCaptor<ResourceAllocateInfoEntity> captor = ArgumentCaptor.forClass(ResourceAllocateInfoEntity.class);
         Mockito.verify(repository).save(captor.capture());
-        Assert.assertNull(captor.getValue().getEndpoint());
+        Assert.assertNull(captor.getValue().getSupervisorEndpoint());
         Assert.assertEquals(captor.getValue().getResourceGroup(), "local");
         Assert.assertEquals(captor.getValue().getResourceRegion(), "local");
         Assert.assertEquals(captor.getValue().getTaskId().longValue(), jobContext.getJobIdentity().getId().longValue());
@@ -76,7 +76,7 @@ public class SupervisorAgentAllocatorTest {
 
     @Test
     public void testCheckAllocateSupervisorEndpointStateReady() {
-        resourceAllocateInfoEntity.setEndpoint(JsonUtils.toJson(supervisorEndpoint));
+        resourceAllocateInfoEntity.setSupervisorEndpoint(JsonUtils.toJson(supervisorEndpoint));
         resourceAllocateInfoEntity.setResourceAllocateState(ResourceAllocateState.AVAILABLE.name());
         Optional<SupervisorEndpoint> endpoint =
                 supervisorAgentAllocator.checkAllocateSupervisorEndpointState(jobContext);
@@ -89,7 +89,7 @@ public class SupervisorAgentAllocatorTest {
 
     @Test
     public void testCheckAllocateSupervisorEndpointStateNotReady1() {
-        resourceAllocateInfoEntity.setEndpoint(JsonUtils.toJson(supervisorEndpoint));
+        resourceAllocateInfoEntity.setSupervisorEndpoint(JsonUtils.toJson(supervisorEndpoint));
         resourceAllocateInfoEntity.setResourceAllocateState(ResourceAllocateState.PREPARING.name());
         Optional<SupervisorEndpoint> endpoint =
                 supervisorAgentAllocator.checkAllocateSupervisorEndpointState(jobContext);
@@ -100,7 +100,7 @@ public class SupervisorAgentAllocatorTest {
 
     @Test
     public void testCheckAllocateSupervisorEndpointStateNotReady2() {
-        resourceAllocateInfoEntity.setEndpoint(JsonUtils.toJson(supervisorEndpoint));
+        resourceAllocateInfoEntity.setSupervisorEndpoint(JsonUtils.toJson(supervisorEndpoint));
         resourceAllocateInfoEntity.setResourceAllocateState(ResourceAllocateState.CREATING_RESOURCE.name());
         Optional<SupervisorEndpoint> endpoint =
                 supervisorAgentAllocator.checkAllocateSupervisorEndpointState(jobContext);
@@ -111,7 +111,7 @@ public class SupervisorAgentAllocatorTest {
 
     @Test(expected = RuntimeException.class)
     public void testCheckAllocateSupervisorEndpointStateInvalid() {
-        resourceAllocateInfoEntity.setEndpoint(JsonUtils.toJson(supervisorEndpoint));
+        resourceAllocateInfoEntity.setSupervisorEndpoint(JsonUtils.toJson(supervisorEndpoint));
         resourceAllocateInfoEntity.setResourceAllocateState(ResourceAllocateState.FAILED.name());
         supervisorAgentAllocator.checkAllocateSupervisorEndpointState(jobContext);
     }

@@ -36,7 +36,7 @@ public interface SupervisorEndpointRepository extends JpaRepository<SupervisorEn
         JpaSpecificationExecutor<SupervisorEndpointEntity> {
 
     @Transactional
-    @Query(value = "update supervisor_endpoint set "
+    @Query(value = "update task_supervisor_endpoint set "
             + " status=:statusToSet, loads = :loadToSet"
             + " where host=:hostToFind and port=:portToFind and resource_id = :resourceIdToFind", nativeQuery = true)
     @Modifying
@@ -46,7 +46,7 @@ public interface SupervisorEndpointRepository extends JpaRepository<SupervisorEn
             @Param("statusToSet") String status);
 
     @Transactional
-    @Query(value = "update supervisor_endpoint set "
+    @Query(value = "update task_supervisor_endpoint set "
             + " status=:statusToSet"
             + " where host=:hostToFind and port=:portToFind and resource_id = :resourceIdToFind", nativeQuery = true)
     @Modifying
@@ -55,7 +55,7 @@ public interface SupervisorEndpointRepository extends JpaRepository<SupervisorEn
             @Param("statusToSet") String status);
 
     @Transactional
-    @Query(value = "update supervisor_endpoint set "
+    @Query(value = "update task_supervisor_endpoint set "
             + " status=:statusToSet"
             + " where id=:idToFind", nativeQuery = true)
     @Modifying
@@ -63,14 +63,14 @@ public interface SupervisorEndpointRepository extends JpaRepository<SupervisorEn
             @Param("statusToSet") String status);
 
     @Transactional
-    @Query(value = "update supervisor_endpoint set "
+    @Query(value = "update task_supervisor_endpoint set "
             + " host=:host"
             + " where id=:id", nativeQuery = true)
     @Modifying
     int updateHostById(@Param("host") String host, @Param("id") Long id);
 
     @Transactional
-    @Query(value = "update supervisor_endpoint set "
+    @Query(value = "update task_supervisor_endpoint set "
             + "loads = loads + :loadToAdd"
             + " where host=:hostToFind and port=:portToFind and resource_id = :resourceIdToFind", nativeQuery = true)
     @Modifying
@@ -80,13 +80,13 @@ public interface SupervisorEndpointRepository extends JpaRepository<SupervisorEn
 
     @Modifying
     @Transactional
-    @Query(value = "update supervisor_endpoint set loads = loads + :loadToAdd where id = :id", nativeQuery = true)
+    @Query(value = "update task_supervisor_endpoint set loads = loads + :loadToAdd where id = :id", nativeQuery = true)
     int addLoadById(@Param("id") Long id, @Param("loadToAdd") Integer loadToAdd);
 
-    @Query(value = "SELECT * FROM supervisor_endpoint WHERE id = ?1", nativeQuery = true)
+    @Query(value = "SELECT * FROM task_supervisor_endpoint WHERE id = ?1", nativeQuery = true)
     Optional<SupervisorEndpointEntity> findByIdNative(Long id);
 
-    @Query(value = "SELECT * FROM supervisor_endpoint WHERE host = :hostToFind and port = :portToFind and resource_id = :resourceIdToFind",
+    @Query(value = "SELECT * FROM task_supervisor_endpoint WHERE host = :hostToFind and port = :portToFind and resource_id = :resourceIdToFind",
             nativeQuery = true)
     Optional<SupervisorEndpointEntity> findByHostPortAndResourceId(@Param("hostToFind") String host,
             @Param("portToFind") Integer port, @Param("resourceIdToFind") Long resourceID);

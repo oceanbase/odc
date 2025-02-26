@@ -63,7 +63,7 @@ public class ResourceDeAllocator {
             } else {
                 // de allocate success
                 log.info("release resource for taskID = {}, endpoint = {}, endpointId = {}",
-                        deAllocateInfoEntity.getTaskId(), deAllocateInfoEntity.getEndpoint(),
+                        deAllocateInfoEntity.getTaskId(), deAllocateInfoEntity.getSupervisorEndpoint(),
                         deAllocateInfoEntity.getSupervisorEndpointId());
                 supervisorEndpointRepositoryWrap.releaseLoad(deAllocateInfoEntity.getSupervisorEndpointId());
             }
