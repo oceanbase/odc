@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.archiver;
+package com.oceanbase.odc.service.exporter;
 
 import static com.oceanbase.odc.common.security.EncryptAlgorithm.AES;
 
@@ -31,15 +31,15 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.oceanbase.odc.common.security.PasswordUtils;
-import com.oceanbase.odc.service.archiver.impl.JsonExtractor;
-import com.oceanbase.odc.service.archiver.impl.LocalJsonExporter;
-import com.oceanbase.odc.service.archiver.model.Encryptable;
-import com.oceanbase.odc.service.archiver.model.ExportConstants;
-import com.oceanbase.odc.service.archiver.model.ExportProperties;
-import com.oceanbase.odc.service.archiver.model.ExportRowDataAppender;
-import com.oceanbase.odc.service.archiver.model.ExportRowDataReader;
-import com.oceanbase.odc.service.archiver.model.ExportedData;
-import com.oceanbase.odc.service.archiver.model.ExportedFile;
+import com.oceanbase.odc.service.exporter.impl.JsonExtractor;
+import com.oceanbase.odc.service.exporter.impl.LocalJsonExporter;
+import com.oceanbase.odc.service.exporter.model.Encryptable;
+import com.oceanbase.odc.service.exporter.model.ExportConstants;
+import com.oceanbase.odc.service.exporter.model.ExportProperties;
+import com.oceanbase.odc.service.exporter.model.ExportRowDataAppender;
+import com.oceanbase.odc.service.exporter.model.ExportRowDataReader;
+import com.oceanbase.odc.service.exporter.model.ExportedData;
+import com.oceanbase.odc.service.exporter.model.ExportedFile;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

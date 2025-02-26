@@ -20,7 +20,7 @@ import java.util.UUID;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
-import com.oceanbase.odc.service.archiver.model.Encryptable;
+import com.oceanbase.odc.service.exporter.model.Encryptable;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 

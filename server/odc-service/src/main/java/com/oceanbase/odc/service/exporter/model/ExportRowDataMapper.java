@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.archiver.model;
+package com.oceanbase.odc.service.exporter.model;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.archiver.model;
+package com.oceanbase.odc.service.exporter.model;
 
 import java.io.File;
 
@@ -21,9 +21,9 @@ import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.service.archiver.streamprovider.ExportedDataStreamProvider;
-import com.oceanbase.odc.service.archiver.streamprovider.FileStreamProvider;
-import com.oceanbase.odc.service.archiver.streamprovider.RemoteUriStreamProvider;
+import com.oceanbase.odc.service.exporter.streamprovider.ExportedDataStreamProvider;
+import com.oceanbase.odc.service.exporter.streamprovider.FileStreamProvider;
+import com.oceanbase.odc.service.exporter.streamprovider.RemoteUriStreamProvider;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

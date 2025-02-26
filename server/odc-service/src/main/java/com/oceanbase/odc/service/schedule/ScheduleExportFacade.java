@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.schedule;
 
-import com.oceanbase.odc.service.archiver.model.ExportProperties;
+import com.oceanbase.odc.service.exporter.model.ExportProperties;
 
 public interface ScheduleExportFacade {
 

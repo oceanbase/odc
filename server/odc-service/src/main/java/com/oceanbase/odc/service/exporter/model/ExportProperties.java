@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.archiver.model;
+package com.oceanbase.odc.service.exporter.model;
 
-import static com.oceanbase.odc.service.archiver.model.ExportConstants.ARCHIVE_TYPE;
-import static com.oceanbase.odc.service.archiver.model.ExportConstants.CREATE_TIME;
-import static com.oceanbase.odc.service.archiver.model.ExportConstants.FILE_NAME;
-import static com.oceanbase.odc.service.archiver.model.ExportConstants.FILE_PATH;
-import static com.oceanbase.odc.service.archiver.model.ExportConstants.FILE_ZIP_SUFFER;
-import static com.oceanbase.odc.service.archiver.model.ExportConstants.ODC_VERSION;
+import static com.oceanbase.odc.service.exporter.model.ExportConstants.ARCHIVE_TYPE;
+import static com.oceanbase.odc.service.exporter.model.ExportConstants.CREATE_TIME;
+import static com.oceanbase.odc.service.exporter.model.ExportConstants.FILE_NAME;
+import static com.oceanbase.odc.service.exporter.model.ExportConstants.FILE_PATH;
+import static com.oceanbase.odc.service.exporter.model.ExportConstants.FILE_ZIP_SUFFER;
+import static com.oceanbase.odc.service.exporter.model.ExportConstants.ODC_VERSION;
 
 import java.io.File;
 import java.util.Date;

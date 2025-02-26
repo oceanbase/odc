@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.archiver;
+package com.oceanbase.odc.service.exporter;
 
 import java.io.Closeable;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.oceanbase.odc.service.archiver.model.ExportRowDataReader;
-import com.oceanbase.odc.service.archiver.model.ExportedData;
-import com.oceanbase.odc.service.archiver.model.ExportedFile;
+import com.oceanbase.odc.service.exporter.model.ExportRowDataReader;
+import com.oceanbase.odc.service.exporter.model.ExportedData;
+import com.oceanbase.odc.service.exporter.model.ExportedFile;
 
 public interface Extractor<R> extends Closeable {
 

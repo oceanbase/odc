@@ -16,7 +16,7 @@
 package com.oceanbase.odc.service.schedule.archiverist.model;
 
 import com.oceanbase.odc.common.security.EncryptAlgorithm;
-import com.oceanbase.odc.service.archiver.model.Encryptable;
+import com.oceanbase.odc.service.exporter.model.Encryptable;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
 import lombok.AllArgsConstructor;

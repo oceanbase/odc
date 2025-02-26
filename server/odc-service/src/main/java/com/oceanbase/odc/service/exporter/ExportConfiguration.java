@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.archiver;
+package com.oceanbase.odc.service.exporter;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.oceanbase.odc.service.archiver.impl.LocalJsonExporter;
+import com.oceanbase.odc.service.exporter.impl.LocalJsonExporter;
 
 import lombok.Data;
 

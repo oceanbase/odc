@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.schedule.archiverist.model;
 
-import com.oceanbase.odc.service.archiver.model.Encryptable;
+import com.oceanbase.odc.service.exporter.model.Encryptable;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

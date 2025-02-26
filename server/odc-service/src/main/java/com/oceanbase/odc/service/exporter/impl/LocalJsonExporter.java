@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.archiver.impl;
+package com.oceanbase.odc.service.exporter.impl;
 
-import static com.oceanbase.odc.service.archiver.model.ExportConstants.HMAC_ALGORITHM;
+import static com.oceanbase.odc.service.exporter.model.ExportConstants.HMAC_ALGORITHM;
 import static com.oceanbase.odc.service.common.util.OdcFileUtil.createFileWithDirectories;
 
 import java.io.File;
@@ -37,13 +37,13 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.security.EncryptAlgorithm;
-import com.oceanbase.odc.service.archiver.Exporter;
-import com.oceanbase.odc.service.archiver.model.Encryptable;
-import com.oceanbase.odc.service.archiver.model.ExportProperties;
-import com.oceanbase.odc.service.archiver.model.ExportRowDataAppender;
-import com.oceanbase.odc.service.archiver.model.ExportedData;
-import com.oceanbase.odc.service.archiver.model.ExportedFile;
-import com.oceanbase.odc.service.archiver.model.ExportedZipFileFactory;
+import com.oceanbase.odc.service.exporter.Exporter;
+import com.oceanbase.odc.service.exporter.model.Encryptable;
+import com.oceanbase.odc.service.exporter.model.ExportProperties;
+import com.oceanbase.odc.service.exporter.model.ExportRowDataAppender;
+import com.oceanbase.odc.service.exporter.model.ExportedData;
+import com.oceanbase.odc.service.exporter.model.ExportedFile;
+import com.oceanbase.odc.service.exporter.model.ExportedZipFileFactory;
 
 import lombok.extern.slf4j.Slf4j;
 

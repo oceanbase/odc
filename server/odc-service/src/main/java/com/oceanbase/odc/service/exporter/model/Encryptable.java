@@ -13,22 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.archiver.model;
+package com.oceanbase.odc.service.exporter.model;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.IOException;
+public interface Encryptable {
 
-public interface ExportRowDataReader<R> extends Closeable {
+    void encrypt(String encryptKey);
 
-    ExportProperties getMetaData();
-
-    <D extends Encryptable> D readRow(Class<D> rowDataClass) throws IOException;
-
-    R readRow() throws IOException;
-
-    File getFile(String fileName);
-
-    Integer getRowNumber();
-
+    void decrypt(String encryptKey);
 }

@@ -13,22 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.archiver.streamprovider;
+package com.oceanbase.odc.service.exporter.streamprovider;
 
-import java.io.File;
 import java.io.InputStream;
-import java.nio.file.Files;
 
-public class FileStreamProvider implements ExportedDataStreamProvider {
-
-    private final File file;
-
-    public FileStreamProvider(File file) {
-        this.file = file;
-    }
-
-    @Override
-    public InputStream getInputStream() throws Exception {
-        return Files.newInputStream(file.toPath());
-    }
+public interface ExportedDataStreamProvider {
+    InputStream getInputStream() throws Exception;
 }

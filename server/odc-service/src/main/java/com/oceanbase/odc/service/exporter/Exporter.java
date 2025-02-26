@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.archiver;
+package com.oceanbase.odc.service.exporter;
 
 import java.io.IOException;
 
-import com.oceanbase.odc.service.archiver.model.ExportProperties;
-import com.oceanbase.odc.service.archiver.model.ExportRowDataAppender;
-import com.oceanbase.odc.service.archiver.model.ExportedFile;
+import com.oceanbase.odc.service.exporter.model.ExportProperties;
+import com.oceanbase.odc.service.exporter.model.ExportRowDataAppender;
+import com.oceanbase.odc.service.exporter.model.ExportedFile;
 
 public interface Exporter {
 

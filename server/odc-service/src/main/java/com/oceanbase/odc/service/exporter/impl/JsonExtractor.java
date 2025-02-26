@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.archiver.impl;
+package com.oceanbase.odc.service.exporter.impl;
 
-import static com.oceanbase.odc.service.archiver.model.ExportConstants.HMAC_ALGORITHM;
+import static com.oceanbase.odc.service.exporter.model.ExportConstants.HMAC_ALGORITHM;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -45,12 +45,12 @@ import com.google.common.base.MoreObjects;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.security.EncryptAlgorithm;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.service.archiver.Extractor;
-import com.oceanbase.odc.service.archiver.model.Encryptable;
-import com.oceanbase.odc.service.archiver.model.ExportProperties;
-import com.oceanbase.odc.service.archiver.model.ExportRowDataReader;
-import com.oceanbase.odc.service.archiver.model.ExportedData;
-import com.oceanbase.odc.service.archiver.model.ExportedFile;
+import com.oceanbase.odc.service.exporter.Extractor;
+import com.oceanbase.odc.service.exporter.model.Encryptable;
+import com.oceanbase.odc.service.exporter.model.ExportProperties;
+import com.oceanbase.odc.service.exporter.model.ExportRowDataReader;
+import com.oceanbase.odc.service.exporter.model.ExportedData;
+import com.oceanbase.odc.service.exporter.model.ExportedFile;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 
 import lombok.Getter;
