@@ -82,9 +82,6 @@ public class DataArchiveJob extends AbstractDlmJob {
             parameters.setDeleteAfterMigration(dataArchiveParameters.isDeleteAfterMigration());
             parameters.setMigrationInsertAction(dataArchiveParameters.getMigrationInsertAction());
             parameters.setNeedPrintSqlTrace(dataArchiveParameters.isNeedPrintSqlTrace());
-            parameters
-                    .setRateLimit(
-                            limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName())));
             parameters.setWriteThreadCount(dataArchiveParameters.getWriteThreadCount());
             parameters.setReadThreadCount(dataArchiveParameters.getReadThreadCount());
             parameters.setShardingStrategy(dataArchiveParameters.getShardingStrategy());
@@ -93,6 +90,10 @@ public class DataArchiveJob extends AbstractDlmJob {
             parameters.getTargetDs().setQueryTimeout(dataArchiveParameters.getQueryTimeout());
             parameters.setSyncTableStructure(dataArchiveParameters.getSyncTableStructure());
         }
+
+        parameters
+                .setRateLimit(
+                        limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName())));
 
         Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis(),
                 dataArchiveParameters.getSourceDatabaseId());
