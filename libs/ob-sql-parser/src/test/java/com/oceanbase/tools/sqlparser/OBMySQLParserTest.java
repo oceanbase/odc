@@ -63,10 +63,19 @@ import com.oceanbase.tools.sqlparser.statement.update.UpdateAssign;
 public class OBMySQLParserTest {
 
     @Test
-    public void parse_Organization() {
+    public void parse_CreateTableOrganizationHeap() {
         SQLParser parser = new OBMySQLParser();
-        Statement actual = parser.parse(new StringReader("create table create_table_with_option_demo (c1 int) ORGANIZATION HEAP;"));
-        System.out.println(";");
+        Statement actual = parser
+                .parse(new StringReader("create table create_table_with_option_demo (c1 int) ORGANIZATION HEAP;"));
+        Assert.assertEquals("ORGANIZATION HEAP",((CreateTable) actual).getTableOptions().getText());
+    }
+
+    @Test
+    public void parse_CreateTableOrganizationIndex() {
+        SQLParser parser = new OBMySQLParser();
+        Statement actual = parser
+            .parse(new StringReader("create table create_table_with_option_demo (c1 int) ORGANIZATION INDEX;"));
+        Assert.assertEquals("ORGANIZATION INDEX",((CreateTable) actual).getTableOptions().getText());
     }
 
     @Test
