@@ -63,6 +63,13 @@ import com.oceanbase.tools.sqlparser.statement.update.UpdateAssign;
 public class OBMySQLParserTest {
 
     @Test
+    public void parse_Organization() {
+        SQLParser parser = new OBMySQLParser();
+        Statement actual = parser.parse(new StringReader("create table create_table_with_option_demo (c1 int) ORGANIZATION HEAP;"));
+        System.out.println(";");
+    }
+
+    @Test
     public void parse_selectStatement_parseSucceed() {
         SQLParser parser = new OBMySQLParser();
         Statement actual = parser.parse(new StringReader("select col.* abc from dual;"));
