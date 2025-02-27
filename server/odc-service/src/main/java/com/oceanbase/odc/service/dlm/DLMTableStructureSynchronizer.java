@@ -16,11 +16,14 @@
 package com.oceanbase.odc.service.dlm;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -124,6 +127,47 @@ public class DLMTableStructureSynchronizer {
             closeDataSource(sourceDs);
             closeDataSource(targetDs);
         }
+    }
+
+    public static void createTempTable(DataSourceInfo sourceInfo, String srcTableName, String tempTableName) {
+        ConnectionConfig srcConfig = DataSourceInfoMapper.toConnectionConfig(sourceInfo);
+        DataSource sourceDs;
+        try {
+            sourceDs = new DruidDataSourceFactory(srcConfig).getDataSource();
+        } catch (Exception e) {
+            log.warn("Create datasource failed,errorMsg={}", e.getMessage());
+            return;
+        }
+
+        try {
+            String srcDbVersion = getDBVersion(srcConfig.getType(), sourceDs);
+            if (!isSupportedSyncTableStructure(srcConfig.getDialectType(), srcDbVersion, srcConfig.getDialectType(),
+                    srcDbVersion)) {
+                log.warn("Create temporary table structure is unsupported,sourceDbType={},targetDbType={}",
+                        srcConfig.getDialectType(),
+                        srcConfig.getDialectType());
+                return;
+            }
+            DBSchemaAccessor srcAccessor = getDBSchemaAccessor(srcConfig.getType(), sourceDs, srcDbVersion);
+            Map<String, DBTable> tables = srcAccessor.getTables(srcConfig.getDefaultSchema(),
+                    Arrays.asList(srcTableName, tempTableName));
+            // create temporary table if not exists.
+            if (!tables.containsKey(tempTableName)) {
+                DBTable srcTable = tables.get(srcTableName);
+                srcTable.setName(tempTableName);
+                DBTableEditor tableEditor = getDBTableEditor(srcConfig.getType(), srcDbVersion);
+                String createTableDdl = tableEditor.generateCreateObjectDDL(srcTable);
+                try (Connection conn = sourceDs.getConnection();
+                        PreparedStatement ps = conn.prepareStatement(createTableDdl)) {
+                    ps.execute();
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Create temporary table failed,errorMsg={}", e.getMessage());
+        } finally {
+            closeDataSource(sourceDs);
+        }
+
     }
 
 
