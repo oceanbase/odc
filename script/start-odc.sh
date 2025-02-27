@@ -174,6 +174,12 @@ function init_java_exec() {
 }
 
 main() {
+    # if start as supervisor agent mode
+    if [[ "${ODC_SUPERVISOR_LISTEN_PORT}" ]]; then
+        echo "start as supervisor agent mode  with listen port ${ODC_SUPERVISOR_LISTEN_PORT}"
+        sh -c "${install_directory}/bin/start-supervisor.sh"
+        exit 0;
+    fi
     # if ODC_BOOT_MODE is TASK_EXECUTOR start odc server as task executor mode
     if [[ "${ODC_BOOT_MODE}" == "TASK_EXECUTOR" ]]; then
         echo "start odc as ${ODC_BOOT_MODE}"

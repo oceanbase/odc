@@ -158,7 +158,7 @@ public class K8sResourceOperatorTest {
                     AbstractK8sResourceOperatorBuilder.CLOUD_K8S_POD_TYPE,
                     k8sResourceContext.resourceNamespace(), k8sResourceContext.getResourceName(),
                     ResourceState.CREATING,
-                    "localhost:8080", new Date(1024));
+                    "localhost:8080", "8089", new Date(1024));
         }
     }
 }

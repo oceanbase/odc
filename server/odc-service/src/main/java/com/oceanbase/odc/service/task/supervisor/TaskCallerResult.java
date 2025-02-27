@@ -13,21 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.config;
+package com.oceanbase.odc.service.task.supervisor;
 
-import com.oceanbase.odc.core.shared.PreConditions;
+import lombok.Data;
 
 /**
- * @author yaobin
- * @date 2024-01-15
- * @since 4.2.4
+ * @author longpeng.zlp
+ * @date 2024/12/9 11:30
  */
-public class JobConfigurationValidator {
+@Data
+public class TaskCallerResult {
+    public static final TaskCallerResult SUCCESS_RESULT = new TaskCallerResult(true, null);
+    private final Boolean succeed;
+    private final Exception e;
 
-    public static void validComponent() {
-        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
-        PreConditions.notNull(jobConfiguration, "jobConfiguration");
-        PreConditions.notNull(jobConfiguration.getTaskFrameworkService(), "taskFrameworkService");
-        PreConditions.notNull(jobConfiguration.getTaskFrameworkProperties(), "taskFrameworkProperties");
+    public static TaskCallerResult failed(Exception e) {
+        return new TaskCallerResult(false, e);
     }
 }
