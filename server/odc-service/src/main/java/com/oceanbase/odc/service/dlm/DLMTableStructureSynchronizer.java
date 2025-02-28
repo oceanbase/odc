@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -155,9 +156,10 @@ public class DLMTableStructureSynchronizer {
             if (!tables.containsKey(tempTableName)) {
                 DBTable srcTable = tables.get(srcTableName);
                 srcTable.setName(tempTableName);
+                adaptDBTable(srcTable);
                 DBTableEditor tableEditor = getDBTableEditor(srcConfig.getType(), srcDbVersion);
                 String createTableDdl = tableEditor.generateCreateObjectDDL(srcTable);
-                log.info("Start to create temporary table,ddl={}",createTableDdl);
+                log.info("Start to create temporary table,ddl={}", createTableDdl);
                 try (Connection conn = sourceDs.getConnection();
                         PreparedStatement ps = conn.prepareStatement(createTableDdl)) {
                     ps.execute();
@@ -220,6 +222,16 @@ public class DLMTableStructureSynchronizer {
 
     private static boolean isMySQLVersionLessThan570(String version) {
         return VersionUtils.isLessThan(version, "5.7.0");
+    }
+
+    private static void adaptDBTable(DBTable dbTable) {
+        dbTable.getColumns().forEach(o -> {
+            if (!o.getNullable()) {
+                if (StringUtils.isEmpty(o.getDefaultValue())) {
+                    o.setDefaultValue("''");
+                }
+            }
+        });
     }
 
 }
